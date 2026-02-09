@@ -169,6 +169,7 @@ get_available_components(
 Like [`get_components`](@ref get_components(
     sys::System,
     attribute::SupplementalAttribute
+    )
 ) but returns only components that are [`get_available`](@ref).
 """
 get_available_components(sys::System, attribute::SupplementalAttribute) =
