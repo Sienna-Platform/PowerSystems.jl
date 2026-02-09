@@ -22,11 +22,11 @@ Enumeration representing different cost models for generators in power system an
 
 IS.@scoped_enum(AngleUnits, DEGREES = 1, RADIANS = 2,)
 @doc"
-AngleUnits
+    AngleUnits
 
 An enumeration of angular measurement units used throughout the PowerSystems package.
 
-Values
+# Values
 - `DEGREES`: Angles expressed in degrees.
 - `RADIANS`: Angles expressed in radians.
 
@@ -43,21 +43,22 @@ julia> θ_rad = unit == AngleUnits.DEGREES ? θ * (π/180) : θ
 
 IS.@scoped_enum(ACBusTypes, PQ = 1, PV = 2, REF = 3, ISOLATED = 4, SLACK = 5,)
 @doc"
-ACBusTypes
+    ACBusTypes
 
 Enumeration of AC power system bus types (MATPOWER Table B‑1).
 Each variant corresponds to a standard bus classification used in power flow
 and steady‑state network models:
 
-- PQ (1): Load bus — active (P) and reactive (Q) power injections are specified;
+# Values
+- `PQ = 1`: Load bus — active (P) and reactive (Q) power injections are specified;
     the bus voltage magnitude and angle are solved by the power‑flow algorithm.
-- PV (2): Generator (PV) bus — active power (P) and voltage magnitude (V) are
+- `PV = 2`: Generator (PV) bus — active power (P) and voltage magnitude (V) are
     specified; reactive power (Q) and voltage angle are solved.
-- REF (3): Reference bus — a named reference for the system voltage angle; often
+- `REF = 3`: Reference bus — a named reference for the system voltage angle; often
     equivalent to a slack bus in semantics but provided separately for clarity.
-- ISOLATED (4): Isolated bus — not connected to the main network (islanded or
+- `ISOLATED = 4`: Isolated bus — not connected to the main network (islanded or
     disconnected); typically excluded from the global power‑flow solution.
-- SLACK (5): Slack bus — balances the system active and reactive power mismatch
+- `SLACK = 5`: Slack bus — balances the system active and reactive power mismatch
     and sets the reference voltage angle (commonly one per connected network).
 
 Notes
@@ -83,6 +84,7 @@ WECC-defined enumeration for load conformity classification used in dynamic mode
 Load conformity indicates whether a load follows system voltage and frequency variations
 according to WECC modeling standards:
 
+# Values
 - `NON_CONFORMING = 0`: Load that does not respond predictably to voltage and frequency changes,
   typically representing constant power loads or loads with complex control systems
 - `CONFORMING = 1`: Load that responds predictably to voltage and frequency variations,
@@ -136,14 +138,14 @@ IS.@scoped_enum(
     CLOSED = 1,
 )
 @doc"
-DiscreteControlledBranchStatus
+    DiscreteControlledBranchStatus
 
 Enumeration describing the controlled (commanded) status of a branch device
 (such as a breaker or a switch) in a power system model.
 
-Values
-- OPEN = 0: The device is open (interrupting state) — the branch is non-conducting.
-- CLOSED = 1: The device is closed (conducting state) — the branch provides a normal conduction path.
+# Values
+- `OPEN = 0`: The device is open (interrupting state) — the branch is non-conducting.
+- `CLOSED = 1`: The device is closed (conducting state) — the branch provides a normal conduction path.
 
 Notes
 - This enum represents the intended or commanded state used by control and protection
@@ -416,17 +418,17 @@ IS.@scoped_enum(
 Enumeration of energy storage technologies used in power systems.
 
 # Values
-- `PTES`: Pumped thermal energy storage
-- `LIB`: Lithium-ion Battery
-- `LAB`: Lead Acid Battery
-- `FLWB`: Redox Flow Battery
-- `SIB`: Sodium Ion Battery
-- `ZIB`: Zinc Ion Battery
-- `HGS`: Hydrogen Gas Storage
-- `LAES`: Liquid Air Energy Storage
-- `OTHER_CHEM`: Chemical Storage (other than specified)
-- `OTHER_MECH`: Mechanical Storage (other than specified)
-- `OTHER_THERM`: Thermal Storage (other than specified)
+- `PTES = 1`: Pumped thermal energy storage
+- `LIB = 2`: Lithium-ion Battery
+- `LAB = 3`: Lead Acid Battery
+- `FLWB = 4`: Redox Flow Battery
+- `SIB = 5`: Sodium Ion Battery
+- `ZIB = 6`: Zinc Ion Battery
+- `HGS = 7`: Hydrogen Gas Storage
+- `LAES = 8`: Liquid Air Energy Storage
+- `OTHER_CHEM = 9`: Chemical Storage (other than specified)
+- `OTHER_MECH = 10`: Mechanical Storage (other than specified)
+- `OTHER_THERM = 11`: Thermal Storage (other than specified)
 
 This enumeration is used to classify different types of energy storage systems
 based on their underlying technology and storage mechanism.
@@ -439,14 +441,14 @@ IS.@scoped_enum(
     PUMP = -1,
 )
 @doc"
-PumpHydroStatus
+    PumpHydroStatus
 
 Operating status of a pumped‑storage hydro unit.
 
-Values
-- OFF = 0: Unit is idle — neither generating nor pumping.
-- GEN = 1: Generating mode (turbine operation), producing active power.
-- PUMP = -1: Pumping mode, consuming active power to store energy.
+# Values
+- `OFF = 0`: Unit is idle — neither generating nor pumping.
+- `GEN = 1`: Generating mode (turbine operation), producing active power.
+- `PUMP = -1`: Pumping mode, consuming active power to store energy.
 
 Notes
 - The sign of the value reflects the net direction of active power (positive = generation, negative = pumping).
@@ -472,7 +474,7 @@ IS.@scoped_enum(
     ENERGY = 4,
 )
 @doc"
-ReservoirDataType
+    ReservoirDataType
 
 Enumeration of reservoir accounting unit classes.
 
@@ -480,11 +482,11 @@ This enum identifies the type of data recorded or tracked for a reservoir. Use t
 the kind of measurement or accounting quantity associated with a reservoir (for example in time series,
 storage models, reporting, or data exchange).
 
-Values
-- USABLE_VOLUME: Volume available for operations and dispatch (active storage). Typically reported in cubic meters (m³) or other volumetric units.
-- TOTAL_VOLUME: Total reservoir volume including dead and active storage. Reported in the same volumetric units as USABLE_VOLUME.
-- HEAD: Hydraulic head or water surface elevation relative to a datum, typically reported in meters (m).
-- ENERGY: Stored or deliverable energy associated with the reservoir (e.g., potential energy or expected generation), often expressed in MWh, GWh, or joules.
+# Values
+- `USABLE_VOLUME = 1`: Volume available for operations and dispatch (active storage). Typically reported in cubic meters (m³) or other volumetric units.
+- `TOTAL_VOLUME = 2`: Total reservoir volume including dead and active storage. Reported in the same volumetric units as USABLE_VOLUME.
+- `HEAD = 3`: Hydraulic head or water surface elevation relative to a datum, typically reported in meters (m).
+- `ENERGY = 4`: Stored or deliverable energy associated with the reservoir (e.g., potential energy or expected generation), often expressed in MWh, GWh, or joules.
 " ReservoirDataType
 
 IS.@scoped_enum(
@@ -511,16 +513,16 @@ of turbine types to ensure consistent modeling and data handling
 across different systems.
 
 # Values
-- `UNKNOWN`   : Default value when the turbine type is not specified.
-- `PELTON`    : Impulse turbine, typically used for high-head, low-flow sites.
-- `FRANCIS`   : Reaction turbine, widely used for medium-head applications.
-- `KAPLAN`    : Adjustable-blade propeller turbine for low-head, high-flow sites.
-- `TURGO`     : Impulse turbine similar to Pelton but suitable for higher flow rates.
-- `CROSSFLOW` : Banki-Michell (crossflow) impulse turbine, robust for small hydro.
-- `BULB`      : Compact Kaplan variant, typically installed in low-head run-of-river plants.
-- `DERIAZ`    : Diagonal flow reaction turbine with variable pitch blades.
-- `PROPELLER` : Fixed-blade propeller turbine, simpler than Kaplan but less efficient at part load.
-- `OTHER`     : Placeholder for less common or custom turbine designs.
+- `UNKNOWN = 0`   : Default value when the turbine type is not specified.
+- `PELTON = 1`    : Impulse turbine, typically used for high-head, low-flow sites.
+- `FRANCIS = 2`   : Reaction turbine, widely used for medium-head applications.
+- `KAPLAN = 3`    : Adjustable-blade propeller turbine for low-head, high-flow sites.
+- `TURGO = 4`     : Impulse turbine similar to Pelton but suitable for higher flow rates.
+- `CROSSFLOW = 5` : Banki-Michell (crossflow) impulse turbine, robust for small hydro.
+- `BULB = 6`      : Compact Kaplan variant, typically installed in low-head run-of-river plants.
+- `DERIAZ = 7`    : Diagonal flow reaction turbine with variable pitch blades.
+- `PROPELLER = 8` : Fixed-blade propeller turbine, simpler than Kaplan but less efficient at part load.
+- `OTHER = 9`     : Placeholder for less common or custom turbine designs.
 " HydroTurbineType
 
 IS.@scoped_enum(
@@ -529,13 +531,13 @@ IS.@scoped_enum(
     TAIL = 2,
 )
 @doc"
-ReservoirLocation
+    ReservoirLocation
 
 Enumeration representing the location of a hydro reservoir relative to its associated turbine.
 
 # Values
-- `HEAD`: The reservoir is located upstream of the turbine, typically at a higher elevation.
-- `TAIL`: The reservoir is located downstream of the turbine at a lower or same elevation.
+- `HEAD = 1`: The reservoir is located upstream of the turbine, typically at a higher elevation.
+- `TAIL = 2`: The reservoir is located downstream of the turbine at a lower or same elevation.
 
 " ReservoirLocation
 
