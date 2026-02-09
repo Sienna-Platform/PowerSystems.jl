@@ -30,15 +30,17 @@ An enumeration of angular measurement units used throughout the PowerSystems pac
 - `DEGREES`: Angles expressed in degrees.
 - `RADIANS`: Angles expressed in radians.
 
-Usage
-Use `AngleUnits` to make unit semantics explicit for functions, fields, and APIs that accept or return angular values. When performing trigonometric calculations with Base functions (`sin`, `cos`, etc.), convert degrees to radians (e.g., `θ * π/180`) if the unit is `DEGREES`.
+# Usage
+Use `AngleUnits` to make unit semantics explicit for functions, fields, and APIs that accept or return angular values. When performing trigonometric calculations with `Base` functions (`sin`, `cos`, etc.), convert degrees to radians (e.g., `θ * π/180`) if the unit is `DEGREES`.
 
-Examples
+# Examples
+```
 julia> unit = AngleUnits.DEGREES
 AngleUnits.DEGREES
 
 julia> θ = 30.0
 julia> θ_rad = unit == AngleUnits.DEGREES ? θ * (π/180) : θ
+```
 " AngleUnits
 
 IS.@scoped_enum(ACBusTypes, PQ = 1, PV = 2, REF = 3, ISOLATED = 4, SLACK = 5,)
@@ -61,7 +63,7 @@ and steady‑state network models:
 - `SLACK = 5`: Slack bus — balances the system active and reactive power mismatch
     and sets the reference voltage angle (commonly one per connected network).
 
-Notes
+# Notes
 - Numeric values follow the MATPOWER convention for bus type codes.
 - Use the enum members (e.g., `ACBusTypes.PQ`, `ACBusTypes.SLACK`) when
     constructing or interpreting network data structures to ensure clarity and
@@ -147,10 +149,10 @@ Enumeration describing the controlled (commanded) status of a branch device
 - `OPEN = 0`: The device is open (interrupting state) — the branch is non-conducting.
 - `CLOSED = 1`: The device is closed (conducting state) — the branch provides a normal conduction path.
 
-Notes
+# Notes
 - This enum represents the intended or commanded state used by control and protection
     logic; it may differ from actual measured/telemetry state during faults or failures.
-- The integer encoding (0/1) is chosen for compact storage and interop with serialization
+- The integer encoding (`0`/`1`) is chosen for compact storage and interop with serialization
     or external data formats.
 " DiscreteControlledBranchStatus
 
@@ -168,10 +170,10 @@ An enumeration representing different types of transformer windings used in powe
 Reflects how to interpret the Transformer Impedance Correction Table (TICT) winding association as described in [`ImpedanceCorrectionData`](@ref).
 
 # Values
-- `TR2W_WINDING = 0`: Winding associated with a two-winding transformer (Transformer2W) connected to a tap-changing transformer's [`ImpedanceCorrectionData`](@ref)
-- `PRIMARY_WINDING = 1`: Primary winding of a three-winding transformer (Transformer3W) associated with a [`ImpedanceCorrectionData`](@ref)
-- `SECONDARY_WINDING = 2`: Secondary winding of a three-winding transformer (Transformer3W) associated with a [`ImpedanceCorrectionData`](@ref)
-- `TERTIARY_WINDING = 3`: Tertiary winding of a three-winding transformer (Transformer3W) associated with a [`ImpedanceCorrectionData`](@ref)
+- `TR2W_WINDING = 0`: Winding associated with a two-winding transformer (`Transformer2W`) connected to a tap-changing transformer's [`ImpedanceCorrectionData`](@ref)
+- `PRIMARY_WINDING = 1`: Primary winding of a three-winding transformer (`Transformer3W`) associated with a [`ImpedanceCorrectionData`](@ref)
+- `SECONDARY_WINDING = 2`: Secondary winding of a three-winding transformer (`Transformer3W`) associated with a [`ImpedanceCorrectionData`](@ref)
+- `TERTIARY_WINDING = 3`: Tertiary winding of a three-winding transformer (`Transformer3W`) associated with a [`ImpedanceCorrectionData`](@ref)
 
 This enumeration is used to categorize transformer windings based on their role and configuration
 in the power system model, particularly in relation to tap-changing transformers.
@@ -196,17 +198,17 @@ of three-phase transformers.
 
 # Valid Values
 - `UNDEFINED = -99`: Undefined or unspecified winding group
-- `GROUP_0 = 0`: 0° phase displacement (Yy0, Dd0, Dz0)
-- `GROUP_1 = 1`: -30° phase displacement (Yy1, Dd1, Dz1)
-- `GROUP_5 = 5`: -150° phase displacement (Yy5, Dd5, Dz5)
-- `GROUP_6 = 6`: 180° phase displacement (Yy6, Dd6, Dz6)
-- `GROUP_7 = 7`: 150° phase displacement (Yy7, Dd7, Dz7)
-- `GROUP_11 = 11`: 30° phase displacement (Yy11, Dd11, Dz11)
+- `GROUP_0 = 0`: `0°` phase displacement (Yy0, Dd0, Dz0)
+- `GROUP_1 = 1`: `-30°` phase displacement (Yy1, Dd1, Dz1)
+- `GROUP_5 = 5`: `-150°` phase displacement (Yy5, Dd5, Dz5)
+- `GROUP_6 = 6`: `180°` phase displacement (Yy6, Dd6, Dz6)
+- `GROUP_7 = 7`: `150°` phase displacement (Yy7, Dd7, Dz7)
+- `GROUP_11 = 11`: `30°` phase displacement (Yy11, Dd11, Dz11)
 
 # Notes
 The phase displacement is measured from the primary to secondary winding, with
 positive angles representing a lead and negative angles representing a lag.
-Clock notation follows the convention where each hour represents 30°.
+Clock notation follows the convention where each hour represents `30°`.
 " WindingGroupNumber
 
 IS.@scoped_enum(
@@ -273,7 +275,7 @@ as specified in the PSS/E-35 manual.
 
 # Notes
 Negative values indicate disabled control modes, while positive values represent active
-control objectives. The `FIXED` mode (0) indicates manual tap position control without
+control objectives. The `FIXED` mode (`0`) indicates manual tap position control without
 automatic adjustment.
 " TransformerControlObjective
 
@@ -330,7 +332,7 @@ Prime movers are the engines, turbines, water wheels, or similar machines that d
 electric generators or provide mechanical energy for other purposes. This enumeration
 provides standardized codes for different types of prime movers used in power plants.
 
-PVe is used for photovoltaic systems renaming from EIA PV to avoid conflict with BusType.PV
+`PVe` is used for photovoltaic systems renaming from EIA PV to avoid conflict with `ACBusType.PV`
 
 # References
 - [EIA Form 923 Instructions](https://www.eia.gov/survey/form/eia_923/instructions.pdf)
@@ -450,7 +452,7 @@ Operating status of a pumped‑storage hydro unit.
 - `GEN = 1`: Generating mode (turbine operation), producing active power.
 - `PUMP = -1`: Pumping mode, consuming active power to store energy.
 
-Notes
+# Notes
 - The sign of the value reflects the net direction of active power (positive = generation, negative = pumping).
 - Intended for use in scheduling, dispatch, and state-tracking of pumped‑storage units.
 " PumpHydroStatus
@@ -484,7 +486,7 @@ storage models, reporting, or data exchange).
 
 # Values
 - `USABLE_VOLUME = 1`: Volume available for operations and dispatch (active storage). Typically reported in cubic meters (m³) or other volumetric units.
-- `TOTAL_VOLUME = 2`: Total reservoir volume including dead and active storage. Reported in the same volumetric units as USABLE_VOLUME.
+- `TOTAL_VOLUME = 2`: Total reservoir volume including dead and active storage. Reported in the same volumetric units as `USABLE_VOLUME`.
 - `HEAD = 3`: Hydraulic head or water surface elevation relative to a datum, typically reported in meters (m).
 - `ENERGY = 4`: Stored or deliverable energy associated with the reservoir (e.g., potential energy or expected generation), often expressed in MWh, GWh, or joules.
 " ReservoirDataType
