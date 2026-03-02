@@ -84,35 +84,9 @@ In this example:
 
 ### Unit System Conversions
 
-When you access these values through the PowerSystems.jl getter functions, they are automatically converted based on the current unit system setting:
-
-```julia
-# Assuming base_power = 100 MVA, rating = 1.0 p.u., max_active_power = 0.95 p.u.
-sys = System(100.0)  # System base power = 100 MVA
-gen = get_component(ThermalStandard, sys, "gen1")
-
-# In DEVICE_BASE
-set_units_base_system!(sys, "DEVICE_BASE")
-get_base_power(gen)                    # Returns: 100.0 MVA (always natural units)
-get_rating(gen)                        # Returns: 1.0 p.u. (on device base)
-get_max_active_power(gen)              # Returns: 0.95 p.u. (on device base)
-
-# In NATURAL_UNITS
-set_units_base_system!(sys, "NATURAL_UNITS")
-get_base_power(gen)                    # Returns: 100.0 MVA (always natural units)
-get_rating(gen)                        # Returns: 100.0 MVA (converted from p.u.)
-get_max_active_power(gen)              # Returns: 95.0 MW (converted from p.u.)
-
-# In SYSTEM_BASE
-set_units_base_system!(sys, "SYSTEM_BASE")
-get_base_power(gen)                    # Returns: 100.0 MVA (always natural units)
-get_rating(gen)                        # Returns: 1.0 p.u. (on system base, assuming system base = device base)
-get_max_active_power(gen)              # Returns: 0.95 p.u. (on system base)
-```
-
-!!! note
-
-    Base power is **always** returned in natural units (MVA) regardless of the unit system setting. The rating and maximum active power are stored in device base but are automatically converted when accessed based on the current unit system setting.
+When you access these values through the `PowerSystems.jl` getter functions, they are
+automatically converted based on the current unit system setting. For a step-by-step
+guide, see [Read Component Values in Different Unit Systems](@ref).
 
 ## See Also
 

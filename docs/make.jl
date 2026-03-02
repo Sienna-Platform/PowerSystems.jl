@@ -42,6 +42,7 @@ pages = OrderedDict(
                 "Save and read data with a JSON" => "how_to/serialize_data.md",
             ],
             "...add a component using natural units (MW)" => "how_to/add_component_natural_units.md",
+            "...read component values in different unit systems" => "how_to/convert_unit_systems.md",
             "...use subsystems" => "how_to/use_subsystems.md",
             "...use context managers for bulk operations" => "how_to/use_context_managers.md",
             "...add additional data to a component" => Any[
