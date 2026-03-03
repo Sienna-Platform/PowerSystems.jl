@@ -56,10 +56,24 @@ from_subsystem(sys, "1")
     The system above is invalid because the bus connected to the Alta generator is not
     part of subsystem "1". Add the bus first, then re-run [`from_subsystem`](@ref):
 
+A valid exported `System` requires three additional components:
+
+  - **The generator's bus** (`nodeA`) — every device must have its connected bus present in
+    the subsystem.
+  - **A reference (slack) bus** (`nodeD`) — at least one [`ACBus`](@ref) with
+    `bustype = ACBusTypes.REF` must be present for the system to pass validation.
+  - **An [`ElectricLoad`](@ref)** — a subsystem with no load components triggers a
+    validation warning. Adding the [`PowerLoad`](@ref) connected to the slack bus
+    satisfies this requirement.
+
 ```@repl subsystem
 g = get_component(ThermalStandard, sys, "Alta")
 b = get_bus(g)
 add_component_to_subsystem!(sys, "1", b)
+ref_bus = get_component(ACBus, sys, "nodeD")
+add_component_to_subsystem!(sys, "1", ref_bus)
+load = first(get_components(x -> get_bus(x) === ref_bus, PowerLoad, sys))
+add_component_to_subsystem!(sys, "1", load)
 from_subsystem(sys, "1")
 ```
 

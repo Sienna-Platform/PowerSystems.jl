@@ -1,6 +1,6 @@
 # [About Supplemental Attributes](@id supplemental_attributes_explanation)
 
-Supplemental attributes help PowerSystems.jl manage the relationships between power system components and their metadata. Instead of cramming everything into basic component definitions, this system keeps electrical data separate from contextual information like location, outages, or plant groupings.
+Supplemental attributes help PowerSystems.jl manage the relationships between power system components and their metadata. Instead of putting everything into basic component definitions, this system keeps electrical data separate from contextual information like location, outages, or plant groupings.
 
 ## Why Use Supplemental Attributes?
 

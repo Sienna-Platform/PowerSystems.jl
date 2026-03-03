@@ -29,7 +29,7 @@ key benefits:
 
 Each infrastructure component is represented as a [`struct`](@ref S) — a composite data
 type that bundles together the fields needed to describe that component. For example, an
-`ACBus` carries fields for its bus number, nominal voltage, bus type, and more:
+[`ACBus`](@ref) carries fields for its bus number, nominal voltage, bus type, and more:
 
 ```@repl types
 using PowerSystems #hide
