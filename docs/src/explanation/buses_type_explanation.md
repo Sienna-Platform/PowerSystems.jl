@@ -75,7 +75,7 @@ the system buses are adequately set. That validation is implemented in
 [`PowerNetworkMatrices.jl`](https://nrel-sienna.github.io/PowerNetworkMatrices.jl/stable/).**
 
 For worked examples of constructing reference and slack buses and adding them to a system,
-see the [Create and Explore a Power System](@ref tutorial_creating_system) tutorial.
+see the [Create and Explore a Power System](@ref "Create and Explore a Power `System`") tutorial.
 
 ## Isolated Buses and the `available` field
 

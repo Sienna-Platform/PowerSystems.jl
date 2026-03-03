@@ -6,7 +6,7 @@ The [`System`](@ref) is the central data container in `PowerSystems.jl`. It hold
 [`Component`](@ref)s — the objects that describe the physical and logical elements of a
 power network — together with references to any associated time series data. For the most
 basic walkthrough of creating a system from scratch, see the
-[Create and Explore a Power System](@ref tutorial_creating_system) tutorial.
+[Create and Explore a Power System](@ref "Create and Explore a Power `System`") tutorial.
 
 `PowerSystems.jl` uses a hybrid approach to data storage: component data and time series
 references are stored in volatile memory, while the actual time series data is stored in
@@ -60,5 +60,4 @@ _this is actively discouraged_ for two reasons:
 
 The `System` also supports partitioning components into named *subsystems*, which is
 useful for decomposition approaches or dispatch coordination workflows. For a hands-on walkthrough of working with a `System`, its components, and the accessor functions, see the
-[Manipulating Datasets](@ref tutorial_manipulating_datasets) tutorial. For a step-by-step
-guide, see [Use subsystems](@ref use_subsystems).
+[Manipulating Datasets](@ref "Manipulating Datasets") tutorial. For a step-by-step guide, see [Use subsystems](@ref use_subsystems).

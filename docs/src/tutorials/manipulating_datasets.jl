@@ -1,4 +1,4 @@
-# # [Manipulating Datasets](@id tutorial_manipulating_datasets)
+# # Manipulating Datasets
 # `PowerSystems` provides function interfaces to all data, and in this tutorial we will explore how to do this using the [`show_components`](@ref),
 # [`get_component`](@ref get_component(::Type{T}, sys::System, name::AbstractString) where {T <: Component})/
 # [`get_components`](@ref), and getter (`get_*`) and setter (`set_*`) functions for component fields.

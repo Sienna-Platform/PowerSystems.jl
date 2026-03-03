@@ -88,4 +88,4 @@ done the per-unit conversion into `"DEVICE_BASE"` behind the scenes.
 
   - [Read more to understand per-unitization in PowerSystems.jl](@ref per_unit)
   - Learn how to use the default constructors and explore the per-unitization settings in
-    [Create and Explore a Power `System`](@ref tutorial_creating_system)
+    [Create and Explore a Power `System`](@ref "Create and Explore a Power `System`")

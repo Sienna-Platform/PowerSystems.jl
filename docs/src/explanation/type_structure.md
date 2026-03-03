@@ -115,5 +115,5 @@ production cost modeling, and transient stability simulation through different d
 packages, without any modification to the underlying data.
 
 For a hands-on introduction to navigating the type hierarchy, see the
-[Create and Explore a Power System](@ref tutorial_creating_system) tutorial.
+[Create and Explore a Power System](@ref "Create and Explore a Power `System`") tutorial.
 ```

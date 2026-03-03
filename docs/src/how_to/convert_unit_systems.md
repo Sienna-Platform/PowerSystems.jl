@@ -110,7 +110,7 @@ See [Use Context Managers for Efficient Bulk Operations](@ref) for more examples
 ## See Also
 
   - [Per-unit Conventions](@ref per_unit) — explanation of all three unit systems
-  - [Create and Explore a Power System](@ref tutorial_creating_system) — tutorial that
+  - [Create and Explore a Power System](@ref "Create and Explore a Power `System`") — tutorial that
     constructs components in device base and demonstrates unit system conversions in practice
   - [Add a Component in Natural Units](@ref) — how to define component data in MW/MVA
   - [`with_units_base`](@ref), [`get_units_base`](@ref), [`set_units_base_system!`](@ref)

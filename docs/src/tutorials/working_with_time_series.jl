@@ -1,4 +1,4 @@
-# # [Working with Time Series Data](@id tutorial_time_series)
+# # Working with Time Series Data
 # In this tutorial, we will manually add, retrieve, and inspect time-series data in
 # different formats, including identifying which components in a power [`System`](@ref) have time
 # series data. Along the way, we will also use workarounds for missing forecast data and
