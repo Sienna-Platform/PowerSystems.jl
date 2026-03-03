@@ -110,6 +110,8 @@
 
   - *pu* or *p.u.*: Per-unit
 
+  - *PWM*: Pulse-width modulation. A switching technique used in power converters to synthesize a desired AC output voltage by rapidly toggling switches at a high frequency.
+
 ### R
 
   - *REECB1*: Renewable Energy Electric Controller Type B1
@@ -127,24 +129,16 @@
   - *SIL*: Surge impedance loading
 
   - *States*: Correspond to the set of inputs, outputs or variables, that evolve dynamically in
-    [`PowerSimulationsDynamics.jl`](https://nrel-sienna.github.io/PowerSimulationsDynamics.jl/stable/),
-    commonly via a differential-algebraic system of equations. In `PowerSystems.jl`, a component
-    associated to a `DynamicInjector` (for example an AVR) specifies the set of states that specific
-    component requires to be modeled accurately.
+    [`PowerSimulationsDynamics.jl`](https://nrel-sienna.github.io/PowerSimulationsDynamics.jl/stable/), commonly via a differential-algebraic system of equations. In `PowerSystems.jl`, a component associated to a `DynamicInjector` (for example an AVR) specifies the set of states that specific component requires to be modeled accurately.
 
-  - *Static*: Typically refers to steady state data or models where the power system
-    and each of its components are assumed to be operating at a steady state equilibrium point. This
-    includes both power flow data for a single time point simulation as well as quasi-static time
-    series data and models, where the power system is at an equilibrium point at each time step.
-    Static data can be used as the input to single time point power flow models and production
-    cost models with, for example, 5-minute, 15-minute, or 1-hour [Resolution](@ref R).
-    For contrast, see the definition for [Dynamic](@ref D) data.
+  - *Static*: Typically refers to steady state data or models where the power system and each of its components are assumed to be operating at a steady state equilibrium point. This includes both power flow data for a single time point simulation as well as quasi-static time   series data and models, where the power system is at an equilibrium point at each time step. Static data can be used as the input to single time point power flow models and production cost models with, for example, 5-minute, 15-minute, or 1-hour [Resolution](@ref R).    For contrast, see the definition for [Dynamic](@ref D) data.
 
   - *STAB*: Speed Sensitive Stabilizing PSS Model
 
-  - *Struct*: A composite data type in Julia that can store multiple values in a single object.
-    See the Julia documentation on [`struct`](https://docs.julialang.org/en/v1/base/base/#struct)
+  - *Struct*: A composite data type in Julia that can store multiple values in a single object. See the Julia documentation on [`struct`](https://docs.julialang.org/en/v1/base/base/#struct)
     and [Composite Types](https://docs.julialang.org/en/v1/manual/types/#Composite-Types).
+
+  - *SVM*: Space vector modulation. A control algorithm for three-phase inverters that represents the desired output voltage as a vector in the complex plane and selects switching states to approximate it, achieving lower harmonic distortion than basic [PWM](@ref D).
 
 ### U
 
