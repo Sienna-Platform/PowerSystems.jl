@@ -43,6 +43,7 @@ pages = OrderedDict(
             ],
             "...add a component using natural units (MW)" => "how_to/add_component_natural_units.md",
             "...read component values in different unit systems" => "how_to/convert_unit_systems.md",
+            "...convert transformer impedances between per-unit bases" => "how_to/convert_transformer_impedance.md",
             "...use subsystems" => "how_to/use_subsystems.md",
             "...use context managers for bulk operations" => "how_to/use_context_managers.md",
             "...add additional data to a component" => Any[
@@ -78,7 +79,6 @@ pages = OrderedDict(
             "explanation/per_unit.md",
             "explanation/power_concepts.md",
             "explanation/conforming_and_non_conforming_loads.md",
-            "explanation/transformer_per_unit_models.md",
             "explanation/time_series.md",
             "explanation/dynamic_data.md",
             "explanation/supplemental_attributes_2.md",
