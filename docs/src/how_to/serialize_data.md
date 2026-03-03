@@ -107,6 +107,6 @@ rm(folder; recursive = true); #hide
     UUIDs.  If you will modify the `System` or components after deserialization then
     it is recommended that you set this flag to generate new UUIDs.
 
-    ```julia
+    ```@repl serialize_data
     system2 = System(path; assign_new_uuids = true)
     ```

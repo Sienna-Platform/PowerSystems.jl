@@ -22,7 +22,7 @@ For this model, attach an upstream [`HydroReservoir`](@ref) to any number of [`H
 
 ### Example: Single Turbine with Single Reservoir
 
-```julia
+```@repl hydro_resv
 using PowerSystems
 import PowerSystems as PSY
 
@@ -89,7 +89,7 @@ set_downstream_turbine!(reservoir, turbine)
 
 ### Example: Multiple Turbines with Single Reservoir
 
-```julia
+```@repl hydro_resv
 
 sys = System(100.0)
 set_units_base_system!(sys, "NATURAL_UNITS")
@@ -154,7 +154,7 @@ flowchart TB
 
 ### Example: Pumped Hydro with Head and Tail Reservoirs
 
-```julia
+```@repl hydro_resv
 # Create a HydroPumpTurbine
 pump_turbine = HydroPumpTurbine(;
     name = "PumpTurbine1",

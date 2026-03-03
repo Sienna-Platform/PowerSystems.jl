@@ -6,7 +6,7 @@ This how-to assumes you have a `System` named `sys` with at least one `FixedForc
 
 Use [`get_supplemental_attributes`](@ref) with a supplemental attribute type to retrieve all matching attributes from a system.
 
-```julia
+```@repl use_supplemental_attributes
 using PowerSystems
 
 for outage in get_supplemental_attributes(FixedForcedOutage, sys)
@@ -18,7 +18,7 @@ The output includes the attribute type name and its [UUID](@ref U) — a unique 
 
 Pass a filter function as the first argument to narrow results by field values.
 
-```julia
+```@repl use_supplemental_attributes
 using PowerSystems
 
 for outage in get_supplemental_attributes(
@@ -34,7 +34,7 @@ end
 
 Use [`get_supplemental_attributes`](@ref) with a component instead of a system to retrieve only the attributes attached to that component.
 
-```julia
+```@repl use_supplemental_attributes
 using PowerSystems
 
 gen1 = first(get_components(ThermalStandard, sys))
@@ -47,7 +47,7 @@ The output includes the attribute type name and its [UUID](@ref U).
 
 Pass a filter function as the first argument to narrow results by field values.
 
-```julia
+```@repl use_supplemental_attributes
 using PowerSystems
 
 for outage in get_supplemental_attributes(
@@ -65,7 +65,7 @@ Use [`get_associated_components`](@ref) to retrieve the components attached to a
 
  1. Get all components associated with a single supplemental attribute.
 
-    ```julia
+    ```@repl use_supplemental_attributes
     using PowerSystems
     
     outage = first(get_supplemental_attributes(FixedForcedOutage, sys))
@@ -78,7 +78,7 @@ Use [`get_associated_components`](@ref) to retrieve the components attached to a
 
  2. Same as the previous, but filter the results by component type.
 
-    ```julia
+    ```@repl use_supplemental_attributes
     using PowerSystems
     
     outage = first(get_supplemental_attributes(FixedForcedOutage, sys))
@@ -93,7 +93,7 @@ Use [`get_associated_components`](@ref) to retrieve the components attached to a
 
     Use [`get_component_supplemental_attribute_pairs`](@ref) to retrieve component/attribute pairs by type. Prefer this over nested loops iterating over components and their attributes separately.
 
-    ```julia
+    ```@repl use_supplemental_attributes
     using PowerSystems
     
     for (gen, outage) in get_component_supplemental_attribute_pairs(

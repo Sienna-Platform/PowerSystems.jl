@@ -136,7 +136,7 @@ type of the struct and extract it in a customized `deserialze` method.
 
 ### Adding `PowerSystems.jl` as a dependency in a modeling package
 
-```julia
+```@repl add_new_types
 module MyModelingModule
 
 import PowerSystems as PSY
@@ -186,7 +186,7 @@ In order to merge new structs to the code base, your struct needs to pass severa
 
 The following code block is an example of the code that the new struct needs to pass
 
-```julia
+```@repl add_new_types
 using PowerSystems
 
 sys = System(100.0)
