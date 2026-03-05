@@ -1,6 +1,6 @@
 # [Parsing PSS/e dynamic data](@id dyr_data)
 
-A `PowerSystems.jl` system can be created using a .RAW and a .DYR file. For a complete list of supported models in PowerSystems.jl version 5.0, including machine models, AVR models, turbine governors, PSS models, inverter models, and additional models, see the [Supported PSS/e Models](@ref psse_models_ref) reference page.
+A `PowerSystems.jl` system can be created using a .RAW and a .DYR file. For a complete list of supported models in `PowerSystems.jl` version 5.0, including machine models, AVR models, turbine governors, PSS models, inverter models, and additional models, see the [Supported PSS/e Models](@ref psse_models_ref) reference page.
 
 In this example we will create a three bus system from these example files:
 
@@ -64,7 +64,7 @@ The dynamic data for the generators is provided in the DYR file:
 
 That assigns a GENROU generator and a ESST1A voltage regulator at the generator located at bus 101, while classic machine models for the generators located at bus 102 and 103.
 
-To create the `System` in `PowerSystems.jl`, we pass both files directories:
+To create the [`System`](@ref) in `PowerSystems.jl`, we pass both files directories:
 
 ```@repl raw_dyr_system
 dyn_system = System(RAW_dir, DYR_dir; runchecks = false)

@@ -28,7 +28,7 @@ industrial processes with unique operational cycles, for example:
     power demand along railway lines based on transportation demand.
 
   - **Pumping Loads:** Pumping loads can change according to water or gas demand and supply
-    needs rather than system-level behavior. WECC specifies in its data collection manuals
+    needs rather than system-level behavior. [WECC](@ref W) specifies in its data collection manuals
     that pumping loads are typically modeled as non-conforming in power flow cases.
 
 ## Modeling using PowerSystems.jl

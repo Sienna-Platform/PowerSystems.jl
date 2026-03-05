@@ -1,4 +1,4 @@
-# Improve Performance with Time Series Data
+# [Improve Performance with Time Series Data](@id improve_ts_performance)
 
 Use the steps here to improve performance with small or large data sets, but
 particularly large data sets. These improvements can help handle adding
@@ -51,7 +51,7 @@ sys = System(
 ## Adding Timeseries To The System
 
 In order to optimize the storage of time series data, time series can be shared
-across devices to avoid duplication. If the same forecast applies to multiple
+across devices to avoid duplication. If the same [forecast](@ref "Forecasts") applies to multiple
 components then can call `add_time_series!`, passing the collection of
 components that share the time series data.
 Time series data can also be shared on a component level. Suppose a time series array applies to
@@ -102,7 +102,7 @@ In the case of production cost modeling or other analyses that access
 forecast windows repeatedly, this can slow down processes significantly, especially if the
 underlying storage uses spinning disks.
 
-PowerSystems provides an alternate interface -- the forecast cache -- that pre-fetches data
+`PowerSystems.jl` provides an alternate interface -- the forecast cache -- that pre-fetches data
 into the system memory with large reads in order to mitigate this potential problem.
 It is highly recommended that you use this interface for modeling implementations. This is
 particularly relevant for models using large datasets.

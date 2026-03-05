@@ -91,4 +91,5 @@ for detailed documentation.
 
 ## Learn More
 
-For more information about supplemental attributes, see the [Supplemental Attributes](@ref) API reference.
+  - [Add Supplemental Attributes to a System](@ref add_supplemental_attributes) -- step-by-step guide for attaching attributes to components
+  - [Supplemental Attributes](@ref) API reference -- complete listing of all supplemental attribute types, their fields, and associated functions

@@ -1,7 +1,7 @@
-# Read Component Values in Different Unit Systems
+# [Read Component Values in Different Unit Systems](@id convert_unit_systems)
 
 `PowerSystems.jl` stores component parameters internally in per-unit on the device base,
-but getter functions automatically convert values to whatever unit system the `System` is
+but getter functions automatically convert values to whatever unit system the [`System`](@ref) is
 currently set to. This page shows how to switch unit systems and interpret the results.
 
 For background on why `PowerSystems.jl` uses per-unit conventions and what each unit system

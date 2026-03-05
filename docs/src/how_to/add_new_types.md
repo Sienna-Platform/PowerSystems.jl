@@ -1,12 +1,12 @@
-# Add a New or Custom Type
+# [Add a New or Custom Type](@id add_new_types)
 
 This page describes how developers should add types to `PowerSystems.jl`
 
 ## Type Hierarchy
 
-All structs that correlate to power system components must be subtypes of the
+All [structs](@ref S) that correlate to power system components must be subtypes of the
 [`Component`](@ref) abstract type. Browse its type hierarchy to choose an appropriate
-supertype for your new struct.
+supertype for your new [struct](@ref S).
 
 ## Interfaces
 
@@ -17,7 +17,7 @@ for component requirements.
 In particular, please note the methods `supports_time_series` (default = false) and
 `supports_supplemental_attributes` (default = true) that you may need to implement.
 
-**Note**: `get_internal` and `get_name` are imported into `PowerSystems`, so you should
+**Note**: `get_internal` and `get_name` are imported into `PowerSystems.jl`, so you should
 implement your methods as `PowerSystems` methods.
 
 Some abstract types define required interface functions in docstring. Be sure
@@ -33,10 +33,10 @@ duplicate the entire existing type and methods. In programming languages that
 support inheritance you would derive a new class from the existing class and
 automatically inherit its fields and methods. Julia doesn't support that.
 However, you can achieve a similar result with a forwarding macro.
-The basic idea is that you include the existing type within your struct and
+The basic idea is that you include the existing type within your [struct](@ref S) and
 then use a macro to automatically forward specific methods to that instance.
 
-A few PowerSystems structs use the macro `InfrastructureSystems.@forward` to
+A few `PowerSystems.jl` structs use the macro `InfrastructureSystems.@forward` to
 do this. Refer to the struct [`RoundRotorQuadratic`](@ref) for an example of how to
 use this.
 
@@ -74,25 +74,25 @@ and `throw_if_not_attached(component, system)`.
 ### Custom Validation
 
 You can implement three methods to perform custom validation or correction for your type.
-PowerSystems calls all of these functions in `add_component!`.
+`PowerSystems.jl` calls all of these functions in `add_component!`.
 
-  - `sanitize_component!(component::Component, sys::System)`: intended to make standard data corrections (e.g. voltage angle in degrees -> radians)
-  - `validate_component(component::Component)`: intended to check component field values for internal consistency
-  - `validate_component_with_system(component::Component, sys::System)`: intended to check component field values for consistency with system
+  - [`sanitize_component!(component::Component, sys::System)`](@ref sanitize_component!): intended to make standard data corrections (e.g. voltage angle in degrees -> radians)
+  - [`validate_component(component::Component)`](@ref validate_component): intended to check component field values for internal consistency
+  - [`validate_component_with_system(component::Component, sys::System)`](@ref validate_component_with_system): intended to check component field values for consistency with system
 
 ### Struct Requirements for Serialization of custom components
 
 One key feature of `PowerSystems.jl` is the serialization capabilities. Supporting
 serialization and de-serialization of custom components requires the implementation of
-several methods. The serialization code converts structs to dictionaries where the struct
+several methods. The serialization code converts [structs](@ref S) to dictionaries where the struct
 fields become dictionary keys.
 
 The code imposes these requirements:
 
  1. The InfrastructureSystems methods `serialize` and `deserialize` must be
     implemented for the struct. InfrastructureSystems implements a method that
-    covers all subtypes of `InfrastructureSystemsType`. All PowerSystems
-    components should be subtypes of `PowerSystems.Component` which is a subtype
+    covers all subtypes of `InfrastructureSystemsType`. All `PowerSystems.jl`
+    components should be subtypes of [`PowerSystems.Component`](@ref Component) which is a subtype
     `InfrastructureSystemsType`, so any new structs should be covered as well.
  2. All struct fields must be able to be encoded in JSON format or be covered be
     covered by `serialize` and `deserialize` methods. Basic types, such as
@@ -101,9 +101,9 @@ The code imposes these requirements:
  3. Structs relying on the default `deserialize` method must have a kwarg-only
     constructor. The deserialization code constructs objects by splatting the
     dictionary key/value pairs into the constructor.
- 4. Structs that contain other PowerSystem components (like a generator contains
-    a bus) must serialize those components as UUIDs instead of actual values.
-    The deserialization code uses the UUIDs as a mechanism to restore a
+ 4. Structs that contain other `PowerSystems.jl`components (like a generator contains
+    a bus) must serialize those components as [UUIDs](@ref U) instead of actual values.
+    The deserialization code uses the [UUIDs](@ref U) as a mechanism to restore a
     reference to the actual object rather a new object with identical values. It
     also significantly reduces the size of the JSON file.
 

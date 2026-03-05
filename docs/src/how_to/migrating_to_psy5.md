@@ -1,6 +1,6 @@
 # [Migrating from version 4.0 to 5.0](@id psy5_migration)
 
-This guide outlines the code updates required to upgrade from PowerSystems.jl version 4.0
+This guide outlines the code updates required to upgrade from `PowerSystems.jl` version 4.0
 to 5.0, which was released in July 2025 and includes breaking changes. Most the changes are related
 to modeling in more detail AC transmission technologies.
 
@@ -58,7 +58,7 @@ Affected Types are:
   - [`SynchronousCondenser`](@ref)
   - [`InterruptibleStandardLoad`](@ref)
 
-These types are no longer part of PowerSystems.jl:
+These types are no longer part of `PowerSystems.jl`:
 
   - `TwoTerminalVSDCLine`
   - `HydroPumpedStorage` (see [Updates to Hydro Storage related devices](@ref Hyd_updates))
@@ -66,7 +66,7 @@ These types are no longer part of PowerSystems.jl:
 
 ## [Updates to hydro storage related devices](@id Hyd_updates)
 
-In previous versions of `PowerSystems.jl`, hydropower connected to reservoirs was modeled as a single plant connected to a single reservoir. Further, the model just kept track of the total energy in the reservoir. In this version of `PowerSystems.jl`, new structs [`HydroTurbine`](@ref) and [`HydroReservoir`](@ref) have been included to enable individual unit dispatch modeling as well as a shared reservoir.
+In previous versions of `PowerSystems.jl`, hydropower connected to reservoirs was modeled as a single plant connected to a single reservoir. Further, the model just kept track of the total energy in the reservoir. In this version of `PowerSystems.jl`, new [structs](@ref S) [`HydroTurbine`](@ref) and [`HydroReservoir`](@ref) have been included to enable individual unit dispatch modeling as well as a shared reservoir.
 
 The new [`HydroReservoir`](@ref) is also used by the new [`HydroPumpTurbine`](@ref) to model the head and tail reservoirs for Hydro Pump Storage facilities. Check the section [Define Hydro Generators with Reservoirs](@ref hydro_resv)
 
@@ -77,7 +77,7 @@ valid and the expanded list can be explored in the documentation [`ThermalFuels`
 
 ## Updates to Transformers
 
-Most of the transformer changes are included to bring PowerSystems.jl closer to the data model employed in PSSe RAW files which tend to be the industry standard. The two notable changes are:
+Most of the transformer changes are included to bring `PowerSystems.jl` closer to the data model employed in PSSe RAW files which tend to be the industry standard. The two notable changes are:
 
   - All transformers now have additional fields for base quantities needed for the calculation of the impedances in adequate bases. See [`Transformer per unit transformations`](@ref transformers_pu) for more details.
   - The shunt branch in the transformer now uses a `Complex{Float64}` to model core losses as well as the core inductance.

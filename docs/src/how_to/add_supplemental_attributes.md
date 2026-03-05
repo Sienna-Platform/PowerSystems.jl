@@ -1,6 +1,6 @@
 # [Add Supplemental Attributes to a System](@id add_supplemental_attributes)
 
-This how-to shows how to attach supplemental attributes to components in a `System`.
+This how-to shows how to attach supplemental attributes to components in a [`System`](@ref).
 It uses [`FixedForcedOutage`](@ref) as the example attribute type.
 
 ## Prerequisites

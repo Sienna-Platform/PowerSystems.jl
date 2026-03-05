@@ -4,10 +4,10 @@ In AC power flow analysis, every bus in the network has four associated quantiti
 power injection ($P$), reactive power injection ($Q$), voltage magnitude ($|V|$), and
 voltage angle ($\delta$). The power flow problem is solvable only when exactly two of
 these four quantities are specified at each bus — the other two are determined by the
-solver. The `ACBusType` of a bus declares which two quantities are known, and therefore
+solver. The [`ACBusType](@ref)` of a bus declares which two quantities are known, and therefore
 shapes how the power flow problem is formulated across the whole network.
 
-`PowerSystems.jl` supports five `ACBusType`s, [listed here](@ref acbustypes_list). The
+`PowerSystems.jl` supports five [`ACBusType](@ref)`s, [listed here](@ref acbustypes_list). The
 choice of bus type for each bus in a dataset has a direct effect on solver behavior,
 convergence, and the interpretation of results.
 

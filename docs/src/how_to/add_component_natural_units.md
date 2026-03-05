@@ -1,4 +1,4 @@
-# Add a Component in Natural Units
+# [Add a Component in Natural Units](@id add_component_natural_units)
 
 ```@setup add_in_nu
 using PowerSystems; #hide
@@ -19,7 +19,7 @@ for users who prefer to define data using `"NATURAL_UNITS"` (e.g., MW, MVA, MVAR
 
 ### Step 1: Set Units Base
 
-Set your (previously-defined) `System`'s units base to `"NATURAL_UNITS"`:
+Set your (previously-defined) [`System`](@ref)'s units base to `"NATURAL_UNITS"`:
 
 ```@repl add_in_nu
 set_units_base_system!(system, "NATURAL_UNITS")
@@ -58,7 +58,7 @@ gas1 = ThermalStandard(;
 
 ### Step 3: Attach the Component
 
-Attach the component to your `System`:
+Attach the component to your [`System`](@ref):
 
 ```@repl add_in_nu
 add_component!(system, gas1)

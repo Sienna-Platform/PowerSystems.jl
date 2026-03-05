@@ -94,7 +94,7 @@ To add time-varying fuel costs, you need to:
 
   - The generator must use a [`FuelCurve`](@ref) (not a [`CostCurve`](@ref)) in its
     [`ThermalGenerationCost`](@ref) to enable time series fuel costs
-  - Time series resolution should match your simulation resolution (e.g., Hour(1) for
+  - Time series [resolution](@ref R) should match your simulation resolution (e.g., Hour(1) for
     hourly simulations)
   - Fuel cost units should be in \$/GJ (or \$/MBtu, etc.) and heat rate in GJ/MWh (or
     MBtu/MWh); their product gives the effective cost in \$/MWh

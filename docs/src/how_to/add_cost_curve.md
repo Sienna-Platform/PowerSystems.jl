@@ -20,8 +20,8 @@ To begin, the user must make 2 or 3 decisions before defining the operating cost
 
           * If you have data in terms of heat rate or water flow, use [`FuelCurve`](@ref).
           * If you have data in units of currency, such as \$/MWh, use [`CostCurve`](@ref).
-            If you selected another `OperationalCost` type, the variable cost is represented
-            as a `CostCurve`.
+            If you selected another [`OperationalCost`](@ref) type, the variable cost is represented
+            as a [`CostCurve`](@ref).
 
  2. Select a [`ValueCurve`](@ref) to represent the variable cost data by comparing the format
     of your variable cost data to the [Variable Cost Representations table](@ref curve_table)
@@ -44,7 +44,7 @@ Following the decision steps above:
  1. We select [`RenewableGenerationCost`](@ref) to represent this renewable generator.
  2. We select a [`LinearCurve`](@ref) to represent the \$22/MWh variable cost.
 
-Following the implementation steps, we define `RenewableGenerationCost` by nesting the
+Following the implementation steps, we define [`RenewableGenerationCost`](@ref "RenewableGenerationCost") by nesting the
 definitions:
 
 ```@repl costcurve

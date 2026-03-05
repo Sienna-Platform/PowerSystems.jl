@@ -27,7 +27,7 @@ generators in a previously defined [`System`](@ref).
 
 __Step 2:__ Retrieve your data using `get_ext` again
 
-First, retrieve the first ThermalStandard generator:
+First, retrieve the first [`ThermalStandard`](@ref "ThermalStandard") generator:
 
 ```@repl generated_adding_additional_fields
 gen = collect(get_components(ThermalStandard, system))[1];

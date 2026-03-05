@@ -184,9 +184,9 @@ end
 
 !!! warning
 
-    When defining a branch that isn't attached to a `System` yet, you must define the
+    When defining a branch that isn't attached to a [`System`](@ref) yet, you must define the
     thermal rating of the transmission line [per-unitized in "SYSTEM_BASE"](@ref per_unit)
-    using the base power of the `System` you plan to connect it to -- defined above as
+    using the base power of the [`System`](@ref) you plan to connect it to -- defined above as
     `system_base_power`.
 
 ## Adding Thermal Generators and their Costs
@@ -233,7 +233,7 @@ constructor and data stored in the `thermal_gens` data frame.
 
 !!! warning
 
-    When you define components that aren't attached to a `System` yet, the constructors
+    When you define components that aren't attached to a [`System`](@ref) yet, the constructors
     assume define all fields related to power are
     [per-unitized in "DEVICE_BASE"](@ref per_unit). Divide all fields with units such as MW,
     MVA, MVAR, or MW/min using the `base_power` of the component (with the exception of
@@ -497,7 +497,7 @@ values in MW for each hydro generator:
 | 1/1/23 1:00 | 0.325386 | 0.325409 | 0.314454 | ... |
 | ...         | ...      | ...      | ...      | ... |
 
-Each time series for its respective hydro generator has an hourly resolution,
+Each time series for its respective hydro generator has an hourly [resolution](@ref R),
 and is for the year 2023, plus one full day into 2024, for a total of 366 days,
 and 8784 values per column.
 
@@ -604,13 +604,13 @@ region's name, and contain the time series values in MW for each region:
 | 1/1/23 1:00 | 4994.53821 | 1726.22134 | 2273.63274 |
 | ...         | ...        | ...        | ...        |
 
-Each time series for its respective load region has an hourly resolution, and
+Each time series for its respective load region has an hourly [resolution](@ref R), and
 is for the year 2023, plus one full day into 2024, for a total of 366 days, and
 8784 values per column. Ensure that your time series file is similarly
 formatted.
 
 Create a data frame from `Load_Time_Series.csv` and define variables for the
-aforementioned resolution and time stamps:
+aforementioned [resolution](@ref R) and time stamps:
 
 ```@repl system_from_csv
 load_time_series = CSV.read("MyData/Load_Time_Series.csv", DataFrame)

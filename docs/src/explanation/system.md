@@ -25,7 +25,7 @@ abstract type hierarchy that organizes components by their role in the system (s
 [Type Structure](@ref type_structure) for details).
 
 A key constraint of the data model is that **a component instance can belong to at most
-one `System` at a time**. Adding a component to a second `System` without first removing
+one [`System`](@ref) at a time**. Adding a component to a second [`System`](@ref) without first removing
 it from the first will raise an error. This ensures that ownership of component data is
 unambiguous and prevents silent aliasing between systems.
 
@@ -36,7 +36,7 @@ aid in data manipulation. Most of these use the [Type Structure](@ref type_struc
 retrieve all components of a certain `Type`.
 
 The most common retrieval function is [`get_components`](@ref), which accepts a concrete or
-abstract component `Type` and returns all matching components from the `System`. It also
+abstract component `Type` and returns all matching components from the [`System`](@ref). It also
 accepts filter functions for more refined searches.
 
 Because a system can contain a large number of components, `PowerSystems.jl` returns
@@ -58,6 +58,6 @@ _this is actively discouraged_ for two reasons:
 
 ## Subsystems
 
-The `System` also supports partitioning components into named *subsystems*, which is
-useful for decomposition approaches or dispatch coordination workflows. For a hands-on walkthrough of working with a `System`, its components, and the accessor functions, see the
+The [`System`](@ref) also supports partitioning components into named *subsystems*, which is
+useful for decomposition approaches or dispatch coordination workflows. For a hands-on walkthrough of working with a [`System`](@ref), its components, and the accessor functions, see the
 [Manipulating Datasets](@ref "Manipulating Datasets") tutorial. For a step-by-step guide, see [Use subsystems](@ref use_subsystems).

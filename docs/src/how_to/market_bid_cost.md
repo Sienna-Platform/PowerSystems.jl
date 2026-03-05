@@ -1,4 +1,4 @@
-# Add a Market Bid
+# [Add a Market Bid](@id market_bid_cost)
 
 A [`MarketBidCost`](@ref) is an `OperationalCost` data structure that allows the user to run a production
 cost model that is very similar to most US electricity market auctions with bids for energy
@@ -94,8 +94,8 @@ generator = ThermalStandard(;
 
 ### Step 2: Creating the `TimeSeriesData` for the Market Bid
 
-The user is expected to pass the `TimeSeriesData` that holds the energy bid data which can be
-of any type (i.e. `SingleTimeSeries` or `Deterministic`) and data must be `PiecewiseStepData`.
+The user is expected to pass the [`TimeSeriesData`](@ref) that holds the energy bid data which can be
+of any type (i.e. [`SingleTimeSeries`](@ref) or [`Deterministic`](@ref D)) and data must be `PiecewiseStepData`.
 This data type is created by specifying a vector of `n` powers, and `n-1` marginal costs.
 The data must be specified in natural units, that is power in MW and marginal cost in $/MWh
 or it will not be accepted when adding to the system.
@@ -121,15 +121,15 @@ time_series_data = Deterministic(;
 
 ### Step 3a: Adding Energy Bid TimeSeriesData to the device
 
-To add energy market bids time-series to the `MarketBidCost`, use `set_variable_cost!`. The
-arguments for `set_variable_cost!` are:
+To add energy market bids time-series to the `MarketBidCost`, use [`set_variable_cost!`](@ref). The
+arguments for [`set_variable_cost!`](@ref) are:
 
   - `sys::System`: PowerSystem System
   - `component::StaticInjection`: Static injection device
   - `time_series_data::TimeSeriesData`: TimeSeriesData
   - `power_units::UnitSystem`: UnitSystem
 
-Currently, time series data only supports natural units for time series data, i.e. MW for power and $/MWh for marginal costs.
+Currently, time series data only supports [natural units](@ref per_unit) for time series data, i.e. MW for power and $/MWh for marginal costs.
 
 ```@repl market_bid_cost
 sys = System(100.0, [bus], [generator])

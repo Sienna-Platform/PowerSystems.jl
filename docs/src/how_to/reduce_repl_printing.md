@@ -1,4 +1,4 @@
-# Reduce REPL printing
+# [Reduce REPL printing](@id reduce_repl_printing)
 
 By default `PowerSystems.jl` outputs to the REPL all Logging statements, which can be
 overwhelming in some cases.

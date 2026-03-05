@@ -1,4 +1,4 @@
-# Add costs for imported/exported power
+# [Add costs for imported/exported power](@id import_export_cost)
 
 This how-to guide explains how to add an [`ImportExportCost`](@ref) to a [`Source`](@ref)
 component to model imports and exports with neighboring areas or external grids.

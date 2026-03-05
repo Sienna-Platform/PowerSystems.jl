@@ -9,7 +9,7 @@ When working with generators in PowerSystems.jl, it's important to understand th
   - **Purpose**: Serves as the denominator when converting device parameters to per-unit values
   - **Units**: Always stored in **natural units** (MVA)
   - **Typical value**: The nameplate capacity of the device
-  - **Access**: Retrieved using `get_base_power(device)`
+  - **Access**: Retrieved using [`get_base_power(device)`](@ref)
 
 Base power is a fundamental parameter for the per-unit system and represents the natural scale of the device. For more details on per-unitization, see the [Per-unit Conventions](@ref per_unit) page.
 
@@ -27,7 +27,7 @@ Base power is a fundamental parameter for the per-unit system and represents the
       + Rotor field winding limits
       + Cooling system capacity
 
-  - **Access**: Retrieved using `get_rating(device)`
+  - **Access**: Retrieved using [`get_rating(device)`](@ref)
 
 The rating is typically determined by the electrical design and thermal limits of the synchronous machine itself. It represents the maximum capability of the electrical generator, independent of the prime mover.
 
@@ -46,7 +46,7 @@ The rating is typically determined by the electrical design and thermal limits o
       + Boiler capacity (for steam generators)
       + Fuel flow limitations
 
-  - **Access**: Retrieved using `get_max_active_power(device)`
+  - **Access**: Retrieved using [`get_max_active_power(device)`](@ref)
 
 The maximum active power is determined by the mechanical system that drives the generator. This is often less than the rating when considering only real power production.
 
@@ -56,9 +56,9 @@ The maximum active power is determined by the mechanical system that drives the 
 
 | Concept          | Storage Units       | Getter Function          |
 |:---------------- |:------------------- |:------------------------ |
-| Base Power       | Natural units (MVA) | `get_base_power()`       |
-| Rating           | Device base (p.u.)  | `get_rating()`           |
-| Max Active Power | Device base (p.u.)  | `get_max_active_power()` |
+| Base Power       | Natural units (MVA) | [`get_base_power()`](@ref)       |
+| Rating           | Device base (p.u.)  | [`get_rating()`](@ref)           |
+| Max Active Power | Device base (p.u.)  | [`get_max_active_power()`](@ref) |
 
 ### Physical Interpretation
 

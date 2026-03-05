@@ -12,8 +12,8 @@ process to obtain the data and its interpretation:
   - [Static Time Series Data](@ref)
   - [Forecasts](@ref)
 
-These categories are are all subtypes of `TimeSeriesData` and fall within this time series
-type hierarchy:
+These categories are are all subtypes of [`TimeSeriesData`](@ref) and fall within this time series
+[type hierarchy](@ref type_structure):
 
 ```@repl
 using PowerSystems #hide
@@ -26,7 +26,7 @@ print(join(tt(TimeSeriesData), "")) #hide
 ### Static Time Series Data
 
 A static time series data is a single column of data where each time period has a single
-value assigned to a component field, such as its maximum active power. This data commonly
+value assigned to a component field, such as its [maximum active power](@ref power_concepts). This data commonly
 is obtained from historical information or the realization of a time-varying quantity.
 
 Static time series usually comes in the following format, with a set [resolution](@ref R)
@@ -40,7 +40,7 @@ between the time-stamps:
 
 This example is a 1-hour resolution static time-series.
 
-In PowerSystems, a static time series is represented using [`SingleTimeSeries`](@ref).
+In `PowerSystems.jl`, a static time series is represented using [`SingleTimeSeries`](@ref).
 
 ### Forecasts
 
@@ -65,7 +65,7 @@ represent the forecasted values at each step in the forecast [horizon](@ref H).
 
 This example forecast has a [interval](@ref I) of 1 hour and a [horizon](@ref H) of 8.
 
-PowerSystems defines the following Julia [structs](@ref S) to represent forecasts:
+`PowerSystems.jl` defines the following Julia [structs](@ref S) to represent forecasts:
 
   - [`Deterministic`](@ref): Point forecast without any uncertainty representation.
   - [`Probabilistic`](@ref): Stores a discretized cumulative distribution functions
@@ -84,7 +84,7 @@ may all follow the same hourly generation profile, but each has a different name
 maximum power output. Storing ten separate time series of absolute MW values wastes
 memory and makes the data harder to maintain.
 
-PowerSystems addresses this with **scaling factors** — normalized time series whose
+`PowerSystems.jl` addresses this with **scaling factors** — normalized time series whose
 values represent a fraction of a component's rated capacity at each time step rather than
 an absolute physical quantity. The actual value at any time is obtained by multiplying:
 
@@ -110,11 +110,11 @@ Scaling factors are worth the added complexity for two key reasons:
     this benefit: one normalized profile replaces many absolute-value duplicates, keeping
     both on-disk and in-memory footprints small.
 
-### How Scaling Factors Work in PowerSystems
+### How Scaling Factors Work in `PowerSystems.jl`
 
 Every time series object has two relevant fields: `data` (the stored values) and
 `scaling_factor_multiplier` (a getter function that identifies which component field
-provides the multiplier). By default, if no multiplier is specified, PowerSystems treats
+provides the multiplier). By default, if no multiplier is specified, `PowerSystems.jl` treats
 the stored values as physical units directly.
 
 To store a time series as scaling factors, pass the appropriate getter function when
@@ -126,7 +126,7 @@ ts = SingleTimeSeries("max_active_power", ta; scaling_factor_multiplier = get_ma
 add_time_series!(sys, gen, ts)
 ```
 
-When you later retrieve values using [`get_time_series_array`](@ref), PowerSystems
+When you later retrieve values using [`get_time_series_array`](@ref), `PowerSystems.jl`
 automatically multiplies the stored scaling factors by the current value returned by
 [`get_max_active_power`](@ref) on the component, returning physical MW values transparently.
 

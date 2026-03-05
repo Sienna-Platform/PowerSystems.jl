@@ -1,4 +1,4 @@
-# Write, View, and Load Data with a JSON
+# [Write, View, and Load Data with a JSON](@id serialize_data)
 
 `PowerSystems.jl` provides functionality to serialize an entire [`System`](@ref) to a JSON
 file and then deserialize it back to a `System`. The main benefit is that
@@ -102,9 +102,9 @@ rm(folder; recursive = true); #hide
 
 !!! tip
 
-    PowerSystems generates UUIDs for the `System` and all components in order to have
+    PowerSystems generates [UUIDs](@ref U) for the `System` and all components in order to have
     a way to uniquely identify objects. During deserialization it restores the same
-    UUIDs.  If you will modify the `System` or components after deserialization then
+    [UUIDs](@ref U).  If you will modify the `System` or components after deserialization then
     it is recommended that you set this flag to generate new UUIDs.
 
     ```@repl serialize_data

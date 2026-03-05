@@ -1,16 +1,16 @@
-# Use Context Managers for Efficient Bulk Operations
+# [Use Context Managers for Efficient Bulk Operations](@id use_context_managers)
 
 `PowerSystems.jl` provides several "context manager" functions that help you perform bulk
 operations more efficiently and safely. These functions temporarily change system settings or
 optimize batch operations, then automatically restore the original state when complete.
 
-Context managers in PowerSystems follow a pattern similar to `Logging.with_logger` in Julia.
+Context managers in `PowerSystems.jl` follow a pattern similar to `Logging.with_logger` in Julia.
 They accept a function (typically as a `do` block) that executes with modified settings,
 ensuring cleanup even if errors occur.
 
 ## Available Context Managers
 
-PowerSystems provides three main context managers:
+`PowerSystems.jl` provides three main context managers:
 
  1. [`with_units_base`](@ref) - Temporarily change unit system for getting/setting component data
  2. [`begin_supplemental_attributes_update`](@ref) - Optimize bulk addition/removal of supplemental attributes
@@ -19,7 +19,7 @@ PowerSystems provides three main context managers:
 ## Using `with_units_base`
 
 The [`with_units_base`](@ref) function temporarily changes the [unit system](@ref per_unit)
-for a `System` or `Component`, executes your code, then automatically restores the original
+for a [`System`](@ref) or [`Component`](@ref), executes your code, then automatically restores the original
 unit system. This is useful when you need to retrieve or set values in a specific unit system
 without permanently changing the system's configuration.
 

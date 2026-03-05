@@ -1,9 +1,9 @@
 # [Parse Time Series Data from .csv's](@id parsing_time_series)
 
-This example shows how to parse time series data from .csv files to add to a `System`.
-For example, a `System` created by [parsing a MATPOWER file](@ref pm_data) doesn't contain
-any time series data, so a user may want to add time series to be able to run a production
-cost model.
+This example shows how to parse time series data from .csv files to add to a [`System`](@ref).
+For example, a [`System`](@ref) created by [parsing a MATPOWER file](@ref pm_data) doesn't contain
+any [time series](@ref ts_data) data, so a user may want to add time series to be able to run a production
+cost model. For background on the `System` container, see [About the System](@ref system_doc).
 
 ```@setup forecasts
 using PowerSystems
@@ -14,7 +14,7 @@ sys = System(joinpath(file_dir, "case5_re.m"));
 ```
 
 Let's use a predefined 5-bus [`System`](@ref) with some renewable generators and loads that
-we want to add time-series data to:
+we want to add time series data to:
 
 ```@repl forecasts
 sys
@@ -22,8 +22,8 @@ sys
 
 ## Define pointers to time series files
 
-`PowerSystems` requires a metadata file that maps components to their time series
-data in order to be able to automatically construct time_series from .csv data
+`PowerSystems.jl` requires a metadata file that maps components to their time series
+data in order to be able to automatically construct time series from .csv data
 files.
 
 For example, if we want to add a bunch of time series files, say one for each load and one
@@ -53,7 +53,7 @@ Notes:
     be sufficient to return the scaling factor data using
     `${scaling_factor_multiplier_module}.${scaling_factor_multiplier}(component)`.
 
-`PowerSystems` supports this metadata in either CSV or JSON formats.
+`PowerSystems.jl` supports this metadata in either CSV or JSON formats.
 
 In this example, we will use the JSON format. The example file can be found
 [here](https://github.com/NREL-Sienna/PowerSystemsTestData/blob/master/5-Bus/5bus_ts/timeseries_pointers_da.json),

@@ -58,7 +58,7 @@ $$X_{pu,\,\text{new}} = 0.10 \times \frac{100}{50} \times \left(\frac{115}{115}\
 
 `PowerSystems.jl` stores transformer impedance on the **device base** internally.
 Getter functions such as [`get_x`](@ref) automatically apply the base conversion and
-return the value on whichever base the `System` is currently set to, following the
+return the value on whichever base the [`System`](@ref) is currently set to, following the
 conventions described in [Per-unit Conventions](@ref per_unit).
 
 The example below builds the same transformer used in Step 2 (50 MVA, 115/13.8 kV,
