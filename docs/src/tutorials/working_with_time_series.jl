@@ -3,6 +3,8 @@
 # different formats, including identifying which components in a power [`System`](@ref) have time
 # series data. Along the way, we will also use workarounds for missing forecast data and
 # reuse identical time series profiles to avoid unnecessary memory usage.
+# For a conceptual overview of how time series data is structured in `PowerSystems.jl`,
+# see [Time Series Data](@ref ts_data).
 
 # ## Example Data and Setup
 # We will make an example [`System`](@ref) with a wind generator and two loads, and
@@ -331,6 +333,54 @@ get_max_active_power(wind1)
 #     `max_active_power` field, so check
 #     [`get_max_active_power`](@ref get_max_active_power(d::RenewableGen))
 #     to see how its calculated.
+# ## Getting Timestamps and Values Separately
+# When working with a retrieved time series object, you can extract the timestamps and
+# values independently rather than always working with the combined `TimeArray`.
+# Use [`get_time_series_timestamps`](@ref) to get just the timestamps for a time series:
+
+get_time_series_timestamps(SingleTimeSeries, load1, "max_active_power")
+
+# Use [`get_time_series_values`](@ref) to get just the numeric values. Note the
+# scaling factor multiplier is still applied:
+
+get_time_series_values(SingleTimeSeries, load1, "max_active_power")
+
+# The same functions work for forecasts -- just pass a `start_time` to select the window:
+
+get_time_series_timestamps(
+    Deterministic,
+    wind1,
+    "max_active_power";
+    start_time = DateTime("2020-01-01T08:00:00"),
+)
+
+get_time_series_values(
+    Deterministic,
+    wind1,
+    "max_active_power";
+    start_time = DateTime("2020-01-01T08:00:00"),
+)
+
+# ## Inspecting Time Series Metadata
+# Rather than retrieving the full data, you can inspect the structural metadata of a time
+# series object returned by [`get_time_series`](@ref).
+# Let's retrieve the wind forecast object again and inspect its properties:
+
+forecast = get_time_series(wind1, keys[1])
+
+# Get the [resolution](@ref R) (time step between values):
+
+get_resolution(forecast)
+
+# Get the [horizon](@ref H) (total duration of one forecast window):
+
+get_horizon(forecast)
+
+# Similarly, for the load [`SingleTimeSeries`](@ref):
+
+sts = get_time_series(SingleTimeSeries, load1, "max_active_power")
+get_resolution(sts)
+
 # # Next Steps
 # In this tutorial, you defined, added, and retrieved four time series data
 # sets, including static time series and deterministic forecasts. Along the way, we
