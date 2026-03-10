@@ -40,6 +40,17 @@ flowchart LR
 
 This flexibility matches how power systems actually work, where components share resources and are affected by common factors.
 
+Supplemental attributes can be concrete or abstract. See the [Julia Types documentation](https://docs.julialang.org/en/v1/manual/ty) for more information on these types. Here is an example using the `PowerSystems.jl` Type Tree.
+
+```@repl types
+using PowerSystems #hide
+import TypeTree: tt #hide
+docs_dir = joinpath(pkgdir(PowerSystems), "docs", "src", "tutorials", "utils"); #hide
+include(joinpath(docs_dir, "docs_utils.jl")); #hide
+print(join(tt(PowerSystems.IS.InfrastructureSystemsType), "")) #hide
+```
+The concrete supplemental attributes are the last ones listed in a section. For example, following the first few lines of the type tree: InfrastructureSystems.InfrastructureSystemsType > InfrastructureSystems.AbstractTimeSeriesParameters > InfrastructureSystems.ForecastParameters . InfrastructureSystems.ForecastParameters is the concrete supplemental attribute, and the abstract supplemental attribute is InfrastructureSystems.AbstractTimeSeriesParameters. Providing another example with: InfrastructureSystems.InfrastructureSystemsType > InfrastructureSystems.DeviceParameter > DynamicComponent > PowerSystems.DynamicGeneratorComponent > AVR > AVRFixed . AVRFixed is the concrete supplemental attributes, and the abstract supplemental attributes are the higher up layers.
+
 ## Time Series Support
 
 Attributes can include time series data like weather patterns and planned outages.
