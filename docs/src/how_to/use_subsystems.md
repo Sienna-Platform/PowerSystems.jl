@@ -41,6 +41,9 @@ gens_2 = get_components(ThermalStandard, sys; subsystem_name = "2")
 get_name.(gens_2)
 ```
 
+# !!! tip
+#     The get_name. command may look like a way to use `.` to access the fields of a component, which is method actively discouraged by the Sienna team, however it is a [broadcast function](https://blog.glcs.io/broadcasting) in Julia.
+
 ## Export a subsystem as a new `System`
 
 [`from_subsystem`](@ref) produces a new, standalone [`System`](@ref) from the components
