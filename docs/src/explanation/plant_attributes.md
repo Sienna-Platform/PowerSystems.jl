@@ -18,13 +18,13 @@ For interoperable analysis across different tools and datasets, it is often nece
  3. **Market operations**: ISOs may require unit-level bidding while planning studies use plant-level data
  4. **Regulatory reporting**: Different reports require different aggregation levels
 
-PowerSystems.jl addresses this challenge through **Plant Attributes**, which are
+`PowerSystems.jl` addresses this challenge through **Plant Attributes**, which are
 [`SupplementalAttribute`](@ref supplemental_attributes_explanation) types that group individual generator
 components into logical plant structures while preserving the detailed unit-level information.
 
 ## Plant Attribute Types
 
-PowerSystems.jl provides five specialized plant attribute types, each designed for a specific
+`PowerSystems.jl` provides five specialized plant attribute types, each designed for a specific
 generation technology:
 
 ```mermaid
@@ -51,7 +51,7 @@ share a common **shaft**, which is relevant for modeling mechanical coupling con
 ### CombinedCycleBlock
 
 Represents combined cycle plants using a block configuration. Models the relationship between
-combustion turbines (CTs) and steam turbines through the Heat Recovery Steam Generator (HRSG).
+combustion turbines ([CT](@ref)s) and steam turbines through the Heat Recovery Steam Generator ([HRSG](@ref)).
 
 | Field                           | Type                         | Description                                  |
 |:------------------------------- |:---------------------------- |:-------------------------------------------- |
@@ -64,9 +64,9 @@ combustion turbines (CTs) and steam turbines through the Heat Recovery Steam Gen
 | `ca_hrsg_map`                   | `Dict{UUID, Vector{Int}}`    | Reverse CA to HRSG mapping                   |
 
 The `CombinedCycleConfiguration` enum describes the plant layout. Combined cycle plants are
-typically described using a "CTs x STs" notation (e.g., 2x1 means two combustion turbines
-feeding one steam turbine through a Heat Recovery Steam Generator). However, the EIA
-[prime mover codes](@ref pm_list) employ CT and CA to distinguish between the combustion
+typically described using a "CTs x [ST](@ref)s" notation (e.g., 2x1 means two combustion turbines
+feeding one steam turbine through a Heat Recovery Steam Generator). However, the [EIA](@ref)
+[prime mover codes](@ref pm_list) employ CT and [CA](@ref) to distinguish between the combustion
 turbine units and the steam portion of the combined cycle respectively.
 
 ```@raw html
@@ -92,7 +92,7 @@ For more information on combined cycle configurations, see the
 Represents combined cycle generation when each unit represents a specific configuration with
 an aggregate heat rate. Unlike [`CombinedCycleBlock`](@ref), which models the CT/CA relationship
 through the HRSG, the fractional representation uses **operation exclusion groups** to define
-which units can operate simultaneously. Only generators with the `CC` (combined cycle)
+which units can operate simultaneously. Only generators with the `CC` ([CC](@ref), combined cycle)
 [prime mover type](@ref pm_list) can be added.
 
 | Field                             | Type                         | Description                                              |
@@ -117,7 +117,7 @@ dependencies between units.
 ### RenewablePowerPlant
 
 Represents renewable energy plants (wind farms, solar farms) where multiple generators or
-storage devices connect through a common **Point of Common Coupling (PCC)** to the grid.
+storage devices connect through a common **Point of Common Coupling ([PCC](@ref))** to the grid.
 
 | Field             | Type                      | Description                                  |
 |:----------------- |:------------------------- |:-------------------------------------------- |

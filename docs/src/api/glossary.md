@@ -15,7 +15,13 @@
 
 ### C
 
+  - *CA*: EIA prime mover code for the steam turbine (combined cycle steam) portion of a combined cycle plant
+
   - *CAISO*: California Independent System Operator
+
+  - *CC*: EIA prime mover code for combined cycle units
+
+  - *CT*: Combustion Turbine
 
 ### D
 
@@ -31,6 +37,8 @@
     see the definition for [Static](@ref S) data.
 
 ### E
+
+  - *EIA*: U.S. Energy Information Administration
 
   - *EIM*: Energy Imbalance Market
   - *EMF*: Electromotive force
@@ -59,6 +67,8 @@
     for the next day, which would have a horizon of `Dates.Hour(24)` or `Dates.Day(1)`. If the
     forecast included the next day plus a 24-hour lookahead window, the horizon would be
     `Dates.Hour(48)` or `Dates.Day(2)`. See the article on [`Time Series Data`](@ref ts_data).
+
+  - *HRSG*: Heat Recovery Steam Generator
 
   - *HVDC*: High-voltage DC
 
@@ -89,6 +99,8 @@
   - *OEL*: Over Excitation Limiter
 
 ### P
+
+  - *PCC*: Point of Common Coupling. The point where a generator or plant connects to the grid.
 
   - *PLL*: Phase-locked loop
 
@@ -127,6 +139,8 @@
   - *SEXS*: Simplified Excitation System model from PSS/E
 
   - *SIL*: Surge impedance loading
+
+  - *ST*: Steam Turbine
 
   - *States*: Correspond to the set of inputs, outputs or variables, that evolve dynamically in
     [`PowerSimulationsDynamics.jl`](https://nrel-sienna.github.io/PowerSimulationsDynamics.jl/stable/), commonly via a differential-algebraic system of equations. In `PowerSystems.jl`, a component associated to a `DynamicInjector` (for example an AVR) specifies the set of states that specific component requires to be modeled accurately.
