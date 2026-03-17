@@ -6,12 +6,13 @@
 3-states salient-pole synchronous machine with exponential saturation:
 IEEE Std 1110 §5.3.2 (Model 2.1). GENSAE in PSSE and PSLF.
 
-# Arguments:
-- `base_machine::SalientPoleMachine`: Salient Pole Machine model.
-- `saturation_coeffs::Tuple{Float64, Float64}``: Saturation coefficients for exponential model.
+# Arguments
+$(TYPEDFIELDS)
 """
 mutable struct SalientPoleExponential <: Machine
+    "Salient Pole machine parameters"
     base_machine::SalientPoleMachine
+    "Derived saturation coefficients for the exponential saturation model, computed from the `Se` input"
     saturation_coeffs::Tuple{Float64, Float64}
 end
 IS.@forward((SalientPoleExponential, :base_machine), SalientPoleMachine)

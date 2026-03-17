@@ -1,22 +1,31 @@
+"""
+Return the system base power for the component.
+
+# Arguments
+- `c::Component`: The component.
+"""
 function get_system_base_power(c::Component)
     return get_internal(c).units_info.base_value
 end
 
 """
 Default behavior of a component. If there is no base_power field, assume is in the system's base power.
+
+# Arguments
+- `c::Component`: The component.
 """
 get_base_power(c::Component) = get_system_base_power(c)
 
-_get_multiplier(c::T, conversion_unit) where {T <: Component} =
+_get_multiplier(c::Component, conversion_unit) =
     _get_multiplier(c, get_internal(c).units_info, conversion_unit)
 
-_get_multiplier(::T, ::Nothing, conversion_unit) where {T <: Component} =
+_get_multiplier(::Component, ::Nothing, conversion_unit) =
     1.0
 _get_multiplier(
-    c::T,
+    c::Component,
     setting::IS.SystemUnitsSettings,
     conversion_unit,
-) where {T <: Component} =
+) =
     _get_multiplier(c, setting, Val(setting.unit_system), conversion_unit)
 
 # PERF: dispatching on the UnitSystem values instead of comparing with if/else avoids the
@@ -24,28 +33,28 @@ _get_multiplier(
 # i.e., IS.UnitSystem.NATURAL_UNITS by itself isn't treated as a constant, it's a dictionary
 # lookup each time.
 _get_multiplier(
-    ::T,
+    ::Component,
     ::IS.SystemUnitsSettings,
     ::Val{IS.UnitSystem.DEVICE_BASE},
     ::Any,
-) where {T <: Component} =
+) =
     1.0
 ###############
 #### Power ####
 ###############
 _get_multiplier(
-    c::T,
+    c::Component,
     setting::IS.SystemUnitsSettings,
     ::Val{IS.UnitSystem.SYSTEM_BASE},
     ::Val{:mva},
-) where {T <: Component} =
+) =
     get_base_power(c) / setting.base_value
 _get_multiplier(
-    c::T,
+    c::Component,
     ::IS.SystemUnitsSettings,
     ::Val{IS.UnitSystem.NATURAL_UNITS},
     ::Val{:mva},
-) where {T <: Component} =
+) =
     get_base_power(c)
 
 ###############
@@ -53,18 +62,18 @@ _get_multiplier(
 ###############
 # Z_device / Z_sys = (V_device^2 / S_device) / (V_device^2 / S_sys) = S_sys / S_device 
 _get_multiplier(
-    c::T,
+    c::Branch,
     setting::IS.SystemUnitsSettings,
     ::Val{IS.UnitSystem.SYSTEM_BASE},
     ::Val{:ohm},
-) where {T <: Branch} =
+) =
     setting.base_value / get_base_power(c)
 function _get_multiplier(
-    c::T,
+    c::Branch,
     ::IS.SystemUnitsSettings,
     ::Val{IS.UnitSystem.NATURAL_UNITS},
     ::Val{:ohm},
-) where {T <: Branch}
+)
     base_voltage = get_base_voltage(get_arc(c).from)
     if isnothing(base_voltage)
         error("Base voltage is not defined for $(summary(c)).")
@@ -72,11 +81,11 @@ function _get_multiplier(
     return get_base_voltage(get_arc(c).from)^2 / get_base_power(c)
 end
 function _get_multiplier(
-    c::T,
+    c::TwoWindingTransformer,
     ::IS.SystemUnitsSettings,
     ::Val{IS.UnitSystem.NATURAL_UNITS},
     ::Val{:ohm},
-) where {T <: TwoWindingTransformer}
+)
     base_voltage = get_base_voltage_primary(c)
     if isnothing(base_voltage)
         error("Base voltage is not defined for $(summary(c)).")
@@ -89,18 +98,18 @@ end
 ##################
 # Y_device / Y_sys = (S_device / V_device^2) / (S_sys / S_sys^2) = S_device / S_sys 
 _get_multiplier(
-    c::T,
+    c::Branch,
     setting::IS.SystemUnitsSettings,
     ::Val{IS.UnitSystem.SYSTEM_BASE},
     ::Val{:siemens},
-) where {T <: Branch} =
+) =
     get_base_power(c) / setting.base_value
 function _get_multiplier(
-    c::T,
+    c::Branch,
     ::IS.SystemUnitsSettings,
     ::Val{IS.UnitSystem.NATURAL_UNITS},
     ::Val{:siemens},
-) where {T <: Branch}
+)
     base_voltage = get_base_voltage(get_arc(c).from)
     if isnothing(base_voltage)
         @warn "Base voltage is not set for $(c.name). Returning in DEVICE_BASE units."
@@ -109,11 +118,11 @@ function _get_multiplier(
     return get_base_power(c) / get_base_voltage(get_arc(c).from)^2
 end
 function _get_multiplier(
-    c::T,
+    c::TwoWindingTransformer,
     ::IS.SystemUnitsSettings,
     ::Val{IS.UnitSystem.NATURAL_UNITS},
     ::Val{:siemens},
-) where {T <: TwoWindingTransformer}
+)
     base_voltage = get_base_voltage_primary(c)
     if isnothing(base_voltage)
         @warn "Base voltage is not set for $(c.name). Returning in DEVICE_BASE units."
@@ -122,9 +131,17 @@ function _get_multiplier(
     return get_base_power(c) / base_voltage^2
 end
 
-_get_multiplier(::T, ::IS.SystemUnitsSettings, _, _) where {T <: Component} =
+_get_multiplier(::Component, ::IS.SystemUnitsSettings, _, _) =
     error("Undefined Conditional")
 
+"""
+Return the field value of a component, converted using the system's unit settings.
+
+# Arguments
+- `c::Component`: The component.
+- `field::Val{T}`: The field name as a `Val`.
+- `conversion_unit`: The target unit for conversion.
+"""
 function get_value(c::Component, ::Val{T}, conversion_unit) where {T}
     value = Base.getproperty(c, T)
     return _get_value(c, value, conversion_unit)
@@ -180,6 +197,15 @@ function _get_value(::Nothing, _, _)
     return
 end
 
+"""
+Set the field value of a component, converting from the system's unit settings.
+
+# Arguments
+- `c::Component`: The component.
+- `field`: The field name.
+- `val`: The value to set.
+- `conversion_unit`: The unit of the value being set.
+"""
 function set_value(c::Component, _, val, conversion_unit)
     return _set_value(c, val, conversion_unit)
 end

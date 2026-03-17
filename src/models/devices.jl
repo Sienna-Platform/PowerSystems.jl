@@ -36,7 +36,11 @@ end
 """
 Remove a service from a device.
 
-Throws ArgumentError if the service is not attached to the device.
+Throws `ArgumentError` if the service is not attached to the device.
+
+# Arguments
+- `device::Device`: The device from which to remove the service.
+- `service::Service`: The service to remove.
 """
 function remove_service!(device::Device, service::Service)
     if !_remove_service!(device, service)
@@ -50,6 +54,12 @@ end
 
 """
 Return true if the service is attached to the device.
+
+See also [`has_service` by type](@ref has_service(::Device, ::Type{T}) where {T <: Service}).
+
+# Arguments
+- `device::Device`: The device.
+- `service::Service`: The service to check.
 """
 function has_service(device::Device, service::Service)
     for _service in get_services(device)
@@ -62,7 +72,13 @@ function has_service(device::Device, service::Service)
 end
 
 """
-Return true if a service with type T is attached to the device.
+Return true if a service of type `T` is attached to the device.
+
+See also [`has_service` by instance](@ref has_service(::Device, ::Service)).
+
+# Arguments
+- `device::Device`: The device.
+- `T::Type{<:Service}`: The service type to check for.
 """
 function has_service(device::Device, ::Type{T}) where {T <: Service}
     if !supports_services(device)
@@ -103,6 +119,9 @@ end
 
 """
 Remove all services attached to the device.
+
+# Arguments
+- `device::Device`: The device.
 """
 function clear_services!(device::Device)
     if !supports_services(device)
@@ -114,13 +133,24 @@ function clear_services!(device::Device)
     return
 end
 
-""" Ensures that reservoirs cannot provide services """
+"""
+Return false since hydro reservoirs cannot provide services.
+
+See also [`supports_services` for `Device`](@ref supports_services(::Device)),
+[`supports_services` for `StaticInjection`](@ref supports_services(::StaticInjection)),
+[`supports_services` for `ACBranch`](@ref supports_services(::ACBranch)),
+[`supports_services` for `DynamicInjection`](@ref supports_services(::DynamicInjection)).
+"""
 supports_services(::HydroReservoir) = false
 
 """
-Remove a reservoir from a device.
+Remove a turbine from a hydro reservoir.
 
-Throws ArgumentError if the reservoir is not attached to the device.
+Throws `ArgumentError` if the turbine is not attached to the reservoir.
+
+# Arguments
+- `reservoir::HydroReservoir`: The hydro reservoir.
+- `device::HydroTurbine`: The turbine to remove.
 """
 function remove_turbine!(reservoir::HydroReservoir, device::HydroTurbine)
     if !_remove_turbine!(reservoir, device)
@@ -133,7 +163,13 @@ function remove_turbine!(reservoir::HydroReservoir, device::HydroTurbine)
 end
 
 """
-Return true if the reservoir has attached the upstream turbine.
+Return true if the upstream turbine is attached to the reservoir.
+
+See also [`has_upstream_turbine` for any turbine](@ref has_upstream_turbine(::HydroReservoir)).
+
+# Arguments
+- `reservoir::HydroReservoir`: The hydro reservoir.
+- `turbine::HydroUnit`: The turbine to check.
 """
 function has_upstream_turbine(reservoir::HydroReservoir, turbine::HydroUnit)
     for _turbine in get_upstream_turbines(reservoir)
@@ -146,7 +182,13 @@ function has_upstream_turbine(reservoir::HydroReservoir, turbine::HydroUnit)
 end
 
 """
-Return true if the reservoir has attached the upstream turbine.
+Return true if the downstream turbine is attached to the reservoir.
+
+See also [`has_downstream_turbine` for any turbine](@ref has_downstream_turbine(::HydroReservoir)).
+
+# Arguments
+- `reservoir::HydroReservoir`: The hydro reservoir.
+- `turbine::HydroUnit`: The turbine to check.
 """
 function has_downstream_turbine(reservoir::HydroReservoir, turbine::HydroUnit)
     for _turbine in get_downstream_turbines(reservoir)
@@ -160,6 +202,11 @@ end
 
 """
 Return true if any upstream hydro unit is attached to the reservoir.
+
+See also [`has_upstream_turbine` for a specific turbine](@ref has_upstream_turbine(::HydroReservoir, ::HydroUnit)).
+
+# Arguments
+- `reservoir::HydroReservoir`: The hydro reservoir.
 """
 function has_upstream_turbine(reservoir::HydroReservoir)
     return !isempty(get_upstream_turbines(reservoir))
@@ -167,6 +214,11 @@ end
 
 """
 Return true if any downstream hydro unit is attached to the reservoir.
+
+See also [`has_downstream_turbine` for a specific turbine](@ref has_downstream_turbine(::HydroReservoir, ::HydroUnit)).
+
+# Arguments
+- `reservoir::HydroReservoir`: The hydro reservoir.
 """
 function has_downstream_turbine(reservoir::HydroReservoir)
     return !isempty(get_downstream_turbines(reservoir))
@@ -209,6 +261,9 @@ end
 
 """
 Remove all turbines attached to the reservoir.
+
+# Arguments
+- `device::HydroReservoir`: The hydro reservoir.
 """
 function clear_turbines!(device::HydroReservoir)
     turbines = get_upstream_turbines(device)

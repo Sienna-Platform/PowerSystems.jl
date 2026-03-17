@@ -31,59 +31,55 @@ A Hybrid System that includes a combination of renewable generation, load, therm
 generation and/or energy storage.
 
 # Arguments
-- `name::String`: Name of the component. Components of the same type (e.g., `PowerLoad`) must have unique names, but components of different types (e.g., `PowerLoad` and `ACBus`) can have the same name
-- `available::Bool`: Indicator of whether the component is connected and online (`true`) or disconnected, offline, or down (`false`). Unavailable components are excluded during simulations
-- `status::Bool`: Initial commitment condition at the start of a simulation (`true` = on or `false` = off)
-- `bus::ACBus`: Bus that this component is connected to
-- `active_power::Float64`: Initial active power set point of the unit in MW. For power flow, this is the steady state operating point of the system. For production cost modeling, this may or may not be used as the initial starting point for the solver, depending on the solver used
-- `reactive_power::Float64`: Initial reactive power set point of the unit (MVAR)
-- `base_power::Float64`: Base power of the unit (MVA) for per unitization, which is commonly the same as `rating`
-- `operation_cost::MarketBidCost`: Market bid cost to operate, [`MarketBidCost`](@ref)
-- `thermal_unit::Union{Nothing, ThermalGen}`: A thermal generator with supertype [`ThermalGen`](@ref)
-- `electric_load::Union{Nothing, ElectricLoad}`: A load with supertype [`ElectricLoad`](@ref)
-- `storage::Union{Nothing, Storage}`: An energy storage system with supertype [`Storage`](@ref)
-- `renewable_unit::Union{Nothing, RenewableGen}`: A renewable generator with supertype [`RenewableGen`](@ref)
-- `interconnection_impedance::ComplexF64`: Impedance (typically in p.u.) between the hybrid system and the grid interconnection
-- `interconnection_rating::Union{Nothing, Float64}`: Maximum rating of the hybrid system's interconnection with the transmission network (MVA)
-- `input_active_power_limits::MinMax`: Minimum and maximum stable input active power levels (MW)
-- `output_active_power_limits::MinMax`: Minimum and maximum stable output active power levels (MW)
-- `reactive_power_limits::Union{Nothing, MinMax}`: Minimum and maximum reactive power limits (MVAR). Set to `Nothing` if not applicable.
-- `interconnection_efficiency::Union{Nothing, NamedTuple{(:in, :out), Tuple{Float64, Float64}},}`: Efficiency [0, 1.0] at the grid interconnection to model losses `in` and `out` of the common DC-side conversion
-- `services::Vector{Service}`: (optional) Services that this device contributes to
-- `dynamic_injector::Union{Nothing, DynamicInjection}`: (optional) corresponding dynamic injection device
-- `ext::Dict{String, Any}`: (optional) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
-- `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference.
+$(TYPEDFIELDS)
 """
 mutable struct HybridSystem <: StaticInjectionSubsystem
+    "Name of the component. Components of the same type (e.g., `PowerLoad`) must have unique names, but components of different types (e.g., `PowerLoad` and `ACBus`) can have the same name"
     name::String
+    "Indicator of whether the component is connected and online (`true`) or disconnected, offline, or down (`false`). Unavailable components are excluded during simulations"
     available::Bool
+    "Initial commitment condition at the start of a simulation (`true` = on or `false` = off)"
     status::Bool
+    "Bus that this component is connected to"
     bus::ACBus
+    "Initial active power set point of the unit in MW. For power flow, this is the steady state operating point of the system. For production cost modeling, this may or may not be used as the initial starting point for the solver, depending on the solver used"
     active_power::Float64
+    "Initial reactive power set point of the unit (MVAR)"
     reactive_power::Float64
+    "Base power of the unit (MVA) for per unitization, which is commonly the same as `rating`"
     base_power::Float64
+    "Market bid cost to operate, [`MarketBidCost`](@ref)"
     operation_cost::MarketBidCost
+    "A thermal generator with supertype [`ThermalGen`](@ref)"
     thermal_unit::Union{Nothing, ThermalGen}
+    "A load with supertype [`ElectricLoad`](@ref)"
     electric_load::Union{Nothing, ElectricLoad}
+    "An energy storage system with supertype [`Storage`](@ref)"
     storage::Union{Nothing, Storage}
+    "A renewable generator with supertype [`RenewableGen`](@ref)"
     renewable_unit::Union{Nothing, RenewableGen}
-    # interconnection Data
-    "Thermal limited MVA Power Output of the unit. <= Capacity"
+    "Impedance (typically in p.u.) between the hybrid system and the grid interconnection"
     interconnection_impedance::ComplexF64
+    "Maximum rating of the hybrid system's interconnection with the transmission network (MVA)"
     interconnection_rating::Union{Nothing, Float64}
+    "Minimum and maximum stable input active power levels (MW)"
     input_active_power_limits::Union{Nothing, MinMax}
+    "Minimum and maximum stable output active power levels (MW)"
     output_active_power_limits::Union{Nothing, MinMax}
+    "Minimum and maximum reactive power limits (MVAR). Set to `Nothing` if not applicable"
     reactive_power_limits::Union{Nothing, MinMax}
+    "Efficiency [0, 1.0] at the grid interconnection to model losses `in` and `out` of the common DC-side conversion"
     interconnection_efficiency::Union{
         Nothing,
         NamedTuple{(:in, :out), Tuple{Float64, Float64}},
     }
-    "corresponding dynamic injection device"
+    "(optional) Services that this device contributes to"
     services::Vector{Service}
+    "(optional) Corresponding dynamic injection device"
     dynamic_injector::Union{Nothing, DynamicInjection}
+    "(optional) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation"
     ext::Dict{String, Any}
-    "internal forecast storage"
-    "power system internal reference, do not modify"
+    "(**Do not modify.**) PowerSystems.jl internal reference"
     internal::InfrastructureSystemsInternal
 end
 

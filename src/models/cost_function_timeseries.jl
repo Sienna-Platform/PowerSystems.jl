@@ -31,7 +31,7 @@ function _validate_reserve_demand_curve(
     end
 end
 
-function _validate_reserve_demand_curve(cost::T, name::String) where {T <: CostCurve}
+function _validate_reserve_demand_curve(cost::CostCurve, name::String)
     throw(
         ArgumentError(
             "Reserve curve of type $(typeof(cost)) on $name cannot represent an ORDC curve, use CostCurve{PiecewiseIncrementalCurve} instead",
@@ -132,6 +132,8 @@ of the relevant fields (`incremental_offer_curves`, `incremental_initial_input`,
 `no_load_cost`) are time series, the user may specify `start_time` and `len` and the
 function returns a `TimeArray` of `CostCurve{PiecewiseIncrementalCurve}`s; if the field is
 not a time series, the function returns a single `CostCurve{PiecewiseIncrementalCurve}`.
+
+See also [`get_variable_cost` for `ReserveDemandCurve`](@ref get_variable_cost(::ReserveDemandCurve)).
 """
 function get_variable_cost(
     device::StaticInjection,
@@ -321,6 +323,8 @@ end
 """
 Retrieve the variable cost data for a `ReserveDemandCurve`. The user may specify
 `start_time` and `len` and the function returns a `TimeArray` of `CostCurve`s.
+
+See also [`get_variable_cost` for `StaticInjection` with `MarketBidCost`](@ref get_variable_cost(::StaticInjection, ::MarketBidCost)).
 """
 get_variable_cost(
     service::ReserveDemandCurve;
@@ -514,12 +518,12 @@ _process_set_cost(_, _, _, _, ::Nothing) = nothing
 _process_set_cost(::Type{T}, _, _, _, cost::T) where {T} = cost
 
 function _process_set_cost(
-    ::Type{_},
+    ::Type,
     ::Type{T},
     sys::System,
     component::Component,
     cost::IS.TimeSeriesData,
-) where {_, T}
+) where {T}
     data_type = IS.eltype_data(cost)
     !(data_type <: T) && throw(TypeError(_process_set_cost, T, data_type))
     key = add_time_series!(sys, component, cost)
@@ -529,6 +533,9 @@ end
 # SETTER IMPLEMENTATIONS
 """
 Set the incremental variable cost bid for a `StaticInjection` device with a `MarketBidCost`.
+
+See also [`set_variable_cost!` for `ReserveDemandCurve` with time series](@ref set_variable_cost!(::System, ::ReserveDemandCurve, ::Union{Nothing, IS.TimeSeriesData})),
+[`set_variable_cost!` for `ReserveDemandCurve` with scalar](@ref set_variable_cost!(::System, ::ReserveDemandCurve, ::CostCurve{PiecewiseIncrementalCurve})).
 
 # Arguments
 - `sys::System`: PowerSystem System
@@ -545,6 +552,7 @@ function set_variable_cost!(
     data::Union{Nothing, IS.TimeSeriesData, CostCurve{PiecewiseIncrementalCurve}},
     power_units::UnitSystem,
 )
+    # See also: set_variable_cost! for ReserveDemandCurve
     market_bid_cost = get_operation_cost(component)
     _validate_market_bid_cost(market_bid_cost, "get_operation_cost(component)")
     if (typeof(data) <: CostCurve{PiecewiseIncrementalCurve}) &&
@@ -743,6 +751,9 @@ end
 """
 Adds energy market bids time-series to the ReserveDemandCurve.
 
+See also [`set_variable_cost!` for `StaticInjection`](@ref set_variable_cost!(::System, ::StaticInjection, ::Union{Nothing, IS.TimeSeriesData, CostCurve{PiecewiseIncrementalCurve}}, ::UnitSystem)),
+[`set_variable_cost!` for `ReserveDemandCurve` with scalar](@ref set_variable_cost!(::System, ::ReserveDemandCurve, ::CostCurve{PiecewiseIncrementalCurve})).
+
 # Arguments
 - `sys::System`: PowerSystem System
 - `component::ReserveDemandCurve`: the curve
@@ -761,10 +772,13 @@ end
 """
 Adds fixed energy market bids to the ReserveDemandCurve.
 
+See also [`set_variable_cost!` for `StaticInjection`](@ref set_variable_cost!(::System, ::StaticInjection, ::Union{Nothing, IS.TimeSeriesData, CostCurve{PiecewiseIncrementalCurve}}, ::UnitSystem)),
+[`set_variable_cost!` for `ReserveDemandCurve` with time series](@ref set_variable_cost!(::System, ::ReserveDemandCurve, ::Union{Nothing, IS.TimeSeriesData})).
+
 # Arguments
 - `sys::System`: PowerSystem System
 - `component::ReserveDemandCurve`: the curve
-- `time_series_data::CostCurve{PiecewiseIncrementalCurve}
+- `time_series_data::CostCurve{PiecewiseIncrementalCurve}`
 """
 function set_variable_cost!(
     ::System,

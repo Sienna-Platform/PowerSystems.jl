@@ -7,11 +7,12 @@
 IEEE Std 1110 §5.3.2 (Model 2.2). GENROU model in PSSE and PSLF.
 
 # Arguments
-- `base_machine::RoundRotorMachine`: Round Rotor Machine model.
-- `saturation_coeffs::Tuple{Float64, Float64}``: Saturation coefficients for quadratic model.
+$(TYPEDFIELDS)
 """
 mutable struct RoundRotorQuadratic <: Machine
+    "Round Rotor machine parameters"
     base_machine::RoundRotorMachine
+    "Derived saturation coefficients for the quadratic saturation model, computed from the `Se` input"
     saturation_coeffs::Tuple{Float64, Float64}
 end
 IS.@forward((RoundRotorQuadratic, :base_machine), RoundRotorMachine)

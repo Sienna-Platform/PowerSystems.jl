@@ -43,20 +43,7 @@ It must be attached to a
 response.
 
 # Arguments
-- `name::String`: Name of inverter.
-- `ω_ref::Float64`: Frequency reference set-point in pu.
-- `converter <: Converter`: Converter model for the PWM transformation.
-- `outer_control <: OuterControl`: An [OuterControl](@ref) controller model.
-- `inner_control <: InnerControl`: An [InnerControl](@ref) controller model.
-- `dc_source <: DCSource`: [DCSource](@ref) model.
-- `freq_estimator <: FrequencyEstimator`: a [FrequencyEstimator](@ref) (typically a [PLL](@ref P)) model.
-- `filter <: Filter`: [Filter](@ref) model.
-- `limiter <: Union{nothing, OutputCurrentLimiter}`: (default: nothing) Inner Control [Current Limiter](@ref OutputCurrentLimiter) model
-- `base_power::Float64`: (default: `100.0`) Base power of the unit (MVA) for [per unitization](@ref per_unit). Although this has a default, in almost all cases `base_power` should be updated to equal the `base_power` field of the [`StaticInjection`](@ref) device that this dynamic generator will be attached to.
-- `n_states::Int`: (**Do not modify.**)  Number of states (will depend on the inputs above).
-- `states::Vector{Symbol}`: (**Do not modify.**) Vector of states (will depend on the inputs above).
-- `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation
-- `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
+$(TYPEDFIELDS)
 """
 mutable struct DynamicInverter{
     C <: Converter,
@@ -67,19 +54,33 @@ mutable struct DynamicInverter{
     F <: Filter,
     L <: Union{Nothing, OutputCurrentLimiter},
 } <: DynamicInjection
+    "Name of the inverter"
     name::String
+    "Frequency reference set-point in pu"
     ω_ref::Float64
+    "[Converter](@ref) model for the PWM transformation"
     converter::C
+    "[OuterControl](@ref) controller model"
     outer_control::O
+    "[InnerControl](@ref) controller model"
     inner_control::IC
+    "[DCSource](@ref) model"
     dc_source::DC
+    "[FrequencyEstimator](@ref) (typically a [PLL](@ref)) model"
     freq_estimator::P
+    "[Filter](@ref) model"
     filter::F
+    "(default: `nothing`) Inner Control [Current Limiter](@ref OutputCurrentLimiter) model"
     limiter::L
+    "(default: `100.0`) Base power of the unit (MVA) for [per unitization](@ref per_unit). In almost all cases, this should match the `base_power` of the attached [`StaticInjection`](@ref) device"
     base_power::Float64
+    "(**Do not modify.**) Number of states (will depend on the components above)"
     n_states::Int
+    "(**Do not modify.**) Vector of states (will depend on the components above)"
     states::Vector{Symbol}
+    "(default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation"
     ext::Dict{String, Any}
+    "(**Do not modify.**) PowerSystems.jl internal reference"
     internal::InfrastructureSystemsInternal
 end
 

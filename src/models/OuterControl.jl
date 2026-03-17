@@ -12,18 +12,19 @@
 Parameters of a Outer-Loop controller using a active power controller and a reactive power droop controller.
 
 # Arguments
-- `A <: ActivePowerControl`: Active power controller (typically droop or virtual inertia).
-- `R <: ReactivePowerControl`: Reactive power controller (typically droop).
-- `ext::Dict{String, Any}`
-- `states::Vector{Symbol}`: Vector of states (will depend on the components).
-- `n_states::Int`: Number of states (will depend on the components).
+$(TYPEDFIELDS)
 """
 mutable struct OuterControl{A <: ActivePowerControl, R <: ReactivePowerControl} <:
                DynamicInverterComponent
+    "Active power controller (a subtype of [`ActivePowerControl`](@ref), typically droop or virtual inertia)"
     active_power_control::A
+    "Reactive power controller (a subtype of [`ReactivePowerControl`](@ref), typically droop)"
     reactive_power_control::R
+    "(optional) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation"
     ext::Dict{String, Any}
+    "(**Do not modify.**) Vector of states (will depend on the active and reactive power control components)"
     states::Vector{Symbol}
+    "(**Do not modify.**) Number of states (will depend on the active and reactive power control components)"
     n_states::Int
 end
 

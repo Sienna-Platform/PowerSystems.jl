@@ -1,14 +1,17 @@
 """
-Extends the branch type to add the information required for dynamic modeling of branches. Includes the fields for the states and the number of states
-
+Extends the branch type to add the information required for dynamic modeling of branches.
 
 # Arguments
-- `branch::ACTransmission`
+$(TYPEDFIELDS)
 """
 mutable struct DynamicBranch <: ACTransmission
+    "The static AC transmission branch that this struct extends with dynamic modeling data"
     branch::ACTransmission
+    "Number of dynamic states"
     n_states::Int
+    "Names of the dynamic states"
     states::Vector{Symbol}
+    "(**Do not modify.**) PowerSystems.jl internal reference"
     internal::IS.InfrastructureSystemsInternal
 
     function DynamicBranch(branch, n_states, states, internal)
