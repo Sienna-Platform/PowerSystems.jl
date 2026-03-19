@@ -1,21 +1,53 @@
-""" Supertype for all generation technologies"""
+"""
+    Generator
+
+Supertype for all generation technologies.
+
+Abstract subtypes include [`HydroGen`](@ref), [`RenewableGen`](@ref), and
+[`ThermalGen`](@ref).
+
+See also: [`StaticInjection`](@ref), [`HydroGen`](@ref), [`RenewableGen`](@ref), [`ThermalGen`](@ref)
+"""
 abstract type Generator <: StaticInjection end
 const Generators = Array{<:Generator, 1}
 
-""" Supertype for all Hydropower generation technologies"""
+"""
+    HydroGen
+
+Supertype for all hydropower generation technologies.
+
+The abstract subtype [`HydroUnit`](@ref) covers turbine-based units
+([`HydroTurbine`](@ref), [`HydroPumpTurbine`](@ref)). The concrete subtype
+[`HydroDispatch`](@ref) also inherits directly from `HydroGen`.
+
+See also: [`Generator`](@ref), [`HydroUnit`](@ref), [`HydroReservoir`](@ref)
+"""
 abstract type HydroGen <: Generator end
 
 """ Supertype for all Hydropower generation technologies that are represented as units (i.e. HydroTurbine and HydroPumpTurbine)"""
 abstract type HydroUnit <: HydroGen end
 
 """
-Supertype for all renewable generation technologies
+    RenewableGen
 
-Requires the implementation of `get_rating`and `get_power_factor` methods
+Supertype for all renewable generation technologies.
+
+Concrete subtypes include [`RenewableDispatch`](@ref) and [`RenewableNonDispatch`](@ref).
+All subtypes must implement `get_rating` and `get_power_factor` methods.
+
+See also: [`Generator`](@ref), [`ThermalGen`](@ref)
 """
 abstract type RenewableGen <: Generator end
 
-""" Supertype for all Thermal generation technologies"""
+"""
+    ThermalGen
+
+Supertype for all thermal generation technologies.
+
+Concrete subtypes include [`ThermalStandard`](@ref) and [`ThermalMultiStart`](@ref).
+
+See also: [`Generator`](@ref), [`HydroGen`](@ref), [`RenewableGen`](@ref)
+"""
 abstract type ThermalGen <: Generator end
 
 function IS.get_limits(
