@@ -9,10 +9,16 @@ function get_system_base_power(c::Component)
 end
 
 """
-Default behavior of a component. If there is no base_power field, assume is in the system's base power.
+    get_base_power(c)
+
+Return the base power for the component.
+
+If the component does not have a `base_power` field, returns the system's base power value.
 
 # Arguments
 - `c::Component`: The component.
+
+See also: [`get_base_power` for `System`](@ref get_base_power(::System))
 """
 get_base_power(c::Component) = get_system_base_power(c)
 

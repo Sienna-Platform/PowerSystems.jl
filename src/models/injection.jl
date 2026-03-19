@@ -1,12 +1,16 @@
 """
 Set the dynamic injector for a static injection device.
 
-This method is for internal use only.
+Passes `nothing` to remove an existing dynamic injector from the device. Throws
+`ArgumentError` if the device already has a dynamic injector and a non-`nothing` value
+is provided.
 
 # Arguments
 - `static_injector::StaticInjection`: The static injection device.
 - `dynamic_injector::Union{Nothing, DynamicInjection}`: The dynamic injector to set,
   or `nothing` to remove it.
+
+See also: [`get_dynamic_injector`](@ref)
 """
 function set_dynamic_injector!(
     static_injector::StaticInjection,

@@ -786,7 +786,17 @@ provide a constructor that allows existing values to be deserialized.
 """
 abstract type Component <: IS.InfrastructureSystemsComponent end
 
-""" Supertype for "devices" (bus, line, etc.) """
+"""
+    Device
+
+Supertype for all physical equipment in a power system.
+
+Subtypes include [`Branch`](@ref) (transmission elements) and [`StaticInjection`](@ref)
+(generators, loads, and storage). All `Device` subtypes support time series and
+supplemental attributes.
+
+See also: [`Branch`](@ref), [`StaticInjection`](@ref), [`Component`](@ref)
+"""
 abstract type Device <: Component end
 
 supports_time_series(::Device) = true

@@ -41,6 +41,8 @@ Throws `ArgumentError` if the service is not attached to the device.
 # Arguments
 - `device::Device`: The device from which to remove the service.
 - `service::Service`: The service to remove.
+
+See also: [`clear_services!`](@ref), [`has_service`](@ref)
 """
 function remove_service!(device::Device, service::Service)
     if !_remove_service!(device, service)
@@ -73,6 +75,8 @@ end
 
 """
 Return true if a service of type `T` is attached to the device.
+
+Returns `false` immediately if the device does not support services.
 
 See also [`has_service` by instance](@ref has_service(::Device, ::Service)).
 
@@ -120,8 +124,12 @@ end
 """
 Remove all services attached to the device.
 
+This is a no-op if the device does not support services.
+
 # Arguments
 - `device::Device`: The device.
+
+See also: [`remove_service!`](@ref), [`get_services`](@ref)
 """
 function clear_services!(device::Device)
     if !supports_services(device)
@@ -151,6 +159,8 @@ Throws `ArgumentError` if the turbine is not attached to the reservoir.
 # Arguments
 - `reservoir::HydroReservoir`: The hydro reservoir.
 - `device::HydroTurbine`: The turbine to remove.
+
+See also: [`clear_turbines!`](@ref), [`has_upstream_turbine`](@ref), [`has_downstream_turbine`](@ref)
 """
 function remove_turbine!(reservoir::HydroReservoir, device::HydroTurbine)
     if !_remove_turbine!(reservoir, device)
@@ -260,10 +270,14 @@ function _remove_turbine!(reservoir::HydroReservoir, device::HydroUnit)
 end
 
 """
-Remove all turbines attached to the reservoir.
+Remove all turbines attached to the hydro reservoir.
+
+Clears both upstream and downstream turbine associations from the reservoir.
 
 # Arguments
 - `device::HydroReservoir`: The hydro reservoir.
+
+See also: [`get_upstream_turbines`](@ref), [`get_downstream_turbines`](@ref)
 """
 function clear_turbines!(device::HydroReservoir)
     turbines = get_upstream_turbines(device)
