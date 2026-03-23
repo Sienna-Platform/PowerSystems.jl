@@ -24,49 +24,43 @@ IS.@scoped_enum(AngleUnits, DEGREES = 1, RADIANS = 2,)
 @doc"
 AngleUnits
 
-An enumeration of angular measurement units used throughout the PowerSystems package.
+Enumeration of angular measurement units used throughout PowerSystems.jl.
 
-Values
-- `DEGREES`: Angles expressed in degrees.
-- `RADIANS`: Angles expressed in radians.
+- `DEGREES` (1): Angles expressed in degrees.
+- `RADIANS` (2): Angles expressed in radians.
 
-Usage
-Use `AngleUnits` to make unit semantics explicit for functions, fields, and APIs that accept or return angular values. When performing trigonometric calculations with Base functions (`sin`, `cos`, etc.), convert degrees to radians (e.g., `θ * π/180`) if the unit is `DEGREES`.
-
-Examples
-julia> unit = AngleUnits.DEGREES
-AngleUnits.DEGREES
-
-julia> θ = 30.0
-julia> θ_rad = unit == AngleUnits.DEGREES ? θ * (π/180) : θ
+# Notes
+When performing trigonometric calculations with Julia's built-in functions (`sin`, `cos`,
+etc.), convert degrees to radians first (e.g., `θ * π/180`) if the unit is `DEGREES`.
 " AngleUnits
 
 IS.@scoped_enum(ACBusTypes, PQ = 1, PV = 2, REF = 3, ISOLATED = 4, SLACK = 5,)
 @doc"
 ACBusTypes
 
-Enumeration of AC power system bus types (MATPOWER Table B‑1).
+Enumeration of AC power system bus types (MATPOWER Table B-1).
 Each variant corresponds to a standard bus classification used in power flow
-and steady‑state network models:
+and steady-state network models. Set on an [`ACBus`](@ref) via the `bustype` field.
 
-- PQ (1): Load bus — active (P) and reactive (Q) power injections are specified;
-    the bus voltage magnitude and angle are solved by the power‑flow algorithm.
-- PV (2): Generator (PV) bus — active power (P) and voltage magnitude (V) are
+- `PQ` (1): Load bus — active (P) and reactive (Q) power injections are specified;
+    the bus voltage magnitude and angle are solved by the power-flow algorithm.
+- `PV` (2): Generator bus — active power (P) and voltage magnitude (V) are
     specified; reactive power (Q) and voltage angle are solved.
-- REF (3): Reference bus — a named reference for the system voltage angle; often
-    equivalent to a slack bus in semantics but provided separately for clarity.
-- ISOLATED (4): Isolated bus — not connected to the main network (islanded or
-    disconnected); typically excluded from the global power‑flow solution.
-- SLACK (5): Slack bus — balances the system active and reactive power mismatch
-    and sets the reference voltage angle (commonly one per connected network).
+- `REF` (3): Reference bus — provides a named reference for the system voltage
+    angle; often used interchangeably with `SLACK` but kept separate for clarity.
+- `ISOLATED` (4): Isolated bus — not connected to the main network; typically
+    excluded from the global power-flow solution.
+- `SLACK` (5): Slack bus — balances system active and reactive power mismatch and
+    sets the reference voltage angle (typically one per connected network).
 
-Notes
+# Notes
 - Numeric values follow the MATPOWER convention for bus type codes.
 - Use the enum members (e.g., `ACBusTypes.PQ`, `ACBusTypes.SLACK`) when
-    constructing or interpreting network data structures to ensure clarity and
-    compatibility with MATPOWER-based data conventions.
+    constructing or interpreting network data to ensure compatibility with
+    MATPOWER-based data conventions.
 
-Reference: MATPOWER manual, Table B‑1 (http://www.pserc.cornell.edu/matpower/MATPOWER-manual.pdf).
+# References
+- [MATPOWER manual, Table B-1](http://www.pserc.cornell.edu/matpower/MATPOWER-manual.pdf)
 " ACBusTypes
 
 IS.@scoped_enum(
@@ -75,23 +69,20 @@ IS.@scoped_enum(
     CONFORMING = 1,
     UNDEFINED = 2,
 )
-@doc"""
-    LoadConformity
+@doc"
+LoadConformity
 
 WECC-defined enumeration for load conformity classification used in dynamic modeling.
 
 Load conformity indicates whether a load follows system voltage and frequency variations
 according to WECC modeling standards:
 
-- `NON_CONFORMING = 0`: Load that does not respond predictably to voltage and frequency changes,
-  typically representing constant power loads or loads with complex control systems
-- `CONFORMING = 1`: Load that responds predictably to voltage and frequency variations,
-  following standard load modeling practices for dynamic studies
-- `UNDEFINED = 2`: Load conformity status is not specified or unknown
-
-This classification is essential for WECC dynamic studies as it determines how loads are
-modeled during system disturbances and stability analysis.
-""" LoadConformity
+- `NON_CONFORMING` (0): Load that does not respond predictably to voltage and frequency
+    changes, typically representing constant power loads or loads with complex controls.
+- `CONFORMING` (1): Load that responds predictably to voltage and frequency variations,
+    following standard load modeling practices for dynamic studies.
+- `UNDEFINED` (2): Load conformity status is not specified or unknown.
+" LoadConformity
 
 # "From PSSE POM v33 Manual"
 IS.@scoped_enum(
@@ -138,18 +129,15 @@ IS.@scoped_enum(
 @doc"
 DiscreteControlledBranchStatus
 
-Enumeration describing the controlled (commanded) status of a branch device
-(such as a breaker or a switch) in a power system model.
+Enumeration describing the controlled (commanded) status of a branch device such as a
+breaker or switch. Used with [`DiscreteControlledACBranch`](@ref).
 
-Values
-- OPEN = 0: The device is open (interrupting state) — the branch is non-conducting.
-- CLOSED = 1: The device is closed (conducting state) — the branch provides a normal conduction path.
+- `OPEN` (0): The device is open (non-conducting).
+- `CLOSED` (1): The device is closed (conducting).
 
-Notes
-- This enum represents the intended or commanded state used by control and protection
-    logic; it may differ from actual measured/telemetry state during faults or failures.
-- The integer encoding (0/1) is chosen for compact storage and interop with serialization
-    or external data formats.
+# Notes
+Represents the intended or commanded state used by control and protection logic; it may
+differ from the actual measured/telemetry state during faults or failures.
 " DiscreteControlledBranchStatus
 
 IS.@scoped_enum(
@@ -475,17 +463,13 @@ IS.@scoped_enum(
 @doc"
 ReservoirDataType
 
-Enumeration of reservoir accounting unit classes.
+Enumeration of the quantity type used to represent the state of a [`HydroReservoir`](@ref).
 
-This enum identifies the type of data recorded or tracked for a reservoir. Use these values when specifying
-the kind of measurement or accounting quantity associated with a reservoir (for example in time series,
-storage models, reporting, or data exchange).
-
-Values
-- USABLE_VOLUME: Volume available for operations and dispatch (active storage). Typically reported in cubic meters (m³) or other volumetric units.
-- TOTAL_VOLUME: Total reservoir volume including dead and active storage. Reported in the same volumetric units as USABLE_VOLUME.
-- HEAD: Hydraulic head or water surface elevation relative to a datum, typically reported in meters (m).
-- ENERGY: Stored or deliverable energy associated with the reservoir (e.g., potential energy or expected generation), often expressed in MWh, GWh, or joules.
+- `USABLE_VOLUME` (1): Volume available for operations and dispatch (active storage),
+    typically in cubic meters (m³).
+- `TOTAL_VOLUME` (2): Total reservoir volume including dead and active storage, in m³.
+- `HEAD` (3): Hydraulic head or water surface elevation relative to a datum, in meters (m).
+- `ENERGY` (4): Stored or deliverable energy associated with the reservoir, in MWh or GWh.
 " ReservoirDataType
 
 IS.@scoped_enum(
@@ -532,12 +516,11 @@ IS.@scoped_enum(
 @doc"
 ReservoirLocation
 
-Enumeration representing the location of a hydro reservoir relative to its associated turbine.
+Enumeration representing the location of a [`HydroReservoir`](@ref) relative to its
+associated turbine unit.
 
-# Values
-- `HEAD`: The reservoir is located upstream of the turbine, typically at a higher elevation.
-- `TAIL`: The reservoir is located downstream of the turbine at a lower or same elevation.
-
+- `HEAD` (1): The reservoir is located upstream of the turbine (higher elevation).
+- `TAIL` (2): The reservoir is located downstream of the turbine (lower elevation).
 " ReservoirLocation
 
 IS.@scoped_enum(

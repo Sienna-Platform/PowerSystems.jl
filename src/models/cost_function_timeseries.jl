@@ -568,19 +568,16 @@ end
 
 # SETTER IMPLEMENTATIONS
 """
-Set the incremental variable cost bid for a `StaticInjection` device with a `MarketBidCost`.
+Set the incremental variable cost bid for a [`StaticInjection`](@ref) device with a
+[`MarketBidCost`](@ref).
 
-See also [`set_variable_cost!` for `ReserveDemandCurve` with time series](@ref set_variable_cost!(::System, ::ReserveDemandCurve, ::Union{Nothing, IS.TimeSeriesData})),
-[`set_variable_cost!` for `ReserveDemandCurve` with scalar](@ref set_variable_cost!(::System, ::ReserveDemandCurve, ::CostCurve{PiecewiseIncrementalCurve})).
+`data` may be a single `CostCurve{PiecewiseIncrementalCurve}` or a time series of
+`PiecewiseStepData`. When using a time series, `power_units` must be
+`UnitSystem.NATURAL_UNITS`.
 
-# Arguments
-- `sys::System`: PowerSystem System
-- `component::StaticInjection`: Static injection device
-- `time_series_data::Union{Nothing, IS.TimeSeriesData,
-  CostCurve{PiecewiseIncrementalCurve}},`: the data. If using a time series, must be of eltype
-  `PiecewiseStepData`. `PiecewiseIncrementalCurve` is only accepted for single CostCurve and
-  not accepted for time series data.
-- `power_units::UnitSystem`: Units to be used for data. Must be NATURAL_UNITS.
+See also: [`set_variable_cost!` for `ReserveDemandCurve` with time series](@ref set_variable_cost!(::System, ::ReserveDemandCurve, ::Union{Nothing, IS.TimeSeriesData})),
+[`set_variable_cost!` for `ReserveDemandCurve` with scalar](@ref set_variable_cost!(::System, ::ReserveDemandCurve, ::CostCurve{PiecewiseIncrementalCurve})),
+[`get_variable_cost`](@ref)
 """
 function set_variable_cost!(
     sys::System,
@@ -625,16 +622,13 @@ function set_variable_cost!(
 end
 
 """
-Set the incremental variable cost bid for a `StaticInjection` device with a `MarketBidCost`.
+Set the incremental variable cost bid for a [`StaticInjection`](@ref) device with a
+[`MarketBidCost`](@ref).
 
-# Arguments
-- `sys::System`: PowerSystem System
-- `component::StaticInjection`: Static injection device
-- `time_series_data::Union{Nothing, IS.TimeSeriesData,
-  CostCurve{PiecewiseIncrementalCurve}},`: the data. If using a time series, must be of eltype
-  `PiecewiseStepData`. `PiecewiseIncrementalCurve` is only accepted for single CostCurve and
-  not accepted for time series data.
-- `power_units::UnitSystem`: Units to be used for data.
+`data` may be a single `CostCurve{PiecewiseIncrementalCurve}` or a time series of
+`PiecewiseStepData`.
+
+See also: [`set_decremental_variable_cost!`](@ref), [`get_incremental_variable_cost`](@ref)
 """
 function set_incremental_variable_cost!(
     sys::System,
@@ -647,16 +641,13 @@ function set_incremental_variable_cost!(
 end
 
 """
-Set the decremental variable cost bid for a `StaticInjection` device with a `MarketBidCost`.
+Set the decremental variable cost bid for a [`StaticInjection`](@ref) device with a
+[`MarketBidCost`](@ref).
 
-# Arguments
-- `sys::System`: PowerSystem System
-- `component::StaticInjection`: Static injection device
-- `time_series_data::Union{Nothing, IS.TimeSeriesData,
-  CostCurve{PiecewiseIncrementalCurve}},`: the data. If using a time series, must be of eltype
-  `PiecewiseStepData`. `PiecewiseIncrementalCurve` is only accepted for single CostCurve and
-  not accepted for time series data.
-- `power_units::UnitSystem`: Units to be used for data.
+`data` may be a single `CostCurve{PiecewiseIncrementalCurve}` or a time series of
+`PiecewiseStepData`.
+
+See also: [`set_incremental_variable_cost!`](@ref), [`get_decremental_variable_cost`](@ref)
 """
 function set_decremental_variable_cost!(
     sys::System,
@@ -691,15 +682,14 @@ function set_decremental_variable_cost!(
 end
 
 """
-Set the import variable cost bid for a `StaticInjection` device with an `ImportExportCost`.
+Set the import variable cost bid for a [`StaticInjection`](@ref) device with an
+[`ImportExportCost`](@ref).
 
-# Arguments
-- `sys::System`: PowerSystem System
-- `component::StaticInjection`: Static injection device
-- `data::Union{Nothing, IS.TimeSeriesData, CostCurve{PiecewiseIncrementalCurve}}`: the data. 
-  If using a time series, must be of eltype `PiecewiseStepData`. `PiecewiseIncrementalCurve` 
-  is only accepted for single CostCurve and not accepted for time series data.
-- `power_units::UnitSystem`: Units to be used for data.
+`data` may be a single `CostCurve{PiecewiseIncrementalCurve}` or a time series of
+`PiecewiseStepData`. When using a time series, `power_units` must be
+`UnitSystem.NATURAL_UNITS`.
+
+See also: [`set_export_variable_cost!`](@ref), [`get_import_variable_cost`](@ref)
 """
 function set_import_variable_cost!(
     sys::System,
@@ -738,15 +728,14 @@ function set_import_variable_cost!(
 end
 
 """
-Set the export variable cost bid for a `StaticInjection` device with an `ImportExportCost`.
+Set the export variable cost bid for a [`StaticInjection`](@ref) device with an
+[`ImportExportCost`](@ref).
 
-# Arguments
-- `sys::System`: PowerSystem System
-- `component::StaticInjection`: Static injection device
-- `data::Union{Nothing, IS.TimeSeriesData, CostCurve{PiecewiseIncrementalCurve}}`: the data. 
-  If using a time series, must be of eltype `PiecewiseStepData`. `PiecewiseIncrementalCurve` 
-  is only accepted for single CostCurve and not accepted for time series data.
-- `power_units::UnitSystem`: Units to be used for data.
+`data` may be a single `CostCurve{PiecewiseIncrementalCurve}` or a time series of
+`PiecewiseStepData`. When using a time series, `power_units` must be
+`UnitSystem.NATURAL_UNITS`.
+
+See also: [`set_import_variable_cost!`](@ref), [`get_export_variable_cost`](@ref)
 """
 function set_export_variable_cost!(
     sys::System,
@@ -785,15 +774,11 @@ function set_export_variable_cost!(
 end
 
 """
-Adds energy market bids time-series to the ReserveDemandCurve.
+Set the variable cost for a [`ReserveDemandCurve`](@ref) using a time series.
 
-See also [`set_variable_cost!` for `StaticInjection`](@ref set_variable_cost!(::System, ::StaticInjection, ::Union{Nothing, IS.TimeSeriesData, CostCurve{PiecewiseIncrementalCurve}}, ::UnitSystem)),
-[`set_variable_cost!` for `ReserveDemandCurve` with scalar](@ref set_variable_cost!(::System, ::ReserveDemandCurve, ::CostCurve{PiecewiseIncrementalCurve})).
-
-# Arguments
-- `sys::System`: PowerSystem System
-- `component::ReserveDemandCurve`: the curve
-- `time_series_data::IS.TimeSeriesData`: TimeSeriesData
+See also: [`set_variable_cost!` for `StaticInjection`](@ref set_variable_cost!(::System, ::StaticInjection, ::Union{Nothing, IS.TimeSeriesData, CostCurve{PiecewiseIncrementalCurve}}, ::UnitSystem)),
+[`set_variable_cost!` for `ReserveDemandCurve` with scalar](@ref set_variable_cost!(::System, ::ReserveDemandCurve, ::CostCurve{PiecewiseIncrementalCurve})),
+[`get_variable_cost`](@ref)
 """
 function set_variable_cost!(
     sys::System,
@@ -806,15 +791,12 @@ function set_variable_cost!(
 end
 
 """
-Adds fixed energy market bids to the ReserveDemandCurve.
+Set the variable cost for a [`ReserveDemandCurve`](@ref) using a scalar
+`CostCurve{PiecewiseIncrementalCurve}`.
 
-See also [`set_variable_cost!` for `StaticInjection`](@ref set_variable_cost!(::System, ::StaticInjection, ::Union{Nothing, IS.TimeSeriesData, CostCurve{PiecewiseIncrementalCurve}}, ::UnitSystem)),
-[`set_variable_cost!` for `ReserveDemandCurve` with time series](@ref set_variable_cost!(::System, ::ReserveDemandCurve, ::Union{Nothing, IS.TimeSeriesData})).
-
-# Arguments
-- `sys::System`: PowerSystem System
-- `component::ReserveDemandCurve`: the curve
-- `time_series_data::CostCurve{PiecewiseIncrementalCurve}`
+See also: [`set_variable_cost!` for `StaticInjection`](@ref set_variable_cost!(::System, ::StaticInjection, ::Union{Nothing, IS.TimeSeriesData, CostCurve{PiecewiseIncrementalCurve}}, ::UnitSystem)),
+[`set_variable_cost!` for `ReserveDemandCurve` with time series](@ref set_variable_cost!(::System, ::ReserveDemandCurve, ::Union{Nothing, IS.TimeSeriesData})),
+[`get_variable_cost`](@ref)
 """
 function set_variable_cost!(
     ::System,
@@ -826,7 +808,14 @@ function set_variable_cost!(
     set_variable!(component, data)
 end
 
-"Set the fuel cost of the component's variable cost, which must be a `FuelCurve`."
+"""
+Set the fuel cost of a [`StaticInjection`](@ref) component's variable cost, which must be
+a [`FuelCurve`](@ref). `data` may be a scalar `Float64` or a time series of `Float64` values.
+
+Throws `ArgumentError` if the variable cost is not a [`FuelCurve`](@ref).
+
+See also: [`get_fuel_cost`](@ref), [`set_variable_cost!`](@ref)
+"""
 function set_fuel_cost!(
     sys::System,
     component::StaticInjection,
@@ -847,12 +836,11 @@ function set_fuel_cost!(
 end
 
 """
-Set the no-load cost for a `StaticInjection` device with a `MarketBidCost` to either a scalar or a time series.
+Set the no-load cost for a [`StaticInjection`](@ref) device with a [`MarketBidCost`](@ref).
 
-# Arguments
-- `sys::System`: PowerSystem System
-- `component::StaticInjection`: Static injection device
-- `time_series_data::Union{Float64, IS.TimeSeriesData},`: the data. If a time series, must be of eltype `Float64`.
+`data` may be a scalar `Float64` or a time series of `Float64` values.
+
+See also: [`get_no_load_cost`](@ref), [`set_start_up!`](@ref)
 """
 function set_no_load_cost!(
     sys::System,
@@ -866,12 +854,12 @@ function set_no_load_cost!(
 end
 
 """
-Set the `incremental_initial_input` for a `StaticInjection` device with a `MarketBidCost` to either a scalar or a time series.
+Set the `incremental_initial_input` for a [`StaticInjection`](@ref) device with a
+[`MarketBidCost`](@ref).
 
-# Arguments
-- `sys::System`: PowerSystem System
-- `component::StaticInjection`: Static injection device
-- `time_series_data::Union{Float64, IS.TimeSeriesData},`: the data. If a time series, must be of eltype `Float64`.
+`data` may be a scalar `Float64` or a time series of `Float64` values.
+
+See also: [`set_decremental_initial_input!`](@ref), [`get_incremental_initial_input`](@ref)
 """
 function set_incremental_initial_input!(
     sys::System,
@@ -885,12 +873,12 @@ function set_incremental_initial_input!(
 end
 
 """
-Set the `decremental_initial_input` for a `StaticInjection` device with a `MarketBidCost` to either a scalar or a time series.
+Set the `decremental_initial_input` for a [`StaticInjection`](@ref) device with a
+[`MarketBidCost`](@ref).
 
-# Arguments
-- `sys::System`: PowerSystem System
-- `component::StaticInjection`: Static injection device
-- `time_series_data::Union{Float64, IS.TimeSeriesData},`: the data. If a time series, must be of eltype `Float64`.
+`data` may be a scalar `Float64` or a time series of `Float64` values.
+
+See also: [`set_incremental_initial_input!`](@ref), [`get_decremental_initial_input`](@ref)
 """
 function set_decremental_initial_input!(
     sys::System,
@@ -904,15 +892,12 @@ function set_decremental_initial_input!(
 end
 
 """
-Set the startup cost for a `StaticInjection` device with a `MarketBidCost` to either a
-single number, a single `StartUpStages`, or a time series.
+Set the startup cost for a [`StaticInjection`](@ref) device with a [`MarketBidCost`](@ref).
 
-# Arguments
-- `sys::System`: PowerSystem System
-- `component::StaticInjection`: Static injection device
-- `data::Union{Float64, StartUpStages, IS.TimeSeriesData},`: the data. If a time series,
-  must be of eltype `NTuple{3, Float64}` -- to represent a single value in a time series,
-  use `(value, 0.0, 0.0)`.
+`data` may be a scalar `Float64`, a single [`StartUpStages`](@ref), or a time series of
+`NTuple{3, Float64}`. To represent a single value in a time series, use `(value, 0.0, 0.0)`.
+
+See also: [`set_shut_down!`](@ref), [`set_no_load_cost!`](@ref), [`get_start_up`](@ref)
 """
 function set_start_up!(
     sys::System,
@@ -932,14 +917,11 @@ function set_start_up!(
 end
 
 """
-Set the shutdown cost for a `StaticInjection` device with a `MarketBidCost` to either a
-single number or a time series.
+Set the shutdown cost for a [`StaticInjection`](@ref) device with a [`MarketBidCost`](@ref).
 
-# Arguments
-- `sys::System`: PowerSystem System
-- `component::StaticInjection`: Static injection device
-- `data::Union{Float64, IS.TimeSeriesData},`: the data. If a time series, must be of eltype
-  `Float64`.
+`data` may be a scalar `Float64` or a time series of `Float64` values.
+
+See also: [`set_start_up!`](@ref), [`get_shut_down`](@ref)
 """
 function set_shut_down!(
     sys::System,
@@ -959,13 +941,13 @@ function set_shut_down!(
 end
 
 """
-Adds service bids time-series data to the MarketBidCost.
+Set service bid time series data for a [`StaticInjection`](@ref) device with a
+[`MarketBidCost`](@ref) for a specific [`Service`](@ref).
 
-# Arguments
-- `sys::System`: PowerSystem System
-- `component::StaticInjection`: Static injection device
-- `service::Service,`: Service for which the device is eligible to contribute
-- `time_series_data::IS.TimeSeriesData`: TimeSeriesData
+`time_series_data` must be of eltype `PiecewiseStepData` and `power_units` must be
+`UnitSystem.NATURAL_UNITS`. The device must be eligible to contribute to the service.
+
+See also: [`get_services_bid`](@ref), [`set_variable_cost!`](@ref)
 """
 function set_service_bid!(
     sys::System,

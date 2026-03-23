@@ -9,8 +9,6 @@ Concrete subtypes:
 - [`LoadCost`](@ref)
 - [`ImportExportCost`](@ref)
 - [`MarketBidCost`](@ref)
-
-See also: [`DeviceParameter`](@ref)
 """
 abstract type OperationalCost <: DeviceParameter end
 
