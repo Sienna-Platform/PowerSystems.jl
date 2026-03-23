@@ -69,4 +69,6 @@ Each inverter is a data structure that is defined by the following components:
   - [Filter](@ref Filter): Used to connect the converter output to the grid.⠀
 
 For a hands-on example of constructing and attaching dynamic generator and inverter components to a system, see the [Adding Dynamic Data](../tutorials/generated_add_dynamic_data.md) tutorial.
+
+```
 ```

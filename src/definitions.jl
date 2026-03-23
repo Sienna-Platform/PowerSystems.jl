@@ -454,6 +454,16 @@ Notes
 " PumpHydroStatus
 
 IS.@scoped_enum(StateTypes, Differential = 1, Algebraic = 2, Hybrid = 3,)
+@doc"
+    StateTypes
+
+Enumeration of state variable types for dynamic components.
+
+Values:
+- `Differential`: State governed by a differential equation (evolves continuously over time).
+- `Algebraic`: State determined by an algebraic constraint (no time derivative).
+- `Hybrid`: State that can behave as either differential or algebraic depending on operating conditions.
+" StateTypes
 
 IS.@scoped_enum(
     ReservoirDataType,

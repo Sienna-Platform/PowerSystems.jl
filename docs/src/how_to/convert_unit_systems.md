@@ -37,11 +37,11 @@ set_units_base_system!(sys, "NATURAL_UNITS")
 
 The three supported options are:
 
-| Setting | Meaning |
-|:--- |:--- |
-| `"SYSTEM_BASE"` | Values divided by the system `base_power` (default) |
-| `"DEVICE_BASE"` | Values divided by the device's own `base_power` |
-| `"NATURAL_UNITS"` | Values in physical units (MW, MVA, etc.) |
+| Setting           | Meaning                                             |
+|:----------------- |:--------------------------------------------------- |
+| `"SYSTEM_BASE"`   | Values divided by the system `base_power` (default) |
+| `"DEVICE_BASE"`   | Values divided by the device's own `base_power`     |
+| `"NATURAL_UNITS"` | Values in physical units (MW, MVA, etc.)            |
 
 ## Step 2: Read values with getter functions
 
@@ -105,12 +105,12 @@ end
 # Unit system is restored to its previous value here
 ```
 
-See [Use Context Managers for Efficient Bulk Operations](@ref) for more examples.
+See [Use Context Managers for Efficient Bulk Operations](@ref use_context_managers) for more examples.
 
 ## See Also
 
   - [Per-unit Conventions](@ref per_unit) — explanation of all three unit systems
   - [Create and Explore a Power System](@ref "Create and Explore a Power `System`") — tutorial that
     constructs components in device base and demonstrates unit system conversions in practice
-  - [Add a Component in Natural Units](@ref) — how to define component data in MW/MVA
+  - [Add a Component in Natural Units](@ref add_component_natural_units) — how to define component data in MW/MVA
   - [`with_units_base`](@ref), [`get_units_base`](@ref), [`set_units_base_system!`](@ref)

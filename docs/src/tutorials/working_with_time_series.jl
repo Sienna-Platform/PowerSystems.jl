@@ -389,6 +389,6 @@ get_resolution(sts)
 # forecast data.
 # Next you might like to:
 #   - [Parse many timeseries data sets from CSV's](@ref parsing_time_series)
-#   - [See how to improve performance efficiency with your own time series data](@ref "Improve Performance with Time Series Data")
+#   - [See how to improve performance efficiency with your own time series data](@ref improve_ts_performance)
 #   - [Review the available time series data formats](@ref ts_data)
 #   - [Learn more about how times series data is stored](@ref "Data Storage")

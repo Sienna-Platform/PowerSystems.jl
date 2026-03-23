@@ -54,8 +54,8 @@ The maximum active power is determined by the mechanical system that drives the 
 
 ### Storage Convention Summary
 
-| Concept          | Storage Units       | Getter Function          |
-|:---------------- |:------------------- |:------------------------ |
+| Concept          | Storage Units       | Getter Function                  |
+|:---------------- |:------------------- |:-------------------------------- |
 | Base Power       | Natural units (MVA) | [`get_base_power()`](@ref)       |
 | Rating           | Device base (p.u.)  | [`get_rating()`](@ref)           |
 | Max Active Power | Device base (p.u.)  | [`get_max_active_power()`](@ref) |
@@ -86,7 +86,7 @@ In this example:
 
 When you access these values through the `PowerSystems.jl` getter functions, they are
 automatically converted based on the current unit system setting. For a step-by-step
-guide, see [Read Component Values in Different Unit Systems](@ref).
+guide, see [Read Component Values in Different Unit Systems](@ref convert_unit_systems).
 
 ## See Also
 

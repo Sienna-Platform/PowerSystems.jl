@@ -65,7 +65,7 @@ inf_source = Source(;
 add_component!(threebus_sys, inf_source)
 
 # This completes the first layer of [static](@ref S) data, using components similar to those
-# we added manually in the [Create and Explore a Power `System`](@ref tutorial_creating_system) tutorial.
+# we added manually in the [Create and Explore a Power `System`](@ref) tutorial.
 
 # ## Adding a Dynamic Generator
 # Now, we will connect a classic machine model to the generator at bus 102.
@@ -328,7 +328,7 @@ threebus_sys
 # a more complex EMT simulation with the additional dynamic inverter and dynamic lines.
 # Next, you might like to:
 #   - Read more about the static and dynamic data layers and the dynamic data format in
-#     [Dynamic Devices](@ref).
+#     [Dynamic Devices](@ref dynamic_data).
 #   - Review the specific subsystem models available in `PowerSystems.jl` for [Machine](@ref),
 #     [Shaft](@ref), [AVR](@ref), [PSS](@ref),
 #     [Prime Mover and Turbine Governor](@ref TurbineGov), [Converter](@ref),

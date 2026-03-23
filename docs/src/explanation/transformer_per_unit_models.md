@@ -4,7 +4,7 @@ The per-unit (p.u.) system is a fundamental tool in power system analysis, espec
 
 For a step-by-step guide to establishing base values and converting transformer impedances
 to a new per-unit base, see
-[Convert Transformer Impedances Between Per-Unit Bases](@ref).
+[Convert Transformer Impedances Between Per-Unit Bases](@ref convert_transformer_impedance).
 
 !!! note
 

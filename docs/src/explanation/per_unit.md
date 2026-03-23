@@ -25,7 +25,7 @@ You can get and set the unit system setting of a `System` with [`get_units_base`
 function [`with_units_base`](@ref), which sets the unit system to a particular value,
 performs some action, then automatically sets the unit system back to its previous value.
 For a worked example of switching unit systems and reading component values, see
-[Read Component Values in Different Unit Systems](@ref).
+[Read Component Values in Different Unit Systems](@ref convert_unit_systems).
 
 Conversion between unit systems does not change
 the stored parameter values. Instead, unit system conversions are made when accessing
@@ -52,7 +52,7 @@ converge when using natural units. If you change the unit setting, it's suggeste
 switch back to `"SYSTEM_BASE"` before solving an optimization problem (for example in
 [`PowerSimulations.jl`](https://nrel-sienna.github.io/PowerSimulations.jl/stable/)).
 
-## [Transformer per unit transformations](@id transformers_pu)
+## [Transformer per unit transformations](@id transformers_pu_per_unit)
 
 Per-unit conventions with transformers simplify calculations by normalizing all quantities
 (voltage, current, power, impedance) to a common base. This effectively "retains" the
@@ -81,7 +81,7 @@ voltage to make this relationship unambiguous.
 
 For a step-by-step guide to establishing base values and performing the impedance base
 change manually, see
-[Convert Transformer Impedances Between Per-Unit Bases](@ref).
+[Convert Transformer Impedances Between Per-Unit Bases](@ref convert_transformer_impedance).
 
 !!! note
 

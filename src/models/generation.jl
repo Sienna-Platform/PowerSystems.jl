@@ -60,22 +60,20 @@ function IS.get_limits(
 end
 
 """
-Return the maximum active power for a renewable generator, calculated as
-`rating * power_factor`.
+Return the maximum active power for a [`RenewableGen`](@ref) in per unit on the device base,
+calculated as [`get_rating`](@ref) × [`get_power_factor`](@ref).
 
-# Arguments
-- `d::RenewableGen`: The renewable generation device.
+See also: [`get_max_reactive_power`](@ref get_max_reactive_power(d::RenewableGen))
 """
 function get_max_active_power(d::RenewableGen)
     return get_rating(d) * get_power_factor(d)
 end
 
 """
-Return the maximum reactive power for a renewable generator, calculated as
-`rating * sin(acos(power_factor))`.
+Return the maximum reactive power for a [`RenewableGen`](@ref) in per unit on the device base,
+calculated as [`get_rating`](@ref) × sin(acos([`get_power_factor`](@ref))).
 
-# Arguments
-- `d::RenewableGen`: The renewable generation device.
+See also: [`get_max_active_power`](@ref get_max_active_power(d::RenewableGen))
 """
 function get_max_reactive_power(d::RenewableGen)
     return get_rating(d) * sin(acos(get_power_factor(d)))

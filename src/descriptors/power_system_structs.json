@@ -5976,7 +5976,7 @@
         },
         {
             "struct_name": "RenewableDispatch",
-            "docstring": "A renewable (e.g., wind or solar) generator whose output can be curtailed to satisfy power system constraints.\n\nThese generators can also participate in reserves markets, including upwards reserves by proactively curtailing some available power (based on its [`max_active_power` time series](@ref ts_data)). Example uses include: a utility-scale wind or solar generator whose PPA allows curtailment. For non-curtailable or must-take renewables, see [`RenewableNonDispatch`](@ref).\n\nRenewable generators do not have a `max_active_power` parameter, which is instead calculated when calling [`get_max_active_power()`](@ref get_max_active_power(d::T) where {T <: RenewableGen})",
+            "docstring": "A renewable (e.g., wind or solar) generator whose output can be curtailed to satisfy power system constraints.\n\nThese generators can also participate in reserves markets, including upwards reserves by proactively curtailing some available power (based on its [`max_active_power` time series](@ref ts_data)). Example uses include: a utility-scale wind or solar generator whose PPA allows curtailment. For non-curtailable or must-take renewables, see [`RenewableNonDispatch`](@ref).\n\nRenewable generators do not have a `max_active_power` parameter, which is instead calculated when calling [`get_max_active_power()`](@ref get_max_active_power(d::RenewableGen))",
             "fields": [
                 {
                     "null_value": "init",
@@ -6102,7 +6102,7 @@
         },
         {
             "struct_name": "RenewableNonDispatch",
-            "docstring": "A non-dispatchable (i.e., non-curtailable or must-take) renewable generator.\n\nIts output is equal to its [`max_active_power` time series](@ref ts_data) by default. Example use: an aggregation of behind-the-meter distributed energy resources like rooftop solar. For curtailable or downward dispatachable generation, see [`RenewableDispatch`](@ref).\n\nRenewable generators do not have a `max_active_power` parameter, which is instead calculated when calling [`get_max_active_power()`](@ref get_max_active_power(d::T) where {T <: RenewableGen})",
+            "docstring": "A non-dispatchable (i.e., non-curtailable or must-take) renewable generator.\n\nIts output is equal to its [`max_active_power` time series](@ref ts_data) by default. Example use: an aggregation of behind-the-meter distributed energy resources like rooftop solar. For curtailable or downward dispatachable generation, see [`RenewableDispatch`](@ref).\n\nRenewable generators do not have a `max_active_power` parameter, which is instead calculated when calling [`get_max_active_power()`](@ref get_max_active_power(d::RenewableGen))",
             "fields": [
                 {
                     "null_value": "init",

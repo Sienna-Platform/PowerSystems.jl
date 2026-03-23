@@ -122,7 +122,11 @@ constructing the time series. For example, to represent a renewable generator's 
 as a fraction of its maximum active power:
 
 ```@repl time_series
-ts = SingleTimeSeries("max_active_power", ta; scaling_factor_multiplier = get_max_active_power)
+ts = SingleTimeSeries(
+    "max_active_power",
+    ta;
+    scaling_factor_multiplier = get_max_active_power,
+)
 add_time_series!(sys, gen, ts)
 ```
 

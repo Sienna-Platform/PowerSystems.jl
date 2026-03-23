@@ -6,6 +6,11 @@ the output power of a generator held constant over a five-minute period.
 
 Many `StaticInjection` models can accept a [`DynamicInjection`](@ref) model
 as an optional add-on for conducting [dynamic](@ref D) simulations.
+
+Subtypes: [`Generator`](@ref), [`ElectricLoad`](@ref), [`Storage`](@ref),
+[`StaticInjectionSubsystem`](@ref)
+
+See also: [`Device`](@ref)
 """
 abstract type StaticInjection <: Device end
 

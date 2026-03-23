@@ -85,7 +85,7 @@ sys
 
 ### See also:
 
-  - [Improve Performance with Time Series Data](@ref)
+  - [Improve Performance with Time Series Data](@ref improve_ts_performance)
   - Parsing [Matpower or PSS/e RAW Files](@ref pm_data)
   - Parsing [PSS/e DYR Files](@ref dyr_data)
   - [Build a `System` from CSV files](@ref system_from_csv)

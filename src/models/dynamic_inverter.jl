@@ -66,7 +66,7 @@ mutable struct DynamicInverter{
     inner_control::IC
     "[DCSource](@ref) model"
     dc_source::DC
-    "[FrequencyEstimator](@ref) (typically a [PLL](@ref)) model"
+    "[FrequencyEstimator](@ref) (typically a phase-locked loop (PLL)) model"
     freq_estimator::P
     "[Filter](@ref) model"
     filter::F

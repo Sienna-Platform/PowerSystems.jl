@@ -13,17 +13,17 @@ requirements and modeling roles. Rather than treating all components as untyped 
 `PowerSystems.jl` places them into an abstract type hierarchy. This design provides two
 key benefits:
 
-1. **Categorization by behavior:** Components that serve the same modeling role share a
-   common abstract supertype. Code can retrieve all components of a given category — all
-   generators, all transmission branches — without enumerating every specific technology
-   type.
+ 1. **Categorization by behavior:** Components that serve the same modeling role share a
+    common abstract supertype. Code can retrieve all components of a given category — all
+    generators, all transmission branches — without enumerating every specific technology
+    type.
 
-2. **Generic and extensible model logic:** Downstream packages such as
-   [`PowerSimulations.jl`](https://nrel-sienna.github.io/PowerSimulations.jl/stable/)
-   define optimization formulations against abstract types. A new concrete component type
-   slots into existing model formulations automatically, as long as it implements the
-   expected interface. This means users can define technologies not yet in the package and
-   have them work with existing tools.
+ 2. **Generic and extensible model logic:** Downstream packages such as
+    [`PowerSimulations.jl`](https://nrel-sienna.github.io/PowerSimulations.jl/stable/)
+    define optimization formulations against abstract types. A new concrete component type
+    slots into existing model formulations automatically, as long as it implements the
+    expected interface. This means users can define technologies not yet in the package and
+    have them work with existing tools.
 
 ## How components are stored
 
@@ -70,7 +70,7 @@ The hierarchy is rooted at `InfrastructureSystemsType`. The subtypes most releva
         services from devices reflects the fact that a service is a requirement that
         *devices contribute to*, rather than a physical component itself.
 
-  - [`InfrastructureSystems.DeviceParameter`](@ref): [`struct`](@ref S)s that carry data describing
+  - `DeviceParameter`: [`struct`](@ref S)s that carry data describing
     the dynamic or economic characteristics of a `Device`, such as cost function curves or
     dynamic machine parameters. Decoupling these from the device [`struct`](@ref S) itself allows the
     same physical device to carry different parameter sets depending on the modeling
@@ -116,4 +116,6 @@ packages, without any modification to the underlying data.
 
 For a hands-on introduction to navigating the type hierarchy, see the
 [Create and Explore a Power System](@ref "Create and Explore a Power `System`") tutorial.
+
+```
 ```

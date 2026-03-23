@@ -43,18 +43,18 @@ generation rather than passive demand. This is also known as "Dispatchable Deman
 
 In `PowerSystems.jl`, these distinctions surface in two places:
 
-1. **The `conformity` field.** Concrete subtypes of [`StaticLoad`](@ref) carry a
-   `conformity` field that records whether a load is conforming or non-conforming (see the
-   [options listed here](@ref loadconform_list)). This field exists for monitoring and
-   bookkeeping purposes — it allows downstream tools and analysts to identify which loads
-   were treated as non-conforming without needing to inspect the time series data directly.
+ 1. **The `conformity` field.** Concrete subtypes of [`StaticLoad`](@ref) carry a
+    `conformity` field that records whether a load is conforming or non-conforming (see the
+    [options listed here](@ref loadconform_list)). This field exists for monitoring and
+    bookkeeping purposes — it allows downstream tools and analysts to identify which loads
+    were treated as non-conforming without needing to inspect the time series data directly.
 
-2. **Time series assignment.** The behavioral difference between conforming and
-   non-conforming loads is expressed through time series. A conforming load typically
-   shares an aggregate area forecast that is then scaled by a participation factor; a
-   non-conforming load carries its own individual time series. `PowerSystems.jl` supports
-   both patterns equally — the `conformity` flag declares the intent, while the time series
-   assignment carries it out.
+ 2. **Time series assignment.** The behavioral difference between conforming and
+    non-conforming loads is expressed through time series. A conforming load typically
+    shares an aggregate area forecast that is then scaled by a participation factor; a
+    non-conforming load carries its own individual time series. `PowerSystems.jl` supports
+    both patterns equally — the `conformity` flag declares the intent, while the time series
+    assignment carries it out.
 
 This design means that modeling the distinction requires no special data structures or
 separate code paths: assigning a distinct time series to a non-conforming load is

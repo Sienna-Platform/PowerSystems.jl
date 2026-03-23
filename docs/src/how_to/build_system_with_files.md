@@ -14,7 +14,7 @@ manually is:
     your dataset. Use [`add_component!`](@ref) to add each component to the [`System`](@ref).
  4. Similarly, add cost and time series data either within each `for` loop, or after the
     components have been defined using [`begin_time_series_update`](@ref).
- 5. [Save your `System` to a JSON](@ref "Write, View, and Load Data with a JSON") once you are
+ 5. [Save your `System` to a JSON](@ref serialize_data) once you are
     finished
 
 The following example demonstrates this process for selected component
@@ -680,8 +680,8 @@ Additional resources to help you built your own custom [`System`](@ref):
     `for` loop from a .csv, if you don't have PSS/e files available for
     [automated parsing](@ref dyr_data)
   - See more on how to [Parse Time Series Data from .csv's](@ref parsing_time_series)
-  - See how to [Add a New or Custom Type](@ref)
-  - See how to [Add a Component in Natural Units](@ref), which is an alternative to the
+  - See how to [Add a New or Custom Type](@ref add_new_types)
+  - See how to [Add a Component in Natural Units](@ref add_component_natural_units), which is an alternative to the
     per-unitized `for` loops above, but requires more code
-  - See how to [Write, View, and Load Data with a JSON](@ref) to efficiently save your
+  - See how to [Write, View, and Load Data with a JSON](@ref serialize_data) to efficiently save your
     [`System`](@ref) once you've built it

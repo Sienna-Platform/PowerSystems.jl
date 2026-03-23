@@ -127,13 +127,15 @@ end
 
 # GETTER IMPLEMENTATIONS
 """
-Retrieve the variable cost bid for a `StaticInjection` device with a `MarketBidCost`. If any
-of the relevant fields (`incremental_offer_curves`, `incremental_initial_input`,
-`no_load_cost`) are time series, the user may specify `start_time` and `len` and the
-function returns a `TimeArray` of `CostCurve{PiecewiseIncrementalCurve}`s; if the field is
-not a time series, the function returns a single `CostCurve{PiecewiseIncrementalCurve}`.
+Retrieve the variable cost bid for a [`StaticInjection`](@ref) device with a [`MarketBidCost`](@ref).
 
-See also [`get_variable_cost` for `ReserveDemandCurve`](@ref get_variable_cost(::ReserveDemandCurve)).
+If any of the relevant fields (`incremental_offer_curves`, `incremental_initial_input`,
+`no_load_cost`) are time series, `start_time` and `len` may be specified and a
+`TimeArray` of `CostCurve{PiecewiseIncrementalCurve}` values is returned; otherwise
+returns a single `CostCurve{PiecewiseIncrementalCurve}`.
+
+See also: [`get_variable_cost` for `ReserveDemandCurve`](@ref get_variable_cost(::ReserveDemandCurve)),
+[`get_incremental_variable_cost`](@ref), [`get_decremental_variable_cost`](@ref)
 """
 function get_variable_cost(
     device::StaticInjection,
@@ -192,12 +194,13 @@ function get_variable_cost(
 end
 
 """
-Retrieve the incremental variable cost bid for a `StaticInjection` device with a
-`MarketBidCost`. If any of the relevant fields (`incremental_offer_curves`,
-`incremental_initial_input`, `no_load_cost`) are time series, the user may specify
-`start_time` and `len` and the function returns a `TimeArray` of
-`CostCurve{PiecewiseIncrementalCurve}`s; if the field is not a time series, the function
-returns a single `CostCurve{PiecewiseIncrementalCurve}`.
+Retrieve the incremental variable cost bid for a [`StaticInjection`](@ref) device with a
+[`MarketBidCost`](@ref). If any of the relevant fields (`incremental_offer_curves`,
+`incremental_initial_input`, `no_load_cost`) are time series, `start_time` and `len` may
+be specified and a `TimeArray` of `CostCurve{PiecewiseIncrementalCurve}` values is
+returned; otherwise returns a single `CostCurve{PiecewiseIncrementalCurve}`.
+
+See also: [`get_variable_cost`](@ref), [`get_decremental_variable_cost`](@ref)
 """
 function get_incremental_variable_cost(
     device::StaticInjection,
@@ -214,12 +217,13 @@ function get_incremental_variable_cost(
 end
 
 """
-Retrieve the decremental variable cost bid for a `StaticInjection` device with a
-`MarketBidCost`. If any of the relevant fields (`decremental_offer_curves`,
-`decremental_initial_input`, `no_load_cost`) are time series, the user may specify
-`start_time` and `len` and the function returns a `TimeArray` of
-`CostCurve{PiecewiseIncrementalCurve}`s; if the field is not a time series, the function
-returns a single `CostCurve{PiecewiseIncrementalCurve}` or `nothing`.
+Retrieve the decremental variable cost bid for a [`StaticInjection`](@ref) device with a
+[`MarketBidCost`](@ref). If any of the relevant fields (`decremental_offer_curves`,
+`decremental_initial_input`, `no_load_cost`) are time series, `start_time` and `len` may
+be specified and a `TimeArray` of `CostCurve{PiecewiseIncrementalCurve}` values is
+returned; otherwise returns a single `CostCurve{PiecewiseIncrementalCurve}` or `nothing`.
+
+See also: [`get_variable_cost`](@ref), [`get_incremental_variable_cost`](@ref)
 """
 function get_decremental_variable_cost(
     device::StaticInjection,
@@ -279,11 +283,12 @@ function get_decremental_variable_cost(
 end
 
 """
-Retrieve the import variable cost bid for a `StaticInjection` device with an
-`ImportExportCost`. If `import_offer_curves` is a time series, the user may specify
-`start_time` and `len` and the function returns a `TimeArray` of
-`CostCurve{PiecewiseIncrementalCurve}`s; if the field is not a time series, the function
-returns a single `CostCurve{PiecewiseIncrementalCurve}` or `nothing`.
+Retrieve the import variable cost bid for a [`StaticInjection`](@ref) device with an
+[`ImportExportCost`](@ref). If `import_offer_curves` is a time series, `start_time` and
+`len` may be specified and a `TimeArray` of `CostCurve{PiecewiseIncrementalCurve}` values
+is returned; otherwise returns a single `CostCurve{PiecewiseIncrementalCurve}` or `nothing`.
+
+See also: [`get_export_variable_cost`](@ref), [`get_import_offer_curves`](@ref)
 """
 function get_import_variable_cost(
     device::StaticInjection,
@@ -300,11 +305,12 @@ function get_import_variable_cost(
 end
 
 """
-Retrieve the export variable cost bid for a `StaticInjection` device with an
-`ImportExportCost`. If `export_offer_curves` is a time series, the user may specify
-`start_time` and `len` and the function returns a `TimeArray` of
-`CostCurve{PiecewiseIncrementalCurve}`s; if the field is not a time series, the function
-returns a single `CostCurve{PiecewiseIncrementalCurve}` or `nothing`.
+Retrieve the export variable cost bid for a [`StaticInjection`](@ref) device with an
+[`ImportExportCost`](@ref). If `export_offer_curves` is a time series, `start_time` and
+`len` may be specified and a `TimeArray` of `CostCurve{PiecewiseIncrementalCurve}` values
+is returned; otherwise returns a single `CostCurve{PiecewiseIncrementalCurve}` or `nothing`.
+
+See also: [`get_import_variable_cost`](@ref), [`get_export_offer_curves`](@ref)
 """
 function get_export_variable_cost(
     device::StaticInjection,
@@ -321,10 +327,12 @@ function get_export_variable_cost(
 end
 
 """
-Retrieve the variable cost data for a `ReserveDemandCurve`. The user may specify
-`start_time` and `len` and the function returns a `TimeArray` of `CostCurve`s.
+Retrieve the variable cost data for a [`ReserveDemandCurve`](@ref).
 
-See also [`get_variable_cost` for `StaticInjection` with `MarketBidCost`](@ref get_variable_cost(::StaticInjection, ::MarketBidCost)).
+`start_time` and `len` may be specified and the function returns a `TimeArray` of
+`CostCurve` values.
+
+See also: [`get_variable_cost` for `StaticInjection` with `MarketBidCost`](@ref get_variable_cost(::StaticInjection, ::MarketBidCost))
 """
 get_variable_cost(
     service::ReserveDemandCurve;
@@ -334,9 +342,11 @@ get_variable_cost(
     _make_market_bid_curve, start_time, len)
 
 """
-Return service bid time series data for a `StaticInjection` device with a `MarketBidCost`.
-The user may specify `start_time` and `len` and the function returns a `TimeArray` of
-`CostCurve`s.
+Return service bid time series data for a [`StaticInjection`](@ref) device with a
+[`MarketBidCost`](@ref). `start_time` and `len` may be specified and a `TimeArray` of
+`CostCurve` values is returned.
+
+See also: [`get_variable_cost`](@ref), [`get_incremental_offer_curves`](@ref)
 """
 function get_services_bid(
     device::StaticInjection,
@@ -358,7 +368,15 @@ function get_services_bid(
     return converted
 end
 
-"Get the fuel cost of the component's variable cost, which must be a `FuelCurve`."
+"""
+Return the fuel cost of a [`StaticInjection`](@ref) component's variable cost, which must
+be a [`FuelCurve`](@ref). If the fuel cost is a time series, `start_time` and `len` may
+be specified and a `TimeArray` of `Float64` values is returned.
+
+Throws `ArgumentError` if the variable cost is not a [`FuelCurve`](@ref).
+
+See also: [`set_fuel_cost!`](@ref), [`get_variable_cost`](@ref)
+"""
 function get_fuel_cost(component::StaticInjection;
     start_time::Union{Nothing, Dates.DateTime} = nothing,
     len::Union{Nothing, Int} = nothing,
@@ -375,10 +393,12 @@ function get_fuel_cost(component::StaticInjection;
 end
 
 """
-Retrieve the `incremental_offer_curves` for a `StaticInjection` device with a
-`MarketBidCost`. If this field is a time series, the user may specify `start_time` and `len`
-and the function returns a `TimeArray` of `PiecewiseStepData`s; if the field is not a time
-series, the function returns a single `CostCurve{PiecewiseIncrementalCurve}` or `nothing`.
+Retrieve the `incremental_offer_curves` for a [`StaticInjection`](@ref) device with a
+[`MarketBidCost`](@ref). If this field is a time series, `start_time` and `len` may be
+specified and a `TimeArray` of `PiecewiseStepData` values is returned; otherwise returns
+a single `CostCurve{PiecewiseIncrementalCurve}` or `nothing`.
+
+See also: [`get_decremental_offer_curves`](@ref), [`get_incremental_variable_cost`](@ref)
 """
 get_incremental_offer_curves(
     device::StaticInjection,
@@ -390,10 +410,12 @@ get_incremental_offer_curves(
     device, get_incremental_offer_curves(cost), nothing, start_time, len)
 
 """
-Retrieve the `decremental_offer_curves` for a `StaticInjection` device with a
-`MarketBidCost`. If this field is a time series, the user may specify `start_time` and `len`
-and the function returns a `TimeArray` of `PiecewiseStepData`s; if the field is not a time
-series, the function returns a single `CostCurve{PiecewiseIncrementalCurve}` or `nothing`.
+Retrieve the `decremental_offer_curves` for a [`StaticInjection`](@ref) device with a
+[`MarketBidCost`](@ref). If this field is a time series, `start_time` and `len` may be
+specified and a `TimeArray` of `PiecewiseStepData` values is returned; otherwise returns
+a single `CostCurve{PiecewiseIncrementalCurve}` or `nothing`.
+
+See also: [`get_incremental_offer_curves`](@ref), [`get_decremental_variable_cost`](@ref)
 """
 get_decremental_offer_curves(
     device::StaticInjection,
@@ -405,10 +427,12 @@ get_decremental_offer_curves(
     device, get_decremental_offer_curves(cost), nothing, start_time, len)
 
 """
-Retrieve the `import_offer_curves` for a `StaticInjection` device with a `ImportExportCost`.
-If this field is a time series, the user may specify `start_time` and `len` and the function
-returns a `TimeArray` of `PiecewiseStepData`s; if the field is not a time series, the
-function returns a single `CostCurve{PiecewiseIncrementalCurve}` or `nothing`.
+Retrieve the `import_offer_curves` for a [`StaticInjection`](@ref) device with an
+[`ImportExportCost`](@ref). If this field is a time series, `start_time` and `len` may be
+specified and a `TimeArray` of `PiecewiseStepData` values is returned; otherwise returns
+a single `CostCurve{PiecewiseIncrementalCurve}` or `nothing`.
+
+See also: [`get_export_offer_curves`](@ref), [`get_import_variable_cost`](@ref)
 """
 get_import_offer_curves(
     device::StaticInjection,
@@ -419,10 +443,12 @@ get_import_offer_curves(
     device, get_import_offer_curves(cost), nothing, start_time, len)
 
 """
-Retrieve the `export_offer_curves` for a `StaticInjection` device with a `ImportExportCost`.
-If this field is a time series, the user may specify `start_time` and `len` and the function
-returns a `TimeArray` of `PiecewiseStepData`s; if the field is not a time series, the
-function returns a single `CostCurve{PiecewiseIncrementalCurve}` or `nothing`.
+Retrieve the `export_offer_curves` for a [`StaticInjection`](@ref) device with an
+[`ImportExportCost`](@ref). If this field is a time series, `start_time` and `len` may be
+specified and a `TimeArray` of `PiecewiseStepData` values is returned; otherwise returns
+a single `CostCurve{PiecewiseIncrementalCurve}` or `nothing`.
+
+See also: [`get_import_offer_curves`](@ref), [`get_export_variable_cost`](@ref)
 """
 get_export_offer_curves(
     device::StaticInjection,
@@ -433,10 +459,12 @@ get_export_offer_curves(
     device, get_export_offer_curves(cost), nothing, start_time, len)
 
 """
-Retrieve the no-load cost data for a `StaticInjection` device with a `MarketBidCost`. If
-this field is a time series, the user may specify `start_time` and `len` and the function
-returns a `TimeArray` of `Float64`s; if the field is not a time series, the function
-returns a single `Float64` or `nothing`.
+Retrieve the no-load cost data for a [`StaticInjection`](@ref) device with a
+[`MarketBidCost`](@ref). If this field is a time series, `start_time` and `len` may be
+specified and a `TimeArray` of `Float64` values is returned; otherwise returns a single
+`Float64` or `nothing`.
+
+See also: [`get_start_up`](@ref), [`get_variable_cost`](@ref)
 """
 get_no_load_cost(
     device::StaticInjection,
@@ -447,10 +475,12 @@ get_no_load_cost(
     get_no_load_cost(cost), nothing, start_time, len)
 
 """
-Retrieve the `incremental_initial_input` for a `StaticInjection` device with a
-`MarketBidCost`. If this field is a time series, the user may specify `start_time` and `len`
-and the function returns a `TimeArray` of `Float64`s; if the field is not a time series, the
-function returns a single `Float64` or `nothing`.
+Retrieve the `incremental_initial_input` for a [`StaticInjection`](@ref) device with a
+[`MarketBidCost`](@ref). If this field is a time series, `start_time` and `len` may be
+specified and a `TimeArray` of `Float64` values is returned; otherwise returns a single
+`Float64` or `nothing`.
+
+See also: [`get_decremental_initial_input`](@ref), [`get_incremental_offer_curves`](@ref)
 """
 get_incremental_initial_input(
     device::StaticInjection,
@@ -461,10 +491,12 @@ get_incremental_initial_input(
     get_incremental_initial_input(cost), nothing, start_time, len)
 
 """
-Retrieve the `decremental_initial_input` for a `StaticInjection` device with a
-`MarketBidCost`. If this field is a time series, the user may specify `start_time` and `len`
-and the function returns a `TimeArray` of `Float64`s; if the field is not a time series, the
-function returns a single `Float64` or `nothing`.
+Retrieve the `decremental_initial_input` for a [`StaticInjection`](@ref) device with a
+[`MarketBidCost`](@ref). If this field is a time series, `start_time` and `len` may be
+specified and a `TimeArray` of `Float64` values is returned; otherwise returns a single
+`Float64` or `nothing`.
+
+See also: [`get_incremental_initial_input`](@ref), [`get_decremental_offer_curves`](@ref)
 """
 get_decremental_initial_input(
     device::StaticInjection,
@@ -475,10 +507,12 @@ get_decremental_initial_input(
     get_decremental_initial_input(cost), nothing, start_time, len)
 
 """
-Retrieve the startup cost data for a `StaticInjection` device with a `MarketBidCost`. If
-this field is a time series, the user may specify `start_time` and `len` and the function
-returns a `TimeArray` of `StartUpStages`s; if the field is not a time series, the function
-returns a single `StartUpStages`.
+Retrieve the startup cost data for a [`StaticInjection`](@ref) device with a
+[`MarketBidCost`](@ref). If this field is a time series, `start_time` and `len` may be
+specified and a `TimeArray` of `StartUpStages` values is returned; otherwise returns a
+single `StartUpStages`.
+
+See also: [`get_shut_down`](@ref), [`get_no_load_cost`](@ref)
 """
 get_start_up(
     device::StaticInjection,
@@ -489,10 +523,12 @@ get_start_up(
     get_start_up(cost), StartUpStages, start_time, len)
 
 """
-Retrieve the shutdown cost data for a `StaticInjection` device with a `MarketBidCost`. If
-this field is a time series, the user may specify `start_time` and `len` and the function
-returns a `TimeArray` of `Float64`s; if the field is not a time series, the function
-returns a single `Float64`.
+Retrieve the shutdown cost data for a [`StaticInjection`](@ref) device with a
+[`MarketBidCost`](@ref). If this field is a time series, `start_time` and `len` may be
+specified and a `TimeArray` of `Float64` values is returned; otherwise returns a single
+`Float64`.
+
+See also: [`get_start_up`](@ref), [`get_no_load_cost`](@ref)
 """
 get_shut_down(
     device::StaticInjection,

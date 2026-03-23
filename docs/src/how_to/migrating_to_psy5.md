@@ -79,7 +79,7 @@ valid and the expanded list can be explored in the documentation [`ThermalFuels`
 
 Most of the transformer changes are included to bring `PowerSystems.jl` closer to the data model employed in PSSe RAW files which tend to be the industry standard. The two notable changes are:
 
-  - All transformers now have additional fields for base quantities needed for the calculation of the impedances in adequate bases. See [`Transformer per unit transformations`](@ref transformers_pu) for more details.
+  - All transformers now have additional fields for base quantities needed for the calculation of the impedances in adequate bases. See [Transformer per unit transformations](@ref transformers_pu) for more details.
   - The shunt branch in the transformer now uses a `Complex{Float64}` to model core losses as well as the core inductance.
   - Shunt allocation in the transformer between the primary and secondary. We now allocate the shunt to the primary following PSSe's convention. See [`this issue`](https://github.com/NREL-Sienna/PowerSystems.jl/issues/1411) for a description of the discrepancy with Matpower. Note that this mostly affect the results reporting between Matpower and PSSe.
 

@@ -41,12 +41,19 @@
   - *EIA*: U.S. Energy Information Administration
 
   - *EIM*: Energy Imbalance Market
+
   - *EMF*: Electromotive force
+
   - *ESAC*: IEEE Type AC Excitation System model
+
   - *ESDC*: IEEE Type DC Excitation System model
+
   - *EXAC*: IEEE Type AC Excitation System (modified) model
+
   - *EXPIC*: Proportional/Integral Excitation System from PSS/E
+
   - *EXST*: IEEE Type ST (Static) Excitation System model
+
   - *EX4VSA*: IEEE Excitation System for Voltage Security Assessment with Over-Excitation Limits.
 
 ### F

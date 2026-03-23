@@ -1,10 +1,12 @@
 """
-Supertype for all system services
+Abstract supertype for all system services (ancillary services).
 
-Services (or ancillary services) include additional requirements and support
-to ensure reliable electricity service to customers. Common services are
-reserve products to be able to respond quickly to unexpected disturbances,
-such as the sudden loss of a transmission line or generator.
+Services represent additional requirements and support to ensure reliable electricity
+delivery. Examples include reserve products for responding to unexpected disturbances
+(such as the sudden loss of a generator or transmission line), automatic generation
+control, and transmission interface limits.
+
+Subtypes: [`AbstractReserve`](@ref), [`AGC`](@ref), [`TransmissionInterface`](@ref)
 """
 abstract type Service <: Component end
 

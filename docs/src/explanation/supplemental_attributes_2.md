@@ -49,6 +49,7 @@ docs_dir = joinpath(pkgdir(PowerSystems), "docs", "src", "tutorials", "utils"); 
 include(joinpath(docs_dir, "docs_utils.jl")); #hide
 print(join(tt(PowerSystems.IS.InfrastructureSystemsType), "")) #hide
 ```
+
 The concrete supplemental attributes are the last ones listed in a section. For example, following the first few lines of the type tree: InfrastructureSystems.InfrastructureSystemsType > InfrastructureSystems.AbstractTimeSeriesParameters > InfrastructureSystems.ForecastParameters . InfrastructureSystems.ForecastParameters is the concrete supplemental attribute, and the abstract supplemental attribute is InfrastructureSystems.AbstractTimeSeriesParameters. Providing another example with: InfrastructureSystems.InfrastructureSystemsType > InfrastructureSystems.DeviceParameter > DynamicComponent > PowerSystems.DynamicGeneratorComponent > AVR > AVRFixed . AVRFixed is the concrete supplemental attributes, and the abstract supplemental attributes are the higher up layers.
 
 ## Time Series Support

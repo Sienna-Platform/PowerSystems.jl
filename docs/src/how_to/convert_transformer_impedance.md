@@ -7,7 +7,7 @@ manual calculation and explains how `PowerSystems.jl` handles it automatically t
 getter functions.
 
 For the underlying theory, see
-[Transformer per unit transformations](@ref transformers_pu) in the Per-unit Conventions explanation.
+[Transformer per unit transformations](@ref transformers_pu_per_unit) in the Per-unit Conventions explanation.
 
 ## Step 1: Establish base values for each voltage zone
 
@@ -126,5 +126,5 @@ x_device_base = get_x(xfmr)   # returns 0.10 — the original nameplate value
 set_units_base_system!(sys, "SYSTEM_BASE")  # restore
 ```
 
-See [Read Component Values in Different Unit Systems](@ref) for a full description of
+See [Read Component Values in Different Unit Systems](@ref convert_unit_systems) for a full description of
 the available unit system settings.

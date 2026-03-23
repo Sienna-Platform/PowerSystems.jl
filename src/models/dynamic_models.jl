@@ -1,25 +1,29 @@
 """
-Abstract type for all components used to compose a [`DynamicInjection`](@ref) device
+Abstract type for all sub-components used to compose a [`DynamicInjection`](@ref) device.
+
+Examples include machine models ([`BaseMachine`](@ref)), AVR models ([`AVRFixed`](@ref)),
+and turbine governor models ([`TGFixed`](@ref)).
+
+See also: [`DynamicInjection`](@ref)
 """
 abstract type DynamicComponent <: DeviceParameter end
 
 """
-Abstract type for all [Dynamic Devices](@ref)
+Abstract type for all [Dynamic Devices](@ref dynamic_data).
 
 A [dynamic](@ref D) [injection](@ref I) is the continuous time response of a generator,
-typically modeled with differential equations. 
-    
-`DynamicInjection` components can added on to [`StaticInjection`](@ref) components,
+typically modeled with differential equations.
+
+`DynamicInjection` models are attached to [`StaticInjection`](@ref) components,
 which together define all the information needed to model the device in a dynamic
 simulation.
+
+See also: [`DynamicComponent`](@ref), [`StaticInjection`](@ref)
 """
 abstract type DynamicInjection <: Device end
 
 """
-Return all the dynamic components of a [`DynamicInjection`](@ref) device.
-
-# Arguments
-- `device::DynamicInjection`: The dynamic injection device.
+Return an iterator of all [`DynamicComponent`](@ref) fields of a [`DynamicInjection`](@ref) device.
 """
 function get_dynamic_components(device::T) where {T <: DynamicInjection}
     return (
@@ -44,11 +48,10 @@ Return an empty vector of states for a [`DynamicInjection`](@ref) device.
 get_states(::DynamicInjection) = Vector{Symbol}()
 
 """
-Default implementation of `get_states_types` for dynamic components.
-Assumes all states are [`StateTypes.Differential`](@ref).
+Return the [`StateTypes`](@ref) for each state of a [`DynamicComponent`](@ref).
 
-# Arguments
-- `d::DynamicComponent`: The dynamic component.
+The default implementation returns `StateTypes.Differential` for all states.
+Subtypes may override this method to specify different state types.
 """
 function get_states_types(d::DynamicComponent)
     return fill(StateTypes.Differential, get_n_states(d))
