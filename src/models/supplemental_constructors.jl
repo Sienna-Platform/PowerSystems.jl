@@ -55,7 +55,7 @@ function ACBus(
     )
 end
 
-"""Allows construction with bus type specified as a string for legacy code."""
+# Allows construction with enum types specified as strings for legacy code.
 function DiscreteControlledACBranch(
     name,
     available,
@@ -86,7 +86,7 @@ function DiscreteControlledACBranch(
     )
 end
 
-"""Allows construction of FACT Devices with control modes."""
+# Allows construction of FACT Devices with control modes.
 function FACTSControlDevice(
     name,
     available,
@@ -134,7 +134,7 @@ function ConstantReserve(
     )
 end
 
-"""Allows construction of a EnergyReservoirStorage without the specification of a cost."""
+# Allows construction of a EnergyReservoirStorage without the specification of a cost.
 function EnergyReservoirStorage(
     name::AbstractString,
     available::Bool,

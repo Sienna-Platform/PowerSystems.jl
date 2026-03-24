@@ -4,16 +4,30 @@ abstract type PowerPlant <: SupplementalAttribute end
 get_internal(x::PowerPlant) = x.internal
 
 """
-Attribute to represent [`ThermalGen`](@ref) power plants with synchronous generation.
-For Combined Cycle plants consider using [`CombinedCycleBlock`](@ref).
+    struct ThermalPowerPlant <: PowerPlant
+        name::String
+        shaft_map::Dict{Int, Vector{Base.UUID}}
+        reverse_shaft_map::Dict{Base.UUID, Int}
+        internal::InfrastructureSystemsInternal
+    end
 
-The shaft map field is used to represent shared shafts between units.
+Supplemental attribute representing a [`ThermalGen`](@ref) power plant where multiple
+generator units share mechanical shafts. The shaft maps capture the unit ↔ shaft topology
+for multi-shaft dispatch and synchronous condensing configurations.
 
 # Arguments
-- `name::String`: Name of the power plant
-- `shaft_map::Dict{Int, Vector{Base.UUID}}`: Mapping of shaft numbers to unit UUIDs (multiple units can share a shaft)
-- `reverse_shaft_map::Dict{Base.UUID, Int}`: Reverse mapping from unit UUID to shaft number
-- `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems internal reference
+- `name::String`: Name of the power plant.
+- `shaft_map::Dict{Int, Vector{Base.UUID}}`: Mapping from shaft index to the UUIDs of
+    units connected to that shaft (multiple units may share one shaft).
+- `reverse_shaft_map::Dict{Base.UUID, Int}`: Reverse mapping from a unit's UUID to the
+    index of its shaft.
+- `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal
+    reference.
+
+# See Also
+- [`CombinedCycleBlock`](@ref): Plant attribute for combined cycle block-level
+    representations.
+- [`ThermalGen`](@ref): Abstract type for thermal generating units.
 """
 struct ThermalPowerPlant <: PowerPlant
     name::String
@@ -45,10 +59,13 @@ end
 Construct a [`ThermalPowerPlant`](@ref).
 
 # Arguments
-- `name::String`: Name of the power plant
-- `shaft_map::Dict{Int, Vector{Base.UUID}}`: (default: empty dict) Mapping of shaft numbers to unit UUIDs
-- `reverse_shaft_map::Dict{Base.UUID, Int}`: (default: empty dict) Reverse mapping from unit UUID to shaft number
-- `internal::InfrastructureSystemsInternal`: (default: `InfrastructureSystemsInternal()`) (**Do not modify.**) PowerSystems internal reference
+- `name::String`: Name of the power plant.
+- `shaft_map::Dict{Int, Vector{Base.UUID}}`: (default: empty dict) Mapping from shaft
+    index to the UUIDs of units connected to that shaft.
+- `reverse_shaft_map::Dict{Base.UUID, Int}`: (default: empty dict) Reverse mapping from
+    a unit's UUID to its shaft index.
+- `internal::InfrastructureSystemsInternal`: (default: `InfrastructureSystemsInternal()`)
+    (**Do not modify.**) PowerSystems.jl internal reference.
 """
 function ThermalPowerPlant(;
     name::String,
@@ -67,18 +84,42 @@ get_shaft_map(value::ThermalPowerPlant) = value.shaft_map
 get_reverse_shaft_map(value::ThermalPowerPlant) = value.reverse_shaft_map
 
 """
-Attribute to represent combined cycle generation by block configuration that shares heat recovery converstions.
-For aggregate representations consider using [`CombinedCycleFractional`](@ref).
+    struct CombinedCycleBlock <: PowerPlant
+        name::String
+        configuration::CombinedCycleConfiguration
+        heat_recovery_to_steam_factor::Float64
+        hrsg_ct_map::Dict{Int, Vector{Base.UUID}}
+        hrsg_ca_map::Dict{Int, Vector{Base.UUID}}
+        ct_hrsg_map::Dict{Base.UUID, Vector{Int}}
+        ca_hrsg_map::Dict{Base.UUID, Vector{Int}}
+        internal::InfrastructureSystemsInternal
+    end
+
+Supplemental attribute representing a combined cycle plant modeled at the block level,
+where combustion turbines (CTs) feed heat recovery steam generators (HRSGs) that drive
+combined-cycle steam turbines (CAs). The internal maps capture the CT→HRSG→CA topology.
 
 # Arguments
-- `name::String`: Name of the combined cycle block
-- `configuration::CombinedCycleConfiguration`: Configuration type of the combined cycle
-- `heat_recovery_to_steam_factor::Float64`: Factor for heat recovery to steam conversion
-- `hrsg_ct_map::Dict{Int, Vector{Base.UUID}}`: Mapping of HRSG numbers to CT unit UUIDs (CTs as HRSG inputs)
-- `hrsg_ca_map::Dict{Int, Vector{Base.UUID}}`: Mapping of HRSG numbers to CA unit UUIDs (CAs as HRSG outputs)
-- `ct_hrsg_map::Dict{Base.UUID, Vector{Int}}`: Reverse mapping from CT unit UUID to HRSG numbers (a CT can feed multiple HRSGs)
-- `ca_hrsg_map::Dict{Base.UUID, Vector{Int}}`: Reverse mapping from CA unit UUID to HRSG numbers (a CA can receive from multiple HRSGs)
-- `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems internal reference
+- `name::String`: Name of the combined cycle block.
+- `configuration::`[`CombinedCycleConfiguration`](@ref): Configuration type of the
+    combined cycle plant.
+- `heat_recovery_to_steam_factor::Float64`: Fraction of CT exhaust heat recovered by the
+    HRSG for steam generation.
+- `hrsg_ct_map::Dict{Int, Vector{Base.UUID}}`: Mapping from HRSG index to the UUIDs of
+    CTs feeding that HRSG.
+- `hrsg_ca_map::Dict{Int, Vector{Base.UUID}}`: Mapping from HRSG index to the UUIDs of
+    CAs driven by that HRSG.
+- `ct_hrsg_map::Dict{Base.UUID, Vector{Int}}`: Reverse mapping from a CT's UUID to the
+    indices of HRSGs it feeds (a CT can feed multiple HRSGs).
+- `ca_hrsg_map::Dict{Base.UUID, Vector{Int}}`: Reverse mapping from a CA's UUID to the
+    indices of HRSGs that supply it (a CA can receive from multiple HRSGs).
+- `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal
+    reference.
+
+# See Also
+- [`CombinedCycleFractional`](@ref): Combined cycle attribute for aggregate fractional
+    representations.
+- [`CombinedCycleConfiguration`](@ref): Enumeration of combined cycle plant configurations.
 """
 struct CombinedCycleBlock <: PowerPlant
     name::String
@@ -154,7 +195,8 @@ Construct a [`CombinedCycleBlock`](@ref).
 - `hrsg_ca_map::AbstractDict`: (default: empty dict) Mapping of HRSG numbers to CA unit UUIDs (CAs as HRSG outputs)
 - `ct_hrsg_map::AbstractDict`: (default: empty dict) Reverse mapping from CT unit UUID to HRSG numbers
 - `ca_hrsg_map::AbstractDict`: (default: empty dict) Reverse mapping from CA unit UUID to HRSG numbers
-- `internal::InfrastructureSystemsInternal`: (default: `InfrastructureSystemsInternal()`) (**Do not modify.**) PowerSystems internal reference
+- `internal::InfrastructureSystemsInternal`: (default: `InfrastructureSystemsInternal()`)
+    (**Do not modify.**) PowerSystems.jl internal reference.
 """
 function CombinedCycleBlock(;
     name,
@@ -195,15 +237,35 @@ get_ct_hrsg_map(value::CombinedCycleBlock) = value.ct_hrsg_map
 get_ca_hrsg_map(value::CombinedCycleBlock) = value.ca_hrsg_map
 
 """
-Attribute to represent combined cycle generation when each unit represents a specific configuration and aggregate heat rate.
-For block-level representations consider using [`CombinedCycleBlock`](@ref).
+    struct CombinedCycleFractional <: PowerPlant
+        name::String
+        configuration::CombinedCycleConfiguration
+        operation_exclusion_map::Dict{Int, Vector{Base.UUID}}
+        inverse_operation_exclusion_map::Dict{Base.UUID, Int}
+        internal::InfrastructureSystemsInternal
+    end
+
+Supplemental attribute representing a combined cycle plant modeled at the aggregate
+(fractional) level, where each generator unit represents a specific plant configuration
+with an aggregate heat rate. Mutually exclusive operating groups are tracked via the
+operation exclusion maps.
 
 # Arguments
-- `name::String`: Name of the combined cycle fractional plant
-- `configuration::CombinedCycleConfiguration`: Configuration type of the combined cycle
-- `operation_exclusion_map::Dict{Int, Vector{Base.UUID}}`: Mapping of operation exclusion group numbers to unit UUIDs (only units in the same group can operate simultaneously)
-- `inverse_operation_exclusion_map::Dict{Base.UUID, Int}`: Reverse mapping from unit UUID to exclusion group number
-- `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems internal reference
+- `name::String`: Name of the combined cycle fractional plant.
+- `configuration::`[`CombinedCycleConfiguration`](@ref): Configuration type of the
+    combined cycle plant.
+- `operation_exclusion_map::Dict{Int, Vector{Base.UUID}}`: Mapping from exclusion group
+    index to the UUIDs of units in that group; only one unit per group may operate
+    simultaneously.
+- `inverse_operation_exclusion_map::Dict{Base.UUID, Int}`: Reverse mapping from a unit's
+    UUID to its exclusion group index.
+- `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal
+    reference.
+
+# See Also
+- [`CombinedCycleBlock`](@ref): Combined cycle attribute for detailed block-level
+    representations.
+- [`CombinedCycleConfiguration`](@ref): Enumeration of combined cycle plant configurations.
 """
 struct CombinedCycleFractional <: PowerPlant
     name::String
@@ -261,7 +323,8 @@ Construct a [`CombinedCycleFractional`](@ref).
 - `configuration::CombinedCycleConfiguration`: Configuration type of the combined cycle
 - `operation_exclusion_map::AbstractDict`: (default: empty dict) Mapping of operation exclusion group numbers to unit UUIDs
 - `inverse_operation_exclusion_map::AbstractDict`: (default: empty dict) Reverse mapping from unit UUID to exclusion group number
-- `internal::InfrastructureSystemsInternal`: (default: `InfrastructureSystemsInternal()`) (**Do not modify.**) PowerSystems internal reference
+- `internal::InfrastructureSystemsInternal`: (default: `InfrastructureSystemsInternal()`)
+    (**Do not modify.**) PowerSystems.jl internal reference.
 """
 function CombinedCycleFractional(;
     name,
@@ -291,13 +354,28 @@ get_inverse_operation_exclusion_map(value::CombinedCycleFractional) =
     value.inverse_operation_exclusion_map
 
 """
-Attribute to represent hydro power plants with shared penstocks.
+    struct HydroPowerPlant <: PowerPlant
+        name::String
+        penstock_map::Dict{Int, Vector{Base.UUID}}
+        reverse_penstock_map::Dict{Base.UUID, Int}
+        internal::InfrastructureSystemsInternal
+    end
+
+Supplemental attribute representing a [`HydroGen`](@ref) power plant where multiple
+generating units share penstocks. The penstock maps capture the unit ↔ penstock topology
+for hydraulic coupling constraints.
 
 # Arguments
-- `name::String`: Name of the hydro power plant
-- `penstock_map::Dict{Int, Vector{Base.UUID}}`: Mapping of penstock numbers to unit UUIDs (multiple units can share a penstock)
-- `reverse_penstock_map::Dict{Base.UUID, Int}`: Reverse mapping from unit UUID to penstock number
-- `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems internal reference
+- `name::String`: Name of the hydro power plant.
+- `penstock_map::Dict{Int, Vector{Base.UUID}}`: Mapping from penstock index to the UUIDs
+    of units connected to that penstock (multiple units may share one penstock).
+- `reverse_penstock_map::Dict{Base.UUID, Int}`: Reverse mapping from a unit's UUID to the
+    index of its penstock.
+- `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal
+    reference.
+
+# See Also
+- [`HydroGen`](@ref): Abstract type for hydroelectric generating units.
 """
 struct HydroPowerPlant <: PowerPlant
     name::String
@@ -329,10 +407,13 @@ end
 Construct a [`HydroPowerPlant`](@ref).
 
 # Arguments
-- `name::String`: Name of the hydro power plant
-- `penstock_map::Dict{Int, Vector{Base.UUID}}`: (default: empty dict) Mapping of penstock numbers to unit UUIDs
-- `reverse_penstock_map::Dict{Base.UUID, Int}`: (default: empty dict) Reverse mapping from unit UUID to penstock number
-- `internal::InfrastructureSystemsInternal`: (default: `InfrastructureSystemsInternal()`) (**Do not modify.**) PowerSystems internal reference
+- `name::String`: Name of the hydro power plant.
+- `penstock_map::Dict{Int, Vector{Base.UUID}}`: (default: empty dict) Mapping from
+    penstock index to the UUIDs of units connected to that penstock.
+- `reverse_penstock_map::Dict{Base.UUID, Int}`: (default: empty dict) Reverse mapping
+    from a unit's UUID to its penstock index.
+- `internal::InfrastructureSystemsInternal`: (default: `InfrastructureSystemsInternal()`)
+    (**Do not modify.**) PowerSystems.jl internal reference.
 """
 function HydroPowerPlant(;
     name::String,
@@ -351,13 +432,28 @@ get_penstock_map(value::HydroPowerPlant) = value.penstock_map
 get_reverse_penstock_map(value::HydroPowerPlant) = value.reverse_penstock_map
 
 """
-Attribute to represent renewable power plants.
+    struct RenewablePowerPlant <: PowerPlant
+        name::String
+        pcc_map::Dict{Int, Vector{Base.UUID}}
+        reverse_pcc_map::Dict{Base.UUID, Int}
+        internal::InfrastructureSystemsInternal
+    end
+
+Supplemental attribute representing a [`RenewableGen`](@ref) power plant where multiple
+generating units share a point of common coupling (PCC). The PCC maps capture the
+unit ↔ PCC topology for grid connection constraints.
 
 # Arguments
-- `name::String`: Name of the renewable power plant
-- `pcc_map::Dict{Int, Vector{Base.UUID}}`: Mapping of PCC numbers to unit UUIDs (multiple units can share a PCC)
-- `reverse_pcc_map::Dict{Base.UUID, Int}`: Reverse mapping from unit UUID to PCC number
-- `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems internal reference
+- `name::String`: Name of the renewable power plant.
+- `pcc_map::Dict{Int, Vector{Base.UUID}}`: Mapping from PCC index to the UUIDs of units
+    connected to that PCC (multiple units may share one PCC).
+- `reverse_pcc_map::Dict{Base.UUID, Int}`: Reverse mapping from a unit's UUID to the
+    index of its PCC.
+- `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal
+    reference.
+
+# See Also
+- [`RenewableGen`](@ref): Abstract type for renewable generating units.
 """
 struct RenewablePowerPlant <: PowerPlant
     name::String
@@ -386,13 +482,16 @@ end
 """
     RenewablePowerPlant(; name, pcc_map, reverse_pcc_map, internal)
 
-Construct a [`RenewablePowerPlant`](@ref). This supports multiple point of common coupling (PCC) connections.
+Construct a [`RenewablePowerPlant`](@ref).
 
 # Arguments
-- `name::String`: Name of the renewable power plant
-- `pcc_map::Dict{Int, Vector{Base.UUID}}`: (default: empty dict) Mapping of PCC numbers to unit UUIDs
-- `reverse_pcc_map::Dict{Base.UUID, Int}`: (default: empty dict) Reverse mapping from unit UUID to PCC number
-- `internal::InfrastructureSystemsInternal`: (default: `InfrastructureSystemsInternal()`) (**Do not modify.**) PowerSystems internal reference
+- `name::String`: Name of the renewable power plant.
+- `pcc_map::Dict{Int, Vector{Base.UUID}}`: (default: empty dict) Mapping from PCC index
+    to the UUIDs of units connected to that PCC.
+- `reverse_pcc_map::Dict{Base.UUID, Int}`: (default: empty dict) Reverse mapping from a
+    unit's UUID to its PCC index.
+- `internal::InfrastructureSystemsInternal`: (default: `InfrastructureSystemsInternal()`)
+    (**Do not modify.**) PowerSystems.jl internal reference.
 """
 function RenewablePowerPlant(;
     name::String,
