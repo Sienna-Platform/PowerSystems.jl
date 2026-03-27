@@ -131,25 +131,25 @@ get_name(value::HydroDispatch) = value.name
 get_available(value::HydroDispatch) = value.available
 """Get [`HydroDispatch`](@ref) `bus`."""
 get_bus(value::HydroDispatch) = value.bus
-"""Get [`HydroDispatch`](@ref) `active_power`. Returns value in the system's unit setting (natural units by default)."""
-get_active_power(value::HydroDispatch) = get_value(value, Val(:active_power), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`HydroDispatch`](@ref) `active_power`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_active_power(value::HydroDispatch) = get_value(value, Val(:active_power), Val(:mva), DEFAULT_UNITS)
 get_active_power(value::HydroDispatch, units) = get_value(value, Val(:active_power), Val(:mva), units)
-"""Get [`HydroDispatch`](@ref) `reactive_power`. Returns value in the system's unit setting (natural units by default)."""
-get_reactive_power(value::HydroDispatch) = get_value(value, Val(:reactive_power), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`HydroDispatch`](@ref) `reactive_power`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_reactive_power(value::HydroDispatch) = get_value(value, Val(:reactive_power), Val(:mva), DEFAULT_UNITS)
 get_reactive_power(value::HydroDispatch, units) = get_value(value, Val(:reactive_power), Val(:mva), units)
-"""Get [`HydroDispatch`](@ref) `rating`. Returns value in the system's unit setting (natural units by default)."""
-get_rating(value::HydroDispatch) = get_value(value, Val(:rating), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`HydroDispatch`](@ref) `rating`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_rating(value::HydroDispatch) = get_value(value, Val(:rating), Val(:mva), DEFAULT_UNITS)
 get_rating(value::HydroDispatch, units) = get_value(value, Val(:rating), Val(:mva), units)
 """Get [`HydroDispatch`](@ref) `prime_mover_type`."""
 get_prime_mover_type(value::HydroDispatch) = value.prime_mover_type
-"""Get [`HydroDispatch`](@ref) `active_power_limits`. Returns value in the system's unit setting (natural units by default)."""
-get_active_power_limits(value::HydroDispatch) = get_value(value, Val(:active_power_limits), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`HydroDispatch`](@ref) `active_power_limits`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_active_power_limits(value::HydroDispatch) = get_value(value, Val(:active_power_limits), Val(:mva), DEFAULT_UNITS)
 get_active_power_limits(value::HydroDispatch, units) = get_value(value, Val(:active_power_limits), Val(:mva), units)
-"""Get [`HydroDispatch`](@ref) `reactive_power_limits`. Returns value in the system's unit setting (natural units by default)."""
-get_reactive_power_limits(value::HydroDispatch) = get_value(value, Val(:reactive_power_limits), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`HydroDispatch`](@ref) `reactive_power_limits`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_reactive_power_limits(value::HydroDispatch) = get_value(value, Val(:reactive_power_limits), Val(:mva), DEFAULT_UNITS)
 get_reactive_power_limits(value::HydroDispatch, units) = get_value(value, Val(:reactive_power_limits), Val(:mva), units)
-"""Get [`HydroDispatch`](@ref) `ramp_limits`. Returns value in the system's unit setting (natural units by default)."""
-get_ramp_limits(value::HydroDispatch) = get_value(value, Val(:ramp_limits), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`HydroDispatch`](@ref) `ramp_limits`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_ramp_limits(value::HydroDispatch) = get_value(value, Val(:ramp_limits), Val(:mva), DEFAULT_UNITS)
 get_ramp_limits(value::HydroDispatch, units) = get_value(value, Val(:ramp_limits), Val(:mva), units)
 """Get [`HydroDispatch`](@ref) `time_limits`."""
 get_time_limits(value::HydroDispatch) = value.time_limits

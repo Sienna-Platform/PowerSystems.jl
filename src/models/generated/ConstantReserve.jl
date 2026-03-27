@@ -86,8 +86,8 @@ get_name(value::ConstantReserve) = value.name
 get_available(value::ConstantReserve) = value.available
 """Get [`ConstantReserve`](@ref) `time_frame`."""
 get_time_frame(value::ConstantReserve) = value.time_frame
-"""Get [`ConstantReserve`](@ref) `requirement`. Returns value in the system's unit setting (natural units by default)."""
-get_requirement(value::ConstantReserve) = get_value(value, Val(:requirement), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`ConstantReserve`](@ref) `requirement`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_requirement(value::ConstantReserve) = get_value(value, Val(:requirement), Val(:mva), DEFAULT_UNITS)
 get_requirement(value::ConstantReserve, units) = get_value(value, Val(:requirement), Val(:mva), units)
 """Get [`ConstantReserve`](@ref) `sustained_time`."""
 get_sustained_time(value::ConstantReserve) = value.sustained_time

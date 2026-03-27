@@ -302,62 +302,62 @@ get_secondary_star_arc(value::PhaseShiftingTransformer3W) = value.secondary_star
 get_tertiary_star_arc(value::PhaseShiftingTransformer3W) = value.tertiary_star_arc
 """Get [`PhaseShiftingTransformer3W`](@ref) `star_bus`."""
 get_star_bus(value::PhaseShiftingTransformer3W) = value.star_bus
-"""Get [`PhaseShiftingTransformer3W`](@ref) `active_power_flow_primary`. Returns value in the system's unit setting (natural units by default)."""
-get_active_power_flow_primary(value::PhaseShiftingTransformer3W) = get_value(value, Val(:active_power_flow_primary), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`PhaseShiftingTransformer3W`](@ref) `active_power_flow_primary`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_active_power_flow_primary(value::PhaseShiftingTransformer3W) = get_value(value, Val(:active_power_flow_primary), Val(:mva), DEFAULT_UNITS)
 get_active_power_flow_primary(value::PhaseShiftingTransformer3W, units) = get_value(value, Val(:active_power_flow_primary), Val(:mva), units)
-"""Get [`PhaseShiftingTransformer3W`](@ref) `reactive_power_flow_primary`. Returns value in the system's unit setting (natural units by default)."""
-get_reactive_power_flow_primary(value::PhaseShiftingTransformer3W) = get_value(value, Val(:reactive_power_flow_primary), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`PhaseShiftingTransformer3W`](@ref) `reactive_power_flow_primary`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_reactive_power_flow_primary(value::PhaseShiftingTransformer3W) = get_value(value, Val(:reactive_power_flow_primary), Val(:mva), DEFAULT_UNITS)
 get_reactive_power_flow_primary(value::PhaseShiftingTransformer3W, units) = get_value(value, Val(:reactive_power_flow_primary), Val(:mva), units)
-"""Get [`PhaseShiftingTransformer3W`](@ref) `active_power_flow_secondary`. Returns value in the system's unit setting (natural units by default)."""
-get_active_power_flow_secondary(value::PhaseShiftingTransformer3W) = get_value(value, Val(:active_power_flow_secondary), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`PhaseShiftingTransformer3W`](@ref) `active_power_flow_secondary`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_active_power_flow_secondary(value::PhaseShiftingTransformer3W) = get_value(value, Val(:active_power_flow_secondary), Val(:mva), DEFAULT_UNITS)
 get_active_power_flow_secondary(value::PhaseShiftingTransformer3W, units) = get_value(value, Val(:active_power_flow_secondary), Val(:mva), units)
-"""Get [`PhaseShiftingTransformer3W`](@ref) `reactive_power_flow_secondary`. Returns value in the system's unit setting (natural units by default)."""
-get_reactive_power_flow_secondary(value::PhaseShiftingTransformer3W) = get_value(value, Val(:reactive_power_flow_secondary), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`PhaseShiftingTransformer3W`](@ref) `reactive_power_flow_secondary`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_reactive_power_flow_secondary(value::PhaseShiftingTransformer3W) = get_value(value, Val(:reactive_power_flow_secondary), Val(:mva), DEFAULT_UNITS)
 get_reactive_power_flow_secondary(value::PhaseShiftingTransformer3W, units) = get_value(value, Val(:reactive_power_flow_secondary), Val(:mva), units)
-"""Get [`PhaseShiftingTransformer3W`](@ref) `active_power_flow_tertiary`. Returns value in the system's unit setting (natural units by default)."""
-get_active_power_flow_tertiary(value::PhaseShiftingTransformer3W) = get_value(value, Val(:active_power_flow_tertiary), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`PhaseShiftingTransformer3W`](@ref) `active_power_flow_tertiary`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_active_power_flow_tertiary(value::PhaseShiftingTransformer3W) = get_value(value, Val(:active_power_flow_tertiary), Val(:mva), DEFAULT_UNITS)
 get_active_power_flow_tertiary(value::PhaseShiftingTransformer3W, units) = get_value(value, Val(:active_power_flow_tertiary), Val(:mva), units)
-"""Get [`PhaseShiftingTransformer3W`](@ref) `reactive_power_flow_tertiary`. Returns value in the system's unit setting (natural units by default)."""
-get_reactive_power_flow_tertiary(value::PhaseShiftingTransformer3W) = get_value(value, Val(:reactive_power_flow_tertiary), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`PhaseShiftingTransformer3W`](@ref) `reactive_power_flow_tertiary`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_reactive_power_flow_tertiary(value::PhaseShiftingTransformer3W) = get_value(value, Val(:reactive_power_flow_tertiary), Val(:mva), DEFAULT_UNITS)
 get_reactive_power_flow_tertiary(value::PhaseShiftingTransformer3W, units) = get_value(value, Val(:reactive_power_flow_tertiary), Val(:mva), units)
-"""Get [`PhaseShiftingTransformer3W`](@ref) `r_primary`. Returns value in the system's unit setting (natural units by default)."""
-get_r_primary(value::PhaseShiftingTransformer3W) = get_value(value, Val(:r_primary), Val(:ohm), _get_system_units(value, Val(:ohm)))
+"""Get [`PhaseShiftingTransformer3W`](@ref) `r_primary`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_r_primary(value::PhaseShiftingTransformer3W) = get_value(value, Val(:r_primary), Val(:ohm), DEFAULT_UNITS)
 get_r_primary(value::PhaseShiftingTransformer3W, units) = get_value(value, Val(:r_primary), Val(:ohm), units)
-"""Get [`PhaseShiftingTransformer3W`](@ref) `x_primary`. Returns value in the system's unit setting (natural units by default)."""
-get_x_primary(value::PhaseShiftingTransformer3W) = get_value(value, Val(:x_primary), Val(:ohm), _get_system_units(value, Val(:ohm)))
+"""Get [`PhaseShiftingTransformer3W`](@ref) `x_primary`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_x_primary(value::PhaseShiftingTransformer3W) = get_value(value, Val(:x_primary), Val(:ohm), DEFAULT_UNITS)
 get_x_primary(value::PhaseShiftingTransformer3W, units) = get_value(value, Val(:x_primary), Val(:ohm), units)
-"""Get [`PhaseShiftingTransformer3W`](@ref) `r_secondary`. Returns value in the system's unit setting (natural units by default)."""
-get_r_secondary(value::PhaseShiftingTransformer3W) = get_value(value, Val(:r_secondary), Val(:ohm), _get_system_units(value, Val(:ohm)))
+"""Get [`PhaseShiftingTransformer3W`](@ref) `r_secondary`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_r_secondary(value::PhaseShiftingTransformer3W) = get_value(value, Val(:r_secondary), Val(:ohm), DEFAULT_UNITS)
 get_r_secondary(value::PhaseShiftingTransformer3W, units) = get_value(value, Val(:r_secondary), Val(:ohm), units)
-"""Get [`PhaseShiftingTransformer3W`](@ref) `x_secondary`. Returns value in the system's unit setting (natural units by default)."""
-get_x_secondary(value::PhaseShiftingTransformer3W) = get_value(value, Val(:x_secondary), Val(:ohm), _get_system_units(value, Val(:ohm)))
+"""Get [`PhaseShiftingTransformer3W`](@ref) `x_secondary`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_x_secondary(value::PhaseShiftingTransformer3W) = get_value(value, Val(:x_secondary), Val(:ohm), DEFAULT_UNITS)
 get_x_secondary(value::PhaseShiftingTransformer3W, units) = get_value(value, Val(:x_secondary), Val(:ohm), units)
-"""Get [`PhaseShiftingTransformer3W`](@ref) `r_tertiary`. Returns value in the system's unit setting (natural units by default)."""
-get_r_tertiary(value::PhaseShiftingTransformer3W) = get_value(value, Val(:r_tertiary), Val(:ohm), _get_system_units(value, Val(:ohm)))
+"""Get [`PhaseShiftingTransformer3W`](@ref) `r_tertiary`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_r_tertiary(value::PhaseShiftingTransformer3W) = get_value(value, Val(:r_tertiary), Val(:ohm), DEFAULT_UNITS)
 get_r_tertiary(value::PhaseShiftingTransformer3W, units) = get_value(value, Val(:r_tertiary), Val(:ohm), units)
-"""Get [`PhaseShiftingTransformer3W`](@ref) `x_tertiary`. Returns value in the system's unit setting (natural units by default)."""
-get_x_tertiary(value::PhaseShiftingTransformer3W) = get_value(value, Val(:x_tertiary), Val(:ohm), _get_system_units(value, Val(:ohm)))
+"""Get [`PhaseShiftingTransformer3W`](@ref) `x_tertiary`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_x_tertiary(value::PhaseShiftingTransformer3W) = get_value(value, Val(:x_tertiary), Val(:ohm), DEFAULT_UNITS)
 get_x_tertiary(value::PhaseShiftingTransformer3W, units) = get_value(value, Val(:x_tertiary), Val(:ohm), units)
-"""Get [`PhaseShiftingTransformer3W`](@ref) `rating`. Returns value in the system's unit setting (natural units by default)."""
-get_rating(value::PhaseShiftingTransformer3W) = get_value(value, Val(:rating), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`PhaseShiftingTransformer3W`](@ref) `rating`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_rating(value::PhaseShiftingTransformer3W) = get_value(value, Val(:rating), Val(:mva), DEFAULT_UNITS)
 get_rating(value::PhaseShiftingTransformer3W, units) = get_value(value, Val(:rating), Val(:mva), units)
-"""Get [`PhaseShiftingTransformer3W`](@ref) `r_12`. Returns value in the system's unit setting (natural units by default)."""
-get_r_12(value::PhaseShiftingTransformer3W) = get_value(value, Val(:r_12), Val(:ohm), _get_system_units(value, Val(:ohm)))
+"""Get [`PhaseShiftingTransformer3W`](@ref) `r_12`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_r_12(value::PhaseShiftingTransformer3W) = get_value(value, Val(:r_12), Val(:ohm), DEFAULT_UNITS)
 get_r_12(value::PhaseShiftingTransformer3W, units) = get_value(value, Val(:r_12), Val(:ohm), units)
-"""Get [`PhaseShiftingTransformer3W`](@ref) `x_12`. Returns value in the system's unit setting (natural units by default)."""
-get_x_12(value::PhaseShiftingTransformer3W) = get_value(value, Val(:x_12), Val(:ohm), _get_system_units(value, Val(:ohm)))
+"""Get [`PhaseShiftingTransformer3W`](@ref) `x_12`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_x_12(value::PhaseShiftingTransformer3W) = get_value(value, Val(:x_12), Val(:ohm), DEFAULT_UNITS)
 get_x_12(value::PhaseShiftingTransformer3W, units) = get_value(value, Val(:x_12), Val(:ohm), units)
-"""Get [`PhaseShiftingTransformer3W`](@ref) `r_23`. Returns value in the system's unit setting (natural units by default)."""
-get_r_23(value::PhaseShiftingTransformer3W) = get_value(value, Val(:r_23), Val(:ohm), _get_system_units(value, Val(:ohm)))
+"""Get [`PhaseShiftingTransformer3W`](@ref) `r_23`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_r_23(value::PhaseShiftingTransformer3W) = get_value(value, Val(:r_23), Val(:ohm), DEFAULT_UNITS)
 get_r_23(value::PhaseShiftingTransformer3W, units) = get_value(value, Val(:r_23), Val(:ohm), units)
-"""Get [`PhaseShiftingTransformer3W`](@ref) `x_23`. Returns value in the system's unit setting (natural units by default)."""
-get_x_23(value::PhaseShiftingTransformer3W) = get_value(value, Val(:x_23), Val(:ohm), _get_system_units(value, Val(:ohm)))
+"""Get [`PhaseShiftingTransformer3W`](@ref) `x_23`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_x_23(value::PhaseShiftingTransformer3W) = get_value(value, Val(:x_23), Val(:ohm), DEFAULT_UNITS)
 get_x_23(value::PhaseShiftingTransformer3W, units) = get_value(value, Val(:x_23), Val(:ohm), units)
-"""Get [`PhaseShiftingTransformer3W`](@ref) `r_13`. Returns value in the system's unit setting (natural units by default)."""
-get_r_13(value::PhaseShiftingTransformer3W) = get_value(value, Val(:r_13), Val(:ohm), _get_system_units(value, Val(:ohm)))
+"""Get [`PhaseShiftingTransformer3W`](@ref) `r_13`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_r_13(value::PhaseShiftingTransformer3W) = get_value(value, Val(:r_13), Val(:ohm), DEFAULT_UNITS)
 get_r_13(value::PhaseShiftingTransformer3W, units) = get_value(value, Val(:r_13), Val(:ohm), units)
-"""Get [`PhaseShiftingTransformer3W`](@ref) `x_13`. Returns value in the system's unit setting (natural units by default)."""
-get_x_13(value::PhaseShiftingTransformer3W) = get_value(value, Val(:x_13), Val(:ohm), _get_system_units(value, Val(:ohm)))
+"""Get [`PhaseShiftingTransformer3W`](@ref) `x_13`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_x_13(value::PhaseShiftingTransformer3W) = get_value(value, Val(:x_13), Val(:ohm), DEFAULT_UNITS)
 get_x_13(value::PhaseShiftingTransformer3W, units) = get_value(value, Val(:x_13), Val(:ohm), units)
 """Get [`PhaseShiftingTransformer3W`](@ref) `α_primary`."""
 get_α_primary(value::PhaseShiftingTransformer3W) = value.α_primary
@@ -377,11 +377,11 @@ get_base_voltage_primary(value::PhaseShiftingTransformer3W) = value.base_voltage
 get_base_voltage_secondary(value::PhaseShiftingTransformer3W) = value.base_voltage_secondary
 """Get [`PhaseShiftingTransformer3W`](@ref) `base_voltage_tertiary`."""
 get_base_voltage_tertiary(value::PhaseShiftingTransformer3W) = value.base_voltage_tertiary
-"""Get [`PhaseShiftingTransformer3W`](@ref) `g`. Returns value in the system's unit setting (natural units by default)."""
-get_g(value::PhaseShiftingTransformer3W) = get_value(value, Val(:g), Val(:siemens), _get_system_units(value, Val(:siemens)))
+"""Get [`PhaseShiftingTransformer3W`](@ref) `g`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_g(value::PhaseShiftingTransformer3W) = get_value(value, Val(:g), Val(:siemens), DEFAULT_UNITS)
 get_g(value::PhaseShiftingTransformer3W, units) = get_value(value, Val(:g), Val(:siemens), units)
-"""Get [`PhaseShiftingTransformer3W`](@ref) `b`. Returns value in the system's unit setting (natural units by default)."""
-get_b(value::PhaseShiftingTransformer3W) = get_value(value, Val(:b), Val(:siemens), _get_system_units(value, Val(:siemens)))
+"""Get [`PhaseShiftingTransformer3W`](@ref) `b`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_b(value::PhaseShiftingTransformer3W) = get_value(value, Val(:b), Val(:siemens), DEFAULT_UNITS)
 get_b(value::PhaseShiftingTransformer3W, units) = get_value(value, Val(:b), Val(:siemens), units)
 """Get [`PhaseShiftingTransformer3W`](@ref) `primary_turns_ratio`."""
 get_primary_turns_ratio(value::PhaseShiftingTransformer3W) = value.primary_turns_ratio
@@ -395,14 +395,14 @@ get_available_primary(value::PhaseShiftingTransformer3W) = value.available_prima
 get_available_secondary(value::PhaseShiftingTransformer3W) = value.available_secondary
 """Get [`PhaseShiftingTransformer3W`](@ref) `available_tertiary`."""
 get_available_tertiary(value::PhaseShiftingTransformer3W) = value.available_tertiary
-"""Get [`PhaseShiftingTransformer3W`](@ref) `rating_primary`. Returns value in the system's unit setting (natural units by default)."""
-get_rating_primary(value::PhaseShiftingTransformer3W) = get_value(value, Val(:rating_primary), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`PhaseShiftingTransformer3W`](@ref) `rating_primary`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_rating_primary(value::PhaseShiftingTransformer3W) = get_value(value, Val(:rating_primary), Val(:mva), DEFAULT_UNITS)
 get_rating_primary(value::PhaseShiftingTransformer3W, units) = get_value(value, Val(:rating_primary), Val(:mva), units)
-"""Get [`PhaseShiftingTransformer3W`](@ref) `rating_secondary`. Returns value in the system's unit setting (natural units by default)."""
-get_rating_secondary(value::PhaseShiftingTransformer3W) = get_value(value, Val(:rating_secondary), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`PhaseShiftingTransformer3W`](@ref) `rating_secondary`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_rating_secondary(value::PhaseShiftingTransformer3W) = get_value(value, Val(:rating_secondary), Val(:mva), DEFAULT_UNITS)
 get_rating_secondary(value::PhaseShiftingTransformer3W, units) = get_value(value, Val(:rating_secondary), Val(:mva), units)
-"""Get [`PhaseShiftingTransformer3W`](@ref) `rating_tertiary`. Returns value in the system's unit setting (natural units by default)."""
-get_rating_tertiary(value::PhaseShiftingTransformer3W) = get_value(value, Val(:rating_tertiary), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`PhaseShiftingTransformer3W`](@ref) `rating_tertiary`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_rating_tertiary(value::PhaseShiftingTransformer3W) = get_value(value, Val(:rating_tertiary), Val(:mva), DEFAULT_UNITS)
 get_rating_tertiary(value::PhaseShiftingTransformer3W, units) = get_value(value, Val(:rating_tertiary), Val(:mva), units)
 """Get [`PhaseShiftingTransformer3W`](@ref) `phase_angle_limits`."""
 get_phase_angle_limits(value::PhaseShiftingTransformer3W) = value.phase_angle_limits

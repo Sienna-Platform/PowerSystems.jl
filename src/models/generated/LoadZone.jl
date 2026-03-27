@@ -57,11 +57,11 @@ end
 
 """Get [`LoadZone`](@ref) `name`."""
 get_name(value::LoadZone) = value.name
-"""Get [`LoadZone`](@ref) `peak_active_power`. Returns value in the system's unit setting (natural units by default)."""
-get_peak_active_power(value::LoadZone) = get_value(value, Val(:peak_active_power), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`LoadZone`](@ref) `peak_active_power`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_peak_active_power(value::LoadZone) = get_value(value, Val(:peak_active_power), Val(:mva), DEFAULT_UNITS)
 get_peak_active_power(value::LoadZone, units) = get_value(value, Val(:peak_active_power), Val(:mva), units)
-"""Get [`LoadZone`](@ref) `peak_reactive_power`. Returns value in the system's unit setting (natural units by default)."""
-get_peak_reactive_power(value::LoadZone) = get_value(value, Val(:peak_reactive_power), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`LoadZone`](@ref) `peak_reactive_power`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_peak_reactive_power(value::LoadZone) = get_value(value, Val(:peak_reactive_power), Val(:mva), DEFAULT_UNITS)
 get_peak_reactive_power(value::LoadZone, units) = get_value(value, Val(:peak_reactive_power), Val(:mva), units)
 """Get [`LoadZone`](@ref) `ext`."""
 get_ext(value::LoadZone) = value.ext

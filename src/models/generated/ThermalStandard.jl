@@ -143,23 +143,23 @@ get_available(value::ThermalStandard) = value.available
 get_status(value::ThermalStandard) = value.status
 """Get [`ThermalStandard`](@ref) `bus`."""
 get_bus(value::ThermalStandard) = value.bus
-"""Get [`ThermalStandard`](@ref) `active_power`. Returns value in the system's unit setting (natural units by default)."""
-get_active_power(value::ThermalStandard) = get_value(value, Val(:active_power), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`ThermalStandard`](@ref) `active_power`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_active_power(value::ThermalStandard) = get_value(value, Val(:active_power), Val(:mva), DEFAULT_UNITS)
 get_active_power(value::ThermalStandard, units) = get_value(value, Val(:active_power), Val(:mva), units)
-"""Get [`ThermalStandard`](@ref) `reactive_power`. Returns value in the system's unit setting (natural units by default)."""
-get_reactive_power(value::ThermalStandard) = get_value(value, Val(:reactive_power), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`ThermalStandard`](@ref) `reactive_power`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_reactive_power(value::ThermalStandard) = get_value(value, Val(:reactive_power), Val(:mva), DEFAULT_UNITS)
 get_reactive_power(value::ThermalStandard, units) = get_value(value, Val(:reactive_power), Val(:mva), units)
-"""Get [`ThermalStandard`](@ref) `rating`. Returns value in the system's unit setting (natural units by default)."""
-get_rating(value::ThermalStandard) = get_value(value, Val(:rating), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`ThermalStandard`](@ref) `rating`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_rating(value::ThermalStandard) = get_value(value, Val(:rating), Val(:mva), DEFAULT_UNITS)
 get_rating(value::ThermalStandard, units) = get_value(value, Val(:rating), Val(:mva), units)
-"""Get [`ThermalStandard`](@ref) `active_power_limits`. Returns value in the system's unit setting (natural units by default)."""
-get_active_power_limits(value::ThermalStandard) = get_value(value, Val(:active_power_limits), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`ThermalStandard`](@ref) `active_power_limits`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_active_power_limits(value::ThermalStandard) = get_value(value, Val(:active_power_limits), Val(:mva), DEFAULT_UNITS)
 get_active_power_limits(value::ThermalStandard, units) = get_value(value, Val(:active_power_limits), Val(:mva), units)
-"""Get [`ThermalStandard`](@ref) `reactive_power_limits`. Returns value in the system's unit setting (natural units by default)."""
-get_reactive_power_limits(value::ThermalStandard) = get_value(value, Val(:reactive_power_limits), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`ThermalStandard`](@ref) `reactive_power_limits`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_reactive_power_limits(value::ThermalStandard) = get_value(value, Val(:reactive_power_limits), Val(:mva), DEFAULT_UNITS)
 get_reactive_power_limits(value::ThermalStandard, units) = get_value(value, Val(:reactive_power_limits), Val(:mva), units)
-"""Get [`ThermalStandard`](@ref) `ramp_limits`. Returns value in the system's unit setting (natural units by default)."""
-get_ramp_limits(value::ThermalStandard) = get_value(value, Val(:ramp_limits), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`ThermalStandard`](@ref) `ramp_limits`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_ramp_limits(value::ThermalStandard) = get_value(value, Val(:ramp_limits), Val(:mva), DEFAULT_UNITS)
 get_ramp_limits(value::ThermalStandard, units) = get_value(value, Val(:ramp_limits), Val(:mva), units)
 """Get [`ThermalStandard`](@ref) `operation_cost`."""
 get_operation_cost(value::ThermalStandard) = value.operation_cost

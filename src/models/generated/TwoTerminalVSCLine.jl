@@ -206,24 +206,24 @@ get_name(value::TwoTerminalVSCLine) = value.name
 get_available(value::TwoTerminalVSCLine) = value.available
 """Get [`TwoTerminalVSCLine`](@ref) `arc`."""
 get_arc(value::TwoTerminalVSCLine) = value.arc
-"""Get [`TwoTerminalVSCLine`](@ref) `active_power_flow`. Returns value in the system's unit setting (natural units by default)."""
-get_active_power_flow(value::TwoTerminalVSCLine) = get_value(value, Val(:active_power_flow), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`TwoTerminalVSCLine`](@ref) `active_power_flow`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_active_power_flow(value::TwoTerminalVSCLine) = get_value(value, Val(:active_power_flow), Val(:mva), DEFAULT_UNITS)
 get_active_power_flow(value::TwoTerminalVSCLine, units) = get_value(value, Val(:active_power_flow), Val(:mva), units)
-"""Get [`TwoTerminalVSCLine`](@ref) `rating`. Returns value in the system's unit setting (natural units by default)."""
-get_rating(value::TwoTerminalVSCLine) = get_value(value, Val(:rating), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`TwoTerminalVSCLine`](@ref) `rating`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_rating(value::TwoTerminalVSCLine) = get_value(value, Val(:rating), Val(:mva), DEFAULT_UNITS)
 get_rating(value::TwoTerminalVSCLine, units) = get_value(value, Val(:rating), Val(:mva), units)
-"""Get [`TwoTerminalVSCLine`](@ref) `active_power_limits_from`. Returns value in the system's unit setting (natural units by default)."""
-get_active_power_limits_from(value::TwoTerminalVSCLine) = get_value(value, Val(:active_power_limits_from), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`TwoTerminalVSCLine`](@ref) `active_power_limits_from`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_active_power_limits_from(value::TwoTerminalVSCLine) = get_value(value, Val(:active_power_limits_from), Val(:mva), DEFAULT_UNITS)
 get_active_power_limits_from(value::TwoTerminalVSCLine, units) = get_value(value, Val(:active_power_limits_from), Val(:mva), units)
-"""Get [`TwoTerminalVSCLine`](@ref) `active_power_limits_to`. Returns value in the system's unit setting (natural units by default)."""
-get_active_power_limits_to(value::TwoTerminalVSCLine) = get_value(value, Val(:active_power_limits_to), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`TwoTerminalVSCLine`](@ref) `active_power_limits_to`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_active_power_limits_to(value::TwoTerminalVSCLine) = get_value(value, Val(:active_power_limits_to), Val(:mva), DEFAULT_UNITS)
 get_active_power_limits_to(value::TwoTerminalVSCLine, units) = get_value(value, Val(:active_power_limits_to), Val(:mva), units)
 """Get [`TwoTerminalVSCLine`](@ref) `g`."""
 get_g(value::TwoTerminalVSCLine) = value.g
 """Get [`TwoTerminalVSCLine`](@ref) `dc_current`."""
 get_dc_current(value::TwoTerminalVSCLine) = value.dc_current
-"""Get [`TwoTerminalVSCLine`](@ref) `reactive_power_from`. Returns value in the system's unit setting (natural units by default)."""
-get_reactive_power_from(value::TwoTerminalVSCLine) = get_value(value, Val(:reactive_power_from), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`TwoTerminalVSCLine`](@ref) `reactive_power_from`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_reactive_power_from(value::TwoTerminalVSCLine) = get_value(value, Val(:reactive_power_from), Val(:mva), DEFAULT_UNITS)
 get_reactive_power_from(value::TwoTerminalVSCLine, units) = get_value(value, Val(:reactive_power_from), Val(:mva), units)
 """Get [`TwoTerminalVSCLine`](@ref) `dc_voltage_control_from`."""
 get_dc_voltage_control_from(value::TwoTerminalVSCLine) = value.dc_voltage_control_from
@@ -237,18 +237,18 @@ get_ac_setpoint_from(value::TwoTerminalVSCLine) = value.ac_setpoint_from
 get_converter_loss_from(value::TwoTerminalVSCLine) = value.converter_loss_from
 """Get [`TwoTerminalVSCLine`](@ref) `max_dc_current_from`."""
 get_max_dc_current_from(value::TwoTerminalVSCLine) = value.max_dc_current_from
-"""Get [`TwoTerminalVSCLine`](@ref) `rating_from`. Returns value in the system's unit setting (natural units by default)."""
-get_rating_from(value::TwoTerminalVSCLine) = get_value(value, Val(:rating_from), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`TwoTerminalVSCLine`](@ref) `rating_from`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_rating_from(value::TwoTerminalVSCLine) = get_value(value, Val(:rating_from), Val(:mva), DEFAULT_UNITS)
 get_rating_from(value::TwoTerminalVSCLine, units) = get_value(value, Val(:rating_from), Val(:mva), units)
-"""Get [`TwoTerminalVSCLine`](@ref) `reactive_power_limits_from`. Returns value in the system's unit setting (natural units by default)."""
-get_reactive_power_limits_from(value::TwoTerminalVSCLine) = get_value(value, Val(:reactive_power_limits_from), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`TwoTerminalVSCLine`](@ref) `reactive_power_limits_from`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_reactive_power_limits_from(value::TwoTerminalVSCLine) = get_value(value, Val(:reactive_power_limits_from), Val(:mva), DEFAULT_UNITS)
 get_reactive_power_limits_from(value::TwoTerminalVSCLine, units) = get_value(value, Val(:reactive_power_limits_from), Val(:mva), units)
 """Get [`TwoTerminalVSCLine`](@ref) `power_factor_weighting_fraction_from`."""
 get_power_factor_weighting_fraction_from(value::TwoTerminalVSCLine) = value.power_factor_weighting_fraction_from
 """Get [`TwoTerminalVSCLine`](@ref) `voltage_limits_from`."""
 get_voltage_limits_from(value::TwoTerminalVSCLine) = value.voltage_limits_from
-"""Get [`TwoTerminalVSCLine`](@ref) `reactive_power_to`. Returns value in the system's unit setting (natural units by default)."""
-get_reactive_power_to(value::TwoTerminalVSCLine) = get_value(value, Val(:reactive_power_to), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`TwoTerminalVSCLine`](@ref) `reactive_power_to`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_reactive_power_to(value::TwoTerminalVSCLine) = get_value(value, Val(:reactive_power_to), Val(:mva), DEFAULT_UNITS)
 get_reactive_power_to(value::TwoTerminalVSCLine, units) = get_value(value, Val(:reactive_power_to), Val(:mva), units)
 """Get [`TwoTerminalVSCLine`](@ref) `dc_voltage_control_to`."""
 get_dc_voltage_control_to(value::TwoTerminalVSCLine) = value.dc_voltage_control_to
@@ -262,11 +262,11 @@ get_ac_setpoint_to(value::TwoTerminalVSCLine) = value.ac_setpoint_to
 get_converter_loss_to(value::TwoTerminalVSCLine) = value.converter_loss_to
 """Get [`TwoTerminalVSCLine`](@ref) `max_dc_current_to`."""
 get_max_dc_current_to(value::TwoTerminalVSCLine) = value.max_dc_current_to
-"""Get [`TwoTerminalVSCLine`](@ref) `rating_to`. Returns value in the system's unit setting (natural units by default)."""
-get_rating_to(value::TwoTerminalVSCLine) = get_value(value, Val(:rating_to), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`TwoTerminalVSCLine`](@ref) `rating_to`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_rating_to(value::TwoTerminalVSCLine) = get_value(value, Val(:rating_to), Val(:mva), DEFAULT_UNITS)
 get_rating_to(value::TwoTerminalVSCLine, units) = get_value(value, Val(:rating_to), Val(:mva), units)
-"""Get [`TwoTerminalVSCLine`](@ref) `reactive_power_limits_to`. Returns value in the system's unit setting (natural units by default)."""
-get_reactive_power_limits_to(value::TwoTerminalVSCLine) = get_value(value, Val(:reactive_power_limits_to), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`TwoTerminalVSCLine`](@ref) `reactive_power_limits_to`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_reactive_power_limits_to(value::TwoTerminalVSCLine) = get_value(value, Val(:reactive_power_limits_to), Val(:mva), DEFAULT_UNITS)
 get_reactive_power_limits_to(value::TwoTerminalVSCLine, units) = get_value(value, Val(:reactive_power_limits_to), Val(:mva), units)
 """Get [`TwoTerminalVSCLine`](@ref) `power_factor_weighting_fraction_to`."""
 get_power_factor_weighting_fraction_to(value::TwoTerminalVSCLine) = value.power_factor_weighting_fraction_to

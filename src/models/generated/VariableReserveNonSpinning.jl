@@ -88,8 +88,8 @@ get_name(value::VariableReserveNonSpinning) = value.name
 get_available(value::VariableReserveNonSpinning) = value.available
 """Get [`VariableReserveNonSpinning`](@ref) `time_frame`."""
 get_time_frame(value::VariableReserveNonSpinning) = value.time_frame
-"""Get [`VariableReserveNonSpinning`](@ref) `requirement`. Returns value in the system's unit setting (natural units by default)."""
-get_requirement(value::VariableReserveNonSpinning) = get_value(value, Val(:requirement), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`VariableReserveNonSpinning`](@ref) `requirement`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_requirement(value::VariableReserveNonSpinning) = get_value(value, Val(:requirement), Val(:mva), DEFAULT_UNITS)
 get_requirement(value::VariableReserveNonSpinning, units) = get_value(value, Val(:requirement), Val(:mva), units)
 """Get [`VariableReserveNonSpinning`](@ref) `sustained_time`."""
 get_sustained_time(value::VariableReserveNonSpinning) = value.sustained_time

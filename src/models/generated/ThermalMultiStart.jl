@@ -157,30 +157,30 @@ get_available(value::ThermalMultiStart) = value.available
 get_status(value::ThermalMultiStart) = value.status
 """Get [`ThermalMultiStart`](@ref) `bus`."""
 get_bus(value::ThermalMultiStart) = value.bus
-"""Get [`ThermalMultiStart`](@ref) `active_power`. Returns value in the system's unit setting (natural units by default)."""
-get_active_power(value::ThermalMultiStart) = get_value(value, Val(:active_power), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`ThermalMultiStart`](@ref) `active_power`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_active_power(value::ThermalMultiStart) = get_value(value, Val(:active_power), Val(:mva), DEFAULT_UNITS)
 get_active_power(value::ThermalMultiStart, units) = get_value(value, Val(:active_power), Val(:mva), units)
-"""Get [`ThermalMultiStart`](@ref) `reactive_power`. Returns value in the system's unit setting (natural units by default)."""
-get_reactive_power(value::ThermalMultiStart) = get_value(value, Val(:reactive_power), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`ThermalMultiStart`](@ref) `reactive_power`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_reactive_power(value::ThermalMultiStart) = get_value(value, Val(:reactive_power), Val(:mva), DEFAULT_UNITS)
 get_reactive_power(value::ThermalMultiStart, units) = get_value(value, Val(:reactive_power), Val(:mva), units)
-"""Get [`ThermalMultiStart`](@ref) `rating`. Returns value in the system's unit setting (natural units by default)."""
-get_rating(value::ThermalMultiStart) = get_value(value, Val(:rating), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`ThermalMultiStart`](@ref) `rating`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_rating(value::ThermalMultiStart) = get_value(value, Val(:rating), Val(:mva), DEFAULT_UNITS)
 get_rating(value::ThermalMultiStart, units) = get_value(value, Val(:rating), Val(:mva), units)
 """Get [`ThermalMultiStart`](@ref) `prime_mover_type`."""
 get_prime_mover_type(value::ThermalMultiStart) = value.prime_mover_type
 """Get [`ThermalMultiStart`](@ref) `fuel`."""
 get_fuel(value::ThermalMultiStart) = value.fuel
-"""Get [`ThermalMultiStart`](@ref) `active_power_limits`. Returns value in the system's unit setting (natural units by default)."""
-get_active_power_limits(value::ThermalMultiStart) = get_value(value, Val(:active_power_limits), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`ThermalMultiStart`](@ref) `active_power_limits`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_active_power_limits(value::ThermalMultiStart) = get_value(value, Val(:active_power_limits), Val(:mva), DEFAULT_UNITS)
 get_active_power_limits(value::ThermalMultiStart, units) = get_value(value, Val(:active_power_limits), Val(:mva), units)
-"""Get [`ThermalMultiStart`](@ref) `reactive_power_limits`. Returns value in the system's unit setting (natural units by default)."""
-get_reactive_power_limits(value::ThermalMultiStart) = get_value(value, Val(:reactive_power_limits), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`ThermalMultiStart`](@ref) `reactive_power_limits`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_reactive_power_limits(value::ThermalMultiStart) = get_value(value, Val(:reactive_power_limits), Val(:mva), DEFAULT_UNITS)
 get_reactive_power_limits(value::ThermalMultiStart, units) = get_value(value, Val(:reactive_power_limits), Val(:mva), units)
-"""Get [`ThermalMultiStart`](@ref) `ramp_limits`. Returns value in the system's unit setting (natural units by default)."""
-get_ramp_limits(value::ThermalMultiStart) = get_value(value, Val(:ramp_limits), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`ThermalMultiStart`](@ref) `ramp_limits`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_ramp_limits(value::ThermalMultiStart) = get_value(value, Val(:ramp_limits), Val(:mva), DEFAULT_UNITS)
 get_ramp_limits(value::ThermalMultiStart, units) = get_value(value, Val(:ramp_limits), Val(:mva), units)
-"""Get [`ThermalMultiStart`](@ref) `power_trajectory`. Returns value in the system's unit setting (natural units by default)."""
-get_power_trajectory(value::ThermalMultiStart) = get_value(value, Val(:power_trajectory), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`ThermalMultiStart`](@ref) `power_trajectory`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_power_trajectory(value::ThermalMultiStart) = get_value(value, Val(:power_trajectory), Val(:mva), DEFAULT_UNITS)
 get_power_trajectory(value::ThermalMultiStart, units) = get_value(value, Val(:power_trajectory), Val(:mva), units)
 """Get [`ThermalMultiStart`](@ref) `time_limits`."""
 get_time_limits(value::ThermalMultiStart) = value.time_limits

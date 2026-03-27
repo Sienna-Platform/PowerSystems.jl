@@ -149,20 +149,20 @@ get_name(value::HydroTurbine) = value.name
 get_available(value::HydroTurbine) = value.available
 """Get [`HydroTurbine`](@ref) `bus`."""
 get_bus(value::HydroTurbine) = value.bus
-"""Get [`HydroTurbine`](@ref) `active_power`. Returns value in the system's unit setting (natural units by default)."""
-get_active_power(value::HydroTurbine) = get_value(value, Val(:active_power), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`HydroTurbine`](@ref) `active_power`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_active_power(value::HydroTurbine) = get_value(value, Val(:active_power), Val(:mva), DEFAULT_UNITS)
 get_active_power(value::HydroTurbine, units) = get_value(value, Val(:active_power), Val(:mva), units)
-"""Get [`HydroTurbine`](@ref) `reactive_power`. Returns value in the system's unit setting (natural units by default)."""
-get_reactive_power(value::HydroTurbine) = get_value(value, Val(:reactive_power), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`HydroTurbine`](@ref) `reactive_power`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_reactive_power(value::HydroTurbine) = get_value(value, Val(:reactive_power), Val(:mva), DEFAULT_UNITS)
 get_reactive_power(value::HydroTurbine, units) = get_value(value, Val(:reactive_power), Val(:mva), units)
-"""Get [`HydroTurbine`](@ref) `rating`. Returns value in the system's unit setting (natural units by default)."""
-get_rating(value::HydroTurbine) = get_value(value, Val(:rating), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`HydroTurbine`](@ref) `rating`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_rating(value::HydroTurbine) = get_value(value, Val(:rating), Val(:mva), DEFAULT_UNITS)
 get_rating(value::HydroTurbine, units) = get_value(value, Val(:rating), Val(:mva), units)
-"""Get [`HydroTurbine`](@ref) `active_power_limits`. Returns value in the system's unit setting (natural units by default)."""
-get_active_power_limits(value::HydroTurbine) = get_value(value, Val(:active_power_limits), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`HydroTurbine`](@ref) `active_power_limits`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_active_power_limits(value::HydroTurbine) = get_value(value, Val(:active_power_limits), Val(:mva), DEFAULT_UNITS)
 get_active_power_limits(value::HydroTurbine, units) = get_value(value, Val(:active_power_limits), Val(:mva), units)
-"""Get [`HydroTurbine`](@ref) `reactive_power_limits`. Returns value in the system's unit setting (natural units by default)."""
-get_reactive_power_limits(value::HydroTurbine) = get_value(value, Val(:reactive_power_limits), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`HydroTurbine`](@ref) `reactive_power_limits`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_reactive_power_limits(value::HydroTurbine) = get_value(value, Val(:reactive_power_limits), Val(:mva), DEFAULT_UNITS)
 get_reactive_power_limits(value::HydroTurbine, units) = get_value(value, Val(:reactive_power_limits), Val(:mva), units)
 
 _get_base_power(value::HydroTurbine) = value.base_power
@@ -170,8 +170,8 @@ _get_base_power(value::HydroTurbine) = value.base_power
 get_operation_cost(value::HydroTurbine) = value.operation_cost
 """Get [`HydroTurbine`](@ref) `powerhouse_elevation`."""
 get_powerhouse_elevation(value::HydroTurbine) = value.powerhouse_elevation
-"""Get [`HydroTurbine`](@ref) `ramp_limits`. Returns value in the system's unit setting (natural units by default)."""
-get_ramp_limits(value::HydroTurbine) = get_value(value, Val(:ramp_limits), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`HydroTurbine`](@ref) `ramp_limits`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_ramp_limits(value::HydroTurbine) = get_value(value, Val(:ramp_limits), Val(:mva), DEFAULT_UNITS)
 get_ramp_limits(value::HydroTurbine, units) = get_value(value, Val(:ramp_limits), Val(:mva), units)
 """Get [`HydroTurbine`](@ref) `time_limits`."""
 get_time_limits(value::HydroTurbine) = value.time_limits

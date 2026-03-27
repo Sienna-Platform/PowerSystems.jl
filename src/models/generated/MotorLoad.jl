@@ -106,22 +106,22 @@ get_name(value::MotorLoad) = value.name
 get_available(value::MotorLoad) = value.available
 """Get [`MotorLoad`](@ref) `bus`."""
 get_bus(value::MotorLoad) = value.bus
-"""Get [`MotorLoad`](@ref) `active_power`. Returns value in the system's unit setting (natural units by default)."""
-get_active_power(value::MotorLoad) = get_value(value, Val(:active_power), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`MotorLoad`](@ref) `active_power`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_active_power(value::MotorLoad) = get_value(value, Val(:active_power), Val(:mva), DEFAULT_UNITS)
 get_active_power(value::MotorLoad, units) = get_value(value, Val(:active_power), Val(:mva), units)
-"""Get [`MotorLoad`](@ref) `reactive_power`. Returns value in the system's unit setting (natural units by default)."""
-get_reactive_power(value::MotorLoad) = get_value(value, Val(:reactive_power), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`MotorLoad`](@ref) `reactive_power`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_reactive_power(value::MotorLoad) = get_value(value, Val(:reactive_power), Val(:mva), DEFAULT_UNITS)
 get_reactive_power(value::MotorLoad, units) = get_value(value, Val(:reactive_power), Val(:mva), units)
 
 _get_base_power(value::MotorLoad) = value.base_power
-"""Get [`MotorLoad`](@ref) `rating`. Returns value in the system's unit setting (natural units by default)."""
-get_rating(value::MotorLoad) = get_value(value, Val(:rating), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`MotorLoad`](@ref) `rating`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_rating(value::MotorLoad) = get_value(value, Val(:rating), Val(:mva), DEFAULT_UNITS)
 get_rating(value::MotorLoad, units) = get_value(value, Val(:rating), Val(:mva), units)
-"""Get [`MotorLoad`](@ref) `max_active_power`. Returns value in the system's unit setting (natural units by default)."""
-get_max_active_power(value::MotorLoad) = get_value(value, Val(:max_active_power), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`MotorLoad`](@ref) `max_active_power`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_max_active_power(value::MotorLoad) = get_value(value, Val(:max_active_power), Val(:mva), DEFAULT_UNITS)
 get_max_active_power(value::MotorLoad, units) = get_value(value, Val(:max_active_power), Val(:mva), units)
-"""Get [`MotorLoad`](@ref) `reactive_power_limits`. Returns value in the system's unit setting (natural units by default)."""
-get_reactive_power_limits(value::MotorLoad) = get_value(value, Val(:reactive_power_limits), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`MotorLoad`](@ref) `reactive_power_limits`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_reactive_power_limits(value::MotorLoad) = get_value(value, Val(:reactive_power_limits), Val(:mva), DEFAULT_UNITS)
 get_reactive_power_limits(value::MotorLoad, units) = get_value(value, Val(:reactive_power_limits), Val(:mva), units)
 """Get [`MotorLoad`](@ref) `motor_technology`."""
 get_motor_technology(value::MotorLoad) = value.motor_technology

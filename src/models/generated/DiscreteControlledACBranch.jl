@@ -92,22 +92,22 @@ end
 get_name(value::DiscreteControlledACBranch) = value.name
 """Get [`DiscreteControlledACBranch`](@ref) `available`."""
 get_available(value::DiscreteControlledACBranch) = value.available
-"""Get [`DiscreteControlledACBranch`](@ref) `active_power_flow`. Returns value in the system's unit setting (natural units by default)."""
-get_active_power_flow(value::DiscreteControlledACBranch) = get_value(value, Val(:active_power_flow), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`DiscreteControlledACBranch`](@ref) `active_power_flow`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_active_power_flow(value::DiscreteControlledACBranch) = get_value(value, Val(:active_power_flow), Val(:mva), DEFAULT_UNITS)
 get_active_power_flow(value::DiscreteControlledACBranch, units) = get_value(value, Val(:active_power_flow), Val(:mva), units)
-"""Get [`DiscreteControlledACBranch`](@ref) `reactive_power_flow`. Returns value in the system's unit setting (natural units by default)."""
-get_reactive_power_flow(value::DiscreteControlledACBranch) = get_value(value, Val(:reactive_power_flow), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`DiscreteControlledACBranch`](@ref) `reactive_power_flow`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_reactive_power_flow(value::DiscreteControlledACBranch) = get_value(value, Val(:reactive_power_flow), Val(:mva), DEFAULT_UNITS)
 get_reactive_power_flow(value::DiscreteControlledACBranch, units) = get_value(value, Val(:reactive_power_flow), Val(:mva), units)
 """Get [`DiscreteControlledACBranch`](@ref) `arc`."""
 get_arc(value::DiscreteControlledACBranch) = value.arc
-"""Get [`DiscreteControlledACBranch`](@ref) `r`. Returns value in the system's unit setting (natural units by default)."""
-get_r(value::DiscreteControlledACBranch) = get_value(value, Val(:r), Val(:ohm), _get_system_units(value, Val(:ohm)))
+"""Get [`DiscreteControlledACBranch`](@ref) `r`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_r(value::DiscreteControlledACBranch) = get_value(value, Val(:r), Val(:ohm), DEFAULT_UNITS)
 get_r(value::DiscreteControlledACBranch, units) = get_value(value, Val(:r), Val(:ohm), units)
-"""Get [`DiscreteControlledACBranch`](@ref) `x`. Returns value in the system's unit setting (natural units by default)."""
-get_x(value::DiscreteControlledACBranch) = get_value(value, Val(:x), Val(:ohm), _get_system_units(value, Val(:ohm)))
+"""Get [`DiscreteControlledACBranch`](@ref) `x`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_x(value::DiscreteControlledACBranch) = get_value(value, Val(:x), Val(:ohm), DEFAULT_UNITS)
 get_x(value::DiscreteControlledACBranch, units) = get_value(value, Val(:x), Val(:ohm), units)
-"""Get [`DiscreteControlledACBranch`](@ref) `rating`. Returns value in the system's unit setting (natural units by default)."""
-get_rating(value::DiscreteControlledACBranch) = get_value(value, Val(:rating), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`DiscreteControlledACBranch`](@ref) `rating`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_rating(value::DiscreteControlledACBranch) = get_value(value, Val(:rating), Val(:mva), DEFAULT_UNITS)
 get_rating(value::DiscreteControlledACBranch, units) = get_value(value, Val(:rating), Val(:mva), units)
 """Get [`DiscreteControlledACBranch`](@ref) `discrete_branch_type`."""
 get_discrete_branch_type(value::DiscreteControlledACBranch) = value.discrete_branch_type

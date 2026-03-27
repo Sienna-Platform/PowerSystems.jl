@@ -66,8 +66,8 @@ end
 get_name(value::ConstantReserveGroup) = value.name
 """Get [`ConstantReserveGroup`](@ref) `available`."""
 get_available(value::ConstantReserveGroup) = value.available
-"""Get [`ConstantReserveGroup`](@ref) `requirement`. Returns value in the system's unit setting (natural units by default)."""
-get_requirement(value::ConstantReserveGroup) = get_value(value, Val(:requirement), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`ConstantReserveGroup`](@ref) `requirement`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_requirement(value::ConstantReserveGroup) = get_value(value, Val(:requirement), Val(:mva), DEFAULT_UNITS)
 get_requirement(value::ConstantReserveGroup, units) = get_value(value, Val(:requirement), Val(:mva), units)
 """Get [`ConstantReserveGroup`](@ref) `ext`."""
 get_ext(value::ConstantReserveGroup) = value.ext

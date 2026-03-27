@@ -77,15 +77,15 @@ end
 get_name(value::AreaInterchange) = value.name
 """Get [`AreaInterchange`](@ref) `available`."""
 get_available(value::AreaInterchange) = value.available
-"""Get [`AreaInterchange`](@ref) `active_power_flow`. Returns value in the system's unit setting (natural units by default)."""
-get_active_power_flow(value::AreaInterchange) = get_value(value, Val(:active_power_flow), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`AreaInterchange`](@ref) `active_power_flow`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_active_power_flow(value::AreaInterchange) = get_value(value, Val(:active_power_flow), Val(:mva), DEFAULT_UNITS)
 get_active_power_flow(value::AreaInterchange, units) = get_value(value, Val(:active_power_flow), Val(:mva), units)
 """Get [`AreaInterchange`](@ref) `from_area`."""
 get_from_area(value::AreaInterchange) = value.from_area
 """Get [`AreaInterchange`](@ref) `to_area`."""
 get_to_area(value::AreaInterchange) = value.to_area
-"""Get [`AreaInterchange`](@ref) `flow_limits`. Returns value in the system's unit setting (natural units by default)."""
-get_flow_limits(value::AreaInterchange) = get_value(value, Val(:flow_limits), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`AreaInterchange`](@ref) `flow_limits`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_flow_limits(value::AreaInterchange) = get_value(value, Val(:flow_limits), Val(:mva), DEFAULT_UNITS)
 get_flow_limits(value::AreaInterchange, units) = get_value(value, Val(:flow_limits), Val(:mva), units)
 """Get [`AreaInterchange`](@ref) `services`."""
 get_services(value::AreaInterchange) = value.services

@@ -94,19 +94,19 @@ get_name(value::SynchronousCondenser) = value.name
 get_available(value::SynchronousCondenser) = value.available
 """Get [`SynchronousCondenser`](@ref) `bus`."""
 get_bus(value::SynchronousCondenser) = value.bus
-"""Get [`SynchronousCondenser`](@ref) `reactive_power`. Returns value in the system's unit setting (natural units by default)."""
-get_reactive_power(value::SynchronousCondenser) = get_value(value, Val(:reactive_power), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`SynchronousCondenser`](@ref) `reactive_power`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_reactive_power(value::SynchronousCondenser) = get_value(value, Val(:reactive_power), Val(:mva), DEFAULT_UNITS)
 get_reactive_power(value::SynchronousCondenser, units) = get_value(value, Val(:reactive_power), Val(:mva), units)
-"""Get [`SynchronousCondenser`](@ref) `rating`. Returns value in the system's unit setting (natural units by default)."""
-get_rating(value::SynchronousCondenser) = get_value(value, Val(:rating), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`SynchronousCondenser`](@ref) `rating`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_rating(value::SynchronousCondenser) = get_value(value, Val(:rating), Val(:mva), DEFAULT_UNITS)
 get_rating(value::SynchronousCondenser, units) = get_value(value, Val(:rating), Val(:mva), units)
-"""Get [`SynchronousCondenser`](@ref) `reactive_power_limits`. Returns value in the system's unit setting (natural units by default)."""
-get_reactive_power_limits(value::SynchronousCondenser) = get_value(value, Val(:reactive_power_limits), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`SynchronousCondenser`](@ref) `reactive_power_limits`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_reactive_power_limits(value::SynchronousCondenser) = get_value(value, Val(:reactive_power_limits), Val(:mva), DEFAULT_UNITS)
 get_reactive_power_limits(value::SynchronousCondenser, units) = get_value(value, Val(:reactive_power_limits), Val(:mva), units)
 
 _get_base_power(value::SynchronousCondenser) = value.base_power
-"""Get [`SynchronousCondenser`](@ref) `active_power_losses`. Returns value in the system's unit setting (natural units by default)."""
-get_active_power_losses(value::SynchronousCondenser) = get_value(value, Val(:active_power_losses), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`SynchronousCondenser`](@ref) `active_power_losses`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_active_power_losses(value::SynchronousCondenser) = get_value(value, Val(:active_power_losses), Val(:mva), DEFAULT_UNITS)
 get_active_power_losses(value::SynchronousCondenser, units) = get_value(value, Val(:active_power_losses), Val(:mva), units)
 """Get [`SynchronousCondenser`](@ref) `services`."""
 get_services(value::SynchronousCondenser) = value.services

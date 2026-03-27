@@ -7,21 +7,24 @@ using Unitful: Quantity, Units, @u_str, uconvert
 # get_base_voltage go through the conversion path and return unitful values.
 # ============================================================
 
-function _get_system_base_power(c::Component)
+@inline function _get_system_base_power(c::Component)::Float64
     units_info = get_internal(c).units_info
     if isnothing(units_info)
         error(
             "Component $(get_name(c)) is not attached to a system. Cannot determine system base power.",
         )
     end
-    return units_info.base_value
+    # Type assertion needed because units_info is Union{Nothing, UnitsData} where
+    # UnitsData is abstract. If IS changes the field type on InfrastructureSystemsInternal
+    # to Union{Nothing, SystemUnitsSettings}, this assertion can be removed.
+    return (units_info::IS.SystemUnitsSettings).base_value
 end
 
 """
 Internal: raw Float64 base power in MVA. For components without a base_power field,
 falls back to the system base power.
 """
-function _get_base_power(c::Component)
+@inline function _get_base_power(c::Component)::Float64
     units_info = get_internal(c).units_info
     if isnothing(units_info)
         error(
@@ -129,7 +132,18 @@ _system_conversion_base(c, ::Val{:kv}) = _get_base_voltage(c)
 _system_conversion_base(c, ::Val{:ka}) = _get_system_base_power(c) / _get_base_voltage(c)
 
 # ============================================================
+# Default units for 1-arg getters
+# ============================================================
+
+# The default units returned by 1-arg getters (e.g., get_active_power(gen)).
+# SU (system base per-unit) matches the common downstream use case (PSI).
+# Change to MW / OHMS / etc. for natural units if preferred.
+const DEFAULT_UNITS = IS.SU
+
+# ============================================================
 # Stateful unit system (reads the system's current setting)
+# Kept for backward compat of set_units_base_system! / with_units_base.
+# No longer used by default 1-arg getters.
 # ============================================================
 
 function _get_system_units(c::Component, cat::Val)

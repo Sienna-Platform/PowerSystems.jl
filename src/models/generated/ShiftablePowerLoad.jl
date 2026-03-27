@@ -111,20 +111,20 @@ get_name(value::ShiftablePowerLoad) = value.name
 get_available(value::ShiftablePowerLoad) = value.available
 """Get [`ShiftablePowerLoad`](@ref) `bus`."""
 get_bus(value::ShiftablePowerLoad) = value.bus
-"""Get [`ShiftablePowerLoad`](@ref) `active_power`. Returns value in the system's unit setting (natural units by default)."""
-get_active_power(value::ShiftablePowerLoad) = get_value(value, Val(:active_power), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`ShiftablePowerLoad`](@ref) `active_power`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_active_power(value::ShiftablePowerLoad) = get_value(value, Val(:active_power), Val(:mva), DEFAULT_UNITS)
 get_active_power(value::ShiftablePowerLoad, units) = get_value(value, Val(:active_power), Val(:mva), units)
-"""Get [`ShiftablePowerLoad`](@ref) `active_power_limits`. Returns value in the system's unit setting (natural units by default)."""
-get_active_power_limits(value::ShiftablePowerLoad) = get_value(value, Val(:active_power_limits), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`ShiftablePowerLoad`](@ref) `active_power_limits`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_active_power_limits(value::ShiftablePowerLoad) = get_value(value, Val(:active_power_limits), Val(:mva), DEFAULT_UNITS)
 get_active_power_limits(value::ShiftablePowerLoad, units) = get_value(value, Val(:active_power_limits), Val(:mva), units)
-"""Get [`ShiftablePowerLoad`](@ref) `reactive_power`. Returns value in the system's unit setting (natural units by default)."""
-get_reactive_power(value::ShiftablePowerLoad) = get_value(value, Val(:reactive_power), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`ShiftablePowerLoad`](@ref) `reactive_power`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_reactive_power(value::ShiftablePowerLoad) = get_value(value, Val(:reactive_power), Val(:mva), DEFAULT_UNITS)
 get_reactive_power(value::ShiftablePowerLoad, units) = get_value(value, Val(:reactive_power), Val(:mva), units)
-"""Get [`ShiftablePowerLoad`](@ref) `max_active_power`. Returns value in the system's unit setting (natural units by default)."""
-get_max_active_power(value::ShiftablePowerLoad) = get_value(value, Val(:max_active_power), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`ShiftablePowerLoad`](@ref) `max_active_power`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_max_active_power(value::ShiftablePowerLoad) = get_value(value, Val(:max_active_power), Val(:mva), DEFAULT_UNITS)
 get_max_active_power(value::ShiftablePowerLoad, units) = get_value(value, Val(:max_active_power), Val(:mva), units)
-"""Get [`ShiftablePowerLoad`](@ref) `max_reactive_power`. Returns value in the system's unit setting (natural units by default)."""
-get_max_reactive_power(value::ShiftablePowerLoad) = get_value(value, Val(:max_reactive_power), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`ShiftablePowerLoad`](@ref) `max_reactive_power`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_max_reactive_power(value::ShiftablePowerLoad) = get_value(value, Val(:max_reactive_power), Val(:mva), DEFAULT_UNITS)
 get_max_reactive_power(value::ShiftablePowerLoad, units) = get_value(value, Val(:max_reactive_power), Val(:mva), units)
 
 _get_base_power(value::ShiftablePowerLoad) = value.base_power

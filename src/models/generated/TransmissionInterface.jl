@@ -64,8 +64,8 @@ end
 get_name(value::TransmissionInterface) = value.name
 """Get [`TransmissionInterface`](@ref) `available`."""
 get_available(value::TransmissionInterface) = value.available
-"""Get [`TransmissionInterface`](@ref) `active_power_flow_limits`. Returns value in the system's unit setting (natural units by default)."""
-get_active_power_flow_limits(value::TransmissionInterface) = get_value(value, Val(:active_power_flow_limits), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`TransmissionInterface`](@ref) `active_power_flow_limits`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_active_power_flow_limits(value::TransmissionInterface) = get_value(value, Val(:active_power_flow_limits), Val(:mva), DEFAULT_UNITS)
 get_active_power_flow_limits(value::TransmissionInterface, units) = get_value(value, Val(:active_power_flow_limits), Val(:mva), units)
 """Get [`TransmissionInterface`](@ref) `violation_penalty`."""
 get_violation_penalty(value::TransmissionInterface) = value.violation_penalty

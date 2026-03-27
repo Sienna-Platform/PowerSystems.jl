@@ -121,17 +121,17 @@ get_name(value::Source) = value.name
 get_available(value::Source) = value.available
 """Get [`Source`](@ref) `bus`."""
 get_bus(value::Source) = value.bus
-"""Get [`Source`](@ref) `active_power`. Returns value in the system's unit setting (natural units by default)."""
-get_active_power(value::Source) = get_value(value, Val(:active_power), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`Source`](@ref) `active_power`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_active_power(value::Source) = get_value(value, Val(:active_power), Val(:mva), DEFAULT_UNITS)
 get_active_power(value::Source, units) = get_value(value, Val(:active_power), Val(:mva), units)
-"""Get [`Source`](@ref) `reactive_power`. Returns value in the system's unit setting (natural units by default)."""
-get_reactive_power(value::Source) = get_value(value, Val(:reactive_power), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`Source`](@ref) `reactive_power`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_reactive_power(value::Source) = get_value(value, Val(:reactive_power), Val(:mva), DEFAULT_UNITS)
 get_reactive_power(value::Source, units) = get_value(value, Val(:reactive_power), Val(:mva), units)
-"""Get [`Source`](@ref) `active_power_limits`. Returns value in the system's unit setting (natural units by default)."""
-get_active_power_limits(value::Source) = get_value(value, Val(:active_power_limits), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`Source`](@ref) `active_power_limits`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_active_power_limits(value::Source) = get_value(value, Val(:active_power_limits), Val(:mva), DEFAULT_UNITS)
 get_active_power_limits(value::Source, units) = get_value(value, Val(:active_power_limits), Val(:mva), units)
-"""Get [`Source`](@ref) `reactive_power_limits`. Returns value in the system's unit setting (natural units by default)."""
-get_reactive_power_limits(value::Source) = get_value(value, Val(:reactive_power_limits), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`Source`](@ref) `reactive_power_limits`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_reactive_power_limits(value::Source) = get_value(value, Val(:reactive_power_limits), Val(:mva), DEFAULT_UNITS)
 get_reactive_power_limits(value::Source, units) = get_value(value, Val(:reactive_power_limits), Val(:mva), units)
 """Get [`Source`](@ref) `R_th`."""
 get_R_th(value::Source) = value.R_th

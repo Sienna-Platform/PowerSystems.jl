@@ -119,39 +119,39 @@ end
 get_name(value::MonitoredLine) = value.name
 """Get [`MonitoredLine`](@ref) `available`."""
 get_available(value::MonitoredLine) = value.available
-"""Get [`MonitoredLine`](@ref) `active_power_flow`. Returns value in the system's unit setting (natural units by default)."""
-get_active_power_flow(value::MonitoredLine) = get_value(value, Val(:active_power_flow), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`MonitoredLine`](@ref) `active_power_flow`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_active_power_flow(value::MonitoredLine) = get_value(value, Val(:active_power_flow), Val(:mva), DEFAULT_UNITS)
 get_active_power_flow(value::MonitoredLine, units) = get_value(value, Val(:active_power_flow), Val(:mva), units)
-"""Get [`MonitoredLine`](@ref) `reactive_power_flow`. Returns value in the system's unit setting (natural units by default)."""
-get_reactive_power_flow(value::MonitoredLine) = get_value(value, Val(:reactive_power_flow), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`MonitoredLine`](@ref) `reactive_power_flow`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_reactive_power_flow(value::MonitoredLine) = get_value(value, Val(:reactive_power_flow), Val(:mva), DEFAULT_UNITS)
 get_reactive_power_flow(value::MonitoredLine, units) = get_value(value, Val(:reactive_power_flow), Val(:mva), units)
 """Get [`MonitoredLine`](@ref) `arc`."""
 get_arc(value::MonitoredLine) = value.arc
-"""Get [`MonitoredLine`](@ref) `r`. Returns value in the system's unit setting (natural units by default)."""
-get_r(value::MonitoredLine) = get_value(value, Val(:r), Val(:ohm), _get_system_units(value, Val(:ohm)))
+"""Get [`MonitoredLine`](@ref) `r`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_r(value::MonitoredLine) = get_value(value, Val(:r), Val(:ohm), DEFAULT_UNITS)
 get_r(value::MonitoredLine, units) = get_value(value, Val(:r), Val(:ohm), units)
-"""Get [`MonitoredLine`](@ref) `x`. Returns value in the system's unit setting (natural units by default)."""
-get_x(value::MonitoredLine) = get_value(value, Val(:x), Val(:ohm), _get_system_units(value, Val(:ohm)))
+"""Get [`MonitoredLine`](@ref) `x`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_x(value::MonitoredLine) = get_value(value, Val(:x), Val(:ohm), DEFAULT_UNITS)
 get_x(value::MonitoredLine, units) = get_value(value, Val(:x), Val(:ohm), units)
-"""Get [`MonitoredLine`](@ref) `b`. Returns value in the system's unit setting (natural units by default)."""
-get_b(value::MonitoredLine) = get_value(value, Val(:b), Val(:siemens), _get_system_units(value, Val(:siemens)))
+"""Get [`MonitoredLine`](@ref) `b`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_b(value::MonitoredLine) = get_value(value, Val(:b), Val(:siemens), DEFAULT_UNITS)
 get_b(value::MonitoredLine, units) = get_value(value, Val(:b), Val(:siemens), units)
-"""Get [`MonitoredLine`](@ref) `flow_limits`. Returns value in the system's unit setting (natural units by default)."""
-get_flow_limits(value::MonitoredLine) = get_value(value, Val(:flow_limits), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`MonitoredLine`](@ref) `flow_limits`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_flow_limits(value::MonitoredLine) = get_value(value, Val(:flow_limits), Val(:mva), DEFAULT_UNITS)
 get_flow_limits(value::MonitoredLine, units) = get_value(value, Val(:flow_limits), Val(:mva), units)
-"""Get [`MonitoredLine`](@ref) `rating`. Returns value in the system's unit setting (natural units by default)."""
-get_rating(value::MonitoredLine) = get_value(value, Val(:rating), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`MonitoredLine`](@ref) `rating`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_rating(value::MonitoredLine) = get_value(value, Val(:rating), Val(:mva), DEFAULT_UNITS)
 get_rating(value::MonitoredLine, units) = get_value(value, Val(:rating), Val(:mva), units)
 """Get [`MonitoredLine`](@ref) `angle_limits`."""
 get_angle_limits(value::MonitoredLine) = value.angle_limits
-"""Get [`MonitoredLine`](@ref) `rating_b`. Returns value in the system's unit setting (natural units by default)."""
-get_rating_b(value::MonitoredLine) = get_value(value, Val(:rating_b), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`MonitoredLine`](@ref) `rating_b`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_rating_b(value::MonitoredLine) = get_value(value, Val(:rating_b), Val(:mva), DEFAULT_UNITS)
 get_rating_b(value::MonitoredLine, units) = get_value(value, Val(:rating_b), Val(:mva), units)
-"""Get [`MonitoredLine`](@ref) `rating_c`. Returns value in the system's unit setting (natural units by default)."""
-get_rating_c(value::MonitoredLine) = get_value(value, Val(:rating_c), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`MonitoredLine`](@ref) `rating_c`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_rating_c(value::MonitoredLine) = get_value(value, Val(:rating_c), Val(:mva), DEFAULT_UNITS)
 get_rating_c(value::MonitoredLine, units) = get_value(value, Val(:rating_c), Val(:mva), units)
-"""Get [`MonitoredLine`](@ref) `g`. Returns value in the system's unit setting (natural units by default)."""
-get_g(value::MonitoredLine) = get_value(value, Val(:g), Val(:siemens), _get_system_units(value, Val(:siemens)))
+"""Get [`MonitoredLine`](@ref) `g`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_g(value::MonitoredLine) = get_value(value, Val(:g), Val(:siemens), DEFAULT_UNITS)
 get_g(value::MonitoredLine, units) = get_value(value, Val(:g), Val(:siemens), units)
 """Get [`MonitoredLine`](@ref) `services`."""
 get_services(value::MonitoredLine) = value.services

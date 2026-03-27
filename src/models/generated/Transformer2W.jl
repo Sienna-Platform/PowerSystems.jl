@@ -124,25 +124,25 @@ end
 get_name(value::Transformer2W) = value.name
 """Get [`Transformer2W`](@ref) `available`."""
 get_available(value::Transformer2W) = value.available
-"""Get [`Transformer2W`](@ref) `active_power_flow`. Returns value in the system's unit setting (natural units by default)."""
-get_active_power_flow(value::Transformer2W) = get_value(value, Val(:active_power_flow), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`Transformer2W`](@ref) `active_power_flow`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_active_power_flow(value::Transformer2W) = get_value(value, Val(:active_power_flow), Val(:mva), DEFAULT_UNITS)
 get_active_power_flow(value::Transformer2W, units) = get_value(value, Val(:active_power_flow), Val(:mva), units)
-"""Get [`Transformer2W`](@ref) `reactive_power_flow`. Returns value in the system's unit setting (natural units by default)."""
-get_reactive_power_flow(value::Transformer2W) = get_value(value, Val(:reactive_power_flow), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`Transformer2W`](@ref) `reactive_power_flow`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_reactive_power_flow(value::Transformer2W) = get_value(value, Val(:reactive_power_flow), Val(:mva), DEFAULT_UNITS)
 get_reactive_power_flow(value::Transformer2W, units) = get_value(value, Val(:reactive_power_flow), Val(:mva), units)
 """Get [`Transformer2W`](@ref) `arc`."""
 get_arc(value::Transformer2W) = value.arc
-"""Get [`Transformer2W`](@ref) `r`. Returns value in the system's unit setting (natural units by default)."""
-get_r(value::Transformer2W) = get_value(value, Val(:r), Val(:ohm), _get_system_units(value, Val(:ohm)))
+"""Get [`Transformer2W`](@ref) `r`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_r(value::Transformer2W) = get_value(value, Val(:r), Val(:ohm), DEFAULT_UNITS)
 get_r(value::Transformer2W, units) = get_value(value, Val(:r), Val(:ohm), units)
-"""Get [`Transformer2W`](@ref) `x`. Returns value in the system's unit setting (natural units by default)."""
-get_x(value::Transformer2W) = get_value(value, Val(:x), Val(:ohm), _get_system_units(value, Val(:ohm)))
+"""Get [`Transformer2W`](@ref) `x`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_x(value::Transformer2W) = get_value(value, Val(:x), Val(:ohm), DEFAULT_UNITS)
 get_x(value::Transformer2W, units) = get_value(value, Val(:x), Val(:ohm), units)
-"""Get [`Transformer2W`](@ref) `primary_shunt`. Returns value in the system's unit setting (natural units by default)."""
-get_primary_shunt(value::Transformer2W) = get_value(value, Val(:primary_shunt), Val(:siemens), _get_system_units(value, Val(:siemens)))
+"""Get [`Transformer2W`](@ref) `primary_shunt`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_primary_shunt(value::Transformer2W) = get_value(value, Val(:primary_shunt), Val(:siemens), DEFAULT_UNITS)
 get_primary_shunt(value::Transformer2W, units) = get_value(value, Val(:primary_shunt), Val(:siemens), units)
-"""Get [`Transformer2W`](@ref) `rating`. Returns value in the system's unit setting (natural units by default)."""
-get_rating(value::Transformer2W) = get_value(value, Val(:rating), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`Transformer2W`](@ref) `rating`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_rating(value::Transformer2W) = get_value(value, Val(:rating), Val(:mva), DEFAULT_UNITS)
 get_rating(value::Transformer2W, units) = get_value(value, Val(:rating), Val(:mva), units)
 
 _get_base_power(value::Transformer2W) = value.base_power
@@ -150,11 +150,11 @@ _get_base_power(value::Transformer2W) = value.base_power
 get_base_voltage_primary(value::Transformer2W) = value.base_voltage_primary
 """Get [`Transformer2W`](@ref) `base_voltage_secondary`."""
 get_base_voltage_secondary(value::Transformer2W) = value.base_voltage_secondary
-"""Get [`Transformer2W`](@ref) `rating_b`. Returns value in the system's unit setting (natural units by default)."""
-get_rating_b(value::Transformer2W) = get_value(value, Val(:rating_b), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`Transformer2W`](@ref) `rating_b`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_rating_b(value::Transformer2W) = get_value(value, Val(:rating_b), Val(:mva), DEFAULT_UNITS)
 get_rating_b(value::Transformer2W, units) = get_value(value, Val(:rating_b), Val(:mva), units)
-"""Get [`Transformer2W`](@ref) `rating_c`. Returns value in the system's unit setting (natural units by default)."""
-get_rating_c(value::Transformer2W) = get_value(value, Val(:rating_c), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`Transformer2W`](@ref) `rating_c`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_rating_c(value::Transformer2W) = get_value(value, Val(:rating_c), Val(:mva), DEFAULT_UNITS)
 get_rating_c(value::Transformer2W, units) = get_value(value, Val(:rating_c), Val(:mva), units)
 """Get [`Transformer2W`](@ref) `winding_group_number`."""
 get_winding_group_number(value::Transformer2W) = value.winding_group_number

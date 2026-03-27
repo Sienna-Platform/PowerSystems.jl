@@ -112,36 +112,36 @@ end
 get_name(value::Line) = value.name
 """Get [`Line`](@ref) `available`."""
 get_available(value::Line) = value.available
-"""Get [`Line`](@ref) `active_power_flow`. Returns value in the system's unit setting (natural units by default)."""
-get_active_power_flow(value::Line) = get_value(value, Val(:active_power_flow), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`Line`](@ref) `active_power_flow`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_active_power_flow(value::Line) = get_value(value, Val(:active_power_flow), Val(:mva), DEFAULT_UNITS)
 get_active_power_flow(value::Line, units) = get_value(value, Val(:active_power_flow), Val(:mva), units)
-"""Get [`Line`](@ref) `reactive_power_flow`. Returns value in the system's unit setting (natural units by default)."""
-get_reactive_power_flow(value::Line) = get_value(value, Val(:reactive_power_flow), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`Line`](@ref) `reactive_power_flow`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_reactive_power_flow(value::Line) = get_value(value, Val(:reactive_power_flow), Val(:mva), DEFAULT_UNITS)
 get_reactive_power_flow(value::Line, units) = get_value(value, Val(:reactive_power_flow), Val(:mva), units)
 """Get [`Line`](@ref) `arc`."""
 get_arc(value::Line) = value.arc
-"""Get [`Line`](@ref) `r`. Returns value in the system's unit setting (natural units by default)."""
-get_r(value::Line) = get_value(value, Val(:r), Val(:ohm), _get_system_units(value, Val(:ohm)))
+"""Get [`Line`](@ref) `r`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_r(value::Line) = get_value(value, Val(:r), Val(:ohm), DEFAULT_UNITS)
 get_r(value::Line, units) = get_value(value, Val(:r), Val(:ohm), units)
-"""Get [`Line`](@ref) `x`. Returns value in the system's unit setting (natural units by default)."""
-get_x(value::Line) = get_value(value, Val(:x), Val(:ohm), _get_system_units(value, Val(:ohm)))
+"""Get [`Line`](@ref) `x`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_x(value::Line) = get_value(value, Val(:x), Val(:ohm), DEFAULT_UNITS)
 get_x(value::Line, units) = get_value(value, Val(:x), Val(:ohm), units)
-"""Get [`Line`](@ref) `b`. Returns value in the system's unit setting (natural units by default)."""
-get_b(value::Line) = get_value(value, Val(:b), Val(:siemens), _get_system_units(value, Val(:siemens)))
+"""Get [`Line`](@ref) `b`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_b(value::Line) = get_value(value, Val(:b), Val(:siemens), DEFAULT_UNITS)
 get_b(value::Line, units) = get_value(value, Val(:b), Val(:siemens), units)
-"""Get [`Line`](@ref) `rating`. Returns value in the system's unit setting (natural units by default)."""
-get_rating(value::Line) = get_value(value, Val(:rating), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`Line`](@ref) `rating`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_rating(value::Line) = get_value(value, Val(:rating), Val(:mva), DEFAULT_UNITS)
 get_rating(value::Line, units) = get_value(value, Val(:rating), Val(:mva), units)
 """Get [`Line`](@ref) `angle_limits`."""
 get_angle_limits(value::Line) = value.angle_limits
-"""Get [`Line`](@ref) `rating_b`. Returns value in the system's unit setting (natural units by default)."""
-get_rating_b(value::Line) = get_value(value, Val(:rating_b), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`Line`](@ref) `rating_b`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_rating_b(value::Line) = get_value(value, Val(:rating_b), Val(:mva), DEFAULT_UNITS)
 get_rating_b(value::Line, units) = get_value(value, Val(:rating_b), Val(:mva), units)
-"""Get [`Line`](@ref) `rating_c`. Returns value in the system's unit setting (natural units by default)."""
-get_rating_c(value::Line) = get_value(value, Val(:rating_c), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`Line`](@ref) `rating_c`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_rating_c(value::Line) = get_value(value, Val(:rating_c), Val(:mva), DEFAULT_UNITS)
 get_rating_c(value::Line, units) = get_value(value, Val(:rating_c), Val(:mva), units)
-"""Get [`Line`](@ref) `g`. Returns value in the system's unit setting (natural units by default)."""
-get_g(value::Line) = get_value(value, Val(:g), Val(:siemens), _get_system_units(value, Val(:siemens)))
+"""Get [`Line`](@ref) `g`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_g(value::Line) = get_value(value, Val(:g), Val(:siemens), DEFAULT_UNITS)
 get_g(value::Line, units) = get_value(value, Val(:g), Val(:siemens), units)
 """Get [`Line`](@ref) `services`."""
 get_services(value::Line) = value.services

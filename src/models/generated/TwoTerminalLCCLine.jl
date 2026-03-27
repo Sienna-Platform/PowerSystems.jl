@@ -241,8 +241,8 @@ get_name(value::TwoTerminalLCCLine) = value.name
 get_available(value::TwoTerminalLCCLine) = value.available
 """Get [`TwoTerminalLCCLine`](@ref) `arc`."""
 get_arc(value::TwoTerminalLCCLine) = value.arc
-"""Get [`TwoTerminalLCCLine`](@ref) `active_power_flow`. Returns value in the system's unit setting (natural units by default)."""
-get_active_power_flow(value::TwoTerminalLCCLine) = get_value(value, Val(:active_power_flow), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`TwoTerminalLCCLine`](@ref) `active_power_flow`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_active_power_flow(value::TwoTerminalLCCLine) = get_value(value, Val(:active_power_flow), Val(:mva), DEFAULT_UNITS)
 get_active_power_flow(value::TwoTerminalLCCLine, units) = get_value(value, Val(:active_power_flow), Val(:mva), units)
 """Get [`TwoTerminalLCCLine`](@ref) `r`."""
 get_r(value::TwoTerminalLCCLine) = value.r
@@ -302,17 +302,17 @@ get_inverter_tap_step(value::TwoTerminalLCCLine) = value.inverter_tap_step
 get_inverter_extinction_angle(value::TwoTerminalLCCLine) = value.inverter_extinction_angle
 """Get [`TwoTerminalLCCLine`](@ref) `inverter_capacitor_reactance`."""
 get_inverter_capacitor_reactance(value::TwoTerminalLCCLine) = value.inverter_capacitor_reactance
-"""Get [`TwoTerminalLCCLine`](@ref) `active_power_limits_from`. Returns value in the system's unit setting (natural units by default)."""
-get_active_power_limits_from(value::TwoTerminalLCCLine) = get_value(value, Val(:active_power_limits_from), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`TwoTerminalLCCLine`](@ref) `active_power_limits_from`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_active_power_limits_from(value::TwoTerminalLCCLine) = get_value(value, Val(:active_power_limits_from), Val(:mva), DEFAULT_UNITS)
 get_active_power_limits_from(value::TwoTerminalLCCLine, units) = get_value(value, Val(:active_power_limits_from), Val(:mva), units)
-"""Get [`TwoTerminalLCCLine`](@ref) `active_power_limits_to`. Returns value in the system's unit setting (natural units by default)."""
-get_active_power_limits_to(value::TwoTerminalLCCLine) = get_value(value, Val(:active_power_limits_to), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`TwoTerminalLCCLine`](@ref) `active_power_limits_to`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_active_power_limits_to(value::TwoTerminalLCCLine) = get_value(value, Val(:active_power_limits_to), Val(:mva), DEFAULT_UNITS)
 get_active_power_limits_to(value::TwoTerminalLCCLine, units) = get_value(value, Val(:active_power_limits_to), Val(:mva), units)
-"""Get [`TwoTerminalLCCLine`](@ref) `reactive_power_limits_from`. Returns value in the system's unit setting (natural units by default)."""
-get_reactive_power_limits_from(value::TwoTerminalLCCLine) = get_value(value, Val(:reactive_power_limits_from), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`TwoTerminalLCCLine`](@ref) `reactive_power_limits_from`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_reactive_power_limits_from(value::TwoTerminalLCCLine) = get_value(value, Val(:reactive_power_limits_from), Val(:mva), DEFAULT_UNITS)
 get_reactive_power_limits_from(value::TwoTerminalLCCLine, units) = get_value(value, Val(:reactive_power_limits_from), Val(:mva), units)
-"""Get [`TwoTerminalLCCLine`](@ref) `reactive_power_limits_to`. Returns value in the system's unit setting (natural units by default)."""
-get_reactive_power_limits_to(value::TwoTerminalLCCLine) = get_value(value, Val(:reactive_power_limits_to), Val(:mva), _get_system_units(value, Val(:mva)))
+"""Get [`TwoTerminalLCCLine`](@ref) `reactive_power_limits_to`. Returns value in DEFAULT_UNITS (system base per-unit)."""
+get_reactive_power_limits_to(value::TwoTerminalLCCLine) = get_value(value, Val(:reactive_power_limits_to), Val(:mva), DEFAULT_UNITS)
 get_reactive_power_limits_to(value::TwoTerminalLCCLine, units) = get_value(value, Val(:reactive_power_limits_to), Val(:mva), units)
 """Get [`TwoTerminalLCCLine`](@ref) `loss`."""
 get_loss(value::TwoTerminalLCCLine) = value.loss
