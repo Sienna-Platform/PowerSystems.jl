@@ -92,6 +92,7 @@ set_base_power_13!(c::Component, val::Quantity) =
     (c.base_power_13 = Unitful.ustrip(u"MW", val))
 set_base_power_13!(c::Component, val::Float64) = (c.base_power_13 = val)
 
+# PERF: line → arc → from_bus → base_voltage chain slows things down a bit.
 _get_base_voltage(c::Branch) = get_base_voltage(get_arc(c).from)
 _get_base_voltage(c::TwoWindingTransformer) = get_base_voltage_primary(c)
 _get_base_voltage(c::StaticInjection) = get_base_voltage(get_bus(c))
@@ -190,6 +191,19 @@ function _convert_from_device_base(
 )
     ratio = _conversion_base(c, cat) / _system_conversion_base(c, cat)
     return (value * ratio) * IS.SU
+end
+
+# → Raw Float64 in DEFAULT_UNITS (skips unit wrapper).
+# Convenience for downstream packages (e.g. PNM) that work in system-base p.u.
+# and don't need the Unitful wrapper.
+function _convert_from_device_base(
+    c::Component,
+    value::Number,
+    cat::Val,
+    ::Type{Float64},
+)
+    ratio = _conversion_base(c, cat) / _system_conversion_base(c, cat)
+    return (value * ratio)::Float64
 end
 
 # nothing passthrough
