@@ -216,8 +216,7 @@ get_reactive_power_limits(value::HybridSystem) =
     get_value(value, Val(:reactive_power_limits), Val(:mva))
 """get [`HybridSystem`](@ref) interconnection efficiency"""
 get_interconnection_efficiency(value::HybridSystem) = value.interconnection_efficiency
-"""Get [`HybridSystem`](@ref) `base_power`."""
-get_base_power(value::HybridSystem) = value.base_power
+_get_base_power(value::HybridSystem) = value.base_power
 """Get [`HybridSystem`](@ref) `operation_cost`."""
 get_operation_cost(value::HybridSystem) = value.operation_cost
 """Get [`HybridSystem`](@ref) `services`."""
@@ -257,7 +256,7 @@ set_reactive_power_limits!(value::HybridSystem, val) = value.reactive_power_limi
 set_interconnection_efficiency!(value::HybridSystem, val) =
     value.interconnection_rating = val
 """Set [`HybridSystem`](@ref) `base_power`."""
-set_base_power!(value::HybridSystem, val) = value.base_power = val
+# set_base_power! defined on Component in components.jl
 """Set [`HybridSystem`](@ref) `operation_cost`."""
 set_operation_cost!(value::HybridSystem, val) = value.operation_cost = val
 """Set [`HybridSystem`](@ref) `services`."""

@@ -489,6 +489,13 @@ export get_component_uuids
 export get_description
 export set_description!
 export get_base_power
+export set_base_power!
+export get_base_power_12
+export set_base_power_12!
+export get_base_power_13
+export set_base_power_13!
+export get_base_power_23
+export set_base_power_23!
 export get_frequency
 export get_frequency_droop
 export set_units_base_system!

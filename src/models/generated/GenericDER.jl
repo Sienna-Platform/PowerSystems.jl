@@ -338,8 +338,8 @@ get_Pfa_ref(value::GenericDER) = value.Pfa_ref
 get_Q_ref(value::GenericDER) = value.Q_ref
 """Get [`GenericDER`](@ref) `P_ref`."""
 get_P_ref(value::GenericDER) = value.P_ref
-"""Get [`GenericDER`](@ref) `base_power`."""
-get_base_power(value::GenericDER) = value.base_power
+
+_get_base_power(value::GenericDER) = value.base_power
 """Get [`GenericDER`](@ref) `states`."""
 get_states(value::GenericDER) = value.states
 """Get [`GenericDER`](@ref) `n_states`."""
@@ -429,7 +429,5 @@ set_Pfa_ref!(value::GenericDER, val) = value.Pfa_ref = val
 set_Q_ref!(value::GenericDER, val) = value.Q_ref = val
 """Set [`GenericDER`](@ref) `P_ref`."""
 set_P_ref!(value::GenericDER, val) = value.P_ref = val
-"""Set [`GenericDER`](@ref) `base_power`."""
-set_base_power!(value::GenericDER, val) = value.base_power = val
 """Set [`GenericDER`](@ref) `ext`."""
 set_ext!(value::GenericDER, val) = value.ext = val

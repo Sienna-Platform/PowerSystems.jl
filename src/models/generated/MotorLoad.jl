@@ -112,8 +112,8 @@ get_active_power(value::MotorLoad, units) = get_value(value, Val(:active_power),
 """Get [`MotorLoad`](@ref) `reactive_power`. Returns value in the system's unit setting (natural units by default)."""
 get_reactive_power(value::MotorLoad) = get_value(value, Val(:reactive_power), Val(:mva), _get_system_units(value, Val(:mva)))
 get_reactive_power(value::MotorLoad, units) = get_value(value, Val(:reactive_power), Val(:mva), units)
-"""Get [`MotorLoad`](@ref) `base_power`."""
-get_base_power(value::MotorLoad) = value.base_power
+
+_get_base_power(value::MotorLoad) = value.base_power
 """Get [`MotorLoad`](@ref) `rating`. Returns value in the system's unit setting (natural units by default)."""
 get_rating(value::MotorLoad) = get_value(value, Val(:rating), Val(:mva), _get_system_units(value, Val(:mva)))
 get_rating(value::MotorLoad, units) = get_value(value, Val(:rating), Val(:mva), units)
@@ -142,8 +142,6 @@ set_bus!(value::MotorLoad, val) = value.bus = val
 set_active_power!(value::MotorLoad, val) = value.active_power = set_value(value, Val(:active_power), val, Val(:mva))
 """Set [`MotorLoad`](@ref) `reactive_power`. Value must have units (e.g., `30.0MW`, `0.5DU`)."""
 set_reactive_power!(value::MotorLoad, val) = value.reactive_power = set_value(value, Val(:reactive_power), val, Val(:mva))
-"""Set [`MotorLoad`](@ref) `base_power`."""
-set_base_power!(value::MotorLoad, val) = value.base_power = val
 """Set [`MotorLoad`](@ref) `rating`. Value must have units (e.g., `30.0MW`, `0.5DU`)."""
 set_rating!(value::MotorLoad, val) = value.rating = set_value(value, Val(:rating), val, Val(:mva))
 """Set [`MotorLoad`](@ref) `max_active_power`. Value must have units (e.g., `30.0MW`, `0.5DU`)."""

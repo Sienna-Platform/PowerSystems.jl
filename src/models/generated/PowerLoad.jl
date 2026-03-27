@@ -107,8 +107,8 @@ get_active_power(value::PowerLoad, units) = get_value(value, Val(:active_power),
 """Get [`PowerLoad`](@ref) `reactive_power`. Returns value in the system's unit setting (natural units by default)."""
 get_reactive_power(value::PowerLoad) = get_value(value, Val(:reactive_power), Val(:mva), _get_system_units(value, Val(:mva)))
 get_reactive_power(value::PowerLoad, units) = get_value(value, Val(:reactive_power), Val(:mva), units)
-"""Get [`PowerLoad`](@ref) `base_power`."""
-get_base_power(value::PowerLoad) = value.base_power
+
+_get_base_power(value::PowerLoad) = value.base_power
 """Get [`PowerLoad`](@ref) `max_active_power`. Returns value in the system's unit setting (natural units by default)."""
 get_max_active_power(value::PowerLoad) = get_value(value, Val(:max_active_power), Val(:mva), _get_system_units(value, Val(:mva)))
 get_max_active_power(value::PowerLoad, units) = get_value(value, Val(:max_active_power), Val(:mva), units)
@@ -134,8 +134,6 @@ set_bus!(value::PowerLoad, val) = value.bus = val
 set_active_power!(value::PowerLoad, val) = value.active_power = set_value(value, Val(:active_power), val, Val(:mva))
 """Set [`PowerLoad`](@ref) `reactive_power`. Value must have units (e.g., `30.0MW`, `0.5DU`)."""
 set_reactive_power!(value::PowerLoad, val) = value.reactive_power = set_value(value, Val(:reactive_power), val, Val(:mva))
-"""Set [`PowerLoad`](@ref) `base_power`."""
-set_base_power!(value::PowerLoad, val) = value.base_power = val
 """Set [`PowerLoad`](@ref) `max_active_power`. Value must have units (e.g., `30.0MW`, `0.5DU`)."""
 set_max_active_power!(value::PowerLoad, val) = value.max_active_power = set_value(value, Val(:max_active_power), val, Val(:mva))
 """Set [`PowerLoad`](@ref) `max_reactive_power`. Value must have units (e.g., `30.0MW`, `0.5DU`)."""

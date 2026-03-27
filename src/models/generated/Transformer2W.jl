@@ -144,8 +144,8 @@ get_primary_shunt(value::Transformer2W, units) = get_value(value, Val(:primary_s
 """Get [`Transformer2W`](@ref) `rating`. Returns value in the system's unit setting (natural units by default)."""
 get_rating(value::Transformer2W) = get_value(value, Val(:rating), Val(:mva), _get_system_units(value, Val(:mva)))
 get_rating(value::Transformer2W, units) = get_value(value, Val(:rating), Val(:mva), units)
-"""Get [`Transformer2W`](@ref) `base_power`."""
-get_base_power(value::Transformer2W) = value.base_power
+
+_get_base_power(value::Transformer2W) = value.base_power
 """Get [`Transformer2W`](@ref) `base_voltage_primary`."""
 get_base_voltage_primary(value::Transformer2W) = value.base_voltage_primary
 """Get [`Transformer2W`](@ref) `base_voltage_secondary`."""
@@ -181,8 +181,6 @@ set_x!(value::Transformer2W, val) = value.x = set_value(value, Val(:x), val, Val
 set_primary_shunt!(value::Transformer2W, val) = value.primary_shunt = set_value(value, Val(:primary_shunt), val, Val(:siemens))
 """Set [`Transformer2W`](@ref) `rating`. Value must have units (e.g., `30.0MW`, `0.5DU`)."""
 set_rating!(value::Transformer2W, val) = value.rating = set_value(value, Val(:rating), val, Val(:mva))
-"""Set [`Transformer2W`](@ref) `base_power`."""
-set_base_power!(value::Transformer2W, val) = value.base_power = val
 """Set [`Transformer2W`](@ref) `base_voltage_primary`."""
 set_base_voltage_primary!(value::Transformer2W, val) = value.base_voltage_primary = val
 """Set [`Transformer2W`](@ref) `base_voltage_secondary`."""

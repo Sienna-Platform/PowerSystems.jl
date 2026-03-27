@@ -206,8 +206,8 @@ get_ramp_limits(value::HydroPumpTurbine) = get_value(value, Val(:ramp_limits), V
 get_ramp_limits(value::HydroPumpTurbine, units) = get_value(value, Val(:ramp_limits), Val(:mva), units)
 """Get [`HydroPumpTurbine`](@ref) `time_limits`."""
 get_time_limits(value::HydroPumpTurbine) = value.time_limits
-"""Get [`HydroPumpTurbine`](@ref) `base_power`."""
-get_base_power(value::HydroPumpTurbine) = value.base_power
+
+_get_base_power(value::HydroPumpTurbine) = value.base_power
 """Get [`HydroPumpTurbine`](@ref) `status`."""
 get_status(value::HydroPumpTurbine) = value.status
 """Get [`HydroPumpTurbine`](@ref) `time_at_status`."""
@@ -264,8 +264,6 @@ set_powerhouse_elevation!(value::HydroPumpTurbine, val) = value.powerhouse_eleva
 set_ramp_limits!(value::HydroPumpTurbine, val) = value.ramp_limits = set_value(value, Val(:ramp_limits), val, Val(:mva))
 """Set [`HydroPumpTurbine`](@ref) `time_limits`."""
 set_time_limits!(value::HydroPumpTurbine, val) = value.time_limits = val
-"""Set [`HydroPumpTurbine`](@ref) `base_power`."""
-set_base_power!(value::HydroPumpTurbine, val) = value.base_power = val
 """Set [`HydroPumpTurbine`](@ref) `status`."""
 set_status!(value::HydroPumpTurbine, val) = value.status = val
 """Set [`HydroPumpTurbine`](@ref) `time_at_status`."""

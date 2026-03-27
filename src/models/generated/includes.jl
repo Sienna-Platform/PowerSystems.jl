@@ -504,10 +504,6 @@ export get_available_primary
 export get_available_secondary
 export get_available_tertiary
 export get_b
-export get_base_power
-export get_base_power_12
-export get_base_power_13
-export get_base_power_23
 export get_base_voltage
 export get_base_voltage_primary
 export get_base_voltage_secondary

@@ -5,7 +5,7 @@
         build_system(PSISystems, "RTS_GMLC_DA_sys"; force_build = true)
     )
     for comp in get_components(PSY.SynchronousCondenser, sys)
-        @test abs(get_base_power(comp)) > eps()
+        @test abs(PSY._get_base_power(comp)) > eps()
     end
 end
 

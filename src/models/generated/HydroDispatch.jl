@@ -153,8 +153,8 @@ get_ramp_limits(value::HydroDispatch) = get_value(value, Val(:ramp_limits), Val(
 get_ramp_limits(value::HydroDispatch, units) = get_value(value, Val(:ramp_limits), Val(:mva), units)
 """Get [`HydroDispatch`](@ref) `time_limits`."""
 get_time_limits(value::HydroDispatch) = value.time_limits
-"""Get [`HydroDispatch`](@ref) `base_power`."""
-get_base_power(value::HydroDispatch) = value.base_power
+
+_get_base_power(value::HydroDispatch) = value.base_power
 """Get [`HydroDispatch`](@ref) `status`."""
 get_status(value::HydroDispatch) = value.status
 """Get [`HydroDispatch`](@ref) `time_at_status`."""
@@ -190,8 +190,6 @@ set_reactive_power_limits!(value::HydroDispatch, val) = value.reactive_power_lim
 set_ramp_limits!(value::HydroDispatch, val) = value.ramp_limits = set_value(value, Val(:ramp_limits), val, Val(:mva))
 """Set [`HydroDispatch`](@ref) `time_limits`."""
 set_time_limits!(value::HydroDispatch, val) = value.time_limits = val
-"""Set [`HydroDispatch`](@ref) `base_power`."""
-set_base_power!(value::HydroDispatch, val) = value.base_power = val
 """Set [`HydroDispatch`](@ref) `status`."""
 set_status!(value::HydroDispatch, val) = value.status = val
 """Set [`HydroDispatch`](@ref) `time_at_status`."""

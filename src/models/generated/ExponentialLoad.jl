@@ -121,8 +121,8 @@ get_reactive_power(value::ExponentialLoad, units) = get_value(value, Val(:reacti
 get_α(value::ExponentialLoad) = value.α
 """Get [`ExponentialLoad`](@ref) `β`."""
 get_β(value::ExponentialLoad) = value.β
-"""Get [`ExponentialLoad`](@ref) `base_power`."""
-get_base_power(value::ExponentialLoad) = value.base_power
+
+_get_base_power(value::ExponentialLoad) = value.base_power
 """Get [`ExponentialLoad`](@ref) `max_active_power`. Returns value in the system's unit setting (natural units by default)."""
 get_max_active_power(value::ExponentialLoad) = get_value(value, Val(:max_active_power), Val(:mva), _get_system_units(value, Val(:mva)))
 get_max_active_power(value::ExponentialLoad, units) = get_value(value, Val(:max_active_power), Val(:mva), units)
@@ -152,8 +152,6 @@ set_reactive_power!(value::ExponentialLoad, val) = value.reactive_power = set_va
 set_α!(value::ExponentialLoad, val) = value.α = val
 """Set [`ExponentialLoad`](@ref) `β`."""
 set_β!(value::ExponentialLoad, val) = value.β = val
-"""Set [`ExponentialLoad`](@ref) `base_power`."""
-set_base_power!(value::ExponentialLoad, val) = value.base_power = val
 """Set [`ExponentialLoad`](@ref) `max_active_power`. Value must have units (e.g., `30.0MW`, `0.5DU`)."""
 set_max_active_power!(value::ExponentialLoad, val) = value.max_active_power = set_value(value, Val(:max_active_power), val, Val(:mva))
 """Set [`ExponentialLoad`](@ref) `max_reactive_power`. Value must have units (e.g., `30.0MW`, `0.5DU`)."""

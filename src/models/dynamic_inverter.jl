@@ -239,14 +239,14 @@ get_dc_source(device::DynamicInverter) = device.dc_source
 get_freq_estimator(device::DynamicInverter) = device.freq_estimator
 get_filter(device::DynamicInverter) = device.filter
 get_limiter(device::DynamicInverter) = device.limiter
-get_base_power(device::DynamicInverter) = device.base_power
+_get_base_power(device::DynamicInverter) = device.base_power
 get_internal(device::DynamicInverter) = device.internal
 get_P_ref(value::DynamicInverter) =
     get_P_ref(get_active_power_control(get_outer_control(value)))
 get_V_ref(value::DynamicInverter) =
     get_V_ref(get_reactive_power_control(get_outer_control(value)))
 
-set_base_power!(value::DynamicInverter, val) = value.base_power = val
+# set_base_power! defined on Component in components.jl
 
 function _calc_n_states(
     converter,

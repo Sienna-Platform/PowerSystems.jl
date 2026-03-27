@@ -163,8 +163,8 @@ get_α(value::PhaseShiftingTransformer) = value.α
 """Get [`PhaseShiftingTransformer`](@ref) `rating`. Returns value in the system's unit setting (natural units by default)."""
 get_rating(value::PhaseShiftingTransformer) = get_value(value, Val(:rating), Val(:mva), _get_system_units(value, Val(:mva)))
 get_rating(value::PhaseShiftingTransformer, units) = get_value(value, Val(:rating), Val(:mva), units)
-"""Get [`PhaseShiftingTransformer`](@ref) `base_power`."""
-get_base_power(value::PhaseShiftingTransformer) = value.base_power
+
+_get_base_power(value::PhaseShiftingTransformer) = value.base_power
 """Get [`PhaseShiftingTransformer`](@ref) `base_voltage_primary`."""
 get_base_voltage_primary(value::PhaseShiftingTransformer) = value.base_voltage_primary
 """Get [`PhaseShiftingTransformer`](@ref) `base_voltage_secondary`."""
@@ -206,8 +206,6 @@ set_tap!(value::PhaseShiftingTransformer, val) = value.tap = val
 set_α!(value::PhaseShiftingTransformer, val) = value.α = val
 """Set [`PhaseShiftingTransformer`](@ref) `rating`. Value must have units (e.g., `30.0MW`, `0.5DU`)."""
 set_rating!(value::PhaseShiftingTransformer, val) = value.rating = set_value(value, Val(:rating), val, Val(:mva))
-"""Set [`PhaseShiftingTransformer`](@ref) `base_power`."""
-set_base_power!(value::PhaseShiftingTransformer, val) = value.base_power = val
 """Set [`PhaseShiftingTransformer`](@ref) `base_voltage_primary`."""
 set_base_voltage_primary!(value::PhaseShiftingTransformer, val) = value.base_voltage_primary = val
 """Set [`PhaseShiftingTransformer`](@ref) `base_voltage_secondary`."""

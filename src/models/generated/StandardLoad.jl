@@ -143,8 +143,8 @@ get_name(value::StandardLoad) = value.name
 get_available(value::StandardLoad) = value.available
 """Get [`StandardLoad`](@ref) `bus`."""
 get_bus(value::StandardLoad) = value.bus
-"""Get [`StandardLoad`](@ref) `base_power`."""
-get_base_power(value::StandardLoad) = value.base_power
+
+_get_base_power(value::StandardLoad) = value.base_power
 """Get [`StandardLoad`](@ref) `constant_active_power`. Returns value in the system's unit setting (natural units by default)."""
 get_constant_active_power(value::StandardLoad) = get_value(value, Val(:constant_active_power), Val(:mva), _get_system_units(value, Val(:mva)))
 get_constant_active_power(value::StandardLoad, units) = get_value(value, Val(:constant_active_power), Val(:mva), units)
@@ -196,8 +196,6 @@ get_internal(value::StandardLoad) = value.internal
 set_available!(value::StandardLoad, val) = value.available = val
 """Set [`StandardLoad`](@ref) `bus`."""
 set_bus!(value::StandardLoad, val) = value.bus = val
-"""Set [`StandardLoad`](@ref) `base_power`."""
-set_base_power!(value::StandardLoad, val) = value.base_power = val
 """Set [`StandardLoad`](@ref) `constant_active_power`. Value must have units (e.g., `30.0MW`, `0.5DU`)."""
 set_constant_active_power!(value::StandardLoad, val) = value.constant_active_power = set_value(value, Val(:constant_active_power), val, Val(:mva))
 """Set [`StandardLoad`](@ref) `constant_reactive_power`. Value must have units (e.g., `30.0MW`, `0.5DU`)."""

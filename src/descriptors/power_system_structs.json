@@ -19,7 +19,6 @@
                     "default": "0.0",
                     "needs_conversion": true,
                     "conversion_unit": ":mva"
-
                 },
                 {
                     "name": "peak_reactive_power",
@@ -412,7 +411,7 @@
                     "exclude_setter": true
                 }
             ],
-            "custom_code": "get_name(arc::Arc) = (get_name ∘ get_from)(arc) * \" -> \" * (get_name ∘ get_to)(arc)",
+            "custom_code": "get_name(arc::Arc) = (get_name \u2218 get_from)(arc) * \" -> \" * (get_name \u2218 get_to)(arc)",
             "supertype": "Topology"
         },
         {
@@ -909,7 +908,7 @@
                     "validation_action": "error"
                 },
                 {
-                    "name": "α",
+                    "name": "\u03b1",
                     "comment": "Initial condition of phase shift (radians) between the `from` and `to` buses ",
                     "null_value": "0.0",
                     "data_type": "Float64",
@@ -938,10 +937,12 @@
                     "null_value": "100.0",
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": 1e-4,
+                        "min": 0.0001,
                         "max": null
                     },
-                    "validation_action": "warn"
+                    "validation_action": "warn",
+                    "exclude_getter": true,
+                    "exclude_setter": true
                 },
                 {
                     "name": "base_voltage_primary",
@@ -1127,10 +1128,12 @@
                     "null_value": "100.0",
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": 1e-4,
+                        "min": 0.0001,
                         "max": null
                     },
-                    "validation_action": "warn"
+                    "validation_action": "warn",
+                    "exclude_getter": true,
+                    "exclude_setter": true
                 },
                 {
                     "name": "base_voltage_primary",
@@ -1170,7 +1173,7 @@
                     "name": "rating_c",
                     "comment": "Third current rating; entered in MVA.",
                     "data_type": "Union{Nothing, Float64}",
-                   "needs_conversion": true,
+                    "needs_conversion": true,
                     "conversion_unit": ":mva",
                     "default": "nothing"
                 },
@@ -1296,7 +1299,7 @@
                         "max": null
                     },
                     "validation_action": "error",
-                   "needs_conversion": true,
+                    "needs_conversion": true,
                     "conversion_unit": ":mva"
                 },
                 {
@@ -1305,10 +1308,12 @@
                     "null_value": "100.0",
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": 1e-4,
+                        "min": 0.0001,
                         "max": null
                     },
-                    "validation_action": "warn"
+                    "validation_action": "warn",
+                    "exclude_getter": true,
+                    "exclude_setter": true
                 },
                 {
                     "name": "base_voltage_primary",
@@ -1650,7 +1655,9 @@
                         "min": 0,
                         "max": null
                     },
-                    "validation_action": "warn"
+                    "validation_action": "warn",
+                    "exclude_getter": true,
+                    "exclude_setter": true
                 },
                 {
                     "name": "base_power_23",
@@ -1661,7 +1668,9 @@
                         "min": 0,
                         "max": null
                     },
-                    "validation_action": "warn"
+                    "validation_action": "warn",
+                    "exclude_getter": true,
+                    "exclude_setter": true
                 },
                 {
                     "name": "base_power_13",
@@ -1672,7 +1681,9 @@
                         "min": 0,
                         "max": null
                     },
-                    "validation_action": "warn"
+                    "validation_action": "warn",
+                    "exclude_getter": true,
+                    "exclude_setter": true
                 },
                 {
                     "name": "base_voltage_primary",
@@ -2122,7 +2133,7 @@
                     "conversion_unit": ":ohm"
                 },
                 {
-                    "name": "α_primary",
+                    "name": "\u03b1_primary",
                     "comment": "Initial condition of primary phase shift (radians) between the `from` and `to` buses ",
                     "null_value": "0.0",
                     "data_type": "Float64",
@@ -2133,7 +2144,7 @@
                     "validation_action": "warn"
                 },
                 {
-                    "name": "α_secondary",
+                    "name": "\u03b1_secondary",
                     "comment": "Initial condition of secondary phase shift (radians) between the `from` and `to` buses ",
                     "null_value": "0.0",
                     "data_type": "Float64",
@@ -2144,7 +2155,7 @@
                     "validation_action": "warn"
                 },
                 {
-                    "name": "α_tertiary",
+                    "name": "\u03b1_tertiary",
                     "comment": "Initial condition of tertiary phase shift (radians) between the `from` and `to` buses ",
                     "null_value": "0.0",
                     "data_type": "Float64",
@@ -2163,7 +2174,9 @@
                         "min": 0,
                         "max": null
                     },
-                    "validation_action": "warn"
+                    "validation_action": "warn",
+                    "exclude_getter": true,
+                    "exclude_setter": true
                 },
                 {
                     "name": "base_power_23",
@@ -2174,7 +2187,9 @@
                         "min": 0,
                         "max": null
                     },
-                    "validation_action": "warn"
+                    "validation_action": "warn",
+                    "exclude_getter": true,
+                    "exclude_setter": true
                 },
                 {
                     "name": "base_power_13",
@@ -2185,7 +2200,9 @@
                         "min": 0,
                         "max": null
                     },
-                    "validation_action": "warn"
+                    "validation_action": "warn",
+                    "exclude_getter": true,
+                    "exclude_setter": true
                 },
                 {
                     "name": "base_voltage_primary",
@@ -2787,7 +2804,7 @@
                 },
                 {
                     "name": "rectifier_delay_angle_limits",
-                    "comment": "Minimum and maximum rectifier firing delay angle (α) (radians)",
+                    "comment": "Minimum and maximum rectifier firing delay angle (\u03b1) (radians)",
                     "null_value": "(min=0.0, max=0.0)",
                     "data_type": "MinMax"
                 },
@@ -2817,7 +2834,7 @@
                 },
                 {
                     "name": "inverter_extinction_angle_limits",
-                    "comment": "Minimum and maximum inverter extinction angle (γ) (radians)",
+                    "comment": "Minimum and maximum inverter extinction angle (\u03b3) (radians)",
                     "null_value": "(min=0.0, max=0.0)",
                     "data_type": "MinMax"
                 },
@@ -2863,7 +2880,7 @@
                 {
                     "name": "min_compounding_voltage",
                     "data_type": "Float64",
-                    "comment": "Minimum compounded voltage, in kV. This parameter must not be added in per-unit. Only used in constant gamma operation (γ_min = γ_max), and the AC transformer is used to control the DC voltage.",
+                    "comment": "Minimum compounded voltage, in kV. This parameter must not be added in per-unit. Only used in constant gamma operation (\u03b3_min = \u03b3_max), and the AC transformer is used to control the DC voltage.",
                     "null_value": "0.0",
                     "default": "0.0"
                 },
@@ -2897,7 +2914,7 @@
                 },
                 {
                     "name": "rectifier_delay_angle",
-                    "comment": "Rectifier firing delay angle (α).",
+                    "comment": "Rectifier firing delay angle (\u03b1).",
                     "null_value": "0.0",
                     "data_type": "Float64",
                     "default": "0.0"
@@ -2939,7 +2956,7 @@
                 },
                 {
                     "name": "inverter_extinction_angle",
-                    "comment": "Inverter extinction angle (γ).",
+                    "comment": "Inverter extinction angle (\u03b3).",
                     "null_value": "0.0",
                     "data_type": "Float64",
                     "default": "0.0"
@@ -3168,10 +3185,12 @@
                     "null_value": "100.0",
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": 1e-4,
+                        "min": 0.0001,
                         "max": null
                     },
-                    "validation_action": "warn"
+                    "validation_action": "warn",
+                    "exclude_getter": true,
+                    "exclude_setter": true
                 },
                 {
                     "name": "operation_cost",
@@ -3219,7 +3238,7 @@
         },
         {
             "struct_name": "InterruptibleStandardLoad",
-                "docstring": "A voltage-dependent [ZIP load](@ref Z), most commonly used for dynamics modeling.\n\nA `StandardLoad` breaks the ZIP into three pieces: Z (constant impedance), I (constant current), and P (constant power), according to `P = P_P * V^0 + P_I * V^1 + P_Z * V^2` for active power and `Q = Q_P * V^0 + Q_I * V^1 + Q_Z * V^2` for reactive power. (Voltage V is in per unit.)\n\nFor an alternative exponential formulation of the ZIP model, see [`ExponentialLoad`](@ref). For a simpler load model with no voltage dependency, see [`PowerLoad`](@ref)",
+            "docstring": "A voltage-dependent [ZIP load](@ref Z), most commonly used for dynamics modeling.\n\nA `StandardLoad` breaks the ZIP into three pieces: Z (constant impedance), I (constant current), and P (constant power), according to `P = P_P * V^0 + P_I * V^1 + P_Z * V^2` for active power and `Q = Q_P * V^0 + Q_I * V^1 + Q_Z * V^2` for reactive power. (Voltage V is in per unit.)\n\nFor an alternative exponential formulation of the ZIP model, see [`ExponentialLoad`](@ref). For a simpler load model with no voltage dependency, see [`PowerLoad`](@ref)",
             "fields": [
                 {
                     "null_value": "init",
@@ -3246,10 +3265,12 @@
                     "null_value": "100.0",
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": 1e-4,
+                        "min": 0.0001,
                         "max": null
                     },
-                    "validation_action": "warn"
+                    "validation_action": "warn",
+                    "exclude_getter": true,
+                    "exclude_setter": true
                 },
                 {
                     "name": "operation_cost",
@@ -3472,10 +3493,12 @@
                     "null_value": "100.0",
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": 1e-4,
+                        "min": 0.0001,
                         "max": null
                     },
-                    "validation_action": "warn"
+                    "validation_action": "warn",
+                    "exclude_getter": true,
+                    "exclude_setter": true
                 },
                 {
                     "name": "load_balance_time_horizon",
@@ -3716,7 +3739,8 @@
                     "data_type": "Vector{Complex{Float64}}",
                     "default": "Complex{Float64}[]"
                 },
-                {   "name": "admittance_limits",
+                {
+                    "name": "admittance_limits",
                     "comment": "Shunt admittance limits for switched shunt model",
                     "null_value": "(min=0.0, max=0.0)",
                     "data_type": "MinMax",
@@ -3799,10 +3823,12 @@
                     "null_value": "100.0",
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": 1e-4,
+                        "min": 0.0001,
                         "max": null
                     },
-                    "validation_action": "warn"
+                    "validation_action": "warn",
+                    "exclude_getter": true,
+                    "exclude_setter": true
                 },
                 {
                     "name": "max_active_power",
@@ -3903,10 +3929,12 @@
                     "null_value": "100.0",
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": 1e-4,
+                        "min": 0.0001,
                         "max": null
                     },
-                    "validation_action": "warn"
+                    "validation_action": "warn",
+                    "exclude_getter": true,
+                    "exclude_setter": true
                 },
                 {
                     "name": "rating",
@@ -3938,7 +3966,7 @@
                     "needs_conversion": true,
                     "conversion_unit": ":mva"
                 },
-            {
+                {
                     "name": "motor_technology",
                     "comment": "AC Motor type. Options are listed [here](@ref motor_list)",
                     "null_value": "MotorLoadTechnology.UNDETERMINED",
@@ -3979,7 +4007,7 @@
         },
         {
             "struct_name": "StandardLoad",
-                "docstring": "A voltage-dependent [ZIP load](@ref Z), most commonly used for dynamics modeling.\n\nA `StandardLoad` breaks the ZIP into three pieces: Z (constant impedance), I (constant current), and P (constant power), according to `P = P_P * V^0 + P_I * V^1 + P_Z * V^2` for active power and `Q = Q_P * V^0 + Q_I * V^1 + Q_Z * V^2` for reactive power. (Voltage V is in per unit.)\n\nFor an alternative exponential formulation of the ZIP model, see [`ExponentialLoad`](@ref). For a simpler load model with no voltage dependency, see [`PowerLoad`](@ref)",
+            "docstring": "A voltage-dependent [ZIP load](@ref Z), most commonly used for dynamics modeling.\n\nA `StandardLoad` breaks the ZIP into three pieces: Z (constant impedance), I (constant current), and P (constant power), according to `P = P_P * V^0 + P_I * V^1 + P_Z * V^2` for active power and `Q = Q_P * V^0 + Q_I * V^1 + Q_Z * V^2` for reactive power. (Voltage V is in per unit.)\n\nFor an alternative exponential formulation of the ZIP model, see [`ExponentialLoad`](@ref). For a simpler load model with no voltage dependency, see [`PowerLoad`](@ref)",
             "fields": [
                 {
                     "null_value": "init",
@@ -4006,10 +4034,12 @@
                     "null_value": "100.0",
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": 1e-4,
+                        "min": 0.0001,
                         "max": null
                     },
-                    "validation_action": "warn"
+                    "validation_action": "warn",
+                    "exclude_getter": true,
+                    "exclude_setter": true
                 },
                 {
                     "name": "constant_active_power",
@@ -4159,7 +4189,7 @@
         },
         {
             "struct_name": "ExponentialLoad",
-            "docstring": "A voltage-dependent [ZIP load](@ref Z), most commonly used for dynamics modeling.\n\nAn `ExponentialLoad` models active power as P = P0 * V^α and reactive power as Q = Q0 * V^β, where the exponents α and β select govern the voltage dependency. For an alternative three-part formulation of the ZIP model, see [`StandardLoad`](@ref). For a simpler load model with no voltage dependency, see [`PowerLoad`](@ref)",
+            "docstring": "A voltage-dependent [ZIP load](@ref Z), most commonly used for dynamics modeling.\n\nAn `ExponentialLoad` models active power as P = P0 * V^\u03b1 and reactive power as Q = Q0 * V^\u03b2, where the exponents \u03b1 and \u03b2 select govern the voltage dependency. For an alternative three-part formulation of the ZIP model, see [`StandardLoad`](@ref). For a simpler load model with no voltage dependency, see [`PowerLoad`](@ref)",
             "fields": [
                 {
                     "null_value": "init",
@@ -4197,7 +4227,7 @@
                     "conversion_unit": ":mva"
                 },
                 {
-                    "name": "α",
+                    "name": "\u03b1",
                     "comment": "Exponent relating voltage dependency for active power. 0 = constant power only, 1 = constant current only, and 2 = constant impedance only",
                     "null_value": "0.0",
                     "data_type": "Float64",
@@ -4208,7 +4238,7 @@
                     "validation_action": "warn"
                 },
                 {
-                    "name": "β",
+                    "name": "\u03b2",
                     "comment": "Exponent relating voltage dependency for reactive power. 0 = constant power only, 1 = constant current only, and 2 = constant impedance only",
                     "null_value": "0.0",
                     "data_type": "Float64",
@@ -4224,10 +4254,12 @@
                     "null_value": "100.0",
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": 1e-4,
+                        "min": 0.0001,
                         "max": null
                     },
-                    "validation_action": "warn"
+                    "validation_action": "warn",
+                    "exclude_getter": true,
+                    "exclude_setter": true
                 },
                 {
                     "name": "max_active_power",
@@ -4380,9 +4412,11 @@
                     "null_value": 100.0,
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": 1e-4,
+                        "min": 0.0001,
                         "max": null
-                    }
+                    },
+                    "exclude_getter": true,
+                    "exclude_setter": true
                 },
                 {
                     "name": "ext",
@@ -4398,7 +4432,7 @@
                     "data_type": "Float64"
                 },
                 {
-                    "name": "τ_ref",
+                    "name": "\u03c4_ref",
                     "comment": "Reference torque parameter",
                     "internal_default": "1.0",
                     "data_type": "Float64"
@@ -4424,8 +4458,8 @@
                 {
                     "name": "states",
                     "exclude_setter": true,
-                    "comment": "(**Do not modify.**) The [states](@ref S) are:\n\tψ_qs: stator flux in the q-axis,\n\tψ_ds: stator flux in the d-axis,\n\tψ_qr: rotor flux in the q-axis,\n\tψ_dr: rotor flux in the d-axis, \n\tωr: Rotor speed [pu],",
-                    "internal_default": "[:ψ_qs, :ψ_ds, :ψ_qr, :ψ_dr, :ωr]",
+                    "comment": "(**Do not modify.**) The [states](@ref S) are:\n\t\u03c8_qs: stator flux in the q-axis,\n\t\u03c8_ds: stator flux in the d-axis,\n\t\u03c8_qr: rotor flux in the q-axis,\n\t\u03c8_dr: rotor flux in the d-axis, \n\t\u03c9r: Rotor speed [pu],",
+                    "internal_default": "[:\u03c8_qs, :\u03c8_ds, :\u03c8_qr, :\u03c8_dr, :\u03c9r]",
                     "data_type": "Vector{Symbol}"
                 },
                 {
@@ -4542,9 +4576,11 @@
                     "null_value": 100.0,
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": 1e-4,
+                        "min": 0.0001,
                         "max": null
-                    }
+                    },
+                    "exclude_getter": true,
+                    "exclude_setter": true
                 },
                 {
                     "name": "ext",
@@ -4560,7 +4596,7 @@
                     "data_type": "Float64"
                 },
                 {
-                    "name": "τ_ref",
+                    "name": "\u03c4_ref",
                     "comment": "Reference torque parameter",
                     "internal_default": "1.0",
                     "data_type": "Float64"
@@ -4592,8 +4628,8 @@
                 {
                     "name": "states",
                     "exclude_setter": true,
-                    "comment": "(**Do not modify.**) The [states](@ref S) are:\n\tψ_qr: rotor flux in the q-axis,\n\tψ_dr: rotor flux in the d-axis, \n\tωr: Rotor speed [pu],",
-                    "internal_default": "[:ψ_qr, :ψ_dr, :ωr]",
+                    "comment": "(**Do not modify.**) The [states](@ref S) are:\n\t\u03c8_qr: rotor flux in the q-axis,\n\t\u03c8_dr: rotor flux in the d-axis, \n\t\u03c9r: Rotor speed [pu],",
+                    "internal_default": "[:\u03c8_qr, :\u03c8_dr, :\u03c9r]",
                     "data_type": "Vector{Symbol}"
                 },
                 {
@@ -4645,7 +4681,7 @@
                     }
                 },
                 {
-                    "name": "α",
+                    "name": "\u03b1",
                     "comment": "Active power transient exponential coefficient",
                     "null_value": 0,
                     "data_type": "Float64",
@@ -4655,7 +4691,7 @@
                     }
                 },
                 {
-                    "name": "β",
+                    "name": "\u03b2",
                     "comment": "Reactive power transient exponential coefficient",
                     "null_value": 0,
                     "data_type": "Float64",
@@ -4695,7 +4731,9 @@
                     "name": "base_power",
                     "comment": "Base power of the load (MVA) for [per unitization](@ref per_unit)",
                     "internal_default": "100.0",
-                    "data_type": "Float64"
+                    "data_type": "Float64",
+                    "exclude_getter": true,
+                    "exclude_setter": true
                 },
                 {
                     "name": "states",
@@ -4868,9 +4906,11 @@
                     "null_value": 100.0,
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": 1e-4,
+                        "min": 0.0001,
                         "max": null
-                    }
+                    },
+                    "exclude_getter": true,
+                    "exclude_setter": true
                 },
                 {
                     "name": "ext",
@@ -4898,7 +4938,7 @@
                     "data_type": "Float64"
                 },
                 {
-                    "name": "ω_ref",
+                    "name": "\u03c9_ref",
                     "comment": "Reference frequency (pu)",
                     "internal_default": "1.0",
                     "data_type": "Float64"
@@ -4912,8 +4952,8 @@
                 {
                     "name": "states",
                     "exclude_setter": true,
-                    "comment": "(**Do not modify.**) The [states](@ref S) are:\n\tθ_pll: PLL deviation angle, \n\tϵ_pll: PLL integrator state, \n\tη: DC-voltage controller integrator state, \n\tv_dc: DC voltage at the capacitor, \n\tγd: d-axis Current controller integrator state, \n\tγq: q-axis Current controller integrator state, \n\tir_cnv: Real current out of the converter,\n\tii_cnv: Imaginary current out of the converter,\n\tvr_filter: Real voltage at the filter's capacitor,\n\tvi_filter: Imaginary voltage at the filter's capacitor,\n\tir_filter: Real current out of the filter,\n\tii_filter: Imaginary current out of the filter",
-                    "internal_default": "[:θ_pll, :ϵ_pll, :η, :v_dc, :γd, :γq, :ir_cnv, :ii_cnv, :vr_filter, :vi_filter, :ir_filter, :ii_filter]",
+                    "comment": "(**Do not modify.**) The [states](@ref S) are:\n\t\u03b8_pll: PLL deviation angle, \n\t\u03f5_pll: PLL integrator state, \n\t\u03b7: DC-voltage controller integrator state, \n\tv_dc: DC voltage at the capacitor, \n\t\u03b3d: d-axis Current controller integrator state, \n\t\u03b3q: q-axis Current controller integrator state, \n\tir_cnv: Real current out of the converter,\n\tii_cnv: Imaginary current out of the converter,\n\tvr_filter: Real voltage at the filter's capacitor,\n\tvi_filter: Imaginary voltage at the filter's capacitor,\n\tir_filter: Real current out of the filter,\n\tii_filter: Imaginary current out of the filter",
+                    "internal_default": "[:\u03b8_pll, :\u03f5_pll, :\u03b7, :v_dc, :\u03b3d, :\u03b3q, :ir_cnv, :ii_cnv, :vr_filter, :vi_filter, :ir_filter, :ii_filter]",
                     "data_type": "Vector{Symbol}"
                 },
                 {
@@ -4999,10 +5039,12 @@
                     "null_value": 100.0,
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": 1e-4,
+                        "min": 0.0001,
                         "max": null
                     },
-                    "validation_action": "warn"
+                    "validation_action": "warn",
+                    "exclude_getter": true,
+                    "exclude_setter": true
                 },
                 {
                     "name": "dc_current",
@@ -5174,9 +5216,11 @@
                     "null_value": 100.0,
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": 1e-4,
+                        "min": 0.0001,
                         "max": null
-                    }
+                    },
+                    "exclude_getter": true,
+                    "exclude_setter": true
                 },
                 {
                     "name": "ext",
@@ -5333,10 +5377,12 @@
                     "null_value": "100.0",
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": 1e-4,
+                        "min": 0.0001,
                         "max": null
                     },
-                    "validation_action": "warn"
+                    "validation_action": "warn",
+                    "exclude_getter": true,
+                    "exclude_setter": true
                 },
                 {
                     "null_value": "false",
@@ -5473,10 +5519,12 @@
                     "null_value": "100.0",
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": 1e-4,
+                        "min": 0.0001,
                         "max": null
                     },
-                    "validation_action": "warn"
+                    "validation_action": "warn",
+                    "exclude_getter": true,
+                    "exclude_setter": true
                 },
                 {
                     "name": "operation_cost",
@@ -5740,17 +5788,18 @@
                     "null_value": "100.0",
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": 1e-4,
+                        "min": 0.0001,
                         "max": null
                     },
-                    "validation_action": "warn"
+                    "validation_action": "warn",
+                    "exclude_getter": true,
+                    "exclude_setter": true
                 },
                 {
-
                     "null_value": "PumpHydroStatus.OFF",
                     "default": "PumpHydroStatus.OFF",
                     "name": "status",
-                    "comment": "Initial Operating status of a pumped‑storage hydro unit. See [PumpHydroStatus](@ref) for reference",
+                    "comment": "Initial Operating status of a pumped\u2011storage hydro unit. See [PumpHydroStatus](@ref) for reference",
                     "data_type": "PumpHydroStatus"
                 },
                 {
@@ -6063,10 +6112,12 @@
                     "null_value": "100.0",
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": 1e-4,
+                        "min": 0.0001,
                         "max": null
                     },
-                    "validation_action": "warn"
+                    "validation_action": "warn",
+                    "exclude_getter": true,
+                    "exclude_setter": true
                 },
                 {
                     "name": "services",
@@ -6175,10 +6226,12 @@
                     "null_value": "100.0",
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": 1e-4,
+                        "min": 0.0001,
                         "max": null
                     },
-                    "validation_action": "warn"
+                    "validation_action": "warn",
+                    "exclude_getter": true,
+                    "exclude_setter": true
                 },
                 {
                     "name": "services",
@@ -6320,10 +6373,12 @@
                     "null_value": "100.0",
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": 1e-4,
+                        "min": 0.0001,
                         "max": null
                     },
-                    "validation_action": "warn"
+                    "validation_action": "warn",
+                    "exclude_getter": true,
+                    "exclude_setter": true
                 },
                 {
                     "name": "time_limits",
@@ -6457,10 +6512,12 @@
                     "null_value": "100.0",
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": 1e-4,
+                        "min": 0.0001,
                         "max": null
                     },
-                    "validation_action": "warn"
+                    "validation_action": "warn",
+                    "exclude_getter": true,
+                    "exclude_setter": true
                 },
                 {
                     "name": "active_power_losses",
@@ -6663,10 +6720,12 @@
                     "null_value": "100.0",
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": 1e-4,
+                        "min": 0.0001,
                         "max": null
                     },
-                    "validation_action": "warn"
+                    "validation_action": "warn",
+                    "exclude_getter": true,
+                    "exclude_setter": true
                 },
                 {
                     "name": "services",
@@ -6861,10 +6920,12 @@
                     "null_value": "100.0",
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": 1e-4,
+                        "min": 0.0001,
                         "max": null
                     },
-                    "validation_action": "warn"
+                    "validation_action": "warn",
+                    "exclude_getter": true,
+                    "exclude_setter": true
                 },
                 {
                     "name": "operation_cost",
@@ -7486,7 +7547,7 @@
         },
         {
             "struct_name": "AGC",
-            "docstring": "Automatic generation control (AGC) for the system or a certain `Area` within the system.\n\nThis model uses a proportional–integral–derivative (PID) control to simulate a \"smooth\" response of the AGC to the area control error (ACE). Refer to [\"AGC Simulation Model for Large Renewable Energy Penetration Studies.\"](https://doi.org/10.1109/NAPS50074.2021.9449687)",
+            "docstring": "Automatic generation control (AGC) for the system or a certain `Area` within the system.\n\nThis model uses a proportional\u2013integral\u2013derivative (PID) control to simulate a \"smooth\" response of the AGC to the area control error (ACE). Refer to [\"AGC Simulation Model for Large Renewable Energy Penetration Studies.\"](https://doi.org/10.1109/NAPS50074.2021.9449687)",
             "fields": [
                 {
                     "null_value": "init",
@@ -10631,7 +10692,7 @@
                     "validation_action": "warn"
                 },
                 {
-                    "name": "θp",
+                    "name": "\u03b8p",
                     "comment": "Potential circuit phase angle (degrees)",
                     "null_value": 0,
                     "data_type": "Float64",
@@ -10653,10 +10714,10 @@
                     }
                 },
                 {
-                    "name": "θp_rad",
+                    "name": "\u03b8p_rad",
                     "comment": "(**Do not modify.**) Potential circuit phase angle (radians)",
                     "null_value": 0,
-                    "default": "θp*π*inv(180)",
+                    "default": "\u03b8p*\u03c0*inv(180)",
                     "data_type": "Float64"
                 },
                 {
@@ -11108,7 +11169,7 @@
                     "validation_action": "warn"
                 },
                 {
-                    "name": "θ_p",
+                    "name": "\u03b8_p",
                     "comment": "Potential circuit phase angle (degrees)",
                     "null_value": 0,
                     "data_type": "Float64",
@@ -11601,7 +11662,7 @@
         },
         {
             "struct_name": "RoundRotorMachine",
-            "docstring": "Parameters of 4-[states](@ref S) round-rotor synchronous machine with quadratic/exponential saturation:\nIEEE Std 1110 §5.3.2 (Model 2.2). GENROU or GENROE model in PSSE and PSLF",
+            "docstring": "Parameters of 4-[states](@ref S) round-rotor synchronous machine with quadratic/exponential saturation:\nIEEE Std 1110 \u00a75.3.2 (Model 2.2). GENROU or GENROE model in PSSE and PSLF",
             "fields": [
                 {
                     "name": "R",
@@ -11715,7 +11776,7 @@
                 },
                 {
                     "name": "Se",
-                    "comment": "Saturation factor at 1 and 1.2 pu flux: S(1.0) = B(|ψ_pp|-A)^2",
+                    "comment": "Saturation factor at 1 and 1.2 pu flux: S(1.0) = B(|\u03c8_pp|-A)^2",
                     "null_value": "(0.0, 0.0)",
                     "data_type": "Tuple{Float64, Float64}"
                 },
@@ -11727,40 +11788,40 @@
                     "default": "Dict{String, Any}()"
                 },
                 {
-                    "name": "γ_d1",
-                    "comment": "(**Do not modify.**) γ_d1 parameter",
+                    "name": "\u03b3_d1",
+                    "comment": "(**Do not modify.**) \u03b3_d1 parameter",
                     "internal_default": "(Xd_pp - Xl) / (Xd_p - Xl)",
                     "data_type": "Float64"
                 },
                 {
-                    "name": "γ_q1",
-                    "comment": "(**Do not modify.**) γ_q1 parameter",
+                    "name": "\u03b3_q1",
+                    "comment": "(**Do not modify.**) \u03b3_q1 parameter",
                     "internal_default": "(Xd_pp - Xl) / (Xq_p - Xl)",
                     "data_type": "Float64"
                 },
                 {
-                    "name": "γ_d2",
-                    "comment": "(**Do not modify.**) γ_d2 parameter",
+                    "name": "\u03b3_d2",
+                    "comment": "(**Do not modify.**) \u03b3_d2 parameter",
                     "internal_default": "(Xd_p - Xd_pp) / (Xd_p - Xl)^2",
                     "data_type": "Float64"
                 },
                 {
-                    "name": "γ_q2",
-                    "comment": "(**Do not modify.**) γ_q2 parameter",
+                    "name": "\u03b3_q2",
+                    "comment": "(**Do not modify.**) \u03b3_q2 parameter",
                     "internal_default": "(Xq_p - Xd_pp) / (Xq_p - Xl)^2",
                     "data_type": "Float64"
                 },
                 {
-                    "name": "γ_qd",
-                    "comment": "(**Do not modify.**) γ_qd parameter",
+                    "name": "\u03b3_qd",
+                    "comment": "(**Do not modify.**) \u03b3_qd parameter",
                     "internal_default": "(Xq - Xl) / (Xd - Xl)",
                     "data_type": "Float64"
                 },
                 {
                     "name": "states",
                     "exclude_setter": true,
-                    "comment": "(**Do not modify.**) The [states](@ref S) are:\n\teq_p: q-axis generator voltage behind the transient reactance,\n\ted_p: d-axis generator voltage behind the transient reactance,\n\tψ_kd: flux linkage in the first equivalent damping circuit in the d-axis,\n\tψ_kq: flux linkage in the first equivalent damping circuit in the d-axis",
-                    "internal_default": "[:eq_p, :ed_p, :ψ_kd, :ψ_kq]",
+                    "comment": "(**Do not modify.**) The [states](@ref S) are:\n\teq_p: q-axis generator voltage behind the transient reactance,\n\ted_p: d-axis generator voltage behind the transient reactance,\n\t\u03c8_kd: flux linkage in the first equivalent damping circuit in the d-axis,\n\t\u03c8_kq: flux linkage in the first equivalent damping circuit in the d-axis",
+                    "internal_default": "[:eq_p, :ed_p, :\u03c8_kd, :\u03c8_kq]",
                     "data_type": "Vector{Symbol}"
                 },
                 {
@@ -11782,7 +11843,7 @@
         },
         {
             "struct_name": "SalientPoleMachine",
-            "docstring": "Parameters of 3-[states](@ref S) salient-pole synchronous machine with quadratic/exponential saturation:\nIEEE Std 1110 §5.3.1 (Model 2.1). GENSAL or GENSAE model in PSSE and PSLF",
+            "docstring": "Parameters of 3-[states](@ref S) salient-pole synchronous machine with quadratic/exponential saturation:\nIEEE Std 1110 \u00a75.3.1 (Model 2.1). GENSAL or GENSAE model in PSSE and PSLF",
             "fields": [
                 {
                     "name": "R",
@@ -11888,28 +11949,28 @@
                     "default": "Dict{String, Any}()"
                 },
                 {
-                    "name": "γ_d1",
-                    "comment": "(**Do not modify.**) γ_d1 parameter",
+                    "name": "\u03b3_d1",
+                    "comment": "(**Do not modify.**) \u03b3_d1 parameter",
                     "internal_default": "(Xd_pp - Xl) / (Xd_p - Xl)",
                     "data_type": "Float64"
                 },
                 {
-                    "name": "γ_q1",
-                    "comment": "(**Do not modify.**) γ_q1 parameter",
+                    "name": "\u03b3_q1",
+                    "comment": "(**Do not modify.**) \u03b3_q1 parameter",
                     "internal_default": "(Xd_p - Xd_pp) / (Xd_p - Xl)",
                     "data_type": "Float64"
                 },
                 {
-                    "name": "γ_d2",
-                    "comment": "(**Do not modify.**) γ_d2 parameter",
+                    "name": "\u03b3_d2",
+                    "comment": "(**Do not modify.**) \u03b3_d2 parameter",
                     "internal_default": "(Xd_p - Xd_pp) / (Xd_p - Xl)^2",
                     "data_type": "Float64"
                 },
                 {
                     "name": "states",
                     "exclude_setter": true,
-                    "comment": "(**Do not modify.**) The [states](@ref S) are:\n\teq_p: q-axis generator voltage behind the transient reactance,\n\tψ_kd: flux linkage in the first equivalent damping circuit in the d-axis,\n\tψq_pp: phasonf of the subtransient flux linkage in the q-axis",
-                    "internal_default": "[:eq_p, :ψ_kd, :ψq_pp]",
+                    "comment": "(**Do not modify.**) The [states](@ref S) are:\n\teq_p: q-axis generator voltage behind the transient reactance,\n\t\u03c8_kd: flux linkage in the first equivalent damping circuit in the d-axis,\n\t\u03c8q_pp: phasonf of the subtransient flux linkage in the q-axis",
+                    "internal_default": "[:eq_p, :\u03c8_kd, :\u03c8q_pp]",
                     "data_type": "Vector{Symbol}"
                 },
                 {
@@ -12053,8 +12114,8 @@
                 {
                     "name": "states",
                     "exclude_setter": true,
-                    "comment": "(**Do not modify.**) The [states](@ref S) are:\n\tψq: q-axis stator flux,\n\tψd: d-axis stator flux,\n\teq_p: q-axis transient voltage,\n\ted_p: d-axis transient voltage,\n\teq_pp: q-axis subtransient voltage,\n\ted_pp: d-axis subtransient voltage",
-                    "internal_default": "[:ψq, :ψd, :eq_p, :ed_p, :eq_pp, :ed_pp]",
+                    "comment": "(**Do not modify.**) The [states](@ref S) are:\n\t\u03c8q: q-axis stator flux,\n\t\u03c8d: d-axis stator flux,\n\teq_p: q-axis transient voltage,\n\ted_p: d-axis transient voltage,\n\teq_pp: q-axis subtransient voltage,\n\ted_pp: d-axis subtransient voltage",
+                    "internal_default": "[:\u03c8q, :\u03c8d, :eq_p, :ed_p, :eq_pp, :ed_pp]",
                     "data_type": "Vector{Symbol}"
                 },
                 {
@@ -12076,7 +12137,7 @@
         },
         {
             "struct_name": "FullMachine",
-            "docstring": "Parameter of a full order flux stator-rotor model without zero sequence flux in the stator.\n The derivative of stator fluxes (ψd and ψq) is NOT neglected. Only one q-axis damping circuit is considered. All parameters are in machine per unit.\n Refer to Chapter 3 of [Power System Stability and Control by P. Kundur](https://www.accessengineeringlibrary.com/content/book/9781260473544) or Chapter 11 of [Power System Dynamics: Stability and Control, by J. Machowski, J. Bialek and J. Bumby](https://www.wiley.com/en-us/Power+System+Dynamics%3A+Stability+and+Control%2C+3rd+Edition-p-9781119526360), for more details.\n Note that the models are somewhat different (but equivalent) due to the different Park Transformation used in both books",
+            "docstring": "Parameter of a full order flux stator-rotor model without zero sequence flux in the stator.\n The derivative of stator fluxes (\u03c8d and \u03c8q) is NOT neglected. Only one q-axis damping circuit is considered. All parameters are in machine per unit.\n Refer to Chapter 3 of [Power System Stability and Control by P. Kundur](https://www.accessengineeringlibrary.com/content/book/9781260473544) or Chapter 11 of [Power System Dynamics: Stability and Control, by J. Machowski, J. Bialek and J. Bumby](https://www.wiley.com/en-us/Power+System+Dynamics%3A+Stability+and+Control%2C+3rd+Edition-p-9781119526360), for more details.\n Note that the models are somewhat different (but equivalent) due to the different Park Transformation used in both books",
             "fields": [
                 {
                     "name": "R",
@@ -12220,8 +12281,8 @@
                 {
                     "name": "states",
                     "exclude_setter": true,
-                    "comment": "(**Do not modify.**) The [states](@ref S) are:\n\tψd: d-axis stator flux,\n\tψq: q-axis stator flux,\n\tψf: field rotor flux,\n\tψ1d: d-axis rotor damping flux,\n\tψ1q: q-axis rotor damping flux",
-                    "internal_default": "[:ψd, :ψq, :ψf, :ψ1d, :ψ1q]",
+                    "comment": "(**Do not modify.**) The [states](@ref S) are:\n\t\u03c8d: d-axis stator flux,\n\t\u03c8q: q-axis stator flux,\n\t\u03c8f: field rotor flux,\n\t\u03c81d: d-axis rotor damping flux,\n\t\u03c81q: q-axis rotor damping flux",
+                    "internal_default": "[:\u03c8d, :\u03c8q, :\u03c8f, :\u03c81d, :\u03c81q]",
                     "data_type": "Vector{Symbol}"
                 },
                 {
@@ -12373,25 +12434,25 @@
                     "default": "Dict{String, Any}()"
                 },
                 {
-                    "name": "γ_d1",
+                    "name": "\u03b3_d1",
                     "data_type": "Float64",
                     "internal_default": "(Xd_pp-Xl)/(Xd_p-Xl)",
                     "comment": "(**Do not modify.**) Internal equation"
                 },
                 {
-                    "name": "γ_q1",
+                    "name": "\u03b3_q1",
                     "data_type": "Float64",
                     "internal_default": "(Xq_pp-Xl)/(Xq_p-Xl)",
                     "comment": "(**Do not modify.**) Internal equation"
                 },
                 {
-                    "name": "γ_d2",
+                    "name": "\u03b3_d2",
                     "data_type": "Float64",
                     "internal_default": "(Xd_p - Xd_pp) / (Xd_p - Xl)^2",
                     "comment": "(**Do not modify.**) Internal equation"
                 },
                 {
-                    "name": "γ_q2",
+                    "name": "\u03b3_q2",
                     "data_type": "Float64",
                     "internal_default": "(Xq_p - Xq_pp) / (Xq_p - Xl)^2",
                     "comment": "(**Do not modify.**) Internal equation"
@@ -12399,8 +12460,8 @@
                 {
                     "name": "states",
                     "exclude_setter": true,
-                    "comment": "(**Do not modify.**) The [states](@ref S) are:\n\tψq: q-axis stator flux,\n\tψd: d-axis stator flux,\n\teq_p: q-axis transient voltage,\n\ted_p: d-axis transient voltage\n\tψd_pp: subtransient flux linkage in the d-axis\n\tψq_pp: subtransient flux linkage in the q-axis",
-                    "internal_default": "[:ψq, :ψd, :eq_p, :ed_p, :ψd_pp, :ψq_pp]",
+                    "comment": "(**Do not modify.**) The [states](@ref S) are:\n\t\u03c8q: q-axis stator flux,\n\t\u03c8d: d-axis stator flux,\n\teq_p: q-axis transient voltage,\n\ted_p: d-axis transient voltage\n\t\u03c8d_pp: subtransient flux linkage in the d-axis\n\t\u03c8q_pp: subtransient flux linkage in the q-axis",
+                    "internal_default": "[:\u03c8q, :\u03c8d, :eq_p, :ed_p, :\u03c8d_pp, :\u03c8q_pp]",
                     "data_type": "Vector{Symbol}"
                 },
                 {
@@ -12552,13 +12613,13 @@
                     "default": "Dict{String, Any}()"
                 },
                 {
-                    "name": "γd",
+                    "name": "\u03b3d",
                     "data_type": "Float64",
                     "internal_default": "((Td0_pp*Xd_pp)/(Td0_p*Xd_p) )*(Xd-Xd_p)",
                     "comment": "(**Do not modify.**) Internal equation"
                 },
                 {
-                    "name": "γq",
+                    "name": "\u03b3q",
                     "data_type": "Float64",
                     "internal_default": "((Tq0_pp*Xq_pp)/(Tq0_p*Xq_p) )*(Xq-Xq_p)",
                     "comment": "(**Do not modify.**) Internal equation"
@@ -12566,8 +12627,8 @@
                 {
                     "name": "states",
                     "exclude_setter": true,
-                    "comment": "(**Do not modify.**) The [states](@ref S) are:\n\tψq: q-axis stator flux,\n\tψd: d-axis stator flux,\n\teq_p: q-axis transient voltage,\n\ted_p: d-axis transient voltage,\n\teq_pp: q-axis subtransient voltage,\n\ted_pp: d-axis subtransient voltage",
-                    "internal_default": "[:ψq, :ψd, :eq_p, :ed_p, :eq_pp, :ed_pp]",
+                    "comment": "(**Do not modify.**) The [states](@ref S) are:\n\t\u03c8q: q-axis stator flux,\n\t\u03c8d: d-axis stator flux,\n\teq_p: q-axis transient voltage,\n\ted_p: d-axis transient voltage,\n\teq_pp: q-axis subtransient voltage,\n\ted_pp: d-axis subtransient voltage",
+                    "internal_default": "[:\u03c8q, :\u03c8d, :eq_p, :ed_p, :eq_pp, :ed_pp]",
                     "data_type": "Vector{Symbol}"
                 },
                 {
@@ -12589,7 +12650,7 @@
         },
         {
             "struct_name": "OneDOneQMachine",
-            "docstring": "Parameters of 4-[states](@ref S) synchronous machine: Simplified Marconato model\n The derivative of stator fluxes (ψd and ψq) is neglected and ωψd = ψd and\n ωψq = ψq is assumed (i.e. ω=1.0). This is standard when\n transmission network dynamics is neglected",
+            "docstring": "Parameters of 4-[states](@ref S) synchronous machine: Simplified Marconato model\n The derivative of stator fluxes (\u03c8d and \u03c8q) is neglected and \u03c9\u03c8d = \u03c8d and\n \u03c9\u03c8q = \u03c8q is assumed (i.e. \u03c9=1.0). This is standard when\n transmission network dynamics is neglected",
             "fields": [
                 {
                     "name": "R",
@@ -12694,7 +12755,7 @@
         },
         {
             "struct_name": "SimpleAFMachine",
-            "docstring": "Parameters of 4-[states](@ref S) simplified Anderson-Fouad (SimpleAFMachine) model.\n The derivative of stator fluxes (ψd and ψq) is neglected and ωψd = ψd and\n ωψq = ψq is assumed (i.e. ω=1.0). This is standard when transmission network\n dynamics is neglected.\n If transmission dynamics is considered use the full order Anderson Fouad model",
+            "docstring": "Parameters of 4-[states](@ref S) simplified Anderson-Fouad (SimpleAFMachine) model.\n The derivative of stator fluxes (\u03c8d and \u03c8q) is neglected and \u03c9\u03c8d = \u03c8d and\n \u03c9\u03c8q = \u03c8q is assumed (i.e. \u03c9=1.0). This is standard when transmission network\n dynamics is neglected.\n If transmission dynamics is considered use the full order Anderson Fouad model",
             "fields": [
                 {
                     "name": "R",
@@ -12839,7 +12900,7 @@
         },
         {
             "struct_name": "SimpleFullMachine",
-            "docstring": "Parameter of a full order flux stator-rotor model without zero sequence flux in the stator.\n The derivative of stator fluxes (ψd and ψq) is neglected. This is standard when\n transmission network dynamics is neglected. Only one q-axis damping circuit\n is considered. All per unit are in machine per unit.\n Refer to Chapter 3 of Power System Stability and Control by P. Kundur or Chapter 11 of Power System Dynamics: Stability and Control, by J. Machowski, J. Bialek and J. Bumby, for more details.\n Note that the models are somewhat different (but equivalent) due to the different Park Transformation used in both books",
+            "docstring": "Parameter of a full order flux stator-rotor model without zero sequence flux in the stator.\n The derivative of stator fluxes (\u03c8d and \u03c8q) is neglected. This is standard when\n transmission network dynamics is neglected. Only one q-axis damping circuit\n is considered. All per unit are in machine per unit.\n Refer to Chapter 3 of Power System Stability and Control by P. Kundur or Chapter 11 of Power System Dynamics: Stability and Control, by J. Machowski, J. Bialek and J. Bumby, for more details.\n Note that the models are somewhat different (but equivalent) due to the different Park Transformation used in both books",
             "fields": [
                 {
                     "name": "R",
@@ -12983,8 +13044,8 @@
                 {
                     "name": "states",
                     "exclude_setter": true,
-                    "comment": "(**Do not modify.**) The [states](@ref S) are:\n\tψf: field rotor flux,\n\tψ1d: d-axis rotor damping flux,\n\tψ1q: q-axis rotor damping flux",
-                    "internal_default": "[:ψf, :ψ1d, :ψ1q]",
+                    "comment": "(**Do not modify.**) The [states](@ref S) are:\n\t\u03c8f: field rotor flux,\n\t\u03c81d: d-axis rotor damping flux,\n\t\u03c81q: q-axis rotor damping flux",
+                    "internal_default": "[:\u03c8f, :\u03c81d, :\u03c81q]",
                     "data_type": "Vector{Symbol}"
                 },
                 {
@@ -13006,7 +13067,7 @@
         },
         {
             "struct_name": "SimpleMarconatoMachine",
-            "docstring": "Parameters of 4-[states](@ref S) synchronous machine: Simplified Marconato model\n The derivative of stator fluxes (ψd and ψq) is neglected and ωψd = ψd and\n ωψq = ψq is assumed (i.e. ω=1.0). This is standard when transmission network\n dynamics is neglected",
+            "docstring": "Parameters of 4-[states](@ref S) synchronous machine: Simplified Marconato model\n The derivative of stator fluxes (\u03c8d and \u03c8q) is neglected and \u03c9\u03c8d = \u03c8d and\n \u03c9\u03c8q = \u03c8q is assumed (i.e. \u03c9=1.0). This is standard when transmission network\n dynamics is neglected",
             "fields": [
                 {
                     "name": "R",
@@ -13136,13 +13197,13 @@
                     "default": "Dict{String, Any}()"
                 },
                 {
-                    "name": "γd",
+                    "name": "\u03b3d",
                     "data_type": "Float64",
                     "internal_default": "((Td0_pp*Xd_pp)/(Td0_p*Xd_p) )*(Xd-Xd_p)",
                     "comment": "(**Do not modify.**) Internal equation"
                 },
                 {
-                    "name": "γq",
+                    "name": "\u03b3q",
                     "data_type": "Float64",
                     "internal_default": "((Tq0_pp*Xq_pp)/(Tq0_p*Xq_p) )*(Xq-Xq_p)",
                     "comment": "(**Do not modify.**) Internal equation"
@@ -13221,7 +13282,7 @@
             "docstring": "Parameters of a PSS that returns a proportional droop voltage to add to the reference for the AVR",
             "fields": [
                 {
-                    "name": "K_ω",
+                    "name": "K_\u03c9",
                     "comment": "Proportional gain for frequency",
                     "null_value": 0,
                     "data_type": "Float64",
@@ -14578,8 +14639,8 @@
                 {
                     "name": "states",
                     "exclude_setter": true,
-                    "comment": "(**Do not modify.**) The [states](@ref S) are:\n\tδ: rotor angle,\n\tω: rotor speed",
-                    "internal_default": "[:δ, :ω]",
+                    "comment": "(**Do not modify.**) The [states](@ref S) are:\n\t\u03b4: rotor angle,\n\t\u03c9: rotor speed",
+                    "internal_default": "[:\u03b4, :\u03c9]",
                     "data_type": "Vector{Symbol}"
                 },
                 {
@@ -14793,8 +14854,8 @@
                 {
                     "name": "states",
                     "exclude_setter": true,
-                    "comment": "(**Do not modify.**) The [states](@ref S) are:\n\tδ: rotor angle,\n\tω: rotor speed,\n\tδ_hp: rotor angle of high pressure turbine,\n\tω_hp: rotor speed of high pressure turbine,\n\tδ_ip: rotor angle of intermediate pressure turbine,\n\tω_ip: rotor speed of intermediate pressure turbine,\n\tδ_lp: rotor angle of low pressure turbine,\n\tω_lp: rotor speed of low pressure turbine,\n\tδ_ex: rotor angle of exciter,\n\tω_lp: rotor speed of exciter",
-                    "internal_default": "[:δ, :ω, :δ_hp, :ω_hp, :δ_ip, :ω_ip, :δ_lp, :ω_lp, :δ_ex, :ω_ex]",
+                    "comment": "(**Do not modify.**) The [states](@ref S) are:\n\t\u03b4: rotor angle,\n\t\u03c9: rotor speed,\n\t\u03b4_hp: rotor angle of high pressure turbine,\n\t\u03c9_hp: rotor speed of high pressure turbine,\n\t\u03b4_ip: rotor angle of intermediate pressure turbine,\n\t\u03c9_ip: rotor speed of intermediate pressure turbine,\n\t\u03b4_lp: rotor angle of low pressure turbine,\n\t\u03c9_lp: rotor speed of low pressure turbine,\n\t\u03b4_ex: rotor angle of exciter,\n\t\u03c9_lp: rotor speed of exciter",
+                    "internal_default": "[:\u03b4, :\u03c9, :\u03b4_hp, :\u03c9_hp, :\u03b4_ip, :\u03c9_ip, :\u03b4_lp, :\u03c9_lp, :\u03b4_ex, :\u03c9_ex]",
                     "data_type": "Vector{Symbol}"
                 },
                 {
@@ -16777,7 +16838,7 @@
                     }
                 },
                 {
-                    "name": "τ_limits",
+                    "name": "\u03c4_limits",
                     "comment": "Power into the governor limits",
                     "null_value": "(min=0.0, max=0.0)",
                     "data_type": "MinMax"
@@ -16869,8 +16930,8 @@
                 {
                     "name": "states",
                     "exclude_setter": true,
-                    "comment": "(**Do not modify.**) The [states](@ref S) of the TGSimple model are:\n\tτm: mechanical torque",
-                    "internal_default": "[:τm]",
+                    "comment": "(**Do not modify.**) The [states](@ref S) of the TGSimple model are:\n\t\u03c4m: mechanical torque",
+                    "internal_default": "[:\u03c4m]",
                     "data_type": "Vector{Symbol}"
                 },
                 {
@@ -17462,8 +17523,8 @@
                 {
                     "name": "states",
                     "exclude_setter": true,
-                    "comment": "(**Do not modify.**) The [states](@ref S) of the ZeroOrderBESS model are:\n\tv_dc: DC-link voltage,\n\ti_b: Battery current,\n\t ν: integrator state of the voltage controller,\n\t ζ: integrator state of the PI current controller",
-                    "internal_default": "[:v_dc, :i_b, :ν, :ζ]",
+                    "comment": "(**Do not modify.**) The [states](@ref S) of the ZeroOrderBESS model are:\n\tv_dc: DC-link voltage,\n\ti_b: Battery current,\n\t \u03bd: integrator state of the voltage controller,\n\t \u03b6: integrator state of the PI current controller",
+                    "internal_default": "[:v_dc, :i_b, :\u03bd, :\u03b6]",
                     "data_type": "Vector{Symbol}"
                 },
                 {
@@ -17665,7 +17726,7 @@
             "docstring": "Parameters of a Phase-Locked Loop (PLL) based on [\"Operation of a phase locked loop system under distorted utility conditions\"](https://doi.org/10.1109/28.567077) by Vikram Kaura, and Vladimir Blasko",
             "fields": [
                 {
-                    "name": "ω_lp",
+                    "name": "\u03c9_lp",
                     "comment": "PLL low-pass filter frequency (rad/sec)",
                     "null_value": 0,
                     "data_type": "Float64",
@@ -17704,8 +17765,8 @@
                 {
                     "name": "states",
                     "exclude_setter": true,
-                    "comment": "(**Do not modify.**) The [states](@ref S) of the KauraPLL model are:\n\tvd_pll: d-axis of the measured voltage in the PLL synchronous reference frame (SRF),\n\tvq_pll: q-axis of the measured voltage in the PLL SRF,\n\tε_pll: Integrator state of the PI controller,\n\tθ_pll: Phase angle displacement in the PLL SRF",
-                    "internal_default": "[:vd_pll, :vq_pll, :ε_pll, :θ_pll]",
+                    "comment": "(**Do not modify.**) The [states](@ref S) of the KauraPLL model are:\n\tvd_pll: d-axis of the measured voltage in the PLL synchronous reference frame (SRF),\n\tvq_pll: q-axis of the measured voltage in the PLL SRF,\n\t\u03b5_pll: Integrator state of the PI controller,\n\t\u03b8_pll: Phase angle displacement in the PLL SRF",
+                    "internal_default": "[:vd_pll, :vq_pll, :\u03b5_pll, :\u03b8_pll]",
                     "data_type": "Vector{Symbol}"
                 },
                 {
@@ -17723,7 +17784,7 @@
             "docstring": "Parameters of a Phase-Locked Loop (PLL) based on [\"Reduced-order Structure-preserving Model for Parallel-connected Three-phase Grid-tied Inverters.\"](https://doi.org/10.1109/COMPEL.2017.8013389)",
             "fields": [
                 {
-                    "name": "ω_lp",
+                    "name": "\u03c9_lp",
                     "comment": "PLL low-pass filter frequency (rad/sec)",
                     "null_value": 0,
                     "data_type": "Float64",
@@ -17762,8 +17823,8 @@
                 {
                     "name": "states",
                     "exclude_setter": true,
-                    "comment": "(**Do not modify.**) The [states](@ref S) of the ReducedOrderPLL model are:\n\tvq_pll: q-axis of the measured voltage in the PLL synchronous reference frame (SRF),\n\tε_pll: Integrator state of the PI controller,\n\tθ_pll: Phase angle displacement in the PLL SRF",
-                    "internal_default": "[:vq_pll, :ε_pll, :θ_pll]",
+                    "comment": "(**Do not modify.**) The [states](@ref S) of the ReducedOrderPLL model are:\n\tvq_pll: q-axis of the measured voltage in the PLL synchronous reference frame (SRF),\n\t\u03b5_pll: Integrator state of the PI controller,\n\t\u03b8_pll: Phase angle displacement in the PLL SRF",
+                    "internal_default": "[:vq_pll, :\u03b5_pll, :\u03b8_pll]",
                     "data_type": "Vector{Symbol}"
                 },
                 {
@@ -17836,7 +17897,7 @@
                     }
                 },
                 {
-                    "name": "kω",
+                    "name": "k\u03c9",
                     "comment": "frequency droop gain",
                     "null_value": 0,
                     "data_type": "Float64",
@@ -17866,8 +17927,8 @@
                 {
                     "name": "states",
                     "exclude_setter": true,
-                    "comment": "(**Do not modify.**) The [states](@ref S) of the VirtualInertia model are:\n\tθ_oc: Phase angle displacement of the virtual synchronous generator model\n\tω_oc: Speed of the rotating reference frame of the virtual synchronous generator model",
-                    "internal_default": "[:θ_oc, :ω_oc]",
+                    "comment": "(**Do not modify.**) The [states](@ref S) of the VirtualInertia model are:\n\t\u03b8_oc: Phase angle displacement of the virtual synchronous generator model\n\t\u03c9_oc: Speed of the rotating reference frame of the virtual synchronous generator model",
+                    "internal_default": "[:\u03b8_oc, :\u03c9_oc]",
                     "data_type": "Vector{Symbol}"
                 },
                 {
@@ -17895,7 +17956,7 @@
                     }
                 },
                 {
-                    "name": "ωz",
+                    "name": "\u03c9z",
                     "comment": "filter frequency cutoff",
                     "null_value": 0,
                     "data_type": "Float64",
@@ -17925,8 +17986,8 @@
                 {
                     "name": "states",
                     "exclude_setter": true,
-                    "comment": "(**Do not modify.**) The [states](@ref S) of the ActivePowerDroop model are:\n\tθ_oc: Phase angle displacement of the inverter model,\n\tp_oc: Measured active power of the inverter model",
-                    "internal_default": "[:θ_oc, :p_oc]",
+                    "comment": "(**Do not modify.**) The [states](@ref S) of the ActivePowerDroop model are:\n\t\u03b8_oc: Phase angle displacement of the inverter model,\n\tp_oc: Measured active power of the inverter model",
+                    "internal_default": "[:\u03b8_oc, :p_oc]",
                     "data_type": "Vector{Symbol}"
                 },
                 {
@@ -17964,7 +18025,7 @@
                     }
                 },
                 {
-                    "name": "ωz",
+                    "name": "\u03c9z",
                     "comment": "filter frequency cutoff",
                     "null_value": 0,
                     "data_type": "Float64",
@@ -17994,8 +18055,8 @@
                 {
                     "name": "states",
                     "exclude_setter": true,
-                    "comment": "(**Do not modify.**) The [states](@ref S) of the ActivePowerPI model are:\n\tσp_oc: Integrator state of the PI Controller,\n\tp_oc: Measured active power of the inverter model",
-                    "internal_default": "[:σp_oc, :p_oc]",
+                    "comment": "(**Do not modify.**) The [states](@ref S) of the ActivePowerPI model are:\n\t\u03c3p_oc: Integrator state of the PI Controller,\n\tp_oc: Measured active power of the inverter model",
+                    "internal_default": "[:\u03c3p_oc, :p_oc]",
                     "data_type": "Vector{Symbol}"
                 },
                 {
@@ -18023,7 +18084,7 @@
                     }
                 },
                 {
-                    "name": "ψ",
+                    "name": "\u03c8",
                     "comment": "Rotation angle of the controller",
                     "null_value": 0,
                     "data_type": "Float64",
@@ -18053,8 +18114,8 @@
                 {
                     "name": "states",
                     "exclude_setter": true,
-                    "comment": "(**Do not modify.**) The [states](@ref S) of the ActiveVirtualOscillator model are:\n\tθ_oc: Phase angle displacement of the inverter model",
-                    "internal_default": "[:θ_oc]",
+                    "comment": "(**Do not modify.**) The [states](@ref S) of the ActiveVirtualOscillator model are:\n\t\u03b8_oc: Phase angle displacement of the inverter model",
+                    "internal_default": "[:\u03b8_oc]",
                     "data_type": "Vector{Symbol}"
                 },
                 {
@@ -18384,7 +18445,7 @@
                 },
                 {
                     "name": "V_frz",
-                    "comment": "Voltage below which state ξq_oc (integrator state) is freeze",
+                    "comment": "Voltage below which state \u03beq_oc (integrator state) is freeze",
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
@@ -18543,7 +18604,7 @@
                     }
                 },
                 {
-                    "name": "ωf",
+                    "name": "\u03c9f",
                     "comment": "filter frequency cutoff",
                     "null_value": 0,
                     "data_type": "Float64",
@@ -18612,7 +18673,7 @@
                     }
                 },
                 {
-                    "name": "ωf",
+                    "name": "\u03c9f",
                     "comment": "filter frequency cutoff",
                     "null_value": 0,
                     "data_type": "Float64",
@@ -18653,8 +18714,8 @@
                 {
                     "name": "states",
                     "exclude_setter": true,
-                    "comment": "(**Do not modify.**) The [states](@ref S) of the ReactivePowerPI model are:\n\tσq_oc: Integrator state of the PI Controller,\n\tq_oc: Measured reactive power of the inverter model",
-                    "internal_default": "[:σq_oc, :q_oc]",
+                    "comment": "(**Do not modify.**) The [states](@ref S) of the ReactivePowerPI model are:\n\t\u03c3q_oc: Integrator state of the PI Controller,\n\tq_oc: Measured reactive power of the inverter model",
+                    "internal_default": "[:\u03c3q_oc, :q_oc]",
                     "data_type": "Vector{Symbol}"
                 },
                 {
@@ -18812,7 +18873,7 @@
                     }
                 },
                 {
-                    "name": "ωad",
+                    "name": "\u03c9ad",
                     "comment": "active damping filter cutoff frequency (rad/sec)",
                     "null_value": 0,
                     "data_type": "Float64",
@@ -18841,8 +18902,8 @@
                 {
                     "name": "states",
                     "exclude_setter": true,
-                    "comment": "(**Do not modify.**) The [states](@ref S) of the VoltageModeControl model are:\n\tξd_ic: d-axis integrator state of the PI voltage controller,\n\tξq_ic: q-axis integrator state of the PI voltage controller,\n\tγd_ic: d-axis integrator state of the PI current controller,\n\tγq_ic: q-axis integrator state of the PI current controller,\n\tϕd_ic: d-axis low-pass filter of active damping,\n\tϕq_ic: q-axis low-pass filter of active damping",
-                    "internal_default": "[:ξd_ic, :ξq_ic, :γd_ic, :γq_ic, :ϕd_ic, :ϕq_ic]",
+                    "comment": "(**Do not modify.**) The [states](@ref S) of the VoltageModeControl model are:\n\t\u03bed_ic: d-axis integrator state of the PI voltage controller,\n\t\u03beq_ic: q-axis integrator state of the PI voltage controller,\n\t\u03b3d_ic: d-axis integrator state of the PI current controller,\n\t\u03b3q_ic: q-axis integrator state of the PI current controller,\n\t\u03d5d_ic: d-axis low-pass filter of active damping,\n\t\u03d5q_ic: q-axis low-pass filter of active damping",
+                    "internal_default": "[:\u03bed_ic, :\u03beq_ic, :\u03b3d_ic, :\u03b3q_ic, :\u03d5d_ic, :\u03d5q_ic]",
                     "data_type": "Vector{Symbol}"
                 },
                 {
@@ -18899,8 +18960,8 @@
                 {
                     "name": "states",
                     "exclude_setter": true,
-                    "comment": "(**Do not modify.**) The [states](@ref S) of the CurrentModeControl model are:\n\tγd_ic: d-axis integrator state of the PI current controller,\n\tγq_ic: q-axis integrator state of the PI current controller",
-                    "internal_default": "[:γd_ic, :γq_ic]",
+                    "comment": "(**Do not modify.**) The [states](@ref S) of the CurrentModeControl model are:\n\t\u03b3d_ic: d-axis integrator state of the PI current controller,\n\t\u03b3q_ic: q-axis integrator state of the PI current controller",
+                    "internal_default": "[:\u03b3d_ic, :\u03b3q_ic]",
                     "data_type": "Vector{Symbol}"
                 },
                 {
@@ -19122,7 +19183,7 @@
                     }
                 },
                 {
-                    "name": "ϕ_I",
+                    "name": "\u03d5_I",
                     "comment": "Pre-defined angle (measured against the d-axis) for I_ref once limit I_max is hit",
                     "null_value": 0,
                     "data_type": "Float64",
@@ -19559,7 +19620,7 @@
                     }
                 },
                 {
-                    "name": "ω_ref",
+                    "name": "\u03c9_ref",
                     "comment": "Reference Frequency (pu)",
                     "null_value": 0,
                     "default": "1.0",
@@ -19596,7 +19657,9 @@
                     "comment": "Base power (MVA) for [per unitization](@ref per_unit)",
                     "null_value": 0,
                     "data_type": "Float64",
-                    "default": "100.0"
+                    "default": "100.0",
+                    "exclude_getter": true,
+                    "exclude_setter": true
                 },
                 {
                     "name": "ext",
@@ -19734,7 +19797,9 @@
                     "comment": "Base Power in MVA",
                     "null_value": 0,
                     "data_type": "Float64",
-                    "default": "100.0"
+                    "default": "100.0",
+                    "exclude_getter": true,
+                    "exclude_setter": true
                 },
                 {
                     "name": "operation_cost",
@@ -19857,13 +19922,15 @@
                     "comment": "Base power of the source (MVA) for [per unitization](@ref per_unit)",
                     "null_value": 0,
                     "data_type": "Float64",
-                    "default": "100.0"
+                    "default": "100.0",
+                    "exclude_getter": true,
+                    "exclude_setter": true
                 },
                 {
                     "name": "states",
                     "exclude_setter": true,
                     "comment": "(**Do not modify.**) The [states](@ref S) for time, voltage and angle",
-                    "internal_default": "[:Vt, :θt]",
+                    "internal_default": "[:Vt, :\u03b8t]",
                     "data_type": "Vector{Symbol}"
                 },
                 {
@@ -20250,7 +20317,9 @@
                     "comment": "Base power of the unit (MVA) for [per unitization](@ref per_unit)",
                     "null_value": 0,
                     "data_type": "Float64",
-                    "default": "100.0"
+                    "default": "100.0",
+                    "exclude_getter": true,
+                    "exclude_setter": true
                 },
                 {
                     "name": "states",
@@ -20293,7 +20362,7 @@
                     "name": "name"
                 },
                 {
-                    "name": "ω_ref"
+                    "name": "\u03c9_ref"
                 },
                 {
                     "name": "machine"
@@ -20335,7 +20404,7 @@
                     "name": "name"
                 },
                 {
-                    "name": "ω_ref"
+                    "name": "\u03c9_ref"
                 },
                 {
                     "name": "converter"

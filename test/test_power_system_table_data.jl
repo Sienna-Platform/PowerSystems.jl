@@ -115,7 +115,7 @@ end
                     @test all(
                         isapprox.(
                             [p.x for p in cdm_points],
-                            [p.x * get_base_power(mpgen) for p in mp_points],
+                            [p.x * PSY._get_base_power(mpgen) for p in mp_points],
                             atol = 0.1),
                     )
                 end

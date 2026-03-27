@@ -163,8 +163,8 @@ get_ramp_limits(value::ThermalStandard) = get_value(value, Val(:ramp_limits), Va
 get_ramp_limits(value::ThermalStandard, units) = get_value(value, Val(:ramp_limits), Val(:mva), units)
 """Get [`ThermalStandard`](@ref) `operation_cost`."""
 get_operation_cost(value::ThermalStandard) = value.operation_cost
-"""Get [`ThermalStandard`](@ref) `base_power`."""
-get_base_power(value::ThermalStandard) = value.base_power
+
+_get_base_power(value::ThermalStandard) = value.base_power
 """Get [`ThermalStandard`](@ref) `time_limits`."""
 get_time_limits(value::ThermalStandard) = value.time_limits
 """Get [`ThermalStandard`](@ref) `must_run`."""
@@ -204,8 +204,6 @@ set_reactive_power_limits!(value::ThermalStandard, val) = value.reactive_power_l
 set_ramp_limits!(value::ThermalStandard, val) = value.ramp_limits = set_value(value, Val(:ramp_limits), val, Val(:mva))
 """Set [`ThermalStandard`](@ref) `operation_cost`."""
 set_operation_cost!(value::ThermalStandard, val) = value.operation_cost = val
-"""Set [`ThermalStandard`](@ref) `base_power`."""
-set_base_power!(value::ThermalStandard, val) = value.base_power = val
 """Set [`ThermalStandard`](@ref) `time_limits`."""
 set_time_limits!(value::ThermalStandard, val) = value.time_limits = val
 """Set [`ThermalStandard`](@ref) `must_run`."""

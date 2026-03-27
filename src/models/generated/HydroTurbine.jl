@@ -164,8 +164,8 @@ get_active_power_limits(value::HydroTurbine, units) = get_value(value, Val(:acti
 """Get [`HydroTurbine`](@ref) `reactive_power_limits`. Returns value in the system's unit setting (natural units by default)."""
 get_reactive_power_limits(value::HydroTurbine) = get_value(value, Val(:reactive_power_limits), Val(:mva), _get_system_units(value, Val(:mva)))
 get_reactive_power_limits(value::HydroTurbine, units) = get_value(value, Val(:reactive_power_limits), Val(:mva), units)
-"""Get [`HydroTurbine`](@ref) `base_power`."""
-get_base_power(value::HydroTurbine) = value.base_power
+
+_get_base_power(value::HydroTurbine) = value.base_power
 """Get [`HydroTurbine`](@ref) `operation_cost`."""
 get_operation_cost(value::HydroTurbine) = value.operation_cost
 """Get [`HydroTurbine`](@ref) `powerhouse_elevation`."""
@@ -210,8 +210,6 @@ set_rating!(value::HydroTurbine, val) = value.rating = set_value(value, Val(:rat
 set_active_power_limits!(value::HydroTurbine, val) = value.active_power_limits = set_value(value, Val(:active_power_limits), val, Val(:mva))
 """Set [`HydroTurbine`](@ref) `reactive_power_limits`. Value must have units (e.g., `30.0MW`, `0.5DU`)."""
 set_reactive_power_limits!(value::HydroTurbine, val) = value.reactive_power_limits = set_value(value, Val(:reactive_power_limits), val, Val(:mva))
-"""Set [`HydroTurbine`](@ref) `base_power`."""
-set_base_power!(value::HydroTurbine, val) = value.base_power = val
 """Set [`HydroTurbine`](@ref) `operation_cost`."""
 set_operation_cost!(value::HydroTurbine, val) = value.operation_cost = val
 """Set [`HydroTurbine`](@ref) `powerhouse_elevation`."""

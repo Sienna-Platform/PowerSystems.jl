@@ -8,7 +8,7 @@ function validate_component_with_system(line::Union{MonitoredLine, Line}, sys::S
     is_valid = true
     if !check_endpoint_voltages(line)
         is_valid = false
-    elseif !correct_rate_limits!(line, get_base_power(sys))
+    elseif !correct_rate_limits!(line, _get_base_power(sys))
         is_valid = false
     end
     return is_valid
@@ -180,7 +180,7 @@ function validate_component_with_system(
     sys::System,
 )
     is_valid_reactance = check_transformer_reactance(xfrm)
-    is_valid_rating = check_rating_values(xfrm, get_base_power(sys))
+    is_valid_rating = check_rating_values(xfrm, _get_base_power(sys))
     return is_valid_reactance && is_valid_rating
 end
 
@@ -196,7 +196,7 @@ function check_rating_values(
     closestV_ix = findmin(abs.(voltage_levels .- vrated))
     closest_v_level = voltage_levels[closestV_ix[2]]
     closest_rate_range = MVA_LIMITS_TRANSFORMERS[closest_v_level]
-    device_base_power = get_base_power(xfrm)
+    device_base_power = _get_base_power(xfrm)
     # The rate is in device pu
     for field in [:rating, :rating_b, :rating_c]
         rating_value = getproperty(xfrm, field)

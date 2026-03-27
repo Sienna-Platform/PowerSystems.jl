@@ -105,8 +105,8 @@ get_T_p(value::DynamicExponentialLoad) = value.T_p
 get_T_q(value::DynamicExponentialLoad) = value.T_q
 """Get [`DynamicExponentialLoad`](@ref) `ext`."""
 get_ext(value::DynamicExponentialLoad) = value.ext
-"""Get [`DynamicExponentialLoad`](@ref) `base_power`."""
-get_base_power(value::DynamicExponentialLoad) = value.base_power
+
+_get_base_power(value::DynamicExponentialLoad) = value.base_power
 """Get [`DynamicExponentialLoad`](@ref) `states`."""
 get_states(value::DynamicExponentialLoad) = value.states
 """Get [`DynamicExponentialLoad`](@ref) `n_states`."""
@@ -128,5 +128,3 @@ set_T_p!(value::DynamicExponentialLoad, val) = value.T_p = val
 set_T_q!(value::DynamicExponentialLoad, val) = value.T_q = val
 """Set [`DynamicExponentialLoad`](@ref) `ext`."""
 set_ext!(value::DynamicExponentialLoad, val) = value.ext = val
-"""Set [`DynamicExponentialLoad`](@ref) `base_power`."""
-set_base_power!(value::DynamicExponentialLoad, val) = value.base_power = val

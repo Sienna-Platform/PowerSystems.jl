@@ -86,7 +86,8 @@ end
     tw3s = get_components(Transformer3W, sys4)
     @test length(tw3s) == 1
     tw3 = only(tw3s)
-    @test isapprox(get_b(tw3, SU), 0.00251SU; atol = 1e-5)
+    # Winding-aware conversion: uses base_power_12 for primary winding
+    @test isapprox(get_b(tw3, SU), 0.0036144SU; atol = 1e-5)
     @test get_primary_turns_ratio(tw3) == 1.5
     @test get_rating(tw3, DU) == 0.0DU
 
@@ -532,7 +533,8 @@ end
     trf_3w = collect(get_components(Transformer3W, sys))[1]
     @test get_available(trf_3w) == true
     @test get_available_tertiary(trf_3w) == true
-    @test get_x_tertiary(trf_3w) == 1.5e-5SU
+    # Winding-aware conversion: uses base_power_13 for tertiary winding
+    @test isapprox(get_x_tertiary(trf_3w, SU), 0.0001SU; atol = 1e-8)
 end
 
 @testset "Test GeoJSON RFC 7946 Compliance" begin

@@ -126,8 +126,8 @@ get_max_active_power(value::ShiftablePowerLoad, units) = get_value(value, Val(:m
 """Get [`ShiftablePowerLoad`](@ref) `max_reactive_power`. Returns value in the system's unit setting (natural units by default)."""
 get_max_reactive_power(value::ShiftablePowerLoad) = get_value(value, Val(:max_reactive_power), Val(:mva), _get_system_units(value, Val(:mva)))
 get_max_reactive_power(value::ShiftablePowerLoad, units) = get_value(value, Val(:max_reactive_power), Val(:mva), units)
-"""Get [`ShiftablePowerLoad`](@ref) `base_power`."""
-get_base_power(value::ShiftablePowerLoad) = value.base_power
+
+_get_base_power(value::ShiftablePowerLoad) = value.base_power
 """Get [`ShiftablePowerLoad`](@ref) `load_balance_time_horizon`."""
 get_load_balance_time_horizon(value::ShiftablePowerLoad) = value.load_balance_time_horizon
 """Get [`ShiftablePowerLoad`](@ref) `operation_cost`."""
@@ -155,8 +155,6 @@ set_reactive_power!(value::ShiftablePowerLoad, val) = value.reactive_power = set
 set_max_active_power!(value::ShiftablePowerLoad, val) = value.max_active_power = set_value(value, Val(:max_active_power), val, Val(:mva))
 """Set [`ShiftablePowerLoad`](@ref) `max_reactive_power`. Value must have units (e.g., `30.0MW`, `0.5DU`)."""
 set_max_reactive_power!(value::ShiftablePowerLoad, val) = value.max_reactive_power = set_value(value, Val(:max_reactive_power), val, Val(:mva))
-"""Set [`ShiftablePowerLoad`](@ref) `base_power`."""
-set_base_power!(value::ShiftablePowerLoad, val) = value.base_power = val
 """Set [`ShiftablePowerLoad`](@ref) `load_balance_time_horizon`."""
 set_load_balance_time_horizon!(value::ShiftablePowerLoad, val) = value.load_balance_time_horizon = val
 """Set [`ShiftablePowerLoad`](@ref) `operation_cost`."""

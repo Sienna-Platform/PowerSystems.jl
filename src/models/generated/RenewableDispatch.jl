@@ -131,8 +131,8 @@ get_reactive_power_limits(value::RenewableDispatch, units) = get_value(value, Va
 get_power_factor(value::RenewableDispatch) = value.power_factor
 """Get [`RenewableDispatch`](@ref) `operation_cost`."""
 get_operation_cost(value::RenewableDispatch) = value.operation_cost
-"""Get [`RenewableDispatch`](@ref) `base_power`."""
-get_base_power(value::RenewableDispatch) = value.base_power
+
+_get_base_power(value::RenewableDispatch) = value.base_power
 """Get [`RenewableDispatch`](@ref) `services`."""
 get_services(value::RenewableDispatch) = value.services
 """Get [`RenewableDispatch`](@ref) `dynamic_injector`."""
@@ -160,8 +160,6 @@ set_reactive_power_limits!(value::RenewableDispatch, val) = value.reactive_power
 set_power_factor!(value::RenewableDispatch, val) = value.power_factor = val
 """Set [`RenewableDispatch`](@ref) `operation_cost`."""
 set_operation_cost!(value::RenewableDispatch, val) = value.operation_cost = val
-"""Set [`RenewableDispatch`](@ref) `base_power`."""
-set_base_power!(value::RenewableDispatch, val) = value.base_power = val
 """Set [`RenewableDispatch`](@ref) `services`."""
 set_services!(value::RenewableDispatch, val) = value.services = val
 """Set [`RenewableDispatch`](@ref) `ext`."""

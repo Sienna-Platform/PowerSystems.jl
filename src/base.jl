@@ -524,10 +524,9 @@ Return a user-modifiable dictionary to store extra information.
 """
 get_ext(sys::System) = IS.get_ext(sys.internal)
 
-"""
-Return the system's base power.
-"""
-get_base_power(sys::System) = sys.units_settings.base_value
+_get_base_power(sys::System) = sys.units_settings.base_value
+"""Return the system's base power in MW."""
+get_base_power(sys::System) = _get_base_power(sys) * u"MW"
 
 """
 Return the system's frequency.
@@ -2284,7 +2283,7 @@ end
 
 function check_ac_transmission_rate_values(sys::System)
     is_valid = true
-    base_power = get_base_power(sys)
+    base_power = _get_base_power(sys)
     for line in
         Iterators.flatten((get_components(Line, sys), get_components(MonitoredLine, sys)))
         if !check_rating_values(line, base_power)
@@ -2875,7 +2874,7 @@ end
 
 function handle_component_addition!(sys::System, dyn_injector::DynamicInjection; kwargs...)
     static_injector = kwargs[:static_injector]
-    static_base_power = get_base_power(static_injector)
+    static_base_power = _get_base_power(static_injector)
     set_base_power!(dyn_injector, static_base_power)
     set_dynamic_injector!(static_injector, dyn_injector)
     return

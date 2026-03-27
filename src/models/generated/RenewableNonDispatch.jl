@@ -116,8 +116,8 @@ get_rating(value::RenewableNonDispatch, units) = get_value(value, Val(:rating), 
 get_prime_mover_type(value::RenewableNonDispatch) = value.prime_mover_type
 """Get [`RenewableNonDispatch`](@ref) `power_factor`."""
 get_power_factor(value::RenewableNonDispatch) = value.power_factor
-"""Get [`RenewableNonDispatch`](@ref) `base_power`."""
-get_base_power(value::RenewableNonDispatch) = value.base_power
+
+_get_base_power(value::RenewableNonDispatch) = value.base_power
 """Get [`RenewableNonDispatch`](@ref) `services`."""
 get_services(value::RenewableNonDispatch) = value.services
 """Get [`RenewableNonDispatch`](@ref) `dynamic_injector`."""
@@ -141,8 +141,6 @@ set_rating!(value::RenewableNonDispatch, val) = value.rating = set_value(value, 
 set_prime_mover_type!(value::RenewableNonDispatch, val) = value.prime_mover_type = val
 """Set [`RenewableNonDispatch`](@ref) `power_factor`."""
 set_power_factor!(value::RenewableNonDispatch, val) = value.power_factor = val
-"""Set [`RenewableNonDispatch`](@ref) `base_power`."""
-set_base_power!(value::RenewableNonDispatch, val) = value.base_power = val
 """Set [`RenewableNonDispatch`](@ref) `services`."""
 set_services!(value::RenewableNonDispatch, val) = value.services = val
 """Set [`RenewableNonDispatch`](@ref) `ext`."""

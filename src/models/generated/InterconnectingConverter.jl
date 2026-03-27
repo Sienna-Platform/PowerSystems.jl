@@ -120,8 +120,8 @@ get_rating(value::InterconnectingConverter, units) = get_value(value, Val(:ratin
 """Get [`InterconnectingConverter`](@ref) `active_power_limits`. Returns value in the system's unit setting (natural units by default)."""
 get_active_power_limits(value::InterconnectingConverter) = get_value(value, Val(:active_power_limits), Val(:mva), _get_system_units(value, Val(:mva)))
 get_active_power_limits(value::InterconnectingConverter, units) = get_value(value, Val(:active_power_limits), Val(:mva), units)
-"""Get [`InterconnectingConverter`](@ref) `base_power`."""
-get_base_power(value::InterconnectingConverter) = value.base_power
+
+_get_base_power(value::InterconnectingConverter) = value.base_power
 """Get [`InterconnectingConverter`](@ref) `dc_current`."""
 get_dc_current(value::InterconnectingConverter) = value.dc_current
 """Get [`InterconnectingConverter`](@ref) `max_dc_current`."""
@@ -149,8 +149,6 @@ set_active_power!(value::InterconnectingConverter, val) = value.active_power = s
 set_rating!(value::InterconnectingConverter, val) = value.rating = set_value(value, Val(:rating), val, Val(:mva))
 """Set [`InterconnectingConverter`](@ref) `active_power_limits`. Value must have units (e.g., `30.0MW`, `0.5DU`)."""
 set_active_power_limits!(value::InterconnectingConverter, val) = value.active_power_limits = set_value(value, Val(:active_power_limits), val, Val(:mva))
-"""Set [`InterconnectingConverter`](@ref) `base_power`."""
-set_base_power!(value::InterconnectingConverter, val) = value.base_power = val
 """Set [`InterconnectingConverter`](@ref) `dc_current`."""
 set_dc_current!(value::InterconnectingConverter, val) = value.dc_current = val
 """Set [`InterconnectingConverter`](@ref) `max_dc_current`."""

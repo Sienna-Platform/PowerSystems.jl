@@ -251,8 +251,8 @@ end
     gen.bus = bus
     add_component!(sys, gen)
 
-    device_base = get_base_power(gen)
-    system_base = get_base_power(sys)
+    device_base = PSY._get_base_power(gen)  # raw Float64
+    system_base = PSY._get_base_power(sys)
     raw_active = gen.active_power
     raw_reactive = gen.reactive_power
 
@@ -289,7 +289,7 @@ end
     gen.bus = bus
     add_component!(sys, gen)
 
-    device_base = get_base_power(gen)
+    device_base = PSY._get_base_power(gen)  # raw Float64
 
     # Set with MW
     set_active_power!(gen, 50.0PSY.MW)

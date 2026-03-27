@@ -274,7 +274,12 @@ function test_accessors(component)
         end
 
         val = func(component)
-        @test val isa field_type
+        # base_power fields return unitful Quantity instead of Float64
+        if startswith(string(field_name), "base_power")
+            @test val isa Union{field_type, Unitful.Quantity}
+        else
+            @test val isa field_type
+        end
         try
             if typeof(val) == Float64 || typeof(val) == Int
                 if !isnan(val)

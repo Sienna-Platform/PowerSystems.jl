@@ -144,8 +144,8 @@ get_H(value::SingleCageInductionMachine) = value.H
 get_A(value::SingleCageInductionMachine) = value.A
 """Get [`SingleCageInductionMachine`](@ref) `B`."""
 get_B(value::SingleCageInductionMachine) = value.B
-"""Get [`SingleCageInductionMachine`](@ref) `base_power`."""
-get_base_power(value::SingleCageInductionMachine) = value.base_power
+
+_get_base_power(value::SingleCageInductionMachine) = value.base_power
 """Get [`SingleCageInductionMachine`](@ref) `ext`."""
 get_ext(value::SingleCageInductionMachine) = value.ext
 """Get [`SingleCageInductionMachine`](@ref) `C`."""
@@ -181,8 +181,6 @@ set_H!(value::SingleCageInductionMachine, val) = value.H = val
 set_A!(value::SingleCageInductionMachine, val) = value.A = val
 """Set [`SingleCageInductionMachine`](@ref) `B`."""
 set_B!(value::SingleCageInductionMachine, val) = value.B = val
-"""Set [`SingleCageInductionMachine`](@ref) `base_power`."""
-set_base_power!(value::SingleCageInductionMachine, val) = value.base_power = val
 """Set [`SingleCageInductionMachine`](@ref) `ext`."""
 set_ext!(value::SingleCageInductionMachine, val) = value.ext = val
 """Set [`SingleCageInductionMachine`](@ref) `C`."""

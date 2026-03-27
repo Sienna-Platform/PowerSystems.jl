@@ -118,8 +118,8 @@ get_max_active_power(value::InterruptiblePowerLoad, units) = get_value(value, Va
 """Get [`InterruptiblePowerLoad`](@ref) `max_reactive_power`. Returns value in the system's unit setting (natural units by default)."""
 get_max_reactive_power(value::InterruptiblePowerLoad) = get_value(value, Val(:max_reactive_power), Val(:mva), _get_system_units(value, Val(:mva)))
 get_max_reactive_power(value::InterruptiblePowerLoad, units) = get_value(value, Val(:max_reactive_power), Val(:mva), units)
-"""Get [`InterruptiblePowerLoad`](@ref) `base_power`."""
-get_base_power(value::InterruptiblePowerLoad) = value.base_power
+
+_get_base_power(value::InterruptiblePowerLoad) = value.base_power
 """Get [`InterruptiblePowerLoad`](@ref) `operation_cost`."""
 get_operation_cost(value::InterruptiblePowerLoad) = value.operation_cost
 """Get [`InterruptiblePowerLoad`](@ref) `conformity`."""
@@ -145,8 +145,6 @@ set_reactive_power!(value::InterruptiblePowerLoad, val) = value.reactive_power =
 set_max_active_power!(value::InterruptiblePowerLoad, val) = value.max_active_power = set_value(value, Val(:max_active_power), val, Val(:mva))
 """Set [`InterruptiblePowerLoad`](@ref) `max_reactive_power`. Value must have units (e.g., `30.0MW`, `0.5DU`)."""
 set_max_reactive_power!(value::InterruptiblePowerLoad, val) = value.max_reactive_power = set_value(value, Val(:max_reactive_power), val, Val(:mva))
-"""Set [`InterruptiblePowerLoad`](@ref) `base_power`."""
-set_base_power!(value::InterruptiblePowerLoad, val) = value.base_power = val
 """Set [`InterruptiblePowerLoad`](@ref) `operation_cost`."""
 set_operation_cost!(value::InterruptiblePowerLoad, val) = value.operation_cost = val
 """Set [`InterruptiblePowerLoad`](@ref) `conformity`."""

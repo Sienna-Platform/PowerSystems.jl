@@ -354,12 +354,12 @@ get_r_13(value::Transformer3W, units) = get_value(value, Val(:r_13), Val(:ohm), 
 """Get [`Transformer3W`](@ref) `x_13`. Returns value in the system's unit setting (natural units by default)."""
 get_x_13(value::Transformer3W) = get_value(value, Val(:x_13), Val(:ohm), _get_system_units(value, Val(:ohm)))
 get_x_13(value::Transformer3W, units) = get_value(value, Val(:x_13), Val(:ohm), units)
-"""Get [`Transformer3W`](@ref) `base_power_12`."""
-get_base_power_12(value::Transformer3W) = value.base_power_12
-"""Get [`Transformer3W`](@ref) `base_power_23`."""
-get_base_power_23(value::Transformer3W) = value.base_power_23
-"""Get [`Transformer3W`](@ref) `base_power_13`."""
-get_base_power_13(value::Transformer3W) = value.base_power_13
+
+_get_base_power_12(value::Transformer3W) = value.base_power_12
+
+_get_base_power_23(value::Transformer3W) = value.base_power_23
+
+_get_base_power_13(value::Transformer3W) = value.base_power_13
 """Get [`Transformer3W`](@ref) `base_voltage_primary`."""
 get_base_voltage_primary(value::Transformer3W) = value.base_voltage_primary
 """Get [`Transformer3W`](@ref) `base_voltage_secondary`."""
@@ -460,12 +460,6 @@ set_x_23!(value::Transformer3W, val) = value.x_23 = set_value(value, Val(:x_23),
 set_r_13!(value::Transformer3W, val) = value.r_13 = set_value(value, Val(:r_13), val, Val(:ohm))
 """Set [`Transformer3W`](@ref) `x_13`. Value must have units (e.g., `30.0MW`, `0.5DU`)."""
 set_x_13!(value::Transformer3W, val) = value.x_13 = set_value(value, Val(:x_13), val, Val(:ohm))
-"""Set [`Transformer3W`](@ref) `base_power_12`."""
-set_base_power_12!(value::Transformer3W, val) = value.base_power_12 = val
-"""Set [`Transformer3W`](@ref) `base_power_23`."""
-set_base_power_23!(value::Transformer3W, val) = value.base_power_23 = val
-"""Set [`Transformer3W`](@ref) `base_power_13`."""
-set_base_power_13!(value::Transformer3W, val) = value.base_power_13 = val
 """Set [`Transformer3W`](@ref) `base_voltage_primary`."""
 set_base_voltage_primary!(value::Transformer3W, val) = value.base_voltage_primary = val
 """Set [`Transformer3W`](@ref) `base_voltage_secondary`."""

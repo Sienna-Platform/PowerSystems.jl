@@ -114,8 +114,8 @@ get_internal_angle_bias(value::PeriodicVariableSource) = value.internal_angle_bi
 get_internal_angle_frequencies(value::PeriodicVariableSource) = value.internal_angle_frequencies
 """Get [`PeriodicVariableSource`](@ref) `internal_angle_coefficients`."""
 get_internal_angle_coefficients(value::PeriodicVariableSource) = value.internal_angle_coefficients
-"""Get [`PeriodicVariableSource`](@ref) `base_power`."""
-get_base_power(value::PeriodicVariableSource) = value.base_power
+
+_get_base_power(value::PeriodicVariableSource) = value.base_power
 """Get [`PeriodicVariableSource`](@ref) `states`."""
 get_states(value::PeriodicVariableSource) = value.states
 """Get [`PeriodicVariableSource`](@ref) `n_states`."""
@@ -141,7 +141,5 @@ set_internal_angle_bias!(value::PeriodicVariableSource, val) = value.internal_an
 set_internal_angle_frequencies!(value::PeriodicVariableSource, val) = value.internal_angle_frequencies = val
 """Set [`PeriodicVariableSource`](@ref) `internal_angle_coefficients`."""
 set_internal_angle_coefficients!(value::PeriodicVariableSource, val) = value.internal_angle_coefficients = val
-"""Set [`PeriodicVariableSource`](@ref) `base_power`."""
-set_base_power!(value::PeriodicVariableSource, val) = value.base_power = val
 """Set [`PeriodicVariableSource`](@ref) `ext`."""
 set_ext!(value::PeriodicVariableSource, val) = value.ext = val

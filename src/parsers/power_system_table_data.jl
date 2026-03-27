@@ -934,7 +934,7 @@ function make_generator(
         @error "Skipping unsupported generator" gen.name gen_type
     end
 
-    if abs(get_base_power(generator)) <= 1e-6
+    if abs(_get_base_power(generator)) <= 1e-6
         @warn "Generator $(summary(generator)) has base power of zero: changing device " *
               "base power to match system base power, $(data.base_power)"
         set_base_power!(generator, data.base_power)
@@ -1398,7 +1398,7 @@ function make_thermal_generator_multistart(
         start_time_limits = startup_timelimits,
         start_types = start_types,
         operation_cost = op_cost,
-        base_power = get_base_power(thermal_gen),
+        base_power = _get_base_power(thermal_gen),
         time_at_status = get_time_at_status(thermal_gen),
         must_run = get_must_run(thermal_gen),
     )

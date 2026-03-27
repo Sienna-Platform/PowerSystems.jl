@@ -187,8 +187,8 @@ get_reactive_power(value::EnergyReservoirStorage, units) = get_value(value, Val(
 """Get [`EnergyReservoirStorage`](@ref) `reactive_power_limits`. Returns value in the system's unit setting (natural units by default)."""
 get_reactive_power_limits(value::EnergyReservoirStorage) = get_value(value, Val(:reactive_power_limits), Val(:mva), _get_system_units(value, Val(:mva)))
 get_reactive_power_limits(value::EnergyReservoirStorage, units) = get_value(value, Val(:reactive_power_limits), Val(:mva), units)
-"""Get [`EnergyReservoirStorage`](@ref) `base_power`."""
-get_base_power(value::EnergyReservoirStorage) = value.base_power
+
+_get_base_power(value::EnergyReservoirStorage) = value.base_power
 """Get [`EnergyReservoirStorage`](@ref) `operation_cost`."""
 get_operation_cost(value::EnergyReservoirStorage) = value.operation_cost
 """Get [`EnergyReservoirStorage`](@ref) `conversion_factor`."""
@@ -234,8 +234,6 @@ set_efficiency!(value::EnergyReservoirStorage, val) = value.efficiency = val
 set_reactive_power!(value::EnergyReservoirStorage, val) = value.reactive_power = set_value(value, Val(:reactive_power), val, Val(:mva))
 """Set [`EnergyReservoirStorage`](@ref) `reactive_power_limits`. Value must have units (e.g., `30.0MW`, `0.5DU`)."""
 set_reactive_power_limits!(value::EnergyReservoirStorage, val) = value.reactive_power_limits = set_value(value, Val(:reactive_power_limits), val, Val(:mva))
-"""Set [`EnergyReservoirStorage`](@ref) `base_power`."""
-set_base_power!(value::EnergyReservoirStorage, val) = value.base_power = val
 """Set [`EnergyReservoirStorage`](@ref) `operation_cost`."""
 set_operation_cost!(value::EnergyReservoirStorage, val) = value.operation_cost = val
 """Set [`EnergyReservoirStorage`](@ref) `conversion_factor`."""

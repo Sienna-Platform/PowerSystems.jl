@@ -156,8 +156,8 @@ get_tap(value::TapTransformer) = value.tap
 """Get [`TapTransformer`](@ref) `rating`. Returns value in the system's unit setting (natural units by default)."""
 get_rating(value::TapTransformer) = get_value(value, Val(:rating), Val(:mva), _get_system_units(value, Val(:mva)))
 get_rating(value::TapTransformer, units) = get_value(value, Val(:rating), Val(:mva), units)
-"""Get [`TapTransformer`](@ref) `base_power`."""
-get_base_power(value::TapTransformer) = value.base_power
+
+_get_base_power(value::TapTransformer) = value.base_power
 """Get [`TapTransformer`](@ref) `base_voltage_primary`."""
 get_base_voltage_primary(value::TapTransformer) = value.base_voltage_primary
 """Get [`TapTransformer`](@ref) `base_voltage_secondary`."""
@@ -197,8 +197,6 @@ set_primary_shunt!(value::TapTransformer, val) = value.primary_shunt = set_value
 set_tap!(value::TapTransformer, val) = value.tap = val
 """Set [`TapTransformer`](@ref) `rating`. Value must have units (e.g., `30.0MW`, `0.5DU`)."""
 set_rating!(value::TapTransformer, val) = value.rating = set_value(value, Val(:rating), val, Val(:mva))
-"""Set [`TapTransformer`](@ref) `base_power`."""
-set_base_power!(value::TapTransformer, val) = value.base_power = val
 """Set [`TapTransformer`](@ref) `base_voltage_primary`."""
 set_base_voltage_primary!(value::TapTransformer, val) = value.base_voltage_primary = val
 """Set [`TapTransformer`](@ref) `base_voltage_secondary`."""
