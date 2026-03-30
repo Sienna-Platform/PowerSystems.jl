@@ -65,6 +65,8 @@ function set_base_power!(c::Component, val::IS.RelativeQuantity{<:Any, IS.System
 end
 
 # 3WT per-winding base powers — same pattern as base_power.
+# FIXME: we're unitizing each respect to itself. Is that sensible?
+# Might be better to unitize all three to the same base, e.g. 12.
 get_base_power_12(c::Component) = _get_base_power_12(c) * u"MW"
 get_base_power_12(c::Component, ::typeof(u"MW")) = _get_base_power_12(c) * u"MW"
 get_base_power_12(c::Component, ::IS.DeviceBaseUnit) = 1.0 * IS.DU
@@ -166,7 +168,7 @@ end
 # get_value: read field + convert from device-base p.u.
 # ============================================================
 
-function get_value(c::Component, field::Val{T}, cat, units) where {T}
+function get_value(c::Component, ::Val{T}, cat, units) where {T}
     value = Base.getproperty(c, T)
     return _convert_from_device_base(c, value, cat, units)
 end
@@ -193,18 +195,44 @@ function _convert_from_device_base(
     return (value * ratio) * IS.SU
 end
 
-# → Raw Float64 in DEFAULT_UNITS (skips unit wrapper).
+# → Raw value in DEFAULT_UNITS (skips unit wrapper).
 # Convenience for downstream packages (e.g. PNM) that work in system-base p.u.
 # and don't need the Unitful wrapper.
+# For unattached components, returns raw field value (no conversion possible).
+# Note: the DU→SU ratio simplifies to base_power/system_base_power for all
+# categories (voltage cancels in ohm and siemens ratios, and is identity for kv).
 function _convert_from_device_base(
     c::Component,
-    value::Number,
+    value::Float64,
     cat::Val,
     ::Type{Float64},
-)
-    ratio = _conversion_base(c, cat) / _system_conversion_base(c, cat)
-    return (value * ratio)::Float64
+)::Float64
+    units_info = get_internal(c).units_info
+    isnothing(units_info) && return value
+    return value * _du_to_su_ratio(c, cat)
 end
+
+function _convert_from_device_base(
+    c::Component,
+    value::ComplexF64,
+    cat::Val,
+    ::Type{Float64},
+)::ComplexF64
+    units_info = get_internal(c).units_info
+    isnothing(units_info) && return value
+    return value * _du_to_su_ratio(c, cat)
+end
+
+# DU→SU ratio: voltage cancels for all categories.
+# :mva → base_power / system_base_power
+# :ohm → system_base_power / base_power (inverse of :mva)
+# :siemens → base_power / system_base_power (same as :mva)
+# :kv → 1.0 (voltage base doesn't change)
+_du_to_su_ratio(c, ::Val{:mva}) = _get_base_power(c) / _get_system_base_power(c)
+_du_to_su_ratio(c, ::Val{:ohm}) = _get_system_base_power(c) / _get_base_power(c)
+_du_to_su_ratio(c, ::Val{:siemens}) = _get_base_power(c) / _get_system_base_power(c)
+_du_to_su_ratio(c, ::Val{:kv}) = 1.0
+_du_to_su_ratio(c, ::Val{:ka}) = _get_system_base_power(c) / _get_base_power(c)
 
 # nothing passthrough
 _convert_from_device_base(::Component, ::Nothing, ::Val, ::Any) = nothing
@@ -609,6 +637,22 @@ function get_value(
     su_multiplier =
         _get_multiplier(c, field, Val(IS.UnitSystem.SYSTEM_BASE), settings.base_value, cat)
     return (value * su_multiplier) * IS.SU
+end
+
+# 3WT Float64 path — raw value in system-base p.u.
+function get_value(
+    c::ThreeWindingTransformer,
+    field::Val{T},
+    cat,
+    ::Type{Float64},
+) where {T}
+    value = Base.getproperty(c, T)
+    isnothing(value) && return nothing
+    settings = get_internal(c).units_info
+    isnothing(settings) && return value
+    su_multiplier =
+        _get_multiplier(c, field, Val(IS.UnitSystem.SYSTEM_BASE), settings.base_value, cat)
+    return value * su_multiplier
 end
 
 function set_value(c::ThreeWindingTransformer, field, val::Float64, conversion_unit)

@@ -28,7 +28,7 @@ _remove_aggregration_topology!(bus::ACBus, ::Area) = bus.area = nothing
 """
 Generic method to calculate the admittance of [`ACTransmission`](@ref) devices.
 """
-get_series_susceptance(b::ACTransmission) = 1 / get_x(b)
+get_series_susceptance(b::ACTransmission) = 1 / get_x(b, Float64)
 
 """
 Returns the series susceptance of a controllable 2-winding transformer (e.g., [`TapTransformer`](@ref), [`PhaseShiftingTransformer`](@ref)) following the convention
@@ -38,7 +38,7 @@ In the case of phase shifter transformers the angle is ignored.
 See also: [`get_series_susceptances`](@ref) for 3-winding transformers
 """
 function get_series_susceptance(b::Union{TapTransformer, PhaseShiftingTransformer})
-    y = 1 / get_x(b)
+    y = 1 / get_x(b, Float64)
     y_a = y / (get_tap(b))
     return y_a
 end
@@ -59,9 +59,9 @@ The phase shift angles are ignored in the susceptance calculation.
 See also: [`get_series_susceptance`](@ref) for 2-winding transformers and [`get_series_susceptances`](@ref get_series_susceptances(b::Transformer3W)) for [`Transformer3W`](@ref)
 """
 function get_series_susceptances(b::PhaseShiftingTransformer3W)
-    y1 = 1 / get_x_primary(b)
-    y2 = 1 / get_x_secondary(b)
-    y3 = 1 / get_x_tertiary(b)
+    y1 = 1 / get_x_primary(b, Float64)
+    y2 = 1 / get_x_secondary(b, Float64)
+    y3 = 1 / get_x_tertiary(b, Float64)
 
     y1_a = y1 / get_primary_turns_ratio(b)
     y2_a = y2 / get_secondary_turns_ratio(b)
@@ -78,9 +78,9 @@ in power systems to define susceptance as the inverse of the imaginary part of t
 See also: [`get_series_susceptance`](@ref) for 2-winding transformers and [`get_series_susceptances`](@ref get_series_susceptances(b::PhaseShiftingTransformer3W)) for [`PhaseShiftingTransformer3W`](@ref)
 """
 function get_series_susceptances(b::Transformer3W)
-    Z1s = get_r_primary(b) + get_x_primary(b) * 1im
-    Z2s = get_r_secondary(b) + get_x_secondary(b) * 1im
-    Z3s = get_r_tertiary(b) + get_x_tertiary(b) * 1im
+    Z1s = get_r_primary(b, Float64) + get_x_primary(b, Float64) * 1im
+    Z2s = get_r_secondary(b, Float64) + get_x_secondary(b, Float64) * 1im
+    Z3s = get_r_tertiary(b, Float64) + get_x_tertiary(b, Float64) * 1im
 
     b1s = imag(1 / Z1s)
     b2s = imag(1 / Z2s)
@@ -93,7 +93,7 @@ end
 Calculate the series admittance of a [`ACTransmission`](@ref) as the inverse of the complex impedance.
 Returns 1/(R + jX) where R is resistance and X is reactance.
 """
-get_series_admittance(b::ACTransmission) = 1 / (get_r(b) + get_x(b) * 1im)
+get_series_admittance(b::ACTransmission) = 1 / (get_r(b, Float64) + get_x(b, Float64) * 1im)
 
 """
 Calculate the series admittance of a [`PhaseShiftingTransformer`](@ref) accounting for the tap ratio.
@@ -106,7 +106,7 @@ See also: [`get_series_susceptance`](@ref)
 """
 function get_series_admittance(b::PhaseShiftingTransformer)
     tap = get_tap(b)
-    Z_series = get_r(b) + get_x(b) * 1im
+    Z_series = get_r(b, Float64) + get_x(b, Float64) * 1im
     return 1 / (tap * Z_series)
 end
 
@@ -120,7 +120,7 @@ See also: [`get_series_susceptance`](@ref)
 """
 function get_series_admittance(b::TapTransformer)
     tap = get_tap(b)
-    Z_series = get_r(b) + get_x(b) * 1im
+    Z_series = get_r(b, Float64) + get_x(b, Float64) * 1im
     return 1 / (tap * Z_series)
 end
 
