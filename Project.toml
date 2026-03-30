@@ -1,11 +1,10 @@
 name = "PowerSystems"
 uuid = "bcd98974-b02a-5e2f-9ee0-a103f5c450dd"
-authors = ["Jose Daniel Lara", "Daniel Thom", "Rodrigo Henriquez-Auba", "Gabriel Konar-Steenberg", "Clayton Barrows"]
 version = "5.3.0"
+authors = ["Jose Daniel Lara", "Daniel Thom", "Rodrigo Henriquez-Auba", "Gabriel Konar-Steenberg", "Clayton Barrows"]
 
 [deps]
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
-Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
@@ -16,10 +15,12 @@ JSON3 = "0f8b85d8-7281-11e9-16c2-39a750bddbf1"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
 PowerFlowData = "dd99e9e3-7471-40fc-b48d-a10501125371"
+PowerSystemsUnits = "68e3e300-ad78-400a-9448-9f67be5a6d39"
 PrettyTables = "08abe8d2-0d0c-5749-adfa-8a2ac140af0d"
 TimeSeries = "9e3dc215-6440-5c97-bce1-76c03772f85e"
 UUIDs = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
 Unicode = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
+Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 YAML = "ddb6d928-2868-570f-bddf-ab3f9cf99eb6"
 
 [compat]
@@ -36,8 +37,9 @@ Logging = "1"
 PowerFlowData = "^1.5"
 PrettyTables = "2.4, 3.1"
 TimeSeries = "0.25"
-Unitful = "^1.12"
 UUIDs = "1"
 Unicode = "1"
+PowerSystemsUnits = "^0.1"
+Unitful = "^1.12"
 YAML = "~0.4"
 julia = "^1.10"

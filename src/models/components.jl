@@ -2,28 +2,30 @@ import Unitful
 using Unitful: Quantity, Units, @u_str, uconvert
 
 # ============================================================
-# Internal base-quantity accessors (raw Float64, implied natural units).
-# These are used by the conversion machinery. The public get_base_power /
-# get_base_voltage go through the conversion path and return unitful values.
+# Implement PowerSystemsUnits interface for PSY components
 # ============================================================
 
-@inline function _get_system_base_power(c::Component)::Float64
+@inline function IS.get_system_base_power(c::Component)::Float64
     units_info = get_internal(c).units_info
     if isnothing(units_info)
         error(
             "Component $(get_name(c)) is not attached to a system. Cannot determine system base power.",
         )
     end
-    # Type assertion needed because units_info is Union{Nothing, UnitsData} where
-    # UnitsData is abstract. If IS changes the field type on InfrastructureSystemsInternal
-    # to Union{Nothing, SystemUnitsSettings}, this assertion can be removed.
     return (units_info::IS.SystemUnitsSettings).base_value
 end
 
-"""
-Internal: raw Float64 base power in MVA. For components without a base_power field,
-falls back to the system base power.
-"""
+# Bridge to PowerSystemsUnits: delegates to _get_base_power, which has
+# generated per-type methods (e.g. _get_base_power(c::ThermalStandard) = c.base_power)
+# and a Component fallback below (returns system base for types without base_power field).
+@inline IS.get_device_base_power(c::Component)::Float64 = _get_base_power(c)
+
+IS.get_base_voltage(c::Branch) = get_base_voltage(get_arc(c).from)
+IS.get_base_voltage(c::TwoWindingTransformer) = get_base_voltage_primary(c)
+IS.get_base_voltage(c::StaticInjection) = get_base_voltage(get_bus(c))
+
+# Fallback for components without a base_power field (e.g. Area):
+# uses the system base power.
 @inline function _get_base_power(c::Component)::Float64
     units_info = get_internal(c).units_info
     if isnothing(units_info)
@@ -31,42 +33,34 @@ falls back to the system base power.
             "Component $(get_name(c)) is not attached to a system. Cannot determine base power.",
         )
     end
-    return units_info.base_value
+    return (units_info::IS.SystemUnitsSettings).base_value
 end
 
-# For components that have a base_power field, the generated getter/setter are excluded
-# (via exclude_getter/exclude_setter in power_system_structs.json). Instead we define:
-#   _get_base_power(c) — raw Float64, used internally by conversion machinery
-#   get_base_power(c) — returns unitful MW, the public API
-#   set_base_power!(c, val) — accepts unitful or raw Float64
-#
-# The _get_base_power fallback above returns system base for components without the field.
-# Components with the field get an override via the generated _get_base_power methods
-# (not yet generated — for now we rely on the fact that the generated get_base_power
-# was the only caller, and it's been removed).
+# Internal aliases
+const _get_system_base_power = IS.get_system_base_power
+const _get_base_voltage = IS.get_base_voltage
 
-# Public unitful getter: base_power is stored in natural units (MW), so just attach unit.
-# This is defined on Component — it works for both the field-access case and the
-# system-base fallback, since _get_base_power handles the dispatch.
+# ============================================================
+# Hand-written base_power getters/setters
+# (base_power defines the per-unit system, so it can't go through
+# the generic device-base conversion path)
+# ============================================================
+
 get_base_power(c::Component) = _get_base_power(c) * u"MW"
-
-# With explicit unit request:
 get_base_power(c::Component, ::typeof(u"MW")) = _get_base_power(c) * u"MW"
-get_base_power(c::Component, ::IS.DeviceBaseUnit) = 1.0 * IS.DU  # always 1.0 by definition
+get_base_power(c::Component, ::IS.DeviceBaseUnit) = 1.0 * IS.DU
+get_base_power(c::Component, ::IS.NaturalUnit) = _get_base_power(c) * u"MW"
 function get_base_power(c::Component, ::IS.SystemBaseUnit)
     return (_get_base_power(c) / _get_system_base_power(c)) * IS.SU
 end
 
-# Public setter: accepts unitful MW or raw Float64 (for backward compat).
 set_base_power!(c::Component, val::Quantity) = (c.base_power = Unitful.ustrip(u"MW", val))
 set_base_power!(c::Component, val::Float64) = (c.base_power = val)
 function set_base_power!(c::Component, val::IS.RelativeQuantity{<:Any, IS.SystemBaseUnit})
     c.base_power = IS.ustrip(val) * _get_system_base_power(c)
 end
 
-# 3WT per-winding base powers — same pattern as base_power.
-# FIXME: we're unitizing each respect to itself. Is that sensible?
-# Might be better to unitize all three to the same base, e.g. 12.
+# 3WT per-winding base powers
 get_base_power_12(c::Component) = _get_base_power_12(c) * u"MW"
 get_base_power_12(c::Component, ::typeof(u"MW")) = _get_base_power_12(c) * u"MW"
 get_base_power_12(c::Component, ::IS.DeviceBaseUnit) = 1.0 * IS.DU
@@ -94,196 +88,50 @@ set_base_power_13!(c::Component, val::Quantity) =
     (c.base_power_13 = Unitful.ustrip(u"MW", val))
 set_base_power_13!(c::Component, val::Float64) = (c.base_power_13 = val)
 
-# PERF: line → arc → from_bus → base_voltage chain slows things down a bit.
-_get_base_voltage(c::Branch) = get_base_voltage(get_arc(c).from)
-_get_base_voltage(c::TwoWindingTransformer) = get_base_voltage_primary(c)
-_get_base_voltage(c::StaticInjection) = get_base_voltage(get_bus(c))
-
 # ============================================================
-# Table-driven unit conversion system
-#
-# Two lookup tables per unit category, plus one per-family dispatch
-# for base voltage. Everything else is generic.
+# Val → UnitCategory mapping (bridges generated code to PowerSystemsUnits)
 # ============================================================
 
-# Device-base-to-natural conversion factor, per unit category.
-# :natural_mw is for fields already stored in natural units (e.g. base_power).
-# Conversion factor is 1.0 — just attach the unit.
-_conversion_base(c, ::Val{:natural_mw}) = 1.0
-_conversion_base(c, ::Val{:mva}) = _get_base_power(c)
-_conversion_base(c, ::Val{:ohm}) = _get_base_voltage(c)^2 / _get_base_power(c)
-_conversion_base(c, ::Val{:siemens}) = _get_base_power(c) / _get_base_voltage(c)^2
-_conversion_base(c, ::Val{:kv}) = _get_base_voltage(c)
-_conversion_base(c, ::Val{:ka}) = _get_base_power(c) / _get_base_voltage(c)  # unused currently
-
-# The natural Unitful unit for each category.
-_natural_unit(::Val{:natural_mw}) = u"MW"
-_natural_unit(::Val{:mva}) = u"MW"
-_natural_unit(::Val{:ohm}) = u"Ω"
-_natural_unit(::Val{:siemens}) = u"S"
-_natural_unit(::Val{:kv}) = u"kV"
-_natural_unit(::Val{:ka}) = u"kA"
-
-# System-base-to-natural conversion factor, per unit category.
-_system_conversion_base(c, ::Val{:mva}) = _get_system_base_power(c)
-_system_conversion_base(c, ::Val{:ohm}) = _get_base_voltage(c)^2 / _get_system_base_power(c)
-_system_conversion_base(c, ::Val{:siemens}) =
-    _get_system_base_power(c) / _get_base_voltage(c)^2
-# Voltage base is per-bus, not system-wide (unlike power, which has both a per-device
-# and a system-wide base). So the "system" voltage base is the same as the device one.
-_system_conversion_base(c, ::Val{:kv}) = _get_base_voltage(c)
-_system_conversion_base(c, ::Val{:ka}) = _get_system_base_power(c) / _get_base_voltage(c)
+_to_category(::Val{:mva}) = IS.POWER
+_to_category(::Val{:ohm}) = IS.IMPEDANCE
+_to_category(::Val{:siemens}) = IS.ADMITTANCE
+_to_category(::Val{:kv}) = IS.VOLTAGE
+_to_category(::Val{:ka}) = IS.CURRENT
 
 # ============================================================
-# Default units for 1-arg getters
+# get_value: read field + convert via PowerSystemsUnits
 # ============================================================
 
-# The default units returned by 1-arg getters (e.g., get_active_power(gen)).
-# SU (system base per-unit) matches the common downstream use case (PSI).
-# Change to MW / OHMS / etc. for natural units if preferred.
-const DEFAULT_UNITS = IS.SU
-
-# ============================================================
-# Stateful unit system (reads the system's current setting)
-# Kept for backward compat of set_units_base_system! / with_units_base.
-# No longer used by default 1-arg getters.
-# ============================================================
-
-function _get_system_units(c::Component, cat::Val)
-    units_info = get_internal(c).units_info
-    if isnothing(units_info)
-        return _natural_unit(cat)  # Default to natural units if not set
-    end
-    unit_system = units_info.unit_system
-    if unit_system == IS.UnitSystem.NATURAL_UNITS
-        return _natural_unit(cat)
-    elseif unit_system == IS.UnitSystem.DEVICE_BASE
-        return IS.DU
-    else  # SYSTEM_BASE
-        return IS.SU
-    end
-end
-
-# ============================================================
-# get_value: read field + convert from device-base p.u.
-# ============================================================
-
-function get_value(c::Component, ::Val{T}, cat, units) where {T}
+function get_value(c::Component, ::Val{T}, cat::Val, units) where {T}
     value = Base.getproperty(c, T)
-    return _convert_from_device_base(c, value, cat, units)
+    return _convert_value(c, value, _to_category(cat), units)
 end
 
-# → Natural units (MW, Ω, S, or any Unitful unit via uconvert)
-function _convert_from_device_base(c::Component, value::Number, cat::Val, units::Units)
-    natural = value * _conversion_base(c, cat) * _natural_unit(cat)
-    return uconvert(units, natural)
-end
-
-# → Device base (DU) — identity on the numeric value
-function _convert_from_device_base(::Component, value::Number, ::Val, ::IS.DeviceBaseUnit)
-    return value * IS.DU
-end
-
-# → System base (SU)
-function _convert_from_device_base(
-    c::Component,
-    value::Number,
-    cat::Val,
-    ::IS.SystemBaseUnit,
-)
-    ratio = _conversion_base(c, cat) / _system_conversion_base(c, cat)
-    return (value * ratio) * IS.SU
-end
-
-# → Raw value in DEFAULT_UNITS (skips unit wrapper).
-# Convenience for downstream packages (e.g. PNM) that work in system-base p.u.
-# and don't need the Unitful wrapper.
-# For unattached components, returns raw field value (no conversion possible).
-# Note: the DU→SU ratio simplifies to base_power/system_base_power for all
-# categories (voltage cancels in ohm and siemens ratios, and is identity for kv).
-function _convert_from_device_base(
-    c::Component,
-    value::Float64,
-    cat::Val,
-    ::Type{Float64},
-)::Float64
+# Float64 path — unattached component fallback
+function get_value(c::Component, ::Val{T}, cat::Val, ::Type{Float64}) where {T}
+    value = Base.getproperty(c, T)
     units_info = get_internal(c).units_info
     isnothing(units_info) && return value
-    return value * _du_to_su_ratio(c, cat)
+    return _convert_value(c, value, _to_category(cat), Float64)
 end
 
-function _convert_from_device_base(
-    c::Component,
-    value::ComplexF64,
-    cat::Val,
-    ::Type{Float64},
-)::ComplexF64
-    units_info = get_internal(c).units_info
-    isnothing(units_info) && return value
-    return value * _du_to_su_ratio(c, cat)
-end
+# Scalar values → delegate to PowerSystemsUnits
+_convert_value(c, value::Number, cat::IS.UnitCategory, units) =
+    IS.convert_units(c, value, cat, IS.DU, units)
+_convert_value(::Any, ::Nothing, ::IS.UnitCategory, ::Any) = nothing
 
-# DU→SU ratio: voltage cancels for all categories.
-# :mva → base_power / system_base_power
-# :ohm → system_base_power / base_power (inverse of :mva)
-# :siemens → base_power / system_base_power (same as :mva)
-# :kv → 1.0 (voltage base doesn't change)
-_du_to_su_ratio(c, ::Val{:mva}) = _get_base_power(c) / _get_system_base_power(c)
-_du_to_su_ratio(c, ::Val{:ohm}) = _get_system_base_power(c) / _get_base_power(c)
-_du_to_su_ratio(c, ::Val{:siemens}) = _get_base_power(c) / _get_system_base_power(c)
-_du_to_su_ratio(c, ::Val{:kv}) = 1.0
-_du_to_su_ratio(c, ::Val{:ka}) = _get_system_base_power(c) / _get_base_power(c)
-
-# nothing passthrough
-_convert_from_device_base(::Component, ::Nothing, ::Val, ::Any) = nothing
-
-# Compound types — recurse into elements
-function _convert_from_device_base(c::Component, value::MinMax, cat, units)
-    return (
-        min = _convert_from_device_base(c, value.min, cat, units),
-        max = _convert_from_device_base(c, value.max, cat, units),
-    )
-end
-
-function _convert_from_device_base(c::Component, value::UpDown, cat, units)
-    return (
-        up = _convert_from_device_base(c, value.up, cat, units),
-        down = _convert_from_device_base(c, value.down, cat, units),
-    )
-end
-
-function _convert_from_device_base(c::Component, value::FromTo_ToFrom, cat, units)
-    return (
-        from_to = _convert_from_device_base(c, value.from_to, cat, units),
-        to_from = _convert_from_device_base(c, value.to_from, cat, units),
-    )
-end
-
-function _convert_from_device_base(c::Component, value::FromTo, cat, units)
-    return (
-        from = _convert_from_device_base(c, value.from, cat, units),
-        to = _convert_from_device_base(c, value.to, cat, units),
-    )
-end
-
-function _convert_from_device_base(c::Component, value::StartUpShutDown, cat, units)
-    return (
-        startup = _convert_from_device_base(c, value.startup, cat, units),
-        shutdown = _convert_from_device_base(c, value.shutdown, cat, units),
-    )
-end
+# Compound types (NamedTuple) — map over elements
+_convert_value(c, value::NamedTuple, cat, units) =
+    map(v -> _convert_value(c, v, cat, units), value)
 
 # ============================================================
 # set_value: convert unitful input → device-base p.u.
 # ============================================================
 
-# From Unitful quantity (e.g., 30.0u"MW")
 function set_value(c::Component, field, val::Quantity, cat::Val)
-    natural_val = Unitful.ustrip(_natural_unit(cat), val)
-    return natural_val / _conversion_base(c, cat)
+    return IS.ustrip(IS.convert_units(c, val, _to_category(cat), IS.NU, IS.DU))
 end
 
-# From DU — identity
 function set_value(
     ::Component,
     field,
@@ -293,50 +141,29 @@ function set_value(
     return IS.ustrip(val)
 end
 
-# From SU
 function set_value(
     c::Component,
     field,
     val::IS.RelativeQuantity{<:Any, IS.SystemBaseUnit},
     cat::Val,
 )
-    ratio = _conversion_base(c, cat) / _system_conversion_base(c, cat)
-    return IS.ustrip(val) / ratio
+    return IS.ustrip(IS.convert_units(c, IS.ustrip(val), _to_category(cat), IS.SU, IS.DU))
 end
 
-# Compound type setters — recurse into elements
-function _to_device_base(c::Component, val, cat)
-    return set_value(c, nothing, val, cat)
-end
-
-function set_value(c::Component, field, val::NamedTuple{(:min, :max)}, cat::Val)
-    return (min = _to_device_base(c, val.min, cat), max = _to_device_base(c, val.max, cat))
-end
-
-function set_value(c::Component, field, val::NamedTuple{(:up, :down)}, cat::Val)
-    return (up = _to_device_base(c, val.up, cat), down = _to_device_base(c, val.down, cat))
-end
-
-function set_value(c::Component, field, val::NamedTuple{(:from_to, :to_from)}, cat::Val)
-    return (
-        from_to = _to_device_base(c, val.from_to, cat),
-        to_from = _to_device_base(c, val.to_from, cat),
-    )
-end
-
-function set_value(c::Component, field, val::NamedTuple{(:from, :to)}, cat::Val)
-    return (from = _to_device_base(c, val.from, cat), to = _to_device_base(c, val.to, cat))
-end
-
-function set_value(c::Component, field, val::NamedTuple{(:startup, :shutdown)}, cat::Val)
-    return (
-        startup = _to_device_base(c, val.startup, cat),
-        shutdown = _to_device_base(c, val.shutdown, cat),
-    )
+# Compound type setters — map over elements
+function set_value(c::Component, field, val::NamedTuple, cat::Val)
+    return map(v -> set_value(c, nothing, v, cat), val)
 end
 
 # ============================================================
-# Legacy get_value/set_value (stateful unit system, backwards compat)
+# LEGACY: Stateful unit system (set_units_base_system! / with_units_base)
+#
+# Everything below this line uses the old _get_multiplier approach that
+# reads the system's runtime unit setting. Kept for:
+#   - HybridSystem.jl (hand-written 3-arg get_value calls)
+#   - ThreeWindingTransformer stateful path
+#   - with_units_base / set_units_base_system! in base.jl
+# TODO: migrate HybridSystem to 4-arg getters, then remove all of this.
 # ============================================================
 
 _get_multiplier(c::T, conversion_unit) where {T <: Component} =
@@ -431,56 +258,42 @@ end
 _get_multiplier(::T, ::IS.SystemUnitsSettings, _, _) where {T <: Component} =
     error("Undefined Conditional")
 
+# LEGACY: 3-arg get_value (stateful). Only called by HybridSystem.jl and 3WT.
 function get_value(c::Component, ::Val{T}, conversion_unit) where {T}
     value = Base.getproperty(c, T)
     return _get_value(c, value, conversion_unit)
 end
 
+# LEGACY: _get_value/_set_value helpers for the stateful 3-arg path.
 _get_value(c::Component, value::Float64, cu)::Float64 = _get_multiplier(c, cu) * value
 _get_value(c::Component, value::ComplexF64, cu)::ComplexF64 = _get_multiplier(c, cu) * value
-_get_value(c::Component, value::MinMax, cu)::MinMax =
-    (m = _get_multiplier(c, cu); (min = value.min * m, max = value.max * m))
-_get_value(c::Component, value::StartUpShutDown, cu)::StartUpShutDown = (
-    m = _get_multiplier(c, cu);
-    (startup = value.startup * m, shutdown = value.shutdown * m)
-)
-_get_value(c::Component, value::UpDown, cu)::UpDown =
-    (m = _get_multiplier(c, cu); (up = value.up * m, down = value.down * m))
-_get_value(c::Component, value::FromTo_ToFrom, cu)::FromTo_ToFrom =
-    (m = _get_multiplier(c, cu); (from_to = value.from_to * m, to_from = value.to_from * m))
-_get_value(c::Component, value::FromTo, cu)::FromTo =
-    (m = _get_multiplier(c, cu); (from = value.from * m, to = value.to * m))
+_get_value(c::Component, value::NamedTuple, cu) =
+    map(v -> _get_value(c, v, cu), value)
 _get_value(::Component, ::Nothing, _) = nothing
 _get_value(::T, value::V, _) where {T <: Component, V} =
     (@warn("conversion not implemented for $(V) in component $(T)"); value::V)
 _get_value(::Nothing, _, _) = nothing
 
+# LEGACY: 3-arg set_value (stateful).
 function set_value(c::Component, _, val, conversion_unit)
     return _set_value(c, val, conversion_unit)
 end
 
 _set_value(c::Component, value::Float64, cu)::Float64 = value / _get_multiplier(c, cu)
-_set_value(c::Component, value::MinMax, cu)::MinMax =
-    (m = 1 / _get_multiplier(c, cu); (min = value.min * m, max = value.max * m))
-_set_value(c::Component, value::StartUpShutDown, cu)::StartUpShutDown = (
-    m = 1 / _get_multiplier(c, cu);
-    (startup = value.startup * m, shutdown = value.shutdown * m)
-)
-_set_value(c::Component, value::UpDown, cu)::UpDown =
-    (m = 1 / _get_multiplier(c, cu); (up = value.up * m, down = value.down * m))
-_set_value(c::Component, value::FromTo_ToFrom, cu)::FromTo_ToFrom = (
-    m = 1 / _get_multiplier(c, cu);
-    (from_to = value.from_to * m, to_from = value.to_from * m)
-)
-_set_value(c::Component, value::FromTo, cu)::FromTo =
-    (m = 1 / _get_multiplier(c, cu); (from = value.from * m, to = value.to * m))
+_set_value(c::Component, value::NamedTuple, cu) =
+    map(v -> _set_value(c, v, cu), value)
 _set_value(::Component, ::Nothing, _) = nothing
 _set_value(::T, value::V, _) where {T <: Component, V} =
     (@warn("conversion not implemented for $(V) in component $(T)"); value::V)
 _set_value(::Nothing, _, _) = nothing
 
 # ============================================================
-# ThreeWindingTransformer — per-winding base power/voltage dispatch
+# LEGACY: ThreeWindingTransformer — per-winding base power/voltage dispatch
+#
+# 3WT can't use the generic conversion path because base voltage/power
+# depend on which winding (field). The winding-aware dispatch uses
+# the legacy _get_multiplier approach.
+# TODO: refactor when 3WT windings become their own struct types.
 # ============================================================
 
 PrimaryImpedances = Union{Val{:r_primary}, Val{:x_primary}, Val{:r_12}, Val{:x_12}}
@@ -594,29 +407,28 @@ function get_value(c::ThreeWindingTransformer, field::Val{T}, conversion_unit) w
     settings = get_internal(c).units_info
     isnothing(settings) && return value
     multiplier = _get_multiplier(
-        c,
-        field,
-        Val(settings.unit_system),
-        settings.base_value,
-        conversion_unit,
+        c, field, Val(settings.unit_system), settings.base_value, conversion_unit,
     )
     return value * multiplier
 end
 
 # 3WT 4-arg path (explicit units) — route through winding-aware multipliers.
-# The generic _convert_from_device_base can't handle 3WT because base voltage
-# depends on which winding, and that info is in the field Val, not the unit category.
-function get_value(c::ThreeWindingTransformer, field::Val{T}, cat, units::Units) where {T}
+function get_value(
+    c::ThreeWindingTransformer,
+    field::Val{T},
+    cat::Val,
+    units::Units,
+) where {T}
     value = Base.getproperty(c, T)
     isnothing(value) && return nothing
     nat_multiplier = _get_multiplier(c, field, Val(IS.UnitSystem.NATURAL_UNITS), 0.0, cat)
-    return uconvert(units, value * nat_multiplier * _natural_unit(cat))
+    return uconvert(units, value * nat_multiplier * IS.natural_unit(_to_category(cat)))
 end
 
 function get_value(
     c::ThreeWindingTransformer,
     field::Val{T},
-    cat,
+    cat::Val,
     ::IS.DeviceBaseUnit,
 ) where {T}
     value = Base.getproperty(c, T)
@@ -627,31 +439,33 @@ end
 function get_value(
     c::ThreeWindingTransformer,
     field::Val{T},
-    cat,
+    cat::Val,
     ::IS.SystemBaseUnit,
 ) where {T}
     value = Base.getproperty(c, T)
     isnothing(value) && return nothing
     settings = get_internal(c).units_info
     isnothing(settings) && return value * IS.SU
-    su_multiplier =
-        _get_multiplier(c, field, Val(IS.UnitSystem.SYSTEM_BASE), settings.base_value, cat)
+    su_multiplier = _get_multiplier(
+        c, field, Val(IS.UnitSystem.SYSTEM_BASE), settings.base_value, cat,
+    )
     return (value * su_multiplier) * IS.SU
 end
 
-# 3WT Float64 path — raw value in system-base p.u.
+# 3WT Float64 path
 function get_value(
     c::ThreeWindingTransformer,
     field::Val{T},
-    cat,
+    cat::Val,
     ::Type{Float64},
 ) where {T}
     value = Base.getproperty(c, T)
     isnothing(value) && return nothing
     settings = get_internal(c).units_info
     isnothing(settings) && return value
-    su_multiplier =
-        _get_multiplier(c, field, Val(IS.UnitSystem.SYSTEM_BASE), settings.base_value, cat)
+    su_multiplier = _get_multiplier(
+        c, field, Val(IS.UnitSystem.SYSTEM_BASE), settings.base_value, cat,
+    )
     return value * su_multiplier
 end
 
@@ -659,11 +473,7 @@ function set_value(c::ThreeWindingTransformer, field, val::Float64, conversion_u
     settings = get_internal(c).units_info
     isnothing(settings) && return val
     multiplier = _get_multiplier(
-        c,
-        field,
-        Val(settings.unit_system),
-        settings.base_value,
-        conversion_unit,
+        c, field, Val(settings.unit_system), settings.base_value, conversion_unit,
     )
     return val / multiplier
 end
