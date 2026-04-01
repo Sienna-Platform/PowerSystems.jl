@@ -21,6 +21,10 @@ const INPUT_CATEGORY_NAMES = [
     ("storage", InputCategory.STORAGE),
 ]
 
+# Convert InputCategory enum to Symbol key for user_descriptors lookup.
+# PowerTableDataParser uses Symbol keys to avoid enum type incompatibility.
+_category_key(category::InputCategory) = Symbol(string(category))
+
 #=
 struct PowerSystemTableData
     base_power::Float64
@@ -275,12 +279,13 @@ function get_user_field(
     category::InputCategory,
     field::AbstractString,
 )
-    if !haskey(data.user_descriptors, category)
+    key = _category_key(category)
+    if !haskey(data.user_descriptors, key)
         throw(DataFormatError("Invalid category=$category"))
     end
 
     try
-        for item in data.user_descriptors[category]
+        for item in data.user_descriptors[key]
             if item["name"] == field
                 return item["custom_name"]
             end
@@ -298,16 +303,17 @@ end
 
 """Return a vector of user-defined fields for the category."""
 function get_user_fields(data::PowerTableDataParser.PowerSystemTableData, category::InputCategory)
-    if !haskey(data.user_descriptors, category)
+    key = _category_key(category)
+    if !haskey(data.user_descriptors, key)
         throw(DataFormatError("Invalid category=$category"))
     end
 
-    return [x["name"] for x in data.user_descriptors[category]]
+    return [x["name"] for x in data.user_descriptors[key]]
 end
 
 """Return the dataframe for the category."""
 function get_dataframe(data::PowerTableDataParser.PowerSystemTableData, category::InputCategory)
-    df = get(data.category_to_df, category, DataFrames.DataFrame())
+    df = get(data.category_to_df, _category_key(category), DataFrames.DataFrame())
     isempty(df) && @warn("Missing $category data.")
     return df
 end
@@ -683,7 +689,7 @@ function cache_storage(data::PowerTableDataParser.PowerSystemTableData)
     storage = Dict{String, Any}()
     gen_head_dict = Dict()
     gen_tail_dict = Dict()
-    if !haskey(data.category_to_df, InputCategory.STORAGE)
+    if !haskey(data.category_to_df, _category_key(InputCategory.STORAGE))
         return gen_head_dict, gen_tail_dict
     end
     for s in iterate_rows(data, InputCategory.STORAGE)
@@ -1454,7 +1460,7 @@ function _make_hydro_reservoirs(
     gen_storage,
     tail_required::Bool,
 )
-    if !haskey(data.category_to_df, InputCategory.STORAGE)
+    if !haskey(data.category_to_df, _category_key(InputCategory.STORAGE))
         throw(DataFormatError("Storage information must defined in storage.csv"))
     end
 
@@ -1763,11 +1769,12 @@ struct _FieldInfo
 end
 
 function _get_field_infos(data::PowerTableDataParser.PowerSystemTableData, category::InputCategory, df_names)
-    if !haskey(data.user_descriptors, category)
+    key = _category_key(category)
+    if !haskey(data.user_descriptors, key)
         throw(DataFormatError("Invalid category=$category"))
     end
 
-    if !haskey(data.descriptors, category)
+    if !haskey(data.descriptors, key)
         throw(DataFormatError("Invalid category=$category"))
     end
 
@@ -1776,7 +1783,7 @@ function _get_field_infos(data::PowerTableDataParser.PowerSystemTableData, categ
     per_unit = Dict{String, IS.UnitSystem}()
     unit = Dict{String, Union{String, Nothing}}()
     custom_names = Dict{String, String}()
-    for descriptor in data.user_descriptors[category]
+    for descriptor in data.user_descriptors[key]
         custom_name = descriptor["custom_name"]
         if descriptor["custom_name"] in df_names
             per_unit[descriptor["name"]] = get_enum_value(
@@ -1792,7 +1799,7 @@ function _get_field_infos(data::PowerTableDataParser.PowerSystemTableData, categ
 
     fields = Vector{_FieldInfo}()
 
-    for item in data.descriptors[category]
+    for item in data.descriptors[key]
         name = item["name"]
         item_unit_system =
             get_enum_value(IS.UnitSystem, get(item, "unit_system", "NATURAL_UNITS"))

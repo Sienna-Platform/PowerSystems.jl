@@ -95,9 +95,9 @@ function get_generator_type(fuel, unit_type, mappings::Union{Dict{NamedTuple, St
     for ut in (unit_type, nothing), fu in (fuel, nothing)
         key = (fuel = fu, unit_type = ut)
         if haskey(mappings, key)
-            if typeof(mappings) == DataType
+            if typeof(mappings[key]) == DataType
                 generator = mappings[key]
-            elseif typeof(mappings) == String
+            elseif typeof(mappings[key]) == String
                 gen_type = mappings[key]
                 generator = getfield(PowerSystems, Symbol(gen_type))
             end
