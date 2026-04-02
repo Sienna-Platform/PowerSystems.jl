@@ -6,6 +6,7 @@ include("ACBus.jl")
 include("DCBus.jl")
 include("Arc.jl")
 include("Line.jl")
+include("GenericArcImpedance.jl")
 include("DiscreteControlledACBranch.jl")
 include("MonitoredLine.jl")
 include("PhaseShiftingTransformer.jl")
@@ -654,6 +655,7 @@ export get_max_current_reactive_power
 export get_max_dc_current
 export get_max_dc_current_from
 export get_max_dc_current_to
+export get_max_flow
 export get_max_impedance_active_power
 export get_max_impedance_reactive_power
 export get_max_output_fraction
@@ -1339,6 +1341,7 @@ export set_max_current_reactive_power!
 export set_max_dc_current!
 export set_max_dc_current_from!
 export set_max_dc_current_to!
+export set_max_flow!
 export set_max_impedance_active_power!
 export set_max_impedance_reactive_power!
 export set_max_output_fraction!

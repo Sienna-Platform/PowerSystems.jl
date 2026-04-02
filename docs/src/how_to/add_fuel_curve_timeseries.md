@@ -86,6 +86,7 @@ To add time-varying fuel costs, you need to:
  2. **Attach the time series to the generator**: Use the [`set_fuel_cost!`](@ref) function
     to attach the time series data to the generator component. The component must already
     be added to the system before attaching time series.
+
  3. **Verify and retrieve the data**: Use [`get_fuel_cost`](@ref) to retrieve the time
     series data and verify it was attached correctly.
 

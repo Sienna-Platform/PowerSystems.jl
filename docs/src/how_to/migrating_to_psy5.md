@@ -5,7 +5,7 @@ to 5.0, which was released in July 2025 and includes breaking changes. Most the 
 to modeling in more detail AC transmission technologies.
 
 !!! warning
-    
+
     ***PowerSystems v5 is not backwards compatible with PowerSystems v4. The datasets created in PowerSystems v4 need to be converted using a separate script to be loaded
     in version 5***
 

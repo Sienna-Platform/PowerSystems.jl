@@ -530,6 +530,15 @@ Enumeration representing the location of a hydro reservoir relative to its assoc
 
 " ReservoirLocation
 
+IS.@scoped_enum(
+    CombinedCycleConfiguration,
+    SingleShaftCombustionSteam = 1,
+    SeparateShaftCombustionSteam = 2,
+    DoubleCombustionOneSteam = 3,
+    TripleCombustionOneSteam = 4,
+    Other = 5,
+)
+
 const PS_MAX_LOG = parse(Int, get(ENV, "PS_MAX_LOG", "50"))
 # const DEFAULT_BASE_MVA = 100.0; only used in PSTD parser
 

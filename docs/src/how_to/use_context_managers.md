@@ -24,7 +24,7 @@ unit system. This is useful when you need to retrieve or set values in a specifi
 without permanently changing the system's configuration.
 
 !!! note
-    
+
     You can specify the unit system using either the `UnitSystem` enum (e.g.,
     `UnitSystem.NATURAL_UNITS`) or a string (e.g., `"NATURAL_UNITS"`). Both forms are
     supported and equivalent.
@@ -73,7 +73,7 @@ end
 ```
 
 !!! tip
-    
+
     The `with_units_base` context manager is particularly useful when you need to work with
     data in natural units (MW, MVA, etc.) while keeping your system configured in per-unit
     for optimization or simulation purposes.
@@ -132,7 +132,7 @@ end
 ```
 
 !!! note
-    
+
     Without using this context manager, each individual call to
     `add_supplemental_attribute!` updates internal indexes separately, which can be slow
     when adding many attributes. The context manager batches all updates together for
@@ -148,7 +148,7 @@ transactions.
 If an error occurs during the update, changes are automatically reverted.
 
 !!! note
-    
+
     This context manager is not necessary for in-memory time series stores, only for
     HDF5-backed storage.
 
@@ -207,7 +207,7 @@ end
 ```
 
 !!! tip
-    
+
     When adding thousands of time series arrays, using `begin_time_series_update` can
     provide significant performance improvements by reducing file I/O and database
     transaction overhead.
@@ -219,8 +219,9 @@ end
 
  2. **Automatic cleanup**: Context managers ensure cleanup happens even if errors occur, so
     your system state remains consistent.
+
  3. **Nested context managers**: You can nest context managers if needed:
-    
+
     ```julia
     with_units_base(sys, "NATURAL_UNITS") do
         begin_time_series_update(sys) do
@@ -231,9 +232,10 @@ end
         end
     end
     ```
+
  4. **Error handling**: The context managers automatically handle cleanup, but you can still
     use `try-catch` blocks for application-specific error handling:
-    
+
     ```julia
     try
         begin_time_series_update(sys) do

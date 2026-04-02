@@ -221,6 +221,7 @@ end
 
 @testset "Test system units" begin
     sys = PSB.build_system(PSITestSystems, "test_RTS_GMLC_sys"; add_forecasts = false)
+    set_units_base_system!(sys, "DEVICE_BASE")
     @test get_units_base(sys) == "DEVICE_BASE"
     set_units_base_system!(sys, "SYSTEM_BASE")
     @test get_units_base(sys) == "SYSTEM_BASE"

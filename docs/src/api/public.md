@@ -35,6 +35,7 @@ Private = false
 Modules = [PowerSystems]
 Pages   = ["outages.jl",
            "impedance_correction.jl",
+           "plant_attribute.jl"
            ]
 Public = true
 Private = false

@@ -5,7 +5,7 @@ CurrentModule = PowerSystems
 ```
 
 !!! tip "Announcement"
-    
+
     PowerSystems.jl upgraded to version 5.0 in November 2025, which included breaking changes.
     Visit the [v5.0 migration guide](@ref psy5_migration) for information on
     how to update your existing code from version 4.0.
@@ -70,7 +70,7 @@ framework.
     Instructions to install `PowerSystems.jl` and other Sienna packages
 
 !!! note
-    
+
     `PowerSystems.jl` uses [`InfrastructureSystems.jl`](https://nrel-sienna.github.io/InfrastructureSystems.jl/stable/) as a utility library. Many methods are re-exported from `InfrastructureSystems.jl`.
     For most users there is no need to import `InfrastructureSystems.jl`.
 

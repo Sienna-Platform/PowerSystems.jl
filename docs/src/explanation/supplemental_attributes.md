@@ -75,7 +75,7 @@ using the function [`get_associated_supplemental_attributes`](@ref). If one attr
 multiple components of the given type, it will still only appear once in the result.
 
  1. Get all the attributes associated with all components of a given type.
-    
+
     ```julia
     for outage in get_associated_supplemental_attributes(system, ThermalStandard)
         @show summary(outage)
@@ -83,7 +83,7 @@ multiple components of the given type, it will still only appear once in the res
     ```
 
  2. Same as #1, but filter the results by attribute type, which can be concrete or abstract.
-    
+
     ```julia
     for outage in
         get_associated_supplemental_attributes(
@@ -101,7 +101,7 @@ You can retrieve the components associated with a single supplemental attribute 
 function [`get_associated_components`](@ref).
 
  1. Get all components associated with a single supplemental attribute.
-    
+
     ```julia
     outage = first(get_supplemental_attributes(FixedForcedOutage, system))
     for component in get_associated_components(system, outage)
@@ -110,7 +110,7 @@ function [`get_associated_components`](@ref).
     ```
 
  2. Same as #1, but filter the results by component type, which can be concrete or abstract.
-    
+
     ```julia
     outage = first(get_supplemental_attributes(FixedForcedOutage, system))
     for component in get_associated_components(system, outage; component_type = ThermalStandard)
@@ -124,7 +124,7 @@ You can retrieve the components associated with any supplemental attribute of a 
 using the function [`get_associated_components`](@ref).
 
  1. Get all components associated with any supplemental attribute of a given type.
-    
+
     ```julia
     for component in get_associated_components(system, FixedForcedOutage)
         @show summary(component)
@@ -132,7 +132,7 @@ using the function [`get_associated_components`](@ref).
     ```
 
  2. Same as #1, but filter the results by component type, which can be concrete or abstract.
-    
+
     ```julia
     for component in
         get_associated_components(system, FixedForcedOutage; component_type = ThermalStandard)
@@ -160,8 +160,23 @@ end
 
 ## Existing Supplemental Attributes in PowerSystems
 
+  - [`GeographicInfo`](@ref)
+  - [`ImpedanceCorrectionData`](@ref)
+
+### Contingency Attributes
+
   - [`FixedForcedOutage`](@ref)
   - [`GeometricDistributionForcedOutage`](@ref)
   - [`PlannedOutage`](@ref)
-  - [`GeographicInfo`](@ref)
-  - [`ImpedanceCorrectionData`](@ref)
+
+### Plant Attributes
+
+Plant attributes are a specialized category of supplemental attributes for grouping individual
+generator units into logical plant structures. See [Plant Attributes](@ref plant_attributes)
+for detailed documentation.
+
+  - [`ThermalPowerPlant`](@ref) - Thermal plants with shared shafts
+  - [`CombinedCycleBlock`](@ref) - Combined cycle plants with HRSG configurations
+  - [`CombinedCycleFractional`](@ref) - Combined cycle plants with aggregate heat rate and exclusion groups
+  - [`HydroPowerPlant`](@ref) - Hydro plants with shared penstocks
+  - [`RenewablePowerPlant`](@ref) - Renewable plants with shared PCCs

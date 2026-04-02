@@ -656,3 +656,29 @@ end
     cost_forecast_e = get_export_variable_cost(source, ie_cost; start_time = initial_time)
     @test isequal(first(TimeSeries.values(cost_forecast_e)), first(export_sd[initial_time]))
 end
+
+@testset "Test HydroReservoirCost getters and setters" begin
+    cost = HydroReservoirCost(;
+        level_shortage_cost = 1.0,
+        level_surplus_cost = 2.0,
+        spillage_cost = 3.0,
+    )
+    @test get_level_shortage_cost(cost) == 1.0
+    @test get_level_surplus_cost(cost) == 2.0
+    @test get_spillage_cost(cost) == 3.0
+
+    set_level_shortage_cost!(cost, 10.0)
+    @test get_level_shortage_cost(cost) == 10.0
+    @test get_level_surplus_cost(cost) == 2.0
+    @test get_spillage_cost(cost) == 3.0
+
+    set_level_surplus_cost!(cost, 20.0)
+    @test get_level_surplus_cost(cost) == 20.0
+    @test get_level_shortage_cost(cost) == 10.0
+    @test get_spillage_cost(cost) == 3.0
+
+    set_spillage_cost!(cost, 30.0)
+    @test get_spillage_cost(cost) == 30.0
+    @test get_level_shortage_cost(cost) == 10.0
+    @test get_level_surplus_cost(cost) == 20.0
+end

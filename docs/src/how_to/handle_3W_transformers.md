@@ -33,7 +33,9 @@ It does not explicitly store the equivalent star (wye) impedances. Instead, it s
   - Positive Sequence Impedance (R1-2, X1-2): Resistance and reactance between winding 1 (primary) and winding 2 (secondary) in per-unit on the transformer's base MVA.
 
   - Positive Sequence Impedance (R1-3, X1-3): Resistance and reactance between winding 1 (primary) and winding 3 (tertiary) in per-unit on the transformer's base MVA.
+
   - Positive Sequence Impedance (R2-3, X2-3): Resistance and reactance between winding 2 (secondary) and winding 3 (tertiary) in per-unit on the transformer's base MVA.
+
   - Star Bus Number: The star bus number is optional and it might be represented or not.
 
 ### Magnetizing Admittance

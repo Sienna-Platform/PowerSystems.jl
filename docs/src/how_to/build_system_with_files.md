@@ -183,7 +183,7 @@ end
 ```
 
 !!! warning
-    
+
     When defining a branch that isn't attached to a `System` yet, you must define the
     thermal rating of the transmission line [per-unitized in "SYSTEM_BASE"](@ref per_unit)
     using the base power of the `System` you plan to connect it to -- defined above as
@@ -232,7 +232,7 @@ Build the thermal generator components using the [`ThermalStandard`](@ref)
 constructor and data stored in the `thermal_gens` data frame.
 
 !!! warning
-    
+
     When you define components that aren't attached to a `System` yet, the constructors
     assume define all fields related to power are
     [per-unitized in "DEVICE_BASE"](@ref per_unit). Divide all fields with units such as MW,

@@ -82,7 +82,7 @@ from_subsystem(sys, "1")
 ```
 
 !!! warning
-    
+
     The system is invalid because the bus connected to the Alta generator is not part of the subsystem. We can add it, and then run [`from_subsystem`](@ref) again
 
 ```@repl subsystem

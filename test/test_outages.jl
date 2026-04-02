@@ -149,3 +149,27 @@ end
     @test length(thermal_geo_attrs) == 2 && geo_attr1 in thermal_geo_attrs &&
           geo_attr2 in thermal_geo_attrs
 end
+
+@testset "Test remove_supplemental_attributes! by type" begin
+    sys = create_system_with_outages()
+    # Verify initial state
+    @test length(get_supplemental_attributes(GeometricDistributionForcedOutage, sys)) == 2
+    @test length(get_supplemental_attributes(PlannedOutage, sys)) == 2
+    @test length(get_supplemental_attributes(GeographicInfo, sys)) == 2
+
+    # Remove all GeometricDistributionForcedOutage attributes
+    remove_supplemental_attributes!(GeometricDistributionForcedOutage, sys)
+    @test length(get_supplemental_attributes(GeometricDistributionForcedOutage, sys)) == 0
+    # Other types should be unaffected
+    @test length(get_supplemental_attributes(PlannedOutage, sys)) == 2
+    @test length(get_supplemental_attributes(GeographicInfo, sys)) == 2
+
+    # Remove all PlannedOutage attributes
+    remove_supplemental_attributes!(PlannedOutage, sys)
+    @test length(get_supplemental_attributes(PlannedOutage, sys)) == 0
+    @test length(get_supplemental_attributes(GeographicInfo, sys)) == 2
+
+    # Remove all GeographicInfo attributes
+    remove_supplemental_attributes!(GeographicInfo, sys)
+    @test length(get_supplemental_attributes(GeographicInfo, sys)) == 0
+end

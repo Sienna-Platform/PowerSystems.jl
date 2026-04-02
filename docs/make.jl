@@ -4,6 +4,9 @@ using Literate
 using DocumenterInterLinks
 using DocumenterMermaid
 
+# UPDATE FOR CURRENT MODULE NAME HERE
+const _DOCS_BASE_URL = "https://nrel-sienna.github.io/PowerSystems.jl/stable"
+
 links = InterLinks(
     "InfrastructureSystems" => "https://nrel-sienna.github.io/InfrastructureSystems.jl/stable/",
     # Sometimes IS docstrings @extref to PSY, and sometimes those IS docstrings are included
@@ -21,14 +24,15 @@ fallbacks = ExternalFallbacks(
 # communicate this information to users is ongoing.
 #include(joinpath(@__DIR__, "src", "generate_validation_table.jl"))
 include(joinpath(@__DIR__, "make_model_library.jl"))
+include(joinpath(@__DIR__, "make_tutorials.jl"))
 
 pages = OrderedDict(
         "Welcome Page" => "index.md",
         "Tutorials" =>  Any[
-            "Create and Explore a Power `System`" => "tutorials/creating_system.md",
-            "Manipulating Data Sets" => "tutorials/manipulating_datasets.md",
-            "Working with Time Series" => "tutorials/working_with_time_series.md",
-            "Adding Data for Dynamic Simulations" => "tutorials/add_dynamic_data.md",
+            "Create and Explore a Power `System`" => "tutorials/generated_creating_system.md",
+            "Manipulating Data Sets" => "tutorials/generated_manipulating_datasets.md",
+            "Working with Time Series" => "tutorials/generated_working_with_time_series.md",
+            "Adding Data for Dynamic Simulations" => "tutorials/generated_add_dynamic_data.md",
         ],
         "How to..." =>  Any[
             "...import data" => Any[
@@ -72,6 +76,7 @@ pages = OrderedDict(
             "explanation/time_series.md",
             "explanation/dynamic_data.md",
             "explanation/supplemental_attributes.md",
+            "explanation/plant_attributes.md",
             ],
         "Model Library" => Any[],
         "Reference" =>
@@ -125,29 +130,8 @@ pages["Model Library"] = make_model_library(
         )
 )
 
-# postprocess function to insert md
-function insert_md(content)
-    m = match(r"APPEND_MARKDOWN\(\"(.*)\"\)", content)
-    if !isnothing(m)
-        md_content = read(m.captures[1], String)
-        content = replace(content, r"APPEND_MARKDOWN\(\"(.*)\"\)" => md_content)
-    end
-    return content
-end
-
-# Function to clean up old generated_*.md files
-function clean_old_generated_files(dir::String)
-    # Remove old generated_*.md files before creating new ones
-    if !isdir(dir)
-        @warn "Directory does not exist: $dir"
-        return
-    end
-    generated_files = filter(f -> startswith(f, "generated_") && endswith(f, ".md"), readdir(dir))
-    for file in generated_files
-        rm(joinpath(dir, file), force=true)
-        @info "Removed old generated file: $file"
-    end
-end
+# clean_old_generated_files and insert_md are now defined in make_tutorials.jl
+# They are used here for other sections (Model Library, Explanation, How to...)
 
 # This code performs the automated addition of Literate - Generated Markdowns. The desired
 # section name should be the name of the file for instance network_matrices.jl -> Network Matrices
@@ -169,16 +153,21 @@ for (section, folder) in folders
     clean_old_generated_files(outputdir)
 end
 
+
+# Process other sections (Model Library, Explanation, How to...)
 for (section, folder) in folders
     for file in folder
         @show file
         section_folder_name = lowercase(replace(section, " " => "_"))
-        outputdir = joinpath(pwd(), "docs", "src", "$section_folder_name")
         inputfile = joinpath("$section_folder_name", "$file")
         infile_path = joinpath(pwd(), "docs", "src", inputfile)
-        outputfile = string("generated_", replace("$file", ".jl" => ""))
         execute = occursin("EXECUTE = TRUE", uppercase(readline(infile_path))) ? true : false
         execute && include(infile_path)
+        
+        outputdir = joinpath(pwd(), "docs", "src", "$section_folder_name")
+        outputfile = string("generated_", replace("$file", ".jl" => ""))
+        
+        # Generate markdown
         Literate.markdown(infile_path,
                           outputdir;
                           name = outputfile,
@@ -187,10 +176,14 @@ for (section, folder) in folders
                           documenter = true,
                           postprocess = insert_md,
                           execute = execute)
+        
         subsection = titlecase(replace(split(file, ".")[1], "_" => " "))
         push!(pages[section], ("$subsection" =>  joinpath("$section_folder_name", "$(outputfile).md")))
     end
 end
+
+# Process tutorials separately with Literate
+make_tutorials()
 
 makedocs(
     modules = [PowerSystems],

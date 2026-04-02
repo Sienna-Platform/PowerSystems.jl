@@ -1,7 +1,7 @@
 name = "PowerSystems"
 uuid = "bcd98974-b02a-5e2f-9ee0-a103f5c450dd"
-version = "5.4.0"
 authors = ["Jose Daniel Lara", "Daniel Thom", "Rodrigo Henriquez-Auba", "Gabriel Konar-Steenberg", "Clayton Barrows"]
+version = "5.7.0"
 
 [deps]
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"

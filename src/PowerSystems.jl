@@ -22,11 +22,38 @@ export get_aggregation_topology_accessor
 export SupplementalAttribute
 export GeographicInfo
 export get_geo_json
+export PowerPlant
+export ThermalPowerPlant
+export CombinedCycleBlock
+export CombinedCycleFractional
+export CombinedCycleConfiguration
+export HydroPowerPlant
+export RenewablePowerPlant
+export get_shaft_map
+export get_reverse_shaft_map
+export get_components_in_shaft
+export get_configuration
+export get_heat_recovery_to_steam_factor
+export get_penstock_map
+export get_reverse_penstock_map
+export get_components_in_penstock
+export get_hrsg_ct_map
+export get_hrsg_ca_map
+export get_ct_hrsg_map
+export get_ca_hrsg_map
+export get_pcc_map
+export get_reverse_pcc_map
+export get_components_in_pcc
+export get_operation_exclusion_map
+export get_inverse_operation_exclusion_map
+export get_components_in_exclusion_group
 
 export Component
 export Device
 export get_max_active_power
 export get_max_reactive_power
+export get_high_voltage
+export get_low_voltage
 export Branch
 export StaticInjection
 export StaticInjectionSubsystem
@@ -38,6 +65,7 @@ export ThreeWindingTransformer
 export TwoTerminalHVDC
 export Line
 export MonitoredLine
+export GenericArcImpedance
 export DCBranch
 export TwoTerminalGenericHVDCLine
 export TwoTerminalVSCLine
@@ -365,6 +393,7 @@ export copy_time_series!
 export copy_subcomponent_time_series!
 export add_component!
 export add_components!
+export replace_dynamic_injector!
 export remove_component!
 export remove_components!
 export clear_components!
@@ -840,6 +869,7 @@ include("outages.jl")
 
 # Definitions of PowerSystem
 include("base.jl")
+include("plant_attribute.jl")
 include("subsystems.jl")
 include("component_selector.jl")
 include("data_format_conversions.jl")

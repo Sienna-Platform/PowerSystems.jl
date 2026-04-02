@@ -82,6 +82,12 @@ end
     @test tTapTransformer isa PowerSystems.Component
     tPhaseShiftingTransformer = PhaseShiftingTransformer(nothing)
     @test tPhaseShiftingTransformer isa PowerSystems.Component
+    tTransformer3W = Transformer3W(nothing)
+    @test tTransformer3W isa PowerSystems.Component
+    tPhaseShiftingTransformer3W = PhaseShiftingTransformer3W(nothing)
+    @test tPhaseShiftingTransformer3W isa PowerSystems.Component
+    tGenericArcImpedance = GenericArcImpedance(nothing)
+    @test tGenericArcImpedance isa PowerSystems.Component
 end
 
 @testset "Service Constructors" begin

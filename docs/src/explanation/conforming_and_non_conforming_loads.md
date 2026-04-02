@@ -13,7 +13,9 @@ Non-conforming loads, on the other hand have patterns of consumption that don't 
   - Electric Arc Furnaces: Used in steel manufacturing, electric arc furnaces cause massive, sudden spikes in power demand when they are in operation. Depending on the time-scale of modeling these loads can require a consumption pattern that mathches the underlying industrial process.
 
   - Large Data Centers: While having a relatively constant base load, the computational demands of large data centers almost never change with the patterns from the rest of the system. These loads tend to be flat and in some advanced models include the behavior of compute load dispatch algorithms that conduct geographic price arbitrage.
+
   - Traction Loads for Railways: The movement of electric trains results in fluctuating power demand along the railway lines based on the transportation demand.
+
   - Pumping Loads: Similarly to tranction loads, pumping loads can change according to water or gas demand and supply needs and not system level behavior. In its data collection manuals, WECC specifies that pumping loads are typically modeled as non-conforming in power flow cases.
 
 ## Modeling using PowerSystems.jl
@@ -23,6 +25,7 @@ Drawing again from CAISO's EIM procedures, the management of non-conforming load
  1. **Segregated Data Submission**: The historical consumption data for the non-conforming load must be separated from the general, or "conforming," load data. This "cleanses" the historical data used to train weather-based load forecasting models, thereby improving their accuracy for the bulk of the system's load.
 
  2. **Independent Forecasting**: While the system operator forecasts the aggregate conforming load, the entity responsible for the non-conforming load is often required to submit its own forecast or schedule.
+
  3. **Specialized Modeling**: In market and operational models, non-conforming loads are often treated as a type of resource. For instance, in the CAISO market, they are represented as "Dispatchable Demand Response" (DDR) resources, which are essentially modeled as negative generation. This allows their behavior to be explicitly accounted for in market clearing and dispatch instructions.
 
 If a modeler wants to account for the differences in behavior between various loads, they only need to assign a distinct time series to each load. In `PowerSystems.jl`, we keep track of data related to "conformity" for monitoring purposes. This data is defined in the `conformity` field for concrete subtypes of [`StaticLoad`](@ref) and has the [options listed here](@ref loadconform_list). However, the behavioral variations described in the literature are already taken into consideration through the ways modelers can manage these time series assignments.

@@ -61,7 +61,7 @@ export_curve = make_export_curve(;
 ```
 
 !!! note
-    
+
       - Import curves must have non-decreasing (convex) slopes
       - Export curves must have non-increasing (concave) slopes
       - Power values must have one more entry than price values
@@ -103,7 +103,7 @@ source = Source(;
 ```
 
 !!! tip
-    
+
     The `active_power_limits` should span negative (for export) to positive (for import)
     values. Negative power indicates exporting power to the external grid.
 

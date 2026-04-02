@@ -101,12 +101,12 @@ rm(folder; recursive = true); #hide
 ```
 
 !!! tip
-    
+
     PowerSystems generates UUIDs for the `System` and all components in order to have
     a way to uniquely identify objects. During deserialization it restores the same
     UUIDs.  If you will modify the `System` or components after deserialization then
     it is recommended that you set this flag to generate new UUIDs.
-    
+
     ```julia
     system2 = System(path; assign_new_uuids = true)
     ```

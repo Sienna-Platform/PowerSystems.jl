@@ -80,7 +80,7 @@ Notice the return values are divided by the `base_power` of 30 MW, showing the s
 done the per-unit conversion into `"DEVICE_BASE"` behind the scenes.
 
 !!! tip
-    
+
     Steps 2-4 can be called within a `for` loop to define many components at once (or step 3
     can be replaced with [`add_components!`](@ref) to add all components at once).
 

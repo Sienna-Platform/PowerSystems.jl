@@ -20,11 +20,13 @@ Base power is a fundamental parameter for the per-unit system and represents the
   - **Purpose**: Defines the maximum apparent power (MVA) that the generator's electrical components can safely handle
 
   - **Units**: Stored in per-unit using **device base** (i.e., divided by the device's `base_power`)
+
   - **Physical meaning**: The maximum MVA output considering electrical constraints such as:
-    
+
       + Stator winding thermal limits
       + Rotor field winding limits
       + Cooling system capacity
+
   - **Access**: Retrieved using `get_rating(device)`
 
 The rating is typically determined by the electrical design and thermal limits of the synchronous machine itself. It represents the maximum capability of the electrical generator, independent of the prime mover.
@@ -36,12 +38,14 @@ The rating is typically determined by the electrical design and thermal limits o
   - **Purpose**: Defines the maximum real power (MW) that the prime mover can deliver
 
   - **Units**: Stored in per-unit using **device base** (i.e., divided by the device's `base_power`)
+
   - **Physical meaning**: The maximum MW output considering prime mover constraints such as:
-    
+
       + Turbine capacity (for steam, gas, or hydro turbines)
       + Combustion chamber limits (for gas turbines)
       + Boiler capacity (for steam generators)
       + Fuel flow limitations
+
   - **Access**: Retrieved using `get_max_active_power(device)`
 
 The maximum active power is determined by the mechanical system that drives the generator. This is often less than the rating when considering only real power production.
@@ -107,7 +111,7 @@ get_max_active_power(gen)              # Returns: 0.95 p.u. (on system base)
 ```
 
 !!! note
-    
+
     Base power is **always** returned in natural units (MVA) regardless of the unit system setting. The rating and maximum active power are stored in device base but are automatically converted when accessed based on the current unit system setting.
 
 ## See Also

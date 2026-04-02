@@ -13,11 +13,11 @@ To begin, the user must make 2 or 3 decisions before defining the operating cost
     options. In general, each operating cost has parameters to define fixed and variable costs.
     To be able to define an `OperationalCost`, you must first select a curve to represent the
     variable cost(s).
-    
+
      1. If you selected [`ThermalGenerationCost`](@ref) or [`HydroGenerationCost`](@ref),
         select either a [`FuelCurve`](@ref) or [`CostCurve`](@ref) to represent the variable
         cost, based on the units of the generator's data.
-        
+
           * If you have data in terms of heat rate or water flow, use [`FuelCurve`](@ref).
           * If you have data in units of currency, such as \$/MWh, use [`CostCurve`](@ref).
             If you selected another `OperationalCost` type, the variable cost is represented

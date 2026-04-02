@@ -208,21 +208,11 @@ function parse_export_metadata_dict(md::Dict)
     transformer_control_objective_map = md["transformer_control_objective_mapping"]
     transformer_control_objective_formatter =
         name -> get(transformer_control_objective_map, name, nothing)
-    transformer_resistance_map = md["transformer_resistance_mapping"]
-    transformer_resistance_formatter =
-        name -> get(transformer_resistance_map, name, nothing)
-    transformer_reactance_map = md["transformer_reactance_mapping"]
-    transformer_reactance_formatter = name -> get(transformer_reactance_map, name, nothing)
-    transformer_tap_map = md["transformer_tap_mapping"]
-    transformer_tap_formatter = name -> get(transformer_tap_map, name, nothing)
     sys_kwargs = Dict(
         :area_name_formatter => area_name_formatter,
         :loadzone_name_formatter => loadzone_name_formatter,
         :bus_name_formatter => bus_name_formatter,
         :load_name_formatter => load_name_formatter,
-        :transformer_resistance_formatter => transformer_resistance_formatter,
-        :transformer_reactance_formatter => transformer_reactance_formatter,
-        :transformer_tap_formatter => transformer_tap_formatter,
         :shunt_name_formatter => shunt_name_formatter,
         :gen_name_formatter => gen_name_formatter,
         :branch_name_formatter => branch_name_formatter,

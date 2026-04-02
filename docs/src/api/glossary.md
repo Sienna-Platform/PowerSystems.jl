@@ -8,7 +8,9 @@
   - *AC*: Alternating current
 
   - *ACE*: Area control error
+
   - *AGC*: Automatic generation control
+
   - *AVR*: Automatic Voltage Regulator
 
 ### D
@@ -16,6 +18,7 @@
   - *DC*: Direct current
 
   - *DERA1*:
+
   - *Dynamic*: Refers to data and simulations for power system transient simulations using differential
     equations. Common examples include signal stability analysis to verify the power system will
     maintain stability in the few seconds following an unexpected fault or generator trip. For contrast,
@@ -60,11 +63,14 @@
     device *injects* power or current into the power system. Loads are negative injectors. In
     `PowerSystems.jl`, some components can accept data for both [`StaticInjection`](@ref) and
     [`DynamicInjection`](@ref) models for both [static](@ref S) and [dynamic](@ref D) modeling.
+
   - *Interval*: The period of time between forecast initial times. In `PowerSystems.jl` all
     intervals are represented using `Dates.Period` types. For instance, in a Day-Ahead market
     simulation, the interval is usually `Hour(24)`.
+
   - *Initial time*: The first time-stamp in a forecast window. See the article on
     [`Time Series Data`](@ref ts_data).
+
   - *IPC*: Interconnecting power converter
 
 ### L
@@ -80,12 +86,19 @@
   - *PLL*: Phase-locked loop
 
   - *PSS*: Power System Stabilizer
+
   - *PSSE* or *PSS/E*: Siemens' PSS®E Power System Simulator for Engineering
+
   - *PPA*: Power purchase agreement
+
   - *PSI*: [`PowerSimulations.jl`](https://nrel-sienna.github.io/PowerSimulations.jl/latest/)
+
   - *PSID*: [`PowerSimulationsDynamics.jl`](https://nrel-sienna.github.io/PowerSimulationsDynamics.jl/stable/)
+
   - *PSLF*: GE Vernova's Positive Sequence Load Flow Software
+
   - *PSY*: `PowerSystems.jl` (this package)
+
   - *pu* or *p.u.*: Per-unit
 
 ### R
@@ -101,12 +114,15 @@
   - *SCRX*: Bus Fed or Solid Fed Static Exciter
 
   - *SEXS*: Simplified Excitation System model from PSS/E
+
   - *SIL*: Surge impedance loading
+
   - *States*: Correspond to the set of inputs, outputs or variables, that evolve dynamically in
     [`PowerSimulationsDynamics.jl`](https://nrel-sienna.github.io/PowerSimulationsDynamics.jl/stable/),
     commonly via a differential-algebraic system of equations. In `PowerSystems.jl`, a component
     associated to a `DynamicInjector` (for example an AVR) specifies the set of states that specific
     component requires to be modeled accurately.
+
   - *Static*: Typically refers to steady state data or models where the power system
     and each of its components are assumed to be operating at a steady state equilibrium point. This
     includes both power flow data for a single time point simulation as well as quasi-static time
@@ -114,6 +130,7 @@
     Static data can be used as the input to single time point power flow models and production
     cost models with, for example, 5-minute, 15-minute, or 1-hour [Resolution](@ref R).
     For contrast, see the definition for [Dynamic](@ref D) data.
+
   - *STAB*: Speed Sensitive Stabilizing PSS Model
 
 ### V

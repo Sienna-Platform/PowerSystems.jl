@@ -20,7 +20,7 @@ like the Western Electricity Coordinating Council (WECC) planning case and the M
 ## [Conventions when parsing MATPOWER or PSS/e Files](@id parse_conventions)
 
 !!! Info
-    
+
     In PowerSystems v5, the parsing conventions changed from those in PowerSystems v4. You might experience different behaviors when loading MATPOWER or PSS/e Files.
 
 PowerSystems.jl utilizes a data model that bridges the gap between operational simulations, such as Production Cost Analysis, and electrical engineering simulations, including power flows. Given the different practices in these domains, there are several discrepancies in how to handle data and we have made changes to make the modeling compatible.
