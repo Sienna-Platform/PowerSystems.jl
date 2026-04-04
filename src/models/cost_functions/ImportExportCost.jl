@@ -2,27 +2,19 @@
 $(TYPEDEF)
 $(TYPEDFIELDS)
 
-    ImportExportCost(import_offer_curves, export_offer_curves, energy_import_weekly_limit, energy_export_weekly_limits, ancillary_service_offers)
-    ImportExportCost(; import_offer_curves, export_offer_curves, energy_export_weekly_limits, ancillary_service_offers)
+    ImportExportCost(import_offer_curves, export_offer_curves, energy_import_weekly_limit, energy_export_weekly_limit, ancillary_service_offers)
+    ImportExportCost(; import_offer_curves, export_offer_curves, energy_import_weekly_limit, energy_export_weekly_limit, ancillary_service_offers)
 
-An operating cost for imports/exports and ancillary services from neighboring areas. The data model
-employs a CostCurve{PiecewiseIncrementalCurve} with an implied zero cost at zero power.
+An operating cost for static (non-time-varying) imports/exports and ancillary services
+from neighboring areas. The data model employs a `CostCurve{PiecewiseIncrementalCurve}`
+with an implied zero cost at zero power.
+For time-varying bids, use [`ImportExportTimeSeriesCost`](@ref).
 """
 mutable struct ImportExportCost <: OfferCurveCost
-    "Buy Price Curves data to import power, which can be a time series of [`PiecewiseStepData`] or a
-    [`CostCurve`](@ref) of [`PiecewiseIncrementalCurve`](@ref)"
-    import_offer_curves::Union{
-        Nothing,
-        TimeSeriesKey,  # piecewise step data
-        CostCurve{PiecewiseIncrementalCurve},
-    }
-    "Sell Price Curves data to export power, which can be a time series of `PiecewiseStepData` or a
-    [`CostCurve`](@ref) of [`PiecewiseIncrementalCurve`](@ref)"
-    export_offer_curves::Union{
-        Nothing,
-        TimeSeriesKey,
-        CostCurve{PiecewiseIncrementalCurve},
-    }
+    "Buy Price Curves data to import power"
+    import_offer_curves::CostCurve{PiecewiseIncrementalCurve}
+    "Sell Price Curves data to export power"
+    export_offer_curves::CostCurve{PiecewiseIncrementalCurve}
     "Weekly limit on the amount of energy that can be imported, defined in system base p.u-hours."
     energy_import_weekly_limit::Float64
     "Weekly limit on the amount of energy that can be exported, defined in system base p.u-hours."
@@ -32,8 +24,8 @@ mutable struct ImportExportCost <: OfferCurveCost
 end
 
 ImportExportCost(;
-    import_offer_curves = nothing,
-    export_offer_curves = nothing,
+    import_offer_curves = ZERO_OFFER_CURVE,
+    export_offer_curves = ZERO_OFFER_CURVE,
     energy_import_weekly_limit = INFINITE_BOUND,
     energy_export_weekly_limit = INFINITE_BOUND,
     ancillary_service_offers = Vector{Service}(),
@@ -58,7 +50,7 @@ get_export_offer_curves(value::ImportExportCost) = value.export_offer_curves
 get_ancillary_service_offers(value::ImportExportCost) = value.ancillary_service_offers
 """Get [`ImportExportCost`](@ref) `energy_import_weekly_limit`."""
 get_energy_import_weekly_limit(value::ImportExportCost) = value.energy_import_weekly_limit
-"""Get [`ImportExportCost`](@ref) `energy_export_weekly_limits`."""
+"""Get [`ImportExportCost`](@ref) `energy_export_weekly_limit`."""
 get_energy_export_weekly_limit(value::ImportExportCost) = value.energy_export_weekly_limit
 
 """Set [`ImportExportCost`](@ref) `import_offer_curves`."""
@@ -73,7 +65,7 @@ set_ancillary_service_offers!(value::ImportExportCost, val) =
 """Set [`ImportExportCost`](@ref) `energy_import_weekly_limit`."""
 set_energy_import_weekly_limit!(value::ImportExportCost, val) =
     value.energy_import_weekly_limit = val
-"""Set [`ImportExportCost`](@ref) `energy_export_weekly_limits`."""
+"""Set [`ImportExportCost`](@ref) `energy_export_weekly_limit`."""
 set_energy_export_weekly_limit!(value::ImportExportCost, val) =
     value.energy_export_weekly_limit = val
 
@@ -85,8 +77,8 @@ function is_import_export_curve(curve::ProductionVariableCostCurve)
 end
 
 """
-Make a CostCurve{PiecewiseIncrementalCurve} suitable for inclusion in a ImportExportCost from
-the FunctionData that might be used to store such a cost curve in a time series.
+Make a static `CostCurve{PiecewiseIncrementalCurve}` suitable for an `ImportExportCost`
+from `PiecewiseStepData`.
 """
 function make_import_export_curve(
     curve::PiecewiseStepData,
@@ -101,13 +93,12 @@ function make_import_export_curve(
 end
 
 """
-Make a CostCurve{PiecewiseIncrementalCurve} suitable for inclusion in an ImportExportCost from a
-vector of power values, a vector of costs, and an optional units system.
+Make a static `CostCurve{PiecewiseIncrementalCurve}` for an `ImportExportCost` from
+vectors of power values and prices.
 
 # Examples
 ```julia
 iec = make_import_export_curve([0.0, 100.0, 105.0, 120.0, 130.0], [25.0, 26.0, 28.0, 30.0])
-iec1 = make_import_export_curve([0.0, 100.0, 105.0, 120.0, 130.0], [25.0, 26.0, 28.0, 30.0]; power_units = UnitSystem.NATURAL_UNITS)
 ```
 """
 function make_import_export_curve(
@@ -118,10 +109,7 @@ function make_import_export_curve(
     valid_data = (length(powers) == length(prices) + 1)
     if valid_data
         curve = PiecewiseStepData(powers, prices)
-        return make_import_export_curve(
-            curve,
-            power_units,
-        )
+        return make_import_export_curve(curve, power_units)
     else
         throw(
             ArgumentError(
@@ -136,11 +124,7 @@ function make_import_export_curve(
     price::Float64,
     power_units::UnitSystem = UnitSystem.NATURAL_UNITS,
 )
-    return make_import_export_curve(
-        [0.0, max_power],
-        [price],
-        power_units,
-    )
+    return make_import_export_curve([0.0, max_power], [price], power_units)
 end
 
 function make_import_export_curve(;
@@ -148,23 +132,21 @@ function make_import_export_curve(;
     prices,
     power_units = UnitSystem.NATURAL_UNITS,
 )
-    return make_import_export_curve(
-        powers,
-        prices,
-        power_units,
-    )
+    return make_import_export_curve(powers, prices, power_units)
 end
 
 """
-Make an import CostCurve{PiecewiseIncrementalCurve} suitable for inclusion in an ImportExportCost from a
-vector of power values, a vector of costs, and an optional units system.
-
-# Examples
-```julia
-ic = make_import_curve([0.0, 100.0, 105.0, 120.0, 130.0], [25.0, 26.0, 28.0, 30.0])
-ic1 = make_import_curve(power = [0.0, 100.0, 105.0, 120.0, 130.0], price = [25.0, 26.0, 28.0, 30.0], power_units = UnitSystem.NATURAL_UNITS)
-```
+Make a time-series-backed `CostCurve{TimeSeriesPiecewiseIncrementalCurve}` from a
+`TimeSeriesKey`.
 """
+function make_import_export_curve(
+    ts_key::TimeSeriesKey;
+    power_units::UnitSystem = UnitSystem.NATURAL_UNITS,
+)
+    vc = TimeSeriesPiecewiseIncrementalCurve(ts_key, nothing, nothing)
+    return CostCurve(vc, power_units)
+end
+
 function make_import_curve(
     power::Vector{Float64},
     price::Vector{Float64},
@@ -173,11 +155,7 @@ function make_import_curve(
     curve = PiecewiseStepData(power, price)
     convex = is_convex(curve)
     if convex
-        return make_import_export_curve(
-            power,
-            price,
-            power_units,
-        )
+        return make_import_export_curve(power, price, power_units)
     else
         throw(
             ArgumentError(
@@ -187,50 +165,18 @@ function make_import_curve(
     end
 end
 
-"""
-Make a CostCurve{PiecewiseIncrementalCurve} from suitable for inclusion in an ImportExportCost from
-a max import power, a single price and an optional units system. Assume the minimum import is 0.0
-
-# Examples
-```julia
-ic = make_import_curve(power = 100.0, price = 25.0)
-ic1 = make_import_curve(power = 100.0, price = 25.0, power_units = UnitSystem.NATURAL_UNITS)
-```
-"""
 function make_import_curve(
     power::Float64,
     price::Float64,
     power_units::UnitSystem = UnitSystem.NATURAL_UNITS,
 )
-    return make_import_export_curve(
-        power,
-        price,
-        power_units,
-    )
+    return make_import_export_curve(power, price, power_units)
 end
 
-function make_import_curve(;
-    power,
-    price,
-    power_units = UnitSystem.NATURAL_UNITS,
-)
-    return make_import_curve(
-        power,
-        price,
-        power_units,
-    )
+function make_import_curve(; power, price, power_units = UnitSystem.NATURAL_UNITS)
+    return make_import_curve(power, price, power_units)
 end
 
-"""
-Make an export CostCurve{PiecewiseIncrementalCurve} suitable for inclusion in an ImportExportCost from a
-vector of power values, a vector of costs, and an optional units system.
-
-# Examples
-```julia
-ec = make_export_curve([0.0, 100.0, 105.0, 120.0, 130.0], [30.0, 28.0, 26.0, 25.0])
-ec1 = make_export_curve(power = [0.0, 100.0, 105.0, 120.0, 130.0], price = [30.0, 28.0, 26.0, 25.0], power_units = UnitSystem.NATURAL_UNITS)
-```
-"""
 function make_export_curve(
     power::Vector{Float64},
     price::Vector{Float64},
@@ -239,11 +185,7 @@ function make_export_curve(
     curve = PiecewiseStepData(power, price)
     concave = is_concave(curve)
     if concave
-        return make_import_export_curve(
-            power,
-            price,
-            power_units,
-        )
+        return make_import_export_curve(power, price, power_units)
     else
         throw(
             ArgumentError(
@@ -253,36 +195,14 @@ function make_export_curve(
     end
 end
 
-"""
-Make a CostCurve{PiecewiseIncrementalCurve} from suitable for inclusion in an ImportExportCost from a
-a max export power, a single price and an optional units system. Assume the minimum export is 0.0.
-
-# Examples
-```julia
-ec = make_export_curve(power = 100.0, price = 30.0)
-ec1 = make_export_curve(power = 100.0, price = 30.0, power_units = UnitSystem.NATURAL_UNITS)
-```
-"""
 function make_export_curve(
     power::Float64,
     price::Float64,
     power_units::UnitSystem = UnitSystem.NATURAL_UNITS,
 )
-    return make_import_export_curve(
-        power,
-        price,
-        power_units,
-    )
+    return make_import_export_curve(power, price, power_units)
 end
 
-function make_export_curve(;
-    power,
-    price,
-    power_units = UnitSystem.NATURAL_UNITS,
-)
-    return make_export_curve(
-        power,
-        price,
-        power_units,
-    )
+function make_export_curve(; power, price, power_units = UnitSystem.NATURAL_UNITS)
+    return make_export_curve(power, price, power_units)
 end
