@@ -34,6 +34,7 @@ end
         PSB.PSITestSystems,
         "test_RTS_GMLC_sys_with_hybrid";
         add_forecasts = true,
+        force_build = true,
     )
     hybrids = collect(get_components(HybridSystem, sys))
     @test length(hybrids) == 1
