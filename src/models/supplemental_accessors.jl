@@ -26,7 +26,7 @@ _remove_aggregration_topology!(bus::ACBus, ::LoadZone) = bus.load_zone = nothing
 _remove_aggregration_topology!(bus::ACBus, ::Area) = bus.area = nothing
 
 """
-Generic method to calculate the admittance of [`ACTransmission`](@ref) devices.
+Generic method to calculate the susceptance of [`ACTransmission`](@ref) devices.
 """
 get_series_susceptance(b::ACTransmission) = 1 / get_x(b)
 
