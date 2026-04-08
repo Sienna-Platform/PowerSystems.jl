@@ -20,8 +20,6 @@
         @test length(
             get_associated_components(sys, geo; component_type = ThermalStandard),
         ) == 1
-        # This method is deprecated for now...will be deleted later.
-        @test length(get_components(sys, geo)) == 2
     end
 
     associated_components = get_associated_components(sys, GeographicInfo)

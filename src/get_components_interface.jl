@@ -79,11 +79,6 @@ function get_associated_components(
     )
 end
 
-@deprecate get_components(sys::System, attribute::SupplementalAttribute) get_associated_components(
-    sys,
-    attribute,
-)
-
 """
 Return a vector of components that are associated to one or more supplemental attributes of
 the given type.
@@ -166,10 +161,8 @@ get_available_components(
     IS.get_available_components(T, sys; subsystem_name = subsystem_name)
 
 """
-Like [`get_components`](@ref get_components(
-    sys::System,
-    attribute::SupplementalAttribute
-) but returns only components that are [`get_available`](@ref).
+Like [`get_associated_components`](@ref) but returns only components that are
+[`get_available`](@ref).
 """
 get_available_components(sys::System, attribute::SupplementalAttribute) =
     IS.get_available_components(sys, attribute)
