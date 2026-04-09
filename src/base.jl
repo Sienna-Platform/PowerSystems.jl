@@ -1856,80 +1856,39 @@ Return the compression settings used for system data such as time series arrays.
 get_compression_settings(sys::System) = IS.get_compression_settings(sys.data)
 
 """
-Return the initial times for all forecasts, optionally filtered by `resolution` and/or
-`interval`.
+Return the initial times for all forecasts. Use `resolution` and/or `interval` keyword
+arguments to filter when multiple forecast groups exist.
 """
-function get_forecast_initial_times(
-    sys::System;
-    resolution::Union{Nothing, Dates.Period} = nothing,
-    interval::Union{Nothing, Dates.Period} = nothing,
-)
-    return IS.get_forecast_initial_times(
-        sys.data;
-        resolution = resolution,
-        interval = interval,
-    )
-end
+get_forecast_initial_times(sys::System; kwargs...) =
+    IS.get_forecast_initial_times(sys.data; kwargs...)
 
 """
-Return the window count for all forecasts, optionally filtered by `resolution` and/or
-`interval`.
+Return the window count for all forecasts. Use `resolution` and/or `interval` keyword
+arguments to filter when multiple forecast groups exist.
 """
-function get_forecast_window_count(
-    sys::System;
-    resolution::Union{Nothing, Dates.Period} = nothing,
-    interval::Union{Nothing, Dates.Period} = nothing,
-)
-    return IS.get_forecast_window_count(
-        sys.data;
-        resolution = resolution,
-        interval = interval,
-    )
-end
+get_forecast_window_count(sys::System; kwargs...) =
+    IS.get_forecast_window_count(sys.data; kwargs...)
 
 """
-Return the horizon for all forecasts, optionally filtered by `resolution` and/or
-`interval`.
+Return the horizon for all forecasts. Use `resolution` and/or `interval` keyword
+arguments to filter when multiple forecast groups exist.
 """
-function get_forecast_horizon(
-    sys::System;
-    resolution::Union{Nothing, Dates.Period} = nothing,
-    interval::Union{Nothing, Dates.Period} = nothing,
-)
-    return IS.get_forecast_horizon(sys.data; resolution = resolution, interval = interval)
-end
+get_forecast_horizon(sys::System; kwargs...) =
+    IS.get_forecast_horizon(sys.data; kwargs...)
 
 """
-Return the initial_timestamp for all forecasts, optionally filtered by `resolution`
-and/or `interval`.
+Return the initial timestamp for all forecasts. Use `resolution` and/or `interval` keyword
+arguments to filter when multiple forecast groups exist.
 """
-function get_forecast_initial_timestamp(
-    sys::System;
-    resolution::Union{Nothing, Dates.Period} = nothing,
-    interval::Union{Nothing, Dates.Period} = nothing,
-)
-    return IS.get_forecast_initial_timestamp(
-        sys.data;
-        resolution = resolution,
-        interval = interval,
-    )
-end
+get_forecast_initial_timestamp(sys::System; kwargs...) =
+    IS.get_forecast_initial_timestamp(sys.data; kwargs...)
 
 """
-Return the interval for all forecasts, optionally filtered by `resolution` and/or
-`interval`.
+Return the forecast interval. Use `resolution` and/or `interval` keyword arguments to
+select which forecast group to query when multiple exist.
 """
-function get_forecast_interval(
-    sys::System;
-    resolution::Union{Nothing, Dates.Period} = nothing,
-    interval::Union{Nothing, Dates.Period} = nothing,
-)
-    return IS.get_forecast_interval(
-        sys.data;
-        resolution = resolution,
-        interval = interval,
-    )
-end
+get_forecast_interval(sys::System; kwargs...) =
+    IS.get_forecast_interval(sys.data; kwargs...)
 
 """
 Return a sorted Vector of distinct resolutions for all time series of the given type
@@ -1941,7 +1900,7 @@ get_time_series_resolutions(
 ) = IS.get_time_series_resolutions(sys.data; time_series_type = time_series_type)
 
 """
-Return an iterator of time series in order of initial time.
+Return an iterator of time series attached to components in the system.
 
 Note that passing a filter function can be much slower than the other filtering parameters
 because it reads time series data from media.
@@ -1949,7 +1908,7 @@ because it reads time series data from media.
 Call `collect` on the result to get an array.
 
 # Arguments
-- `data::SystemData`: system
+- `sys::System`: system
 - `filter_func = nothing`: Only return time series for which this returns true.
 - `type = nothing`: Only return time series with this type.
 - `name = nothing`: Only return time series matching this value.
@@ -1973,7 +1932,7 @@ function IS.get_time_series_multiple(
     resolution = nothing,
     interval = nothing,
 )
-    Channel() do channel
+    Channel{TimeSeriesData}() do channel
         for component in
             IS.iterate_components_with_time_series(sys.data; time_series_type = type)
             for time_series in get_time_series_multiple(
@@ -2005,8 +1964,9 @@ end
 """
 Remove the time series data for a component or supplemental attribute and time series type.
 
-Use `resolution` and `interval` keyword arguments to disambiguate when multiple time series
-of the same type and name exist with different resolutions or intervals.
+Use `resolution`, `interval`, and `features` keyword arguments to disambiguate when multiple
+time series of the same type and name exist with different resolutions, intervals, or
+user-defined feature tags.
 """
 function remove_time_series!(
     sys::System,

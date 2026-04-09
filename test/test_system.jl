@@ -449,7 +449,6 @@ end
     interval1 = Dates.Minute(30)
     interval2 = Dates.Hour(1)
 
-    # Transform with two different intervals
     transform_single_time_series!(
         sys,
         horizon,
@@ -463,7 +462,6 @@ end
         delete_existing = false,
     )
 
-    # Both transforms exist
     @test has_time_series(
         gen,
         DeterministicSingleTimeSeries,
@@ -477,7 +475,6 @@ end
         interval = interval2,
     )
 
-    # Retrieve by interval
     ts1 = get_time_series(
         DeterministicSingleTimeSeries,
         gen,
@@ -496,21 +493,18 @@ end
     @test ts2 isa DeterministicSingleTimeSeries
     @test IS.get_interval(ts2) == interval2
 
-    # Without interval, ambiguous query throws
     @test_throws ArgumentError get_time_series(
         DeterministicSingleTimeSeries,
         gen,
         sts_name,
     )
 
-    # Forecast query wrappers with interval filtering
     @test get_forecast_interval(sys; interval = interval1) == interval1
     @test get_forecast_interval(sys; interval = interval2) == interval2
     @test get_forecast_horizon(sys; interval = interval1) == horizon
     @test get_forecast_window_count(sys; interval = interval1) > 0
     @test get_forecast_window_count(sys; interval = interval2) > 0
 
-    # get_time_series_multiple with interval filtering
     ts_interval1 = collect(
         get_time_series_multiple(
             sys;
@@ -523,7 +517,6 @@ end
         @test IS.get_interval(ts) == interval1
     end
 
-    # Remove only interval1
     remove_time_series!(
         sys,
         DeterministicSingleTimeSeries,
@@ -537,7 +530,6 @@ end
         sts_name;
         interval = interval1,
     )
-    # interval2 still present
     @test has_time_series(
         gen,
         DeterministicSingleTimeSeries,
@@ -545,7 +537,6 @@ end
         interval = interval2,
     )
 
-    # Original SingleTimeSeries still accessible
     @test has_time_series(gen, SingleTimeSeries, sts_name)
 end
 
