@@ -1,12 +1,16 @@
 # VALIDATORS
 function _validate_market_bid_cost(cost, context)
     (cost isa MarketBidCost || cost isa MarketBidTimeSeriesCost) || throw(
-        ArgumentError("Expected MarketBidCost or MarketBidTimeSeriesCost for $context, got $(typeof(cost))"))
+        ArgumentError(
+            "Expected MarketBidCost or MarketBidTimeSeriesCost for $context, got $(typeof(cost))",
+        ))
 end
 
 function _validate_import_export_cost(cost, context)
     (cost isa ImportExportCost || cost isa ImportExportTimeSeriesCost) || throw(
-        ArgumentError("Expected ImportExportCost or ImportExportTimeSeriesCost for $context, got $(typeof(cost))"))
+        ArgumentError(
+            "Expected ImportExportCost or ImportExportTimeSeriesCost for $context, got $(typeof(cost))",
+        ))
 end
 
 function _validate_reserve_demand_curve(

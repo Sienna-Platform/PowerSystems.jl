@@ -154,17 +154,3 @@ function make_market_bid_curve(
     @assert is_market_bid_curve(cc)
     return cc
 end
-
-"""
-Make a time-series-backed `CostCurve{TimeSeriesPiecewiseIncrementalCurve}` from
-`TimeSeriesKey` references.
-"""
-function make_market_bid_curve(
-    ts_key::TimeSeriesKey,
-    initial_input_key::Union{Nothing, TimeSeriesKey};
-    power_units::UnitSystem = UnitSystem.NATURAL_UNITS,
-    input_at_zero_key::Union{Nothing, TimeSeriesKey} = nothing,
-)
-    vc = TimeSeriesPiecewiseIncrementalCurve(ts_key, initial_input_key, input_at_zero_key)
-    return CostCurve(vc, power_units)
-end

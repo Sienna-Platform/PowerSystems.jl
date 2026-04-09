@@ -101,8 +101,10 @@ end
     gencls_dyr_file = joinpath(PSSE_TEST_DIR, "TestGENCLS.dyr")
     nogencls_dyr_file = joinpath(PSSE_TEST_DIR, "Test-NoCLS.dyr")
     sexs_dyr_file = joinpath(PSSE_TEST_DIR, "Test_SEXS.dyr")
-    sys_gencls = PSB.build_system(PSYTestSystems, "psse_3bus_gen_cls_sys"; force_build = true)
-    sys_nogencls = PSB.build_system(PSYTestSystems, "psse_3bus_no_cls_sys"; force_build = true)
+    sys_gencls =
+        PSB.build_system(PSYTestSystems, "psse_3bus_gen_cls_sys"; force_build = true)
+    sys_nogencls =
+        PSB.build_system(PSYTestSystems, "psse_3bus_no_cls_sys"; force_build = true)
     sys_sexs = PSB.build_system(PSYTestSystems, "psse_3bus_SEXS_sys"; force_build = true)
 
     #Check that generator at bus 102 (H = 0) is a Source, and not ThermalStandard.

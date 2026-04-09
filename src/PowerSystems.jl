@@ -112,8 +112,8 @@ export OperationalCost,
 export HydroGenerationCost, RenewableGenerationCost, ThermalGenerationCost
 export HydroReservoirCost
 export get_fuel_cost, set_fuel_cost!, get_vom_cost
-export is_market_bid_curve, make_market_bid_curve
-export make_import_curve, make_export_curve
+export is_market_bid_curve, make_market_bid_curve, make_market_bid_ts_curve
+export make_import_curve, make_export_curve, make_import_export_ts_curve
 export TimeSeriesLinearCurve, TimeSeriesQuadraticCurve, TimeSeriesPiecewisePointCurve
 export TimeSeriesPiecewiseIncrementalCurve, TimeSeriesPiecewiseAverageCurve
 export get_no_load_cost, set_no_load_cost!, get_start_up, set_start_up!

@@ -66,3 +66,16 @@ set_energy_import_weekly_limit!(value::ImportExportTimeSeriesCost, val) =
 """Set [`ImportExportTimeSeriesCost`](@ref) `energy_export_weekly_limit`."""
 set_energy_export_weekly_limit!(value::ImportExportTimeSeriesCost, val) =
     value.energy_export_weekly_limit = val
+
+"""
+Make a time-series-backed `CostCurve{TimeSeriesPiecewiseIncrementalCurve}` from a
+`TimeSeriesKey`, suitable for the `import_offer_curves` or `export_offer_curves` field of
+an [`ImportExportTimeSeriesCost`](@ref).
+"""
+function make_import_export_ts_curve(
+    ts_key::TimeSeriesKey,
+    power_units::UnitSystem = UnitSystem.NATURAL_UNITS,
+)
+    vc = TimeSeriesPiecewiseIncrementalCurve(ts_key, nothing, nothing)
+    return CostCurve(vc, power_units)
+end

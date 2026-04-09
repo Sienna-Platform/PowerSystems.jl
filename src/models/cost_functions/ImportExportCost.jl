@@ -76,10 +76,7 @@ function is_import_export_curve(curve::ProductionVariableCostCurve)
            iszero(first(get_x_coords(get_value_curve(curve))))
 end
 
-"""
-Make a static `CostCurve{PiecewiseIncrementalCurve}` suitable for an `ImportExportCost`
-from `PiecewiseStepData`.
-"""
+# Internal helper: build a static import/export `CostCurve` from validated step data.
 function make_import_export_curve(
     curve::PiecewiseStepData,
     power_units::UnitSystem = UnitSystem.NATURAL_UNITS,
@@ -93,116 +90,67 @@ function make_import_export_curve(
 end
 
 """
-Make a static `CostCurve{PiecewiseIncrementalCurve}` for an `ImportExportCost` from
-vectors of power values and prices.
+Make a static `CostCurve{PiecewiseIncrementalCurve}` suitable for the
+`import_offer_curves` field of an [`ImportExportCost`](@ref) from vectors of power
+breakpoints and prices. `power` must have one more element than `price`, and the resulting
+curve must have incremental (convex) slopes.
 
 # Examples
 ```julia
-iec = make_import_export_curve([0.0, 100.0, 105.0, 120.0, 130.0], [25.0, 26.0, 28.0, 30.0])
+import_curve = make_import_curve([0.0, 100.0, 105.0, 120.0, 200.0], [5.0, 10.0, 20.0, 40.0])
 ```
 """
-function make_import_export_curve(
-    powers::Vector{Float64},
-    prices::Vector{Float64},
-    power_units::UnitSystem = UnitSystem.NATURAL_UNITS,
-)
-    valid_data = (length(powers) == length(prices) + 1)
-    if valid_data
-        curve = PiecewiseStepData(powers, prices)
-        return make_import_export_curve(curve, power_units)
-    else
-        throw(
-            ArgumentError(
-                "Must specify exactly one more number of powers points than prices",
-            ),
-        )
-    end
-end
-
-function make_import_export_curve(
-    max_power::Float64,
-    price::Float64,
-    power_units::UnitSystem = UnitSystem.NATURAL_UNITS,
-)
-    return make_import_export_curve([0.0, max_power], [price], power_units)
-end
-
-function make_import_export_curve(;
-    powers,
-    prices,
-    power_units = UnitSystem.NATURAL_UNITS,
-)
-    return make_import_export_curve(powers, prices, power_units)
-end
-
-"""
-Make a time-series-backed `CostCurve{TimeSeriesPiecewiseIncrementalCurve}` from a
-`TimeSeriesKey`.
-"""
-function make_import_export_curve(
-    ts_key::TimeSeriesKey;
-    power_units::UnitSystem = UnitSystem.NATURAL_UNITS,
-)
-    vc = TimeSeriesPiecewiseIncrementalCurve(ts_key, nothing, nothing)
-    return CostCurve(vc, power_units)
-end
-
 function make_import_curve(
     power::Vector{Float64},
     price::Vector{Float64},
     power_units::UnitSystem = UnitSystem.NATURAL_UNITS,
 )
     curve = PiecewiseStepData(power, price)
-    convex = is_convex(curve)
-    if convex
-        return make_import_export_curve(power, price, power_units)
-    else
-        throw(
-            ArgumentError(
-                "Import Curve does not have incremental slopes. Check slopes.",
-            ),
-        )
-    end
+    is_convex(curve) ||
+        throw(ArgumentError("Import Curve does not have incremental slopes. Check slopes."))
+    return make_import_export_curve(curve, power_units)
 end
 
+"""
+Make a single-segment static import `CostCurve` from a max power and a flat price.
+"""
 function make_import_curve(
     power::Float64,
     price::Float64,
     power_units::UnitSystem = UnitSystem.NATURAL_UNITS,
 )
-    return make_import_export_curve(power, price, power_units)
+    return make_import_curve([0.0, power], [price], power_units)
 end
 
-function make_import_curve(; power, price, power_units = UnitSystem.NATURAL_UNITS)
-    return make_import_curve(power, price, power_units)
-end
+"""
+Make a static `CostCurve{PiecewiseIncrementalCurve}` suitable for the
+`export_offer_curves` field of an [`ImportExportCost`](@ref) from vectors of power
+breakpoints and prices. `power` must have one more element than `price`, and the resulting
+curve must have decremental (concave) slopes.
 
+# Examples
+```julia
+export_curve = make_export_curve([0.0, 100.0, 105.0, 120.0, 200.0], [40.0, 20.0, 10.0, 5.0])
+```
+"""
 function make_export_curve(
     power::Vector{Float64},
     price::Vector{Float64},
     power_units::UnitSystem = UnitSystem.NATURAL_UNITS,
 )
     curve = PiecewiseStepData(power, price)
-    concave = is_concave(curve)
-    if concave
-        return make_import_export_curve(power, price, power_units)
-    else
-        throw(
-            ArgumentError(
-                "Export Curve does not have decremental slopes. Check slopes.",
-            ),
-        )
-    end
+    is_concave(curve) ||
+        throw(ArgumentError("Export Curve does not have decremental slopes. Check slopes."))
+    return make_import_export_curve(curve, power_units)
 end
 
+"""
+Make a single-segment static export `CostCurve` from a max power and a flat price.
+"""
 function make_export_curve(
     power::Float64,
     price::Float64,
     power_units::UnitSystem = UnitSystem.NATURAL_UNITS,
 )
-    return make_import_export_curve(power, price, power_units)
-end
-
-function make_export_curve(; power, price, power_units = UnitSystem.NATURAL_UNITS)
-    return make_export_curve(power, price, power_units)
+    return make_export_curve([0.0, power], [price], power_units)
 end

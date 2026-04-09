@@ -36,10 +36,10 @@ For a simple constant price over a power range:
 
 ```@repl source_ie_cost
 # Import curve: buy power at $25/MWh up to 200 MW
-import_curve = make_import_curve(; power = 200.0, price = 25.0)
+import_curve = make_import_curve(200.0, 25.0)
 
 # Export curve: sell power at $30/MWh up to 200 MW
-export_curve = make_export_curve(; power = 200.0, price = 30.0)
+export_curve = make_export_curve(200.0, 30.0)
 ```
 
 ### Option B: Piecewise Linear Curves
@@ -48,15 +48,15 @@ For more complex pricing with multiple segments:
 
 ```@repl source_ie_cost
 # Import curve with increasing prices as more power is imported
-import_curve = make_import_curve(;
-    power = [0.0, 100.0, 105.0, 120.0, 200.0],
-    price = [5.0, 10.0, 20.0, 40.0],
+import_curve = make_import_curve(
+    [0.0, 100.0, 105.0, 120.0, 200.0],
+    [5.0, 10.0, 20.0, 40.0],
 )
 
 # Export curve with decreasing prices as more power is exported
-export_curve = make_export_curve(;
-    power = [0.0, 100.0, 105.0, 120.0, 200.0],
-    price = [40.0, 20.0, 10.0, 5.0],
+export_curve = make_export_curve(
+    [0.0, 100.0, 105.0, 120.0, 200.0],
+    [40.0, 20.0, 10.0, 5.0],
 )
 ```
 

@@ -69,3 +69,18 @@ set_decremental_offer_curves!(value::MarketBidTimeSeriesCost, val) =
 """Set [`MarketBidTimeSeriesCost`](@ref) `ancillary_service_offers`."""
 set_ancillary_service_offers!(value::MarketBidTimeSeriesCost, val) =
     value.ancillary_service_offers = val
+
+"""
+Make a time-series-backed `CostCurve{TimeSeriesPiecewiseIncrementalCurve}` from
+`TimeSeriesKey` references, suitable for the `incremental_offer_curves` or
+`decremental_offer_curves` field of a [`MarketBidTimeSeriesCost`](@ref).
+"""
+function make_market_bid_ts_curve(
+    ts_key::TimeSeriesKey,
+    initial_input_key::Union{Nothing, TimeSeriesKey} = nothing,
+    power_units::UnitSystem = UnitSystem.NATURAL_UNITS;
+    input_at_zero_key::Union{Nothing, TimeSeriesKey} = nothing,
+)
+    vc = TimeSeriesPiecewiseIncrementalCurve(ts_key, initial_input_key, input_at_zero_key)
+    return CostCurve(vc, power_units)
+end
