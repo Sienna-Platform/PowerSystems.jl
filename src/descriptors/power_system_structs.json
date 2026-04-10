@@ -17084,7 +17084,7 @@
                 },
                 {
                     "name": "Lv_pnts",
-                    "comment": "Voltage points for low voltage active current management (pu) (Lvpnt0, Lvpnt1)",
+                    "comment": "Voltage points for low voltage active current management (pu) `(Lvpnt0, Lvpnt1)`",
                     "null_value": "(min=0.0, max=0.0)",
                     "data_type": "MinMax"
                 },
@@ -17120,7 +17120,7 @@
                 },
                 {
                     "name": "Iqr_lims",
-                    "comment": "Limit on rate of change for reactive current (pu/s) (Iqr_min, Iqr_max)",
+                    "comment": "Limit on rate of change for reactive current (pu/s) `(Iqr_min, Iqr_max)`",
                     "null_value": "(min=0.0, max=0.0)",
                     "data_type": "MinMax"
                 },
@@ -17136,7 +17136,7 @@
                 },
                 {
                     "name": "Lvpl_sw",
-                    "comment": "Low voltage power logic (LVPL) switch. (0: LVPL not present, 1: LVPL present)",
+                    "comment": "Low voltage power logic (LVPL) switch. (`0`: LVPL not present, `1`: LVPL present)",
                     "null_value": 0,
                     "data_type": "Int",
                     "valid_range": {
@@ -17187,14 +17187,14 @@
                 {
                     "name": "states",
                     "exclude_setter": true,
-                    "comment": "(**Do not modify.**) The [states](@ref S) are:\tIp: Converter lag for Ipcmd,\tIq: Converter lag for Iqcmd,\tVmeas: Voltage filter for low voltage active current management",
+                    "comment": "(**Do not modify.**) The [states](@ref S) are:\t`Ip`: Converter lag for Ipcmd,\t`Iq`: Converter lag for Iqcmd,\t`Vmeas`: Voltage filter for low voltage active current management",
                     "internal_default": "[:Ip, :Iq, :Vmeas]",
                     "data_type": "Vector{Symbol}"
                 },
                 {
                     "name": "n_states",
                     "exclude_setter": true,
-                    "comment": "(**Do not modify.**) RenewableEnergyConverterTypeA has 3 states",
+                    "comment": "(**Do not modify.**) `RenewableEnergyConverterTypeA` has 3 states",
                     "internal_default": 3,
                     "data_type": "Int"
                 }
@@ -17267,7 +17267,7 @@
                 },
                 {
                     "name": "Lv_pnts",
-                    "comment": "Voltage points for low voltage active current management (pu) (Lvpnt0, Lvpnt1)",
+                    "comment": "Voltage points for low voltage active current management (pu) `(Lvpnt0, Lvpnt1)`",
                     "null_value": "(min=0.0, max=0.0)",
                     "data_type": "MinMax"
                 },
@@ -17303,7 +17303,7 @@
                 },
                 {
                     "name": "Iqr_lims",
-                    "comment": "Limit on rate of change for reactive current (pu/s) (Iqr_min, Iqr_max)",
+                    "comment": "Limit on rate of change for reactive current (pu/s) `(Iqr_min, Iqr_max)`",
                     "null_value": "(min=0.0, max=0.0)",
                     "data_type": "MinMax"
                 },
@@ -17319,7 +17319,7 @@
                 },
                 {
                     "name": "Lvpl_sw",
-                    "comment": "Low voltage power logic (LVPL) switch. (0: LVPL not present, 1: LVPL present)",
+                    "comment": "Low voltage power logic (LVPL) switch. (`0`: LVPL not present, `1`: LVPL present)",
                     "null_value": 0,
                     "data_type": "Int",
                     "valid_range": {
@@ -17348,14 +17348,14 @@
                 {
                     "name": "states",
                     "exclude_setter": true,
-                    "comment": "(**Do not modify.**) The [states](@ref S) are:\tIp: Converter lag for Ipcmd,\tIq: Converter lag for Iqcmd,\tVmeas: Voltage filter for low voltage active current management",
+                    "comment": "(**Do not modify.**) The [states](@ref S) are:\t`Ip`: Converter lag for Ipcmd,\t`Iq`: Converter lag for Iqcmd,\t`Vmeas`: Voltage filter for low voltage active current management",
                     "internal_default": "[:Ip, :Iq, :Vmeas]",
                     "data_type": "Vector{Symbol}"
                 },
                 {
                     "name": "n_states",
                     "exclude_setter": true,
-                    "comment": "(**Do not modify.**) RenewableEnergyVoltageConverterTypeA has 3 states",
+                    "comment": "(**Do not modify.**) `RenewableEnergyVoltageConverterTypeA` has 3 states",
                     "internal_default": 3,
                     "data_type": "Int"
                 }
