@@ -201,7 +201,7 @@
                 },
                 {
                     "name": "direction_mapping",
-                    "comment": "Dictionary of the line `name`s in the interface and their direction of flow (1 or -1) relative to the flow of the interface",
+                    "comment": "Dictionary of the line `name`s in the interface and their direction of flow (`1` or `-1`) relative to the flow of the interface",
                     "null_value": "Dict{String, Int}()",
                     "data_type": "Dict{String, Int}",
                     "default": "Dict{String, Int}()"
@@ -238,7 +238,7 @@
                 {
                     "null_value": "false",
                     "name": "available",
-                    "comment": "Indicator of whether the component is connected and online (`true`) or disconnected, offline, or down (`false`). Unavailable components are excluded during simulations. This field should not be confused with the ISOLATED enum value (@ref acbustypes_list)",
+                    "comment": "Indicator of whether the component is connected and online (`true`) or disconnected, offline, or down (`false`). Unavailable components are excluded during simulations. This field should not be confused with the [`ISOLATED`](@ref acbustypes_list) enum value",
                     "data_type": "Bool"
                 },
                 {
@@ -249,13 +249,13 @@
                 },
                 {
                     "name": "angle",
-                    "comment": "angle of the bus in radians",
+                    "comment": "Angle of the bus in radians",
                     "null_value": "0.0",
                     "data_type": "Union{Nothing, Float64}"
                 },
                 {
                     "name": "magnitude",
-                    "comment": "voltage as a multiple of `base_voltage`",
+                    "comment": "Voltage as a multiple of `base_voltage`",
                     "null_value": "0.0",
                     "data_type": "Union{Nothing, Float64}",
                     "valid_range": "voltage_limits",
@@ -263,13 +263,13 @@
                 },
                 {
                     "name": "voltage_limits",
-                    "comment": "limits on the voltage variation as multiples of `base_voltage`",
+                    "comment": "Limits on the voltage variation as multiples of `base_voltage`",
                     "null_value": "(min=0.0, max=0.0)",
                     "data_type": "Union{Nothing, MinMax}"
                 },
                 {
                     "name": "base_voltage",
-                    "comment": "the base voltage in kV",
+                    "comment": "The base voltage in kV",
                     "null_value": "nothing",
                     "data_type": "Union{Nothing, Float64}",
                     "valid_range": {
@@ -280,14 +280,14 @@
                 },
                 {
                     "name": "area",
-                    "comment": "the area containing the bus",
+                    "comment": "The area containing the bus",
                     "null_value": "nothing",
                     "data_type": "Union{Nothing, Area}",
                     "default": "nothing"
                 },
                 {
                     "name": "load_zone",
-                    "comment": "the load zone containing the bus",
+                    "comment": "The load zone containing the bus",
                     "null_value": "nothing",
                     "data_type": "Union{Nothing, LoadZone}",
                     "default": "nothing"
@@ -334,7 +334,7 @@
                 },
                 {
                     "name": "magnitude",
-                    "comment": "voltage as a multiple of `base_voltage`",
+                    "comment": "Voltage as a multiple of `base_voltage`",
                     "null_value": "0.0",
                     "data_type": "Union{Nothing, Float64}",
                     "valid_range": "voltage_limits",
@@ -342,13 +342,13 @@
                 },
                 {
                     "name": "voltage_limits",
-                    "comment": "limits on the voltage variation as multiples of `base_voltage`",
+                    "comment": "Limits on the voltage variation as multiples of `base_voltage`",
                     "null_value": "(min=0.0, max=0.0)",
                     "data_type": "Union{Nothing, MinMax}"
                 },
                 {
                     "name": "base_voltage",
-                    "comment": "the base voltage in kV",
+                    "comment": "The base voltage in kV",
                     "null_value": "nothing",
                     "data_type": "Union{Nothing, Float64}",
                     "valid_range": {
@@ -359,14 +359,14 @@
                 },
                 {
                     "name": "area",
-                    "comment": "the area containing the DC bus",
+                    "comment": "The area containing the DC bus",
                     "null_value": "nothing",
                     "data_type": "Union{Nothing, Area}",
                     "default": "nothing"
                 },
                 {
                     "name": "load_zone",
-                    "comment": "the load zone containing the DC bus",
+                    "comment": "The load zone containing the DC bus",
                     "null_value": "nothing",
                     "data_type": "Union{Nothing, LoadZone}",
                     "default": "nothing"
@@ -979,7 +979,7 @@
                 },
                 {
                     "name": "tap",
-                    "comment": "Normalized tap changer position for voltage control, varying between 0 and 2, with 1 centered at the nominal voltage",
+                    "comment": "Normalized tap changer position for voltage control, varying between `0.0` and `2.0`, with `1.0` centered at the nominal voltage",
                     "null_value": "1.0",
                     "data_type": "Float64",
                     "valid_range": {
@@ -1179,7 +1179,7 @@
                 },
                 {
                     "name": "tap",
-                    "comment": "Normalized tap changer position for voltage control, varying between 0 and 2, with 1 centered at the nominal voltage",
+                    "comment": "Normalized tap changer position for voltage control, varying between `0.0` and `2.0`, with `1.0` centered at the nominal voltage",
                     "null_value": "1.0",
                     "data_type": "Float64",
                     "valid_range": {
@@ -1840,14 +1840,14 @@
                     "null_value": "false",
                     "name": "available_secondary",
                     "data_type": "Bool",
-                    "comment": "Status if primary winding is available or not.",
+                    "comment": "Status if secondary winding is available or not.",
                     "default": "true"
                 },
                 {
                     "null_value": "false",
                     "name": "available_tertiary",
                     "data_type": "Bool",
-                    "comment": "Status if primary winding is available or not.",
+                    "comment": "Status if tertiary winding is available or not.",
                     "default": "true"
                 },
                 {
