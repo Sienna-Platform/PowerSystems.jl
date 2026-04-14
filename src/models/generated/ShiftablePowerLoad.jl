@@ -16,7 +16,7 @@ This file is auto-generated. Do not edit.
         max_reactive_power::Float64
         base_power::Float64
         load_balance_time_horizon::Int
-        operation_cost::Union{LoadCost, MarketBidCost}
+        operation_cost::OperationalCost
         services::Vector{Service}
         dynamic_injector::Union{Nothing, DynamicInjection}
         ext::Dict{String, Any}
@@ -38,7 +38,7 @@ A [static](@ref S) power load that can be partially or completed shifted to late
 - `max_reactive_power::Float64`: Maximum reactive power (MVAR) that this load can demand
 - `base_power::Float64`: Base power (MVA) for [per unitization](@ref per_unit), validation range: `(0.0001, nothing)`
 - `load_balance_time_horizon::Int`: Number of time periods over which load must be balanced, validation range: `(1, nothing)`
-- `operation_cost::Union{LoadCost, MarketBidCost}`: [`OperationalCost`](@ref) of interrupting load
+- `operation_cost::OperationalCost`: [`OperationalCost`](@ref) of interrupting load
 - `services::Vector{Service}`: (default: `Device[]`) Services that this device contributes to
 - `dynamic_injector::Union{Nothing, DynamicInjection}`: (default: `nothing`) corresponding dynamic injection device
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
@@ -66,7 +66,7 @@ mutable struct ShiftablePowerLoad <: ControllableLoad
     "Number of time periods over which load must be balanced"
     load_balance_time_horizon::Int
     "[`OperationalCost`](@ref) of interrupting load"
-    operation_cost::Union{LoadCost, MarketBidCost}
+    operation_cost::OperationalCost
     "Services that this device contributes to"
     services::Vector{Service}
     "corresponding dynamic injection device"

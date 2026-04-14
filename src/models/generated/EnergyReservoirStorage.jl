@@ -22,7 +22,7 @@ This file is auto-generated. Do not edit.
         reactive_power::Float64
         reactive_power_limits::Union{Nothing, MinMax}
         base_power::Float64
-        operation_cost::Union{StorageCost, MarketBidCost}
+        operation_cost::OperationalCost
         conversion_factor::Float64
         storage_target::Float64
         cycle_limits::Int
@@ -53,7 +53,7 @@ This is suitable for modeling storage charging and discharging with average effi
 - `reactive_power::Float64`: Initial reactive power set point of the unit (MVAR), validation range: `reactive_power_limits`
 - `reactive_power_limits::Union{Nothing, MinMax}`: Minimum and maximum reactive power limits. Set to `Nothing` if not applicable
 - `base_power::Float64`: Base power of the unit (MVA) for [per unitization](@ref per_unit), validation range: `(0.0001, nothing)`
-- `operation_cost::Union{StorageCost, MarketBidCost}`: (default: `StorageCost(nothing)`) [`OperationalCost`](@ref) of storage
+- `operation_cost::OperationalCost`: (default: `StorageCost(nothing)`) [`OperationalCost`](@ref) of storage
 - `conversion_factor::Float64`: (default: `1.0`) Conversion factor of `storage_capacity` to MWh, if different than 1.0. For example, X MWh/liter hydrogen
 - `storage_target::Float64`: (default: `0.0`) Storage target at the end of simulation as ratio of storage capacity
 - `cycle_limits::Int`: (default: `1e4`) Storage Maximum number of cycles per year
@@ -96,7 +96,7 @@ mutable struct EnergyReservoirStorage <: Storage
     "Base power of the unit (MVA) for [per unitization](@ref per_unit)"
     base_power::Float64
     "[`OperationalCost`](@ref) of storage"
-    operation_cost::Union{StorageCost, MarketBidCost}
+    operation_cost::OperationalCost
     "Conversion factor of `storage_capacity` to MWh, if different than 1.0. For example, X MWh/liter hydrogen"
     conversion_factor::Float64
     "Storage target at the end of simulation as ratio of storage capacity"

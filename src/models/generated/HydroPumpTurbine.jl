@@ -22,7 +22,7 @@ This file is auto-generated. Do not edit.
         base_power::Float64
         status::PumpHydroStatus
         time_at_status::Float64
-        operation_cost::Union{HydroGenerationCost, MarketBidCost}
+        operation_cost::OperationalCost
         active_power_pump::Float64
         efficiency::TurbinePump
         transition_time::TurbinePump
@@ -56,7 +56,7 @@ A hydropower pumped turbine that needs to have two [`HydroReservoir`](@ref)s att
 - `base_power::Float64`: Base power of the unit (MVA) for [per unitization](@ref per_unit), validation range: `(0.0001, nothing)`
 - `status::PumpHydroStatus`: (default: `PumpHydroStatus.OFF`) Initial Operating status of a pumped‑storage hydro unit. See [PumpHydroStatus](@ref) for reference
 - `time_at_status::Float64`: (default: `INFINITE_TIME`) Time (e.g., `Hours(6)`) the generator has been on or off, as indicated by `status`
-- `operation_cost::Union{HydroGenerationCost, MarketBidCost}`: (default: `HydroGenerationCost(nothing)`) [`OperationalCost`](@ref) of generation
+- `operation_cost::OperationalCost`: (default: `HydroGenerationCost(nothing)`) [`OperationalCost`](@ref) of generation
 - `active_power_pump::Float64`: (default: `0.0`) Initial active power set point of the pump unit in MW. For power flow, this is the steady state operating point of the system. For production cost modeling, this may or may not be used as the initial starting point for the solver, depending on the solver used
 - `efficiency::TurbinePump`: (default: `(turbine = 1.0, pump = 1.0)`) Turbine/Pump efficiency [0, 1.0]
 - `transition_time::TurbinePump`: (default: `(turbine = 0.0, pump = 0.0)`) Transition time in hours to switch into the specific mode.
@@ -104,7 +104,7 @@ mutable struct HydroPumpTurbine <: HydroUnit
     "Time (e.g., `Hours(6)`) the generator has been on or off, as indicated by `status`"
     time_at_status::Float64
     "[`OperationalCost`](@ref) of generation"
-    operation_cost::Union{HydroGenerationCost, MarketBidCost}
+    operation_cost::OperationalCost
     "Initial active power set point of the pump unit in MW. For power flow, this is the steady state operating point of the system. For production cost modeling, this may or may not be used as the initial starting point for the solver, depending on the solver used"
     active_power_pump::Float64
     "Turbine/Pump efficiency [0, 1.0]"
