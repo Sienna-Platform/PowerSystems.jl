@@ -20,6 +20,7 @@ merge!(
         "sync_cond" => ThermalFuels.OTHER,
         "geothermal" => ThermalFuels.GEOTHERMAL,
         "ag_byproduct" => ThermalFuels.AG_BYPRODUCT,
+        "othehr_biomass_gas" => ThermalFuels.OTHER_BIOMASS_GAS,
     ),
 )
 
