@@ -1,28 +1,3 @@
-#=
-"""Container for data parsed by PowerModels"""
-struct PowerModelsData
-    data::Dict{String, Any}
-end
-
-"""
-Constructs PowerModelsData from a raw file.
-Currently Supports MATPOWER and PSSE data files parsed by PowerModels.
-"""
-function PowerModelsData(file::Union{String, IO}; kwargs...)
-    validate = get(kwargs, :pm_data_corrections, true)
-    import_all = get(kwargs, :import_all, false)
-    correct_branch_rating = get(kwargs, :correct_branch_rating, true)
-    pm_dict = parse_file(
-        file;
-        import_all = import_all,
-        validate = validate,
-        correct_branch_rating = correct_branch_rating,
-    )
-    pm_data = PowerModelsData(pm_dict)
-    correct_pm_transformer_status!(pm_data)
-    return pm_data
-end
-=#
 """
 Constructs a System from PowerFlowFileParser.PowerModelsData.
 
@@ -84,27 +59,7 @@ function System(pm_data::PowerFlowFileParser.PowerModelsData; kwargs...)
 
     return sys
 end
-#= this function only used in PowerModelsData function, not System
-function correct_pm_transformer_status!(pm_data::PowerFlowFileParser.PowerModelsData)
-    for (k, branch) in pm_data.data["branch"]
-        f_bus_bvolt = pm_data.data["bus"][branch["f_bus"]]["base_kv"]
-        t_bus_bvolt = pm_data.data["bus"][branch["t_bus"]]["base_kv"]
-        percent_difference =
-            abs(f_bus_bvolt - t_bus_bvolt) / ((f_bus_bvolt + t_bus_bvolt) / 2)
-        if !branch["transformer"] &&
-           percent_difference > BRANCH_BUS_VOLTAGE_DIFFERENCE_TOL
-            branch["transformer"] = true
-            branch["base_power"] = pm_data.data["baseMVA"]
-            branch["ext"] = Dict{String, Any}()
-            @warn "Branch $(branch["f_bus"]) - $(branch["t_bus"]) has different voltage levels endpoints (from: $(f_bus_bvolt)kV, to: $(t_bus_bvolt)kV) which exceed the $(BRANCH_BUS_VOLTAGE_DIFFERENCE_TOL*100)% threshold; converting to transformer."
-            if !haskey(branch, "base_voltage_from")
-                branch["base_voltage_from"] = f_bus_bvolt
-                branch["base_voltage_to"] = t_bus_bvolt
-            end
-        end
-    end
-end
-=#
+
 """
 Internal component name retrieval from pm2ps_dict
 """

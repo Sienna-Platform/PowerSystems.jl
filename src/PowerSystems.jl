@@ -381,7 +381,6 @@ export Scenarios # scenarios.jl
 
 export get_dynamic_components
 
-# export parse_file
 export open_time_series_store!
 export add_time_series!
 export bulk_add_time_series!
@@ -530,8 +529,6 @@ export clear_ext!
 export convert_component!
 export set_area!
 export set_load_zone!
-# export PowerModelsData
-# export PowerSystemTableData
 export add_dyn_injectors!
 export get_machine
 export get_shaft

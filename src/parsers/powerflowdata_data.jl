@@ -1,17 +1,3 @@
-#=
-"""Container for data parsed by PowerFlowData"""
-struct PowerFlowDataNetwork
-    data::PowerFlowData.Network
-end
-
-"""
-Constructs PowerFlowDataNetwork from a raw file.
-Currently Supports PSSE data files v30, v32 and v33
-"""
-function PowerFlowDataNetwork(file::Union{String, IO}; kwargs...)
-    return PowerFlowDataNetwork(PowerFlowData.parse_network(file))
-end
-=#
 """
 Constructs a System from PowerModelsData.
 
