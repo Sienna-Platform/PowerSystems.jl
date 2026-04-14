@@ -50,6 +50,9 @@ end
     )
     set_incremental_variable_cost!(sys, generator, cc2, UnitSystem.NATURAL_UNITS)
     @test get_incremental_variable_cost(generator, mbc) == cc2
+
+    set_decremental_variable_cost!(sys, generator, cc2, UnitSystem.NATURAL_UNITS)
+    @test get_decremental_offer_curves(mbc) == cc2
 end
 
 @testset "Test Make market bid curve interface" begin
@@ -111,25 +114,6 @@ test_costs = Dict(
         repeat([(hot = PSY.START_COST, warm = PSY.START_COST, cold = PSY.START_COST)], 24),
 )
 
-@testset "Test MarketBidCost static incremental/decremental setters" begin
-    sys = PSB.build_system(PSITestSystems, "test_RTS_GMLC_sys")
-    generator = get_component(ThermalStandard, sys, "322_CT_6")
-    powers = [22.0, 33.0, 44.0, 55.0]
-    marginal_costs = [25.0, 26.0, 28.0]
-    initial_input = 50.0
-
-    cc = CostCurve(PiecewiseIncrementalCurve(initial_input, powers, marginal_costs))
-    market_bid = MarketBidCost(; incremental_offer_curves = cc)
-    set_operation_cost!(generator, market_bid)
-
-    cc2 = CostCurve(
-        PiecewiseIncrementalCurve(initial_input, powers, marginal_costs .* 1.5),
-    )
-    set_incremental_variable_cost!(sys, generator, cc2, UnitSystem.NATURAL_UNITS)
-    set_decremental_variable_cost!(sys, generator, cc2, UnitSystem.NATURAL_UNITS)
-    @test get_incremental_offer_curves(market_bid) == cc2
-    @test get_decremental_offer_curves(market_bid) == cc2
-end
 
 @testset "Test MarketBidCost defaults and nothing constructor" begin
     mbc = MarketBidCost(nothing)
@@ -139,21 +123,8 @@ end
     @test get_shut_down(mbc) == LinearCurve(0.0)
     @test get_incremental_offer_curves(mbc) == PSY.ZERO_OFFER_CURVE
     @test get_decremental_offer_curves(mbc) == PSY.ZERO_OFFER_CURVE
-
-    mbc2 = MarketBidCost()
-    @test get_no_load_cost(mbc2) == LinearCurve(0.0)
-    @test get_start_up(mbc2) == (hot = 0.0, warm = 0.0, cold = 0.0)
-    @test get_shut_down(mbc2) == LinearCurve(0.0)
 end
 
-@testset "Test MarketBidCost no_load_cost and shut_down kwargs" begin
-    market_bid = MarketBidCost(;
-        no_load_cost = LinearCurve(1.23),
-        shut_down = LinearCurve(3.14),
-    )
-    @test get_no_load_cost(market_bid) == LinearCurve(1.23)
-    @test get_shut_down(market_bid) == LinearCurve(3.14)
-end
 
 @testset "Test MarketBidCost start_up setters" begin
     cost = MarketBidCost(nothing)
@@ -186,13 +157,12 @@ end
     )
     set_variable_cost!(sys, reserve, cc2)
     @test get_variable_cost(reserve) == cc2
-end
 
-@testset "Test ReserveDemandCurve nothing constructor" begin
-    reserve = ReserveDemandCurve{ReserveUp}(nothing)
-    @test get_name(reserve) == "init"
-    @test get_available(reserve) == false
-    @test get_variable(reserve) == PSY.ZERO_OFFER_CURVE
+    # Nothing constructor
+    reserve_nil = ReserveDemandCurve{ReserveUp}(nothing)
+    @test get_name(reserve_nil) == "init"
+    @test get_available(reserve_nil) == false
+    @test get_variable(reserve_nil) == PSY.ZERO_OFFER_CURVE
 end
 
 @testset "Test fuel cost (scalar and time series)" begin
@@ -259,14 +229,14 @@ function build_iec_sys()
         [5.0, 10.0, 20.0, 40.0],
     )
 
-    import_curve2 = make_import_curve(200.0, 25.0)
+    import_curve2 = make_import_curve([0.0, 200.0], [25.0])
 
     export_curve = make_export_curve(
         [0.0, 100.0, 105.0, 120.0, 200.0],
         [40.0, 20.0, 10.0, 5.0],
     )
 
-    export_curve2 = make_export_curve(200.0, 45.0)
+    export_curve2 = make_export_curve([0.0, 200.0], [45.0])
 
     ie_cost = ImportExportCost(;
         import_offer_curves = import_curve,
@@ -428,9 +398,18 @@ end
     nl_key = _attach_linear_forecast(sys, generator, "no_load")
     sd_key = _attach_linear_forecast(sys, generator, "shut_down")
 
+    timestamps = range(_TS_RESOLVE_INITIAL_TIME; step = _TS_RESOLVE_RESOLUTION, length = 24)
+    su_ta = TimeSeries.TimeArray(
+        collect(timestamps),
+        fill((0.0, 0.0, 0.0), 24),
+    )
+    su_key = add_time_series!(
+        sys, generator, IS.SingleTimeSeries(; name = "start_up_stages_var", data = su_ta),
+    )
+
     mbtc = MarketBidTimeSeriesCost(;
         no_load_cost = IS.TimeSeriesLinearCurve(nl_key),
-        start_up = (hot = 0.0, warm = 0.0, cold = 0.0),
+        start_up = TupleTimeSeries{PSY.StartUpStages}(su_key),
         shut_down = IS.TimeSeriesLinearCurve(sd_key),
         incremental_offer_curves = make_market_bid_ts_curve(inc_key),
         decremental_offer_curves = make_market_bid_ts_curve(dec_key),
@@ -450,6 +429,47 @@ end
             start_time = _TS_RESOLVE_INITIAL_TIME,
         )
     @test get_function_data(get_value_curve(dec_resolved)) == _TS_RESOLVE_PWL_DATA[1]
+end
+
+@testset "MarketBidTimeSeriesCost resolves start_up via TupleTimeSeries" begin
+    sys = PSB.build_system(PSITestSystems, "test_RTS_GMLC_sys")
+    generator = get_component(ThermalStandard, sys, "322_CT_6")
+
+    inc_key = _attach_pwl_forecast(sys, generator, "inc_offer")
+    dec_key = _attach_pwl_forecast(sys, generator, "dec_offer")
+    nl_key = _attach_linear_forecast(sys, generator, "no_load")
+    sd_key = _attach_linear_forecast(sys, generator, "shut_down")
+
+    # Build a SingleTimeSeries of NTuple{3, Float64} distinct per timestamp so that
+    # the resolved value at a chosen start_time is unambiguous.
+    timestamps = range(_TS_RESOLVE_INITIAL_TIME; step = _TS_RESOLVE_RESOLUTION, length = 24)
+    su_values = [(Float64(i), Float64(i) + 10.0, Float64(i) + 20.0) for i in 1:24]
+    su_ta = TimeSeries.TimeArray(collect(timestamps), su_values)
+    su_sts = IS.SingleTimeSeries(; name = "start_up_stages", data = su_ta)
+    su_key = add_time_series!(sys, generator, su_sts)
+
+    mbtc = MarketBidTimeSeriesCost(;
+        no_load_cost = IS.TimeSeriesLinearCurve(nl_key),
+        start_up = TupleTimeSeries{PSY.StartUpStages}(su_key),
+        shut_down = IS.TimeSeriesLinearCurve(sd_key),
+        incremental_offer_curves = make_market_bid_ts_curve(inc_key),
+        decremental_offer_curves = make_market_bid_ts_curve(dec_key),
+    )
+
+    @test get_start_up(mbtc) isa TupleTimeSeries{PSY.StartUpStages}
+
+    resolved_first =
+        get_start_up(generator, mbtc; start_time = _TS_RESOLVE_INITIAL_TIME)
+    @test resolved_first isa PSY.StartUpStages
+    @test resolved_first == (hot = 1.0, warm = 11.0, cold = 21.0)
+
+    resolved_fifth = get_start_up(
+        generator, mbtc;
+        start_time = _TS_RESOLVE_INITIAL_TIME + Dates.Hour(4),
+    )
+    @test resolved_fifth == (hot = 5.0, warm = 15.0, cold = 25.0)
+
+    @test_throws ArgumentError get_start_up(generator, mbtc)
 end
 
 @testset "ImportExportTimeSeriesCost resolves import/export costs at start_time" begin

@@ -197,14 +197,10 @@ function get_start_up(
     device::StaticInjection,
     cost::MarketBidTimeSeriesCost;
     start_time::Union{Nothing, Dates.DateTime} = nothing,
-    len::Union{Nothing, Int} = nothing,
 )
-    su = get_start_up(cost)
-    su isa StartUpStages && return su
-    # TimeSeriesKey case -- resolve via time series
-    ts = get_time_series(device, su; start_time = start_time, len = len, count = 1)
-    data = IS.get_time_series_array(device, ts; start_time = start_time, len = len)
-    return StartUpStages(first(TimeSeries.values(data)))
+    isnothing(start_time) &&
+        throw(ArgumentError("start_time is required for MarketBidTimeSeriesCost"))
+    return IS.build_static_tuple(get_start_up(cost), device, start_time)
 end
 
 # ── STATIC ReserveDemandCurve GETTERS ──────────────────────────────────────

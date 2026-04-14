@@ -116,6 +116,7 @@ export is_market_bid_curve, make_market_bid_curve, make_market_bid_ts_curve
 export make_import_curve, make_export_curve, make_import_export_ts_curve
 export TimeSeriesLinearCurve, TimeSeriesQuadraticCurve, TimeSeriesPiecewisePointCurve
 export TimeSeriesPiecewiseIncrementalCurve, TimeSeriesPiecewiseAverageCurve
+export TupleTimeSeries
 export get_no_load_cost, set_no_load_cost!, get_start_up, set_start_up!
 export set_shut_down!
 export get_curtailment_cost
@@ -769,6 +770,8 @@ import InfrastructureSystems:
     TimeSeriesPiecewisePointCurve,
     TimeSeriesPiecewiseIncrementalCurve,
     TimeSeriesPiecewiseAverageCurve,
+    TupleTimeSeries,
+    build_static_tuple,
     get_function_data,
     get_initial_input,
     get_input_at_zero,
@@ -923,5 +926,11 @@ include("models/serialization.jl")
 
 #Deprecated
 include("deprecated.jl")
+
+# Precompile hints (must be after all types are defined)
+precompile(TupleTimeSeries{StartUpStages}, (IS.TimeSeriesKey,))
+precompile(TupleTimeSeries{StartUpStages}, (IS.StaticTimeSeriesKey,))
+precompile(TupleTimeSeries{StartUpStages}, (IS.ForecastKey,))
+precompile(IS.build_static_tuple, (TupleTimeSeries{StartUpStages}, ThermalStandard, Dates.DateTime))
 
 end # module
