@@ -47,7 +47,8 @@ export get_components_in_pcc
 export get_operation_exclusion_map
 export get_inverse_operation_exclusion_map
 export get_components_in_exclusion_group
-
+export get_variable
+export set_variable!
 export Component
 export Device
 export get_max_active_power

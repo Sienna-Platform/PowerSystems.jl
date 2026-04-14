@@ -783,7 +783,6 @@ export get_turbine_type
 export get_upstream_reservoirs
 export get_upstream_turbines
 export get_valve_position_limits
-export get_variable
 export get_vh_pnts
 export get_violation_penalty
 export get_vl_pnts
@@ -1469,7 +1468,6 @@ export set_turbine_type!
 export set_upstream_reservoirs!
 export set_upstream_turbines!
 export set_valve_position_limits!
-export set_variable!
 export set_vh_pnts!
 export set_violation_penalty!
 export set_vl_pnts!
