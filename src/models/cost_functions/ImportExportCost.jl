@@ -111,16 +111,6 @@ function make_import_curve(
     return make_import_export_curve(curve, power_units)
 end
 
-"""
-Make a single-segment static import `CostCurve` from a max power and a flat price.
-"""
-function make_import_curve(
-    power::Float64,
-    price::Float64,
-    power_units::UnitSystem = UnitSystem.NATURAL_UNITS,
-)
-    return make_import_curve([0.0, power], [price], power_units)
-end
 
 """
 Make a static `CostCurve{PiecewiseIncrementalCurve}` suitable for the
@@ -144,13 +134,3 @@ function make_export_curve(
     return make_import_export_curve(curve, power_units)
 end
 
-"""
-Make a single-segment static export `CostCurve` from a max power and a flat price.
-"""
-function make_export_curve(
-    power::Float64,
-    price::Float64,
-    power_units::UnitSystem = UnitSystem.NATURAL_UNITS,
-)
-    return make_export_curve([0.0, power], [price], power_units)
-end
