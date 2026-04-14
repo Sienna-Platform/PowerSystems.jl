@@ -931,6 +931,9 @@ include("deprecated.jl")
 precompile(TupleTimeSeries{StartUpStages}, (IS.TimeSeriesKey,))
 precompile(TupleTimeSeries{StartUpStages}, (IS.StaticTimeSeriesKey,))
 precompile(TupleTimeSeries{StartUpStages}, (IS.ForecastKey,))
-precompile(IS.build_static_tuple, (TupleTimeSeries{StartUpStages}, ThermalStandard, Dates.DateTime))
+precompile(
+    IS.build_static_tuple,
+    (TupleTimeSeries{StartUpStages}, ThermalStandard, Dates.DateTime),
+)
 
 end # module

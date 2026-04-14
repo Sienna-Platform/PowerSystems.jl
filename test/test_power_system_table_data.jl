@@ -96,7 +96,7 @@ end
                         CostCurve{InputOutputCurve{PiecewiseLinearData}}
                 mp_points = get_points(
                     get_function_data(get_value_curve(
-                        PSY.get_variable(mpgen_cost))),
+                            PSY.get_variable(mpgen_cost))),
                 )
                 if length(mp_points) == 4
                     cdm_op_cost = get_operation_cost(cdmgen)
@@ -187,7 +187,8 @@ end
 
     g_hr = get_components(ThermalStandard, sys_hr)
     g = get_components(ThermalStandard, sys)
-    @test PSY.get_variable.(PSY.get_operation_cost.(g)) == PSY.get_variable.(PSY.get_operation_cost.(g))
+    @test PSY.get_variable.(PSY.get_operation_cost.(g)) ==
+          PSY.get_variable.(PSY.get_operation_cost.(g))
 end
 
 @testset "Test create_poly_cost function" begin

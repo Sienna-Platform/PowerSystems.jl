@@ -111,7 +111,6 @@ function make_import_curve(
     return make_import_export_curve(curve, power_units)
 end
 
-
 """
 Make a static `CostCurve{PiecewiseIncrementalCurve}` suitable for the
 `export_offer_curves` field of an [`ImportExportCost`](@ref) from vectors of power
@@ -133,4 +132,3 @@ function make_export_curve(
         throw(ArgumentError("Export Curve does not have decremental slopes. Check slopes."))
     return make_import_export_curve(curve, power_units)
 end
-

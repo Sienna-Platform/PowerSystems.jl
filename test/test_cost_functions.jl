@@ -114,7 +114,6 @@ test_costs = Dict(
         repeat([(hot = PSY.START_COST, warm = PSY.START_COST, cold = PSY.START_COST)], 24),
 )
 
-
 @testset "Test MarketBidCost defaults and nothing constructor" begin
     mbc = MarketBidCost(nothing)
     @test get_no_load_cost(mbc) == LinearCurve(0.0)
@@ -124,7 +123,6 @@ test_costs = Dict(
     @test get_incremental_offer_curves(mbc) == PSY.ZERO_OFFER_CURVE
     @test get_decremental_offer_curves(mbc) == PSY.ZERO_OFFER_CURVE
 end
-
 
 @testset "Test MarketBidCost start_up setters" begin
     cost = MarketBidCost(nothing)
@@ -404,7 +402,8 @@ end
         fill((0.0, 0.0, 0.0), 24),
     )
     su_key = add_time_series!(
-        sys, generator, IS.SingleTimeSeries(; name = "start_up_stages_var", data = su_ta),
+        sys, generator,
+        IS.SingleTimeSeries(; name = "start_up_stages_var", data = su_ta),
     )
 
     mbtc = MarketBidTimeSeriesCost(;
