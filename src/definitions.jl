@@ -369,7 +369,7 @@ IS.@scoped_enum(
     BLACK_LIQUOR = 28, # BLQ
     WOOD_WASTE_LIQUIDS = 29, # WDL # includes red liquor, sludge wood, spent sulfite liquor, and other wood-based liquid. Excluding black liquour
     LANDFILL_GAS = 30, # LFG
-    OTHEHR_BIOMASS_GAS = 31, # OBG # includes digester gas, methane, and other biomass gasses
+    OTHER_BIOMASS_GAS = 31, # OBG # includes digester gas, methane, and other biomass gasses
     GEOTHERMAL = 32,  # GEO
     WASTE_HEAT = 33, # WH # WH should only be reported where the fuel source for the waste heat is undetermined, and for combined-cycle steam turbines that do not have supplemental firing.
     TIREDERIVED_FUEL = 34, # TDF
