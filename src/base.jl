@@ -1392,13 +1392,6 @@ function IS.get_components(
 end
 
 """
-Return a vector of components that are attached to the supplemental attribute.
-"""
-function IS.get_components(sys::System, attribute::SupplementalAttribute)
-    return IS.get_components(sys.data, attribute)
-end
-
-"""
 Get the component by UUID.
 """
 IS.get_component(sys::System, uuid::Base.UUID) = IS.get_component(sys.data, uuid)
