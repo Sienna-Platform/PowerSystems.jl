@@ -113,6 +113,9 @@ function remove_component_from_subsystem!(
     return
 end
 
+"""
+Remove a component from all subsystems it belongs to.
+"""
 remove_component_from_subsystems!(
     sys::System,
     component::Component,
@@ -150,7 +153,9 @@ is_assigned_to_subsystem(
     subsystem_name::AbstractString,
 ) = IS.is_assigned_to_subsystem(sys.data, component, subsystem_name)
 
-# Utility function, not for export
+"""
+Return the UUIDs of all components in the given subsystem.
+"""
 get_component_uuids(sys::System, subsystem_name::AbstractString) =
     IS.get_component_uuids(sys.data, subsystem_name)
 

@@ -1222,6 +1222,11 @@ function remove_components!(::Type{T}, sys::System) where {T <: Component}
     return remove_components!(sys, T)
 end
 
+"""
+Remove all components of type `T` from the system.
+
+Throws `ArgumentError` if the type is not stored.
+"""
 function remove_components!(sys::System, ::Type{T}) where {T <: Component}
     components = IS.remove_components!(T, sys.data)
     for component in components
@@ -1230,6 +1235,9 @@ function remove_components!(sys::System, ::Type{T}) where {T <: Component}
     return components
 end
 
+"""
+Remove all components of type `T` that match `filter_func` from the system.
+"""
 function remove_components!(
     filter_func::Function,
     sys::System,
@@ -1473,6 +1481,10 @@ function get_contributing_devices(sys::System, service::TransmissionInterface)
     return [x for x in get_components(Branch, sys) if has_service(x, service)]
 end
 
+"""
+Container associating a [`Service`](@ref) with the [`Device`](@ref) components that
+contribute to it.
+"""
 struct ServiceContributingDevices
     service::Service
     contributing_devices::Vector{Device}
@@ -1574,6 +1586,10 @@ function get_connected_tail_reservoirs(sys::System, turbine::T) where {T <: Hydr
     ]
 end
 
+"""
+Container associating a hydro turbine with its connected [`Device`](@ref) components
+(e.g., [`HydroReservoir`](@ref) units).
+"""
 struct TurbineConnectedDevices
     turbine::HydroUnit
     connected_devices::Vector{Device}
@@ -2397,6 +2413,12 @@ function check_component(sys::System, component::Component)
     return
 end
 
+"""
+Check that all AC transmission [`Line`](@ref) and [`MonitoredLine`](@ref) components
+have valid rate values relative to the system base power.
+
+Returns `true` if all values are valid, `false` otherwise.
+"""
 function check_ac_transmission_rate_values(sys::System)
     is_valid = true
     base_power = get_base_power(sys)
@@ -2409,6 +2431,11 @@ function check_ac_transmission_rate_values(sys::System)
     return is_valid
 end
 
+"""
+Serialize a [System](@ref) instance. Returns a `Dict{String, Any}` 
+of the form `Dict("data_format_version" => "1.0", "field1" => serialize(sys.field1), ...)`,
+which can then be written to a JSON3 file.
+"""
 function IS.serialize(sys::T) where {T <: System}
     data = Dict{String, Any}()
     data["data_format_version"] = DATA_FORMAT_VERSION
@@ -2424,6 +2451,9 @@ function IS.serialize(sys::T) where {T <: System}
     return data
 end
 
+"""
+Deserialize a [System](@ref) instance from a JSON3 file; the reverse of [`IS.serialize`](@ref).
+"""
 function IS.deserialize(
     ::Type{System},
     filename::AbstractString;

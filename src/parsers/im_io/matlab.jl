@@ -8,11 +8,18 @@
 
 export parse_matlab_file, parse_matlab_string
 
+"""
+Parse a MATLAB `.m` file into a `Dict`.
+"""
 function parse_matlab_file(file_string::String; kwargs...)
     data_string = read(open(file_string), String)
     return parse_matlab_string(data_string; kwargs...)
 end
 
+"""
+Parse a MATLAB data string into a `Dict`, extracting function definitions and matrix
+assignments.
+"""
 function parse_matlab_string(data_string::String; extended = false)
     data_lines = split(data_string, '\n')
 

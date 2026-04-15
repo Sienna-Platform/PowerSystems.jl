@@ -134,10 +134,15 @@ get_name(device::DynamicGenerator) = device.name
 get_states(device::DynamicGenerator) = device.states
 get_n_states(device::DynamicGenerator) = device.n_states
 get_ω_ref(device::DynamicGenerator) = device.ω_ref
+"""Get the [`Machine`](@ref) component of a [`DynamicGenerator`](@ref)."""
 get_machine(device::DynamicGenerator) = device.machine
+"""Get the [`Shaft`](@ref) component of a [`DynamicGenerator`](@ref)."""
 get_shaft(device::DynamicGenerator) = device.shaft
+"""Get the [`AVR`](@ref) component of a [`DynamicGenerator`](@ref)."""
 get_avr(device::DynamicGenerator) = device.avr
+"""Get the [`TurbineGov`](@ref) (prime mover) component of a [`DynamicGenerator`](@ref)."""
 get_prime_mover(device::DynamicGenerator) = device.prime_mover
+"""Get the [`PSS`](@ref) component of a [`DynamicGenerator`](@ref)."""
 get_pss(device::DynamicGenerator) = device.pss
 get_base_power(device::DynamicGenerator) = device.base_power
 get_ext(device::DynamicGenerator) = device.ext
@@ -175,6 +180,9 @@ function get_degov1_states(droop_flag::Int)
     end
 end
 
+"""
+Get the frequency droop parameter from the prime mover of a [`DynamicGenerator`](@ref).
+"""
 function get_frequency_droop(dyn_gen::DynamicGenerator)
     return get_frequency_droop(get_prime_mover(dyn_gen))
 end
