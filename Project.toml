@@ -33,3 +33,6 @@ TimeSeries = "0.25"
 UUIDs = "1"
 Unicode = "1"
 julia = "^1.10"
+
+[sources]
+InfrastructureSystems = {url = "https://github.com/NREL-Sienna/InfrastructureSystems.jl", rev = "IS4"}
