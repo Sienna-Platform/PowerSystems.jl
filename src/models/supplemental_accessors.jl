@@ -26,7 +26,7 @@ _remove_aggregration_topology!(bus::ACBus, ::LoadZone) = bus.load_zone = nothing
 _remove_aggregration_topology!(bus::ACBus, ::Area) = bus.area = nothing
 
 """
-Generic method to calculate the admittance of [`ACTransmission`](@ref) devices.
+Generic method to calculate the susceptance of [`ACTransmission`](@ref) devices.
 """
 get_series_susceptance(b::ACTransmission) = 1 / get_x(b)
 
@@ -87,6 +87,70 @@ function get_series_susceptances(b::Transformer3W)
     b3s = imag(1 / Z3s)
 
     return (b1s, b2s, b3s)
+end
+
+"""
+    get_base_voltage(line::Union{Line, MonitoredLine})
+
+Return the base voltage (kV) of a [`Line`](@ref) or [`MonitoredLine`](@ref) by reading the
+`base_voltage` from both endpoints of the line's [`Arc`](@ref).
+
+If the two bus voltages are identical, that value is returned directly. If they differ but
+are within [`BRANCH_BUS_VOLTAGE_DIFFERENCE_TOL`] (percent), the value with fewer significant
+figures is returned (i.e., the rounder number). If the difference exceeds the tolerance, an
+error is thrown.
+"""
+function get_base_voltage(line::Union{Line, MonitoredLine})
+    v_from = get_base_voltage(get_from_bus(line))
+    v_to = get_base_voltage(get_to_bus(line))
+    v_from == v_to && return v_from
+    percent_diff = abs(v_from - v_to) / ((v_from + v_to) / 2)
+    if percent_diff > BRANCH_BUS_VOLTAGE_DIFFERENCE_TOL
+        error(
+            "Bus voltage mismatch on $(get_name(line)): " *
+            "from=$(v_from) kV, to=$(v_to) kV exceeds " *
+            "$(BRANCH_BUS_VOLTAGE_DIFFERENCE_TOL * 100)% tolerance.",
+        )
+    end
+    return _select_fewer_significant_figures(v_from, v_to)
+end
+
+"""
+Select the value with fewer significant figures (the "rounder" number).
+Uses trailing zeros after stripping the decimal point as a proxy.
+"""
+function _select_fewer_significant_figures(a::Float64, b::Float64)
+    sa = rstrip(string(a), '0')
+    sb = rstrip(string(b), '0')
+    la = length(sa)
+    lb = length(sb)
+    la < lb && return a
+    lb < la && return b
+    return max(a, b)
+end
+
+"""
+    get_high_voltage(t::TwoWindingTransformer)
+
+Return the high-side base voltage (kV) of a [`TwoWindingTransformer`](@ref) as the
+maximum of `base_voltage_primary` and `base_voltage_secondary`.
+"""
+function get_high_voltage(t::TwoWindingTransformer)
+    v_primary = get_base_voltage_primary(t)
+    v_secondary = get_base_voltage_secondary(t)
+    return max(v_primary, v_secondary)
+end
+
+"""
+    get_low_voltage(t::TwoWindingTransformer)
+
+Return the low-side base voltage (kV) of a [`TwoWindingTransformer`](@ref) as the
+minimum of `base_voltage_primary` and `base_voltage_secondary`.
+"""
+function get_low_voltage(t::TwoWindingTransformer)
+    v_primary = get_base_voltage_primary(t)
+    v_secondary = get_base_voltage_secondary(t)
+    return min(v_primary, v_secondary)
 end
 
 """

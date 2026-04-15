@@ -745,7 +745,7 @@ function add_component!(
         # occurred when the original addition ran and do not apply to that scenario.
         handle_component_addition!(sys, component; kwargs...)
         # Special condition required to populate the bus numbers in the system after
-    elseif component isa ACBus
+    elseif component isa Bus
         handle_component_addition!(sys, component; kwargs...)
     end
 
@@ -791,6 +791,70 @@ function add_component!(
     kwargs...,
 )
     add_component!(sys, dyn_injector; static_injector = static_injector, kwargs...)
+    return
+end
+
+"""
+Replace the dynamic injector in a static component.
+
+Safely removes the old dynamic injector from the system if no other component references it.
+If another component references the old dynamic injector, it is kept in the system and an
+info message is logged.
+
+Throws ArgumentError if the static injector is not attached to the system.
+Throws ArgumentError if the static injector does not have a dynamic injector.
+Throws ArgumentError if the new dynamic injector name does not match the static injector name.
+"""
+function replace_dynamic_injector!(
+    sys::System,
+    static_injector::StaticInjection,
+    new_dynamic_injector::DynamicInjection,
+)
+    throw_if_not_attached(static_injector, sys)
+
+    old_dynamic_injector = get_dynamic_injector(static_injector)
+    if isnothing(old_dynamic_injector)
+        throw(
+            ArgumentError(
+                "$(get_name(static_injector)) does not have a dynamic injector to replace",
+            ),
+        )
+    end
+
+    if get_name(new_dynamic_injector) != get_name(static_injector)
+        throw(
+            ArgumentError(
+                "new_dynamic_injector must have the same name as the static_injector",
+            ),
+        )
+    end
+
+    # Unlink old dynamic injector from this static component
+    set_dynamic_injector!(static_injector, nothing)
+
+    # Check if any other static injector in the system references the old dynamic injector
+    is_referenced_elsewhere = false
+    for si in get_components(StaticInjection, sys)
+        si === static_injector && continue
+        dyn = get_dynamic_injector(si)
+        if dyn === old_dynamic_injector
+            is_referenced_elsewhere = true
+            break
+        end
+    end
+
+    if is_referenced_elsewhere
+        @info "The dynamic injector $(get_name(old_dynamic_injector)) is referenced by " *
+              "another component and will not be removed from the system."
+    else
+        # Safely remove old dynamic injector from the system
+        _handle_component_removal_common!(old_dynamic_injector)
+        IS.remove_component!(sys.data, old_dynamic_injector)
+    end
+
+    # Add the new dynamic injector, linked to the static component
+    add_component!(sys, new_dynamic_injector, static_injector)
+
     return
 end
 
@@ -1921,8 +1985,10 @@ when actual forecasts are unavailable, without unnecessarily duplicating data.
 
 If all `SingleTimeSeries` instances cannot be transformed then none will be.
 
-Any existing `DeterministicSingleTimeSeries` forecasts will be deleted even if the inputs are
-invalid.
+By default, any existing `DeterministicSingleTimeSeries` forecasts will be deleted before the
+transform (`delete_existing = true`). Set `delete_existing = false` to preserve existing
+`DeterministicSingleTimeSeries`; entries with matching name, resolution, features, horizon,
+and interval are skipped, allowing multiple calls with different resolutions to coexist.
 
 # Arguments
 - `sys::System`: System containing the components.
@@ -1930,12 +1996,15 @@ invalid.
 - `interval::Dates.Period`: desired [interval](@ref I) between forecast [windows](@ref W)
 - `resolution::Union{Nothing, Dates.Period} = nothing`: If set, only transform time series
    with this resolution.
+- `delete_existing::Bool = true`: If `true`, delete all existing
+   `DeterministicSingleTimeSeries` before transforming.
 """
 function transform_single_time_series!(
     sys::System,
     horizon::Dates.Period,
     interval::Dates.Period;
     resolution::Union{Nothing, Dates.Period} = nothing,
+    delete_existing::Bool = true,
 )
     IS.transform_single_time_series!(
         sys.data,
@@ -1943,6 +2012,7 @@ function transform_single_time_series!(
         horizon,
         interval;
         resolution = resolution,
+        delete_existing = delete_existing,
     )
     return
 end
@@ -1995,7 +2065,7 @@ function remove_supplemental_attributes!(
     ::Type{T},
     sys::System,
 ) where {T <: IS.SupplementalAttribute}
-    return IS.remove_supplemental_attributes!(T, sys.data)
+    return IS.remove_supplemental_attributes!(sys.data, T)
 end
 
 """
@@ -2865,7 +2935,7 @@ function check_component_addition(sys::System, dyn_injector::DynamicInjection; k
     return
 end
 
-function check_component_addition(sys::System, bus::ACBus; kwargs...)
+function check_component_addition(sys::System, bus::Bus; kwargs...)
     number = get_number(bus)
     if number in sys.bus_numbers
         throw(ArgumentError("bus number $number is already stored in the system"))
@@ -2882,9 +2952,11 @@ function check_component_addition(sys::System, bus::ACBus; kwargs...)
     end
 end
 
-function handle_component_addition!(sys::System, bus::ACBus; kwargs...)
+function handle_component_addition!(sys::System, bus::Bus; kwargs...)
     number = get_number(bus)
-    @assert !(number in sys.bus_numbers) "bus number $number is already stored"
+    if number in sys.bus_numbers
+        throw(ArgumentError("bus number $number is already stored"))
+    end
     push!(sys.bus_numbers, number)
     return
 end
@@ -2968,10 +3040,12 @@ _handle_branch_addition_common!(sys::System, component::AreaInterchange) = nothi
 """
 Throws ArgumentError if the bus number is not stored in the system.
 """
-function handle_component_removal!(sys::System, bus::ACBus)
+function handle_component_removal!(sys::System, bus::Bus)
     _handle_component_removal_common!(bus)
     number = get_number(bus)
-    @assert number in sys.bus_numbers "bus number $number is not stored"
+    if !(number in sys.bus_numbers)
+        throw(ArgumentError("bus number $number is not stored"))
+    end
     pop!(sys.bus_numbers, number)
     return
 end
@@ -3247,7 +3321,7 @@ end
 """
 Set the number of a bus.
 """
-function set_bus_number!(sys::System, bus::ACBus, number::Int)
+function set_bus_number!(sys::System, bus::Bus, number::Int)
     throw_if_not_attached(bus, sys)
 
     orig = get_number(bus)

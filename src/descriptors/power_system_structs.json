@@ -564,6 +564,86 @@
             "supertype": "ACTransmission"
         },
         {
+            "struct_name": "GenericArcImpedance",
+            "docstring": "A virtual impedance between two buses that does not correspond to a physical component. This can be used to model the effects of network reductions (e.g. Ward reduction).",
+            "fields": [
+                {
+                    "null_value": "init",
+                    "name": "name",
+                    "comment": "Name of the component. Components of the same type (e.g., `PowerLoad`) must have unique names, but components of different types (e.g., `PowerLoad` and `ACBus`) can have the same name",
+                    "exclude_setter": true,
+                    "data_type": "String"
+                },
+                {
+                    "null_value": "false",
+                    "name": "available",
+                    "comment": "Indicator of whether the component is connected and online (`true`) or disconnected, offline, or down (`false`). Unavailable components are excluded during simulations",
+                    "data_type": "Bool"
+                },
+                {
+                    "name": "active_power_flow",
+                    "comment": "Initial condition of active power flow on the line (MW)",
+                    "null_value": "0.0",
+                    "data_type": "Float64",
+                    "needs_conversion": true,
+                    "conversion_unit": ":mva"
+                },
+                {
+                    "name": "reactive_power_flow",
+                    "comment": "Initial condition of reactive power flow on the line (MVAR)",
+                    "null_value": "0.0",
+                    "data_type": "Float64",
+                    "needs_conversion": true,
+                    "conversion_unit": ":mva"
+                },
+                {
+                    "null_value": "0.0",
+                    "name": "max_flow",
+                    "comment": "Maximum allowable flow on the generic impedance. When defining a GenericArcImpedance before it is attached to a `System`, `max_flow` must be in pu ([`SYSTEM_BASE`](@ref per_unit)) using the base power of the `System` it will be attached to",
+                    "data_type": "Float64",
+                    "needs_conversion": true,
+                    "conversion_unit": ":mva"
+                },
+                {
+                    "null_value": "Arc(ACBus(nothing), ACBus(nothing))",
+                    "name": "arc",
+                    "comment": "An [`Arc`](@ref) defining this line `from` a bus `to` another bus",
+                    "data_type": "Arc"
+                },
+               {
+                    "null_value": "0.0",
+                    "name": "r",
+                    "data_type": "Float64",
+                    "comment": "Resistance in pu ([`SYSTEM_BASE`](@ref per_unit))",
+                    "needs_conversion": true,
+                    "conversion_unit": ":ohm"
+                },
+                {
+                    "null_value": "0.0",
+                    "name": "x",
+                    "data_type": "Float64",
+                    "comment": "Reactance in pu ([`SYSTEM_BASE`](@ref per_unit))",
+                    "needs_conversion": true,
+                    "conversion_unit": ":ohm"
+                },
+                {
+                    "name": "ext",
+                    "comment": "An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.",
+                    "data_type": "Dict{String, Any}",
+                    "null_value": "Dict{String, Any}()",
+                    "default": "Dict{String, Any}()"
+                },
+                {
+                    "name": "internal",
+                    "comment": "(**Do not modify.**) PowerSystems.jl internal reference",
+                    "data_type": "InfrastructureSystemsInternal",
+                    "internal_default": "InfrastructureSystemsInternal()",
+                    "exclude_setter": true
+                }
+            ],
+            "supertype": "ACTransmission"
+        },
+        {
             "struct_name": "DiscreteControlledACBranch",
             "docstring": "Used to represent switches and breakers connecting AC Buses",
             "fields": [
