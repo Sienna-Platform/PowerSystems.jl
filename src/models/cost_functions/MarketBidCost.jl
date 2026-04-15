@@ -104,6 +104,10 @@ function set_start_up!(value::MarketBidCost, val::Real)
     set_start_up!(value, start_up_multi)
 end
 
+"""
+Return `true` if the given [`ProductionVariableCostCurve`](@ref) is a market bid curve
+(a `CostCurve{PiecewiseIncrementalCurve}` as used in [`MarketBidCost`](@ref)).
+"""
 function is_market_bid_curve(curve::ProductionVariableCostCurve)
     return (curve isa CostCurve{PiecewiseIncrementalCurve})
 end

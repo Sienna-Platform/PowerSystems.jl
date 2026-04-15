@@ -90,17 +90,10 @@ checksys = false
     clear_components!(sys14b)
 end
 
-@testset "Test System constructor from Matpower" begin
-    # Include a System kwarg to make sure it doesn't get forwarded to PM functions.
-    kwarg_test =
-        () -> begin
-            sys = System(
-                joinpath(BAD_DATA,
-                    "case5_re.m");
-                runchecks = true,
-            )
-        end
-    @test_logs (:error,) min_level = Logging.Error match_mode = :any kwarg_test()
+@testset "Test System constructor rejects non-JSON files" begin
+    @test_throws IS.DataFormatError System("some_file.m")
+    @test_throws IS.DataFormatError System("some_file.raw")
+    @test_throws IS.DataFormatError System("some_file.txt")
 end
 
 @testset "Test accessor functions of PowerSystems auto-generated types" begin
@@ -138,42 +131,6 @@ end
 end
 
 @testset "Test component conversion" begin
-    test_line_conversion =
-        () -> begin
-            sys = System(joinpath(BAD_DATA, "case5_re.m"))
-            l = get_component(Line, sys, "bus2-bus3-i_4")
-            initial_time = Dates.DateTime("2020-01-01T00:00:00")
-            dates = collect(
-                initial_time:Dates.Hour(1):Dates.DateTime("2020-01-01T23:00:00"),
-            )
-            data = collect(1:24)
-            ta = TimeSeries.TimeArray(dates, data, [get_name(l)])
-            name = "active_power_flow"
-            time_series = SingleTimeSeries(; name = name, data = ta)
-            add_time_series!(sys, l, time_series)
-            @test get_time_series(SingleTimeSeries, l, name) isa SingleTimeSeries
-            PSY.convert_component!(sys, l, MonitoredLine)
-            @test isnothing(get_component(Line, sys, "bus2-bus3-i_4"))
-            mline = get_component(MonitoredLine, sys, "bus2-bus3-i_4")
-            @test !isnothing(mline)
-            @test get_name(mline) == "bus2-bus3-i_4"
-            @test get_time_series(SingleTimeSeries, mline, name) isa SingleTimeSeries
-            @test_throws ErrorException convert_component!(
-                sys,
-                get_component(MonitoredLine, sys, "bus2-bus3-i_4"),
-                Line,
-            )
-            convert_component!(
-                sys,
-                get_component(MonitoredLine, sys, "bus2-bus3-i_4"),
-                Line;
-                force = true,
-            )
-            line = get_component(Line, sys, "bus2-bus3-i_4")
-            @test !isnothing(mline)
-            @test get_time_series(SingleTimeSeries, line, name) isa SingleTimeSeries
-        end
-
     test_load_conversion =
         () -> begin
             sys = PSB.build_system(PSB.PSITestSystems, "c_sys5")
@@ -203,6 +160,5 @@ end
             # Conversion back is not implemented
         end
 
-    @test_logs (:error,) min_level = Logging.Error match_mode = :any test_line_conversion()
     test_load_conversion()
 end

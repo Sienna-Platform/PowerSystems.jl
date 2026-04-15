@@ -1,8 +1,49 @@
 abstract type DynamicGeneratorComponent <: DynamicComponent end
+
+"""
+Supertype for all Automatic Voltage Regulator (AVR) models for
+[`DynamicGenerator`](@ref) components.
+
+Concrete subtypes include [`AVRFixed`](@ref), [`AVRSimple`](@ref), [`AVRTypeI`](@ref),
+[`AVRTypeII`](@ref), [`IEEET1`](@ref), [`ESDC1A`](@ref), [`ESAC1A`](@ref),
+[`SEXS`](@ref), [`SCRX`](@ref), and others.
+"""
 abstract type AVR <: DynamicGeneratorComponent end
+
+"""
+Supertype for all synchronous machine models for [`DynamicGenerator`](@ref) components.
+
+Concrete subtypes include [`BaseMachine`](@ref), [`OneDOneQMachine`](@ref),
+[`SauerPaiMachine`](@ref), [`MarconatoMachine`](@ref), [`RoundRotorMachine`](@ref),
+[`SalientPoleMachine`](@ref), [`AndersonFouadMachine`](@ref), [`FullMachine`](@ref),
+and others.
+"""
 abstract type Machine <: DynamicGeneratorComponent end
+
+"""
+Supertype for all Power System Stabilizer (PSS) models for
+[`DynamicGenerator`](@ref) components.
+
+Concrete subtypes include [`PSSFixed`](@ref), [`PSSSimple`](@ref), [`IEEEST`](@ref),
+[`PSS2A`](@ref), [`PSS2B`](@ref), [`PSS2C`](@ref), [`STAB1`](@ref), and [`CSVGN1`](@ref).
+"""
 abstract type PSS <: DynamicGeneratorComponent end
+
+"""
+Supertype for all shaft and rotor models for [`DynamicGenerator`](@ref) components.
+
+Concrete subtypes include [`SingleMass`](@ref) and [`FiveMassShaft`](@ref).
+"""
 abstract type Shaft <: DynamicGeneratorComponent end
+
+"""
+Supertype for all turbine governor models for [`DynamicGenerator`](@ref) components.
+
+Concrete subtypes include [`TGFixed`](@ref), [`TGTypeI`](@ref), [`TGTypeII`](@ref),
+[`GasTG`](@ref), [`GeneralGovModel`](@ref), [`HydroTurbineGov`](@ref),
+[`IEEETurbineGov1`](@ref), [`SteamTurbineGov1`](@ref), [`DEGOV`](@ref),
+[`DEGOV1`](@ref), and others.
+"""
 abstract type TurbineGov <: DynamicGeneratorComponent end
 
 """

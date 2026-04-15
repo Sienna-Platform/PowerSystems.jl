@@ -232,11 +232,17 @@ get_ω_ref(device::DynamicInverter) = device.ω_ref
 get_ext(device::DynamicInverter) = device.ext
 get_states(device::DynamicInverter) = device.states
 get_n_states(device::DynamicInverter) = device.n_states
+"""Get the [`Converter`](@ref) component of a [`DynamicInverter`](@ref)."""
 get_converter(device::DynamicInverter) = device.converter
+"""Get the [`OuterControl`](@ref) component of a [`DynamicInverter`](@ref)."""
 get_outer_control(device::DynamicInverter) = device.outer_control
+"""Get the [`InnerControl`](@ref) component of a [`DynamicInverter`](@ref)."""
 get_inner_control(device::DynamicInverter) = device.inner_control
+"""Get the [`DCSource`](@ref) component of a [`DynamicInverter`](@ref)."""
 get_dc_source(device::DynamicInverter) = device.dc_source
+"""Get the [`FrequencyEstimator`](@ref) component of a [`DynamicInverter`](@ref)."""
 get_freq_estimator(device::DynamicInverter) = device.freq_estimator
+"""Get the [`Filter`](@ref) component of a [`DynamicInverter`](@ref)."""
 get_filter(device::DynamicInverter) = device.filter
 get_limiter(device::DynamicInverter) = device.limiter
 get_base_power(device::DynamicInverter) = device.base_power

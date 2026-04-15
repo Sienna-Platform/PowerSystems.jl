@@ -1,3 +1,10 @@
+const UNIT_SYSTEM_MAPPING = Dict(
+    "SYSTEM_BASE" => IS.UnitSystem.SYSTEM_BASE,
+    "DEVICE_BASE" => IS.UnitSystem.DEVICE_BASE,
+    "NATURAL_UNITS" => IS.UnitSystem.NATURAL_UNITS,
+    "NA" => nothing,
+)
+
 const MinMax = NamedTuple{(:min, :max), Tuple{Float64, Float64}}
 const UpDown = NamedTuple{(:up, :down), Tuple{Float64, Float64}}
 const StartUpShutDown = NamedTuple{(:startup, :shutdown), Tuple{Float64, Float64}}
@@ -455,6 +462,15 @@ Notes
 
 IS.@scoped_enum(StateTypes, Differential = 1, Algebraic = 2, Hybrid = 3,)
 
+@doc """
+Categorization of dynamic state variables.
+
+# Values
+- `Differential`: State governed by a differential equation
+- `Algebraic`: State governed by an algebraic constraint
+- `Hybrid`: State with both differential and algebraic aspects
+""" StateTypes
+
 IS.@scoped_enum(
     ReservoirDataType,
     USABLE_VOLUME = 1,
@@ -539,8 +555,18 @@ IS.@scoped_enum(
     Other = 5,
 )
 
+@doc """
+Configuration types for combined cycle power plants.
+
+# Values
+- `SingleShaftCombustionSteam`: Single-shaft arrangement with one combustion and one steam turbine
+- `SeparateShaftCombustionSteam`: Separate shafts for combustion and steam turbines
+- `DoubleCombustionOneSteam`: Two combustion turbines feeding one steam turbine
+- `TripleCombustionOneSteam`: Three combustion turbines feeding one steam turbine
+- `Other`: Other combined cycle configuration
+""" CombinedCycleConfiguration
+
 const PS_MAX_LOG = parse(Int, get(ENV, "PS_MAX_LOG", "50"))
-const DEFAULT_BASE_MVA = 100.0
 
 const POWER_SYSTEM_STRUCT_DESCRIPTOR_FILE =
     joinpath(dirname(pathof(PowerSystems)), "descriptors", "power_system_structs.json")
@@ -552,10 +578,6 @@ const START_COST = 1e8
 const INFINITE_COST = 1e8
 const INFINITE_BOUND = 1e6
 const BRANCH_BUS_VOLTAGE_DIFFERENCE_TOL = 0.01
-
-const PSSE_PARSER_TAP_RATIO_UBOUND = 1.5
-const PSSE_PARSER_TAP_RATIO_LBOUND = 0.5
-const PARSER_TAP_RATIO_CORRECTION_TOL = 1e-5
 
 const ZERO_IMPEDANCE_REACTANCE_THRESHOLD = 1e-4
 

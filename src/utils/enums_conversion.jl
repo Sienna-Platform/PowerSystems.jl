@@ -1,20 +1,3 @@
-
-IS.@scoped_enum(
-    InputCategory,
-    BRANCH = 1,
-    BUS = 2,
-    DC_BRANCH = 3,
-    GENERATOR = 4,
-    LOAD = 5,
-    RESERVE = 6,
-    SIMULATION_OBJECTS = 7,
-    STORAGE = 8,
-    FACTS = 9,
-    DCBRTYPE = 10,
-    DCBRSTATUS = 11,
-    TICT = 12,
-)
-
 const ENUMS = (
     AngleUnits,
     ACBusTypes,
@@ -24,7 +7,6 @@ const ENUMS = (
     WindingCategory,
     ImpedanceCorrectionTransformerControlMode,
     GeneratorCostModels,
-    InputCategory,
     PrimeMovers,
     StateTypes,
     ReservoirDataType,
@@ -86,4 +68,4 @@ Base.convert(::Type{TransformerControlObjective}, val::AbstractString) =
 Base.convert(::Type{ReservoirLocation}, val::AbstractString) =
     get_enum_value(ReservoirLocation, val)
 Base.convert(::Type{HydroTurbineType}, val::AbstractString) =
-    get_enum_value(ReservoirLocation, val)
+    get_enum_value(HydroTurbineType, val)
