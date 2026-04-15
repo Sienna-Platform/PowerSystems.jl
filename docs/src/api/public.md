@@ -33,6 +33,7 @@ Private = false
 ```@autodocs
 Modules = [PowerSystems]
 Pages   = ["outages.jl",
+           "contingencies.jl",
            "impedance_correction.jl",
            "plant_attribute.jl"
            ]
@@ -143,7 +144,8 @@ Filter  = t -> !(t isa AbstractString) && nameof(t) in names(PowerSystems) && ge
 
 ```@autodocs
 Modules = [PowerSystems]
-Pages   = ["supplemental_accessors.jl"]
+Pages   = ["supplemental_accessors.jl",
+           "supplemental_setters.jl"]
 Public = true
 Private = false
 ```
@@ -165,7 +167,8 @@ Pages = ["parsers/power_system_table_data.jl",
          "parsers/power_models_data.jl",
          "parsers/TAMU_data.jl",
          "parsers/psse_dynamic_data.jl",
-         "parsers/pm_io/common.jl"]
+         "parsers/pm_io/common.jl",
+         "parsers/im_io/matlab.jl"]
 Public = true
 Private = false
 Filter = t -> t ∉ [System]

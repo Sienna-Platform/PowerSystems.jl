@@ -319,3 +319,21 @@ end
         end
     end
 end
+
+@testset "Test serialization of GenericArcImpedance" begin
+    sys = PSB.build_system(PSB.PSITestSystems, "c_sys5")
+    arc = first(get_components(Arc, sys))
+    generic_arc_impedance = GenericArcImpedance(;
+        name = "test_impedance",
+        available = true,
+        active_power_flow = 0.0,
+        reactive_power_flow = 0.0,
+        max_flow = 0.0,
+        arc = arc,
+        r = 0.01,
+        x = 0.1,
+    )
+    add_component!(sys, generic_arc_impedance)
+    _, result = validate_serialization(sys)
+    @test result
+end

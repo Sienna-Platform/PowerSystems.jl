@@ -52,6 +52,8 @@ export Component
 export Device
 export get_max_active_power
 export get_max_reactive_power
+export get_high_voltage
+export get_low_voltage
 export Branch
 export StaticInjection
 export StaticInjectionSubsystem
@@ -63,6 +65,7 @@ export ThreeWindingTransformer
 export TwoTerminalHVDC
 export Line
 export MonitoredLine
+export GenericArcImpedance
 export DCBranch
 export TwoTerminalGenericHVDCLine
 export TwoTerminalVSCLine
@@ -391,6 +394,7 @@ export copy_time_series!
 export copy_subcomponent_time_series!
 export add_component!
 export add_components!
+export replace_dynamic_injector!
 export remove_component!
 export remove_components!
 export clear_components!
@@ -800,7 +804,15 @@ See also: [`Branch`](@ref), [`StaticInjection`](@ref), [`Component`](@ref)
 """
 abstract type Device <: Component end
 
+"""
+All PowerSystems [Device](@ref) types support time series. This can be overridden for 
+custom component types that do not support time series.
+"""
 supports_time_series(::Device) = true
+"""
+All PowerSystems [Device](@ref) types support supplemental attributes. This can be overridden for 
+custom component types that do not support supplemental attributes.
+"""
 supports_supplemental_attributes(::Device) = true
 
 # Include utilities

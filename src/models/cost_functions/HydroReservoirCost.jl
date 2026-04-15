@@ -34,7 +34,7 @@ set_level_shortage_cost!(value::HydroReservoirCost, val) =
     value.level_shortage_cost = val
 """Set [`HydroReservoirCost`](@ref) `level_surplus_cost`."""
 set_level_surplus_cost!(value::HydroReservoirCost, val) =
-    value.energy_surplus_cost = val
+    value.level_surplus_cost = val
 """Set [`HydroReservoirCost`](@ref) `spillage_cost`."""
 set_spillage_cost!(value::HydroReservoirCost, val) =
     value.spillage_cost = val

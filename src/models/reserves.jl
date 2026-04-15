@@ -42,8 +42,12 @@ A [`Reserve`](@ref) can be specified as a [`ReserveSymmetric`](@ref) when it is 
 See also: [`ReserveUp`](@ref), [`ReserveDown`](@ref)
 """
 abstract type ReserveSymmetric <: ReserveDirection end
+
 """
-Abstract supertype for all reserve products
+Supertype for all reserve products, both spinning and non-spinning.
+
+Concrete subtypes include [`Reserve`](@ref) (parameterized by [`ReserveDirection`](@ref))
+and [`ReserveNonSpinning`](@ref).
 """
 abstract type AbstractReserve <: Service end
 
@@ -60,9 +64,12 @@ See also: [`ConstantReserve`](@ref), [`VariableReserve`](@ref), [`ReserveDemandC
 abstract type Reserve{T <: ReserveDirection} <: AbstractReserve end
 
 """
-A non-spinning reserve product: capacity that is committed but not yet generating.
+Supertype for non-spinning (quick-start) reserve products.
 
-Non-spinning reserves can be brought online more slowly than spinning reserves and
-typically have a longer response time requirement.
+Non-spinning reserves can be brought online within a short time but are not
+currently synchronized to the grid. See also [`Reserve`](@ref) for spinning reserves.
+
+Concrete subtypes include [`ConstantReserveNonSpinning`](@ref) and
+[`VariableReserveNonSpinning`](@ref).
 """
 abstract type ReserveNonSpinning <: AbstractReserve end

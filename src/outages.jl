@@ -1,7 +1,17 @@
+"""
+Supertype for outage contingencies representing planned or unplanned equipment outages.
+
+Concrete subtypes include [`GeometricDistributionForcedOutage`](@ref),
+[`PlannedOutage`](@ref), and [`FixedForcedOutage`](@ref).
+"""
 abstract type Outage <: Contingency end
 
 abstract type UnplannedOutage <: Outage end
 
+"""
+All PowerSystems [Outage](@ref) types support time series. This can be overridden for custom 
+outage types that do not support time series.
+"""
 supports_time_series(::Outage) = true
 
 """Get `internal`."""

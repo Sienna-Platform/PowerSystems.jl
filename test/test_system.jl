@@ -221,6 +221,7 @@ end
 
 @testset "Test system units" begin
     sys = PSB.build_system(PSITestSystems, "test_RTS_GMLC_sys"; add_forecasts = false)
+    set_units_base_system!(sys, "DEVICE_BASE")
     @test get_units_base(sys) == "DEVICE_BASE"
     set_units_base_system!(sys, "SYSTEM_BASE")
     @test get_units_base(sys) == "SYSTEM_BASE"
@@ -421,6 +422,122 @@ end
 
     remove_time_series!(sys, typeof(forecast), gen, get_name(forecast))
     @test_throws ArgumentError get_time_series(typeof(forecast), gen, get_name(forecast))
+end
+
+@testset "Test multi-interval DeterministicSingleTimeSeries" begin
+    sys = System(100.0)
+    bus = ACBus(nothing)
+    bus.bustype = ACBusTypes.REF
+    add_component!(sys, bus)
+    gen = ThermalStandard(nothing)
+    gen.name = "gen"
+    gen.bus = bus
+    add_component!(sys, gen)
+
+    initial_time = Dates.DateTime("2020-09-01")
+    resolution = Dates.Minute(5)
+    sts_length = 288  # 24 hours at 5-min resolution
+    data = TimeSeries.TimeArray(
+        range(initial_time; length = sts_length, step = resolution),
+        rand(sts_length),
+    )
+    sts_name = "max_active_power"
+    sts = SingleTimeSeries(; data = data, name = sts_name)
+    add_time_series!(sys, gen, sts)
+
+    horizon = Dates.Hour(1)
+    interval1 = Dates.Minute(30)
+    interval2 = Dates.Hour(1)
+
+    transform_single_time_series!(
+        sys,
+        horizon,
+        interval1;
+        delete_existing = false,
+    )
+    transform_single_time_series!(
+        sys,
+        horizon,
+        interval2;
+        delete_existing = false,
+    )
+
+    @test has_time_series(
+        gen,
+        DeterministicSingleTimeSeries,
+        sts_name;
+        interval = interval1,
+    )
+    @test has_time_series(
+        gen,
+        DeterministicSingleTimeSeries,
+        sts_name;
+        interval = interval2,
+    )
+
+    ts1 = get_time_series(
+        DeterministicSingleTimeSeries,
+        gen,
+        sts_name;
+        interval = interval1,
+    )
+    @test ts1 isa DeterministicSingleTimeSeries
+    @test IS.get_interval(ts1) == interval1
+
+    ts2 = get_time_series(
+        DeterministicSingleTimeSeries,
+        gen,
+        sts_name;
+        interval = interval2,
+    )
+    @test ts2 isa DeterministicSingleTimeSeries
+    @test IS.get_interval(ts2) == interval2
+
+    @test_throws ArgumentError get_time_series(
+        DeterministicSingleTimeSeries,
+        gen,
+        sts_name,
+    )
+
+    @test get_forecast_interval(sys; interval = interval1) == interval1
+    @test get_forecast_interval(sys; interval = interval2) == interval2
+    @test get_forecast_horizon(sys; interval = interval1) == horizon
+    @test get_forecast_window_count(sys; interval = interval1) > 0
+    @test get_forecast_window_count(sys; interval = interval2) > 0
+
+    ts_interval1 = collect(
+        get_time_series_multiple(
+            sys;
+            type = DeterministicSingleTimeSeries,
+            interval = interval1,
+        ),
+    )
+    @test length(ts_interval1) > 0
+    for ts in ts_interval1
+        @test IS.get_interval(ts) == interval1
+    end
+
+    remove_time_series!(
+        sys,
+        DeterministicSingleTimeSeries,
+        gen,
+        sts_name;
+        interval = interval1,
+    )
+    @test !has_time_series(
+        gen,
+        DeterministicSingleTimeSeries,
+        sts_name;
+        interval = interval1,
+    )
+    @test has_time_series(
+        gen,
+        DeterministicSingleTimeSeries,
+        sts_name;
+        interval = interval2,
+    )
+
+    @test has_time_series(gen, SingleTimeSeries, sts_name)
 end
 
 @testset "Invalid constructor" begin

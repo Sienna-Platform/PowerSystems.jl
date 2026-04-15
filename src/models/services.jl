@@ -11,17 +11,13 @@ Subtypes: [`AbstractReserve`](@ref), [`AGC`](@ref), [`TransmissionInterface`](@r
 abstract type Service <: Component end
 
 """
-Return true since all services support time series data.
-
-# Arguments
-- `service::Service`: The service.
+All PowerSystems [Service](@ref) types support time series. This can be overridden for custom 
+types that do not support time series.
 """
 supports_time_series(::Service) = true
 
 """
-Return true since all services support supplemental attributes.
-
-# Arguments
-- `service::Service`: The service.
+All PowerSystems [Service](@ref) types support supplemental attributes. This can be overridden for 
+custom service types that do not support supplemental attributes.
 """
 supports_supplemental_attributes(::Service) = true

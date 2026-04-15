@@ -546,6 +546,148 @@ end
     cd(orig_dir)
 end
 
+@testset "Replace Dynamic Injector" begin
+    nodes = [
+        ACBus(
+            1,
+            "Bus 1",
+            true,
+            "REF",
+            0,
+            1.06,
+            (min = 0.94, max = 1.06),
+            69,
+            nothing,
+            nothing,
+        ),
+        ACBus(
+            2,
+            "Bus 2",
+            true,
+            "PV",
+            0,
+            1.045,
+            (min = 0.94, max = 1.06),
+            69,
+            nothing,
+            nothing,
+        ),
+    ]
+
+    static = ThermalStandard(;
+        name = "ReplaceTestGen",
+        available = true,
+        status = true,
+        bus = nodes[2],
+        active_power = 0.40,
+        reactive_power = 0.010,
+        rating = 0.5,
+        prime_mover_type = PrimeMovers.ST,
+        fuel = ThermalFuels.COAL,
+        active_power_limits = (min = 0.0, max = 0.40),
+        reactive_power_limits = (min = -0.30, max = 0.30),
+        time_limits = nothing,
+        ramp_limits = nothing,
+        operation_cost = ThermalGenerationCost(
+            CostCurve(LinearCurve(1400.0)),
+            0.0,
+            4.0,
+            2.0,
+        ),
+        base_power = 1.0,
+    )
+
+    branches = [
+        Line(
+            "ReplaceLine1",
+            true,
+            0.0,
+            0.0,
+            Arc(; from = nodes[1], to = nodes[2]),
+            0.01,
+            0.05,
+            (from = 0.0, to = 0.0),
+            1.14,
+            (min = -0.7, max = 0.7),
+        ),
+    ]
+
+    Basic = BaseMachine(; R = 0.0, Xd_p = 0.2995, eq_p = 1.05)
+    BaseShaft = SingleMass(; H = 5.148, D = 2.0)
+    fixed_avr = AVRFixed(; Vf = 1.05, V_ref = 1.0)
+    proportional_avr = AVRSimple(; Kv = 5000.0)
+    fixed_tg = TGFixed(; efficiency = 1.0)
+    no_pss = PSSFixed(; V_pss = 0.0)
+
+    oneDoneQ = OneDOneQMachine(;
+        R = 0.0,
+        Xd = 0.8979,
+        Xq = 0.646,
+        Xd_p = 0.2995,
+        Xq_p = 0.04,
+        Td0_p = 7.4,
+        Tq0_p = 0.033,
+    )
+
+    Gen1 = DynamicGenerator(;
+        name = get_name(static),
+        ω_ref = 1.0,
+        machine = Basic,
+        shaft = BaseShaft,
+        avr = proportional_avr,
+        prime_mover = fixed_tg,
+        pss = no_pss,
+    )
+
+    Gen2 = DynamicGenerator(;
+        name = get_name(static),
+        ω_ref = 1.0,
+        machine = oneDoneQ,
+        shaft = BaseShaft,
+        avr = fixed_avr,
+        prime_mover = fixed_tg,
+        pss = no_pss,
+    )
+
+    sys = System(100.0)
+    for bus in nodes
+        add_component!(sys, bus)
+    end
+    for line in branches
+        add_component!(sys, line)
+    end
+    add_component!(sys, static)
+    add_component!(sys, Gen1, static)
+
+    @test get_dynamic_injector(static) === Gen1
+
+    # Replace the dynamic injector
+    replace_dynamic_injector!(sys, static, Gen2)
+    @test get_dynamic_injector(static) === Gen2
+    @test get_base_power(static) == get_base_power(Gen2)
+
+    # Old dynamic injector should be removed from the system
+    @test length(collect(get_components(DynamicGenerator, sys))) == 1
+
+    # Error: static injector has no dynamic injector
+    remove_component!(sys, Gen2)
+    @test isnothing(get_dynamic_injector(static))
+    @test_throws ArgumentError replace_dynamic_injector!(sys, static, Gen1)
+
+    # Error: name mismatch
+    add_component!(sys, Gen1, static)
+    bad_name_gen = DynamicGenerator(;
+        name = "wrong_name",
+        ω_ref = 1.0,
+        machine = BaseMachine(; R = 0.0, Xd_p = 0.2995, eq_p = 1.05),
+        shaft = SingleMass(; H = 5.148, D = 2.0),
+        avr = AVRSimple(; Kv = 5000.0),
+        prime_mover = TGFixed(; efficiency = 1.0),
+        pss = PSSFixed(; V_pss = 0.0),
+    )
+    @test_throws ArgumentError replace_dynamic_injector!(sys, static, bad_name_gen)
+end
+
 @testset "Generic DER (DERD)" begin
     #valid (non-default) Qref_Flag
     derd = GenericDER(;

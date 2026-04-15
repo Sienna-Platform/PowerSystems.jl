@@ -811,7 +811,7 @@ function add_component!(
         # occurred when the original addition ran and do not apply to that scenario.
         handle_component_addition!(sys, component; kwargs...)
         # Special condition required to populate the bus numbers in the system after
-    elseif component isa ACBus
+    elseif component isa Bus
         handle_component_addition!(sys, component; kwargs...)
     end
 
@@ -867,6 +867,70 @@ function add_component!(
     kwargs...,
 )
     add_component!(sys, dyn_injector; static_injector = static_injector, kwargs...)
+    return
+end
+
+"""
+Replace the dynamic injector in a static component.
+
+Safely removes the old dynamic injector from the system if no other component references it.
+If another component references the old dynamic injector, it is kept in the system and an
+info message is logged.
+
+Throws ArgumentError if the static injector is not attached to the system.
+Throws ArgumentError if the static injector does not have a dynamic injector.
+Throws ArgumentError if the new dynamic injector name does not match the static injector name.
+"""
+function replace_dynamic_injector!(
+    sys::System,
+    static_injector::StaticInjection,
+    new_dynamic_injector::DynamicInjection,
+)
+    throw_if_not_attached(static_injector, sys)
+
+    old_dynamic_injector = get_dynamic_injector(static_injector)
+    if isnothing(old_dynamic_injector)
+        throw(
+            ArgumentError(
+                "$(get_name(static_injector)) does not have a dynamic injector to replace",
+            ),
+        )
+    end
+
+    if get_name(new_dynamic_injector) != get_name(static_injector)
+        throw(
+            ArgumentError(
+                "new_dynamic_injector must have the same name as the static_injector",
+            ),
+        )
+    end
+
+    # Unlink old dynamic injector from this static component
+    set_dynamic_injector!(static_injector, nothing)
+
+    # Check if any other static injector in the system references the old dynamic injector
+    is_referenced_elsewhere = false
+    for si in get_components(StaticInjection, sys)
+        si === static_injector && continue
+        dyn = get_dynamic_injector(si)
+        if dyn === old_dynamic_injector
+            is_referenced_elsewhere = true
+            break
+        end
+    end
+
+    if is_referenced_elsewhere
+        @info "The dynamic injector $(get_name(old_dynamic_injector)) is referenced by " *
+              "another component and will not be removed from the system."
+    else
+        # Safely remove old dynamic injector from the system
+        _handle_component_removal_common!(old_dynamic_injector)
+        IS.remove_component!(sys.data, old_dynamic_injector)
+    end
+
+    # Add the new dynamic injector, linked to the static component
+    add_component!(sys, new_dynamic_injector, static_injector)
+
     return
 end
 
@@ -1328,17 +1392,9 @@ function remove_components!(::Type{T}, sys::System) where {T <: Component}
 end
 
 """
-    remove_components!(sys::System, ::Type{T}) where {T <: Component}
-    remove_components!(filter_func::Function, sys::System, ::Type{T}) where {T <: Component}
+Remove all components of type `T` from the system.
 
-Remove components from the system.
-
-The first form removes all components of type `T`. Throws `ArgumentError` if the type is
-not stored.
-
-The second form removes all components of type `T` for which `filter_func` returns `true`.
-
-See also: [`remove_component!`](@ref)
+Throws `ArgumentError` if the type is not stored.
 """
 function remove_components!(sys::System, ::Type{T}) where {T <: Component}
     components = IS.remove_components!(T, sys.data)
@@ -1348,6 +1404,9 @@ function remove_components!(sys::System, ::Type{T}) where {T <: Component}
     return components
 end
 
+"""
+Remove all components of type `T` that match `filter_func` from the system.
+"""
 function remove_components!(
     filter_func::Function,
     sys::System,
@@ -1591,6 +1650,10 @@ function get_contributing_devices(sys::System, service::TransmissionInterface)
     return [x for x in get_components(Branch, sys) if has_service(x, service)]
 end
 
+"""
+Container associating a [`Service`](@ref) with the [`Device`](@ref) components that
+contribute to it.
+"""
 struct ServiceContributingDevices
     service::Service
     contributing_devices::Vector{Device}
@@ -1692,6 +1755,10 @@ function get_connected_tail_reservoirs(sys::System, turbine::T) where {T <: Hydr
     ]
 end
 
+"""
+Container associating a hydro turbine with its connected [`Device`](@ref) components
+(e.g., [`HydroReservoir`](@ref) units).
+"""
 struct TurbineConnectedDevices
     turbine::HydroUnit
     connected_devices::Vector{Device}
@@ -2013,29 +2080,39 @@ Return the compression settings used for system data such as time series arrays.
 get_compression_settings(sys::System) = IS.get_compression_settings(sys.data)
 
 """
-Return the initial times for all forecasts.
+Return the initial times for all forecasts. Use `resolution` and/or `interval` keyword
+arguments to filter when multiple forecast groups exist.
 """
-get_forecast_initial_times(sys::System) = IS.get_forecast_initial_times(sys.data)
+get_forecast_initial_times(sys::System; kwargs...) =
+    IS.get_forecast_initial_times(sys.data; kwargs...)
 
 """
-Return the window count for all forecasts.
+Return the window count for all forecasts. Use `resolution` and/or `interval` keyword
+arguments to filter when multiple forecast groups exist.
 """
-get_forecast_window_count(sys::System) = IS.get_forecast_window_count(sys.data)
+get_forecast_window_count(sys::System; kwargs...) =
+    IS.get_forecast_window_count(sys.data; kwargs...)
 
 """
-Return the horizon for all forecasts.
+Return the horizon for all forecasts. Use `resolution` and/or `interval` keyword
+arguments to filter when multiple forecast groups exist.
 """
-get_forecast_horizon(sys::System) = IS.get_forecast_horizon(sys.data)
+get_forecast_horizon(sys::System; kwargs...) =
+    IS.get_forecast_horizon(sys.data; kwargs...)
 
 """
-Return the initial_timestamp for all forecasts.
+Return the initial timestamp for all forecasts. Use `resolution` and/or `interval` keyword
+arguments to filter when multiple forecast groups exist.
 """
-get_forecast_initial_timestamp(sys::System) = IS.get_forecast_initial_timestamp(sys.data)
+get_forecast_initial_timestamp(sys::System; kwargs...) =
+    IS.get_forecast_initial_timestamp(sys.data; kwargs...)
 
 """
-Return the interval for all forecasts.
+Return the forecast interval. Use `resolution` and/or `interval` keyword arguments to
+select which forecast group to query when multiple exist.
 """
-get_forecast_interval(sys::System) = IS.get_forecast_interval(sys.data)
+get_forecast_interval(sys::System; kwargs...) =
+    IS.get_forecast_interval(sys.data; kwargs...)
 
 """
 Return a sorted Vector of distinct resolutions for all time series of the given type
@@ -2047,7 +2124,7 @@ get_time_series_resolutions(
 ) = IS.get_time_series_resolutions(sys.data; time_series_type = time_series_type)
 
 """
-Return an iterator of time series in order of initial time.
+Return an iterator of time series attached to components in the system.
 
 Note that passing a filter function can be much slower than the other filtering parameters
 because it reads time series data from media.
@@ -2055,10 +2132,12 @@ because it reads time series data from media.
 Call `collect` on the result to get an array.
 
 # Arguments
-- `data::SystemData`: system
+- `sys::System`: system
 - `filter_func = nothing`: Only return time series for which this returns true.
 - `type = nothing`: Only return time series with this type.
 - `name = nothing`: Only return time series matching this value.
+- `resolution = nothing`: Only return time series matching this resolution.
+- `interval = nothing`: Only return time series matching this interval.
 
 # Examples
 ```julia
@@ -2074,8 +2153,24 @@ function IS.get_time_series_multiple(
     filter_func = nothing;
     type = nothing,
     name = nothing,
+    resolution = nothing,
+    interval = nothing,
 )
-    return get_time_series_multiple(sys.data, filter_func; type = type, name = name)
+    Channel{TimeSeriesData}() do channel
+        for component in
+            IS.iterate_components_with_time_series(sys.data; time_series_type = type)
+            for time_series in get_time_series_multiple(
+                component,
+                filter_func;
+                type = type,
+                name = name,
+                resolution = resolution,
+                interval = interval,
+            )
+                put!(channel, time_series)
+            end
+        end
+    end
 end
 
 """
@@ -2098,14 +2193,29 @@ end
 
 """
 Remove the time series data for a component or supplemental attribute and time series type.
+
+Use `resolution`, `interval`, and `features` keyword arguments to disambiguate when multiple
+time series of the same type and name exist with different resolutions, intervals, or
+user-defined feature tags.
 """
 function remove_time_series!(
     sys::System,
     ::Type{T},
     owner::Union{Component, SupplementalAttribute},
-    name::String,
+    name::String;
+    resolution::Union{Nothing, Dates.Period} = nothing,
+    interval::Union{Nothing, Dates.Period} = nothing,
+    features...,
 ) where {T <: TimeSeriesData}
-    return IS.remove_time_series!(sys.data, T, owner, name)
+    return IS.remove_time_series!(
+        sys.data,
+        T,
+        owner,
+        name;
+        resolution = resolution,
+        interval = interval,
+        features...,
+    )
 end
 
 """
@@ -2119,8 +2229,13 @@ most time series instances then consider using `clear_time_series!`. It
 will delete the HDF5 file and create a new one. PowerSystems has plans to
 automate this type of workflow.
 """
-function remove_time_series!(sys::System, ::Type{T}) where {T <: TimeSeriesData}
-    return IS.remove_time_series!(sys.data, T)
+function remove_time_series!(
+    sys::System,
+    ::Type{T};
+    resolution::Union{Nothing, Dates.Period} = nothing,
+    interval::Union{Nothing, Dates.Period} = nothing,
+) where {T <: TimeSeriesData}
+    return IS.remove_time_series!(sys.data, T; resolution = resolution, interval = interval)
 end
 
 """
@@ -2132,8 +2247,10 @@ when actual forecasts are unavailable, without unnecessarily duplicating data.
 
 If all `SingleTimeSeries` instances cannot be transformed then none will be.
 
-Any existing `DeterministicSingleTimeSeries` forecasts will be deleted even if the inputs are
-invalid.
+By default, any existing `DeterministicSingleTimeSeries` forecasts will be deleted before the
+transform (`delete_existing = true`). Set `delete_existing = false` to preserve existing
+`DeterministicSingleTimeSeries`; entries with matching name, resolution, features, horizon,
+and interval are skipped, allowing multiple calls with different resolutions to coexist.
 
 # Arguments
 - `sys::System`: System containing the components.
@@ -2141,12 +2258,15 @@ invalid.
 - `interval::Dates.Period`: desired [interval](@ref I) between forecast [windows](@ref W)
 - `resolution::Union{Nothing, Dates.Period} = nothing`: If set, only transform time series
    with this resolution.
+- `delete_existing::Bool = true`: If `true`, delete all existing
+   `DeterministicSingleTimeSeries` before transforming.
 """
 function transform_single_time_series!(
     sys::System,
     horizon::Dates.Period,
     interval::Dates.Period;
     resolution::Union{Nothing, Dates.Period} = nothing,
+    delete_existing::Bool = true,
 )
     IS.transform_single_time_series!(
         sys.data,
@@ -2154,6 +2274,7 @@ function transform_single_time_series!(
         horizon,
         interval;
         resolution = resolution,
+        delete_existing = delete_existing,
     )
     return
 end
@@ -2241,7 +2362,7 @@ function remove_supplemental_attributes!(
     ::Type{T},
     sys::System,
 ) where {T <: IS.SupplementalAttribute}
-    return IS.remove_supplemental_attributes!(T, sys.data)
+    return IS.remove_supplemental_attributes!(sys.data, T)
 end
 
 """
@@ -2591,6 +2712,12 @@ function check_component(sys::System, component::Component)
     return
 end
 
+"""
+Check that all AC transmission [`Line`](@ref) and [`MonitoredLine`](@ref) components
+have valid rate values relative to the system base power.
+
+Returns `true` if all values are valid, `false` otherwise.
+"""
 function check_ac_transmission_rate_values(sys::System)
     is_valid = true
     base_power = get_base_power(sys)
@@ -2603,6 +2730,11 @@ function check_ac_transmission_rate_values(sys::System)
     return is_valid
 end
 
+"""
+Serialize a [System](@ref) instance. Returns a `Dict{String, Any}` 
+of the form `Dict("data_format_version" => "1.0", "field1" => serialize(sys.field1), ...)`,
+which can then be written to a JSON3 file.
+"""
 function IS.serialize(sys::T) where {T <: System}
     data = Dict{String, Any}()
     data["data_format_version"] = DATA_FORMAT_VERSION
@@ -2618,6 +2750,9 @@ function IS.serialize(sys::T) where {T <: System}
     return data
 end
 
+"""
+Deserialize a [System](@ref) instance from a JSON3 file; the reverse of [`IS.serialize`](@ref).
+"""
 function IS.deserialize(
     ::Type{System},
     filename::AbstractString;
@@ -3147,7 +3282,7 @@ function check_component_addition(sys::System, dyn_injector::DynamicInjection; k
     return
 end
 
-function check_component_addition(sys::System, bus::ACBus; kwargs...)
+function check_component_addition(sys::System, bus::Bus; kwargs...)
     number = get_number(bus)
     if number in sys.bus_numbers
         throw(ArgumentError("bus number $number is already stored in the system"))
@@ -3164,9 +3299,11 @@ function check_component_addition(sys::System, bus::ACBus; kwargs...)
     end
 end
 
-function handle_component_addition!(sys::System, bus::ACBus; kwargs...)
+function handle_component_addition!(sys::System, bus::Bus; kwargs...)
     number = get_number(bus)
-    @assert !(number in sys.bus_numbers) "bus number $number is already stored"
+    if number in sys.bus_numbers
+        throw(ArgumentError("bus number $number is already stored"))
+    end
     push!(sys.bus_numbers, number)
     return
 end
@@ -3250,10 +3387,12 @@ _handle_branch_addition_common!(sys::System, component::AreaInterchange) = nothi
 """
 Throws ArgumentError if the bus number is not stored in the system.
 """
-function handle_component_removal!(sys::System, bus::ACBus)
+function handle_component_removal!(sys::System, bus::Bus)
     _handle_component_removal_common!(bus)
     number = get_number(bus)
-    @assert number in sys.bus_numbers "bus number $number is not stored"
+    if !(number in sys.bus_numbers)
+        throw(ArgumentError("bus number $number is not stored"))
+    end
     pop!(sys.bus_numbers, number)
     return
 end
@@ -3581,7 +3720,7 @@ end
 """
 Set the number of a bus.
 """
-function set_bus_number!(sys::System, bus::ACBus, number::Int)
+function set_bus_number!(sys::System, bus::Bus, number::Int)
     throw_if_not_attached(bus, sys)
 
     orig = get_number(bus)

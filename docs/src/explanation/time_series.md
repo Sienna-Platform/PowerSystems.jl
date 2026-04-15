@@ -74,6 +74,44 @@ This example forecast has a [interval](@ref I) of 1 hour and a [horizon](@ref H)
   - [`Scenarios`](@ref): Stores a set of probable trajectories for forecasted quantity
     with equal probability.
 
+## Multiple Forecast Intervals
+
+PowerSystems supports attaching multiple forecast groups to the same component, where each
+group shares the same name and resolution but differs by [interval](@ref I). This is useful
+when a component needs forecasts updated at different frequencies — for example, an
+hourly-updated forecast and a daily-updated forecast for the same quantity.
+
+Use [`transform_single_time_series!`](@ref) with `delete_existing = false` to create
+multiple [`DeterministicSingleTimeSeries`](@ref) transforms from the same
+[`SingleTimeSeries`](@ref), each with a different interval:
+
+```julia
+# Create a 30-minute interval forecast
+transform_single_time_series!(sys, Hour(1), Minute(30); delete_existing = false)
+# Create a 1-hour interval forecast from the same underlying data
+transform_single_time_series!(sys, Hour(1), Hour(1); delete_existing = false)
+```
+
+When multiple forecasts share the same name and resolution, you must specify the `interval`
+keyword argument to disambiguate retrieval and removal:
+
+```julia
+# Retrieve a specific interval's forecast
+ts = get_time_series(DeterministicSingleTimeSeries, component, "max_active_power";
+    interval = Minute(30))
+
+# Query forecast parameters for a specific interval
+get_forecast_horizon(sys; interval = Minute(30))
+get_forecast_initial_times(sys; interval = Hour(1))
+
+# Remove only one interval's forecasts
+remove_time_series!(sys, DeterministicSingleTimeSeries, component, "max_active_power";
+    interval = Minute(30))
+```
+
+Omitting `interval` when multiple intervals exist for the same name will raise an
+`ArgumentError`.
+
 ## Data Storage
 
 ### Why Sienna Stores Time Series as Scaling Factors

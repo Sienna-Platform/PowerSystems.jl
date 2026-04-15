@@ -1,7 +1,5 @@
 """
-Abstract supertype for supplemental attributes representing physical power plants,
-grouping generators that share physical infrastructure (e.g., a common shaft, penstock,
-or point of common coupling).
+Supertype for power plant supplemental attributes that group generating units.
 
 Concrete subtypes include [`ThermalPowerPlant`](@ref), [`HydroPowerPlant`](@ref),
 [`RenewablePowerPlant`](@ref), [`CombinedCycleBlock`](@ref), and
