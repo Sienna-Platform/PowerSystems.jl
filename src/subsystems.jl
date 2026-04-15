@@ -194,6 +194,13 @@ is_assigned_to_subsystem(
 get_component_uuids(sys::System, subsystem_name::AbstractString) =
     IS.get_component_uuids(sys.data, subsystem_name)
 
+function check_subsystems(sys::System)
+    for component in get_components(Component, sys)
+        check_subsystems(sys, component)
+    end
+    return
+end
+
 function check_subsystems(sys::System, component::Component)
     _check_arc_consistency(sys, component)
     _check_branch_consistency(sys, component)

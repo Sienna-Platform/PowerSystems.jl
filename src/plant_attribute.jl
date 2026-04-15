@@ -1,3 +1,12 @@
+"""
+Abstract supertype for supplemental attributes representing physical power plants,
+grouping generators that share physical infrastructure (e.g., a common shaft, penstock,
+or point of common coupling).
+
+Concrete subtypes include [`ThermalPowerPlant`](@ref), [`HydroPowerPlant`](@ref),
+[`RenewablePowerPlant`](@ref), [`CombinedCycleBlock`](@ref), and
+[`CombinedCycleFractional`](@ref).
+"""
 abstract type PowerPlant <: SupplementalAttribute end
 
 """Get `internal`."""
@@ -78,9 +87,9 @@ end
 
 """Get [`ThermalPowerPlant`](@ref) `name`."""
 get_name(value::ThermalPowerPlant) = value.name
-"""Get [`ThermalPowerPlant`](@ref) `shaft_map`."""
+"""Get [`ThermalPowerPlant`](@ref) `shaft_map`: mapping from shaft index to the UUIDs of generators connected to that shaft."""
 get_shaft_map(value::ThermalPowerPlant) = value.shaft_map
-"""Get [`ThermalPowerPlant`](@ref) `reverse_shaft_map`."""
+"""Get [`ThermalPowerPlant`](@ref) `reverse_shaft_map`: reverse mapping from a generator's UUID to its shaft index."""
 get_reverse_shaft_map(value::ThermalPowerPlant) = value.reverse_shaft_map
 
 """
@@ -227,13 +236,13 @@ get_configuration(value::CombinedCycleBlock) = value.configuration
 """Get [`CombinedCycleBlock`](@ref) `heat_recovery_to_steam_factor`."""
 get_heat_recovery_to_steam_factor(value::CombinedCycleBlock) =
     value.heat_recovery_to_steam_factor
-"""Get [`CombinedCycleBlock`](@ref) `hrsg_ct_map`."""
+"""Get [`CombinedCycleBlock`](@ref) `hrsg_ct_map`: mapping from HRSG index to the UUIDs of combustion turbines (CT) feeding that HRSG."""
 get_hrsg_ct_map(value::CombinedCycleBlock) = value.hrsg_ct_map
-"""Get [`CombinedCycleBlock`](@ref) `hrsg_ca_map`."""
+"""Get [`CombinedCycleBlock`](@ref) `hrsg_ca_map`: mapping from HRSG index to the UUIDs of combined-cycle steam turbines (CA) driven by that HRSG."""
 get_hrsg_ca_map(value::CombinedCycleBlock) = value.hrsg_ca_map
-"""Get [`CombinedCycleBlock`](@ref) `ct_hrsg_map`."""
+"""Get [`CombinedCycleBlock`](@ref) `ct_hrsg_map`: reverse mapping from a combustion turbine's (CT) UUID to the indices of HRSGs it feeds."""
 get_ct_hrsg_map(value::CombinedCycleBlock) = value.ct_hrsg_map
-"""Get [`CombinedCycleBlock`](@ref) `ca_hrsg_map`."""
+"""Get [`CombinedCycleBlock`](@ref) `ca_hrsg_map`: reverse mapping from a combined-cycle steam turbine's (CA) UUID to the indices of HRSGs that supply it."""
 get_ca_hrsg_map(value::CombinedCycleBlock) = value.ca_hrsg_map
 
 """
@@ -346,10 +355,10 @@ end
 get_name(value::CombinedCycleFractional) = value.name
 """Get [`CombinedCycleFractional`](@ref) `configuration`."""
 get_configuration(value::CombinedCycleFractional) = value.configuration
-"""Get [`CombinedCycleFractional`](@ref) `operation_exclusion_map`."""
+"""Get [`CombinedCycleFractional`](@ref) `operation_exclusion_map`: mapping from exclusion group index to the UUIDs of units in that group; only one unit per group may operate simultaneously."""
 get_operation_exclusion_map(value::CombinedCycleFractional) =
     value.operation_exclusion_map
-"""Get [`CombinedCycleFractional`](@ref) `inverse_operation_exclusion_map`."""
+"""Get [`CombinedCycleFractional`](@ref) `inverse_operation_exclusion_map`: reverse mapping from a unit's UUID to its exclusion group index."""
 get_inverse_operation_exclusion_map(value::CombinedCycleFractional) =
     value.inverse_operation_exclusion_map
 
@@ -426,9 +435,9 @@ end
 
 """Get [`HydroPowerPlant`](@ref) `name`."""
 get_name(value::HydroPowerPlant) = value.name
-"""Get [`HydroPowerPlant`](@ref) `penstock_map`."""
+"""Get [`HydroPowerPlant`](@ref) `penstock_map`: mapping from penstock index to the UUIDs of generators connected to that penstock."""
 get_penstock_map(value::HydroPowerPlant) = value.penstock_map
-"""Get [`HydroPowerPlant`](@ref) `reverse_penstock_map`."""
+"""Get [`HydroPowerPlant`](@ref) `reverse_penstock_map`: reverse mapping from a generator's UUID to its penstock index."""
 get_reverse_penstock_map(value::HydroPowerPlant) = value.reverse_penstock_map
 
 """
@@ -504,26 +513,26 @@ end
 
 """Get [`RenewablePowerPlant`](@ref) `name`."""
 get_name(value::RenewablePowerPlant) = value.name
-"""Get [`RenewablePowerPlant`](@ref) `pcc_map`."""
+"""Get [`RenewablePowerPlant`](@ref) `pcc_map`: mapping from PCC (point of common coupling) index to the UUIDs of generators and storage devices connected to that PCC."""
 get_pcc_map(value::RenewablePowerPlant) = value.pcc_map
-"""Get [`RenewablePowerPlant`](@ref) `reverse_pcc_map`."""
+"""Get [`RenewablePowerPlant`](@ref) `reverse_pcc_map`: reverse mapping from a component's UUID to its PCC index."""
 get_reverse_pcc_map(value::RenewablePowerPlant) = value.reverse_pcc_map
 
 """
     get_components_in_shaft(sys::System, plant::ThermalPowerPlant, shaft_number::Int)
 
-Get all thermal generators connected to a specific shaft in a [`ThermalPowerPlant`](@ref).
+Return all thermal generators connected to shaft `shaft_number` in a
+[`ThermalPowerPlant`](@ref).
 
 # Arguments
-- `sys::System`: The system containing the components
-- `plant::ThermalPowerPlant`: The thermal power plant
-- `shaft_number::Int`: The shaft number to query
-
-# Returns
-- `Vector{ThermalGen}`: Vector of thermal generators on the specified shaft
+- `sys::System`: The system containing the components.
+- `plant::ThermalPowerPlant`: The thermal power plant.
+- `shaft_number::Int`: The shaft number to query.
 
 # Throws
-- `ArgumentError`: If the shaft number does not exist in the plant
+- `ArgumentError`: if `shaft_number` does not exist in the plant.
+
+See also: [`add_supplemental_attribute!`](@ref), [`get_shaft_map`](@ref)
 """
 function get_components_in_shaft(
     sys::System,
@@ -548,18 +557,18 @@ end
 """
     get_components_in_penstock(sys::System, plant::HydroPowerPlant, penstock_number::Int)
 
-Get all hydro generators connected to a specific penstock in a [`HydroPowerPlant`](@ref).
+Return all hydro generators connected to penstock `penstock_number` in a
+[`HydroPowerPlant`](@ref).
 
 # Arguments
-- `sys::System`: The system containing the components
-- `plant::HydroPowerPlant`: The hydro power plant
-- `penstock_number::Int`: The penstock number to query
-
-# Returns
-- `Vector{Union{HydroTurbine, HydroPumpTurbine}}`: Vector of hydro generators on the specified penstock
+- `sys::System`: The system containing the components.
+- `plant::HydroPowerPlant`: The hydro power plant.
+- `penstock_number::Int`: The penstock number to query.
 
 # Throws
-- `ArgumentError`: If the penstock number does not exist in the plant
+- `ArgumentError`: if `penstock_number` does not exist in the plant.
+
+See also: [`add_supplemental_attribute!`](@ref), [`get_penstock_map`](@ref)
 """
 function get_components_in_penstock(
     sys::System,
@@ -584,18 +593,18 @@ end
 """
     get_components_in_pcc(sys::System, plant::RenewablePowerPlant, pcc_number::Int)
 
-Get all renewable generators and storage devices connected to a specific PCC in a [`RenewablePowerPlant`](@ref).
+Return all renewable generators and storage devices connected to PCC `pcc_number`
+(point of common coupling) in a [`RenewablePowerPlant`](@ref).
 
 # Arguments
-- `sys::System`: The system containing the components
-- `plant::RenewablePowerPlant`: The renewable power plant
-- `pcc_number::Int`: The PCC (point of common coupling) number to query
-
-# Returns
-- `Vector{Union{RenewableGen, EnergyReservoirStorage}}`: Vector of components on the specified PCC
+- `sys::System`: The system containing the components.
+- `plant::RenewablePowerPlant`: The renewable power plant.
+- `pcc_number::Int`: The PCC number to query.
 
 # Throws
-- `ArgumentError`: If the PCC number does not exist in the plant
+- `ArgumentError`: if `pcc_number` does not exist in the plant.
+
+See also: [`add_supplemental_attribute!`](@ref), [`get_pcc_map`](@ref)
 """
 function get_components_in_pcc(
     sys::System,
@@ -625,10 +634,15 @@ This attaches the plant as a supplemental attribute to the generator and records
 generator's UUID in the plant's shaft map.
 
 # Arguments
-- `sys::System`: The system containing the generator
-- `component::ThermalGen`: The thermal generator to add to the plant
-- `attribute::ThermalPowerPlant`: The thermal power plant
-- `shaft_number::Int`: The shaft number to associate with the generator
+- `sys::System`: The system containing the generator.
+- `component::ThermalGen`: The thermal generator to add to the plant.
+- `attribute::ThermalPowerPlant`: The thermal power plant.
+- `shaft_number::Int`: The shaft number to associate with the generator.
+
+# Throws
+- `ArgumentError`: if the generator is already associated with this plant.
+
+See also: [`remove_supplemental_attribute!`](@ref), [`begin_supplemental_attributes_update`](@ref)
 """
 function add_supplemental_attribute!(
     sys::System,
@@ -655,17 +669,27 @@ function add_supplemental_attribute!(
 end
 
 """
-    add_supplemental_attribute!(sys::System, component::Union{HydroPumpTurbine, HydroTurbine}, attribute::HydroPowerPlant; penstock_number::Int)
+    add_supplemental_attribute!(sys::System, component::Union{HydroPumpTurbine, HydroTurbine}, attribute::HydroPowerPlant, penstock_number::Int)
 
 Add a hydro generator to a [`HydroPowerPlant`](@ref) by associating it with a penstock number.
 This attaches the plant as a supplemental attribute to the generator and records the
 generator's UUID in the plant's penstock map.
 
+!!! note
+    `penstock_number` is a positional argument, unlike the keyword `shaft_number` in the
+    [`ThermalPowerPlant`](@ref) overload. This inconsistency is a known API issue.
+
 # Arguments
-- `sys::System`: The system containing the generator
-- `component::Union{HydroPumpTurbine, HydroTurbine}`: The hydro generator to add to the plant
-- `attribute::HydroPowerPlant`: The hydro power plant
-- `penstock_number::Int`: The penstock number to associate with the generator
+- `sys::System`: The system containing the generator.
+- `component::Union{HydroPumpTurbine, HydroTurbine}`: The hydro generator to add to the plant.
+- `attribute::HydroPowerPlant`: The hydro power plant.
+- `penstock_number::Int`: The penstock number to associate with the generator.
+
+# Throws
+- `ArgumentError`: if the generator is already associated with this plant.
+- `ArgumentError`: if `component` is a [`HydroDispatch`](@ref) — use [`HydroTurbine`](@ref) instead.
+
+See also: [`remove_supplemental_attribute!`](@ref), [`begin_supplemental_attributes_update`](@ref)
 """
 function add_supplemental_attribute!(
     sys::System,
@@ -691,11 +715,8 @@ function add_supplemental_attribute!(
     return
 end
 
-"""
-    add_supplemental_attribute!(sys::System, component::HydroDispatch, attribute::HydroPowerPlant, args...; kwargs...)
-
-Error-throwing overload. HydroDispatch is not supported in a HydroPowerPlant.
-"""
+# Error guard: HydroDispatch is not supported in a HydroPowerPlant.
+# Included to produce a clear error instead of silently succeeding via the generic overload.
 function add_supplemental_attribute!(
     ::System,
     ::HydroDispatch,
@@ -711,17 +732,26 @@ function add_supplemental_attribute!(
 end
 
 """
-    add_supplemental_attribute!(sys::System, component::Union{RenewableGen, EnergyReservoirStorage}, attribute::RenewablePowerPlant; pcc_number::Int=1)
+    add_supplemental_attribute!(sys::System, component::Union{RenewableGen, EnergyReservoirStorage}, attribute::RenewablePowerPlant, pcc_number::Int)
 
 Add a renewable generator or storage to a [`RenewablePowerPlant`](@ref) by associating it with a PCC number.
 This attaches the plant as a supplemental attribute to the generator and records the
 generator's UUID in the plant's PCC map.
 
+!!! note
+    `pcc_number` is a positional argument, unlike the keyword `shaft_number` in the
+    [`ThermalPowerPlant`](@ref) overload. This inconsistency is a known API issue.
+
 # Arguments
-- `sys::System`: The system containing the generator
-- `component::Union{RenewableGen, EnergyReservoirStorage}`: The renewable generator or storage to add to the plant
-- `attribute::RenewablePowerPlant`: The renewable power plant
-- `pcc_number::Int`: (default: 1) The PCC (point of common coupling) number to associate with the generator
+- `sys::System`: The system containing the generator.
+- `component::Union{RenewableGen, EnergyReservoirStorage}`: The renewable generator or storage to add to the plant.
+- `attribute::RenewablePowerPlant`: The renewable power plant.
+- `pcc_number::Int`: The PCC (point of common coupling) number to associate with the generator.
+
+# Throws
+- `ArgumentError`: if the component is already associated with this plant.
+
+See also: [`remove_supplemental_attribute!`](@ref), [`begin_supplemental_attributes_update`](@ref)
 """
 function add_supplemental_attribute!(
     sys::System,
@@ -751,13 +781,16 @@ end
     remove_supplemental_attribute!(sys::System, component::ThermalGen, attribute::ThermalPowerPlant)
 
 Remove a thermal generator from a [`ThermalPowerPlant`](@ref).
-This removes the plant as a supplemental attribute from the generator and removes the
-generator's UUID from the plant's shaft map.
 
 # Arguments
-- `sys::System`: The system containing the generator
-- `component::ThermalGen`: The thermal generator to remove from the plant
-- `attribute::ThermalPowerPlant`: The thermal power plant
+- `sys::System`: The system containing the generator.
+- `component::ThermalGen`: The thermal generator to remove from the plant.
+- `attribute::ThermalPowerPlant`: The thermal power plant.
+
+# Throws
+- `ArgumentError`: if the generator is not associated with this plant.
+
+See also: [`add_supplemental_attribute!`](@ref), [`begin_supplemental_attributes_update`](@ref)
 """
 function remove_supplemental_attribute!(
     sys::System,
@@ -786,13 +819,16 @@ end
     remove_supplemental_attribute!(sys::System, component::Union{HydroPumpTurbine, HydroTurbine}, attribute::HydroPowerPlant)
 
 Remove a hydro generator from a [`HydroPowerPlant`](@ref).
-This removes the plant as a supplemental attribute from the generator and removes the
-generator's UUID from the plant's penstock map.
 
 # Arguments
-- `sys::System`: The system containing the generator
-- `component::Union{HydroPumpTurbine, HydroTurbine}`: The hydro generator to remove from the plant
-- `attribute::HydroPowerPlant`: The hydro power plant
+- `sys::System`: The system containing the generator.
+- `component::Union{HydroPumpTurbine, HydroTurbine}`: The hydro generator to remove from the plant.
+- `attribute::HydroPowerPlant`: The hydro power plant.
+
+# Throws
+- `ArgumentError`: if the generator is not associated with this plant.
+
+See also: [`add_supplemental_attribute!`](@ref), [`begin_supplemental_attributes_update`](@ref)
 """
 function remove_supplemental_attribute!(
     sys::System,
@@ -820,14 +856,17 @@ end
 """
     remove_supplemental_attribute!(sys::System, component::Union{RenewableGen, EnergyReservoirStorage}, attribute::RenewablePowerPlant)
 
-Remove a renewable generator or storage from a [`RenewablePowerPlant`](@ref).
-This removes the plant as a supplemental attribute from the generator and removes the
-generator's UUID from the plant's PCC map.
+Remove a renewable generator or storage device from a [`RenewablePowerPlant`](@ref).
 
 # Arguments
-- `sys::System`: The system containing the generator
-- `component::Union{RenewableGen, EnergyReservoirStorage}`: The renewable generator or storage to remove from the plant
-- `attribute::RenewablePowerPlant`: The renewable power plant
+- `sys::System`: The system containing the component.
+- `component::Union{RenewableGen, EnergyReservoirStorage}`: The renewable generator or storage device to remove from the plant.
+- `attribute::RenewablePowerPlant`: The renewable power plant.
+
+# Throws
+- `ArgumentError`: if the component is not associated with this plant.
+
+See also: [`add_supplemental_attribute!`](@ref), [`begin_supplemental_attributes_update`](@ref)
 """
 function remove_supplemental_attribute!(
     sys::System,
@@ -856,14 +895,20 @@ end
     add_supplemental_attribute!(sys::System, component::ThermalGen, attribute::CombinedCycleBlock; hrsg_number::Int)
 
 Add a thermal generator to a [`CombinedCycleBlock`](@ref) by associating it with an HRSG number.
-Only generators with CT (combustion turbine as HRSG input) or CA (combined cycle steam part as HRSG output)
-prime mover types can be added.
+Only generators with `CT` (combustion turbine as HRSG input) or `CA` (combined cycle steam part
+as HRSG output) prime mover types can be added.
 
 # Arguments
-- `sys::System`: The system containing the generator
-- `component::ThermalGen`: The thermal generator to add to the block (must have prime mover type CT or CA)
-- `attribute::CombinedCycleBlock`: The combined cycle block
-- `hrsg_number::Int`: The HRSG number to associate with the generator
+- `sys::System`: The system containing the generator.
+- `component::ThermalGen`: The thermal generator to add to the block.
+- `attribute::CombinedCycleBlock`: The combined cycle block.
+- `hrsg_number::Int`: The HRSG number to associate with the generator.
+
+# Throws
+- `ArgumentError`: if the generator is already associated with this block.
+- `ArgumentError`: if the generator's prime mover type is not `CT` or `CA`.
+
+See also: [`remove_supplemental_attribute!`](@ref), [`begin_supplemental_attributes_update`](@ref)
 """
 function add_supplemental_attribute!(
     sys::System,
@@ -909,14 +954,18 @@ end
 """
     remove_supplemental_attribute!(sys::System, component::ThermalGen, attribute::CombinedCycleBlock)
 
-Remove a thermal generator from a [`CombinedCycleBlock`](@ref).
-This removes the block as a supplemental attribute from the generator and removes the
-generator's UUID from the block's HRSG maps.
+Remove a thermal generator from a [`CombinedCycleBlock`](@ref). The generator is removed
+from whichever HRSG map corresponds to its prime mover type (`CT` or `CA`).
 
 # Arguments
-- `sys::System`: The system containing the generator
-- `component::ThermalGen`: The thermal generator to remove from the block
-- `attribute::CombinedCycleBlock`: The combined cycle block
+- `sys::System`: The system containing the generator.
+- `component::ThermalGen`: The thermal generator to remove from the block.
+- `attribute::CombinedCycleBlock`: The combined cycle block.
+
+# Throws
+- `ArgumentError`: if the generator is not associated with this block.
+
+See also: [`add_supplemental_attribute!`](@ref), [`begin_supplemental_attributes_update`](@ref)
 """
 function remove_supplemental_attribute!(
     sys::System,
@@ -958,14 +1007,20 @@ end
 """
     add_supplemental_attribute!(sys::System, component::ThermalGen, attribute::CombinedCycleFractional; exclusion_group::Int)
 
-Add a thermal generator to a [`CombinedCycleFractional`](@ref) by associating it with an exclusion group number.
-Only generators with CC (combined cycle) prime mover type can be added.
+Add a thermal generator to a [`CombinedCycleFractional`](@ref) by associating it with an
+exclusion group number. Only generators with `CC` (combined cycle) prime mover type can be added.
 
 # Arguments
-- `sys::System`: The system containing the generator
-- `component::ThermalGen`: The thermal generator to add to the plant (must have prime mover type CC)
-- `attribute::CombinedCycleFractional`: The combined cycle fractional plant
-- `exclusion_group::Int`: The exclusion group number to associate with the generator
+- `sys::System`: The system containing the generator.
+- `component::ThermalGen`: The thermal generator to add to the plant.
+- `attribute::CombinedCycleFractional`: The combined cycle fractional plant.
+- `exclusion_group::Int`: The exclusion group number to associate with the generator.
+
+# Throws
+- `ArgumentError`: if the generator is already associated with this plant.
+- `ArgumentError`: if the generator's prime mover type is not `CC`.
+
+See also: [`remove_supplemental_attribute!`](@ref), [`begin_supplemental_attributes_update`](@ref)
 """
 function add_supplemental_attribute!(
     sys::System,
@@ -1006,13 +1061,16 @@ end
     remove_supplemental_attribute!(sys::System, component::ThermalGen, attribute::CombinedCycleFractional)
 
 Remove a thermal generator from a [`CombinedCycleFractional`](@ref).
-This removes the plant as a supplemental attribute from the generator and removes the
-generator's UUID from the plant's exclusion maps.
 
 # Arguments
-- `sys::System`: The system containing the generator
-- `component::ThermalGen`: The thermal generator to remove from the plant
-- `attribute::CombinedCycleFractional`: The combined cycle fractional plant
+- `sys::System`: The system containing the generator.
+- `component::ThermalGen`: The thermal generator to remove from the plant.
+- `attribute::CombinedCycleFractional`: The combined cycle fractional plant.
+
+# Throws
+- `ArgumentError`: if the generator is not associated with this plant.
+
+See also: [`add_supplemental_attribute!`](@ref), [`begin_supplemental_attributes_update`](@ref)
 """
 function remove_supplemental_attribute!(
     sys::System,
@@ -1046,18 +1104,19 @@ end
 """
     get_components_in_exclusion_group(sys::System, plant::CombinedCycleFractional, exclusion_group::Int)
 
-Get all thermal generators in a specific exclusion group of a [`CombinedCycleFractional`](@ref).
+Return all thermal generators in exclusion group `exclusion_group` of a
+[`CombinedCycleFractional`](@ref). Only one generator per exclusion group may operate
+simultaneously.
 
 # Arguments
-- `sys::System`: The system containing the components
-- `plant::CombinedCycleFractional`: The combined cycle fractional plant
-- `exclusion_group::Int`: The exclusion group number to query
-
-# Returns
-- `Vector{ThermalGen}`: Vector of thermal generators in the specified exclusion group
+- `sys::System`: The system containing the components.
+- `plant::CombinedCycleFractional`: The combined cycle fractional plant.
+- `exclusion_group::Int`: The exclusion group number to query.
 
 # Throws
-- `ArgumentError`: If the exclusion group does not exist in the plant
+- `ArgumentError`: if `exclusion_group` does not exist in the plant.
+
+See also: [`add_supplemental_attribute!`](@ref), [`get_operation_exclusion_map`](@ref)
 """
 function get_components_in_exclusion_group(
     sys::System,

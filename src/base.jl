@@ -179,12 +179,37 @@ function System(data, base_power::Number, internal; kwargs...)
     return System(data, units_settings, internal; kwargs...)
 end
 
-"""Construct an empty `System`. Useful for building a System while parsing raw data."""
+"""
+    System(base_power::Number; kwargs...)
+
+Construct an empty [`System`](@ref) with the given base power. Useful for building a
+`System` incrementally while parsing raw data.
+
+# Arguments
+- `base_power::Number`: The system base power in MVA.
+
+For all keyword arguments, see the main [`System`](@ref) docstring.
+
+See also: [`add_component!`](@ref)
+"""
 function System(base_power::Number; kwargs...)
     return System(_create_system_data_from_kwargs(; kwargs...), base_power; kwargs...)
 end
 
-"""Construct a `System` from `InfrastructureSystems.SystemData`"""
+"""
+    System(data, base_power::Number; internal, kwargs...)
+
+Construct a [`System`](@ref) from a pre-built `InfrastructureSystems.SystemData` object.
+Primarily used during deserialization and advanced workflows where `SystemData` is
+assembled separately.
+
+# Arguments
+- `data`: An `InfrastructureSystems.SystemData` instance.
+- `base_power::Number`: The system base power in MVA.
+- `internal`: (default: `IS.InfrastructureSystemsInternal()`) Internal IS metadata. **Do not set manually.**
+
+For all keyword arguments, see the main [`System`](@ref) docstring.
+"""
 function System(
     data,
     base_power::Number;
@@ -195,7 +220,19 @@ function System(
 end
 
 """
-System constructor when components are constructed externally.
+    System(base_power::Float64, buses::Vector{ACBus}, components...; kwargs...)
+
+Construct a [`System`](@ref) from pre-built component collections. Buses are added first,
+then all remaining component iterables are flattened and added in order.
+
+# Arguments
+- `base_power::Float64`: The system base power in MVA.
+- `buses::Vector{ACBus}`: The AC buses to add to the system.
+- `components...`: Additional iterables of [`Component`](@ref) subtypes to add.
+
+For all keyword arguments, see the main [`System`](@ref) docstring.
+
+See also: [`add_component!`](@ref), [`add_components!`](@ref)
 """
 function System(base_power::Float64, buses::Vector{ACBus}, components...; kwargs...)
     data = _create_system_data_from_kwargs(; kwargs...)
@@ -268,11 +305,24 @@ function system_via_power_models(file_path::AbstractString; kwargs...)
     return System(PowerModelsData(file_path; pm_kwargs...); sys_kwargs...)
 end
 
-"""Constructs a System from a file path ending with .m, .raw, or .json
+"""
+    System(file_path::AbstractString; assign_new_uuids, try_reimport, kwargs...)
 
-If the file is JSON, then `assign_new_uuids = true` will generate new UUIDs for the system
-and all components. If the file is .raw, then `try_reimport = false` will skip searching for
-a `<name>_export_metadata.json` file in the same directory.
+Construct a [`System`](@ref) from a file. Supported formats:
+- `.m` — Matpower
+- `.raw` — PSS/e (PTI format)
+- `.json` — PowerSystems.jl serialized system
+
+# Arguments
+- `file_path::AbstractString`: Path to the input file.
+- `assign_new_uuids::Bool`: (default: `false`) When loading from JSON, generate new UUIDs
+    for the system and all components.
+- `try_reimport::Bool`: (default: `true`) When loading `.raw` files, search for a
+    `<name>_export_metadata.json` file in the same directory to restore metadata.
+
+For all keyword arguments, see the main [`System`](@ref) docstring.
+
+See also: [`System(sys_file, dyr_file)`](@ref System(::AbstractString, ::AbstractString))
 """
 function System(
     file_path::AbstractString;
@@ -353,25 +403,31 @@ function _post_deserialize_handling(sys::System; runchecks = true, assign_new_uu
 end
 
 """
-Parse static and dynamic data directly from PSS/e text files. Automatically generates
-all the relationships between the available dynamic injection models and the static counterpart
+    System(sys_file::AbstractString, dyr_file::AbstractString; kwargs...)
 
-Each dictionary indexed by id contains a vector with 5 of its components:
-* Machine
-* Shaft
-* AVR
-* TurbineGov
-* PSS
+Construct a [`System`](@ref) by parsing static data from a PSS/e `.raw` file and dynamic
+data from a `.dyr` file. Automatically generates all relationships between the dynamic
+injection models and their static counterparts.
 
-Files must be parsed from a .raw file (PTI data format) and a .dyr file.
+Each dynamic injection model includes five sub-components:
+- Machine
+- Shaft
+- AVR
+- TurbineGov
+- PSS
 
-## Examples:
+# Arguments
+- `sys_file::AbstractString`: Path to the PSS/e `.raw` file (PTI data format).
+- `dyr_file::AbstractString`: Path to the PSS/e `.dyr` dynamic data file.
+
+For all keyword arguments, see the main [`System`](@ref) docstring.
+
+# Examples
 ```julia
-raw_file = "Example.raw"
-dyr_file = "Example.dyr"
-sys = System(raw_file, dyr_file)
+sys = System("Example.raw", "Example.dyr")
 ```
 
+See also: [`add_dyn_injectors!`](@ref)
 """
 function System(sys_file::AbstractString, dyr_file::AbstractString; kwargs...)
     ext = splitext(sys_file)[2]
@@ -671,7 +727,9 @@ Set the name of the system.
 set_name!(sys::System, name::AbstractString) = sys.metadata.name = name
 
 """
-Get the name of the system.
+Return the name of the [`System`](@ref).
+
+See also: [`set_name!`](@ref)
 """
 get_name(sys::System) = sys.metadata.name
 
@@ -687,13 +745,21 @@ Get the description of the system.
 get_description(sys::System) = sys.metadata.description
 
 """
+    add_component!(sys::System, component; skip_validation, kwargs...)
+
 Add a component to the system.
 
 A component cannot be added to more than one `System`.
-Throws ArgumentError if the component's name is already stored for its concrete type.
-Throws ArgumentError if any Component-specific rule is violated.
-Throws InvalidValue if any of the component's field values are outside of defined valid
-range.
+
+# Arguments
+- `sys::System`: The system to add the component to.
+- `component`: The [`Component`](@ref) to add.
+- `skip_validation::Bool`: (default: `false`) Skip field value range validation.
+
+# Throws
+- `ArgumentError`: if the component's name is already stored for its concrete type.
+- `ArgumentError`: if any component-specific rule is violated.
+- `InvalidValue`: if any field value is outside its defined valid range.
 
 # Examples
 ```julia
@@ -708,7 +774,7 @@ generators = [gen1, gen2, gen3]
 foreach(x -> add_component!(sys, x), Iterators.flatten((buses, generators)))
 ```
 
-See also [`add_components!`](@ref).
+See also: [`add_components!`](@ref)
 """
 function add_component!(
     sys::System,
@@ -753,13 +819,21 @@ function add_component!(
 end
 
 """
-Add many components to the system at once.
+    add_components!(sys::System, components)
+
+Add multiple components to the system at once. Equivalent to calling
+[`add_component!`](@ref) on each element of `components`.
 
 A component cannot be added to more than one `System`.
-Throws ArgumentError if the component's name is already stored for its concrete type.
-Throws ArgumentError if any Component-specific rule is violated.
-Throws InvalidValue if any of the component's field values are outside of defined valid
-range.
+
+# Arguments
+- `sys::System`: The system to add the components to.
+- `components`: An iterable of [`Component`](@ref) subtypes to add.
+
+# Throws
+- `ArgumentError`: if any component's name is already stored for its concrete type.
+- `ArgumentError`: if any component-specific rule is violated.
+- `InvalidValue`: if any field value is outside its defined valid range.
 
 # Examples
 ```julia
@@ -767,8 +841,10 @@ sys = System(100.0)
 
 buses = [bus1, bus2, bus3]
 generators = [gen1, gen2, gen3]
-add_components!(sys, Iterators.flatten((buses, generators))
+add_components!(sys, Iterators.flatten((buses, generators)))
 ```
+
+See also: [`add_component!`](@ref)
 """
 function add_components!(sys::System, components)
     foreach(x -> add_component!(sys, x), components)
@@ -886,12 +962,24 @@ function _add_service!(
 end
 
 """
-Similar to [`add_component!`](@ref) but for services.
+    add_service!(sys::System, service::Service, contributing_devices; kwargs...)
+
+Add a service to the system with multiple contributing devices.
 
 # Arguments
-- `sys::System`: system
-- `service::Service`: service to add
-- `contributing_devices`: Must be an iterable of type Device
+- `sys::System`: The system to add the service to.
+- `service::Service`: The service to add.
+- `contributing_devices`: An iterable of [`Device`](@ref) subtypes that contribute to
+    the service.
+
+# Throws
+- `ArgumentError`: if any contributing device is not of type `Device`.
+
+See also: [`add_service!(device, service, sys)`](@ref add_service!(
+    device::Device,
+    service::Service,
+    sys::System,
+)), [`remove_service!`](@ref)
 """
 function add_service!(sys::System, service::Service, contributing_devices; kwargs...)
     _add_service!(sys, service, contributing_devices; kwargs...)
@@ -899,12 +987,20 @@ function add_service!(sys::System, service::Service, contributing_devices; kwarg
 end
 
 """
-Similar to [`add_component!`](@ref) but for services.
+    add_service!(sys::System, service::Service, contributing_device::Device; kwargs...)
+
+Add a service to the system with a single contributing device.
 
 # Arguments
-- `sys::System`: system
-- `service::Service`: service to add
-- `contributing_device::Device`: Valid Device
+- `sys::System`: The system to add the service to.
+- `service::Service`: The service to add.
+- `contributing_device::Device`: The device that contributes to the service.
+
+See also: [`add_service!(device, service, sys)`](@ref add_service!(
+    device::Device,
+    service::Service,
+    sys::System,
+)), [`remove_service!`](@ref)
 """
 function add_service!(sys::System, service::Service, contributing_device::Device; kwargs...)
     _add_service!(sys, service, [contributing_device]; kwargs...)
@@ -912,13 +1008,26 @@ function add_service!(sys::System, service::Service, contributing_device::Device
 end
 
 """
-Similar to [`add_service!`](@ref) but for Service and Device already stored in the system.
-Performs validation checks on the device and the system
+    add_service!(device::Device, service::Service, sys::System)
+
+Add a service to a device that is already stored in the system. Both the device and the
+service must already be attached to `sys`.
 
 # Arguments
-- `device::Device`: Device
-- `service::Service`: Service
-- `sys::System`: system
+- `device::Device`: The device to add the service to.
+- `service::Service`: The service to add.
+- `sys::System`: The system containing both the device and the service.
+
+# Throws
+- `ArgumentError`: if the service is not attached to the system.
+- `ArgumentError`: if the device is not attached to the system.
+
+See also: [`add_service!(sys, service, contributing_devices)`](@ref add_service!(
+    sys::System,
+    service::Service,
+    contributing_devices;
+    kwargs...,
+)), [`remove_service!`](@ref)
 """
 function add_service!(device::Device, service::Service, sys::System)
     throw_if_not_attached(service, sys)
@@ -928,11 +1037,26 @@ function add_service!(device::Device, service::Service, sys::System)
 end
 
 """
-Similar to [`add_component!`](@ref) but for ConstantReserveGroup.
+    add_service!(sys::System, service::ConstantReserveGroup; skip_validation, kwargs...)
+
+Add a [`ConstantReserveGroup`](@ref) to the system. All contributing services referenced
+by the group must already be attached to the system.
 
 # Arguments
-- `sys::System`: system
-- `service::ConstantReserveGroup`: service to add
+- `sys::System`: The system to add the service to.
+- `service::ConstantReserveGroup`: The reserve group to add.
+- `skip_validation::Bool`: (default: `false`) Skip field value range validation.
+
+# Throws
+- `ArgumentError`: if any contributing service is not attached to the system.
+
+See also: [`add_service!(sys, service, contributing_services)`](@ref add_service!(
+    sys::System,
+    service::ConstantReserveGroup,
+    contributing_services::Vector{<:Service};
+    skip_validation,
+    kwargs...,
+)), [`remove_service!`](@ref)
 """
 function add_service!(
     sys::System,
@@ -965,12 +1089,26 @@ function set_contributing_services!(
 end
 
 """
-Similar to [`add_component!`](@ref) but for ConstantReserveGroup.
+    add_service!(sys::System, service::ConstantReserveGroup, contributing_services::Vector{<:Service}; skip_validation, kwargs...)
+
+Add a [`ConstantReserveGroup`](@ref) to the system with its contributing services.
+All contributing services must already be attached to the system.
 
 # Arguments
-- `sys::System`: system
-- `service::ConstantReserveGroup`: service to add
-- `contributing_services`: contributing services to the group
+- `sys::System`: The system to add the service to.
+- `service::ConstantReserveGroup`: The reserve group to add.
+- `contributing_services::Vector{<:Service}`: The services that contribute to the group.
+- `skip_validation::Bool`: (default: `false`) Skip field value range validation.
+
+# Throws
+- `ArgumentError`: if any contributing service is not attached to the system.
+
+See also: [`add_service!(sys, service::ConstantReserveGroup)`](@ref add_service!(
+    sys::System,
+    service::ConstantReserveGroup;
+    skip_validation,
+    kwargs...,
+)), [`remove_service!`](@ref)
 """
 function add_service!(
     sys::System,
@@ -1021,12 +1159,20 @@ function open_time_series_store!(
 end
 
 """
-Begin an update of time series. Use this function when adding many time series arrays
-in order to improve performance.
+    begin_time_series_update(func::Function, sys::System)
 
-If an error occurs during the update, changes will be reverted.
+Batch time series additions or removals within `func` to improve performance. When adding
+or removing many time series arrays, this avoids the overhead of opening and closing the
+underlying HDF5 file on every call.
 
-Using this function to remove time series is currently not supported.
+If an error occurs during the update, all changes are reverted.
+
+!!! note
+    Using this function to remove time series is currently not supported.
+
+# Arguments
+- `func::Function`: A zero-argument `do`-block containing [`add_time_series!`](@ref) calls.
+- `sys::System`: The system to update.
 
 # Examples
 ```julia
@@ -1035,18 +1181,29 @@ begin_time_series_update(sys) do
     add_time_series!(sys, component2, time_series2)
 end
 ```
+
+See also: [`add_time_series!`](@ref), [`open_time_series_store!`](@ref)
 """
 begin_time_series_update(func::Function, sys::System) =
     IS.begin_time_series_update(func, sys.data.time_series_manager)
 
 """
-Add time series data from a metadata file or metadata descriptors.
+    add_time_series!(sys::System, metadata_file::AbstractString; resolution)
+
+Add time series data from a metadata file. The file must contain an array of
+`IS.TimeSeriesFileMetadata` instances describing the time series to load.
 
 # Arguments
-- `sys::System`: system
-- `metadata_file::AbstractString`: metadata file for timeseries
-  that includes an array of IS.TimeSeriesFileMetadata instances or a vector.
-- `resolution::DateTime.Period=nothing`: skip time series that don't match this resolution.
+- `sys::System`: The system to add the time series to.
+- `metadata_file::AbstractString`: Path to the metadata file.
+- `resolution::Union{Nothing, Dates.Period}`: (default: `nothing`) If provided, skip time
+    series that do not match this resolution.
+
+See also: [`add_time_series!(sys, file_metadata)`](@ref add_time_series!(
+    sys::System,
+    file_metadata::Vector{IS.TimeSeriesFileMetadata};
+    resolution,
+)), [`begin_time_series_update`](@ref)
 """
 function add_time_series!(sys::System, metadata_file::AbstractString; resolution = nothing)
     return IS.add_time_series_from_file_metadata!(
@@ -1058,12 +1215,22 @@ function add_time_series!(sys::System, metadata_file::AbstractString; resolution
 end
 
 """
-Add time series data from a metadata file or metadata descriptors.
+    add_time_series!(sys::System, file_metadata::Vector{IS.TimeSeriesFileMetadata}; resolution)
+
+Add time series data from a vector of `IS.TimeSeriesFileMetadata` descriptors.
 
 # Arguments
-- `sys::System`: system
-- `timeseries_metadata::Vector{IS.TimeSeriesFileMetadata}`: metadata for timeseries
-- `resolution::DateTime.Period=nothing`: skip time series that don't match this resolution.
+- `sys::System`: The system to add the time series to.
+- `file_metadata::Vector{IS.TimeSeriesFileMetadata}`: Metadata descriptors for the time
+    series to load.
+- `resolution::Union{Nothing, Dates.Period}`: (default: `nothing`) If provided, skip time
+    series that do not match this resolution.
+
+See also: [`add_time_series!(sys, metadata_file)`](@ref add_time_series!(
+    sys::System,
+    metadata_file::AbstractString;
+    resolution,
+)), [`begin_time_series_update`](@ref)
 """
 function add_time_series!(
     sys::System,
@@ -1142,22 +1309,37 @@ function iterate_components(sys::System)
 end
 
 """
+    clear_components!(sys::System)
+
 Remove all components from the system.
+
+# Arguments
+- `sys::System`: The system to clear.
+
+See also: [`remove_component!`](@ref), [`remove_components!`](@ref)
 """
 function clear_components!(sys::System)
     return IS.clear_components!(sys.data)
 end
 
-"""
-Remove all components of type T from the system.
-
-Throws ArgumentError if the type is not stored.
-"""
 # the argument order in this function is un-julian and should be deprecated in 2.0
 function remove_components!(::Type{T}, sys::System) where {T <: Component}
     return remove_components!(sys, T)
 end
 
+"""
+    remove_components!(sys::System, ::Type{T}) where {T <: Component}
+    remove_components!(filter_func::Function, sys::System, ::Type{T}) where {T <: Component}
+
+Remove components from the system.
+
+The first form removes all components of type `T`. Throws `ArgumentError` if the type is
+not stored.
+
+The second form removes all components of type `T` for which `filter_func` returns `true`.
+
+See also: [`remove_component!`](@ref)
+"""
 function remove_components!(sys::System, ::Type{T}) where {T <: Component}
     components = IS.remove_components!(T, sys.data)
     for component in components
@@ -1663,12 +1845,21 @@ function _get_buses(data::IS.SystemData, aggregator::T) where {T <: AggregationT
 end
 
 """
-Add time series data to a component. Assign optional features to differentiate time series
-of the same type with the same name but with different data.
+    add_time_series!(sys::System, component::Component, time_series::TimeSeriesData; features...)
 
-Returns a key that can later be used to retrieve the time series data.
+Add time series data to a component. Optional `features` keyword arguments differentiate
+time series of the same type and name. Returns a key that can be passed to
+[`get_time_series`](@ref) to retrieve the data.
 
-Throws ArgumentError if the component is not stored in the system.
+# Arguments
+- `sys::System`: The system containing the component.
+- `component::Component`: The component to attach the time series to.
+- `time_series::TimeSeriesData`: The time series data to add.
+- `features...`: Optional keyword arguments (e.g. `scenario = "high"`) used to
+    distinguish multiple time series of the same type and name on the same component.
+
+# Throws
+- `ArgumentError`: if the component is not attached to the system.
 
 # Examples
 ```julia
@@ -1692,6 +1883,13 @@ ts1_b = get_time_series(component, key1)
 ts2_b = get_time_series(component, key2)
 ts3_b = get_time_series(component, key3)
 ```
+
+See also: [`add_time_series!(sys, components, time_series)`](@ref add_time_series!(
+    sys::System,
+    components,
+    time_series::TimeSeriesData;
+    features...,
+)), [`begin_time_series_update`](@ref), [`get_time_series`](@ref)
 """
 function add_time_series!(
     sys::System,
@@ -1703,14 +1901,21 @@ function add_time_series!(
 end
 
 """
-Add time series in bulk.
+    bulk_add_time_series!(sys::System, associations; batch_size)
 
-Prefer use of [`begin_time_series_update`](@ref).
+Add time series data to a system in bulk from an iterable of `IS.TimeSeriesAssociation`
+instances. Prefer [`begin_time_series_update`](@ref) for typical use cases; this function
+is intended for large datasets where explicit batch sizing offers additional control.
+
+# Arguments
+- `sys::System`: The system to add the time series to.
+- `associations`: An iterable of `IS.TimeSeriesAssociation` instances, each pairing a
+    component with its time series data.
+- `batch_size::Int`: (default: `IS.ADD_TIME_SERIES_BATCH_SIZE`) Number of associations
+    to process per batch.
 
 # Examples
 ```julia
-# Assumes `read_time_series` will return data appropriate for Deterministic forecasts
-# based on the generator name and the filenames match the component and time series names.
 resolution = Dates.Hour(1)
 associations = (
     IS.TimeSeriesAssociation(
@@ -1718,12 +1923,14 @@ associations = (
         Deterministic(
             data = read_time_series(get_name(gen) * ".csv"),
             name = "get_max_active_power",
-            resolution=resolution),
+            resolution = resolution),
     )
     for gen in get_components(ThermalStandard, sys)
 )
 bulk_add_time_series!(sys, associations)
 ```
+
+See also: [`begin_time_series_update`](@ref), [`add_time_series!`](@ref)
 """
 function bulk_add_time_series!(
     sys::System,
@@ -1734,14 +1941,28 @@ function bulk_add_time_series!(
 end
 
 """
-Add the same time series data to multiple components.
+    add_time_series!(sys::System, components, time_series::TimeSeriesData; features...)
 
-This function stores a single copy of the data. Each component will store a reference to
-that data. This is significantly more efficent than calling `add_time_series!` for each
-component individually with the same data because in this case, only one time series
-array is stored.
+Add the same time series data to multiple components. A single copy of the data is stored;
+each component holds a reference to it. This is significantly more efficient than calling
+[`add_time_series!`](@ref) individually for each component with identical data.
 
-Throws ArgumentError if a component is not stored in the system.
+# Arguments
+- `sys::System`: The system containing the components.
+- `components`: An iterable of [`Component`](@ref) instances to attach the time series to.
+- `time_series::TimeSeriesData`: The time series data to add.
+- `features...`: Optional keyword arguments used to distinguish multiple time series of
+    the same type and name.
+
+# Throws
+- `ArgumentError`: if any component is not attached to the system.
+
+See also: [`add_time_series!(sys, component, time_series)`](@ref add_time_series!(
+    sys::System,
+    component::Component,
+    time_series::TimeSeriesData;
+    features...,
+)), [`begin_time_series_update`](@ref)
 """
 function add_time_series!(sys::System, components, time_series::TimeSeriesData; features...)
     return IS.add_time_series!(sys.data, components, time_series; features...)
@@ -1858,10 +2079,16 @@ function IS.get_time_series_multiple(
 end
 
 """
-Clear all time series data from the system.
+    clear_time_series!(sys::System)
 
-If you are storing time series data in an HDF5 file, this will
-will delete the HDF5 file and create a new one.
+Remove all time series data from the system.
+
+If time series is stored in an HDF5 file, this deletes the file and creates a new one.
+Consider using this instead of individual [`remove_time_series!`](@ref) calls when
+removing most or all time series, as HDF5 does not reclaim file space on removal.
+
+# Arguments
+- `sys::System`: The system whose time series data is cleared.
 
 See also: [`remove_time_series!`](@ref remove_time_series!(sys::System, ::Type{T}) where {T <: TimeSeriesData})
 """
@@ -1932,8 +2159,21 @@ function transform_single_time_series!(
 end
 
 """
-Add a supplemental attribute to the component. The attribute may already be attached to a
+    add_supplemental_attribute!(sys::System, component::Component, attribute::IS.SupplementalAttribute)
+
+Add a supplemental attribute to a component. The attribute may already be attached to a
 different component.
+
+For [`PowerPlant`](@ref) subtypes ([`ThermalPowerPlant`](@ref), [`HydroPowerPlant`](@ref),
+[`RenewablePowerPlant`](@ref), [`CombinedCycleBlock`](@ref), [`CombinedCycleFractional`](@ref)),
+use the specialized overloads which additionally update the plant's internal topology maps.
+
+# Arguments
+- `sys::System`: The system containing the component.
+- `component::Component`: The component to attach the attribute to.
+- `attribute::IS.SupplementalAttribute`: The supplemental attribute to attach.
+
+See also: [`remove_supplemental_attribute!`](@ref), [`begin_supplemental_attributes_update`](@ref)
 """
 function add_supplemental_attribute!(
     sys::System,
@@ -1944,10 +2184,17 @@ function add_supplemental_attribute!(
 end
 
 """
-Begin an update of supplemental attributes. Use this function when adding
-or removing many supplemental attributes in order to improve performance.
+    begin_supplemental_attributes_update(func::Function, sys::System)
 
-If an error occurs during the update, changes will be reverted.
+Batch supplemental attribute additions or removals within `func` to improve performance.
+When adding or removing many supplemental attributes, this avoids per-call overhead.
+
+If an error occurs during the update, all changes are reverted.
+
+# Arguments
+- `func::Function`: A zero-argument `do`-block containing
+    [`add_supplemental_attribute!`](@ref) or [`remove_supplemental_attribute!`](@ref) calls.
+- `sys::System`: The system to update.
 
 # Examples
 ```julia
@@ -1956,13 +2203,28 @@ begin_supplemental_attributes_update(sys) do
     add_supplemental_attribute!(sys, component2, attribute2)
 end
 ```
+
+See also: [`add_supplemental_attribute!`](@ref), [`remove_supplemental_attribute!`](@ref)
 """
 begin_supplemental_attributes_update(func::Function, sys::System) =
     IS.begin_supplemental_attributes_update(func, sys.data.supplemental_attribute_manager)
 
 """
-Remove the supplemental attribute from the component. The attribute will be removed from the
-system if it is not attached to any other component.
+    remove_supplemental_attribute!(sys::System, component::Component, attribute::IS.SupplementalAttribute)
+
+Remove a supplemental attribute from a component. The attribute is removed from the system
+entirely if it is not attached to any other component.
+
+For [`PowerPlant`](@ref) subtypes ([`ThermalPowerPlant`](@ref), [`HydroPowerPlant`](@ref),
+[`RenewablePowerPlant`](@ref), [`CombinedCycleBlock`](@ref), [`CombinedCycleFractional`](@ref)),
+use the specialized overloads which additionally update the plant's internal topology maps.
+
+# Arguments
+- `sys::System`: The system containing the component.
+- `component::Component`: The component to detach the attribute from.
+- `attribute::IS.SupplementalAttribute`: The supplemental attribute to remove.
+
+See also: [`add_supplemental_attribute!`](@ref), [`begin_supplemental_attributes_update`](@ref)
 """
 function remove_supplemental_attribute!(
     sys::System,
@@ -2175,7 +2437,19 @@ Base.@deprecate validate_struct(sys::System, component::Component) validate_comp
 IS.validate_struct(component::Component) = validate_component(component)
 
 """
-Check system consistency and validity.
+    check(sys::System)
+
+Run all consistency and validity checks on the system. Checks include bus slack
+assignment, bus connectivity, critical component presence, generation adequacy,
+and subsystem assignment consistency.
+
+# Arguments
+- `sys::System`: The system to validate.
+
+# Throws
+- `InvalidValue`: if any check fails.
+
+See also: [`check_component`](@ref), [`check_components`](@ref)
 """
 function check(sys::System)
     buses = get_components(ACBus, sys)
@@ -2188,28 +2462,25 @@ function check(sys::System)
 end
 
 """
-Check the the consistency of subsystems.
-"""
-function check_subsystems(sys::System)
-    must_be_assigned_to_subsystem = false
-    for (i, component) in enumerate(iterate_components(sys))
-        is_assigned = is_assigned_to_subsystem(sys, component)
-        if i == 1
-            must_be_assigned_to_subsystem = is_assigned
-        elseif is_assigned != must_be_assigned_to_subsystem
-            throw(
-                IS.InvalidValue(
-                    "If any component is assigned to a subsystem then all " *
-                    "components must be assigned to a subsystem.",
-                ),
-            )
-        end
-        check_subsystems(sys, component)
-    end
-end
+    check_components(sys::System; check_masked_components)
 
-"""
-Check the values of all components. See [`check_component`](@ref) for exceptions thrown.
+Check the field values of all components in the system.
+
+# Arguments
+- `sys::System`: The system whose components are checked.
+- `check_masked_components::Bool`: (default: `true`) Also check components that are
+    masked (e.g. dynamic injectors attached to static injectors).
+
+# Throws
+- `InvalidValue`: if any component's field values are outside the defined valid range
+    or its custom validation fails. See [`check_component`](@ref).
+- `InvalidValue`: if subsystem assignment is inconsistent across components.
+
+See also: [`check_component`](@ref), [`check`](@ref), [`check_components(sys, T)`](@ref check_components(
+    sys::System,
+    ::Type{T};
+    check_masked_components,
+) where {T <: Component})
 """
 function check_components(sys::System; check_masked_components = true)
     must_be_assigned_to_subsystem = false
@@ -2236,8 +2507,26 @@ function check_components(sys::System; check_masked_components = true)
 end
 
 """
-Check the values of components of a given abstract or concrete type.
-See [`check_component`](@ref) for exceptions thrown.
+    check_components(sys::System, ::Type{T}; check_masked_components) where {T <: Component}
+
+Check the field values of all components of type `T` in the system.
+
+`T` can be a concrete or abstract [`Component`](@ref) type.
+
+# Arguments
+- `sys::System`: The system whose components are checked.
+- `T`: The component type to check. Can be concrete or abstract.
+- `check_masked_components::Bool`: (default: `true`) Also check masked components of
+    type `T`.
+
+# Throws
+- `InvalidValue`: if any component's field values are outside the defined valid range
+    or its custom validation fails. See [`check_component`](@ref).
+
+See also: [`check_component`](@ref), [`check_components(sys)`](@ref check_components(
+    sys::System;
+    check_masked_components,
+))
 """
 function check_components(
     sys::System,
@@ -2256,8 +2545,22 @@ function check_components(
 end
 
 """
-Check the values of each component in an iterable of components.
-See [`check_component`](@ref) for exceptions thrown.
+    check_components(sys::System, components)
+
+Check the field values of each component in an iterable of components.
+
+# Arguments
+- `sys::System`: The system containing the components.
+- `components`: An iterable of [`Component`](@ref) instances to check.
+
+# Throws
+- `InvalidValue`: if any component's field values are outside the defined valid range
+    or its custom validation fails. See [`check_component`](@ref).
+
+See also: [`check_component`](@ref), [`check_components(sys)`](@ref check_components(
+    sys::System;
+    check_masked_components,
+))
 """
 function check_components(sys::System, components)
     for component in components
@@ -2266,10 +2569,19 @@ function check_components(sys::System, components)
 end
 
 """
-Check the values of a component.
+    check_component(sys::System, component::Component)
 
-Throws InvalidValue if any of the component's field values are outside of defined valid
-range or if the custom validate method for the type fails its check.
+Check the field values of a single component.
+
+# Arguments
+- `sys::System`: The system containing the component.
+- `component::Component`: The component to validate.
+
+# Throws
+- `InvalidValue`: if any field value is outside the defined valid range or the
+    component's custom `validate_component_with_system` check fails.
+
+See also: [`check_components`](@ref), [`check`](@ref)
 """
 function check_component(sys::System, component::Component)
     if !validate_component_with_system(component, sys)
@@ -3096,8 +3408,23 @@ function _create_system_data_from_kwargs(;
 end
 
 """
-Converts a Line component to a MonitoredLine component and replaces the original in the
-system
+    convert_component!(sys::System, line::Line, linetype::Type{MonitoredLine}; kwargs...)
+
+Convert a [`Line`](@ref) to a [`MonitoredLine`](@ref) in-place. The original component is
+removed and replaced with a new `MonitoredLine` that copies all fields. Time series data is
+preserved.
+
+# Arguments
+- `sys::System`: The system containing the component.
+- `line::Line`: The `Line` component to convert.
+- `linetype::Type{MonitoredLine}`: Must be `MonitoredLine`.
+
+See also: [`convert_component!(sys, line::MonitoredLine, linetype::Type{Line})`](@ref convert_component!(
+    sys::System,
+    line::MonitoredLine,
+    linetype::Type{Line};
+    kwargs...,
+))
 """
 function convert_component!(
     sys::System,
@@ -3134,8 +3461,28 @@ function convert_component!(
 end
 
 """
-Converts a MonitoredLine component to a Line component and replaces the original in the
-system.
+    convert_component!(sys::System, line::MonitoredLine, linetype::Type{Line}; force, kwargs...)
+
+Convert a [`MonitoredLine`](@ref) to a [`Line`](@ref) in-place. The original component is
+removed and replaced with a new `Line`. Time series data is preserved. This conversion
+may result in data loss (monitoring-specific fields are dropped), so `force = true` must
+be passed explicitly to proceed.
+
+# Arguments
+- `sys::System`: The system containing the component.
+- `line::MonitoredLine`: The `MonitoredLine` component to convert.
+- `linetype::Type{Line}`: Must be `Line`.
+- `force::Bool`: (default: `false`) Must be set to `true` to confirm data loss is acceptable.
+
+# Throws
+- `ErrorException`: if `force = true` is not passed.
+
+See also: [`convert_component!(sys, line::Line, linetype::Type{MonitoredLine})`](@ref convert_component!(
+    sys::System,
+    line::Line,
+    linetype::Type{MonitoredLine};
+    kwargs...,
+))
 """
 function convert_component!(
     sys::System,
@@ -3180,8 +3527,25 @@ function convert_component!(
 end
 
 """
-Converts a PowerLoad component to a StandardLoad component and replaces the original in the
-system. Does not set any fields in StandardLoad that lack a PowerLoad equivalent.
+    convert_component!(sys::System, old_load::PowerLoad, new_type::Type{StandardLoad}; kwargs...)
+
+Convert a [`PowerLoad`](@ref) to a [`StandardLoad`](@ref) in-place. The original component
+is removed and replaced with a new `StandardLoad`. Active and reactive power values are
+mapped to the constant power fields. Fields that have no `PowerLoad` equivalent (e.g.
+current and impedance power components) are left at their default values. Time series and
+services are preserved.
+
+# Arguments
+- `sys::System`: The system containing the component.
+- `old_load::PowerLoad`: The `PowerLoad` component to convert.
+- `new_type::Type{StandardLoad}`: Must be `StandardLoad`.
+
+See also: [`convert_component!(sys, line::Line, linetype)`](@ref convert_component!(
+    sys::System,
+    line::Line,
+    linetype::Type{MonitoredLine};
+    kwargs...,
+))
 """
 function convert_component!(
     sys::System,
