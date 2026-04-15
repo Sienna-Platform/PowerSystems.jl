@@ -149,7 +149,7 @@ end
 
     file_metadata = joinpath(DATA_DIR, "5-Bus", "5bus_ts", "timeseries_pointers_rt.json")
 
-    # sys = System(PowerSystems.PowerModelsData(joinpath(MATPOWER_DIR, "case5_re.m")))
+    # sys = System(PowerFlowFileParser.PowerModelsData(joinpath(MATPOWER_DIR, "case5_re.m")))
     sys = PSB.build_system(PSB.MatpowerTestSystems, "matpower_case5_re_sys")
     add_time_series!(sys, file_metadata)
     @test verify_time_series(sys, 1, 5, 288)
