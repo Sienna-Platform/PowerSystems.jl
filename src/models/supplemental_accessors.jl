@@ -1,16 +1,5 @@
 
 """
-Return the name of an [`Arc`](@ref), computed as `"<from_name> -> <to_name>"` from the
-names of its `from` and `to` buses.
-
-Unlike other components, [`Arc`](@ref) has no stored `name` field; the name is derived
-from its endpoints.
-
-See also: [`get_from`](@ref), [`get_to`](@ref)
-"""
-get_name(arc::Arc) = (get_name ∘ get_from)(arc) * " -> " * (get_name ∘ get_to)(arc)
-
-"""
 Return the appropriate accessor function for the given aggregation topology type.
 For [`Area`](@ref) types, returns [`get_area`](@ref); for [`LoadZone`](@ref) types, returns [`get_load_zone`](@ref).
 """
