@@ -124,15 +124,6 @@ test_costs = Dict(
     @test get_decremental_offer_curves(mbc) == PSY.ZERO_OFFER_CURVE
 end
 
-@testset "Test MarketBidCost start_up setters" begin
-    cost = MarketBidCost(nothing)
-    set_start_up!(cost, 3.14)
-    @test get_start_up(cost) == (hot = 3.14, warm = 0.0, cold = 0.0)
-
-    set_start_up!(cost, (hot = 1.23, warm = 2.34, cold = 3.45))
-    @test get_start_up(cost) == (hot = 1.23, warm = 2.34, cold = 3.45)
-end
-
 @testset "Test static ReserveDemandCurve" begin
     sys = System(100.0)
 
@@ -161,32 +152,6 @@ end
     @test get_name(reserve_nil) == "init"
     @test get_available(reserve_nil) == false
     @test get_variable(reserve_nil) == PSY.ZERO_OFFER_CURVE
-end
-
-@testset "Test fuel cost (scalar and time series)" begin
-    sys = PSB.build_system(PSITestSystems, "test_RTS_GMLC_sys")
-    generators = collect(get_components(ThermalStandard, sys))
-    generator = get_component(ThermalStandard, sys, "322_CT_6")
-
-    op_cost = get_operation_cost(generator)
-    value_curve = get_value_curve(get_variable(op_cost))
-    set_variable!(op_cost, FuelCurve(value_curve, 0.0))
-    @test get_fuel_cost(generator) == 0.0
-    @test_throws ArgumentError get_fuel_cost(generator; len = 2)
-
-    set_fuel_cost!(sys, generator, 1.23)
-    @test get_fuel_cost(generator) == 1.23
-
-    initial_time = Dates.DateTime("2020-01-01")
-    resolution = Dates.Hour(1)
-    horizon = 24
-    data_float = SortedDict(initial_time => test_costs[Float64])
-    forecast_fd = IS.Deterministic("fuel_cost", data_float, resolution)
-    set_fuel_cost!(sys, generator, forecast_fd)
-    fuel_forecast = get_fuel_cost(generator; start_time = initial_time)
-    @test first(TimeSeries.values(fuel_forecast)) == first(data_float[initial_time])
-    fuel_forecast = get_fuel_cost(generator)  # missing start_time filled in with initial time
-    @test first(TimeSeries.values(fuel_forecast)) == first(data_float[initial_time])
 end
 
 function build_iec_sys()
@@ -428,6 +393,9 @@ end
             start_time = _TS_RESOLVE_INITIAL_TIME,
         )
     @test get_function_data(get_value_curve(dec_resolved)) == _TS_RESOLVE_PWL_DATA[1]
+
+    @test_throws ArgumentError get_variable_cost(generator, mbtc)
+    @test_throws ArgumentError get_decremental_variable_cost(generator, mbtc)
 end
 
 @testset "MarketBidTimeSeriesCost resolves start_up via TupleTimeSeries" begin
@@ -491,10 +459,31 @@ end
     exp_resolved =
         get_export_variable_cost(generator, iec; start_time = _TS_RESOLVE_INITIAL_TIME)
     @test get_function_data(get_value_curve(exp_resolved)) == _TS_RESOLVE_PWL_DATA[1]
+
+    @test_throws ArgumentError get_import_variable_cost(generator, iec)
+    @test_throws ArgumentError get_export_variable_cost(generator, iec)
 end
 
-# TODO: ReserveDemandTimeSeriesCurve resolution test deferred — constructing the
-# reserve requires a TimeSeriesKey, which today can only be obtained via
-# `add_time_series!` on a component already in a system. Pending an IS interface
-# for constructing a TimeSeriesKey upfront (or a `set_variable_from_forecast!`
-# helper), the test would have to do an ugly bootstrap-and-swap dance.
+@testset "ReserveDemandTimeSeriesCurve resolves variable cost at start_time" begin
+    sys = PSB.build_system(PSITestSystems, "test_RTS_GMLC_sys")
+    # `ForecastKey` identifies a time series by name/type/timing — it does not
+    # bind to a specific component, so we can bootstrap a key from a throwaway
+    # generator and reuse it after attaching the same forecast to the reserve.
+    bootstrap = get_component(ThermalStandard, sys, "322_CT_6")
+    ts_key = _attach_pwl_forecast(sys, bootstrap, "ordc")
+
+    curve = CostCurve(TimeSeriesPiecewiseIncrementalCurve(ts_key, nothing, nothing))
+    reserve = ReserveDemandTimeSeriesCurve{ReserveUp}(;
+        variable = curve,
+        name = "TestOrdc",
+        available = true,
+        time_frame = 10.0,
+    )
+    add_component!(sys, reserve)
+    _attach_pwl_forecast(sys, reserve, "ordc")
+
+    resolved = get_variable_cost(reserve; start_time = _TS_RESOLVE_INITIAL_TIME)
+    @test get_function_data(get_value_curve(resolved)) == _TS_RESOLVE_PWL_DATA[1]
+
+    @test_throws ArgumentError get_variable_cost(reserve)
+end

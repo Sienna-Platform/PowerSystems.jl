@@ -324,7 +324,7 @@ function get_services_bid(
             count = 1,
         )
     end
-    converted = read_and_convert_ts(ts, service, start_time, len, _make_market_bid_curve)
+    converted = read_and_convert_ts(ts, device, start_time, len, _make_market_bid_curve)
     return converted
 end
 
