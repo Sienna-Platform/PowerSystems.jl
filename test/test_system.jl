@@ -453,13 +453,11 @@ end
         sys,
         horizon,
         interval1;
-        delete_existing = false,
     )
     transform_single_time_series!(
         sys,
         horizon,
         interval2;
-        delete_existing = false,
     )
 
     @test has_time_series(
