@@ -277,56 +277,6 @@ get_time_series_array(
 )
 
 # See that `load1`'s scaling factor multiplier is still being applied as expected.
-# # Transform with Multiple Intervals
-# PowerSystems supports creating multiple forecast transforms from the same
-# [`SingleTimeSeries`](@ref), each with a different [interval](@ref I). This is useful when
-# a component needs forecasts updated at different frequencies.
-# Use `delete_existing = false` to preserve the existing transform and add a second one
-# with a different interval:
-
-transform_single_time_series!(
-    system,
-    Dates.Hour(1), # horizon
-    Dates.Hour(1); # a longer interval
-    delete_existing = false,
-);
-
-# Now `load1` has two [`DeterministicSingleTimeSeries`](@ref) forecasts with different
-# intervals. Let's verify:
-
-show_time_series(load1)
-
-# When multiple intervals exist for the same name, you must specify `interval` to
-# disambiguate retrieval:
-
-get_time_series_array(
-    DeterministicSingleTimeSeries,
-    load1,
-    "max_active_power";
-    start_time = DateTime("2020-01-01T08:00:00"),
-    interval = Dates.Minute(30),
-)
-
-# You can also query forecast parameters for a specific interval:
-
-get_forecast_horizon(system; interval = Dates.Hour(1))
-
-#
-
-get_forecast_interval(system; interval = Dates.Minute(30))
-
-# To selectively remove one interval's forecasts while keeping the other:
-
-remove_time_series!(
-    system,
-    DeterministicSingleTimeSeries,
-    load1,
-    "max_active_power";
-    interval = Dates.Hour(1),
-);
-show_time_series(load1)
-
-# The 30-minute interval forecast is still present while the 1-hour one has been removed.
 # # Finding, Retrieving, and Inspecting Time Series
 # Now, let's complete this tutorial by doing a few sanity checks on the data that we've added,
 # where are we will also examine components with time series and retrieve
