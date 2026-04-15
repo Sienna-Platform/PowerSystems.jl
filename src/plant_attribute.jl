@@ -1,3 +1,10 @@
+"""
+Supertype for power plant supplemental attributes that group generating units.
+
+Concrete subtypes include [`ThermalPowerPlant`](@ref), [`HydroPowerPlant`](@ref),
+[`RenewablePowerPlant`](@ref), [`CombinedCycleBlock`](@ref), and
+[`CombinedCycleFractional`](@ref).
+"""
 abstract type PowerPlant <: SupplementalAttribute end
 
 """Get `internal`."""

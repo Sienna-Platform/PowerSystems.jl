@@ -10,6 +10,10 @@ All subtypes must implement the method `get_aggregation_topology_accessor`.
 """
 abstract type AggregationTopology <: Topology end
 
+"""
+All PowerSystems [AggregationTopology](@ref) types support time series. This can be overridden for specific custom 
+aggregation topology types that do not support time series.
+"""
 supports_time_series(::AggregationTopology) = true
 
 """
