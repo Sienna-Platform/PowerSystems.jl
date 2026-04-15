@@ -612,12 +612,9 @@ import Unicode: normalize
 import Logging
 import Dates
 import TimeSeries
-import DataFrames
 import DataStructures: OrderedDict, SortedDict
 import JSON3
-import UUIDs
 import Base.to_index
-import InteractiveUtils
 import PrettyTables
 
 # Import InfrastructureSystems both as full module name (needed for internal macros like @forward)
