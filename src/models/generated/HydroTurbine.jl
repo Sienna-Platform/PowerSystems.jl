@@ -15,7 +15,7 @@ This file is auto-generated. Do not edit.
         active_power_limits::MinMax
         reactive_power_limits::Union{Nothing, MinMax}
         base_power::Float64
-        operation_cost::Union{HydroGenerationCost, MarketBidCost}
+        operation_cost::OperationalCost
         powerhouse_elevation::Float64
         ramp_limits::Union{Nothing, UpDown}
         time_limits::Union{Nothing, UpDown}
@@ -43,7 +43,7 @@ A hydropower generator that must have a [`HydroReservoir`](@ref) attached, suita
 - `active_power_limits::MinMax`: Minimum and maximum stable active power levels (MW), validation range: `(0, nothing)`
 - `reactive_power_limits::Union{Nothing, MinMax}`: Minimum and maximum reactive power limits. Set to `Nothing` if not applicable
 - `base_power::Float64`: Base power of the unit (MVA) for [per unitization](@ref per_unit), validation range: `(0.0001, nothing)`
-- `operation_cost::Union{HydroGenerationCost, MarketBidCost}`: (default: `HydroGenerationCost(nothing)`) [`OperationalCost`](@ref) of generation
+- `operation_cost::OperationalCost`: (default: `HydroGenerationCost(nothing)`) [`OperationalCost`](@ref) of generation
 - `powerhouse_elevation::Float64`: (default: `0.0`) Height level in meters above the sea level of the powerhouse on which the turbine is installed., validation range: `(0, nothing)`
 - `ramp_limits::Union{Nothing, UpDown}`: (default: `nothing`) ramp up and ramp down limits in MW/min, validation range: `(0, nothing)`
 - `time_limits::Union{Nothing, UpDown}`: (default: `nothing`) Minimum up and Minimum down time limits in hours, validation range: `(0, nothing)`
@@ -78,7 +78,7 @@ mutable struct HydroTurbine <: HydroUnit
     "Base power of the unit (MVA) for [per unitization](@ref per_unit)"
     base_power::Float64
     "[`OperationalCost`](@ref) of generation"
-    operation_cost::Union{HydroGenerationCost, MarketBidCost}
+    operation_cost::OperationalCost
     "Height level in meters above the sea level of the powerhouse on which the turbine is installed."
     powerhouse_elevation::Float64
     "ramp up and ramp down limits in MW/min"

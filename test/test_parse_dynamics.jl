@@ -59,7 +59,7 @@ end
 
 @testset "240 Bus WECC system Parsing " begin
     test_dir = mktempdir()
-    sys = PSB.build_system(PSYTestSystems, "psse_240_parsing_sys")
+    sys = PSB.build_system(PSYTestSystems, "psse_240_parsing_sys"; force_build = true)
     dyn_injectors = get_components(DynamicInjection, sys)
     @test length(dyn_injectors) == 146
     for g in dyn_injectors
@@ -101,9 +101,11 @@ end
     gencls_dyr_file = joinpath(PSSE_TEST_DIR, "TestGENCLS.dyr")
     nogencls_dyr_file = joinpath(PSSE_TEST_DIR, "Test-NoCLS.dyr")
     sexs_dyr_file = joinpath(PSSE_TEST_DIR, "Test_SEXS.dyr")
-    sys_gencls = PSB.build_system(PSYTestSystems, "psse_3bus_gen_cls_sys")
-    sys_nogencls = PSB.build_system(PSYTestSystems, "psse_3bus_no_cls_sys")
-    sys_sexs = PSB.build_system(PSYTestSystems, "psse_3bus_SEXS_sys")
+    sys_gencls =
+        PSB.build_system(PSYTestSystems, "psse_3bus_gen_cls_sys"; force_build = true)
+    sys_nogencls =
+        PSB.build_system(PSYTestSystems, "psse_3bus_no_cls_sys"; force_build = true)
+    sys_sexs = PSB.build_system(PSYTestSystems, "psse_3bus_SEXS_sys"; force_build = true)
 
     #Check that generator at bus 102 (H = 0) is a Source, and not ThermalStandard.
     @test isnothing(get_component(ThermalStandard, sys_gencls, "generator-102-1"))
@@ -168,7 +170,7 @@ end
 
 @testset "2000-Bus Parsing" begin
     test_dir = mktempdir()
-    sys = build_system(PSSEParsingTestSystems, "psse_ACTIVSg2000_sys")
+    sys = build_system(PSSEParsingTestSystems, "psse_ACTIVSg2000_sys"; force_build = true)
     for g in get_components(ThermalStandard, sys)
         if isnothing(get_dynamic_injector(g))
             @error "ThermalStandard $(get_name(g)) should have a dynamic injector"

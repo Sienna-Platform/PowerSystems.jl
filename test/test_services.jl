@@ -262,8 +262,8 @@ end
             actual_count += 1
         end
     end
-    # Changed 14 to 13 as we eliminated the Transfer Service
-    @test 13 == actual_count
+    # 16: concrete Service subtypes + (Reserve subtypes × ReserveDirection subtypes)
+    @test 16 == actual_count
 end
 
 @testset "Test ConstantReserveGroup" begin

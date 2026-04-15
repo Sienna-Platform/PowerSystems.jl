@@ -3256,7 +3256,7 @@
                 {
                     "name": "operation_cost",
                     "null_value": "LoadCost(nothing)",
-                    "data_type": "Union{LoadCost, MarketBidCost}",
+                    "data_type": "OperationalCost",
                     "comment": "[`OperationalCost`](@ref) of interrupting load"
                 },
                 {
@@ -3334,7 +3334,7 @@
                 {
                     "name": "operation_cost",
                     "null_value": "LoadCost(nothing)",
-                    "data_type": "Union{LoadCost, MarketBidCost}",
+                    "data_type": "OperationalCost",
                     "comment": "[`OperationalCost`](@ref) of interrupting load"
                 },
                 {
@@ -3571,7 +3571,7 @@
                 {
                     "name": "operation_cost",
                     "null_value": "LoadCost(nothing)",
-                    "data_type": "Union{LoadCost, MarketBidCost}",
+                    "data_type": "OperationalCost",
                     "comment": "[`OperationalCost`](@ref) of interrupting load"
                 },
                 {
@@ -5435,7 +5435,7 @@
                 {
                     "name": "operation_cost",
                     "null_value": "HydroGenerationCost(nothing)",
-                    "data_type": "Union{HydroGenerationCost, MarketBidCost}",
+                    "data_type": "OperationalCost",
                     "default": "HydroGenerationCost(nothing)",
                     "comment": "[`OperationalCost`](@ref) of generation"
                 },
@@ -5561,7 +5561,7 @@
                 {
                     "name": "operation_cost",
                     "null_value": "HydroGenerationCost(nothing)",
-                    "data_type": "Union{HydroGenerationCost, MarketBidCost}",
+                    "data_type": "OperationalCost",
                     "default": "HydroGenerationCost(nothing)",
                     "comment": "[`OperationalCost`](@ref) of generation"
                 },
@@ -5843,7 +5843,7 @@
                 {
                     "name": "operation_cost",
                     "null_value": "HydroGenerationCost(nothing)",
-                    "data_type": "Union{HydroGenerationCost, MarketBidCost}",
+                    "data_type": "OperationalCost",
                     "default": "HydroGenerationCost(nothing)",
                     "comment": "[`OperationalCost`](@ref) of generation"
                 },
@@ -6026,7 +6026,7 @@
                 {
                     "name": "operation_cost",
                     "null_value": "HydroReservoirCost(nothing)",
-                    "data_type": "HydroReservoirCost",
+                    "data_type": "OperationalCost",
                     "default": "HydroReservoirCost(nothing)",
                     "comment": "[`OperationalCost`](@ref) of reservoir."
                 },
@@ -6134,7 +6134,7 @@
                 {
                     "name": "operation_cost",
                     "null_value": "RenewableGenerationCost(nothing)",
-                    "data_type": "Union{RenewableGenerationCost, MarketBidCost}",
+                    "data_type": "OperationalCost",
                     "comment": "[`OperationalCost`](@ref) of generation"
                 },
                 {
@@ -6391,7 +6391,7 @@
                 {
                     "name": "operation_cost",
                     "null_value": "ThermalGenerationCost(nothing)",
-                    "data_type": "Union{ThermalGenerationCost, MarketBidCost}",
+                    "data_type": "OperationalCost",
                     "comment": "[`OperationalCost`](@ref) of generation"
                 },
                 {
@@ -6734,7 +6734,7 @@
                 {
                     "name": "operation_cost",
                     "null_value": "ThermalGenerationCost(nothing)",
-                    "data_type": "Union{ThermalGenerationCost, MarketBidCost}",
+                    "data_type": "OperationalCost",
                     "comment": "[`OperationalCost`](@ref) of generation"
                 },
                 {
@@ -6950,7 +6950,7 @@
                     "name": "operation_cost",
                     "comment": "[`OperationalCost`](@ref) of storage",
                     "null_value": "StorageCost(nothing)",
-                    "data_type": "Union{StorageCost, MarketBidCost}",
+                    "data_type": "OperationalCost",
                     "default": "StorageCost(nothing)"
                 },
                 {
@@ -7274,94 +7274,6 @@
                 }
             ],
             "supertype": "Service"
-        },
-        {
-            "struct_name": "ReserveDemandCurve",
-            "docstring": "A reserve product with an [Operating Reserve Demand Curve (ORDC)](https://hepg.hks.harvard.edu/files/hepg/files/ordcupdate-final.pdf) for operational simulations.\n\nThe ORDC is modeled as a discretized set of `(Reserve capacity (MW), Price (\\$/MWh))` steps, which can vary with time. Use [`set_variable_cost!`](@ref) to define the ORDCs.\n\nWhen defining the reserve, the `ReserveDirection` must be specified to define this as a [`ReserveUp`](@ref), [`ReserveDown`](@ref), or [`ReserveSymmetric`](@ref)",
-            "parametric": "ReserveDirection",
-            "fields": [
-                {
-                    "name": "variable",
-                    "comment": "Create this object with `variable` = `nothing`, then add assign a cost curve or time-series of `variable_cost` using the [`set_variable_cost!`](@ref) function, which will automatically update this parameter",
-                    "null_value": "nothing",
-                    "data_type": "Union{Nothing, TimeSeriesKey, CostCurve{PiecewiseIncrementalCurve}}"
-                },
-                {
-                    "null_value": "init",
-                    "name": "name",
-                    "comment": "Name of the component. Components of the same type (e.g., `PowerLoad`) must have unique names, but components of different types (e.g., `PowerLoad` and `ACBus`) can have the same name",
-                    "exclude_setter": true,
-                    "data_type": "String"
-                },
-                {
-                    "null_value": "false",
-                    "name": "available",
-                    "comment": "Indicator of whether the component is connected and online (`true`) or disconnected, offline, or down (`false`). Unavailable components are excluded during simulations",
-                    "data_type": "Bool"
-                },
-                {
-                    "name": "time_frame",
-                    "comment": "the saturation time_frame in minutes to provide reserve contribution",
-                    "null_value": "0.0",
-                    "data_type": "Float64",
-                    "valid_range": {
-                        "min": 0,
-                        "max": null
-                    },
-                    "validation_action": "error"
-                },
-                {
-                    "name": "sustained_time",
-                    "comment": "the time in seconds that the reserve contribution must sustained at a specified level",
-                    "null_value": "0.0",
-                    "data_type": "Float64",
-                    "valid_range": {
-                        "min": 0,
-                        "max": null
-                    },
-                    "default": "3600.0",
-                    "validation_action": "error"
-                },
-                {
-                    "name": "max_participation_factor",
-                    "comment": "the maximum portion [0, 1.0] of the reserve that can be contributed per device",
-                    "null_value": "1.0",
-                    "data_type": "Float64",
-                    "valid_range": {
-                        "min": 0,
-                        "max": 1
-                    },
-                    "default": "1.0",
-                    "validation_action": "error"
-                },
-                {
-                    "name": "deployed_fraction",
-                    "comment": "Fraction of service procurement that is assumed to be actually deployed. Most commonly, this is assumed to be either 0.0 or 1.0",
-                    "null_value": "0.0",
-                    "data_type": "Float64",
-                    "valid_range": {
-                        "min": 0,
-                        "max": 1
-                    },
-                    "default": "0.0",
-                    "validation_action": "error"
-                },
-                {
-                    "name": "ext",
-                    "comment": "An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.",
-                    "data_type": "Dict{String, Any}",
-                    "null_value": "Dict{String, Any}()",
-                    "default": "Dict{String, Any}()"
-                },
-                {
-                    "name": "internal",
-                    "comment": "(**Do not modify.**) PowerSystems.jl internal reference",
-                    "data_type": "InfrastructureSystemsInternal",
-                    "internal_default": "InfrastructureSystemsInternal()",
-                    "exclude_setter": true
-                }
-            ],
-            "supertype": "Reserve{T}"
         },
         {
             "struct_name": "VariableReserve",
@@ -19819,7 +19731,7 @@
                 {
                     "name": "operation_cost",
                     "null_value": "ImportExportCost(nothing)",
-                    "data_type": "ImportExportCost",
+                    "data_type": "OperationalCost",
                     "default": "ImportExportCost(nothing)",
                     "comment": "[`ImportExportCost`](@ref) of the source."
                 },

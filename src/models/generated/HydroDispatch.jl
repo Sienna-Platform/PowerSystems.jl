@@ -20,7 +20,7 @@ This file is auto-generated. Do not edit.
         base_power::Float64
         status::Bool
         time_at_status::Float64
-        operation_cost::Union{HydroGenerationCost, MarketBidCost}
+        operation_cost::OperationalCost
         services::Vector{Service}
         dynamic_injector::Union{Nothing, DynamicInjection}
         ext::Dict{String, Any}
@@ -46,7 +46,7 @@ For hydro generators with an upper reservoir, see [`HydroReservoir`](@ref)
 - `base_power::Float64`: Base power of the unit (MVA) for [per unitization](@ref per_unit), validation range: `(0.0001, nothing)`
 - `status::Bool`: (default: `false`) Initial commitment condition at the start of a simulation (`true` = on or `false` = off)
 - `time_at_status::Float64`: (default: `INFINITE_TIME`) Time (e.g., `Hours(6)`) the generator has been on or off, as indicated by `status`
-- `operation_cost::Union{HydroGenerationCost, MarketBidCost}`: (default: `HydroGenerationCost(nothing)`) [`OperationalCost`](@ref) of generation
+- `operation_cost::OperationalCost`: (default: `HydroGenerationCost(nothing)`) [`OperationalCost`](@ref) of generation
 - `services::Vector{Service}`: (default: `Device[]`) Services that this device contributes to
 - `dynamic_injector::Union{Nothing, DynamicInjection}`: (default: `nothing`) corresponding dynamic injection device
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
@@ -82,7 +82,7 @@ mutable struct HydroDispatch <: HydroGen
     "Time (e.g., `Hours(6)`) the generator has been on or off, as indicated by `status`"
     time_at_status::Float64
     "[`OperationalCost`](@ref) of generation"
-    operation_cost::Union{HydroGenerationCost, MarketBidCost}
+    operation_cost::OperationalCost
     "Services that this device contributes to"
     services::Vector{Service}
     "corresponding dynamic injection device"

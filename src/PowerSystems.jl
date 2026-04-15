@@ -47,7 +47,8 @@ export get_components_in_pcc
 export get_operation_exclusion_map
 export get_inverse_operation_exclusion_map
 export get_components_in_exclusion_group
-
+export get_variable
+export set_variable!
 export Component
 export Device
 export get_max_active_power
@@ -107,12 +108,16 @@ export get_function_data, get_initial_input, get_input_at_zero
 export get_value_curve, get_power_units
 
 export OperationalCost,
-    OfferCurveCost, MarketBidCost, LoadCost, StorageCost, ImportExportCost
+    OfferCurveCost, MarketBidCost, MarketBidTimeSeriesCost, LoadCost, StorageCost,
+    ImportExportCost, ImportExportTimeSeriesCost
 export HydroGenerationCost, RenewableGenerationCost, ThermalGenerationCost
 export HydroReservoirCost
 export get_fuel_cost, set_fuel_cost!, get_vom_cost
-export is_market_bid_curve, make_market_bid_curve
-export make_import_curve, make_export_curve
+export is_market_bid_curve, make_market_bid_curve, make_market_bid_ts_curve
+export make_import_curve, make_export_curve, make_import_export_ts_curve
+export TimeSeriesLinearCurve, TimeSeriesQuadraticCurve, TimeSeriesPiecewisePointCurve
+export TimeSeriesPiecewiseIncrementalCurve, TimeSeriesPiecewiseAverageCurve
+export TupleTimeSeries
 export get_no_load_cost, set_no_load_cost!, get_start_up, set_start_up!
 export set_shut_down!
 export get_curtailment_cost
@@ -335,6 +340,7 @@ export ConstantReserve
 export VariableReserve
 export AGC
 export ReserveDemandCurve
+export ReserveDemandTimeSeriesCurve
 export ConstantReserveGroup
 export ConstantReserveNonSpinning
 export VariableReserveNonSpinning
@@ -482,8 +488,6 @@ export get_start_up
 export get_shut_down
 export get_incremental_offer_curves, set_incremental_offer_curves!
 export get_decremental_offer_curves, set_decremental_offer_curves!
-export get_incremental_initial_input, set_incremental_initial_input!
-export get_decremental_initial_input, set_decremental_initial_input!
 export get_ancillary_service_offers, set_ancillary_service_offers!
 export get_import_offer_curves, set_import_offer_curves!
 export get_export_offer_curves, set_export_offer_curves!
@@ -757,6 +761,18 @@ import InfrastructureSystems:
     PiecewisePointCurve,
     PiecewiseIncrementalCurve,
     PiecewiseAverageCurve,
+    TimeSeriesInputOutputCurve,
+    TimeSeriesIncrementalCurve,
+    TimeSeriesAverageRateCurve,
+    TimeSeriesFunctionData,
+    StaticFunctionData,
+    TimeSeriesLinearCurve,
+    TimeSeriesQuadraticCurve,
+    TimeSeriesPiecewisePointCurve,
+    TimeSeriesPiecewiseIncrementalCurve,
+    TimeSeriesPiecewiseAverageCurve,
+    TupleTimeSeries,
+    build_static_tuple,
     get_function_data,
     get_initial_input,
     get_input_at_zero,
@@ -826,7 +842,9 @@ include("models/OuterControl.jl")
 include("models/cost_functions/operational_cost.jl")
 include("models/cost_functions/OfferCurveCost.jl")
 include("models/cost_functions/MarketBidCost.jl")
+include("models/cost_functions/MarketBidTimeSeriesCost.jl")
 include("models/cost_functions/ImportExportCost.jl")
+include("models/cost_functions/ImportExportTimeSeriesCost.jl")
 include("models/cost_functions/HydroGenerationCost.jl")
 include("models/cost_functions/LoadCost.jl")
 include("models/cost_functions/RenewableGenerationCost.jl")
@@ -836,6 +854,8 @@ include("models/cost_functions/HydroReservoirCost.jl")
 
 # Include all auto-generated structs.
 include("models/generated/includes.jl")
+include("models/cost_functions/ReserveDemandCurve.jl")
+include("models/cost_functions/ReserveDemandTimeSeriesCurve.jl")
 include("models/HybridSystem.jl")
 
 #Methods for devices
@@ -907,5 +927,14 @@ include("models/serialization.jl")
 
 #Deprecated
 include("deprecated.jl")
+
+# Precompile hints (must be after all types are defined)
+precompile(TupleTimeSeries{StartUpStages}, (IS.TimeSeriesKey,))
+precompile(TupleTimeSeries{StartUpStages}, (IS.StaticTimeSeriesKey,))
+precompile(TupleTimeSeries{StartUpStages}, (IS.ForecastKey,))
+precompile(
+    IS.build_static_tuple,
+    (TupleTimeSeries{StartUpStages}, ThermalStandard, Dates.DateTime),
+)
 
 end # module

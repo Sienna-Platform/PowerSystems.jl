@@ -22,7 +22,7 @@ This file is auto-generated. Do not edit.
         time_limits::Union{Nothing, UpDown}
         start_time_limits::Union{Nothing, StartUpStages}
         start_types::Int
-        operation_cost::Union{ThermalGenerationCost, MarketBidCost}
+        operation_cost::OperationalCost
         base_power::Float64
         services::Vector{Service}
         time_at_status::Float64
@@ -53,7 +53,7 @@ A thermal generator, such as a fossil fuel or nuclear generator, that can start-
 - `time_limits::Union{Nothing, UpDown}`: Minimum up and Minimum down time limits in hours, validation range: `(0, nothing)`
 - `start_time_limits::Union{Nothing, StartUpStages}`: Time limits for start-up based on turbine temperature in hours
 - `start_types::Int`: Number of start-up based on turbine temperature, where `1` = *hot*, `2` = *warm*, and `3` = *cold*, validation range: `(1, 3)`
-- `operation_cost::Union{ThermalGenerationCost, MarketBidCost}`: [`OperationalCost`](@ref) of generation
+- `operation_cost::OperationalCost`: [`OperationalCost`](@ref) of generation
 - `base_power::Float64`: Base power of the unit (MVA) for [per unitization](@ref per_unit), validation range: `(0.0001, nothing)`
 - `services::Vector{Service}`: (default: `Device[]`) Services that this device contributes to
 - `time_at_status::Float64`: (default: `INFINITE_TIME`) Time (e.g., `Hours(6)`) the generator has been on or off, as indicated by `status`
@@ -95,7 +95,7 @@ mutable struct ThermalMultiStart <: ThermalGen
     "Number of start-up based on turbine temperature, where `1` = *hot*, `2` = *warm*, and `3` = *cold*"
     start_types::Int
     "[`OperationalCost`](@ref) of generation"
-    operation_cost::Union{ThermalGenerationCost, MarketBidCost}
+    operation_cost::OperationalCost
     "Base power of the unit (MVA) for [per unitization](@ref per_unit)"
     base_power::Float64
     "Services that this device contributes to"

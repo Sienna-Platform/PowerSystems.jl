@@ -92,16 +92,16 @@ end
 
                 mpgen_cost = get_operation_cost(mpgen)
                 # Currently true; this is likely to change in the future and then we'd have to change the test
-                @assert get_variable(mpgen_cost) isa
+                @assert PSY.get_variable(mpgen_cost) isa
                         CostCurve{InputOutputCurve{PiecewiseLinearData}}
                 mp_points = get_points(
                     get_function_data(get_value_curve(
-                        get_variable(mpgen_cost))),
+                            PSY.get_variable(mpgen_cost))),
                 )
                 if length(mp_points) == 4
                     cdm_op_cost = get_operation_cost(cdmgen)
                     @test get_fixed(cdm_op_cost) == 0.0
-                    fuel_curve = get_variable(cdm_op_cost)
+                    fuel_curve = PSY.get_variable(cdm_op_cost)
                     fuel_cost = get_fuel_cost(fuel_curve)
                     mp_fixed = get_fixed(mpgen_cost)
                     io_curve = InputOutputCurve(get_value_curve(fuel_curve))
@@ -187,7 +187,8 @@ end
 
     g_hr = get_components(ThermalStandard, sys_hr)
     g = get_components(ThermalStandard, sys)
-    @test get_variable.(get_operation_cost.(g)) == get_variable.(get_operation_cost.(g))
+    @test PSY.get_variable.(PSY.get_operation_cost.(g)) ==
+          PSY.get_variable.(PSY.get_operation_cost.(g))
 end
 
 @testset "Test create_poly_cost function" begin

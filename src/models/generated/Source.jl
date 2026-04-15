@@ -18,7 +18,7 @@ This file is auto-generated. Do not edit.
         internal_voltage::Float64
         internal_angle::Float64
         base_power::Float64
-        operation_cost::ImportExportCost
+        operation_cost::OperationalCost
         dynamic_injector::Union{Nothing, DynamicInjection}
         services::Vector{Service}
         ext::Dict{String, Any}
@@ -42,7 +42,7 @@ Commonly used in dynamics simulations to represent a very large machine on a sin
 - `internal_voltage::Float64`: (default: `1.0`) Internal Voltage (pu), validation range: `(0, nothing)`
 - `internal_angle::Float64`: (default: `0.0`) Internal Angle
 - `base_power::Float64`: (default: `100.0`) Base Power in MVA
-- `operation_cost::ImportExportCost`: (default: `ImportExportCost(nothing)`) [`ImportExportCost`](@ref) of the source.
+- `operation_cost::OperationalCost`: (default: `ImportExportCost(nothing)`) [`ImportExportCost`](@ref) of the source.
 - `dynamic_injector::Union{Nothing, DynamicInjection}`: (default: `nothing`) corresponding dynamic injection device
 - `services::Vector{Service}`: (default: `Device[]`) Services that this device contributes to
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
@@ -74,7 +74,7 @@ mutable struct Source <: StaticInjection
     "Base Power in MVA"
     base_power::Float64
     "[`ImportExportCost`](@ref) of the source."
-    operation_cost::ImportExportCost
+    operation_cost::OperationalCost
     "corresponding dynamic injection device"
     dynamic_injector::Union{Nothing, DynamicInjection}
     "Services that this device contributes to"

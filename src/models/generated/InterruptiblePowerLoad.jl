@@ -14,7 +14,7 @@ This file is auto-generated. Do not edit.
         max_active_power::Float64
         max_reactive_power::Float64
         base_power::Float64
-        operation_cost::Union{LoadCost, MarketBidCost}
+        operation_cost::OperationalCost
         conformity::LoadConformity
         services::Vector{Service}
         dynamic_injector::Union{Nothing, DynamicInjection}
@@ -35,7 +35,7 @@ A [static](@ref S) power load that can be compensated for temporary or continuou
 - `max_active_power::Float64`: Maximum active power (MW) that this load can demand
 - `max_reactive_power::Float64`: Maximum reactive power (MVAR) that this load can demand
 - `base_power::Float64`: Base power (MVA) for [per unitization](@ref per_unit), validation range: `(0.0001, nothing)`
-- `operation_cost::Union{LoadCost, MarketBidCost}`: [`OperationalCost`](@ref) of interrupting load
+- `operation_cost::OperationalCost`: [`OperationalCost`](@ref) of interrupting load
 - `conformity::LoadConformity`: (default: `LoadConformity.UNDEFINED`) Indicates whether the specified load is conforming or non-conforming. Options are [listed here](@ref loadconform_list).
 - `services::Vector{Service}`: (default: `Device[]`) Services that this device contributes to
 - `dynamic_injector::Union{Nothing, DynamicInjection}`: (default: `nothing`) corresponding dynamic injection device
@@ -60,7 +60,7 @@ mutable struct InterruptiblePowerLoad <: ControllableLoad
     "Base power (MVA) for [per unitization](@ref per_unit)"
     base_power::Float64
     "[`OperationalCost`](@ref) of interrupting load"
-    operation_cost::Union{LoadCost, MarketBidCost}
+    operation_cost::OperationalCost
     "Indicates whether the specified load is conforming or non-conforming. Options are [listed here](@ref loadconform_list)."
     conformity::LoadConformity
     "Services that this device contributes to"

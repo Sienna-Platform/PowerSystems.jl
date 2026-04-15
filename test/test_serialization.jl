@@ -95,13 +95,15 @@ end
                 [[i, i + 1, i + 2] for i in 1.0:24.0],
                 [[i, i + 1] for i in 1.0:24.0],
             )
-        market_bid = MarketBidCost(nothing)
+        cc = make_market_bid_curve([0.0, 100.0, 200.0], [25.0, 30.0], 10.0)
+        market_bid = MarketBidCost(;
+            incremental_offer_curves = cc,
+            start_up = (hot = 0.0, warm = 0.0, cold = 0.0),
+        )
         set_operation_cost!(gen, market_bid)
         add_component!(sys, gen)
         ta = TimeSeries.TimeArray(dates, data)
-        time_series = IS.SingleTimeSeries(; name = "variable_cost", data = ta)
         power_units = UnitSystem.NATURAL_UNITS
-        set_variable_cost!(sys, gen, time_series, power_units)
         service = ConstantReserve{ReserveDown}(;
             name = "init_$i",
             available = false,
@@ -143,16 +145,17 @@ end
         add_component!(sys, gen)
         push!(devices, gen)
     end
-    initial_time = Dates.DateTime("2020-01-01T00:00:00")
-    end_time = Dates.DateTime("2020-01-01T23:00:00")
-    dates = collect(initial_time:Dates.Hour(1):end_time)
-    data = collect(1:24)
 
-    service = ReserveDemandCurve{ReserveDown}(nothing)
+    cc = CostCurve(
+        PiecewiseIncrementalCurve(0.0, [0.0, 100.0, 200.0], [25.0, 30.0]),
+    )
+    service = ReserveDemandCurve{ReserveDown}(;
+        variable = cc,
+        name = "init",
+        available = false,
+        time_frame = 0.0,
+    )
     add_service!(sys, service, devices)
-    ta = TimeSeries.TimeArray(dates, data)
-    time_series = IS.SingleTimeSeries(; name = "variable_cost", data = ta)
-    set_variable_cost!(sys, service, time_series)
 
     _, result = validate_serialization(sys)
     @test result
@@ -163,6 +166,7 @@ end
         PSB.PSITestSystems,
         "test_RTS_GMLC_sys_with_hybrid";
         add_forecasts = true,
+        force_build = true,
     )
     h_sys = first(get_components(HybridSystem, sys))
     subcomponents = collect(get_subcomponents(h_sys))

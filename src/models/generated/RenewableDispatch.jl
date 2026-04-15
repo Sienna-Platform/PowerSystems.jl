@@ -15,7 +15,7 @@ This file is auto-generated. Do not edit.
         prime_mover_type::PrimeMovers
         reactive_power_limits::Union{Nothing, MinMax}
         power_factor::Float64
-        operation_cost::Union{RenewableGenerationCost, MarketBidCost}
+        operation_cost::OperationalCost
         base_power::Float64
         services::Vector{Service}
         dynamic_injector::Union{Nothing, DynamicInjection}
@@ -39,7 +39,7 @@ Renewable generators do not have a `max_active_power` parameter, which is instea
 - `prime_mover_type::PrimeMovers`: Prime mover technology according to EIA 923. Options are listed [here](@ref pm_list)
 - `reactive_power_limits::Union{Nothing, MinMax}`: Minimum and maximum reactive power limits, used in some production cost model simulations and in power flow if the unit is connected to a [`PV`](@ref acbustypes_list) bus. Set to `nothing` if not applicable
 - `power_factor::Float64`: Power factor [0, 1] set-point, used in some production cost modeling and in load flow if the unit is connected to a [`PQ`](@ref acbustypes_list) bus, validation range: `(0, 1)`
-- `operation_cost::Union{RenewableGenerationCost, MarketBidCost}`: [`OperationalCost`](@ref) of generation
+- `operation_cost::OperationalCost`: [`OperationalCost`](@ref) of generation
 - `base_power::Float64`: Base power of the unit (MVA) for [per unitization](@ref per_unit), validation range: `(0.0001, nothing)`
 - `services::Vector{Service}`: (default: `Device[]`) Services that this device contributes to
 - `dynamic_injector::Union{Nothing, DynamicInjection}`: (default: `nothing`) corresponding dynamic injection device
@@ -66,7 +66,7 @@ mutable struct RenewableDispatch <: RenewableGen
     "Power factor [0, 1] set-point, used in some production cost modeling and in load flow if the unit is connected to a [`PQ`](@ref acbustypes_list) bus"
     power_factor::Float64
     "[`OperationalCost`](@ref) of generation"
-    operation_cost::Union{RenewableGenerationCost, MarketBidCost}
+    operation_cost::OperationalCost
     "Base power of the unit (MVA) for [per unitization](@ref per_unit)"
     base_power::Float64
     "Services that this device contributes to"

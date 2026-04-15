@@ -28,18 +28,18 @@ end
     )
     mbc = MarketBidCost(;
         start_up = (hot = 0.0, warm = 0.0, cold = 0.0),
-        shut_down = 0.0,
+        shut_down = LinearCurve(0.0),
         incremental_offer_curves = cc,
     )
     set_operation_cost!(generator, mbc)
     @test get_operation_cost(generator) isa MarketBidCost
 
-    @test get_incremental_offer_curves(generator, mbc) == cc
-    @test isnothing(get_decremental_offer_curves(generator, mbc))
+    @test get_incremental_offer_curves(mbc) == cc
+    @test get_decremental_offer_curves(mbc) == PSY.ZERO_OFFER_CURVE
 
     @test get_variable_cost(generator, mbc) == cc
     @test get_incremental_variable_cost(generator, mbc) == cc
-    @test isnothing(get_decremental_variable_cost(generator, mbc))
+    @test get_decremental_variable_cost(generator, mbc) == PSY.ZERO_OFFER_CURVE
 
     cc2 = CostCurve(
         PiecewiseIncrementalCurve(
@@ -50,6 +50,9 @@ end
     )
     set_incremental_variable_cost!(sys, generator, cc2, UnitSystem.NATURAL_UNITS)
     @test get_incremental_variable_cost(generator, mbc) == cc2
+
+    set_decremental_variable_cost!(sys, generator, cc2, UnitSystem.NATURAL_UNITS)
+    @test get_decremental_offer_curves(mbc) == cc2
 end
 
 @testset "Test Make market bid curve interface" begin
@@ -111,365 +114,44 @@ test_costs = Dict(
         repeat([(hot = PSY.START_COST, warm = PSY.START_COST, cold = PSY.START_COST)], 24),
 )
 
-@testset "Test MarketBidCost with Quadratic Cost Timeseries" begin
-    # Will throw TypeErrors because market bids must be piecewise, not quadratic and service
-    # bids must be piecewise, not scalar
-    initial_time = Dates.DateTime("2020-01-01")
-    resolution = Dates.Hour(1)
-    name = "test"
-    horizon = 24
-    service_data = Dict(initial_time => rand(horizon))
-    data_quadratic =
-        SortedDict(initial_time => test_costs[CostCurve{QuadraticCurve}])
-    sys = PSB.build_system(PSITestSystems, "test_RTS_GMLC_sys")
-    generator = get_component(ThermalStandard, sys, "322_CT_6")
-    market_bid = MarketBidCost(nothing)
-    set_operation_cost!(generator, market_bid)
-    forecast_fd = IS.Deterministic(
-        "variable_cost",
-        Dict(k => get_function_data.(v) for (k, v) in pairs(data_quadratic)),
-        resolution,
-    )
-    power_units = UnitSystem.NATURAL_UNITS
-    @test_throws TypeError set_variable_cost!(sys, generator, forecast_fd, power_units)
-    for s in generator.services
-        forecast_fd = IS.Deterministic(get_name(s), service_data, resolution)
-        @test_throws TypeError set_service_bid!(sys, generator, s, forecast_fd, power_units)
-    end
+@testset "Test MarketBidCost defaults and nothing constructor" begin
+    mbc = MarketBidCost(nothing)
+    @test get_no_load_cost(mbc) == LinearCurve(0.0)
+    @test get_start_up(mbc) ==
+          (hot = PSY.START_COST, warm = PSY.START_COST, cold = PSY.START_COST)
+    @test get_shut_down(mbc) == LinearCurve(0.0)
+    @test get_incremental_offer_curves(mbc) == PSY.ZERO_OFFER_CURVE
+    @test get_decremental_offer_curves(mbc) == PSY.ZERO_OFFER_CURVE
 end
 
-@testset "Test MarketBidCost with PiecewiseLinearData Cost Timeseries with Service Bid Forecast" begin
-    initial_time = Dates.DateTime("2020-01-01")
-    resolution = Dates.Hour(1)
-    name = "test"
-    horizon = 24
-    power_units = UnitSystem.NATURAL_UNITS
-    data_pwl = SortedDict(initial_time => test_costs[PiecewiseStepData])
-    service_data = data_pwl
-    sys = PSB.build_system(PSITestSystems, "test_RTS_GMLC_sys")
-    generator = get_component(ThermalStandard, sys, "322_CT_6")
-    market_bid = MarketBidCost(nothing)
-    set_operation_cost!(generator, market_bid)
-    forecast_fd = Deterministic(
-        "variable_cost",
-        Dict(k => get_function_data.(v) for (k, v) in pairs(data_pwl)),
-        resolution,
-    )
-    @test_throws ArgumentError set_variable_cost!(
-        sys,
-        generator,
-        forecast_fd,
-        UnitSystem.SYSTEM_BASE,
-    )
-    set_variable_cost!(sys, generator, forecast_fd, power_units)
-
-    for s in generator.services
-        forecast_fd = Deterministic(
-            get_name(s),
-            Dict(k => get_function_data.(v) for (k, v) in pairs(service_data)),
-            resolution,
-        )
-        @test_throws ArgumentError set_service_bid!(
-            sys,
-            generator,
-            s,
-            forecast_fd,
-            UnitSystem.SYSTEM_BASE,
-        )
-        set_service_bid!(sys, generator, s, forecast_fd, power_units)
-    end
-
-    iocs = get_incremental_offer_curves(generator, market_bid)
-    @test isequal(
-        first(TimeSeries.values(iocs)),
-        get_function_data(first(data_pwl[initial_time])),
-    )
-    cost_forecast = get_variable_cost(generator, market_bid; start_time = initial_time)
-    @test isequal(first(TimeSeries.values(cost_forecast)), first(data_pwl[initial_time]))
-
-    for s in generator.services
-        service_cost = get_services_bid(generator, market_bid, s; start_time = initial_time)
-        @test isequal(
-            first(TimeSeries.values(service_cost)),
-            first(service_data[initial_time]),
-        )
-    end
-end
-
-@testset "Test MarketBidCost with PiecewiseLinearData Cost Timeseries, initial_input, and no_load_cost" begin
-    initial_time = Dates.DateTime("2020-01-01")
-    resolution = Dates.Hour(1)
-    name = "test"
-    horizon = 24
-    power_units = UnitSystem.NATURAL_UNITS
-    data_pwl = SortedDict(initial_time => test_costs[PiecewiseIncrementalCurve])
-    service_data = data_pwl
-    sys = PSB.build_system(PSITestSystems, "test_RTS_GMLC_sys")
-    generator = get_component(ThermalStandard, sys, "322_CT_6")
-    market_bid = MarketBidCost(nothing)
-    set_operation_cost!(generator, market_bid)
-    forecast_fd = IS.Deterministic(
-        "variable_cost_function_data",
-        Dict(k => get_function_data.(v) for (k, v) in pairs(data_pwl)),
-        resolution,
-    )
-    set_variable_cost!(sys, generator, forecast_fd, power_units)
-
-    forecast_ii = IS.Deterministic(
-        "variable_cost_initial_input",
-        Dict(k => get_initial_input.(get_value_curve.(v)) for (k, v) in pairs(data_pwl)),
-        resolution,
-    )
-    PSY.set_incremental_initial_input!(sys, generator, forecast_ii)
-
-    forecast_iaz = IS.Deterministic(
-        "variable_cost_input_at_zero",
-        Dict(k => get_input_at_zero.(get_value_curve.(v)) for (k, v) in pairs(data_pwl)),
-        resolution,
-    )
-    set_no_load_cost!(sys, generator, forecast_iaz)
-
-    iocs = get_incremental_offer_curves(generator, market_bid)
-    @test isequal(
-        first(TimeSeries.values(iocs)),
-        get_function_data(first(data_pwl[initial_time])),
-    )
-    cost_forecast = get_variable_cost(generator, market_bid; start_time = initial_time)
-    @test isequal(first(TimeSeries.values(cost_forecast)), first(data_pwl[initial_time]))
-end
-
-@testset "Test MarketBidCost with Decremental PiecewiseLinearData Cost Timeseries, initial_input, and no_load_cost" begin
-    initial_time = Dates.DateTime("2020-01-01")
-    resolution = Dates.Hour(1)
-    name = "test"
-    horizon = 24
-    power_units = UnitSystem.NATURAL_UNITS
-    data_pwl = SortedDict(initial_time => test_costs[PiecewiseIncrementalCurve])
-    service_data = data_pwl
-    sys = PSB.build_system(PSITestSystems, "test_RTS_GMLC_sys")
-    generator = get_component(ThermalStandard, sys, "322_CT_6")
-    market_bid = MarketBidCost(nothing)
-    set_operation_cost!(generator, market_bid)
-    forecast_fd = IS.Deterministic(
-        "decremental_variable_cost_function_data",
-        Dict(k => get_function_data.(v) for (k, v) in pairs(data_pwl)),
-        resolution,
-    )
-    set_decremental_variable_cost!(sys, generator, forecast_fd, power_units)
-
-    forecast_ii = IS.Deterministic(
-        "decremental_variable_cost_initial_input",
-        Dict(k => get_initial_input.(get_value_curve.(v)) for (k, v) in pairs(data_pwl)),
-        resolution,
-    )
-    PSY.set_decremental_initial_input!(sys, generator, forecast_ii)
-
-    forecast_iaz = IS.Deterministic(
-        "variable_cost_input_at_zero",
-        Dict(k => get_input_at_zero.(get_value_curve.(v)) for (k, v) in pairs(data_pwl)),
-        resolution,
-    )
-    set_no_load_cost!(sys, generator, forecast_iaz)
-
-    iocs = get_decremental_offer_curves(generator, market_bid)
-    isequal(first(TimeSeries.values(iocs)), first(data_pwl[initial_time]))
-    cost_forecast =
-        get_decremental_variable_cost(generator, market_bid; start_time = initial_time)
-    @test isequal(first(TimeSeries.values(cost_forecast)), first(data_pwl[initial_time]))
-end
-
-@testset "Test `MarketBidCost` with single `start_up` value" begin
-    cost = MarketBidCost(0.0, 1.0, 2.0)
-    @test get_start_up(cost) == (hot = 1.0, warm = 0.0, cold = 0.0)
-
-    set_start_up!(cost, 2.0)
-    @test get_start_up(cost) == (hot = 2.0, warm = 0.0, cold = 0.0)
-end
-
-@testset "Test ReserveDemandCurve with Cost Timeseries" begin
-    initial_time = Dates.DateTime("2020-01-01")
-    resolution = Dates.Hour(1)
-    other_time = initial_time + resolution
-    name = "test"
-    horizon = 24
-    data_pwl = SortedDict(initial_time => test_costs[PiecewiseStepData],
-        other_time => test_costs[PiecewiseStepData])
+@testset "Test static ReserveDemandCurve" begin
     sys = System(100.0)
-    reserve = ReserveDemandCurve{ReserveUp}(nothing)
-    add_component!(sys, reserve)
-    forecast_fd = IS.Deterministic(
-        "variable_cost",
-        Dict(k => get_function_data.(v) for (k, v) in pairs(data_pwl)),
-        resolution,
+
+    cc = CostCurve(
+        PiecewiseIncrementalCurve(0.0, [0.0, 100.0, 200.0], [25.0, 30.0]),
     )
-    set_variable_cost!(sys, reserve, forecast_fd)
-    cost_forecast = get_variable_cost(reserve; start_time = initial_time)
-    @test isequal(first(TimeSeries.values(cost_forecast)), first(data_pwl[initial_time]))
-end
-
-@testset "Test ReserveDemandCurve with Time Varying PWL Cost" begin
-    initial_time = Dates.DateTime("2020-01-01")
-    resolution = Dates.Hour(1)
-    other_time = initial_time + resolution
-
-    # Create time varying PWL cost data using PiecewiseIncrementalCurve
-    data_pwl_incremental = SortedDict(
-        initial_time => test_costs[PiecewiseIncrementalCurve],
-        other_time => test_costs[PiecewiseIncrementalCurve],
-    )
-
-    # Create system and reserve product
-    sys = System(100.0)
-    reserve = ReserveDemandCurve{ReserveUp}(
-        nothing,  # variable - will be set via set_variable_cost!
-        "TestReserveProduct",
-        true,
-        10.0,  # time_frame
-        3600.0,  # sustained_time
-        1.0,  # max_participation_factor
-        0.0,  # deployed_fraction
+    reserve = ReserveDemandCurve{ReserveUp}(;
+        variable = cc,
+        name = "TestReserve",
+        available = true,
+        time_frame = 10.0,
     )
     add_component!(sys, reserve)
+    @test get_variable_cost(reserve) == cc
+    @test get_variable(reserve) isa CostCurve{PiecewiseIncrementalCurve}
 
-    # Attach time varying cost to the reserve product
-    forecast_fd = IS.Deterministic(
-        "variable_cost",
-        Dict(k => get_function_data.(v) for (k, v) in pairs(data_pwl_incremental)),
-        resolution,
+    # Test set_variable_cost! with validation
+    cc2 = CostCurve(
+        PiecewiseIncrementalCurve(0.0, [0.0, 50.0, 150.0], [20.0, 18.0]),
     )
-    set_variable_cost!(sys, reserve, forecast_fd)
+    set_variable_cost!(sys, reserve, cc2)
+    @test get_variable_cost(reserve) == cc2
 
-    # Retrieve and verify the time varying cost data
-    cost_forecast = get_variable_cost(reserve; start_time = initial_time)
-    retrieved_curve = first(TimeSeries.values(cost_forecast))
-    original_curve = first(data_pwl_incremental[initial_time])
-
-    # Compare function data (x and y coordinates)
-    @test get_function_data(retrieved_curve) == get_function_data(original_curve)
-
-    # Verify we can retrieve cost at the second time point
-    cost_forecast_second = get_variable_cost(reserve; start_time = other_time)
-    retrieved_curve_second = first(TimeSeries.values(cost_forecast_second))
-    original_curve_second = first(data_pwl_incremental[other_time])
-
-    # Compare function data
-    @test get_function_data(retrieved_curve_second) ==
-          get_function_data(original_curve_second)
-
-    # Verify the reserve has the time series attached
-    @test has_time_series(reserve)
-    @test length(get_time_series_keys(reserve)) == 1
-end
-
-@testset "Test fuel cost (scalar and time series)" begin
-    sys = PSB.build_system(PSITestSystems, "test_RTS_GMLC_sys")
-    generators = collect(get_components(ThermalStandard, sys))
-    generator = get_component(ThermalStandard, sys, "322_CT_6")
-
-    op_cost = get_operation_cost(generator)
-    value_curve = get_value_curve(get_variable(op_cost))
-    set_variable!(op_cost, FuelCurve(value_curve, 0.0))
-    @test get_fuel_cost(generator) == 0.0
-    @test_throws ArgumentError get_fuel_cost(generator; len = 2)
-
-    set_fuel_cost!(sys, generator, 1.23)
-    @test get_fuel_cost(generator) == 1.23
-
-    initial_time = Dates.DateTime("2020-01-01")
-    resolution = Dates.Hour(1)
-    horizon = 24
-    data_float = SortedDict(initial_time => test_costs[Float64])
-    forecast_fd = IS.Deterministic("fuel_cost", data_float, resolution)
-    set_fuel_cost!(sys, generator, forecast_fd)
-    fuel_forecast = get_fuel_cost(generator; start_time = initial_time)
-    @test first(TimeSeries.values(fuel_forecast)) == first(data_float[initial_time])
-    fuel_forecast = get_fuel_cost(generator)  # missing start_time filled in with initial time
-    @test first(TimeSeries.values(fuel_forecast)) == first(data_float[initial_time])
-end
-@testset "Test MarketBidCost no-load cost (single number and time series)" begin
-    sys = PSB.build_system(PSITestSystems, "test_RTS_GMLC_sys")
-    generators = collect(get_components(ThermalStandard, sys))
-    generator = get_component(ThermalStandard, sys, "322_CT_6")
-    market_bid = MarketBidCost(nothing)
-    set_operation_cost!(generator, market_bid)
-
-    op_cost = get_operation_cost(generator)
-    @test get_no_load_cost(generator, op_cost) === nothing
-
-    set_no_load_cost!(sys, generator, 1.23)
-    @test get_no_load_cost(generator, op_cost) == 1.23
-
-    initial_time = Dates.DateTime("2020-01-01")
-    resolution = Dates.Hour(1)
-    horizon = 24
-    data_float = SortedDict(initial_time => test_costs[Float64])
-    forecast_fd = IS.Deterministic("no_load_cost", data_float, resolution)
-
-    set_no_load_cost!(sys, generator, forecast_fd)
-    @test first(TimeSeries.values(get_no_load_cost(generator, op_cost))) ==
-          first(data_float[initial_time])
-end
-
-@testset "Test MarketBidCost startup cost (single number, tuple, and time series)" begin
-    sys = PSB.build_system(PSITestSystems, "test_RTS_GMLC_sys")
-    generators = collect(get_components(ThermalStandard, sys))
-    generator = get_component(ThermalStandard, sys, "322_CT_6")
-    market_bid = MarketBidCost(nothing)
-    set_operation_cost!(generator, market_bid)
-
-    op_cost = get_operation_cost(generator)
-    @test get_start_up(op_cost) ==
-          (hot = PSY.START_COST, warm = PSY.START_COST, cold = PSY.START_COST)
-    @test get_start_up(generator, op_cost) ==
-          (hot = PSY.START_COST, warm = PSY.START_COST, cold = PSY.START_COST)
-
-    set_start_up!(sys, generator, 3.14)
-    @test get_start_up(op_cost) == (hot = 3.14, warm = 0.0, cold = 0.0)
-    @test get_start_up(generator, op_cost) == (hot = 3.14, warm = 0.0, cold = 0.0)
-
-    set_start_up!(sys, generator, (hot = 1.23, warm = 2.34, cold = 3.45))
-    @test get_start_up(op_cost) == (hot = 1.23, warm = 2.34, cold = 3.45)
-    @test get_start_up(generator, op_cost) == (hot = 1.23, warm = 2.34, cold = 3.45)
-
-    initial_time = Dates.DateTime("2020-01-01")
-    resolution = Dates.Hour(1)
-    horizon = 24
-    data_sus = SortedDict(initial_time => test_costs[PSY.StartUpStages])
-    forecast_fd = IS.Deterministic(
-        "start_up",
-        Dict(k => Tuple.(v) for (k, v) in pairs(data_sus)),
-        resolution,
-    )
-
-    set_start_up!(sys, generator, forecast_fd)
-    @test first(TimeSeries.values(get_start_up(generator, op_cost))) ==
-          first(data_sus[initial_time])
-end
-
-@testset "Test MarketBidCost shutdown cost (single number and time series)" begin
-    sys = PSB.build_system(PSITestSystems, "test_RTS_GMLC_sys")
-    generators = collect(get_components(ThermalStandard, sys))
-    generator = get_component(ThermalStandard, sys, "322_CT_6")
-    market_bid = MarketBidCost(nothing)
-    set_operation_cost!(generator, market_bid)
-
-    op_cost = get_operation_cost(generator)
-    @test get_shut_down(op_cost) == 0.0
-    @test get_shut_down(generator, op_cost) == 0.0
-
-    set_shut_down!(sys, generator, 3.14)
-    @test get_shut_down(op_cost) == 3.14
-    @test get_shut_down(generator, op_cost) == 3.14
-
-    initial_time = Dates.DateTime("2020-01-01")
-    resolution = Dates.Hour(1)
-    horizon = 24
-    data_float = SortedDict(initial_time => test_costs[Float64])
-    forecast_fd = IS.Deterministic("fuel_cost", data_float, resolution)
-
-    set_shut_down!(sys, generator, forecast_fd)
-    @test first(TimeSeries.values(get_shut_down(generator, op_cost))) ==
-          first(data_float[initial_time])
+    # Nothing constructor
+    reserve_nil = ReserveDemandCurve{ReserveUp}(nothing)
+    @test get_name(reserve_nil) == "init"
+    @test get_available(reserve_nil) == false
+    @test get_variable(reserve_nil) == PSY.ZERO_OFFER_CURVE
 end
 
 function build_iec_sys()
@@ -505,25 +187,19 @@ function build_iec_sys()
         base_power = 100.0,
     )
 
-    import_curve = make_import_curve(;
-        power = [0.0, 100.0, 105.0, 120.0, 200.0],
-        price = [5.0, 10.0, 20.0, 40.0],
+    import_curve = make_import_curve(
+        [0.0, 100.0, 105.0, 120.0, 200.0],
+        [5.0, 10.0, 20.0, 40.0],
     )
 
-    import_curve2 = make_import_curve(;
-        power = 200.0,
-        price = 25.0,
+    import_curve2 = make_import_curve([0.0, 200.0], [25.0])
+
+    export_curve = make_export_curve(
+        [0.0, 100.0, 105.0, 120.0, 200.0],
+        [40.0, 20.0, 10.0, 5.0],
     )
 
-    export_curve = make_export_curve(;
-        power = [0.0, 100.0, 105.0, 120.0, 200.0],
-        price = [40.0, 20.0, 10.0, 5.0],
-    )
-
-    export_curve2 = make_export_curve(;
-        power = 200.0,
-        price = 45.0,
-    )
+    export_curve2 = make_export_curve([0.0, 200.0], [45.0])
 
     ie_cost = ImportExportCost(;
         import_offer_curves = import_curve,
@@ -584,20 +260,14 @@ end
     ie_cost2 =
         build_iec_sys()
 
-    @test get_import_offer_curves(source, ie_cost) == import_curve
-    @test get_export_offer_curves(source, ie_cost) == export_curve
+    @test get_import_offer_curves(ie_cost) == import_curve
+    @test get_export_offer_curves(ie_cost) == export_curve
 
     @test get_import_variable_cost(source, ie_cost) == import_curve
     @test get_export_variable_cost(source, ie_cost) == export_curve
 end
 
-@testset "ImportExportCost cost_function_timeseries time series" begin
-    initial_time = Dates.DateTime("2024-01-01")
-    resolution = Dates.Hour(1)
-    other_time = initial_time + resolution
-    name = "test"
-    horizon = 24
-
+@testset "ImportExportCost static setters" begin
     sys,
     source,
     source2,
@@ -609,52 +279,19 @@ end
     ie_cost2 =
         build_iec_sys()
 
-    import_fd_array = repeat(
-        [
-            make_import_curve(;
-                power = [0.0, 100.0, 105.0, 120.0, 200.0],
-                price = [5.0, 10.0, 20.0, 40.0])], 24)
+    new_import = make_import_curve([0.0, 50.0, 100.0], [10.0, 20.0])
+    set_import_variable_cost!(sys, source, new_import, UnitSystem.NATURAL_UNITS)
+    @test get_import_offer_curves(ie_cost) == new_import
 
-    export_fd_array = repeat(
-        [
-            make_export_curve(;
-                power = [0.0, 100.0, 105.0, 120.0, 200.0],
-                price = [40.0, 20.0, 10.0, 5.0])], 24)
+    new_export = make_export_curve([0.0, 50.0, 100.0], [20.0, 10.0])
+    set_export_variable_cost!(sys, source, new_export, UnitSystem.NATURAL_UNITS)
+    @test get_export_offer_curves(ie_cost) == new_export
 
-    import_sd = SortedDict(initial_time => import_fd_array,
-        other_time => import_fd_array)
-    export_sd = SortedDict(initial_time => export_fd_array,
-        other_time => export_fd_array)
-
-    import_curve = IS.Deterministic(
-        "import_variable_cost",
-        Dict(k => get_function_data.(v) for (k, v) in pairs(import_sd)),
-        resolution,
-    )
-    export_curve = IS.Deterministic(
-        "export_variable_cost",
-        Dict(k => get_function_data.(v) for (k, v) in pairs(export_sd)),
-        resolution,
-    )
-
-    set_import_variable_cost!(sys, source, import_curve, UnitSystem.NATURAL_UNITS)
-    set_export_variable_cost!(sys, source, export_curve, UnitSystem.NATURAL_UNITS)
-
-    iocs = get_import_offer_curves(source, ie_cost)
-    @test isequal(
-        first(TimeSeries.values(iocs)),
-        get_function_data(first(import_sd[initial_time])),
-    )
-    cost_forecast_i = get_import_variable_cost(source, ie_cost; start_time = initial_time)
-    @test isequal(first(TimeSeries.values(cost_forecast_i)), first(import_sd[initial_time]))
-
-    eocs = get_export_offer_curves(source, ie_cost)
-    @test isequal(
-        first(TimeSeries.values(eocs)),
-        get_function_data(first(export_sd[initial_time])),
-    )
-    cost_forecast_e = get_export_variable_cost(source, ie_cost; start_time = initial_time)
-    @test isequal(first(TimeSeries.values(cost_forecast_e)), first(export_sd[initial_time]))
+    # Test unit mismatch throws
+    @test_throws ArgumentError set_import_variable_cost!(
+        sys, source, new_import, UnitSystem.SYSTEM_BASE)
+    @test_throws ArgumentError set_export_variable_cost!(
+        sys, source, new_export, UnitSystem.SYSTEM_BASE)
 end
 
 @testset "Test HydroReservoirCost getters and setters" begin
@@ -681,4 +318,172 @@ end
     @test get_spillage_cost(cost) == 30.0
     @test get_level_shortage_cost(cost) == 10.0
     @test get_level_surplus_cost(cost) == 20.0
+end
+
+# Helpers shared by the time-series cost-resolution tests below.
+# Each timestamp gets a *distinct* PiecewiseStepData so that resolving at a known
+# `start_time` produces an unambiguous expected slice.
+const _TS_RESOLVE_INITIAL_TIME = Dates.DateTime("2020-01-01")
+const _TS_RESOLVE_RESOLUTION = Dates.Hour(1)
+# Match RTS_GMLC's 24h forecast horizon. First step is distinct so the resolution
+# at `_TS_RESOLVE_INITIAL_TIME` is unambiguously identifiable.
+const _TS_RESOLVE_PWL_DATA = vcat(
+    [PiecewiseStepData([1.0, 3.0, 5.0], [2.0, 4.0])],
+    fill(PiecewiseStepData([2.0, 4.0, 6.0], [3.0, 5.0]), 23),
+)
+
+function _attach_pwl_forecast(sys, component, name)
+    fcst = IS.Deterministic(;
+        data = SortedDict(_TS_RESOLVE_INITIAL_TIME => _TS_RESOLVE_PWL_DATA),
+        name = name,
+        resolution = _TS_RESOLVE_RESOLUTION,
+    )
+    return add_time_series!(sys, component, fcst)
+end
+
+function _attach_linear_forecast(sys, component, name)
+    fcst = IS.Deterministic(;
+        data = SortedDict(
+            _TS_RESOLVE_INITIAL_TIME => fill(IS.LinearFunctionData(1.0, 0.0), 24),
+        ),
+        name = name,
+        resolution = _TS_RESOLVE_RESOLUTION,
+    )
+    return add_time_series!(sys, component, fcst)
+end
+
+@testset "MarketBidTimeSeriesCost resolves variable cost at start_time" begin
+    sys = PSB.build_system(PSITestSystems, "test_RTS_GMLC_sys")
+    generator = get_component(ThermalStandard, sys, "322_CT_6")
+
+    inc_key = _attach_pwl_forecast(sys, generator, "inc_offer")
+    dec_key = _attach_pwl_forecast(sys, generator, "dec_offer")
+    nl_key = _attach_linear_forecast(sys, generator, "no_load")
+    sd_key = _attach_linear_forecast(sys, generator, "shut_down")
+
+    timestamps = range(_TS_RESOLVE_INITIAL_TIME; step = _TS_RESOLVE_RESOLUTION, length = 24)
+    su_ta = TimeSeries.TimeArray(
+        collect(timestamps),
+        fill((0.0, 0.0, 0.0), 24),
+    )
+    su_key = add_time_series!(
+        sys, generator,
+        IS.SingleTimeSeries(; name = "start_up_stages_var", data = su_ta),
+    )
+
+    mbtc = MarketBidTimeSeriesCost(;
+        no_load_cost = IS.TimeSeriesLinearCurve(nl_key),
+        start_up = TupleTimeSeries{PSY.StartUpStages}(su_key),
+        shut_down = IS.TimeSeriesLinearCurve(sd_key),
+        incremental_offer_curves = make_market_bid_ts_curve(inc_key),
+        decremental_offer_curves = make_market_bid_ts_curve(dec_key),
+    )
+    # NOTE: not calling set_operation_cost! because ThermalStandard.operation_cost
+    # is typed Union{MarketBidCost, ThermalGenerationCost} and does not yet accept
+    # MarketBidTimeSeriesCost. See PR follow-up about wiring TS cost types into
+    # device unions.
+
+    inc_resolved = get_variable_cost(generator, mbtc; start_time = _TS_RESOLVE_INITIAL_TIME)
+    @test get_function_data(get_value_curve(inc_resolved)) == _TS_RESOLVE_PWL_DATA[1]
+
+    dec_resolved =
+        get_decremental_variable_cost(
+            generator,
+            mbtc;
+            start_time = _TS_RESOLVE_INITIAL_TIME,
+        )
+    @test get_function_data(get_value_curve(dec_resolved)) == _TS_RESOLVE_PWL_DATA[1]
+
+    @test_throws ArgumentError get_variable_cost(generator, mbtc)
+    @test_throws ArgumentError get_decremental_variable_cost(generator, mbtc)
+end
+
+@testset "MarketBidTimeSeriesCost resolves start_up via TupleTimeSeries" begin
+    sys = PSB.build_system(PSITestSystems, "test_RTS_GMLC_sys")
+    generator = get_component(ThermalStandard, sys, "322_CT_6")
+
+    inc_key = _attach_pwl_forecast(sys, generator, "inc_offer")
+    dec_key = _attach_pwl_forecast(sys, generator, "dec_offer")
+    nl_key = _attach_linear_forecast(sys, generator, "no_load")
+    sd_key = _attach_linear_forecast(sys, generator, "shut_down")
+
+    # Build a SingleTimeSeries of NTuple{3, Float64} distinct per timestamp so that
+    # the resolved value at a chosen start_time is unambiguous.
+    timestamps = range(_TS_RESOLVE_INITIAL_TIME; step = _TS_RESOLVE_RESOLUTION, length = 24)
+    su_values = [(Float64(i), Float64(i) + 10.0, Float64(i) + 20.0) for i in 1:24]
+    su_ta = TimeSeries.TimeArray(collect(timestamps), su_values)
+    su_sts = IS.SingleTimeSeries(; name = "start_up_stages", data = su_ta)
+    su_key = add_time_series!(sys, generator, su_sts)
+
+    mbtc = MarketBidTimeSeriesCost(;
+        no_load_cost = IS.TimeSeriesLinearCurve(nl_key),
+        start_up = TupleTimeSeries{PSY.StartUpStages}(su_key),
+        shut_down = IS.TimeSeriesLinearCurve(sd_key),
+        incremental_offer_curves = make_market_bid_ts_curve(inc_key),
+        decremental_offer_curves = make_market_bid_ts_curve(dec_key),
+    )
+
+    @test get_start_up(mbtc) isa TupleTimeSeries{PSY.StartUpStages}
+
+    resolved_first =
+        get_start_up(generator, mbtc; start_time = _TS_RESOLVE_INITIAL_TIME)
+    @test resolved_first isa PSY.StartUpStages
+    @test resolved_first == (hot = 1.0, warm = 11.0, cold = 21.0)
+
+    resolved_fifth = get_start_up(
+        generator, mbtc;
+        start_time = _TS_RESOLVE_INITIAL_TIME + Dates.Hour(4),
+    )
+    @test resolved_fifth == (hot = 5.0, warm = 15.0, cold = 25.0)
+
+    @test_throws ArgumentError get_start_up(generator, mbtc)
+end
+
+@testset "ImportExportTimeSeriesCost resolves import/export costs at start_time" begin
+    sys = PSB.build_system(PSITestSystems, "test_RTS_GMLC_sys")
+    generator = get_component(ThermalStandard, sys, "322_CT_6")
+
+    imp_key = _attach_pwl_forecast(sys, generator, "import_offer")
+    exp_key = _attach_pwl_forecast(sys, generator, "export_offer")
+
+    iec = ImportExportTimeSeriesCost(;
+        import_offer_curves = make_import_export_ts_curve(imp_key),
+        export_offer_curves = make_import_export_ts_curve(exp_key),
+    )
+    # NOTE: not calling set_operation_cost! — see comment above.
+
+    imp_resolved =
+        get_import_variable_cost(generator, iec; start_time = _TS_RESOLVE_INITIAL_TIME)
+    @test get_function_data(get_value_curve(imp_resolved)) == _TS_RESOLVE_PWL_DATA[1]
+
+    exp_resolved =
+        get_export_variable_cost(generator, iec; start_time = _TS_RESOLVE_INITIAL_TIME)
+    @test get_function_data(get_value_curve(exp_resolved)) == _TS_RESOLVE_PWL_DATA[1]
+
+    @test_throws ArgumentError get_import_variable_cost(generator, iec)
+    @test_throws ArgumentError get_export_variable_cost(generator, iec)
+end
+
+@testset "ReserveDemandTimeSeriesCurve resolves variable cost at start_time" begin
+    sys = PSB.build_system(PSITestSystems, "test_RTS_GMLC_sys")
+    # `ForecastKey` identifies a time series by name/type/timing — it does not
+    # bind to a specific component, so we can bootstrap a key from a throwaway
+    # generator and reuse it after attaching the same forecast to the reserve.
+    bootstrap = get_component(ThermalStandard, sys, "322_CT_6")
+    ts_key = _attach_pwl_forecast(sys, bootstrap, "ordc")
+
+    curve = CostCurve(TimeSeriesPiecewiseIncrementalCurve(ts_key, nothing, nothing))
+    reserve = ReserveDemandTimeSeriesCurve{ReserveUp}(;
+        variable = curve,
+        name = "TestOrdc",
+        available = true,
+        time_frame = 10.0,
+    )
+    add_component!(sys, reserve)
+    _attach_pwl_forecast(sys, reserve, "ordc")
+
+    resolved = get_variable_cost(reserve; start_time = _TS_RESOLVE_INITIAL_TIME)
+    @test get_function_data(get_value_curve(resolved)) == _TS_RESOLVE_PWL_DATA[1]
+
+    @test_throws ArgumentError get_variable_cost(reserve)
 end

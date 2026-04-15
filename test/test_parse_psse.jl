@@ -30,7 +30,7 @@ end
     @test get_conformity(get_component(PowerLoad, mp_sys, "bus14")) ==
           LoadConformity.CONFORMING
 
-    sys = build_system(PSYTestSystems, "psse_240_parsing_sys") # current/imedance_power read in natural units during parsing
+    sys = build_system(PSYTestSystems, "psse_240_parsing_sys"; force_build = true) # current/imedance_power read in natural units during parsing
     @test get_current_active_power(get_component(StandardLoad, sys, "load10021")) == 2.2371
     @test get_impedance_reactive_power(get_component(StandardLoad, sys, "load10021")) ==
           -5.83546
@@ -44,7 +44,7 @@ end
           LoadConformity.CONFORMING
 
     @info "Testing ZIP Load Parsing"
-    wecc_sys = build_system(PSYTestSystems, "psse_240_parsing_sys")
+    wecc_sys = build_system(PSYTestSystems, "psse_240_parsing_sys"; force_build = true)
     test_load1 = get_component(StandardLoad, wecc_sys, "load24091")
     impedance_q = get_impedance_reactive_power(test_load1)
     # Negative for capacitive loads
@@ -63,7 +63,7 @@ end
     @test get_status(get_component(ThermalStandard, sys, "generator-2438-EG")) == 1
     @test get_available(get_component(ThermalStandard, sys, "generator-2438-EG")) == 1
 
-    sys3 = build_system(PSSEParsingTestSystems, "psse_ACTIVSg2000_sys")
+    sys3 = build_system(PSSEParsingTestSystems, "psse_ACTIVSg2000_sys"; force_build = true)
     sys4 = build_system(PSSEParsingTestSystems, "pti_frankenstein_70_sys")
 
     base_dir = string(dirname(@__FILE__))

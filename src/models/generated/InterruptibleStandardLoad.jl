@@ -10,7 +10,7 @@ This file is auto-generated. Do not edit.
         available::Bool
         bus::ACBus
         base_power::Float64
-        operation_cost::Union{LoadCost, MarketBidCost}
+        operation_cost::OperationalCost
         conformity::LoadConformity
         constant_active_power::Float64
         constant_reactive_power::Float64
@@ -41,7 +41,7 @@ For an alternative exponential formulation of the ZIP model, see [`ExponentialLo
 - `available::Bool`: Indicator of whether the component is connected and online (`true`) or disconnected, offline, or down (`false`). Unavailable components are excluded during simulations
 - `bus::ACBus`: Bus that this component is connected to
 - `base_power::Float64`: Base power of the load (MVA) for [per unitization](@ref per_unit), validation range: `(0.0001, nothing)`
-- `operation_cost::Union{LoadCost, MarketBidCost}`: [`OperationalCost`](@ref) of interrupting load
+- `operation_cost::OperationalCost`: [`OperationalCost`](@ref) of interrupting load
 - `conformity::LoadConformity`: (default: `LoadConformity.UNDEFINED`) Indicates whether the specified load is conforming or non-conforming. Options are [listed here](@ref loadconform_list).
 - `constant_active_power::Float64`: (default: `0.0`) Constant active power demand in MW (P_P)
 - `constant_reactive_power::Float64`: (default: `0.0`) Constant reactive power demand in MVAR (Q_P)
@@ -70,7 +70,7 @@ mutable struct InterruptibleStandardLoad <: ControllableLoad
     "Base power of the load (MVA) for [per unitization](@ref per_unit)"
     base_power::Float64
     "[`OperationalCost`](@ref) of interrupting load"
-    operation_cost::Union{LoadCost, MarketBidCost}
+    operation_cost::OperationalCost
     "Indicates whether the specified load is conforming or non-conforming. Options are [listed here](@ref loadconform_list)."
     conformity::LoadConformity
     "Constant active power demand in MW (P_P)"

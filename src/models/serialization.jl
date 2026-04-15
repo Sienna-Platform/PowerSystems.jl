@@ -31,7 +31,13 @@ const _ENCODE_AS_UUID_B =
 should_encode_as_uuid(val) = any(x -> val isa x, _ENCODE_AS_UUID_B)
 should_encode_as_uuid(::Type{T}) where {T} = any(x -> T <: x, _ENCODE_AS_UUID_A)
 
-const _CONTAINS_SHOULD_ENCODE = Union{Component, MarketBidCost}  # PSY types with fields that we should_encode_as_uuid
+const _CONTAINS_SHOULD_ENCODE = Union{
+    Component,
+    MarketBidCost,
+    MarketBidTimeSeriesCost,
+    ImportExportCost,
+    ImportExportTimeSeriesCost,
+}  # PSY types with fields that we should_encode_as_uuid
 
 function IS.serialize(component::T) where {T <: _CONTAINS_SHOULD_ENCODE}
     @debug "serialize" _group = IS.LOG_GROUP_SERIALIZATION component T
