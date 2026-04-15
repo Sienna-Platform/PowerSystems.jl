@@ -80,14 +80,6 @@ end
 
     @test !isempty(summary(sys))
 
-    @test isnothing(
-        show(
-            IOBuffer(),
-            "text/plain",
-            PowerSystemTableData(RTS_GMLC_DIR, 100.0, DESCRIPTORS),
-        ),
-    )
-
     @test isnothing(show(IOBuffer(), "text/plain", sys))
     @test isnothing(show(IOBuffer(), "text/html", sys))
     @test isnothing(show_components(IOBuffer(), sys, RenewableNonDispatch))

@@ -1,8 +1,3 @@
-import YAML
-
-const WRONG_FORMAT_CONFIG_FILE =
-    joinpath(dirname(pathof(PowerSystems)), "descriptors", "config.yml")
-
 @testset "Test reading in config data" begin
     data = IS.read_validation_descriptor(PSY.POWER_SYSTEM_STRUCT_DESCRIPTOR_FILE)
     @test data isa Vector

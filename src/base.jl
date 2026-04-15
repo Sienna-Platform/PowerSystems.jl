@@ -2,30 +2,14 @@
 const SKIP_PM_VALIDATION = false
 
 const SYSTEM_KWARGS = Set((
-    :area_name_formatter,
-    :branch_name_formatter,
-    :xfrm_3w_name_formatter,
-    :switched_shunt_name_formatter,
-    :transformer_control_objective_formatter,
-    :dcline_name_formatter,
-    :vscline_name_formatter,
-    :bus_name_formatter,
     :config_path,
     :frequency,
-    :gen_name_formatter,
-    :generator_mapping,
     :internal,
-    :load_name_formatter,
-    :loadzone_name_formatter,
     :runchecks,
-    :shunt_name_formatter,
     :time_series_directory,
     :time_series_in_memory,
     :time_series_read_only,
-    :timeseries_metadata_file,
     :unit_system,
-    :pm_data_corrections,
-    :import_all,
     :enable_compression,
     :compression,
     :name,
@@ -52,8 +36,7 @@ System(base_power)
 System(base_power, buses, components...)
 System(base_power, buses, generators, loads, branches, storage, services; kwargs...)
 System(base_power, buses, generators, loads; kwargs...)
-System(file; kwargs...)
-System(; buses, generators, loads, branches, storage, base_power, services, kwargs...)
+System(file; kwargs...)  # file must be a JSON file
 System(; kwargs...)
 ```
 
@@ -62,7 +45,7 @@ System(; kwargs...)
 - `buses::Vector{ACBus}`: an array of buses
 - `components...`: Each element (e.g., `buses`, `generators`, ...) must be an iterable
     containing subtypes of `Component`.
-- `file::AbstractString`: Path to a Matpower, PSSE, or JSON file ending with .m, .raw, or .json
+- `file::AbstractString`: Path to a PowerSystems JSON file ending with .json
 
 # Keyword arguments
 - `name::String`: System name.
@@ -70,11 +53,9 @@ System(; kwargs...)
 - `frequency::Float64`: (default = 60.0) Operating frequency (Hz).
 - `runchecks::Bool`: Run available checks on input fields and when add_component! is called.
   Throws InvalidValue if an error is found.
-- `generator_mapping`: A dictionary mapping generator names to their corresponding topologies. This is used to associate generators with their respective buses when parsing from CSV.
 - `time_series_in_memory::Bool=false`: Store time series data in memory instead of HDF5.
 - `time_series_directory::Union{Nothing, String}`: Directory for the time series HDF5 file.
     Defaults to the tmp file system.
-- `timeseries_metadata_file`: Path to a file containing time series metadata descriptors. This is used to add time series data to the system from files.
 - `time_series_read_only::Bool=false`: Open the time series store in read-only mode.
     This is useful for reading time series data without modifying it.
 - `enable_compression::Bool=false`: Enable compression of time series data in HDF5.
@@ -83,14 +64,6 @@ System(; kwargs...)
 - `unit_system::String`: (Default = `"SYSTEM_BASE"`) Set the unit system for
     [per-unitization](@ref per_unit) while getting and setting data (`"SYSTEM_BASE"`,
         `"DEVICE_BASE"`, or `"NATURAL_UNITS"`)
-- `bus_name_formatter`: A function that takes a [`Bus`](@ref) and returns a string to use as the bus name when [parsing PSSe or Matpower files](@ref pm_data).
-- `load_name_formatter`: A function that takes an [`ElectricLoad`](@ref) and returns a string to use as the load names when [parsing PSSe or Matpower files](@ref pm_data).
-- `loadzone_name_formatter`: A function that takes a [`LoadZone`](@ref) and returns a string to use as the load zone name when [parsing PSSe or Matpower files](@ref pm_data).
-- `gen_name_formatter`: A function that takes a [`Generator`](@ref) and returns a string to use as the generator name when [parsing PSSe or Matpower files](@ref pm_data).
-- `shunt_name_formatter`: A function that takes the fixed shunt data and returns a string to use as the [`FixedAdmittance`](@ref) name when [parsing PSSe or Matpower files](@ref pm_data).
-- `branch_name_formatter`: A function that takes a [`Branch`](@ref) and returns a string to use as the branch name when [parsing PSSe or Matpower files](@ref pm_data).
-- `pm_data_corrections::Bool`: A function that applies the correction to the data from [`PowerModels.jl`](https://lanl-ansi.github.io/PowerModels.jl/stable/).
-- `import_all::Bool`: A boolean flag to indicate whether to import all available data when [parsing PSSe or Matpower files](@ref pm_data). The additional data will be stored in the `ext` dictionary and can be retrieved using [`get_ext`](@ref)
 - `internal::IS.InfrastructureSystemsInternal`: Internal structure for [`InfrastructureSystems.jl`](https://nrel-sienna.github.io/InfrastructureSystems.jl/stable/). This is used only during JSON de-seralization, do not pass it when building a `System` manually.
 
 By default, time series data is stored in an HDF5 file in the tmp file system to prevent
@@ -111,9 +84,7 @@ performance by storing it in memory with `time_series_in_memory`.
 ```julia
 sys = System(100.0; name = "My Power System")
 sys = System(100.0; name = "My Power System", description = "System corresponds to scenario A")
-sys= System(path_to_my_psse_raw_file; # PSSE file bus names are not unique
-    bus_name_formatter = x -> strip(string(x["name"])) * "-" * string(x["index"]),
-)
+sys = System(path_to_my_json_file)
 sys = System(100.0; enable_compression = true)
 sys = System(100.0; compression = CompressionSettings(
     enabled = true,
@@ -262,54 +233,43 @@ function System(
     )
 end
 
-function system_via_power_models(file_path::AbstractString; kwargs...)
-    pm_kwargs = Dict(k => v for (k, v) in kwargs if !in(k, SYSTEM_KWARGS))
-    sys_kwargs = Dict(k => v for (k, v) in kwargs if in(k, SYSTEM_KWARGS))
-    return System(PowerModelsData(file_path; pm_kwargs...); sys_kwargs...)
-end
+"""Constructs a System from a JSON file path ending with .json.
 
-"""Constructs a System from a file path ending with .m, .raw, or .json
-
-If the file is JSON, then `assign_new_uuids = true` will generate new UUIDs for the system
-and all components. If the file is .raw, then `try_reimport = false` will skip searching for
-a `<name>_export_metadata.json` file in the same directory.
+`assign_new_uuids = true` will generate new UUIDs for the system and all components.
 """
 function System(
     file_path::AbstractString;
     assign_new_uuids = false,
-    try_reimport = true,
     kwargs...,
 )
     ext = lowercase(splitext(file_path)[2])
-    if ext == ".m"
-        return system_via_power_models(file_path; kwargs...)
-    elseif ext == ".raw"
-        try_reimport && return system_from_psse_reimport(file_path; kwargs...)
-        return system_via_power_models(file_path; kwargs...)
-    elseif ext == ".json"
-        unsupported = setdiff(keys(kwargs), SYSTEM_KWARGS)
-        !isempty(unsupported) && error("Unsupported kwargs = $unsupported")
-        runchecks = get(kwargs, :runchecks, true)
-        time_series_read_only = get(kwargs, :time_series_read_only, false)
-        time_series_directory = get(kwargs, :time_series_directory, nothing)
-        config_path = get(kwargs, :config_path, POWER_SYSTEM_STRUCT_DESCRIPTOR_FILE)
-        sys = deserialize(
-            System,
-            file_path;
-            time_series_read_only = time_series_read_only,
-            runchecks = runchecks,
-            time_series_directory = time_series_directory,
-            config_path = config_path,
+    if ext != ".json"
+        throw(
+            DataFormatError(
+                "$file_path is not a supported file type. Only .json files are supported.",
+            ),
         )
-        _post_deserialize_handling(
-            sys;
-            runchecks = runchecks,
-            assign_new_uuids = assign_new_uuids,
-        )
-        return sys
-    else
-        throw(DataFormatError("$file_path is not a supported file type"))
     end
+    unsupported = setdiff(keys(kwargs), SYSTEM_KWARGS)
+    !isempty(unsupported) && error("Unsupported kwargs = $unsupported")
+    runchecks = get(kwargs, :runchecks, true)
+    time_series_read_only = get(kwargs, :time_series_read_only, false)
+    time_series_directory = get(kwargs, :time_series_directory, nothing)
+    config_path = get(kwargs, :config_path, POWER_SYSTEM_STRUCT_DESCRIPTOR_FILE)
+    sys = deserialize(
+        System,
+        file_path;
+        time_series_read_only = time_series_read_only,
+        runchecks = runchecks,
+        time_series_directory = time_series_directory,
+        config_path = config_path,
+    )
+    _post_deserialize_handling(
+        sys;
+        runchecks = runchecks,
+        assign_new_uuids = assign_new_uuids,
+    )
+    return sys
 end
 
 """
@@ -350,39 +310,6 @@ function _post_deserialize_handling(sys::System; runchecks = true, assign_new_uu
         # Note: this does not change UUIDs for time series data because they are
         # shared with components.
     end
-end
-
-"""
-Parse static and dynamic data directly from PSS/e text files. Automatically generates
-all the relationships between the available dynamic injection models and the static counterpart
-
-Each dictionary indexed by id contains a vector with 5 of its components:
-* Machine
-* Shaft
-* AVR
-* TurbineGov
-* PSS
-
-Files must be parsed from a .raw file (PTI data format) and a .dyr file.
-
-## Examples:
-```julia
-raw_file = "Example.raw"
-dyr_file = "Example.dyr"
-sys = System(raw_file, dyr_file)
-```
-
-"""
-function System(sys_file::AbstractString, dyr_file::AbstractString; kwargs...)
-    ext = splitext(sys_file)[2]
-    if lowercase(ext) in [".raw"]
-        pm_kwargs = Dict(k => v for (k, v) in kwargs if !in(k, SYSTEM_KWARGS))
-        sys = System(PowerModelsData(sys_file; pm_kwargs...); kwargs...)
-    else
-        throw(DataFormatError("$sys_file is not a .raw file type"))
-    end
-    add_dyn_injectors!(sys, dyr_file)
-    return sys
 end
 
 """

@@ -1,3 +1,10 @@
+const UNIT_SYSTEM_MAPPING = Dict(
+    "SYSTEM_BASE" => IS.UnitSystem.SYSTEM_BASE,
+    "DEVICE_BASE" => IS.UnitSystem.DEVICE_BASE,
+    "NATURAL_UNITS" => IS.UnitSystem.NATURAL_UNITS,
+    "NA" => nothing,
+)
+
 const MinMax = NamedTuple{(:min, :max), Tuple{Float64, Float64}}
 const UpDown = NamedTuple{(:up, :down), Tuple{Float64, Float64}}
 const StartUpShutDown = NamedTuple{(:startup, :shutdown), Tuple{Float64, Float64}}
@@ -552,10 +559,6 @@ const START_COST = 1e8
 const INFINITE_COST = 1e8
 const INFINITE_BOUND = 1e6
 const BRANCH_BUS_VOLTAGE_DIFFERENCE_TOL = 0.01
-
-const PSSE_PARSER_TAP_RATIO_UBOUND = 1.5
-const PSSE_PARSER_TAP_RATIO_LBOUND = 0.5
-const PARSER_TAP_RATIO_CORRECTION_TOL = 1e-5
 
 const ZERO_IMPEDANCE_REACTANCE_THRESHOLD = 1e-4
 

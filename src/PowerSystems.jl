@@ -387,7 +387,6 @@ export Scenarios # scenarios.jl
 
 export get_dynamic_components
 
-export parse_file
 export open_time_series_store!
 export add_time_series!
 export bulk_add_time_series!
@@ -509,9 +508,6 @@ export get_compression_settings
 export CompressionSettings
 export CompressionTypes
 
-# Parsing functions
-export create_poly_cost
-
 #export make_time_series
 export get_bus_numbers
 export set_bus_number!
@@ -534,9 +530,6 @@ export clear_ext!
 export convert_component!
 export set_area!
 export set_load_zone!
-export PowerModelsData
-export PowerSystemTableData
-export add_dyn_injectors!
 export get_machine
 export get_shaft
 export get_avr
@@ -622,13 +615,10 @@ import TimeSeries
 import DataFrames
 import DataStructures: OrderedDict, SortedDict
 import JSON3
-import CSV
-import YAML
 import UUIDs
 import Base.to_index
 import InteractiveUtils
 import PrettyTables
-import PowerFlowData
 
 # Import InfrastructureSystems both as full module name (needed for internal macros like @forward)
 # and with alias for convenient usage throughout the codebase
@@ -901,17 +891,6 @@ include("models/cost_function_timeseries.jl")
 #Conversions
 include("utils/conversion.jl")
 
-# Include Parsing files
-include("parsers/common.jl")
-include("parsers/enums.jl")
-include("parsers/pm_io.jl")
-include("parsers/im_io.jl")
-include("parsers/power_system_table_data.jl")
-include("parsers/power_models_data.jl")
-include("parsers/powerflowdata_data.jl")
-include("parsers/psse_dynamic_data.jl")
-include("parsers/psse_metadata_reimport.jl")
-
 # Better printing
 include("utils/print.jl")
 @static if pkgversion(PrettyTables).major == 2
@@ -923,6 +902,7 @@ else
     include("utils/print_pt_v3.jl")
 end
 
+include("utils/enums_conversion.jl")
 include("models/serialization.jl")
 
 #Deprecated

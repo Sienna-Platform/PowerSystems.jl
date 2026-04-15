@@ -29,68 +29,70 @@
     @test isa(ts, Deterministic)
 end
 
-@testset "Hybrid System from parsed files" begin
-    sys = PSB.build_system(
-        PSB.PSITestSystems,
-        "test_RTS_GMLC_sys_with_hybrid";
-        add_forecasts = true,
-        force_build = true,
-    )
-    hybrids = collect(get_components(HybridSystem, sys))
-    @test length(hybrids) == 1
-    h_sys = hybrids[1]
-
-    electric_load = nothing
-    thermal_unit = nothing
-    subcomponents = collect(get_subcomponents(h_sys))
-    @test length(subcomponents) == 4
-    expected_time_series_names = Set{String}()
-    num_time_series = 0
-    for subcomponent in subcomponents
-        @test !PSY.is_attached(subcomponent, sys)
-        @test IS.is_attached(subcomponent, sys.data.masked_components)
-        if subcomponent isa PowerLoad
-            electric_load = subcomponent
-        elseif subcomponent isa ThermalStandard
-            thermal_unit = subcomponent
-        end
-        for ts in get_time_series_multiple(subcomponent)
-            push!(
-                expected_time_series_names,
-                PSY.make_subsystem_time_series_name(subcomponent, ts),
-            )
-            num_time_series += 1
-        end
-    end
-    @test electric_load !== nothing
-    @test thermal_unit !== nothing
-
-    sts = collect(get_time_series_multiple(h_sys; type = SingleTimeSeries))
-    forecasts =
-        collect(get_time_series_multiple(h_sys; type = DeterministicSingleTimeSeries))
-    @test length(sts) == 2
-    @test length(forecasts) == 2
-    @test issubset((get_name(x) for x in sts), expected_time_series_names)
-    @test issubset((get_name(x) for x in forecasts), expected_time_series_names)
-
-    @test get_time_series(SingleTimeSeries, electric_load, "max_active_power") isa
-          SingleTimeSeries
-    @test get_time_series(Deterministic, electric_load, "max_active_power") isa
-          DeterministicSingleTimeSeries
-
-    @test !has_time_series(thermal_unit)
-    @test has_time_series(electric_load)
-    remove_time_series!(
-        sys,
-        DeterministicSingleTimeSeries,
-        electric_load,
-        "max_active_power",
-    )
-    @test !has_time_series(electric_load, DeterministicSingleTimeSeries, "max_active_power")
-
-    # Can't set the units when the HybridSystem is attached to system.
-    @test_throws ArgumentError PSY.set_thermal_unit!(h_sys, thermal_unit)
-end
+# TODO: re-enable once PowerSystemCaseBuilder no longer relies on PSY parsers
+# (PSB.build_system uses PSY.PowerSystemTableData internally).
+# @testset "Hybrid System from parsed files" begin
+#     sys = PSB.build_system(
+#         PSB.PSITestSystems,
+#         "test_RTS_GMLC_sys_with_hybrid";
+#         add_forecasts = true,
+#         force_build = true,
+#     )
+#     hybrids = collect(get_components(HybridSystem, sys))
+#     @test length(hybrids) == 1
+#     h_sys = hybrids[1]
+#
+#     electric_load = nothing
+#     thermal_unit = nothing
+#     subcomponents = collect(get_subcomponents(h_sys))
+#     @test length(subcomponents) == 4
+#     expected_time_series_names = Set{String}()
+#     num_time_series = 0
+#     for subcomponent in subcomponents
+#         @test !PSY.is_attached(subcomponent, sys)
+#         @test IS.is_attached(subcomponent, sys.data.masked_components)
+#         if subcomponent isa PowerLoad
+#             electric_load = subcomponent
+#         elseif subcomponent isa ThermalStandard
+#             thermal_unit = subcomponent
+#         end
+#         for ts in get_time_series_multiple(subcomponent)
+#             push!(
+#                 expected_time_series_names,
+#                 PSY.make_subsystem_time_series_name(subcomponent, ts),
+#             )
+#             num_time_series += 1
+#         end
+#     end
+#     @test electric_load !== nothing
+#     @test thermal_unit !== nothing
+#
+#     sts = collect(get_time_series_multiple(h_sys; type = SingleTimeSeries))
+#     forecasts =
+#         collect(get_time_series_multiple(h_sys; type = DeterministicSingleTimeSeries))
+#     @test length(sts) == 2
+#     @test length(forecasts) == 2
+#     @test issubset((get_name(x) for x in sts), expected_time_series_names)
+#     @test issubset((get_name(x) for x in forecasts), expected_time_series_names)
+#
+#     @test get_time_series(SingleTimeSeries, electric_load, "max_active_power") isa
+#           SingleTimeSeries
+#     @test get_time_series(Deterministic, electric_load, "max_active_power") isa
+#           DeterministicSingleTimeSeries
+#
+#     @test !has_time_series(thermal_unit)
+#     @test has_time_series(electric_load)
+#     remove_time_series!(
+#         sys,
+#         DeterministicSingleTimeSeries,
+#         electric_load,
+#         "max_active_power",
+#     )
+#     @test !has_time_series(electric_load, DeterministicSingleTimeSeries, "max_active_power")
+#
+#     # Can't set the units when the HybridSystem is attached to system.
+#     @test_throws ArgumentError PSY.set_thermal_unit!(h_sys, thermal_unit)
+# end
 
 @testset "Hybrid System from unattached subcomponents" begin
     sys = PSB.build_system(PSB.PSITestSystems, "test_RTS_GMLC_sys"; add_forecasts = false)
