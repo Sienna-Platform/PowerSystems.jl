@@ -2080,39 +2080,34 @@ Return the compression settings used for system data such as time series arrays.
 get_compression_settings(sys::System) = IS.get_compression_settings(sys.data)
 
 """
-Return the initial times for all forecasts. Use `resolution` and/or `interval` keyword
-arguments to filter when multiple forecast groups exist.
+Return the initial times for all forecasts.
 """
-get_forecast_initial_times(sys::System; kwargs...) =
-    IS.get_forecast_initial_times(sys.data; kwargs...)
+get_forecast_initial_times(sys::System) =
+    IS.get_forecast_initial_times(sys.data)
 
 """
-Return the window count for all forecasts. Use `resolution` and/or `interval` keyword
-arguments to filter when multiple forecast groups exist.
+Return the window count for all forecasts.
 """
-get_forecast_window_count(sys::System; kwargs...) =
-    IS.get_forecast_window_count(sys.data; kwargs...)
+get_forecast_window_count(sys::System) =
+    IS.get_forecast_window_count(sys.data)
 
 """
-Return the horizon for all forecasts. Use `resolution` and/or `interval` keyword
-arguments to filter when multiple forecast groups exist.
+Return the horizon for all forecasts.
 """
-get_forecast_horizon(sys::System; kwargs...) =
-    IS.get_forecast_horizon(sys.data; kwargs...)
+get_forecast_horizon(sys::System) =
+    IS.get_forecast_horizon(sys.data)
 
 """
-Return the initial timestamp for all forecasts. Use `resolution` and/or `interval` keyword
-arguments to filter when multiple forecast groups exist.
+Return the initial timestamp for all forecasts.
 """
-get_forecast_initial_timestamp(sys::System; kwargs...) =
-    IS.get_forecast_initial_timestamp(sys.data; kwargs...)
+get_forecast_initial_timestamp(sys::System) =
+    IS.get_forecast_initial_timestamp(sys.data)
 
 """
-Return the forecast interval. Use `resolution` and/or `interval` keyword arguments to
-select which forecast group to query when multiple exist.
+Return the forecast interval.
 """
-get_forecast_interval(sys::System; kwargs...) =
-    IS.get_forecast_interval(sys.data; kwargs...)
+get_forecast_interval(sys::System) =
+    IS.get_forecast_interval(sys.data)
 
 """
 Return a sorted Vector of distinct resolutions for all time series of the given type
@@ -2165,9 +2160,13 @@ function IS.get_time_series_multiple(
                 type = type,
                 name = name,
                 resolution = resolution,
-                interval = interval,
             )
-                put!(channel, time_series)
+                if isnothing(interval) || (
+                    time_series isa IS.AbstractDeterministic &&
+                    IS.get_interval(time_series) == interval
+                )
+                    put!(channel, time_series)
+                end
             end
         end
     end

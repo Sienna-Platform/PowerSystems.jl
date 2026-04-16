@@ -424,7 +424,7 @@ end
     @test_throws ArgumentError get_time_series(typeof(forecast), gen, get_name(forecast))
 end
 
-@testset "Test multi-interval DeterministicSingleTimeSeries" begin
+@testset "Test DeterministicSingleTimeSeries transform replaces previous" begin
     sys = System(100.0)
     bus = ACBus(nothing)
     bus.bustype = ACBusTypes.REF
@@ -449,92 +449,38 @@ end
     interval1 = Dates.Minute(30)
     interval2 = Dates.Hour(1)
 
-    transform_single_time_series!(
-        sys,
-        horizon,
-        interval1;
-    )
-    transform_single_time_series!(
-        sys,
-        horizon,
-        interval2;
-    )
-
-    @test has_time_series(
-        gen,
-        DeterministicSingleTimeSeries,
-        sts_name;
-        interval = interval1,
-    )
-    @test has_time_series(
-        gen,
-        DeterministicSingleTimeSeries,
-        sts_name;
-        interval = interval2,
-    )
-
-    ts1 = get_time_series(
-        DeterministicSingleTimeSeries,
-        gen,
-        sts_name;
-        interval = interval1,
-    )
+    # First transform creates DeterministicSingleTimeSeries with interval1
+    transform_single_time_series!(sys, horizon, interval1)
+    @test has_time_series(gen, DeterministicSingleTimeSeries, sts_name)
+    ts1 = get_time_series(DeterministicSingleTimeSeries, gen, sts_name)
     @test ts1 isa DeterministicSingleTimeSeries
     @test IS.get_interval(ts1) == interval1
+    @test get_forecast_interval(sys) == interval1
+    @test get_forecast_horizon(sys) == horizon
+    @test get_forecast_window_count(sys) > 0
 
-    ts2 = get_time_series(
-        DeterministicSingleTimeSeries,
-        gen,
-        sts_name;
-        interval = interval2,
-    )
+    # Second transform replaces the first (IS removes all DeterministicSingleTimeSeries
+    # before adding the new ones; multi-interval coexistence is not supported in IS 3.3.x)
+    transform_single_time_series!(sys, horizon, interval2)
+    @test has_time_series(gen, DeterministicSingleTimeSeries, sts_name)
+    ts2 = get_time_series(DeterministicSingleTimeSeries, gen, sts_name)
     @test ts2 isa DeterministicSingleTimeSeries
     @test IS.get_interval(ts2) == interval2
+    @test get_forecast_interval(sys) == interval2
+    @test get_forecast_window_count(sys) > 0
 
-    @test_throws ArgumentError get_time_series(
-        DeterministicSingleTimeSeries,
-        gen,
-        sts_name,
-    )
-
-    @test get_forecast_interval(sys; interval = interval1) == interval1
-    @test get_forecast_interval(sys; interval = interval2) == interval2
-    @test get_forecast_horizon(sys; interval = interval1) == horizon
-    @test get_forecast_window_count(sys; interval = interval1) > 0
-    @test get_forecast_window_count(sys; interval = interval2) > 0
-
-    ts_interval1 = collect(
-        get_time_series_multiple(
-            sys;
-            type = DeterministicSingleTimeSeries,
-            interval = interval1,
-        ),
-    )
-    @test length(ts_interval1) > 0
-    for ts in ts_interval1
-        @test IS.get_interval(ts) == interval1
+    ts_all = collect(get_time_series_multiple(sys; type = DeterministicSingleTimeSeries))
+    @test length(ts_all) > 0
+    for ts in ts_all
+        @test IS.get_interval(ts) == interval2
     end
 
-    remove_time_series!(
-        sys,
-        DeterministicSingleTimeSeries,
-        gen,
-        sts_name;
-        interval = interval1,
-    )
-    @test !has_time_series(
-        gen,
-        DeterministicSingleTimeSeries,
-        sts_name;
-        interval = interval1,
-    )
-    @test has_time_series(
-        gen,
-        DeterministicSingleTimeSeries,
-        sts_name;
-        interval = interval2,
-    )
+    # The underlying SingleTimeSeries is still present after the transform
+    @test has_time_series(gen, SingleTimeSeries, sts_name)
 
+    # Removing DeterministicSingleTimeSeries leaves SingleTimeSeries intact
+    remove_time_series!(sys, DeterministicSingleTimeSeries)
+    @test !has_time_series(gen, DeterministicSingleTimeSeries, sts_name)
     @test has_time_series(gen, SingleTimeSeries, sts_name)
 end
 
