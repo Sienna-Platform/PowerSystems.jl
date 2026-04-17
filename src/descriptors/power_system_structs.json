@@ -939,7 +939,7 @@
                 {
                     "null_value": "Arc(ACBus(nothing), ACBus(nothing))",
                     "name": "arc",
-                    "comment": "An [`Arc`](@ref) defining this transformer `from` a bus `to` another bus",
+                    "comment": "An [`Arc`](@ref) defining this transformer `from` a primary bus `to` a secondary bus",
                     "data_type": "Arc"
                 },
                 {
@@ -1025,7 +1025,7 @@
                 },
                 {
                     "name": "base_voltage_primary",
-                    "comment": "Primary base voltage in kV",
+                    "comment": "Base voltage (kV) of the `from` (primary) bus",
                     "null_value": "nothing",
                     "data_type": "Union{Nothing, Float64}",
                     "valid_range": {
@@ -1037,7 +1037,7 @@
                 },
                 {
                     "name": "base_voltage_secondary",
-                    "comment": "Secondary base voltage in kV",
+                    "comment": "Base voltage (kV) of the `to` (secondary) bus",
                     "null_value": "nothing",
                     "data_type": "Union{Nothing, Float64}",
                     "valid_range": {
@@ -1050,7 +1050,7 @@
                 {
                     "null_value": "0.0",
                     "name": "rating_b",
-                    "comment": "Second current rating; entered in MVA.",
+                    "comment": "Second current rating; entered in MVA",
                     "data_type": "Union{Nothing, Float64}",
                     "needs_conversion": true,
                     "conversion_unit": ":mva",
@@ -1059,7 +1059,7 @@
                 {
                     "null_value": "0.0",
                     "name": "rating_c",
-                    "comment": "Third current rating; entered in MVA.",
+                    "comment": "Third current rating; entered in MVA",
                     "data_type": "Union{Nothing, Float64}",
                     "needs_conversion": true,
                     "conversion_unit": ":mva",
@@ -1139,7 +1139,7 @@
                 {
                     "null_value": "Arc(ACBus(nothing), ACBus(nothing))",
                     "name": "arc",
-                    "comment": "An [`Arc`](@ref) defining this transformer `from` a bus `to` another bus",
+                    "comment": "An [`Arc`](@ref) defining this transformer `from` a primary bus `to` a secondary bus",
                     "data_type": "Arc"
                 },
                 {
@@ -1214,7 +1214,7 @@
                 },
                 {
                     "name": "base_voltage_primary",
-                    "comment": "Primary base voltage in kV",
+                    "comment": "Base voltage (kV) of the `from` (primary) bus",
                     "null_value": "nothing",
                     "data_type": "Union{Nothing, Float64}",
                     "valid_range": {
@@ -1226,7 +1226,7 @@
                 },
                 {
                     "name": "base_voltage_secondary",
-                    "comment": "Secondary base voltage in kV",
+                    "comment": "Base voltage (kV) of the `to` (secondary) bus",
                     "null_value": "nothing",
                     "data_type": "Union{Nothing, Float64}",
                     "valid_range": {
@@ -1328,7 +1328,7 @@
                 {
                     "null_value": "Arc(ACBus(nothing), ACBus(nothing))",
                     "name": "arc",
-                    "comment": "An [`Arc`](@ref) defining this transformer `from` a bus `to` another bus",
+                    "comment": "An [`Arc`](@ref) defining this transformer `from` a primary bus `to` a secondary bus",
                     "data_type": "Arc"
                 },
                 {
@@ -1392,7 +1392,7 @@
                 },
                 {
                     "name": "base_voltage_primary",
-                    "comment": "Primary base voltage in kV",
+                    "comment": "Base voltage (kV) of the `from` (primary) bus",
                     "null_value": "nothing",
                     "data_type": "Union{Nothing, Float64}",
                     "valid_range": {
@@ -1404,7 +1404,7 @@
                 },
                 {
                     "name": "base_voltage_secondary",
-                    "comment": "Secondary base voltage in kV",
+                    "comment": "Base voltage (kV) of the `to` (secondary) bus",
                     "null_value": "nothing",
                     "data_type": "Union{Nothing, Float64}",
                     "valid_range": {
@@ -1556,7 +1556,7 @@
                     "null_value": "0.0",
                     "name": "r_primary",
                     "data_type": "Float64",
-                    "comment": "Equivalent resistance in pu ([`SYSTEM_BASE`](@ref per_unit)) from primary to star (hidden) bus.",
+                    "comment": "Equivalent resistance in pu ([`SYSTEM_BASE`](@ref per_unit)) `from` the primary bus `to` the star (hidden) bus",
                     "valid_range": {
                         "min": -2,
                         "max": 4
@@ -1569,7 +1569,7 @@
                     "null_value": "0.0",
                     "name": "x_primary",
                     "data_type": "Float64",
-                    "comment": "Equivalent reactance in pu ([`SYSTEM_BASE`](@ref per_unit)) from primary to star (hidden) bus.",
+                    "comment": "Equivalent reactance in pu ([`SYSTEM_BASE`](@ref per_unit)) `from` the primary bus `to` the star (hidden) bus",
                     "valid_range": {
                         "min": -2,
                         "max": 4
@@ -1582,7 +1582,7 @@
                     "null_value": "0.0",
                     "name": "r_secondary",
                     "data_type": "Float64",
-                    "comment": "Equivalent resistance in pu ([`SYSTEM_BASE`](@ref per_unit)) from secondary to star (hidden) bus.",
+                    "comment": "Equivalent resistance in pu ([`SYSTEM_BASE`](@ref per_unit)) `from` the secondary bus `to` the star (hidden) bus",
                     "valid_range": {
                         "min": -2,
                         "max": 4
@@ -1595,7 +1595,7 @@
                     "null_value": "0.0",
                     "name": "x_secondary",
                     "data_type": "Float64",
-                    "comment": "Equivalent reactance in pu ([`SYSTEM_BASE`](@ref per_unit)) from secondary to star (hidden) bus.",
+                    "comment": "Equivalent reactance in pu ([`SYSTEM_BASE`](@ref per_unit)) `from` the secondary bus `to` the star (hidden) bus",
                     "valid_range": {
                         "min": -2,
                         "max": 4
@@ -1608,7 +1608,7 @@
                     "null_value": "0.0",
                     "name": "r_tertiary",
                     "data_type": "Float64",
-                    "comment": "Equivalent resistance in pu ([`SYSTEM_BASE`](@ref per_unit)) from tertiary to star (hidden) bus.",
+                    "comment": "Equivalent resistance in pu ([`SYSTEM_BASE`](@ref per_unit)) `from` the tertiary bus `to` the star (hidden) bus",
                     "valid_range": {
                         "min": -2,
                         "max": 4
@@ -1621,7 +1621,7 @@
                     "null_value": "0.0",
                     "name": "x_tertiary",
                     "data_type": "Float64",
-                    "comment": "Equivalent reactance in pu ([`SYSTEM_BASE`](@ref per_unit)) from tertiary to star (hidden) bus.",
+                    "comment": "Equivalent reactance in pu ([`SYSTEM_BASE`](@ref per_unit)) `from` the tertiary bus `to` the star (hidden) bus",
                     "valid_range": {
                         "min": -2,
                         "max": 4
@@ -1756,7 +1756,7 @@
                 },
                 {
                     "name": "base_voltage_primary",
-                    "comment": "Primary base voltage in kV",
+                    "comment": "Base voltage (kV) of the primary bus",
                     "null_value": "nothing",
                     "data_type": "Union{Nothing, Float64}",
                     "valid_range": {
@@ -1768,7 +1768,7 @@
                 },
                 {
                     "name": "base_voltage_secondary",
-                    "comment": "Secondary base voltage in kV",
+                    "comment": "Base voltage (kV) of the secondary bus",
                     "null_value": "nothing",
                     "data_type": "Union{Nothing, Float64}",
                     "valid_range": {
@@ -1780,7 +1780,7 @@
                 },
                 {
                     "name": "base_voltage_tertiary",
-                    "comment": "Tertiary base voltage in kV",
+                    "comment": "Base voltage (kV) of the tertiary bus",
                     "null_value": "nothing",
                     "data_type": "Union{Nothing, Float64}",
                     "valid_range": {
@@ -1833,21 +1833,21 @@
                     "null_value": "false",
                     "name": "available_primary",
                     "data_type": "Bool",
-                    "comment": "Status if primary winding is available or not.",
+                    "comment": "Indicator of whether the primary winding is in-service (`true`) or out-of-service (`false`)",
                     "default": "true"
                 },
                 {
                     "null_value": "false",
                     "name": "available_secondary",
                     "data_type": "Bool",
-                    "comment": "Status if secondary winding is available or not.",
+                    "comment": "Indicator of whether the secondary winding is in-service (`true`) or out-of-service (`false`)",
                     "default": "true"
                 },
                 {
                     "null_value": "false",
                     "name": "available_tertiary",
                     "data_type": "Bool",
-                    "comment": "Status if tertiary winding is available or not.",
+                    "comment": "Indicator of whether the tertiary winding is in-service (`true`) or out-of-service (`false`)",
                     "default": "true"
                 },
                 {
@@ -1881,40 +1881,40 @@
                     "name": "primary_group_number",
                     "null_value": "WindingGroupNumber.UNDEFINED",
                     "data_type": "WindingGroupNumber",
-                    "comment": "Vector group number ('clock number') indicating fixed phase shift (radians) between the `from` and `to` buses due to the connection group configuration",
+                    "comment": "Vector group number ('clock number') indicating fixed phase shift (radians) `from` the primary bus `to` the star bus, due to the connection group configuration",
                     "default": "WindingGroupNumber.UNDEFINED"
                 },
                 {
                     "name": "secondary_group_number",
                     "null_value": "WindingGroupNumber.UNDEFINED",
                     "data_type": "WindingGroupNumber",
-                    "comment": "Vector group number ('clock number') indicating fixed phase shift (radians) between the `from` and `to` buses due to the connection group configuration",
+                    "comment": "Vector group number ('clock number') indicating fixed phase shift (radians) `from` the secondary bus `to` the star bus, due to the connection group configuration",
                     "default": "WindingGroupNumber.UNDEFINED"
                 },
                 {
                     "name": "tertiary_group_number",
                     "null_value": "WindingGroupNumber.UNDEFINED",
                     "data_type": "WindingGroupNumber",
-                    "comment": "Vector group number ('clock number') indicating fixed phase shift (radians) between the `from` and `to` buses due to the connection group configuration",
+                    "comment": "Vector group number ('clock number') indicating fixed phase shift (radians) `from` the tertiary bus `to` the star bus, due to the connection group configuration",
                     "default": "WindingGroupNumber.UNDEFINED"
                 },
                 {
                     "name": "control_objective_primary",
-                    "comment": "Control objective for the tap changer for winding 1. See [`TransformerControlObjective`](@ref xtf_crtl)",
+                    "comment": "Control objective for the tap changer for the primary winding. See [`TransformerControlObjective`](@ref xtf_crtl)",
                     "data_type": "TransformerControlObjective",
                     "null_value": "TransformerControlObjective.UNDEFINED",
                     "default": "TransformerControlObjective.UNDEFINED"
                 },
                 {
                     "name": "control_objective_secondary",
-                    "comment": "Control objective for the tap changer for winding 2. See [`TransformerControlObjective`](@ref xtf_crtl)",
+                    "comment": "Control objective for the tap changer for secondary winding. See [`TransformerControlObjective`](@ref xtf_crtl)",
                     "data_type": "TransformerControlObjective",
                     "null_value": "TransformerControlObjective.UNDEFINED",
                     "default": "TransformerControlObjective.UNDEFINED"
                 },
                 {
                     "name": "control_objective_tertiary",
-                    "comment": "Control objective for the tap changer for winding 3. See [`TransformerControlObjective`](@ref xtf_crtl)",
+                    "comment": "Control objective for the tap changer for tertiary winding. See [`TransformerControlObjective`](@ref xtf_crtl)",
                     "data_type": "TransformerControlObjective",
                     "null_value": "TransformerControlObjective.UNDEFINED",
                     "default": "TransformerControlObjective.UNDEFINED"
@@ -2036,7 +2036,7 @@
                     "null_value": "0.0",
                     "name": "r_primary",
                     "data_type": "Float64",
-                    "comment": "Equivalent resistance in pu ([`SYSTEM_BASE`](@ref per_unit)) from primary to star (hidden) bus.",
+                    "comment": "Equivalent resistance in pu ([`SYSTEM_BASE`](@ref per_unit)) `from` the primary bus `to` the star (hidden) bus",
                     "valid_range": {
                         "min": -2,
                         "max": 4
@@ -2049,7 +2049,7 @@
                     "null_value": "0.0",
                     "name": "x_primary",
                     "data_type": "Float64",
-                    "comment": "Equivalent reactance in pu ([`SYSTEM_BASE`](@ref per_unit)) from primary to star (hidden) bus.",
+                    "comment": "Equivalent reactance in pu ([`SYSTEM_BASE`](@ref per_unit)) `from` the primary bus `to` the star (hidden) bus",
                     "valid_range": {
                         "min": -2,
                         "max": 4
@@ -2062,7 +2062,7 @@
                     "null_value": "0.0",
                     "name": "r_secondary",
                     "data_type": "Float64",
-                    "comment": "Equivalent resistance in pu ([`SYSTEM_BASE`](@ref per_unit)) from secondary to star (hidden) bus.",
+                    "comment": "Equivalent resistance in pu ([`SYSTEM_BASE`](@ref per_unit)) `from` the secondary bus `to` the star (hidden) bus",
                     "valid_range": {
                         "min": -2,
                         "max": 4
@@ -2075,7 +2075,7 @@
                     "null_value": "0.0",
                     "name": "x_secondary",
                     "data_type": "Float64",
-                    "comment": "Equivalent reactance in pu ([`SYSTEM_BASE`](@ref per_unit)) from secondary to star (hidden) bus.",
+                    "comment": "Equivalent reactance in pu ([`SYSTEM_BASE`](@ref per_unit)) `from` the secondary bus `to` the star (hidden) bus",
                     "valid_range": {
                         "min": -2,
                         "max": 4
@@ -2088,7 +2088,7 @@
                     "null_value": "0.0",
                     "name": "r_tertiary",
                     "data_type": "Float64",
-                    "comment": "Equivalent resistance in pu ([`SYSTEM_BASE`](@ref per_unit)) from tertiary to star (hidden) bus.",
+                    "comment": "Equivalent resistance in pu ([`SYSTEM_BASE`](@ref per_unit)) `from` the tertiary bus `to` the star (hidden) bus",
                     "valid_range": {
                         "min": -2,
                         "max": 4
@@ -2101,7 +2101,7 @@
                     "null_value": "0.0",
                     "name": "x_tertiary",
                     "data_type": "Float64",
-                    "comment": "Equivalent reactance in pu ([`SYSTEM_BASE`](@ref per_unit)) from tertiary to star (hidden) bus.",
+                    "comment": "Equivalent reactance in pu ([`SYSTEM_BASE`](@ref per_unit)) `from` the tertiary bus `to` the star (hidden) bus",
                     "valid_range": {
                         "min": -2,
                         "max": 4
@@ -2203,7 +2203,7 @@
                 },
                 {
                     "name": "α_primary",
-                    "comment": "Initial condition of primary phase shift (radians) between the `from` and `to` buses ",
+                    "comment": "Initial condition of primary phase shift (radians) between the primary (`from`) bus and the star (`to`) bus",
                     "null_value": "0.0",
                     "data_type": "Float64",
                     "valid_range": {
@@ -2214,7 +2214,7 @@
                 },
                 {
                     "name": "α_secondary",
-                    "comment": "Initial condition of secondary phase shift (radians) between the `from` and `to` buses ",
+                    "comment": "Initial condition of secondary phase shift (radians) between the secondary (`from`) bus and the star (`to`) bus",
                     "null_value": "0.0",
                     "data_type": "Float64",
                     "valid_range": {
@@ -2225,7 +2225,7 @@
                 },
                 {
                     "name": "α_tertiary",
-                    "comment": "Initial condition of tertiary phase shift (radians) between the `from` and `to` buses ",
+                    "comment": "Initial condition of tertiary phase shift (radians) between the tertiary (`from`) bus and the star (`to`) bus",
                     "null_value": "0.0",
                     "data_type": "Float64",
                     "valid_range": {
@@ -2236,7 +2236,7 @@
                 },
                 {
                     "name": "base_power_12",
-                    "comment": "Base power (MVA) for [per unitization](@ref per_unit) for primary-secondary windings.",
+                    "comment": "Base power (MVA) for [per unitization](@ref per_unit) for primary-secondary windings",
                     "null_value": "0.0",
                     "data_type": "Float64",
                     "valid_range": {
@@ -2247,7 +2247,7 @@
                 },
                 {
                     "name": "base_power_23",
-                    "comment": "Base power (MVA) for [per unitization](@ref per_unit) for secondary-tertiary windings.",
+                    "comment": "Base power (MVA) for [per unitization](@ref per_unit) for secondary-tertiary windings",
                     "null_value": "0.0",
                     "data_type": "Float64",
                     "valid_range": {
@@ -2258,7 +2258,7 @@
                 },
                 {
                     "name": "base_power_13",
-                    "comment": "Base power (MVA) for [per unitization](@ref per_unit) for primary-tertiary windings.",
+                    "comment": "Base power (MVA) for [per unitization](@ref per_unit) for primary-tertiary windings",
                     "null_value": "0.0",
                     "data_type": "Float64",
                     "valid_range": {
@@ -2269,7 +2269,7 @@
                 },
                 {
                     "name": "base_voltage_primary",
-                    "comment": "Primary base voltage in kV",
+                    "comment": "Base voltage (kV) of the primary bus",
                     "null_value": "nothing",
                     "data_type": "Union{Nothing, Float64}",
                     "valid_range": {
@@ -2281,7 +2281,7 @@
                 },
                 {
                     "name": "base_voltage_secondary",
-                    "comment": "Secondary base voltage in kV",
+                    "comment": "Base voltage (kV) of the secondary bus",
                     "null_value": "nothing",
                     "data_type": "Union{Nothing, Float64}",
                     "valid_range": {
@@ -2293,7 +2293,7 @@
                 },
                 {
                     "name": "base_voltage_tertiary",
-                    "comment": "Tertiary base voltage in kV",
+                    "comment": "Base voltage (kV) of the tertiary bus",
                     "null_value": "nothing",
                     "data_type": "Union{Nothing, Float64}",
                     "valid_range": {
@@ -2346,21 +2346,21 @@
                     "null_value": "false",
                     "name": "available_primary",
                     "data_type": "Bool",
-                    "comment": "Status if primary winding is available or not.",
+                    "comment": "Indicator of whether the primary winding is in-service (`true`) or out-of-service (`false`)",
                     "default": "true"
                 },
                 {
                     "null_value": "false",
                     "name": "available_secondary",
                     "data_type": "Bool",
-                    "comment": "Status if primary winding is available or not.",
+                    "comment": "Indicator of whether the secondary winding is in-service (`true`) or out-of-service (`false`)",
                     "default": "true"
                 },
                 {
                     "null_value": "false",
                     "name": "available_tertiary",
                     "data_type": "Bool",
-                    "comment": "Status if primary winding is available or not.",
+                    "comment": "Indicator of whether the tertiary winding is in-service (`true`) or out-of-service (`false`)",
                     "default": "true"
                 },
                 {
@@ -2399,21 +2399,21 @@
                 },
                 {
                     "name": "control_objective_primary",
-                    "comment": "Control objective for the tap changer for winding 1. See [`TransformerControlObjective`](@ref xtf_crtl)",
+                    "comment": "Control objective for the tap changer for the primary winding. See [`TransformerControlObjective`](@ref xtf_crtl)",
                     "data_type": "TransformerControlObjective",
                     "null_value": "TransformerControlObjective.UNDEFINED",
                     "default": "TransformerControlObjective.UNDEFINED"
                 },
                 {
                     "name": "control_objective_secondary",
-                    "comment": "Control objective for the tap changer for winding 2. See [`TransformerControlObjective`](@ref xtf_crtl)",
+                    "comment": "Control objective for the tap changer for secondary winding. See [`TransformerControlObjective`](@ref xtf_crtl)",
                     "data_type": "TransformerControlObjective",
                     "null_value": "TransformerControlObjective.UNDEFINED",
                     "default": "TransformerControlObjective.UNDEFINED"
                 },
                 {
                     "name": "control_objective_tertiary",
-                    "comment": "Control objective for the tap changer for winding 3. See [`TransformerControlObjective`](@ref xtf_crtl)",
+                    "comment": "Control objective for the tap changer for tertiary winding. See [`TransformerControlObjective`](@ref xtf_crtl)",
                     "data_type": "TransformerControlObjective",
                     "null_value": "TransformerControlObjective.UNDEFINED",
                     "default": "TransformerControlObjective.UNDEFINED"
@@ -2475,7 +2475,7 @@
                 },
                 {
                     "name": "active_power_limits_from",
-                    "comment": "Minimum and maximum active power flows to the FROM node (MW)",
+                    "comment": "Minimum and maximum active power flows to the `from` node (MW)",
                     "null_value": "(min=0.0, max=0.0)",
                     "data_type": "MinMax",
                     "needs_conversion": true,
@@ -2483,7 +2483,7 @@
                 },
                 {
                     "name": "active_power_limits_to",
-                    "comment": "Minimum and maximum active power flows to the TO node (MW)",
+                    "comment": "Minimum and maximum active power flows to the `to` node (MW)",
                     "null_value": "(min=0.0, max=0.0)",
                     "data_type": "MinMax",
                     "needs_conversion": true,
@@ -2491,7 +2491,7 @@
                 },
                 {
                     "name": "reactive_power_limits_from",
-                    "comment": "Minimum and maximum reactive power limits to the FROM node (MVAR)",
+                    "comment": "Minimum and maximum reactive power limits to the `from` node (MVAR)",
                     "null_value": "(min=0.0, max=0.0)",
                     "data_type": "MinMax",
                     "needs_conversion": true,
@@ -2499,7 +2499,7 @@
                 },
                 {
                     "name": "reactive_power_limits_to",
-                    "comment": "Minimum and maximum reactive power limits to the TO node (MVAR)",
+                    "comment": "Minimum and maximum reactive power limits to the `to` node (MVAR)",
                     "null_value": "(min=0.0, max=0.0)",
                     "data_type": "MinMax",
                     "needs_conversion": true,
@@ -2561,7 +2561,7 @@
                 },
                 {
                     "name": "active_power_flow",
-                    "comment": "Initial condition of active power flowing from the from-bus to the to-bus in DC.",
+                    "comment": "Initial condition of active power flow in DC on the line (MW)",
                     "null_value": "0.0",
                     "data_type": "Float64",
                     "needs_conversion": true,
@@ -2582,7 +2582,7 @@
                 },
                 {
                     "name": "active_power_limits_from",
-                    "comment": "Minimum and maximum active power flows to the FROM node (MW)",
+                    "comment": "Minimum and maximum active power flows to the `from` node (MW)",
                     "null_value": "(min=0.0, max=0.0)",
                     "data_type": "MinMax",
                     "needs_conversion": true,
@@ -2590,7 +2590,7 @@
                 },
                 {
                     "name": "active_power_limits_to",
-                    "comment": "Minimum and maximum active power flows to the TO node (MW)",
+                    "comment": "Minimum and maximum active power flows to the `to` node (MW)",
                     "null_value": "(min=0.0, max=0.0)",
                     "data_type": "MinMax",
                     "needs_conversion": true,
@@ -2605,14 +2605,14 @@
                 },
                 {
                     "name": "dc_current",
-                    "comment": "DC current (A) on the converter flowing in the DC line, from `from` bus to `to` bus.",
+                    "comment": "DC current (A) on the converter flowing in the DC line, from the `from` bus to the `to` bus.",
                     "null_value": "0.0",
                     "data_type": "Float64",
                     "default": "0.0"
                 },
                 {
                     "name": "reactive_power_from",
-                    "comment": "Initial condition of reactive power flowing into the from-bus.",
+                    "comment": "Initial condition of reactive power flowing into the `from` bus.",
                     "null_value": "0.0",
                     "data_type": "Float64",
                     "needs_conversion": true,
@@ -2621,21 +2621,21 @@
                 },
                 {
                     "name": "dc_voltage_control_from",
-                    "comment": "Converter control type in the `from` bus converter. Set true for DC Voltage Control (set DC voltage on the DC side of the converter), and false for power demand in the converter.",
+                    "comment": "Converter control type in the `from` bus converter. Set `true` for DC Voltage Control (set DC voltage on the DC side of the converter), and `false` for power demand in the converter.",
                     "null_value": "false",
                     "data_type": "Bool",
                     "default": "true"
                 },
                 {
                     "name": "ac_voltage_control_from",
-                    "comment": "Converter control type in the `from` bus converter. Set true for AC Voltage Control (set AC voltage on the AC side of the converter), and false for fixed power AC factor.",
+                    "comment": "Converter control type in the `from` bus converter. Set `true` for AC Voltage Control (set AC voltage on the AC side of the converter), and `false` for fixed power AC factor.",
                     "null_value": "false",
                     "data_type": "Bool",
                     "default": "true"
                 },
                 {
                     "name": "dc_setpoint_from",
-                    "comment": "Converter DC setpoint in the `from` bus converter. If `voltage_control_from = true` this number is the DC voltage on the DC side of the converter, entered in kV. If `voltage_control_from = false`, this value is the power demand in MW, if positive the converter is supplying power to the AC network at the `from` bus; if negative, the converter is withdrawing power from the AC network at the `from` bus.",
+                    "comment": "Converter DC setpoint in the `from` bus converter. If `voltage_control_from = true` this number is the DC voltage on the DC side of the converter, entered in kV. If `voltage_control_from = false`, this value is the power demand in MW: if positive the converter is supplying power to the AC network at the `from` bus; if negative, the converter is withdrawing power from the AC network at the `from` bus.",
                     "null_value": "0.0",
                     "data_type": "Float64",
                     "default": "0.0"
