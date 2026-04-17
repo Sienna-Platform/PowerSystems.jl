@@ -793,7 +793,15 @@ abstract type Component <: IS.InfrastructureSystemsComponent end
 """ Supertype for "devices" (bus, line, etc.) """
 abstract type Device <: Component end
 
+"""
+All PowerSystems [Device](@ref) types support time series. This can be overridden for 
+custom component types that do not support time series.
+"""
 supports_time_series(::Device) = true
+"""
+All PowerSystems [Device](@ref) types support supplemental attributes. This can be overridden for 
+custom component types that do not support supplemental attributes.
+"""
 supports_supplemental_attributes(::Device) = true
 
 # Include utilities

@@ -455,6 +455,15 @@ Notes
 
 IS.@scoped_enum(StateTypes, Differential = 1, Algebraic = 2, Hybrid = 3,)
 
+@doc """
+Categorization of dynamic state variables.
+
+# Values
+- `Differential`: State governed by a differential equation
+- `Algebraic`: State governed by an algebraic constraint
+- `Hybrid`: State with both differential and algebraic aspects
+""" StateTypes
+
 IS.@scoped_enum(
     ReservoirDataType,
     USABLE_VOLUME = 1,
@@ -538,6 +547,17 @@ IS.@scoped_enum(
     TripleCombustionOneSteam = 4,
     Other = 5,
 )
+
+@doc """
+Configuration types for combined cycle power plants.
+
+# Values
+- `SingleShaftCombustionSteam`: Single-shaft arrangement with one combustion and one steam turbine
+- `SeparateShaftCombustionSteam`: Separate shafts for combustion and steam turbines
+- `DoubleCombustionOneSteam`: Two combustion turbines feeding one steam turbine
+- `TripleCombustionOneSteam`: Three combustion turbines feeding one steam turbine
+- `Other`: Other combined cycle configuration
+""" CombinedCycleConfiguration
 
 const PS_MAX_LOG = parse(Int, get(ENV, "PS_MAX_LOG", "50"))
 const DEFAULT_BASE_MVA = 100.0

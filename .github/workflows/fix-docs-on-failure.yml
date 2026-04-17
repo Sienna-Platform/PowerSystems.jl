@@ -1,0 +1,222 @@
+name: Auto-fix Documentation Failures
+
+on:
+  workflow_run:
+    workflows: ["Documentation"]
+    types:
+      - completed
+    branches:
+      - main
+
+permissions:
+  issues: write
+  actions: read
+  pull-requests: read
+
+jobs:
+  open-copilot-issue:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+    steps:
+      - name: Create or update Copilot issue for docs failure
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const runId = context.payload.workflow_run.id;
+            const runUrl = context.payload.workflow_run.html_url;
+            const headSha = context.payload.workflow_run.head_sha;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+
+            // --- Gather failure logs ---
+            const { data: jobsData } = await github.rest.actions.listJobsForWorkflowRun({
+              owner, repo, run_id: runId, filter: 'latest',
+            });
+
+            let failureSummary = '';
+            for (const job of jobsData.jobs) {
+              if (job.conclusion === 'failure') {
+                failureSummary += `### Job: ${job.name}\n`;
+                failureSummary += `- **Status:** ${job.conclusion}\n`;
+                failureSummary += `- **URL:** ${job.html_url}\n\n`;
+
+                try {
+                  const logResponse = await github.rest.actions.downloadJobLogsForWorkflowRun({
+                    owner, repo, job_id: job.id,
+                  });
+                  const logLines = logResponse.data.split('\n');
+                  const tail = logLines.slice(-200).join('\n');
+                  failureSummary += '<details><summary>Log tail (last 200 lines)</summary>\n\n```\n' + tail + '\n```\n</details>\n\n';
+                } catch (e) {
+                  failureSummary += `_Could not fetch logs: ${e.message}_\n\n`;
+                }
+              }
+            }
+
+            // --- Check for an existing open issue ---
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner, repo,
+              labels: 'documentation,copilot',
+              state: 'open',
+              per_page: 5,
+            });
+            const existingIssue = issues.find(i =>
+              i.title.startsWith('[Copilot] Fix documentation build failure')
+            );
+
+            // --- Check for open PRs (including drafts) already addressing docs failures ---
+            const { data: openPRs } = await github.rest.pulls.list({
+              owner, repo,
+              state: 'open',
+              per_page: 30,
+            });
+            const docFixPRs = openPRs.filter(pr => {
+              const title = pr.title.toLowerCase();
+              const body = (pr.body || '').toLowerCase();
+              const labels = pr.labels.map(l => l.name.toLowerCase());
+              return (
+                labels.includes('documentation') ||
+                title.includes('documentation') ||
+                /\bdocs?\b/.test(title) ||
+                body.includes('documentation build failure') ||
+                body.includes('docs/make.jl')
+              );
+            });
+
+            let prSection = '';
+            if (docFixPRs.length > 0) {
+              prSection = '### Existing PRs that may address this failure\n\n';
+              prSection += 'Check these open PRs (including drafts) before starting work — they may already fix some or all of the errors:\n\n';
+              for (const pr of docFixPRs) {
+                const draft = pr.draft ? ' (draft)' : '';
+                prSection += `- #${pr.number}${draft}: ${pr.title}\n`;
+              }
+              prSection += '\nIf an existing PR already resolves the failure, close this issue. Otherwise, coordinate with or build on the existing PR.\n\n';
+            }
+
+            // --- Build issue body ---
+            const body = [
+              '## Documentation build failed on `main`',
+              '',
+              `The [Documentation workflow run](${runUrl}) (run ID: \`${runId}\`) failed at commit \`${headSha}\`.`,
+              '',
+              prSection,
+              '### Task',
+              'Please investigate the documentation build failure and open a PR to fix it.',
+              "The documentation is built with Julia's Documenter.jl package. The build script is at `docs/make.jl`.",
+              '',
+              '### Cross-repo documentation context',
+              '',
+              'PowerSystems.jl docs are linked to other Sienna packages via [DocumenterInterLinks.jl](https://github.com/JuliaDocumenter/DocumenterInterLinks.jl).',
+              'The `docs/make.jl` file configures `InterLinks` to resolve `@extref` cross-references to other repos in the **NREL-Sienna** (and **NLR-Sienna**) GitHub orgs.',
+              '',
+              '**Common cross-repo causes of documentation failures:**',
+              '- Missing or renamed docstrings in a dependency (e.g., `InfrastructureSystems.jl`) that are referenced via `@extref`',
+              '- Ambiguous docstrings that are imported from another package and re-exported by PowerSystems.jl — these need disambiguation in the `@autodocs` or `@docs` blocks',
+              '- Broken `InterLinks` URLs when a dependency has reorganized or redeployed its documentation',
+              '- `ExternalFallbacks` in `docs/make.jl` that reference symbols no longer present in the upstream package',
+              '',
+              '**If the fix belongs in another repository:**',
+              '- Open a PR in the appropriate **NREL-Sienna/** or **NLR-Sienna/** repo (e.g., `InfrastructureSystems.jl`) to fix the upstream docstring or export',
+              '- Link the upstream PR in this issue and in any PowerSystems.jl PR',
+              '- If a temporary workaround is possible in PowerSystems.jl (e.g., updating `ExternalFallbacks`), include it and note the upstream PR that provides the permanent fix',
+              '',
+              '### Other common causes',
+              '- Docstring errors or missing exports in this repo',
+              '- Broken cross-references or links',
+              '- Literate.jl script errors in `docs/src/`',
+              '- Dependency issues in `docs/Project.toml`',
+              '',
+              '### Documentation guidelines',
+              '',
+              'Follow these guidelines when making documentation changes:',
+              '- [Sienna documentation practices](https://github.com/NREL-Sienna/InfrastructureSystems.jl/blob/main/.claude/Sienna.md) (see "Documentation Practices and Requirements")',
+              '- [Sienna docs best practices](https://nrel-sienna.github.io/InfrastructureSystems.jl/stable/docs_best_practices/explanation/)',
+              '- [Diataxis framework](https://diataxis.fr/)',
+              '',
+              '### Failure Details',
+              failureSummary,
+            ].join('\n');
+
+            if (existingIssue) {
+              // Update the existing issue with new failure info
+              const comment = [
+                '## New documentation build failure',
+                '',
+                `A new failure occurred at commit \`${headSha}\`.`,
+                '',
+                `[Workflow run](${runUrl})`,
+                '',
+                prSection,
+                failureSummary,
+              ].join('\n');
+
+              await github.rest.issues.createComment({
+                owner, repo,
+                issue_number: existingIssue.number,
+                body: comment,
+              });
+              console.log(`Updated existing issue #${existingIssue.number}`);
+            } else if (docFixPRs.length > 0) {
+              // There are already open PRs that may fix this — don't create a duplicate issue,
+              // just add a comment on the most recent relevant PR
+              const targetPR = docFixPRs[0];
+              await github.rest.issues.createComment({
+                owner, repo,
+                issue_number: targetPR.number,
+                body: [
+                  '## Documentation build still failing on `main`',
+                  '',
+                  `The [Documentation workflow](${runUrl}) failed at commit \`${headSha}\`.`,
+                  'This PR may already address the failure — please verify.',
+                  '',
+                  failureSummary,
+                ].join('\n'),
+              });
+              console.log(`Commented on existing docs PR #${targetPR.number}`);
+            } else {
+              // Ensure labels exist
+              for (const label of ['documentation', 'copilot']) {
+                try {
+                  await github.rest.issues.getLabel({ owner, repo, name: label });
+                } catch {
+                  const colors = { documentation: '0075ca', copilot: 'c2e0c6' };
+                  const descriptions = {
+                    documentation: 'Improvements or additions to documentation',
+                    copilot: 'Copilot agent task',
+                  };
+                  await github.rest.issues.createLabel({
+                    owner, repo, name: label,
+                    color: colors[label],
+                    description: descriptions[label],
+                  });
+                }
+              }
+
+              // Create a new issue
+              const { data: issue } = await github.rest.issues.create({
+                owner, repo,
+                title: `[Copilot] Fix documentation build failure (${headSha.slice(0, 7)})`,
+                body: body,
+                labels: ['documentation', 'copilot'],
+              });
+
+              // Assign the issue to Copilot to trigger the coding agent
+              try {
+                await github.rest.issues.addAssignees({
+                  owner, repo,
+                  issue_number: issue.number,
+                  assignees: ['copilot'],
+                });
+                console.log(`Created issue #${issue.number} and assigned to Copilot`);
+              } catch (e) {
+                // If assigning fails, mention @copilot in a comment as fallback
+                console.log(`Could not assign to copilot: ${e.message}`);
+                await github.rest.issues.createComment({
+                  owner, repo,
+                  issue_number: issue.number,
+                  body: '@copilot',
+                });
+                console.log(`Created issue #${issue.number} and mentioned @copilot in comment`);
+              }
+            }

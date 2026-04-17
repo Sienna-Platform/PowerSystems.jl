@@ -104,7 +104,7 @@ MarketBidCost(
         ancillary_service_offers,
     )
 
-# Constructor for demo purposes; non-functional.
+# Constructor that sets the startup cost to a small constant and the rest to 0.0.
 function MarketBidCost(::Nothing)
     MarketBidCost(;
         no_load_cost = nothing,
@@ -202,9 +202,10 @@ function set_start_up!(value::MarketBidCost, val::Real)
     set_start_up!(value, start_up_multi)
 end
 
-# Each market bid curve (the elements that make up the incremental and decremental offer
-# curves in MarketBidCost) is a CostCurve{PiecewiseIncrementalCurve} with NaN initial input
-# and first x-coordinate
+"""
+Return `true` if the given [`ProductionVariableCostCurve`](@ref) is a market bid curve
+(a `CostCurve{PiecewiseIncrementalCurve}` as used in [`MarketBidCost`](@ref)).
+"""
 function is_market_bid_curve(curve::ProductionVariableCostCurve)
     return (curve isa CostCurve{PiecewiseIncrementalCurve})
 end
