@@ -189,9 +189,11 @@ get_status(value::HybridSystem) = value.status
 """Get [`HybridSystem`](@ref) `bus`."""
 get_bus(value::HybridSystem) = value.bus
 """Get [`HybridSystem`](@ref) `active_power`."""
-get_active_power(value::HybridSystem) = get_value(value, Val(:active_power), Val(:mva))
+get_active_power(value::HybridSystem, units) =
+    get_value(value, Val(:active_power), Val(:mva), units)
 """Get [`HybridSystem`](@ref) `reactive_power`."""
-get_reactive_power(value::HybridSystem) = get_value(value, Val(:reactive_power), Val(:mva))
+get_reactive_power(value::HybridSystem, units) =
+    get_value(value, Val(:reactive_power), Val(:mva), units)
 """Get [`HybridSystem`](@ref) thermal unit"""
 get_thermal_unit(value::HybridSystem) = value.thermal_unit
 """Get [`HybridSystem`](@ref) load"""
@@ -201,19 +203,19 @@ get_storage(value::HybridSystem) = value.storage
 """Get [`HybridSystem`](@ref) renewable unit"""
 get_renewable_unit(value::HybridSystem) = value.renewable_unit
 """Get [`HybridSystem`](@ref) `interconnection_rating`."""
-get_interconnection_rating(value::HybridSystem) =
-    get_value(value, Val(:interconnection_rating), Val(:mva))
+get_interconnection_rating(value::HybridSystem, units) =
+    get_value(value, Val(:interconnection_rating), Val(:mva), units)
 """get [`HybridSystem`](@ref) interconnection impedance"""
 get_interconnection_impedance(value::HybridSystem) = value.interconnection_impedance
 """Get [`HybridSystem`](@ref) `input_active_power_limits`."""
-get_input_active_power_limits(value::HybridSystem) =
-    get_value(value, Val(:input_active_power_limits), Val(:mva))
+get_input_active_power_limits(value::HybridSystem, units) =
+    get_value(value, Val(:input_active_power_limits), Val(:mva), units)
 """Get [`HybridSystem`](@ref) `output_active_power_limits`."""
-get_output_active_power_limits(value::HybridSystem) =
-    get_value(value, Val(:output_active_power_limits), Val(:mva))
+get_output_active_power_limits(value::HybridSystem, units) =
+    get_value(value, Val(:output_active_power_limits), Val(:mva), units)
 """Get [`HybridSystem`](@ref) `reactive_power_limits`."""
-get_reactive_power_limits(value::HybridSystem) =
-    get_value(value, Val(:reactive_power_limits), Val(:mva))
+get_reactive_power_limits(value::HybridSystem, units) =
+    get_value(value, Val(:reactive_power_limits), Val(:mva), units)
 """get [`HybridSystem`](@ref) interconnection efficiency"""
 get_interconnection_efficiency(value::HybridSystem) = value.interconnection_efficiency
 """Get [`HybridSystem`](@ref) `base_power`."""

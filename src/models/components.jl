@@ -31,10 +31,6 @@ function get_value(c::Component, field::Val{T}, conversion_unit, units) where {T
     return _convert_from_device_base(c, value, conversion_unit, units)
 end
 
-# 3-arg getter — 1-arg generated accessors call this; default target is DEFAULT_UNITS.
-@inline get_value(c::Component, field::Val, conversion_unit::Val) =
-    get_value(c, field, conversion_unit, DEFAULT_UNITS)
-
 # ---- DU → natural power units ----
 _convert_from_device_base(c::Component, value::Float64, ::Val{:mva}, ::typeof(MW)) =
     value * get_base_power(c) * u"MW"
@@ -207,23 +203,12 @@ function set_value(
     return ustrip(val) / (get_base_power(c) / get_system_base_power(c))
 end
 
-# ---- From bare Float64 (interpreted as SU — the "I know what I'm doing" path) ----
-# Hot-loop form for collections of Float64s already in system base.
-function set_value(c::Component, field, val::Float64, ::Val{:mva})::Float64
-    return val / (get_base_power(c) / get_system_base_power(c))
-end
-
-function set_value(
-    c::T, field, val::Float64, ::Val{:ohm},
-)::Float64 where {T <: Branch}
-    return val / (get_system_base_power(c) / get_base_power(c))
-end
-
-function set_value(
-    c::T, field, val::Float64, ::Val{:siemens},
-)::Float64 where {T <: Branch}
-    return val / (get_base_power(c) / get_system_base_power(c))
-end
+# ---- Bare Float64 is rejected: callers must attach units explicitly ----
+set_value(::Component, ::Any, ::Float64, ::Val) = throw(
+    ArgumentError(
+        "setter requires explicit units (e.g. `val * SU`, `val * DU`, `val * MW`)",
+    ),
+)
 
 # ---- Compound field types for setters ----
 _to_device_base(c::Component, val, cu) = set_value(c, nothing, val, cu)

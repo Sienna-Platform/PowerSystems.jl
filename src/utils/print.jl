@@ -1,5 +1,20 @@
 # "smart" summary and REPL printing
 
+# Getters for unit-bearing fields declare their display-units choice via the
+# `IS.display_units_arg` trait (set by the struct-generator template, default
+# `missing` for plain getters). Prefer the trait's unit (typically `SU`),
+# falling back to `DU` if the component isn't system-attached.
+function _show_accessor_value(getter_func::Function, ist::Component)
+    arg = IS.display_units_arg(getter_func, typeof(ist))
+    ismissing(arg) && return getter_func(ist)
+    try
+        return getter_func(ist, arg)
+    catch err
+        err isa ErrorException && occursin("not attached", err.msg) || rethrow()
+        return getter_func(ist, DU)
+    end
+end
+
 function Base.summary(sys::System)
     return "System (base power $(get_base_power(sys)))"
 end
@@ -56,7 +71,7 @@ function Base.show(io::IO, ist::Component)
             continue
         elseif hasproperty(PowerSystems, getter_name)
             getter_func = getproperty(PowerSystems, getter_name)
-            val = getter_func(ist)
+            val = _show_accessor_value(getter_func, ist)
         else
             val = getproperty(ist, name)
         end
@@ -98,14 +113,7 @@ function Base.show(io::IO, ::MIME"text/plain", ist::Component)
                 val = summary(getproperty(ist, name))
             elseif hasproperty(PowerSystems, getter_name)
                 getter_func = getproperty(PowerSystems, getter_name)
-                try
-                    val = getter_func(ist)
-                catch e
-                    @warn "$(e.msg) Printing in DEVICE_BASE instead."
-                    val = with_units_base(ist, "DEVICE_BASE") do
-                        getter_func(ist)
-                    end
-                end
+                val = _show_accessor_value(getter_func, ist)
             else
                 val = getproperty(ist, name)
             end

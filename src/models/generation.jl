@@ -30,13 +30,13 @@ end
 """
 Return the max active power for the Renewable Generation calculated as the `rating` * `power_factor`
 """
-function get_max_active_power(d::T) where {T <: RenewableGen}
-    return get_rating(d) * get_power_factor(d)
+function get_max_active_power(d::T, units) where {T <: RenewableGen}
+    return get_rating(d, units) * get_power_factor(d)
 end
 
 """
 Return the max reactive power for the Renewable Generation calculated as the `rating` * sin(acos(`power_factor`))
 """
-function get_max_reactive_power(d::T) where {T <: RenewableGen}
-    return get_rating(d) * sin(acos(get_power_factor(d)))
+function get_max_reactive_power(d::T, units) where {T <: RenewableGen}
+    return get_rating(d, units) * sin(acos(get_power_factor(d)))
 end

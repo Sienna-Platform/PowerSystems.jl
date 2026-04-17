@@ -33,8 +33,10 @@ function are_type_and_fields_in_output(obj::T) where {T <: Component}
         # and extract its numeric part for the occursin check.
         getter_name = Symbol("get_$name")
         display_val = if hasproperty(PowerSystems, getter_name)
+            getter_func = getproperty(PowerSystems, getter_name)
+            arg = IS.display_units_arg(getter_func, typeof(obj))
             try
-                getproperty(PowerSystems, getter_name)(obj)
+                ismissing(arg) ? getter_func(obj) : getter_func(obj, arg)
             catch
                 val
             end

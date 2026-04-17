@@ -276,13 +276,13 @@ function test_accessors(component)
             end
         end
 
-        # Some getters convert to SU, which requires system attachment. Fall
-        # back to device-base (DU) for unattached components to avoid errors.
-        val = try
+        # Unit-aware getters are tagged via `display_units_arg`. For unattached
+        # test components, call with `DU` (device base) so the SU conversion
+        # path — which needs system attachment — is skipped.
+        val = if ismissing(IS.display_units_arg(func, ps_type))
             func(component)
-        catch err
-            err isa ErrorException && occursin("not attached", err.msg) || rethrow()
-            hasmethod(func, (ps_type, Any)) ? func(component, DU) : continue
+        else
+            func(component, DU)
         end
         # Getters now wrap values (e.g. `0.5 SU` instead of raw `0.5`), so
         # compare the unwrapped value's type to `field_type`.

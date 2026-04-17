@@ -314,8 +314,11 @@ end
             ts2b = get_time_series(SingleTimeSeries, gen2, "max_reactive_power")
             @test ts1b.data == ts2b.data
             ta_vals = TimeSeries.values(ta)
-            expected1 = use_scaling_factor ? ta_vals * get_max_active_power(gen) : ta_vals
-            expected2 = use_scaling_factor ? ta_vals * get_max_reactive_power(gen) : ta_vals
+            expected1 =
+                use_scaling_factor ? ta_vals * get_max_active_power(gen, SU) :
+                ta_vals
+            expected2 =
+                use_scaling_factor ? ta_vals * get_max_reactive_power(gen, SU) : ta_vals
             @test get_time_series_values(
                 gen2,
                 ts1b,
