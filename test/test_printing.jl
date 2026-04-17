@@ -28,20 +28,37 @@ function are_type_and_fields_in_output(obj::T) where {T <: Component}
             continue
         end
 
-        # Account for the fact that type may be abstract.
-        actual_type = typeof(val)
+        # The show method uses getters, which may return unit-bearing values
+        # (e.g. "0.55 SU"). Call the getter (if any) for the displayed value
+        # and extract its numeric part for the occursin check.
+        getter_name = Symbol("get_$name")
+        display_val = if hasproperty(PowerSystems, getter_name)
+            try
+                getproperty(PowerSystems, getter_name)(obj)
+            catch
+                val
+            end
+        else
+            val
+        end
+
+        actual_type = typeof(display_val)
         if actual_type <: IS.InfrastructureSystemsType
             expected = string(actual_type)
         elseif actual_type <: Vector{<:Service}
             expected = string(actual_type)
         elseif actual_type <: Vector{<:IS.InfrastructureSystemsType}
             expected = string(actual_type)
+        elseif display_val isa Unitful.Quantity
+            expected = string(Unitful.ustrip(display_val))
+        elseif display_val isa RelativeQuantity
+            expected = string(ustrip(display_val))
         else
-            expected = string(val)
+            expected = string(display_val)
         end
 
         if !occursin(expected, custom)
-            @error "field's value is not in custom output" name custom
+            @error "field's value is not in custom output" name expected custom
             match = false
         end
     end

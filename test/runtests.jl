@@ -11,6 +11,7 @@ import PowerSystemCaseBuilder as PSB
 import InfrastructureSystems as IS
 using PowerSystems
 import PowerSystems as PSY
+import Unitful
 
 import Aqua
 Aqua.test_unbound_args(PowerSystems)

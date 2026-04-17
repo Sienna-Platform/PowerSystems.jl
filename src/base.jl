@@ -3261,15 +3261,17 @@ function convert_component!(
     new_type::Type{StandardLoad};
     kwargs...,
 )
+    # Raw device-base values: struct fields are stored in device base (Float64);
+    # we copy the underlying field directly to avoid SU-conversion round-tripping.
     new_load = new_type(;
         name = get_name(old_load),
         available = get_available(old_load),
         bus = get_bus(old_load),
         base_power = get_base_power(old_load),
-        constant_active_power = get_active_power(old_load),
-        constant_reactive_power = get_reactive_power(old_load),
-        max_constant_active_power = get_max_active_power(old_load),
-        max_constant_reactive_power = get_max_active_power(old_load),
+        constant_active_power = old_load.active_power,
+        constant_reactive_power = old_load.reactive_power,
+        max_constant_active_power = old_load.max_active_power,
+        max_constant_reactive_power = old_load.max_active_power,
         conformity = get_conformity(old_load),
         dynamic_injector = get_dynamic_injector(old_load),
         internal = _copy_internal_for_conversion(old_load),

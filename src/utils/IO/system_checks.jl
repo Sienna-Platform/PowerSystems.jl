@@ -1,6 +1,17 @@
 
 ### Utility Functions needed for the construction of the Power System, mostly used for consistency checking ####
 
+"""
+Sum a getter over components in MW, returning `zero(MW_ACCUMULATOR_TYPE)` if empty.
+"""
+function _sum_or_zero(getter::Function, components)
+    if isempty(components)
+        return zero(MW_ACCUMULATOR_TYPE)
+    else
+        return sum(c -> getter(c, MW), components)
+    end
+end
+
 ## Check that all the buses have a type defintion and that bus types are consistent with generator connections ##
 
 function buscheck(sys::System)
@@ -87,18 +98,25 @@ Sum of load ratings.
 - `sys::System`: system
 """
 function total_load_rating(sys::System)
-    # Assumes system is in system base
-    base_power = get_base_power(sys)
-    static_loads = get_available_components(StaticLoad, sys)
-    sl = isempty(static_loads) ? 0.0 : sum(get_max_active_power.(static_loads)) * base_power
+    sl = _sum_or_zero(get_max_active_power, get_available_components(StaticLoad, sys))
     @debug "System has $sl MW of StaticLoad" _group = IS.LOG_GROUP_SYSTEM_CHECKS
     # Total load calculation for admittances assumes P = Real(V^2*Y) with V=1.0
     fa_loads = get_available_components(FixedAdmittance, sys)
-    fa = isempty(fa_loads) ? 0.0 : sum(real.(1.0 .* get_Y.(fa_loads))) * base_power
+    fa =
+        if isempty(fa_loads)
+            zero(MW_ACCUMULATOR_TYPE)
+        else
+            sum(real.(1.0 .* get_Y.(fa_loads))) * get_base_power(sys) * MW
+        end
     @debug "System has $fa MW of FixedAdmittance" _group = IS.LOG_GROUP_SYSTEM_CHECKS
     sa_loads = get_available_components(SwitchedAdmittance, sys)
-    sa = isempty(sa_loads) ? 0.0 : sum(real.(1.0 .* get_Y.(sa_loads))) * base_power
-    @debug "System has $fa MW of SwitchedAdmittance" _group = IS.LOG_GROUP_SYSTEM_CHECKS
+    sa =
+        if isempty(sa_loads)
+            zero(MW_ACCUMULATOR_TYPE)
+        else
+            sum(real.(1.0 .* get_Y.(sa_loads))) * get_base_power(sys) * MW
+        end
+    @debug "System has $sa MW of SwitchedAdmittance" _group = IS.LOG_GROUP_SYSTEM_CHECKS
     total_load = sl + fa + sa
     @debug "Total System Load: $total_load" _group = IS.LOG_GROUP_SYSTEM_CHECKS
     return total_load
@@ -113,15 +131,13 @@ Sum of system generator and storage ratings.
 - `sys::System`: system
 """
 function total_capacity_rating(sys::System)
-    total = 0
+    total = zero(MW_ACCUMULATOR_TYPE)
     for component_type in (Generator, Storage)
-        components = get_available_components(component_type, sys)
-        if !isempty(components)
-            component_total = sum(get_rating.(components)) * get_base_power(sys)
-            @debug "total rating for $component_type = $component_total" _group =
-                IS.LOG_GROUP_SYSTEM_CHECKS
-            total += component_total
-        end
+        component_total =
+            _sum_or_zero(get_rating, get_available_components(component_type, sys))
+        @debug "total rating for $component_type = $component_total" _group =
+            IS.LOG_GROUP_SYSTEM_CHECKS
+        total += component_total
     end
 
     @debug "Total System capacity: $total" _group = IS.LOG_GROUP_SYSTEM_CHECKS
