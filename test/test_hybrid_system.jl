@@ -153,7 +153,7 @@ end
     thermal = first(get_components(ThermalStandard, sys))
     # Ensure thermal has ThermalGenerationCost with FuelCurve
     fc = FuelCurve(InputOutputCurve(IS.QuadraticFunctionData(1, 2, 3)), 2.5)
-    set_operation_cost!(thermal, ThermalGenerationCost(fc))
+    set_operation_cost!(thermal, ThermalGenerationCost(fc, 0.0, 0.0, 0.0))
     expected_fuel_cost = get_fuel_cost(thermal)
 
     bus = get_bus(thermal)
