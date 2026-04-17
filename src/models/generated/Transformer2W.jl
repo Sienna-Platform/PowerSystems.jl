@@ -124,38 +124,38 @@ end
 get_name(value::Transformer2W) = value.name
 """Get [`Transformer2W`](@ref) `available`."""
 get_available(value::Transformer2W) = value.available
-"""Get [`Transformer2W`](@ref) `active_power_flow`."""
-get_active_power_flow(value::Transformer2W) = get_value(value, Val(:active_power_flow), Val(:mva))
+"""Get [`Transformer2W`](@ref) `active_power_flow`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_active_power_flow(value::Transformer2W, units) = get_value(value, Val(:active_power_flow), Val(:mva), units)
-"""Get [`Transformer2W`](@ref) `reactive_power_flow`."""
-get_reactive_power_flow(value::Transformer2W) = get_value(value, Val(:reactive_power_flow), Val(:mva))
+InfrastructureSystems.display_units_arg(::typeof(get_active_power_flow), ::Type{ Transformer2W }) = InfrastructureSystems.SU
+"""Get [`Transformer2W`](@ref) `reactive_power_flow`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_reactive_power_flow(value::Transformer2W, units) = get_value(value, Val(:reactive_power_flow), Val(:mva), units)
+InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_flow), ::Type{ Transformer2W }) = InfrastructureSystems.SU
 """Get [`Transformer2W`](@ref) `arc`."""
 get_arc(value::Transformer2W) = value.arc
-"""Get [`Transformer2W`](@ref) `r`."""
-get_r(value::Transformer2W) = get_value(value, Val(:r), Val(:ohm))
+"""Get [`Transformer2W`](@ref) `r`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_r(value::Transformer2W, units) = get_value(value, Val(:r), Val(:ohm), units)
-"""Get [`Transformer2W`](@ref) `x`."""
-get_x(value::Transformer2W) = get_value(value, Val(:x), Val(:ohm))
+InfrastructureSystems.display_units_arg(::typeof(get_r), ::Type{ Transformer2W }) = InfrastructureSystems.SU
+"""Get [`Transformer2W`](@ref) `x`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_x(value::Transformer2W, units) = get_value(value, Val(:x), Val(:ohm), units)
-"""Get [`Transformer2W`](@ref) `primary_shunt`."""
-get_primary_shunt(value::Transformer2W) = get_value(value, Val(:primary_shunt), Val(:siemens))
+InfrastructureSystems.display_units_arg(::typeof(get_x), ::Type{ Transformer2W }) = InfrastructureSystems.SU
+"""Get [`Transformer2W`](@ref) `primary_shunt`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_primary_shunt(value::Transformer2W, units) = get_value(value, Val(:primary_shunt), Val(:siemens), units)
-"""Get [`Transformer2W`](@ref) `rating`."""
-get_rating(value::Transformer2W) = get_value(value, Val(:rating), Val(:mva))
+InfrastructureSystems.display_units_arg(::typeof(get_primary_shunt), ::Type{ Transformer2W }) = InfrastructureSystems.SU
+"""Get [`Transformer2W`](@ref) `rating`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_rating(value::Transformer2W, units) = get_value(value, Val(:rating), Val(:mva), units)
+InfrastructureSystems.display_units_arg(::typeof(get_rating), ::Type{ Transformer2W }) = InfrastructureSystems.SU
 """Get [`Transformer2W`](@ref) `base_power`."""
 get_base_power(value::Transformer2W) = value.base_power
 """Get [`Transformer2W`](@ref) `base_voltage_primary`."""
 get_base_voltage_primary(value::Transformer2W) = value.base_voltage_primary
 """Get [`Transformer2W`](@ref) `base_voltage_secondary`."""
 get_base_voltage_secondary(value::Transformer2W) = value.base_voltage_secondary
-"""Get [`Transformer2W`](@ref) `rating_b`."""
-get_rating_b(value::Transformer2W) = get_value(value, Val(:rating_b), Val(:mva))
+"""Get [`Transformer2W`](@ref) `rating_b`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_rating_b(value::Transformer2W, units) = get_value(value, Val(:rating_b), Val(:mva), units)
-"""Get [`Transformer2W`](@ref) `rating_c`."""
-get_rating_c(value::Transformer2W) = get_value(value, Val(:rating_c), Val(:mva))
+InfrastructureSystems.display_units_arg(::typeof(get_rating_b), ::Type{ Transformer2W }) = InfrastructureSystems.SU
+"""Get [`Transformer2W`](@ref) `rating_c`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_rating_c(value::Transformer2W, units) = get_value(value, Val(:rating_c), Val(:mva), units)
+InfrastructureSystems.display_units_arg(::typeof(get_rating_c), ::Type{ Transformer2W }) = InfrastructureSystems.SU
 """Get [`Transformer2W`](@ref) `winding_group_number`."""
 get_winding_group_number(value::Transformer2W) = value.winding_group_number
 """Get [`Transformer2W`](@ref) `services`."""

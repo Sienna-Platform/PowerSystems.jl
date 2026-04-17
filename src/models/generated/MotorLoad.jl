@@ -106,23 +106,23 @@ get_name(value::MotorLoad) = value.name
 get_available(value::MotorLoad) = value.available
 """Get [`MotorLoad`](@ref) `bus`."""
 get_bus(value::MotorLoad) = value.bus
-"""Get [`MotorLoad`](@ref) `active_power`."""
-get_active_power(value::MotorLoad) = get_value(value, Val(:active_power), Val(:mva))
+"""Get [`MotorLoad`](@ref) `active_power`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_active_power(value::MotorLoad, units) = get_value(value, Val(:active_power), Val(:mva), units)
-"""Get [`MotorLoad`](@ref) `reactive_power`."""
-get_reactive_power(value::MotorLoad) = get_value(value, Val(:reactive_power), Val(:mva))
+InfrastructureSystems.display_units_arg(::typeof(get_active_power), ::Type{ MotorLoad }) = InfrastructureSystems.SU
+"""Get [`MotorLoad`](@ref) `reactive_power`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_reactive_power(value::MotorLoad, units) = get_value(value, Val(:reactive_power), Val(:mva), units)
+InfrastructureSystems.display_units_arg(::typeof(get_reactive_power), ::Type{ MotorLoad }) = InfrastructureSystems.SU
 """Get [`MotorLoad`](@ref) `base_power`."""
 get_base_power(value::MotorLoad) = value.base_power
-"""Get [`MotorLoad`](@ref) `rating`."""
-get_rating(value::MotorLoad) = get_value(value, Val(:rating), Val(:mva))
+"""Get [`MotorLoad`](@ref) `rating`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_rating(value::MotorLoad, units) = get_value(value, Val(:rating), Val(:mva), units)
-"""Get [`MotorLoad`](@ref) `max_active_power`."""
-get_max_active_power(value::MotorLoad) = get_value(value, Val(:max_active_power), Val(:mva))
+InfrastructureSystems.display_units_arg(::typeof(get_rating), ::Type{ MotorLoad }) = InfrastructureSystems.SU
+"""Get [`MotorLoad`](@ref) `max_active_power`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_max_active_power(value::MotorLoad, units) = get_value(value, Val(:max_active_power), Val(:mva), units)
-"""Get [`MotorLoad`](@ref) `reactive_power_limits`."""
-get_reactive_power_limits(value::MotorLoad) = get_value(value, Val(:reactive_power_limits), Val(:mva))
+InfrastructureSystems.display_units_arg(::typeof(get_max_active_power), ::Type{ MotorLoad }) = InfrastructureSystems.SU
+"""Get [`MotorLoad`](@ref) `reactive_power_limits`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_reactive_power_limits(value::MotorLoad, units) = get_value(value, Val(:reactive_power_limits), Val(:mva), units)
+InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_limits), ::Type{ MotorLoad }) = InfrastructureSystems.SU
 """Get [`MotorLoad`](@ref) `motor_technology`."""
 get_motor_technology(value::MotorLoad) = value.motor_technology
 """Get [`MotorLoad`](@ref) `services`."""

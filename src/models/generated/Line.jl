@@ -112,37 +112,37 @@ end
 get_name(value::Line) = value.name
 """Get [`Line`](@ref) `available`."""
 get_available(value::Line) = value.available
-"""Get [`Line`](@ref) `active_power_flow`."""
-get_active_power_flow(value::Line) = get_value(value, Val(:active_power_flow), Val(:mva))
+"""Get [`Line`](@ref) `active_power_flow`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_active_power_flow(value::Line, units) = get_value(value, Val(:active_power_flow), Val(:mva), units)
-"""Get [`Line`](@ref) `reactive_power_flow`."""
-get_reactive_power_flow(value::Line) = get_value(value, Val(:reactive_power_flow), Val(:mva))
+InfrastructureSystems.display_units_arg(::typeof(get_active_power_flow), ::Type{ Line }) = InfrastructureSystems.SU
+"""Get [`Line`](@ref) `reactive_power_flow`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_reactive_power_flow(value::Line, units) = get_value(value, Val(:reactive_power_flow), Val(:mva), units)
+InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_flow), ::Type{ Line }) = InfrastructureSystems.SU
 """Get [`Line`](@ref) `arc`."""
 get_arc(value::Line) = value.arc
-"""Get [`Line`](@ref) `r`."""
-get_r(value::Line) = get_value(value, Val(:r), Val(:ohm))
+"""Get [`Line`](@ref) `r`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_r(value::Line, units) = get_value(value, Val(:r), Val(:ohm), units)
-"""Get [`Line`](@ref) `x`."""
-get_x(value::Line) = get_value(value, Val(:x), Val(:ohm))
+InfrastructureSystems.display_units_arg(::typeof(get_r), ::Type{ Line }) = InfrastructureSystems.SU
+"""Get [`Line`](@ref) `x`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_x(value::Line, units) = get_value(value, Val(:x), Val(:ohm), units)
-"""Get [`Line`](@ref) `b`."""
-get_b(value::Line) = get_value(value, Val(:b), Val(:siemens))
+InfrastructureSystems.display_units_arg(::typeof(get_x), ::Type{ Line }) = InfrastructureSystems.SU
+"""Get [`Line`](@ref) `b`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_b(value::Line, units) = get_value(value, Val(:b), Val(:siemens), units)
-"""Get [`Line`](@ref) `rating`."""
-get_rating(value::Line) = get_value(value, Val(:rating), Val(:mva))
+InfrastructureSystems.display_units_arg(::typeof(get_b), ::Type{ Line }) = InfrastructureSystems.SU
+"""Get [`Line`](@ref) `rating`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_rating(value::Line, units) = get_value(value, Val(:rating), Val(:mva), units)
+InfrastructureSystems.display_units_arg(::typeof(get_rating), ::Type{ Line }) = InfrastructureSystems.SU
 """Get [`Line`](@ref) `angle_limits`."""
 get_angle_limits(value::Line) = value.angle_limits
-"""Get [`Line`](@ref) `rating_b`."""
-get_rating_b(value::Line) = get_value(value, Val(:rating_b), Val(:mva))
+"""Get [`Line`](@ref) `rating_b`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_rating_b(value::Line, units) = get_value(value, Val(:rating_b), Val(:mva), units)
-"""Get [`Line`](@ref) `rating_c`."""
-get_rating_c(value::Line) = get_value(value, Val(:rating_c), Val(:mva))
+InfrastructureSystems.display_units_arg(::typeof(get_rating_b), ::Type{ Line }) = InfrastructureSystems.SU
+"""Get [`Line`](@ref) `rating_c`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_rating_c(value::Line, units) = get_value(value, Val(:rating_c), Val(:mva), units)
-"""Get [`Line`](@ref) `g`."""
-get_g(value::Line) = get_value(value, Val(:g), Val(:siemens))
+InfrastructureSystems.display_units_arg(::typeof(get_rating_c), ::Type{ Line }) = InfrastructureSystems.SU
+"""Get [`Line`](@ref) `g`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_g(value::Line, units) = get_value(value, Val(:g), Val(:siemens), units)
+InfrastructureSystems.display_units_arg(::typeof(get_g), ::Type{ Line }) = InfrastructureSystems.SU
 """Get [`Line`](@ref) `services`."""
 get_services(value::Line) = value.services
 """Get [`Line`](@ref) `ext`."""

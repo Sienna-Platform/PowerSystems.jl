@@ -113,20 +113,20 @@ get_name(value::RenewableDispatch) = value.name
 get_available(value::RenewableDispatch) = value.available
 """Get [`RenewableDispatch`](@ref) `bus`."""
 get_bus(value::RenewableDispatch) = value.bus
-"""Get [`RenewableDispatch`](@ref) `active_power`."""
-get_active_power(value::RenewableDispatch) = get_value(value, Val(:active_power), Val(:mva))
+"""Get [`RenewableDispatch`](@ref) `active_power`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_active_power(value::RenewableDispatch, units) = get_value(value, Val(:active_power), Val(:mva), units)
-"""Get [`RenewableDispatch`](@ref) `reactive_power`."""
-get_reactive_power(value::RenewableDispatch) = get_value(value, Val(:reactive_power), Val(:mva))
+InfrastructureSystems.display_units_arg(::typeof(get_active_power), ::Type{ RenewableDispatch }) = InfrastructureSystems.SU
+"""Get [`RenewableDispatch`](@ref) `reactive_power`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_reactive_power(value::RenewableDispatch, units) = get_value(value, Val(:reactive_power), Val(:mva), units)
-"""Get [`RenewableDispatch`](@ref) `rating`."""
-get_rating(value::RenewableDispatch) = get_value(value, Val(:rating), Val(:mva))
+InfrastructureSystems.display_units_arg(::typeof(get_reactive_power), ::Type{ RenewableDispatch }) = InfrastructureSystems.SU
+"""Get [`RenewableDispatch`](@ref) `rating`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_rating(value::RenewableDispatch, units) = get_value(value, Val(:rating), Val(:mva), units)
+InfrastructureSystems.display_units_arg(::typeof(get_rating), ::Type{ RenewableDispatch }) = InfrastructureSystems.SU
 """Get [`RenewableDispatch`](@ref) `prime_mover_type`."""
 get_prime_mover_type(value::RenewableDispatch) = value.prime_mover_type
-"""Get [`RenewableDispatch`](@ref) `reactive_power_limits`."""
-get_reactive_power_limits(value::RenewableDispatch) = get_value(value, Val(:reactive_power_limits), Val(:mva))
+"""Get [`RenewableDispatch`](@ref) `reactive_power_limits`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_reactive_power_limits(value::RenewableDispatch, units) = get_value(value, Val(:reactive_power_limits), Val(:mva), units)
+InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_limits), ::Type{ RenewableDispatch }) = InfrastructureSystems.SU
 """Get [`RenewableDispatch`](@ref) `power_factor`."""
 get_power_factor(value::RenewableDispatch) = value.power_factor
 """Get [`RenewableDispatch`](@ref) `operation_cost`."""
