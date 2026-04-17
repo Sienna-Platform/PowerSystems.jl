@@ -1,4 +1,14 @@
 import InfrastructureSystems
+import Unitful
+
+# Strip unit wrappers so accessor return values can be compared against the
+# raw struct field type. Compound values (NamedTuple of units) are unwrapped
+# element-wise.
+_unwrap_units(x) = x
+_unwrap_units(x::RelativeQuantity) = ustrip(x)
+_unwrap_units(x::Unitful.Quantity) = Unitful.ustrip(x)
+_unwrap_units(x::NamedTuple) = map(_unwrap_units, x)
+
 mutable struct TestDevice <: Device
     name::String
 end
@@ -266,8 +276,17 @@ function test_accessors(component)
             end
         end
 
-        val = func(component)
-        @test val isa field_type
+        # Some getters convert to SU, which requires system attachment. Fall
+        # back to device-base (DU) for unattached components to avoid errors.
+        val = try
+            func(component)
+        catch err
+            err isa ErrorException && occursin("not attached", err.msg) || rethrow()
+            hasmethod(func, (ps_type, Any)) ? func(component, DU) : continue
+        end
+        # Getters now wrap values (e.g. `0.5 SU` instead of raw `0.5`), so
+        # compare the unwrapped value's type to `field_type`.
+        @test _unwrap_units(val) isa field_type
         try
             if typeof(val) == Float64 || typeof(val) == Int
                 if !isnan(val)

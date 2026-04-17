@@ -232,6 +232,13 @@ function get_max_active_power(d::T) where {T <: StaticInjection}
 end
 
 """
+Return the max active power for a device with explicit units specified.
+"""
+function get_max_active_power(d::T, units) where {T <: StaticInjection}
+    return get_active_power_limits(d, units).max
+end
+
+"""
 Return the max reactive power for a device as the max field in the named tuple returned by [`get_reactive_power_limits`](@ref).
 """
 function get_max_reactive_power(d::T)::Float64 where {T <: StaticInjection}
@@ -286,6 +293,17 @@ function get_max_active_power(d::Union{InterruptibleStandardLoad, StandardLoad})
     total_load = get_max_constant_active_power(d)
     total_load += get_max_impedance_active_power(d)
     total_load += get_max_current_active_power(d)
+    return total_load
+end
+
+"""
+Calculate the maximum active power for a [`StandardLoad`](@ref) or [`InterruptibleStandardLoad`](@ref)
+    with explicit units specified.
+"""
+function get_max_active_power(d::Union{InterruptibleStandardLoad, StandardLoad}, units)
+    total_load = get_max_constant_active_power(d, units)
+    total_load += get_max_impedance_active_power(d, units)
+    total_load += get_max_current_active_power(d, units)
     return total_load
 end
 

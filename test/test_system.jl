@@ -78,7 +78,7 @@
     @test val[1] isa Dates.DateTime
     val = get_time_series_values(SingleTimeSeries, component, "max_active_power")
     @test val isa Array
-    @test val[1] isa AbstractFloat
+    @test val[1] isa Number
 
     val = get_time_series_array(component, ts)
     @test val isa TimeSeries.TimeArray
@@ -87,7 +87,7 @@
     @test val[1] isa Dates.DateTime
     val = get_time_series_values(component, ts)
     @test val isa Array
-    @test val[1] isa AbstractFloat
+    @test val[1] isa Number
 
     clear_time_series!(sys)
     @test length(collect(get_time_series_multiple(sys))) == 0
@@ -235,49 +235,41 @@ end
     @test active_power_mw == get_active_power(gen)
 end
 
-@testset "Test with_units_base on component" begin
+@testset "Test explicit units API" begin
     sys = PSB.build_system(PSITestSystems, "test_RTS_GMLC_sys"; add_forecasts = false)
-    set_units_base_system!(sys, "SYSTEM_BASE")
     gen = get_component(ThermalStandard, sys, "322_CT_6")
-    base_power = get_base_power(sys)
+    device_base = get_base_power(gen)
+    system_base = get_base_power(sys)
+    raw_active = gen.active_power
 
-    # Component shares system's units_settings initially
-    @test sys.units_settings === PSY.get_internal(gen).units_info
+    P_mw = get_active_power(gen, MW)
+    @test P_mw isa Unitful.Quantity
+    @test Unitful.ustrip(P_mw) ≈ raw_active * device_base
 
-    # with_units_base on component should work and preserve reference after
-    P_pu = get_active_power(gen)
-    P_natural = with_units_base(gen, "NATURAL_UNITS") do
-        get_active_power(gen)
-    end
-    @test P_natural ≈ P_pu * base_power
+    P_du = get_active_power(gen, DU)
+    @test P_du isa RelativeQuantity
+    @test ustrip(P_du) ≈ raw_active
 
-    # Reference should be preserved after with_units_base(component, ...)
-    @test sys.units_settings === PSY.get_internal(gen).units_info
+    P_su = get_active_power(gen, SU)
+    @test P_su isa RelativeQuantity
+    @test ustrip(P_su) ≈ raw_active * device_base / system_base
 
-    # System-level with_units_base should still work after component-level call
-    P_natural_via_sys = with_units_base(sys, UnitSystem.NATURAL_UNITS) do
-        get_active_power(gen)
-    end
-    @test P_natural ≈ P_natural_via_sys
+    # Float64 fast path: returns bare Float64 in system base
+    P_f64 = get_active_power(gen, Float64)
+    @test P_f64 isa Float64
+    @test P_f64 ≈ raw_active * device_base / system_base
 end
 
-@testset "Test with_units_base on component removed during block" begin
+@testset "Test explicit units setters" begin
     sys = PSB.build_system(PSITestSystems, "test_RTS_GMLC_sys"; add_forecasts = false)
-    set_units_base_system!(sys, "SYSTEM_BASE")
-    line = first(get_components(Line, sys))
+    gen = get_component(ThermalStandard, sys, "322_CT_6")
+    device_base = get_base_power(gen)
 
-    # Component shares system's units_settings initially
-    @test sys.units_settings === PSY.get_internal(line).units_info
+    set_active_power!(gen, 50.0 * MW)
+    @test gen.active_power ≈ 50.0 / device_base
 
-    # Remove component during with_units_base block
-    @test_throws ErrorException begin
-        with_units_base(line, "NATURAL_UNITS") do
-            remove_component!(sys, line)
-        end
-    end
-
-    # After removal, units_info should be nothing (not restored to system's)
-    @test isnothing(PSY.get_internal(line).units_info)
+    set_active_power!(gen, 0.6 * DU)
+    @test gen.active_power ≈ 0.6
 end
 
 @testset "Test add_time_series multiple components" begin
@@ -670,7 +662,7 @@ end
     @test IS.compare_values(gen1, gen2)
     @test IS.compare_values(sys1, sys2)
 
-    set_active_power!(gen1, get_active_power(gen1) + 0.1)
+    set_active_power!(gen1, get_active_power(gen1, DU) + 0.1 * DU)
     @test(
         @test_logs(
             (:error, r"not match"),

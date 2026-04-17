@@ -591,6 +591,16 @@ export StructDefinition
 export generate_struct_file
 export generate_struct_files
 export UnitSystem # internal.jl
+# Unit types for explicit units in getters/setters
+export MW, Mvar, MVA, kV, OHMS, SIEMENS
+export DU, SU, NU, DeviceBaseUnit, SystemBaseUnit, NaturalUnit
+export AbstractRelativeUnit, RelativeQuantity
+export UnitCategory,
+    PowerCategory, ImpedanceCategory, AdmittanceCategory,
+    VoltageCategory, CurrentCategory
+export POWER, IMPEDANCE, ADMITTANCE, VOLTAGE, CURRENT
+export natural_unit, base_value, system_base_value, convert_units, DEFAULT_UNITS
+export ustrip
 
 # ComponentSelector
 export ComponentSelector
@@ -623,6 +633,10 @@ import DataStructures: OrderedDict, SortedDict
 import JSON3
 import Base.to_index
 import PrettyTables
+import Unitful
+using Unitful: @u_str, @unit, Quantity, Units, uconvert
+import Unitful: ustrip
+import StructTypes
 
 # Import InfrastructureSystems both as full module name (needed for internal macros like @forward)
 # and with alias for convenient usage throughout the codebase
@@ -819,6 +833,11 @@ include("utils/logging.jl")
 include("utils/IO/base_checks.jl")
 include("utils/generate_struct_files.jl")
 
+# Units machinery (formerly PowerSystemsUnits.jl)
+include("units/types.jl")
+include("units/conversions.jl")
+include("units/serialization.jl")
+
 include("definitions.jl")
 include("models/static_models.jl")
 include("models/dynamic_models.jl")
@@ -928,5 +947,9 @@ precompile(
     IS.build_static_tuple,
     (TupleTimeSeries{StartUpStages}, ThermalStandard, Dates.DateTime),
 )
+
+function __init__()
+    Unitful.register(PowerSystems)
+end
 
 end # module

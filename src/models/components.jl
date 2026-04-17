@@ -1,234 +1,260 @@
-function get_system_base_power(c::Component)
-    return get_internal(c).units_info.base_value
+@inline function get_system_base_power(c::Component)
+    units_info = get_internal(c).units_info
+    isnothing(units_info) && error("Component $(get_name(c)) is not attached to a system.")
+    # Assert concrete type; units_info field is typed as abstract UnitsData.
+    return (units_info::IS.SystemUnitsSettings).base_value
 end
 
 """
-Default behavior of a component. If there is no base_power field, assume is in the system's base power.
+Default behavior of a component. If there is no base_power field, assume it is in the system's base power.
 """
 get_base_power(c::Component) = get_system_base_power(c)
 
-_get_multiplier(c::T, conversion_unit) where {T <: Component} =
-    _get_multiplier(c, get_internal(c).units_info, conversion_unit)
+#######################################################
+# Units-aware get_value / set_value
+#
+# Fields are stored internally in device base (DU). The 4-arg `get_value`
+# converts from DU to a requested target (e.g., MW, SU, Float64). The 3-arg
+# form delegates to the 4-arg with DEFAULT_UNITS (= SU, a RelativeQuantity
+# carrying its unit in its type).
+#######################################################
 
-_get_multiplier(::T, ::Nothing, conversion_unit) where {T <: Component} =
-    1.0
-_get_multiplier(
-    c::T,
-    setting::IS.SystemUnitsSettings,
-    conversion_unit,
-) where {T <: Component} =
-    _get_multiplier(c, setting, Val(setting.unit_system), conversion_unit)
+"""
+    get_value(c::Component, field::Val, conversion_unit::Val, units) -> value
 
-# PERF: dispatching on the UnitSystem values instead of comparing with if/else avoids the
-# performance hit associated with consulting the dictionary that backs the @scoped_enum --
-# i.e., IS.UnitSystem.NATURAL_UNITS by itself isn't treated as a constant, it's a dictionary
-# lookup each time.
-_get_multiplier(
-    ::T,
-    ::IS.SystemUnitsSettings,
-    ::Val{IS.UnitSystem.DEVICE_BASE},
-    ::Any,
-) where {T <: Component} =
-    1.0
-###############
-#### Power ####
-###############
-_get_multiplier(
-    c::T,
-    setting::IS.SystemUnitsSettings,
-    ::Val{IS.UnitSystem.SYSTEM_BASE},
-    ::Val{:mva},
-) where {T <: Component} =
-    get_base_power(c) / setting.base_value
-_get_multiplier(
-    c::T,
-    ::IS.SystemUnitsSettings,
-    ::Val{IS.UnitSystem.NATURAL_UNITS},
-    ::Val{:mva},
-) where {T <: Component} =
-    get_base_power(c)
-
-###############
-#### Ohms #####
-###############
-# Z_device / Z_sys = (V_device^2 / S_device) / (V_device^2 / S_sys) = S_sys / S_device 
-_get_multiplier(
-    c::T,
-    setting::IS.SystemUnitsSettings,
-    ::Val{IS.UnitSystem.SYSTEM_BASE},
-    ::Val{:ohm},
-) where {T <: Branch} =
-    setting.base_value / get_base_power(c)
-function _get_multiplier(
-    c::T,
-    ::IS.SystemUnitsSettings,
-    ::Val{IS.UnitSystem.NATURAL_UNITS},
-    ::Val{:ohm},
-) where {T <: Branch}
-    base_voltage = get_base_voltage(get_arc(c).from)
-    if isnothing(base_voltage)
-        error("Base voltage is not defined for $(summary(c)).")
-    end
-    return get_base_voltage(get_arc(c).from)^2 / get_base_power(c)
-end
-function _get_multiplier(
-    c::T,
-    ::IS.SystemUnitsSettings,
-    ::Val{IS.UnitSystem.NATURAL_UNITS},
-    ::Val{:ohm},
-) where {T <: TwoWindingTransformer}
-    base_voltage = get_base_voltage_primary(c)
-    if isnothing(base_voltage)
-        error("Base voltage is not defined for $(summary(c)).")
-    end
-    return base_voltage^2 / get_base_power(c)
-end
-
-##################
-#### Siemens #####
-##################
-# Y_device / Y_sys = (S_device / V_device^2) / (S_sys / S_sys^2) = S_device / S_sys 
-_get_multiplier(
-    c::T,
-    setting::IS.SystemUnitsSettings,
-    ::Val{IS.UnitSystem.SYSTEM_BASE},
-    ::Val{:siemens},
-) where {T <: Branch} =
-    get_base_power(c) / setting.base_value
-function _get_multiplier(
-    c::T,
-    ::IS.SystemUnitsSettings,
-    ::Val{IS.UnitSystem.NATURAL_UNITS},
-    ::Val{:siemens},
-) where {T <: Branch}
-    base_voltage = get_base_voltage(get_arc(c).from)
-    if isnothing(base_voltage)
-        @warn "Base voltage is not set for $(c.name). Returning in DEVICE_BASE units."
-        return 1.0
-    end
-    return get_base_power(c) / get_base_voltage(get_arc(c).from)^2
-end
-function _get_multiplier(
-    c::T,
-    ::IS.SystemUnitsSettings,
-    ::Val{IS.UnitSystem.NATURAL_UNITS},
-    ::Val{:siemens},
-) where {T <: TwoWindingTransformer}
-    base_voltage = get_base_voltage_primary(c)
-    if isnothing(base_voltage)
-        @warn "Base voltage is not set for $(c.name). Returning in DEVICE_BASE units."
-        return 1.0
-    end
-    return get_base_power(c) / base_voltage^2
-end
-
-_get_multiplier(::T, ::IS.SystemUnitsSettings, _, _) where {T <: Component} =
-    error("Undefined Conditional")
-
-function get_value(c::Component, ::Val{T}, conversion_unit) where {T}
+Get `c`'s field value, converting from device-base storage to `units`.
+Returns a `RelativeQuantity` (for DU/SU targets), a `Unitful.Quantity` (for
+natural units like MW), or a bare `Float64` (when `units === Float64`).
+"""
+function get_value(c::Component, field::Val{T}, conversion_unit, units) where {T}
     value = Base.getproperty(c, T)
-    return _get_value(c, value, conversion_unit)
+    return _convert_from_device_base(c, value, conversion_unit, units)
 end
 
-function _get_value(c::Component, value::Float64, conversion_unit)::Float64
-    return _get_multiplier(c, conversion_unit) * value
+# 3-arg getter — 1-arg generated accessors call this; default target is DEFAULT_UNITS.
+@inline get_value(c::Component, field::Val, conversion_unit::Val) =
+    get_value(c, field, conversion_unit, DEFAULT_UNITS)
+
+# ---- DU → natural power units ----
+_convert_from_device_base(c::Component, value::Float64, ::Val{:mva}, ::typeof(MW)) =
+    value * get_base_power(c) * u"MW"
+
+_convert_from_device_base(c::Component, value::Float64, ::Val{:mva}, ::typeof(Mvar)) =
+    value * get_base_power(c) * Mvar
+
+function _convert_from_device_base(
+    c::T, value::Number, ::Val{:ohm}, ::typeof(OHMS),
+) where {T <: Branch}
+    base_voltage = get_base_voltage(get_arc(c).from)
+    isnothing(base_voltage) && error("Base voltage is not defined for $(summary(c)).")
+    return value * (base_voltage^2 / get_base_power(c)) * u"Ω"
 end
 
-function _get_value(c::Component, value::ComplexF64, conversion_unit)::ComplexF64
-    return _get_multiplier(c, conversion_unit) * value
+function _convert_from_device_base(
+    c::T, value::Number, ::Val{:ohm}, ::typeof(OHMS),
+) where {T <: TwoWindingTransformer}
+    base_voltage = get_base_voltage_primary(c)
+    isnothing(base_voltage) && error("Base voltage is not defined for $(summary(c)).")
+    return value * (base_voltage^2 / get_base_power(c)) * u"Ω"
 end
 
-function _get_value(c::Component, value::MinMax, conversion_unit)::MinMax
-    m = _get_multiplier(c, conversion_unit)
-    return (min = value.min * m, max = value.max * m)
+function _convert_from_device_base(
+    c::T, value::Number, ::Val{:siemens}, ::typeof(SIEMENS),
+) where {T <: Branch}
+    base_voltage = get_base_voltage(get_arc(c).from)
+    if isnothing(base_voltage)
+        @warn "Base voltage is not set for $(c.name). Returning in device base units."
+        return value * DU
+    end
+    return value * (get_base_power(c) / base_voltage^2) * u"S"
 end
 
-function _get_value(
-    c::Component,
-    value::StartUpShutDown,
-    conversion_unit,
-)::StartUpShutDown
-    m = _get_multiplier(c, conversion_unit)
-    return (startup = value.startup * m, shutdown = value.shutdown * m)
+function _convert_from_device_base(
+    c::T, value::Number, ::Val{:siemens}, ::typeof(SIEMENS),
+) where {T <: TwoWindingTransformer}
+    base_voltage = get_base_voltage_primary(c)
+    if isnothing(base_voltage)
+        @warn "Base voltage is not set for $(c.name). Returning in device base units."
+        return value * DU
+    end
+    return value * (get_base_power(c) / base_voltage^2) * u"S"
 end
 
-function _get_value(c::Component, value::UpDown, conversion_unit)::UpDown
-    m = _get_multiplier(c, conversion_unit)
-    return (up = value.up * m, down = value.down * m)
+# ---- DU → DU (identity; no system info needed) ----
+_convert_from_device_base(::Component, value::Number, ::Val, ::DeviceBaseUnit) =
+    value * DU
+
+# ---- DU → SU (RelativeQuantity{Float64, SystemBaseUnit}) ----
+function _convert_from_device_base(
+    c::Component, value::Float64, ::Val{:mva}, ::SystemBaseUnit,
+)
+    return (value * (get_base_power(c) / get_system_base_power(c))) * SU
 end
 
-function _get_value(c::Component, value::FromTo_ToFrom, conversion_unit)::FromTo_ToFrom
-    m = _get_multiplier(c, conversion_unit)
-    return (from_to = value.from_to * m, to_from = value.to_from * m)
+function _convert_from_device_base(
+    c::T, value::Number, ::Val{:ohm}, ::SystemBaseUnit,
+) where {T <: Branch}
+    return (value * (get_system_base_power(c) / get_base_power(c))) * SU
 end
 
-function _get_value(c::Component, value::FromTo, conversion_unit)::FromTo
-    m = _get_multiplier(c, conversion_unit)
-    return (from = value.from * m, to = value.to * m)
+function _convert_from_device_base(
+    c::T, value::Number, ::Val{:siemens}, ::SystemBaseUnit,
+) where {T <: Branch}
+    return (value * (get_base_power(c) / get_system_base_power(c))) * SU
 end
 
-function _get_value(::Component, ::Nothing, _)
-    return nothing
+# ---- DU → Float64 (fast path: raw SU-scaled number, no unit wrapper) ----
+# Use when callers know they want system-base and will form Vector{Float64}.
+function _convert_from_device_base(
+    c::Component, value::Float64, ::Val{:mva}, ::Type{Float64},
+)::Float64
+    return value * (get_base_power(c) / get_system_base_power(c))
 end
 
-function _get_value(::T, value::V, _) where {T <: Component, V}
-    @warn("conversion not implemented for $(V) in component $(T)")
-    return value::V
+function _convert_from_device_base(
+    c::T, value::Float64, ::Val{:ohm}, ::Type{Float64},
+)::Float64 where {T <: Branch}
+    return value * (get_system_base_power(c) / get_base_power(c))
 end
 
-function _get_value(::Nothing, _, _)
-    return
+function _convert_from_device_base(
+    c::T, value::Float64, ::Val{:siemens}, ::Type{Float64},
+)::Float64 where {T <: Branch}
+    return value * (get_base_power(c) / get_system_base_power(c))
 end
 
-function set_value(c::Component, _, val, conversion_unit)
-    return _set_value(c, val, conversion_unit)
+# ---- Generic fallback: any Unitful target for :mva ----
+function _convert_from_device_base(
+    c::Component, value::Float64, ::Val{:mva}, units::Unitful.Units,
+)
+    return Unitful.uconvert(units, value * get_base_power(c) * u"MW")
 end
 
-function _set_value(c::Component, value::Float64, conversion_unit)::Float64
-    return (1 / _get_multiplier(c, conversion_unit)) * value
+# ---- Nothing passthrough ----
+_convert_from_device_base(::Component, ::Nothing, ::Val, ::Any) = nothing
+
+# ---- Compound field types ----
+_convert_from_device_base(c::Component, v::MinMax, cu, u) = (
+    min = _convert_from_device_base(c, v.min, cu, u),
+    max = _convert_from_device_base(c, v.max, cu, u),
+)
+
+_convert_from_device_base(c::Component, v::UpDown, cu, u) = (
+    up = _convert_from_device_base(c, v.up, cu, u),
+    down = _convert_from_device_base(c, v.down, cu, u),
+)
+
+_convert_from_device_base(c::Component, v::FromTo_ToFrom, cu, u) = (
+    from_to = _convert_from_device_base(c, v.from_to, cu, u),
+    to_from = _convert_from_device_base(c, v.to_from, cu, u),
+)
+
+_convert_from_device_base(c::Component, v::FromTo, cu, u) = (
+    from = _convert_from_device_base(c, v.from, cu, u),
+    to = _convert_from_device_base(c, v.to, cu, u),
+)
+
+_convert_from_device_base(c::Component, v::StartUpShutDown, cu, u) = (
+    startup = _convert_from_device_base(c, v.startup, cu, u),
+    shutdown = _convert_from_device_base(c, v.shutdown, cu, u),
+)
+
+#######################################################
+# set_value: accept Unitful.Quantity or RelativeQuantity; return DU scalar
+#######################################################
+
+# ---- From Unitful.Quantity (natural units) ----
+function set_value(c::Component, field, val::Quantity, ::Val{:mva})
+    return Unitful.ustrip(u"MW", val) / get_base_power(c)
 end
 
-function _set_value(c::Component, value::MinMax, conversion_unit)::MinMax
-    m = 1 / _get_multiplier(c, conversion_unit)
-    return (min = value.min * m, max = value.max * m)
+function set_value(
+    c::T, field, val::Quantity, ::Val{:ohm},
+) where {T <: Branch}
+    base_voltage = get_base_voltage(get_arc(c).from)
+    isnothing(base_voltage) && error("Base voltage is not defined for $(summary(c)).")
+    return Unitful.ustrip(u"Ω", val) / (base_voltage^2 / get_base_power(c))
 end
 
-function _set_value(
-    c::Component,
-    value::StartUpShutDown,
-    conversion_unit,
-)::StartUpShutDown
-    m = 1 / _get_multiplier(c, conversion_unit)
-    return (startup = value.startup * m, shutdown = value.shutdown * m)
+function set_value(
+    c::T, field, val::Quantity, ::Val{:siemens},
+) where {T <: Branch}
+    base_voltage = get_base_voltage(get_arc(c).from)
+    isnothing(base_voltage) && error("Base voltage is not defined for $(summary(c)).")
+    return Unitful.ustrip(u"S", val) / (get_base_power(c) / base_voltage^2)
 end
 
-function _set_value(c::Component, value::UpDown, conversion_unit)::UpDown
-    m = 1 / _get_multiplier(c, conversion_unit)
-    return (up = value.up * m, down = value.down * m)
+# ---- From RelativeQuantity in DU (trivial) ----
+set_value(::Component, field, val::RelativeQuantity{<:Any, DeviceBaseUnit}, ::Val) =
+    ustrip(val)
+
+# ---- From RelativeQuantity in SU ----
+function set_value(
+    c::Component, field, val::RelativeQuantity{<:Any, SystemBaseUnit}, ::Val{:mva},
+)
+    return ustrip(val) / (get_base_power(c) / get_system_base_power(c))
 end
 
-function _set_value(c::Component, value::FromTo_ToFrom, conversion_unit)::FromTo_ToFrom
-    m = 1 / _get_multiplier(c, conversion_unit)
-    return (from_to = value.from_to * m, to_from = value.to_from * m)
+function set_value(
+    c::T, field, val::RelativeQuantity{<:Any, SystemBaseUnit}, ::Val{:ohm},
+) where {T <: Branch}
+    return ustrip(val) / (get_system_base_power(c) / get_base_power(c))
 end
 
-function _set_value(c::Component, value::FromTo, conversion_unit)::FromTo
-    m = 1 / _get_multiplier(c, conversion_unit)
-    return (from = value.from * m, to = value.to * m)
+function set_value(
+    c::T, field, val::RelativeQuantity{<:Any, SystemBaseUnit}, ::Val{:siemens},
+) where {T <: Branch}
+    return ustrip(val) / (get_base_power(c) / get_system_base_power(c))
 end
 
-function _set_value(::Component, ::Nothing, _)
-    return nothing
+# ---- From bare Float64 (interpreted as SU — the "I know what I'm doing" path) ----
+# Hot-loop form for collections of Float64s already in system base.
+function set_value(c::Component, field, val::Float64, ::Val{:mva})::Float64
+    return val / (get_base_power(c) / get_system_base_power(c))
 end
 
-function _set_value(c::T, value::V, _) where {T <: Component, V}
-    @warn("conversion not implemented for $(V) in component $(T)")
-    return value::V
+function set_value(
+    c::T, field, val::Float64, ::Val{:ohm},
+)::Float64 where {T <: Branch}
+    return val / (get_system_base_power(c) / get_base_power(c))
 end
 
-function _set_value(::Nothing, _, _)
-    return
+function set_value(
+    c::T, field, val::Float64, ::Val{:siemens},
+)::Float64 where {T <: Branch}
+    return val / (get_base_power(c) / get_system_base_power(c))
 end
+
+# ---- Compound field types for setters ----
+_to_device_base(c::Component, val, cu) = set_value(c, nothing, val, cu)
+
+set_value(c::Component, field, val::NamedTuple{(:min, :max)}, cu::Val) = (
+    min = _to_device_base(c, val.min, cu),
+    max = _to_device_base(c, val.max, cu),
+)
+
+set_value(c::Component, field, val::NamedTuple{(:up, :down)}, cu::Val) = (
+    up = _to_device_base(c, val.up, cu),
+    down = _to_device_base(c, val.down, cu),
+)
+
+set_value(c::Component, field, val::NamedTuple{(:from_to, :to_from)}, cu::Val) = (
+    from_to = _to_device_base(c, val.from_to, cu),
+    to_from = _to_device_base(c, val.to_from, cu),
+)
+
+set_value(c::Component, field, val::NamedTuple{(:from, :to)}, cu::Val) = (
+    from = _to_device_base(c, val.from, cu),
+    to = _to_device_base(c, val.to, cu),
+)
+
+set_value(c::Component, field, val::NamedTuple{(:startup, :shutdown)}, cu::Val) = (
+    startup = _to_device_base(c, val.startup, cu),
+    shutdown = _to_device_base(c, val.shutdown, cu),
+)
+
+# ---- Nothing passthrough ----
+set_value(::Component, _, ::Nothing, ::Val) = nothing
 
 ######################################
 ########### Transformer 3W ###########
@@ -418,7 +444,7 @@ function _get_multiplier(
     return _get_winding_base_power(c, field) / _get_winding_base_voltage(c, field)^2
 end
 
-function get_value(
+function _t3w_get_value(
     c::ThreeWindingTransformer,
     field::Val{T},
     conversion_unit,
@@ -437,7 +463,10 @@ function get_value(
     return value * multiplier
 end
 
-function set_value(
+get_value(c::ThreeWindingTransformer, field::Val{T}, conversion_unit::Val) where {T} =
+    _t3w_get_value(c, field, conversion_unit)
+
+function _t3w_set_value(
     c::ThreeWindingTransformer,
     field,
     val::Float64,
@@ -452,3 +481,10 @@ function set_value(
     multiplier = _get_multiplier(c, field, Val(unit_system), base_mva, conversion_unit)
     return val / multiplier
 end
+
+set_value(c::ThreeWindingTransformer, field, val::Float64, cu::Val{:mva}) =
+    _t3w_set_value(c, field, val, cu)
+set_value(c::ThreeWindingTransformer, field, val::Float64, cu::Val{:ohm}) =
+    _t3w_set_value(c, field, val, cu)
+set_value(c::ThreeWindingTransformer, field, val::Float64, cu::Val{:siemens}) =
+    _t3w_set_value(c, field, val, cu)
