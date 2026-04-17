@@ -134,40 +134,40 @@ end
 get_name(value::TapTransformer) = value.name
 """Get [`TapTransformer`](@ref) `available`."""
 get_available(value::TapTransformer) = value.available
-"""Get [`TapTransformer`](@ref) `active_power_flow`."""
-get_active_power_flow(value::TapTransformer) = get_value(value, Val(:active_power_flow), Val(:mva))
+"""Get [`TapTransformer`](@ref) `active_power_flow`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_active_power_flow(value::TapTransformer, units) = get_value(value, Val(:active_power_flow), Val(:mva), units)
-"""Get [`TapTransformer`](@ref) `reactive_power_flow`."""
-get_reactive_power_flow(value::TapTransformer) = get_value(value, Val(:reactive_power_flow), Val(:mva))
+InfrastructureSystems.display_units_arg(::typeof(get_active_power_flow), ::Type{ TapTransformer }) = InfrastructureSystems.SU
+"""Get [`TapTransformer`](@ref) `reactive_power_flow`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_reactive_power_flow(value::TapTransformer, units) = get_value(value, Val(:reactive_power_flow), Val(:mva), units)
+InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_flow), ::Type{ TapTransformer }) = InfrastructureSystems.SU
 """Get [`TapTransformer`](@ref) `arc`."""
 get_arc(value::TapTransformer) = value.arc
-"""Get [`TapTransformer`](@ref) `r`."""
-get_r(value::TapTransformer) = get_value(value, Val(:r), Val(:ohm))
+"""Get [`TapTransformer`](@ref) `r`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_r(value::TapTransformer, units) = get_value(value, Val(:r), Val(:ohm), units)
-"""Get [`TapTransformer`](@ref) `x`."""
-get_x(value::TapTransformer) = get_value(value, Val(:x), Val(:ohm))
+InfrastructureSystems.display_units_arg(::typeof(get_r), ::Type{ TapTransformer }) = InfrastructureSystems.SU
+"""Get [`TapTransformer`](@ref) `x`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_x(value::TapTransformer, units) = get_value(value, Val(:x), Val(:ohm), units)
-"""Get [`TapTransformer`](@ref) `primary_shunt`."""
-get_primary_shunt(value::TapTransformer) = get_value(value, Val(:primary_shunt), Val(:siemens))
+InfrastructureSystems.display_units_arg(::typeof(get_x), ::Type{ TapTransformer }) = InfrastructureSystems.SU
+"""Get [`TapTransformer`](@ref) `primary_shunt`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_primary_shunt(value::TapTransformer, units) = get_value(value, Val(:primary_shunt), Val(:siemens), units)
+InfrastructureSystems.display_units_arg(::typeof(get_primary_shunt), ::Type{ TapTransformer }) = InfrastructureSystems.SU
 """Get [`TapTransformer`](@ref) `tap`."""
 get_tap(value::TapTransformer) = value.tap
-"""Get [`TapTransformer`](@ref) `rating`."""
-get_rating(value::TapTransformer) = get_value(value, Val(:rating), Val(:mva))
+"""Get [`TapTransformer`](@ref) `rating`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_rating(value::TapTransformer, units) = get_value(value, Val(:rating), Val(:mva), units)
+InfrastructureSystems.display_units_arg(::typeof(get_rating), ::Type{ TapTransformer }) = InfrastructureSystems.SU
 """Get [`TapTransformer`](@ref) `base_power`."""
 get_base_power(value::TapTransformer) = value.base_power
 """Get [`TapTransformer`](@ref) `base_voltage_primary`."""
 get_base_voltage_primary(value::TapTransformer) = value.base_voltage_primary
 """Get [`TapTransformer`](@ref) `base_voltage_secondary`."""
 get_base_voltage_secondary(value::TapTransformer) = value.base_voltage_secondary
-"""Get [`TapTransformer`](@ref) `rating_b`."""
-get_rating_b(value::TapTransformer) = get_value(value, Val(:rating_b), Val(:mva))
+"""Get [`TapTransformer`](@ref) `rating_b`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_rating_b(value::TapTransformer, units) = get_value(value, Val(:rating_b), Val(:mva), units)
-"""Get [`TapTransformer`](@ref) `rating_c`."""
-get_rating_c(value::TapTransformer) = get_value(value, Val(:rating_c), Val(:mva))
+InfrastructureSystems.display_units_arg(::typeof(get_rating_b), ::Type{ TapTransformer }) = InfrastructureSystems.SU
+"""Get [`TapTransformer`](@ref) `rating_c`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_rating_c(value::TapTransformer, units) = get_value(value, Val(:rating_c), Val(:mva), units)
+InfrastructureSystems.display_units_arg(::typeof(get_rating_c), ::Type{ TapTransformer }) = InfrastructureSystems.SU
 """Get [`TapTransformer`](@ref) `winding_group_number`."""
 get_winding_group_number(value::TapTransformer) = value.winding_group_number
 """Get [`TapTransformer`](@ref) `control_objective`."""

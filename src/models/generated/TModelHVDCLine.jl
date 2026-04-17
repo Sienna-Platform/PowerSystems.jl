@@ -94,9 +94,9 @@ end
 get_name(value::TModelHVDCLine) = value.name
 """Get [`TModelHVDCLine`](@ref) `available`."""
 get_available(value::TModelHVDCLine) = value.available
-"""Get [`TModelHVDCLine`](@ref) `active_power_flow`."""
-get_active_power_flow(value::TModelHVDCLine) = get_value(value, Val(:active_power_flow), Val(:mva))
+"""Get [`TModelHVDCLine`](@ref) `active_power_flow`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_active_power_flow(value::TModelHVDCLine, units) = get_value(value, Val(:active_power_flow), Val(:mva), units)
+InfrastructureSystems.display_units_arg(::typeof(get_active_power_flow), ::Type{ TModelHVDCLine }) = InfrastructureSystems.SU
 """Get [`TModelHVDCLine`](@ref) `arc`."""
 get_arc(value::TModelHVDCLine) = value.arc
 """Get [`TModelHVDCLine`](@ref) `r`."""
@@ -105,12 +105,12 @@ get_r(value::TModelHVDCLine) = value.r
 get_l(value::TModelHVDCLine) = value.l
 """Get [`TModelHVDCLine`](@ref) `c`."""
 get_c(value::TModelHVDCLine) = value.c
-"""Get [`TModelHVDCLine`](@ref) `active_power_limits_from`."""
-get_active_power_limits_from(value::TModelHVDCLine) = get_value(value, Val(:active_power_limits_from), Val(:mva))
+"""Get [`TModelHVDCLine`](@ref) `active_power_limits_from`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_active_power_limits_from(value::TModelHVDCLine, units) = get_value(value, Val(:active_power_limits_from), Val(:mva), units)
-"""Get [`TModelHVDCLine`](@ref) `active_power_limits_to`."""
-get_active_power_limits_to(value::TModelHVDCLine) = get_value(value, Val(:active_power_limits_to), Val(:mva))
+InfrastructureSystems.display_units_arg(::typeof(get_active_power_limits_from), ::Type{ TModelHVDCLine }) = InfrastructureSystems.SU
+"""Get [`TModelHVDCLine`](@ref) `active_power_limits_to`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_active_power_limits_to(value::TModelHVDCLine, units) = get_value(value, Val(:active_power_limits_to), Val(:mva), units)
+InfrastructureSystems.display_units_arg(::typeof(get_active_power_limits_to), ::Type{ TModelHVDCLine }) = InfrastructureSystems.SU
 """Get [`TModelHVDCLine`](@ref) `services`."""
 get_services(value::TModelHVDCLine) = value.services
 """Get [`TModelHVDCLine`](@ref) `ext`."""

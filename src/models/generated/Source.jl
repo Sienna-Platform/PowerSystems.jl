@@ -121,18 +121,18 @@ get_name(value::Source) = value.name
 get_available(value::Source) = value.available
 """Get [`Source`](@ref) `bus`."""
 get_bus(value::Source) = value.bus
-"""Get [`Source`](@ref) `active_power`."""
-get_active_power(value::Source) = get_value(value, Val(:active_power), Val(:mva))
+"""Get [`Source`](@ref) `active_power`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_active_power(value::Source, units) = get_value(value, Val(:active_power), Val(:mva), units)
-"""Get [`Source`](@ref) `reactive_power`."""
-get_reactive_power(value::Source) = get_value(value, Val(:reactive_power), Val(:mva))
+InfrastructureSystems.display_units_arg(::typeof(get_active_power), ::Type{ Source }) = InfrastructureSystems.SU
+"""Get [`Source`](@ref) `reactive_power`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_reactive_power(value::Source, units) = get_value(value, Val(:reactive_power), Val(:mva), units)
-"""Get [`Source`](@ref) `active_power_limits`."""
-get_active_power_limits(value::Source) = get_value(value, Val(:active_power_limits), Val(:mva))
+InfrastructureSystems.display_units_arg(::typeof(get_reactive_power), ::Type{ Source }) = InfrastructureSystems.SU
+"""Get [`Source`](@ref) `active_power_limits`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_active_power_limits(value::Source, units) = get_value(value, Val(:active_power_limits), Val(:mva), units)
-"""Get [`Source`](@ref) `reactive_power_limits`."""
-get_reactive_power_limits(value::Source) = get_value(value, Val(:reactive_power_limits), Val(:mva))
+InfrastructureSystems.display_units_arg(::typeof(get_active_power_limits), ::Type{ Source }) = InfrastructureSystems.SU
+"""Get [`Source`](@ref) `reactive_power_limits`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_reactive_power_limits(value::Source, units) = get_value(value, Val(:reactive_power_limits), Val(:mva), units)
+InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_limits), ::Type{ Source }) = InfrastructureSystems.SU
 """Get [`Source`](@ref) `R_th`."""
 get_R_th(value::Source) = value.R_th
 """Get [`Source`](@ref) `X_th`."""

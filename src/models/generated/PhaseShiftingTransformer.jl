@@ -139,42 +139,42 @@ end
 get_name(value::PhaseShiftingTransformer) = value.name
 """Get [`PhaseShiftingTransformer`](@ref) `available`."""
 get_available(value::PhaseShiftingTransformer) = value.available
-"""Get [`PhaseShiftingTransformer`](@ref) `active_power_flow`."""
-get_active_power_flow(value::PhaseShiftingTransformer) = get_value(value, Val(:active_power_flow), Val(:mva))
+"""Get [`PhaseShiftingTransformer`](@ref) `active_power_flow`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_active_power_flow(value::PhaseShiftingTransformer, units) = get_value(value, Val(:active_power_flow), Val(:mva), units)
-"""Get [`PhaseShiftingTransformer`](@ref) `reactive_power_flow`."""
-get_reactive_power_flow(value::PhaseShiftingTransformer) = get_value(value, Val(:reactive_power_flow), Val(:mva))
+InfrastructureSystems.display_units_arg(::typeof(get_active_power_flow), ::Type{ PhaseShiftingTransformer }) = InfrastructureSystems.SU
+"""Get [`PhaseShiftingTransformer`](@ref) `reactive_power_flow`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_reactive_power_flow(value::PhaseShiftingTransformer, units) = get_value(value, Val(:reactive_power_flow), Val(:mva), units)
+InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_flow), ::Type{ PhaseShiftingTransformer }) = InfrastructureSystems.SU
 """Get [`PhaseShiftingTransformer`](@ref) `arc`."""
 get_arc(value::PhaseShiftingTransformer) = value.arc
-"""Get [`PhaseShiftingTransformer`](@ref) `r`."""
-get_r(value::PhaseShiftingTransformer) = get_value(value, Val(:r), Val(:ohm))
+"""Get [`PhaseShiftingTransformer`](@ref) `r`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_r(value::PhaseShiftingTransformer, units) = get_value(value, Val(:r), Val(:ohm), units)
-"""Get [`PhaseShiftingTransformer`](@ref) `x`."""
-get_x(value::PhaseShiftingTransformer) = get_value(value, Val(:x), Val(:ohm))
+InfrastructureSystems.display_units_arg(::typeof(get_r), ::Type{ PhaseShiftingTransformer }) = InfrastructureSystems.SU
+"""Get [`PhaseShiftingTransformer`](@ref) `x`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_x(value::PhaseShiftingTransformer, units) = get_value(value, Val(:x), Val(:ohm), units)
-"""Get [`PhaseShiftingTransformer`](@ref) `primary_shunt`."""
-get_primary_shunt(value::PhaseShiftingTransformer) = get_value(value, Val(:primary_shunt), Val(:siemens))
+InfrastructureSystems.display_units_arg(::typeof(get_x), ::Type{ PhaseShiftingTransformer }) = InfrastructureSystems.SU
+"""Get [`PhaseShiftingTransformer`](@ref) `primary_shunt`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_primary_shunt(value::PhaseShiftingTransformer, units) = get_value(value, Val(:primary_shunt), Val(:siemens), units)
+InfrastructureSystems.display_units_arg(::typeof(get_primary_shunt), ::Type{ PhaseShiftingTransformer }) = InfrastructureSystems.SU
 """Get [`PhaseShiftingTransformer`](@ref) `tap`."""
 get_tap(value::PhaseShiftingTransformer) = value.tap
 """Get [`PhaseShiftingTransformer`](@ref) `α`."""
 get_α(value::PhaseShiftingTransformer) = value.α
-"""Get [`PhaseShiftingTransformer`](@ref) `rating`."""
-get_rating(value::PhaseShiftingTransformer) = get_value(value, Val(:rating), Val(:mva))
+"""Get [`PhaseShiftingTransformer`](@ref) `rating`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_rating(value::PhaseShiftingTransformer, units) = get_value(value, Val(:rating), Val(:mva), units)
+InfrastructureSystems.display_units_arg(::typeof(get_rating), ::Type{ PhaseShiftingTransformer }) = InfrastructureSystems.SU
 """Get [`PhaseShiftingTransformer`](@ref) `base_power`."""
 get_base_power(value::PhaseShiftingTransformer) = value.base_power
 """Get [`PhaseShiftingTransformer`](@ref) `base_voltage_primary`."""
 get_base_voltage_primary(value::PhaseShiftingTransformer) = value.base_voltage_primary
 """Get [`PhaseShiftingTransformer`](@ref) `base_voltage_secondary`."""
 get_base_voltage_secondary(value::PhaseShiftingTransformer) = value.base_voltage_secondary
-"""Get [`PhaseShiftingTransformer`](@ref) `rating_b`."""
-get_rating_b(value::PhaseShiftingTransformer) = get_value(value, Val(:rating_b), Val(:mva))
+"""Get [`PhaseShiftingTransformer`](@ref) `rating_b`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_rating_b(value::PhaseShiftingTransformer, units) = get_value(value, Val(:rating_b), Val(:mva), units)
-"""Get [`PhaseShiftingTransformer`](@ref) `rating_c`."""
-get_rating_c(value::PhaseShiftingTransformer) = get_value(value, Val(:rating_c), Val(:mva))
+InfrastructureSystems.display_units_arg(::typeof(get_rating_b), ::Type{ PhaseShiftingTransformer }) = InfrastructureSystems.SU
+"""Get [`PhaseShiftingTransformer`](@ref) `rating_c`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_rating_c(value::PhaseShiftingTransformer, units) = get_value(value, Val(:rating_c), Val(:mva), units)
+InfrastructureSystems.display_units_arg(::typeof(get_rating_c), ::Type{ PhaseShiftingTransformer }) = InfrastructureSystems.SU
 """Get [`PhaseShiftingTransformer`](@ref) `phase_angle_limits`."""
 get_phase_angle_limits(value::PhaseShiftingTransformer) = value.phase_angle_limits
 """Get [`PhaseShiftingTransformer`](@ref) `control_objective`."""

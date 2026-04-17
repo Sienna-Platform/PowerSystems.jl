@@ -131,26 +131,26 @@ get_name(value::HydroDispatch) = value.name
 get_available(value::HydroDispatch) = value.available
 """Get [`HydroDispatch`](@ref) `bus`."""
 get_bus(value::HydroDispatch) = value.bus
-"""Get [`HydroDispatch`](@ref) `active_power`."""
-get_active_power(value::HydroDispatch) = get_value(value, Val(:active_power), Val(:mva))
+"""Get [`HydroDispatch`](@ref) `active_power`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_active_power(value::HydroDispatch, units) = get_value(value, Val(:active_power), Val(:mva), units)
-"""Get [`HydroDispatch`](@ref) `reactive_power`."""
-get_reactive_power(value::HydroDispatch) = get_value(value, Val(:reactive_power), Val(:mva))
+InfrastructureSystems.display_units_arg(::typeof(get_active_power), ::Type{ HydroDispatch }) = InfrastructureSystems.SU
+"""Get [`HydroDispatch`](@ref) `reactive_power`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_reactive_power(value::HydroDispatch, units) = get_value(value, Val(:reactive_power), Val(:mva), units)
-"""Get [`HydroDispatch`](@ref) `rating`."""
-get_rating(value::HydroDispatch) = get_value(value, Val(:rating), Val(:mva))
+InfrastructureSystems.display_units_arg(::typeof(get_reactive_power), ::Type{ HydroDispatch }) = InfrastructureSystems.SU
+"""Get [`HydroDispatch`](@ref) `rating`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_rating(value::HydroDispatch, units) = get_value(value, Val(:rating), Val(:mva), units)
+InfrastructureSystems.display_units_arg(::typeof(get_rating), ::Type{ HydroDispatch }) = InfrastructureSystems.SU
 """Get [`HydroDispatch`](@ref) `prime_mover_type`."""
 get_prime_mover_type(value::HydroDispatch) = value.prime_mover_type
-"""Get [`HydroDispatch`](@ref) `active_power_limits`."""
-get_active_power_limits(value::HydroDispatch) = get_value(value, Val(:active_power_limits), Val(:mva))
+"""Get [`HydroDispatch`](@ref) `active_power_limits`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_active_power_limits(value::HydroDispatch, units) = get_value(value, Val(:active_power_limits), Val(:mva), units)
-"""Get [`HydroDispatch`](@ref) `reactive_power_limits`."""
-get_reactive_power_limits(value::HydroDispatch) = get_value(value, Val(:reactive_power_limits), Val(:mva))
+InfrastructureSystems.display_units_arg(::typeof(get_active_power_limits), ::Type{ HydroDispatch }) = InfrastructureSystems.SU
+"""Get [`HydroDispatch`](@ref) `reactive_power_limits`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_reactive_power_limits(value::HydroDispatch, units) = get_value(value, Val(:reactive_power_limits), Val(:mva), units)
-"""Get [`HydroDispatch`](@ref) `ramp_limits`."""
-get_ramp_limits(value::HydroDispatch) = get_value(value, Val(:ramp_limits), Val(:mva))
+InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_limits), ::Type{ HydroDispatch }) = InfrastructureSystems.SU
+"""Get [`HydroDispatch`](@ref) `ramp_limits`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_ramp_limits(value::HydroDispatch, units) = get_value(value, Val(:ramp_limits), Val(:mva), units)
+InfrastructureSystems.display_units_arg(::typeof(get_ramp_limits), ::Type{ HydroDispatch }) = InfrastructureSystems.SU
 """Get [`HydroDispatch`](@ref) `time_limits`."""
 get_time_limits(value::HydroDispatch) = value.time_limits
 """Get [`HydroDispatch`](@ref) `base_power`."""

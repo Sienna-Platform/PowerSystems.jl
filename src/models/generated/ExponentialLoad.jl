@@ -111,24 +111,24 @@ get_name(value::ExponentialLoad) = value.name
 get_available(value::ExponentialLoad) = value.available
 """Get [`ExponentialLoad`](@ref) `bus`."""
 get_bus(value::ExponentialLoad) = value.bus
-"""Get [`ExponentialLoad`](@ref) `active_power`."""
-get_active_power(value::ExponentialLoad) = get_value(value, Val(:active_power), Val(:mva))
+"""Get [`ExponentialLoad`](@ref) `active_power`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_active_power(value::ExponentialLoad, units) = get_value(value, Val(:active_power), Val(:mva), units)
-"""Get [`ExponentialLoad`](@ref) `reactive_power`."""
-get_reactive_power(value::ExponentialLoad) = get_value(value, Val(:reactive_power), Val(:mva))
+InfrastructureSystems.display_units_arg(::typeof(get_active_power), ::Type{ ExponentialLoad }) = InfrastructureSystems.SU
+"""Get [`ExponentialLoad`](@ref) `reactive_power`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_reactive_power(value::ExponentialLoad, units) = get_value(value, Val(:reactive_power), Val(:mva), units)
+InfrastructureSystems.display_units_arg(::typeof(get_reactive_power), ::Type{ ExponentialLoad }) = InfrastructureSystems.SU
 """Get [`ExponentialLoad`](@ref) `α`."""
 get_α(value::ExponentialLoad) = value.α
 """Get [`ExponentialLoad`](@ref) `β`."""
 get_β(value::ExponentialLoad) = value.β
 """Get [`ExponentialLoad`](@ref) `base_power`."""
 get_base_power(value::ExponentialLoad) = value.base_power
-"""Get [`ExponentialLoad`](@ref) `max_active_power`."""
-get_max_active_power(value::ExponentialLoad) = get_value(value, Val(:max_active_power), Val(:mva))
+"""Get [`ExponentialLoad`](@ref) `max_active_power`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_max_active_power(value::ExponentialLoad, units) = get_value(value, Val(:max_active_power), Val(:mva), units)
-"""Get [`ExponentialLoad`](@ref) `max_reactive_power`."""
-get_max_reactive_power(value::ExponentialLoad) = get_value(value, Val(:max_reactive_power), Val(:mva))
+InfrastructureSystems.display_units_arg(::typeof(get_max_active_power), ::Type{ ExponentialLoad }) = InfrastructureSystems.SU
+"""Get [`ExponentialLoad`](@ref) `max_reactive_power`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_max_reactive_power(value::ExponentialLoad, units) = get_value(value, Val(:max_reactive_power), Val(:mva), units)
+InfrastructureSystems.display_units_arg(::typeof(get_max_reactive_power), ::Type{ ExponentialLoad }) = InfrastructureSystems.SU
 """Get [`ExponentialLoad`](@ref) `conformity`."""
 get_conformity(value::ExponentialLoad) = value.conformity
 """Get [`ExponentialLoad`](@ref) `services`."""

@@ -111,15 +111,15 @@ get_available(value::InterconnectingConverter) = value.available
 get_bus(value::InterconnectingConverter) = value.bus
 """Get [`InterconnectingConverter`](@ref) `dc_bus`."""
 get_dc_bus(value::InterconnectingConverter) = value.dc_bus
-"""Get [`InterconnectingConverter`](@ref) `active_power`."""
-get_active_power(value::InterconnectingConverter) = get_value(value, Val(:active_power), Val(:mva))
+"""Get [`InterconnectingConverter`](@ref) `active_power`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_active_power(value::InterconnectingConverter, units) = get_value(value, Val(:active_power), Val(:mva), units)
-"""Get [`InterconnectingConverter`](@ref) `rating`."""
-get_rating(value::InterconnectingConverter) = get_value(value, Val(:rating), Val(:mva))
+InfrastructureSystems.display_units_arg(::typeof(get_active_power), ::Type{ InterconnectingConverter }) = InfrastructureSystems.SU
+"""Get [`InterconnectingConverter`](@ref) `rating`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_rating(value::InterconnectingConverter, units) = get_value(value, Val(:rating), Val(:mva), units)
-"""Get [`InterconnectingConverter`](@ref) `active_power_limits`."""
-get_active_power_limits(value::InterconnectingConverter) = get_value(value, Val(:active_power_limits), Val(:mva))
+InfrastructureSystems.display_units_arg(::typeof(get_rating), ::Type{ InterconnectingConverter }) = InfrastructureSystems.SU
+"""Get [`InterconnectingConverter`](@ref) `active_power_limits`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_active_power_limits(value::InterconnectingConverter, units) = get_value(value, Val(:active_power_limits), Val(:mva), units)
+InfrastructureSystems.display_units_arg(::typeof(get_active_power_limits), ::Type{ InterconnectingConverter }) = InfrastructureSystems.SU
 """Get [`InterconnectingConverter`](@ref) `base_power`."""
 get_base_power(value::InterconnectingConverter) = value.base_power
 """Get [`InterconnectingConverter`](@ref) `dc_current`."""
