@@ -1,5 +1,7 @@
-# Tests of the per-unit (RelativeQuantity) and natural-unit (Unitful) machinery
-# vendored from PowerSystemsUnits.jl into PowerSystems.
+# Tests of the power-domain unit machinery: categories, convert_units across
+# per-unit/natural-unit boundaries, serialization, and custom Unitful units.
+# The RelativeQuantity arithmetic/comparison/display tests live in IS
+# (test/test_relative_units.jl) since those types are domain-agnostic.
 
 import Unitful
 using Unitful: @u_str
@@ -22,43 +24,6 @@ PSY.get_base_voltage(::MockGen) = 230.0
 PSY.get_device_base_power(::MockLine) = 100.0
 PSY.get_system_base_power(::MockLine) = 100.0
 PSY.get_base_voltage(::MockLine) = 230.0
-
-@testset "RelativeQuantity construction and arithmetic" begin
-    a = 0.6DU
-    b = 0.4DU
-    @test a isa RelativeQuantity{Float64, DeviceBaseUnit}
-    @test ustrip(a + b) ≈ 1.0
-    @test ustrip(a - b) ≈ 0.2
-    @test ustrip(-a) ≈ -0.6
-    # scalar multiplication dispatches differently on each side
-    @test ustrip(2.0 * a) ≈ 1.2
-    @test ustrip(a * 2.0) ≈ 1.2
-    @test ustrip(a / 2.0) ≈ 0.3
-end
-
-@testset "RelativeQuantity comparisons" begin
-    @test 0.6DU < 0.7DU
-    @test 0.6DU <= 0.6DU
-    @test isapprox(0.6DU, 0.60000001DU; atol = 1e-6)
-    @test isless(0.6DU, 0.7DU)
-end
-
-@testset "DU and SU cannot be mixed" begin
-    @test_throws Exception 0.6DU + 0.4SU
-    @test_throws Exception 0.6DU == 0.4SU
-end
-
-@testset "RelativeQuantity zero and one" begin
-    @test zero(RelativeQuantity{Float64, DeviceBaseUnit}) == 0.0DU
-    @test one(RelativeQuantity{Float64, DeviceBaseUnit}) == 1.0DU
-end
-
-@testset "RelativeQuantity display" begin
-    @test sprint(show, 0.6DU) == "0.6 DU"
-    @test sprint(show, 0.3SU) == "0.3 SU"
-    @test sprint(show, DU) == "DU"
-    @test sprint(show, SU) == "SU"
-end
 
 @testset "Unit categories" begin
     @test natural_unit(POWER) == u"MW"

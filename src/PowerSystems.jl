@@ -635,8 +635,20 @@ import Base.to_index
 import PrettyTables
 import Unitful
 using Unitful: @u_str, @unit, Quantity, Units, uconvert
-import Unitful: ustrip
 import StructTypes
+
+# Relative-unit primitives live in IS; PSY re-exports them for downstream
+# packages so that `PSY.DU`, `PSY.RelativeQuantity`, etc. keep working.
+import InfrastructureSystems:
+    AbstractRelativeUnit,
+    DeviceBaseUnit,
+    SystemBaseUnit,
+    NaturalUnit,
+    RelativeQuantity,
+    DU,
+    SU,
+    NU,
+    ustrip
 
 # Import InfrastructureSystems both as full module name (needed for internal macros like @forward)
 # and with alias for convenient usage throughout the codebase

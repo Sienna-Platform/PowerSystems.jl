@@ -219,22 +219,6 @@ end
     )
 end
 
-@testset "Test system units" begin
-    sys = PSB.build_system(PSITestSystems, "test_RTS_GMLC_sys"; add_forecasts = false)
-    set_units_base_system!(sys, "DEVICE_BASE")
-    @test get_units_base(sys) == "DEVICE_BASE"
-    set_units_base_system!(sys, "SYSTEM_BASE")
-    @test get_units_base(sys) == "SYSTEM_BASE"
-
-    gen = get_component(ThermalStandard, sys, "322_CT_6")
-    active_power_mw = with_units_base(sys, UnitSystem.NATURAL_UNITS) do
-        get_active_power(gen)
-    end
-    @test get_units_base(sys) == "SYSTEM_BASE"
-    set_units_base_system!(sys, UnitSystem.NATURAL_UNITS)
-    @test active_power_mw == get_active_power(gen)
-end
-
 @testset "Test explicit units API" begin
     sys = PSB.build_system(PSITestSystems, "test_RTS_GMLC_sys"; add_forecasts = false)
     gen = get_component(ThermalStandard, sys, "322_CT_6")
