@@ -123,12 +123,16 @@ get_available(value::Source) = value.available
 get_bus(value::Source) = value.bus
 """Get [`Source`](@ref) `active_power`."""
 get_active_power(value::Source) = get_value(value, Val(:active_power), Val(:mva))
+get_active_power(value::Source, units) = get_value(value, Val(:active_power), Val(:mva), units)
 """Get [`Source`](@ref) `reactive_power`."""
 get_reactive_power(value::Source) = get_value(value, Val(:reactive_power), Val(:mva))
+get_reactive_power(value::Source, units) = get_value(value, Val(:reactive_power), Val(:mva), units)
 """Get [`Source`](@ref) `active_power_limits`."""
 get_active_power_limits(value::Source) = get_value(value, Val(:active_power_limits), Val(:mva))
+get_active_power_limits(value::Source, units) = get_value(value, Val(:active_power_limits), Val(:mva), units)
 """Get [`Source`](@ref) `reactive_power_limits`."""
 get_reactive_power_limits(value::Source) = get_value(value, Val(:reactive_power_limits), Val(:mva))
+get_reactive_power_limits(value::Source, units) = get_value(value, Val(:reactive_power_limits), Val(:mva), units)
 """Get [`Source`](@ref) `R_th`."""
 get_R_th(value::Source) = value.R_th
 """Get [`Source`](@ref) `X_th`."""

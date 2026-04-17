@@ -88,6 +88,7 @@ get_available(value::ConstantReserve) = value.available
 get_time_frame(value::ConstantReserve) = value.time_frame
 """Get [`ConstantReserve`](@ref) `requirement`."""
 get_requirement(value::ConstantReserve) = get_value(value, Val(:requirement), Val(:mva))
+get_requirement(value::ConstantReserve, units) = get_value(value, Val(:requirement), Val(:mva), units)
 """Get [`ConstantReserve`](@ref) `sustained_time`."""
 get_sustained_time(value::ConstantReserve) = value.sustained_time
 """Get [`ConstantReserve`](@ref) `max_output_fraction`."""

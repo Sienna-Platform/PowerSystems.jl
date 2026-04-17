@@ -133,18 +133,24 @@ get_available(value::HydroDispatch) = value.available
 get_bus(value::HydroDispatch) = value.bus
 """Get [`HydroDispatch`](@ref) `active_power`."""
 get_active_power(value::HydroDispatch) = get_value(value, Val(:active_power), Val(:mva))
+get_active_power(value::HydroDispatch, units) = get_value(value, Val(:active_power), Val(:mva), units)
 """Get [`HydroDispatch`](@ref) `reactive_power`."""
 get_reactive_power(value::HydroDispatch) = get_value(value, Val(:reactive_power), Val(:mva))
+get_reactive_power(value::HydroDispatch, units) = get_value(value, Val(:reactive_power), Val(:mva), units)
 """Get [`HydroDispatch`](@ref) `rating`."""
 get_rating(value::HydroDispatch) = get_value(value, Val(:rating), Val(:mva))
+get_rating(value::HydroDispatch, units) = get_value(value, Val(:rating), Val(:mva), units)
 """Get [`HydroDispatch`](@ref) `prime_mover_type`."""
 get_prime_mover_type(value::HydroDispatch) = value.prime_mover_type
 """Get [`HydroDispatch`](@ref) `active_power_limits`."""
 get_active_power_limits(value::HydroDispatch) = get_value(value, Val(:active_power_limits), Val(:mva))
+get_active_power_limits(value::HydroDispatch, units) = get_value(value, Val(:active_power_limits), Val(:mva), units)
 """Get [`HydroDispatch`](@ref) `reactive_power_limits`."""
 get_reactive_power_limits(value::HydroDispatch) = get_value(value, Val(:reactive_power_limits), Val(:mva))
+get_reactive_power_limits(value::HydroDispatch, units) = get_value(value, Val(:reactive_power_limits), Val(:mva), units)
 """Get [`HydroDispatch`](@ref) `ramp_limits`."""
 get_ramp_limits(value::HydroDispatch) = get_value(value, Val(:ramp_limits), Val(:mva))
+get_ramp_limits(value::HydroDispatch, units) = get_value(value, Val(:ramp_limits), Val(:mva), units)
 """Get [`HydroDispatch`](@ref) `time_limits`."""
 get_time_limits(value::HydroDispatch) = value.time_limits
 """Get [`HydroDispatch`](@ref) `base_power`."""

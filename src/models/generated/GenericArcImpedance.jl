@@ -84,16 +84,21 @@ get_name(value::GenericArcImpedance) = value.name
 get_available(value::GenericArcImpedance) = value.available
 """Get [`GenericArcImpedance`](@ref) `active_power_flow`."""
 get_active_power_flow(value::GenericArcImpedance) = get_value(value, Val(:active_power_flow), Val(:mva))
+get_active_power_flow(value::GenericArcImpedance, units) = get_value(value, Val(:active_power_flow), Val(:mva), units)
 """Get [`GenericArcImpedance`](@ref) `reactive_power_flow`."""
 get_reactive_power_flow(value::GenericArcImpedance) = get_value(value, Val(:reactive_power_flow), Val(:mva))
+get_reactive_power_flow(value::GenericArcImpedance, units) = get_value(value, Val(:reactive_power_flow), Val(:mva), units)
 """Get [`GenericArcImpedance`](@ref) `max_flow`."""
 get_max_flow(value::GenericArcImpedance) = get_value(value, Val(:max_flow), Val(:mva))
+get_max_flow(value::GenericArcImpedance, units) = get_value(value, Val(:max_flow), Val(:mva), units)
 """Get [`GenericArcImpedance`](@ref) `arc`."""
 get_arc(value::GenericArcImpedance) = value.arc
 """Get [`GenericArcImpedance`](@ref) `r`."""
 get_r(value::GenericArcImpedance) = get_value(value, Val(:r), Val(:ohm))
+get_r(value::GenericArcImpedance, units) = get_value(value, Val(:r), Val(:ohm), units)
 """Get [`GenericArcImpedance`](@ref) `x`."""
 get_x(value::GenericArcImpedance) = get_value(value, Val(:x), Val(:ohm))
+get_x(value::GenericArcImpedance, units) = get_value(value, Val(:x), Val(:ohm), units)
 """Get [`GenericArcImpedance`](@ref) `ext`."""
 get_ext(value::GenericArcImpedance) = value.ext
 """Get [`GenericArcImpedance`](@ref) `internal`."""

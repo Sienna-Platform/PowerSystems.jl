@@ -88,6 +88,7 @@ get_available(value::ConstantReserveNonSpinning) = value.available
 get_time_frame(value::ConstantReserveNonSpinning) = value.time_frame
 """Get [`ConstantReserveNonSpinning`](@ref) `requirement`."""
 get_requirement(value::ConstantReserveNonSpinning) = get_value(value, Val(:requirement), Val(:mva))
+get_requirement(value::ConstantReserveNonSpinning, units) = get_value(value, Val(:requirement), Val(:mva), units)
 """Get [`ConstantReserveNonSpinning`](@ref) `sustained_time`."""
 get_sustained_time(value::ConstantReserveNonSpinning) = value.sustained_time
 """Get [`ConstantReserveNonSpinning`](@ref) `max_output_fraction`."""

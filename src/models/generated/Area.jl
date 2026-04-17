@@ -64,8 +64,10 @@ end
 get_name(value::Area) = value.name
 """Get [`Area`](@ref) `peak_active_power`."""
 get_peak_active_power(value::Area) = get_value(value, Val(:peak_active_power), Val(:mva))
+get_peak_active_power(value::Area, units) = get_value(value, Val(:peak_active_power), Val(:mva), units)
 """Get [`Area`](@ref) `peak_reactive_power`."""
 get_peak_reactive_power(value::Area) = get_value(value, Val(:peak_reactive_power), Val(:mva))
+get_peak_reactive_power(value::Area, units) = get_value(value, Val(:peak_reactive_power), Val(:mva), units)
 """Get [`Area`](@ref) `load_response`."""
 get_load_response(value::Area) = value.load_response
 """Get [`Area`](@ref) `ext`."""

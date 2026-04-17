@@ -79,12 +79,14 @@ get_name(value::AreaInterchange) = value.name
 get_available(value::AreaInterchange) = value.available
 """Get [`AreaInterchange`](@ref) `active_power_flow`."""
 get_active_power_flow(value::AreaInterchange) = get_value(value, Val(:active_power_flow), Val(:mva))
+get_active_power_flow(value::AreaInterchange, units) = get_value(value, Val(:active_power_flow), Val(:mva), units)
 """Get [`AreaInterchange`](@ref) `from_area`."""
 get_from_area(value::AreaInterchange) = value.from_area
 """Get [`AreaInterchange`](@ref) `to_area`."""
 get_to_area(value::AreaInterchange) = value.to_area
 """Get [`AreaInterchange`](@ref) `flow_limits`."""
 get_flow_limits(value::AreaInterchange) = get_value(value, Val(:flow_limits), Val(:mva))
+get_flow_limits(value::AreaInterchange, units) = get_value(value, Val(:flow_limits), Val(:mva), units)
 """Get [`AreaInterchange`](@ref) `services`."""
 get_services(value::AreaInterchange) = value.services
 """Get [`AreaInterchange`](@ref) `ext`."""

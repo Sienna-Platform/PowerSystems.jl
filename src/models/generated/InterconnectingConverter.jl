@@ -113,10 +113,13 @@ get_bus(value::InterconnectingConverter) = value.bus
 get_dc_bus(value::InterconnectingConverter) = value.dc_bus
 """Get [`InterconnectingConverter`](@ref) `active_power`."""
 get_active_power(value::InterconnectingConverter) = get_value(value, Val(:active_power), Val(:mva))
+get_active_power(value::InterconnectingConverter, units) = get_value(value, Val(:active_power), Val(:mva), units)
 """Get [`InterconnectingConverter`](@ref) `rating`."""
 get_rating(value::InterconnectingConverter) = get_value(value, Val(:rating), Val(:mva))
+get_rating(value::InterconnectingConverter, units) = get_value(value, Val(:rating), Val(:mva), units)
 """Get [`InterconnectingConverter`](@ref) `active_power_limits`."""
 get_active_power_limits(value::InterconnectingConverter) = get_value(value, Val(:active_power_limits), Val(:mva))
+get_active_power_limits(value::InterconnectingConverter, units) = get_value(value, Val(:active_power_limits), Val(:mva), units)
 """Get [`InterconnectingConverter`](@ref) `base_power`."""
 get_base_power(value::InterconnectingConverter) = value.base_power
 """Get [`InterconnectingConverter`](@ref) `dc_current`."""
