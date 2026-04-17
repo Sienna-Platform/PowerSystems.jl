@@ -354,6 +354,40 @@ function get_services_bid(
     return converted
 end
 
+"""
+Get the fuel cost of a [`HybridSystem`](@ref)'s thermal subunit.
+
+[`HybridSystem`](@ref) is a [`StaticInjectionSubsystem`](@ref) that aggregates subunits; fuel cost
+for thermal power comes from the [`ThermalGen`](@ref) subcomponent, not the hybrid's top-level
+[`MarketBidCost`](@ref). This method delegates to [`get_fuel_cost`](@ref get_fuel_cost(component::StaticInjection))
+on the thermal subunit when present.
+
+# Arguments
+- `component::HybridSystem`: The hybrid system
+- `start_time`: Optional start time for time series lookup
+- `len`: Optional length for time series lookup
+
+# Returns
+The fuel cost from the thermal subunit (scalar or time series per [`get_fuel_cost`](@ref get_fuel_cost(component::StaticInjection))).
+
+# Throws
+- `ArgumentError` if the hybrid has no thermal unit (`get_thermal_unit(component) === nothing`).
+"""
+function get_fuel_cost(component::HybridSystem;
+    start_time::Union{Nothing, Dates.DateTime} = nothing,
+    len::Union{Nothing, Int} = nothing,
+)
+    thermal = get_thermal_unit(component)
+    if isnothing(thermal)
+        throw(
+            ArgumentError(
+                "HybridSystem $(get_name(component)) has no thermal unit; fuel cost is undefined.",
+            ),
+        )
+    end
+    return get_fuel_cost(thermal; start_time = start_time, len = len)
+end
+
 "Get the fuel cost of the component's variable cost, which must be a `FuelCurve`."
 function get_fuel_cost(component::StaticInjection;
     start_time::Union{Nothing, Dates.DateTime} = nothing,
