@@ -113,8 +113,10 @@ get_available(value::ExponentialLoad) = value.available
 get_bus(value::ExponentialLoad) = value.bus
 """Get [`ExponentialLoad`](@ref) `active_power`."""
 get_active_power(value::ExponentialLoad) = get_value(value, Val(:active_power), Val(:mva))
+get_active_power(value::ExponentialLoad, units) = get_value(value, Val(:active_power), Val(:mva), units)
 """Get [`ExponentialLoad`](@ref) `reactive_power`."""
 get_reactive_power(value::ExponentialLoad) = get_value(value, Val(:reactive_power), Val(:mva))
+get_reactive_power(value::ExponentialLoad, units) = get_value(value, Val(:reactive_power), Val(:mva), units)
 """Get [`ExponentialLoad`](@ref) `α`."""
 get_α(value::ExponentialLoad) = value.α
 """Get [`ExponentialLoad`](@ref) `β`."""
@@ -123,8 +125,10 @@ get_β(value::ExponentialLoad) = value.β
 get_base_power(value::ExponentialLoad) = value.base_power
 """Get [`ExponentialLoad`](@ref) `max_active_power`."""
 get_max_active_power(value::ExponentialLoad) = get_value(value, Val(:max_active_power), Val(:mva))
+get_max_active_power(value::ExponentialLoad, units) = get_value(value, Val(:max_active_power), Val(:mva), units)
 """Get [`ExponentialLoad`](@ref) `max_reactive_power`."""
 get_max_reactive_power(value::ExponentialLoad) = get_value(value, Val(:max_reactive_power), Val(:mva))
+get_max_reactive_power(value::ExponentialLoad, units) = get_value(value, Val(:max_reactive_power), Val(:mva), units)
 """Get [`ExponentialLoad`](@ref) `conformity`."""
 get_conformity(value::ExponentialLoad) = value.conformity
 """Get [`ExponentialLoad`](@ref) `services`."""

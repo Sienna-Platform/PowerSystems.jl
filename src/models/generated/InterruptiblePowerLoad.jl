@@ -108,12 +108,16 @@ get_available(value::InterruptiblePowerLoad) = value.available
 get_bus(value::InterruptiblePowerLoad) = value.bus
 """Get [`InterruptiblePowerLoad`](@ref) `active_power`."""
 get_active_power(value::InterruptiblePowerLoad) = get_value(value, Val(:active_power), Val(:mva))
+get_active_power(value::InterruptiblePowerLoad, units) = get_value(value, Val(:active_power), Val(:mva), units)
 """Get [`InterruptiblePowerLoad`](@ref) `reactive_power`."""
 get_reactive_power(value::InterruptiblePowerLoad) = get_value(value, Val(:reactive_power), Val(:mva))
+get_reactive_power(value::InterruptiblePowerLoad, units) = get_value(value, Val(:reactive_power), Val(:mva), units)
 """Get [`InterruptiblePowerLoad`](@ref) `max_active_power`."""
 get_max_active_power(value::InterruptiblePowerLoad) = get_value(value, Val(:max_active_power), Val(:mva))
+get_max_active_power(value::InterruptiblePowerLoad, units) = get_value(value, Val(:max_active_power), Val(:mva), units)
 """Get [`InterruptiblePowerLoad`](@ref) `max_reactive_power`."""
 get_max_reactive_power(value::InterruptiblePowerLoad) = get_value(value, Val(:max_reactive_power), Val(:mva))
+get_max_reactive_power(value::InterruptiblePowerLoad, units) = get_value(value, Val(:max_reactive_power), Val(:mva), units)
 """Get [`InterruptiblePowerLoad`](@ref) `base_power`."""
 get_base_power(value::InterruptiblePowerLoad) = value.base_power
 """Get [`InterruptiblePowerLoad`](@ref) `operation_cost`."""

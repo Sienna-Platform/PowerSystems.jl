@@ -181,22 +181,29 @@ get_available(value::HydroPumpTurbine) = value.available
 get_bus(value::HydroPumpTurbine) = value.bus
 """Get [`HydroPumpTurbine`](@ref) `active_power`."""
 get_active_power(value::HydroPumpTurbine) = get_value(value, Val(:active_power), Val(:mva))
+get_active_power(value::HydroPumpTurbine, units) = get_value(value, Val(:active_power), Val(:mva), units)
 """Get [`HydroPumpTurbine`](@ref) `reactive_power`."""
 get_reactive_power(value::HydroPumpTurbine) = get_value(value, Val(:reactive_power), Val(:mva))
+get_reactive_power(value::HydroPumpTurbine, units) = get_value(value, Val(:reactive_power), Val(:mva), units)
 """Get [`HydroPumpTurbine`](@ref) `rating`."""
 get_rating(value::HydroPumpTurbine) = get_value(value, Val(:rating), Val(:mva))
+get_rating(value::HydroPumpTurbine, units) = get_value(value, Val(:rating), Val(:mva), units)
 """Get [`HydroPumpTurbine`](@ref) `active_power_limits`."""
 get_active_power_limits(value::HydroPumpTurbine) = get_value(value, Val(:active_power_limits), Val(:mva))
+get_active_power_limits(value::HydroPumpTurbine, units) = get_value(value, Val(:active_power_limits), Val(:mva), units)
 """Get [`HydroPumpTurbine`](@ref) `reactive_power_limits`."""
 get_reactive_power_limits(value::HydroPumpTurbine) = get_value(value, Val(:reactive_power_limits), Val(:mva))
+get_reactive_power_limits(value::HydroPumpTurbine, units) = get_value(value, Val(:reactive_power_limits), Val(:mva), units)
 """Get [`HydroPumpTurbine`](@ref) `active_power_limits_pump`."""
 get_active_power_limits_pump(value::HydroPumpTurbine) = get_value(value, Val(:active_power_limits_pump), Val(:mva))
+get_active_power_limits_pump(value::HydroPumpTurbine, units) = get_value(value, Val(:active_power_limits_pump), Val(:mva), units)
 """Get [`HydroPumpTurbine`](@ref) `outflow_limits`."""
 get_outflow_limits(value::HydroPumpTurbine) = value.outflow_limits
 """Get [`HydroPumpTurbine`](@ref) `powerhouse_elevation`."""
 get_powerhouse_elevation(value::HydroPumpTurbine) = value.powerhouse_elevation
 """Get [`HydroPumpTurbine`](@ref) `ramp_limits`."""
 get_ramp_limits(value::HydroPumpTurbine) = get_value(value, Val(:ramp_limits), Val(:mva))
+get_ramp_limits(value::HydroPumpTurbine, units) = get_value(value, Val(:ramp_limits), Val(:mva), units)
 """Get [`HydroPumpTurbine`](@ref) `time_limits`."""
 get_time_limits(value::HydroPumpTurbine) = value.time_limits
 """Get [`HydroPumpTurbine`](@ref) `base_power`."""
@@ -209,6 +216,7 @@ get_time_at_status(value::HydroPumpTurbine) = value.time_at_status
 get_operation_cost(value::HydroPumpTurbine) = value.operation_cost
 """Get [`HydroPumpTurbine`](@ref) `active_power_pump`."""
 get_active_power_pump(value::HydroPumpTurbine) = get_value(value, Val(:active_power_pump), Val(:mva))
+get_active_power_pump(value::HydroPumpTurbine, units) = get_value(value, Val(:active_power_pump), Val(:mva), units)
 """Get [`HydroPumpTurbine`](@ref) `efficiency`."""
 get_efficiency(value::HydroPumpTurbine) = value.efficiency
 """Get [`HydroPumpTurbine`](@ref) `transition_time`."""

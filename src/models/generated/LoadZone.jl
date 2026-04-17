@@ -59,8 +59,10 @@ end
 get_name(value::LoadZone) = value.name
 """Get [`LoadZone`](@ref) `peak_active_power`."""
 get_peak_active_power(value::LoadZone) = get_value(value, Val(:peak_active_power), Val(:mva))
+get_peak_active_power(value::LoadZone, units) = get_value(value, Val(:peak_active_power), Val(:mva), units)
 """Get [`LoadZone`](@ref) `peak_reactive_power`."""
 get_peak_reactive_power(value::LoadZone) = get_value(value, Val(:peak_reactive_power), Val(:mva))
+get_peak_reactive_power(value::LoadZone, units) = get_value(value, Val(:peak_reactive_power), Val(:mva), units)
 """Get [`LoadZone`](@ref) `ext`."""
 get_ext(value::LoadZone) = value.ext
 """Get [`LoadZone`](@ref) `internal`."""

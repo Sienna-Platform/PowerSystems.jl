@@ -108,16 +108,21 @@ get_available(value::MotorLoad) = value.available
 get_bus(value::MotorLoad) = value.bus
 """Get [`MotorLoad`](@ref) `active_power`."""
 get_active_power(value::MotorLoad) = get_value(value, Val(:active_power), Val(:mva))
+get_active_power(value::MotorLoad, units) = get_value(value, Val(:active_power), Val(:mva), units)
 """Get [`MotorLoad`](@ref) `reactive_power`."""
 get_reactive_power(value::MotorLoad) = get_value(value, Val(:reactive_power), Val(:mva))
+get_reactive_power(value::MotorLoad, units) = get_value(value, Val(:reactive_power), Val(:mva), units)
 """Get [`MotorLoad`](@ref) `base_power`."""
 get_base_power(value::MotorLoad) = value.base_power
 """Get [`MotorLoad`](@ref) `rating`."""
 get_rating(value::MotorLoad) = get_value(value, Val(:rating), Val(:mva))
+get_rating(value::MotorLoad, units) = get_value(value, Val(:rating), Val(:mva), units)
 """Get [`MotorLoad`](@ref) `max_active_power`."""
 get_max_active_power(value::MotorLoad) = get_value(value, Val(:max_active_power), Val(:mva))
+get_max_active_power(value::MotorLoad, units) = get_value(value, Val(:max_active_power), Val(:mva), units)
 """Get [`MotorLoad`](@ref) `reactive_power_limits`."""
 get_reactive_power_limits(value::MotorLoad) = get_value(value, Val(:reactive_power_limits), Val(:mva))
+get_reactive_power_limits(value::MotorLoad, units) = get_value(value, Val(:reactive_power_limits), Val(:mva), units)
 """Get [`MotorLoad`](@ref) `motor_technology`."""
 get_motor_technology(value::MotorLoad) = value.motor_technology
 """Get [`MotorLoad`](@ref) `services`."""

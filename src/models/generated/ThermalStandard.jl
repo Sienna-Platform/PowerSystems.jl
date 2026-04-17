@@ -145,16 +145,22 @@ get_status(value::ThermalStandard) = value.status
 get_bus(value::ThermalStandard) = value.bus
 """Get [`ThermalStandard`](@ref) `active_power`."""
 get_active_power(value::ThermalStandard) = get_value(value, Val(:active_power), Val(:mva))
+get_active_power(value::ThermalStandard, units) = get_value(value, Val(:active_power), Val(:mva), units)
 """Get [`ThermalStandard`](@ref) `reactive_power`."""
 get_reactive_power(value::ThermalStandard) = get_value(value, Val(:reactive_power), Val(:mva))
+get_reactive_power(value::ThermalStandard, units) = get_value(value, Val(:reactive_power), Val(:mva), units)
 """Get [`ThermalStandard`](@ref) `rating`."""
 get_rating(value::ThermalStandard) = get_value(value, Val(:rating), Val(:mva))
+get_rating(value::ThermalStandard, units) = get_value(value, Val(:rating), Val(:mva), units)
 """Get [`ThermalStandard`](@ref) `active_power_limits`."""
 get_active_power_limits(value::ThermalStandard) = get_value(value, Val(:active_power_limits), Val(:mva))
+get_active_power_limits(value::ThermalStandard, units) = get_value(value, Val(:active_power_limits), Val(:mva), units)
 """Get [`ThermalStandard`](@ref) `reactive_power_limits`."""
 get_reactive_power_limits(value::ThermalStandard) = get_value(value, Val(:reactive_power_limits), Val(:mva))
+get_reactive_power_limits(value::ThermalStandard, units) = get_value(value, Val(:reactive_power_limits), Val(:mva), units)
 """Get [`ThermalStandard`](@ref) `ramp_limits`."""
 get_ramp_limits(value::ThermalStandard) = get_value(value, Val(:ramp_limits), Val(:mva))
+get_ramp_limits(value::ThermalStandard, units) = get_value(value, Val(:ramp_limits), Val(:mva), units)
 """Get [`ThermalStandard`](@ref) `operation_cost`."""
 get_operation_cost(value::ThermalStandard) = value.operation_cost
 """Get [`ThermalStandard`](@ref) `base_power`."""

@@ -96,14 +96,18 @@ get_available(value::SynchronousCondenser) = value.available
 get_bus(value::SynchronousCondenser) = value.bus
 """Get [`SynchronousCondenser`](@ref) `reactive_power`."""
 get_reactive_power(value::SynchronousCondenser) = get_value(value, Val(:reactive_power), Val(:mva))
+get_reactive_power(value::SynchronousCondenser, units) = get_value(value, Val(:reactive_power), Val(:mva), units)
 """Get [`SynchronousCondenser`](@ref) `rating`."""
 get_rating(value::SynchronousCondenser) = get_value(value, Val(:rating), Val(:mva))
+get_rating(value::SynchronousCondenser, units) = get_value(value, Val(:rating), Val(:mva), units)
 """Get [`SynchronousCondenser`](@ref) `reactive_power_limits`."""
 get_reactive_power_limits(value::SynchronousCondenser) = get_value(value, Val(:reactive_power_limits), Val(:mva))
+get_reactive_power_limits(value::SynchronousCondenser, units) = get_value(value, Val(:reactive_power_limits), Val(:mva), units)
 """Get [`SynchronousCondenser`](@ref) `base_power`."""
 get_base_power(value::SynchronousCondenser) = value.base_power
 """Get [`SynchronousCondenser`](@ref) `active_power_losses`."""
 get_active_power_losses(value::SynchronousCondenser) = get_value(value, Val(:active_power_losses), Val(:mva))
+get_active_power_losses(value::SynchronousCondenser, units) = get_value(value, Val(:active_power_losses), Val(:mva), units)
 """Get [`SynchronousCondenser`](@ref) `services`."""
 get_services(value::SynchronousCondenser) = value.services
 """Get [`SynchronousCondenser`](@ref) `dynamic_injector`."""

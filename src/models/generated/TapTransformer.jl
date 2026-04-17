@@ -136,20 +136,26 @@ get_name(value::TapTransformer) = value.name
 get_available(value::TapTransformer) = value.available
 """Get [`TapTransformer`](@ref) `active_power_flow`."""
 get_active_power_flow(value::TapTransformer) = get_value(value, Val(:active_power_flow), Val(:mva))
+get_active_power_flow(value::TapTransformer, units) = get_value(value, Val(:active_power_flow), Val(:mva), units)
 """Get [`TapTransformer`](@ref) `reactive_power_flow`."""
 get_reactive_power_flow(value::TapTransformer) = get_value(value, Val(:reactive_power_flow), Val(:mva))
+get_reactive_power_flow(value::TapTransformer, units) = get_value(value, Val(:reactive_power_flow), Val(:mva), units)
 """Get [`TapTransformer`](@ref) `arc`."""
 get_arc(value::TapTransformer) = value.arc
 """Get [`TapTransformer`](@ref) `r`."""
 get_r(value::TapTransformer) = get_value(value, Val(:r), Val(:ohm))
+get_r(value::TapTransformer, units) = get_value(value, Val(:r), Val(:ohm), units)
 """Get [`TapTransformer`](@ref) `x`."""
 get_x(value::TapTransformer) = get_value(value, Val(:x), Val(:ohm))
+get_x(value::TapTransformer, units) = get_value(value, Val(:x), Val(:ohm), units)
 """Get [`TapTransformer`](@ref) `primary_shunt`."""
 get_primary_shunt(value::TapTransformer) = get_value(value, Val(:primary_shunt), Val(:siemens))
+get_primary_shunt(value::TapTransformer, units) = get_value(value, Val(:primary_shunt), Val(:siemens), units)
 """Get [`TapTransformer`](@ref) `tap`."""
 get_tap(value::TapTransformer) = value.tap
 """Get [`TapTransformer`](@ref) `rating`."""
 get_rating(value::TapTransformer) = get_value(value, Val(:rating), Val(:mva))
+get_rating(value::TapTransformer, units) = get_value(value, Val(:rating), Val(:mva), units)
 """Get [`TapTransformer`](@ref) `base_power`."""
 get_base_power(value::TapTransformer) = value.base_power
 """Get [`TapTransformer`](@ref) `base_voltage_primary`."""
@@ -158,8 +164,10 @@ get_base_voltage_primary(value::TapTransformer) = value.base_voltage_primary
 get_base_voltage_secondary(value::TapTransformer) = value.base_voltage_secondary
 """Get [`TapTransformer`](@ref) `rating_b`."""
 get_rating_b(value::TapTransformer) = get_value(value, Val(:rating_b), Val(:mva))
+get_rating_b(value::TapTransformer, units) = get_value(value, Val(:rating_b), Val(:mva), units)
 """Get [`TapTransformer`](@ref) `rating_c`."""
 get_rating_c(value::TapTransformer) = get_value(value, Val(:rating_c), Val(:mva))
+get_rating_c(value::TapTransformer, units) = get_value(value, Val(:rating_c), Val(:mva), units)
 """Get [`TapTransformer`](@ref) `winding_group_number`."""
 get_winding_group_number(value::TapTransformer) = value.winding_group_number
 """Get [`TapTransformer`](@ref) `control_objective`."""

@@ -121,28 +121,38 @@ get_name(value::MonitoredLine) = value.name
 get_available(value::MonitoredLine) = value.available
 """Get [`MonitoredLine`](@ref) `active_power_flow`."""
 get_active_power_flow(value::MonitoredLine) = get_value(value, Val(:active_power_flow), Val(:mva))
+get_active_power_flow(value::MonitoredLine, units) = get_value(value, Val(:active_power_flow), Val(:mva), units)
 """Get [`MonitoredLine`](@ref) `reactive_power_flow`."""
 get_reactive_power_flow(value::MonitoredLine) = get_value(value, Val(:reactive_power_flow), Val(:mva))
+get_reactive_power_flow(value::MonitoredLine, units) = get_value(value, Val(:reactive_power_flow), Val(:mva), units)
 """Get [`MonitoredLine`](@ref) `arc`."""
 get_arc(value::MonitoredLine) = value.arc
 """Get [`MonitoredLine`](@ref) `r`."""
 get_r(value::MonitoredLine) = get_value(value, Val(:r), Val(:ohm))
+get_r(value::MonitoredLine, units) = get_value(value, Val(:r), Val(:ohm), units)
 """Get [`MonitoredLine`](@ref) `x`."""
 get_x(value::MonitoredLine) = get_value(value, Val(:x), Val(:ohm))
+get_x(value::MonitoredLine, units) = get_value(value, Val(:x), Val(:ohm), units)
 """Get [`MonitoredLine`](@ref) `b`."""
 get_b(value::MonitoredLine) = get_value(value, Val(:b), Val(:siemens))
+get_b(value::MonitoredLine, units) = get_value(value, Val(:b), Val(:siemens), units)
 """Get [`MonitoredLine`](@ref) `flow_limits`."""
 get_flow_limits(value::MonitoredLine) = get_value(value, Val(:flow_limits), Val(:mva))
+get_flow_limits(value::MonitoredLine, units) = get_value(value, Val(:flow_limits), Val(:mva), units)
 """Get [`MonitoredLine`](@ref) `rating`."""
 get_rating(value::MonitoredLine) = get_value(value, Val(:rating), Val(:mva))
+get_rating(value::MonitoredLine, units) = get_value(value, Val(:rating), Val(:mva), units)
 """Get [`MonitoredLine`](@ref) `angle_limits`."""
 get_angle_limits(value::MonitoredLine) = value.angle_limits
 """Get [`MonitoredLine`](@ref) `rating_b`."""
 get_rating_b(value::MonitoredLine) = get_value(value, Val(:rating_b), Val(:mva))
+get_rating_b(value::MonitoredLine, units) = get_value(value, Val(:rating_b), Val(:mva), units)
 """Get [`MonitoredLine`](@ref) `rating_c`."""
 get_rating_c(value::MonitoredLine) = get_value(value, Val(:rating_c), Val(:mva))
+get_rating_c(value::MonitoredLine, units) = get_value(value, Val(:rating_c), Val(:mva), units)
 """Get [`MonitoredLine`](@ref) `g`."""
 get_g(value::MonitoredLine) = get_value(value, Val(:g), Val(:siemens))
+get_g(value::MonitoredLine, units) = get_value(value, Val(:g), Val(:siemens), units)
 """Get [`MonitoredLine`](@ref) `services`."""
 get_services(value::MonitoredLine) = value.services
 """Get [`MonitoredLine`](@ref) `ext`."""

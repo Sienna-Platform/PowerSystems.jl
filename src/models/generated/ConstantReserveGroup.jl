@@ -68,6 +68,7 @@ get_name(value::ConstantReserveGroup) = value.name
 get_available(value::ConstantReserveGroup) = value.available
 """Get [`ConstantReserveGroup`](@ref) `requirement`."""
 get_requirement(value::ConstantReserveGroup) = get_value(value, Val(:requirement), Val(:mva))
+get_requirement(value::ConstantReserveGroup, units) = get_value(value, Val(:requirement), Val(:mva), units)
 """Get [`ConstantReserveGroup`](@ref) `ext`."""
 get_ext(value::ConstantReserveGroup) = value.ext
 """Get [`ConstantReserveGroup`](@ref) `contributing_services`."""

@@ -103,14 +103,18 @@ get_available(value::PowerLoad) = value.available
 get_bus(value::PowerLoad) = value.bus
 """Get [`PowerLoad`](@ref) `active_power`."""
 get_active_power(value::PowerLoad) = get_value(value, Val(:active_power), Val(:mva))
+get_active_power(value::PowerLoad, units) = get_value(value, Val(:active_power), Val(:mva), units)
 """Get [`PowerLoad`](@ref) `reactive_power`."""
 get_reactive_power(value::PowerLoad) = get_value(value, Val(:reactive_power), Val(:mva))
+get_reactive_power(value::PowerLoad, units) = get_value(value, Val(:reactive_power), Val(:mva), units)
 """Get [`PowerLoad`](@ref) `base_power`."""
 get_base_power(value::PowerLoad) = value.base_power
 """Get [`PowerLoad`](@ref) `max_active_power`."""
 get_max_active_power(value::PowerLoad) = get_value(value, Val(:max_active_power), Val(:mva))
+get_max_active_power(value::PowerLoad, units) = get_value(value, Val(:max_active_power), Val(:mva), units)
 """Get [`PowerLoad`](@ref) `max_reactive_power`."""
 get_max_reactive_power(value::PowerLoad) = get_value(value, Val(:max_reactive_power), Val(:mva))
+get_max_reactive_power(value::PowerLoad, units) = get_value(value, Val(:max_reactive_power), Val(:mva), units)
 """Get [`PowerLoad`](@ref) `conformity`."""
 get_conformity(value::PowerLoad) = value.conformity
 """Get [`PowerLoad`](@ref) `services`."""

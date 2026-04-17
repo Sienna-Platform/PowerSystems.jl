@@ -114,26 +114,35 @@ get_name(value::Line) = value.name
 get_available(value::Line) = value.available
 """Get [`Line`](@ref) `active_power_flow`."""
 get_active_power_flow(value::Line) = get_value(value, Val(:active_power_flow), Val(:mva))
+get_active_power_flow(value::Line, units) = get_value(value, Val(:active_power_flow), Val(:mva), units)
 """Get [`Line`](@ref) `reactive_power_flow`."""
 get_reactive_power_flow(value::Line) = get_value(value, Val(:reactive_power_flow), Val(:mva))
+get_reactive_power_flow(value::Line, units) = get_value(value, Val(:reactive_power_flow), Val(:mva), units)
 """Get [`Line`](@ref) `arc`."""
 get_arc(value::Line) = value.arc
 """Get [`Line`](@ref) `r`."""
 get_r(value::Line) = get_value(value, Val(:r), Val(:ohm))
+get_r(value::Line, units) = get_value(value, Val(:r), Val(:ohm), units)
 """Get [`Line`](@ref) `x`."""
 get_x(value::Line) = get_value(value, Val(:x), Val(:ohm))
+get_x(value::Line, units) = get_value(value, Val(:x), Val(:ohm), units)
 """Get [`Line`](@ref) `b`."""
 get_b(value::Line) = get_value(value, Val(:b), Val(:siemens))
+get_b(value::Line, units) = get_value(value, Val(:b), Val(:siemens), units)
 """Get [`Line`](@ref) `rating`."""
 get_rating(value::Line) = get_value(value, Val(:rating), Val(:mva))
+get_rating(value::Line, units) = get_value(value, Val(:rating), Val(:mva), units)
 """Get [`Line`](@ref) `angle_limits`."""
 get_angle_limits(value::Line) = value.angle_limits
 """Get [`Line`](@ref) `rating_b`."""
 get_rating_b(value::Line) = get_value(value, Val(:rating_b), Val(:mva))
+get_rating_b(value::Line, units) = get_value(value, Val(:rating_b), Val(:mva), units)
 """Get [`Line`](@ref) `rating_c`."""
 get_rating_c(value::Line) = get_value(value, Val(:rating_c), Val(:mva))
+get_rating_c(value::Line, units) = get_value(value, Val(:rating_c), Val(:mva), units)
 """Get [`Line`](@ref) `g`."""
 get_g(value::Line) = get_value(value, Val(:g), Val(:siemens))
+get_g(value::Line, units) = get_value(value, Val(:g), Val(:siemens), units)
 """Get [`Line`](@ref) `services`."""
 get_services(value::Line) = value.services
 """Get [`Line`](@ref) `ext`."""

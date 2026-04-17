@@ -90,6 +90,7 @@ get_available(value::VariableReserveNonSpinning) = value.available
 get_time_frame(value::VariableReserveNonSpinning) = value.time_frame
 """Get [`VariableReserveNonSpinning`](@ref) `requirement`."""
 get_requirement(value::VariableReserveNonSpinning) = get_value(value, Val(:requirement), Val(:mva))
+get_requirement(value::VariableReserveNonSpinning, units) = get_value(value, Val(:requirement), Val(:mva), units)
 """Get [`VariableReserveNonSpinning`](@ref) `sustained_time`."""
 get_sustained_time(value::VariableReserveNonSpinning) = value.sustained_time
 """Get [`VariableReserveNonSpinning`](@ref) `max_output_fraction`."""
