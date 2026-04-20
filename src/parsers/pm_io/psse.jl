@@ -1981,7 +1981,15 @@ function _psse2pm_switch_breaker!(pm_data::Dict, pti_data::Dict, import_all::Boo
     pm_data["breaker"] = []
     pm_data["switch"] = []
     mapping = Dict('@' => ("breaker", 1), '*' => ("switch", 0))
-    mapping_v35 = Dict(2 => "breaker", 3 => "switch")
+    # PSS(R)E v35 STYPE values:
+    # 1 - Generic connector, 2 - Circuit breaker, 3 - Disconnect switch.
+    # Generic connectors are stored in the "switch" list and distinguished via
+    # discrete_branch_type = OTHER (2).
+    mapping_v35 = Dict(
+        1 => ("switch", 2),
+        2 => ("breaker", 1),
+        3 => ("switch", 0),
+    )
 
     # Always check for legacy entries in PSSe 35 for switches and breakers set as @ or *
     if haskey(pti_data, "SWITCHES_AS_BRANCHES")
@@ -2012,9 +2020,15 @@ function _psse2pm_switch_breaker!(pm_data::Dict, pti_data::Dict, import_all::Boo
     if haskey(pti_data, "SWITCHING DEVICE")
         if pm_data["source_version"] == "35"
             for switching_device in pti_data["SWITCHING DEVICE"]
-                device_type = get(mapping_v35, switching_device["STYPE"], "other")
-                discrete_branch_type =
-                    device_type == "breaker" ? 1 : (device_type == "switch" ? 0 : 2)
+                stype = get(switching_device, "STYPE", nothing)
+                type_mapping = get(mapping_v35, stype, nothing)
+
+                if isnothing(type_mapping)
+                    @warn "Unsupported SWITCHING DEVICE STYPE=$(stype). Skipping entry."
+                    continue
+                end
+
+                device_type, discrete_branch_type = type_mapping
 
                 sub_data = _build_switch_breaker_sub_data(
                     pm_data,
@@ -2025,7 +2039,7 @@ function _psse2pm_switch_breaker!(pm_data::Dict, pti_data::Dict, import_all::Boo
                 )
 
                 if import_all
-                    _import_remaining_keys!(sub_data, branch)
+                    _import_remaining_keys!(sub_data, switching_device)
                 end
 
                 branch_isolated_bus_modifications!(pm_data, sub_data)

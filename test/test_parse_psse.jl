@@ -275,6 +275,26 @@ end
     @test get_branch_status(other) == DiscreteControlledBranchStatus.CLOSED
 end
 
+@testset "PSSE default branch name counter" begin
+    sys = build_system(PSSEParsingTestSystems, "pti_case24_sys")
+    buses = collect(get_components(ACBus, sys))
+    bus_f = buses[1]
+    bus_t = buses[2]
+
+    branch_pair_counts = Dict{Tuple{String, String}, Int}()
+    d1 = Dict{String, Any}("source_id" => Any["transformer", 1, 2, 0, " 1", 0])
+    d2 = Dict{String, Any}("source_id" => Any["transformer", 1, 2, 0, "1 ", 0])
+
+    n1 =
+        PowerSystems._get_pm_branch_name_with_counter!(d1, bus_f, bus_t, branch_pair_counts)
+    n2 =
+        PowerSystems._get_pm_branch_name_with_counter!(d2, bus_f, bus_t, branch_pair_counts)
+
+    @test n1 != n2
+    @test endswith(n1, "-i_1")
+    @test endswith(n2, "-i_2")
+end
+
 @testset "PSSE LCC Parsing" begin
     sys = build_system(PSSEParsingTestSystems, "pti_two_terminal_hvdc_test_sys")
 
