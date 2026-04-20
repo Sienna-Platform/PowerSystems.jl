@@ -83,12 +83,12 @@ System(; kwargs...)
 - `unit_system::String`: (Default = `"SYSTEM_BASE"`) Set the unit system for
     [per-unitization](@ref per_unit) while getting and setting data (`"SYSTEM_BASE"`,
         `"DEVICE_BASE"`, or `"NATURAL_UNITS"`)
-- `bus_name_formatter`: A function that takes a [`Bus`](@ref) and returns a string to use as the bus name when [parsing PSSe or Matpower files](@ref pm_data).
-- `load_name_formatter`: A function that takes an [`ElectricLoad`](@ref) and returns a string to use as the load names when [parsing PSSe or Matpower files](@ref pm_data).
-- `loadzone_name_formatter`: A function that takes a [`LoadZone`](@ref) and returns a string to use as the load zone name when [parsing PSSe or Matpower files](@ref pm_data).
-- `gen_name_formatter`: A function that takes a [`Generator`](@ref) and returns a string to use as the generator name when [parsing PSSe or Matpower files](@ref pm_data).
-- `shunt_name_formatter`: A function that takes the fixed shunt data and returns a string to use as the [`FixedAdmittance`](@ref) name when [parsing PSSe or Matpower files](@ref pm_data).
-- `branch_name_formatter`: A function that takes a [`Branch`](@ref) and returns a string to use as the branch name when [parsing PSSe or Matpower files](@ref pm_data).
+- `bus_name_formatter`: A function that takes a `Dict` of bus data (with keys like `"name"` and `"index"`) and returns a `String` to use as the bus name when [parsing PSSe or Matpower files](@ref pm_data).
+- `load_name_formatter`: A function that takes a `Dict` of load data (with key `"source_id"`) and returns a `String` to use as the load name when [parsing PSSe or Matpower files](@ref pm_data).
+- `loadzone_name_formatter`: A function that takes a load zone identifier (typically an `Int`) and returns a `String` to use as the load zone name when [parsing PSSe or Matpower files](@ref pm_data).
+- `gen_name_formatter`: A function that takes a `Dict` of generator data and returns a `String` to use as the generator name when [parsing PSSe or Matpower files](@ref pm_data).
+- `shunt_name_formatter`: A function that takes a `Dict` of shunt data and returns a `String` to use as the [`FixedAdmittance`](@ref) name when [parsing PSSe or Matpower files](@ref pm_data).
+- `branch_name_formatter`: A function that takes a `Dict` of branch data, a from-bus (`ACBus`), and a to-bus (`ACBus`), and returns a `String` to use as the branch name when [parsing PSSe or Matpower files](@ref pm_data).
 - `pm_data_corrections::Bool`: A function that applies the correction to the data from [`PowerModels.jl`](https://lanl-ansi.github.io/PowerModels.jl/stable/).
 - `import_all::Bool`: A boolean flag to indicate whether to import all available data when [parsing PSSe or Matpower files](@ref pm_data). The additional data will be stored in the `ext` dictionary and can be retrieved using [`get_ext`](@ref)
 - `internal::IS.InfrastructureSystemsInternal`: Internal structure for [`InfrastructureSystems.jl`](https://nrel-sienna.github.io/InfrastructureSystems.jl/stable/). This is used only during JSON de-seralization, do not pass it when building a `System` manually.
