@@ -603,6 +603,13 @@ export make_selector
 export rebuild_selector
 export get_groups
 export get_available_groups
+
+# exports to make parsers/ work in PSB
+export MinMax
+export GeneratorCostModels
+export TransformerControlObjective
+export supports_services
+
 #################################################################################
 # Imports
 
