@@ -1699,7 +1699,11 @@ function read_branch!(
         bus_f = bus_number_to_bus[d["f_bus"]]
         bus_t = bus_number_to_bus[d["t_bus"]]
         name = if isnothing(_get_name)
-            _get_pm_branch_name_with_counter!(d, bus_f, bus_t, branch_pair_counts)
+            if source_type == "pti"
+                _get_pm_branch_name_with_counter!(d, bus_f, bus_t, branch_pair_counts)
+            else
+                _get_pm_branch_name(d, bus_f, bus_t)
+            end
         else
             _get_name(d, bus_f, bus_t)
         end
