@@ -42,6 +42,26 @@ function ImportExportCost(::Nothing)
     ImportExportCost()
 end
 
+# Claude:
+# Deserialization compatibility: import_offer_curves and export_offer_curves were
+# serialized as Nothing in older PSY versions. Substitute ZERO_OFFER_CURVE for each
+# Nothing field so that stale JSON files can still be loaded under PSY6.
+function ImportExportCost(
+    import_offer_curves::Union{Nothing, CostCurve{PiecewiseIncrementalCurve}},
+    export_offer_curves::Union{Nothing, CostCurve{PiecewiseIncrementalCurve}},
+    energy_import_weekly_limit::Float64,
+    energy_export_weekly_limit::Float64,
+    ancillary_service_offers::Vector{<:Service},
+)
+    ImportExportCost(
+        something(import_offer_curves, ZERO_OFFER_CURVE),
+        something(export_offer_curves, ZERO_OFFER_CURVE),
+        energy_import_weekly_limit,
+        energy_export_weekly_limit,
+        ancillary_service_offers,
+    )
+end
+
 """Get [`ImportExportCost`](@ref) `import_offer_curves`."""
 get_import_offer_curves(value::ImportExportCost) = value.import_offer_curves
 """Get [`ImportExportCost`](@ref) `export_offer_curves`."""
