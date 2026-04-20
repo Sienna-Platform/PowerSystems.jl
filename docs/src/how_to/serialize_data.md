@@ -12,7 +12,7 @@ JSON format, and load Data saved in a JSON back into `PowerSystems.jl`.
 
 You can do this to save your own custom `System`, but we'll use an existing
 dataset from
-[`PowerSystemCaseBuilder.jl`](https://github.com/NREL-Sienna/PowerSystemCaseBuilder.jl),
+[`PowerSystemCaseBuilder.jl`](https://github.com/Sienna-Platform/PowerSystemCaseBuilder.jl),
 simply to illustrate the process.
 
 First, load the dependencies and a `System` from `PowerSystemCaseBuilder`:

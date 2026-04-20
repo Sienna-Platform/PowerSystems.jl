@@ -45,7 +45,7 @@ In PowerSystems v5, we have implemented the following conventions for parsing PS
 
   - Managing the new format for rate data. In the old PSSe versions, there was Rate A, Rate B and Rate C. However, in newer versions there are 12 possible rates open to intepretation by the modeler. it can still be interpreted as A, B or C rates or a rate per month. PSSe doesn't provide any metada to interpret the rating bands provided.
   - Detecting motor loads modeled as generators. Same as with the case for the negative loads, motors are known to be modeled as machines with negative injections (i.e., loads) to match modeling them in transient studies as machines.
-  - Automated transformer direction swaping. See [`this issue`](https://github.com/NREL-Sienna/PowerSystems.jl/issues/1423)
+  - Automated transformer direction swaping. See [`this issue`](https://github.com/Sienna-Platform/PowerSystems.jl/issues/1423)
   - Parsing outage data.
 
 ### See also:

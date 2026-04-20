@@ -56,7 +56,7 @@ Notes:
 `PowerSystems` supports this metadata in either CSV or JSON formats.
 
 In this example, we will use the JSON format. The example file can be found
-[here](https://github.com/NREL-Sienna/PowerSystemsTestData/blob/master/5-Bus/5bus_ts/timeseries_pointers_da.json),
+[here](https://github.com/Sienna-Platform/PowerSystemsTestData/blob/master/5-Bus/5bus_ts/timeseries_pointers_da.json),
 and this is what its pointers look like in the required format:
 
 ```@repl forecasts

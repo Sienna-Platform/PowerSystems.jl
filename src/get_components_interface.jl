@@ -22,7 +22,7 @@
 # switch to a design where we no longer maintain two versions of each `get_components`-like
 # function at the cost of slightly more confusing documentation -- simply import the IS
 # versions into PowerSystems and delete this file (and analogous redirects in downstream
-# packages). See https://github.com/NREL-Sienna/InfrastructureSystems.jl/issues/388.
+# packages). See https://github.com/Sienna-Platform/InfrastructureSystems.jl/issues/388.
 
 # Here is the current list of "`get_components`-like functions" to which this plan applies:
 #  - `get_components`

@@ -26,7 +26,7 @@ jobs:
       - name: Clone ${{matrix.package_name}}
         uses: actions/checkout@v2
         with:
-          repository: NREL-Sienna/${{matrix.package_name}}.jl
+          repository: Sienna-Platform/${{matrix.package_name}}.jl
           path: downstream
       - name: Run the tests
         shell: julia --project=downstream {0}

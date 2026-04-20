@@ -198,7 +198,7 @@ makedocs(
 )
 
 deploydocs(
-    repo = "github.com/NREL-Sienna/PowerSystems.jl.git",
+    repo = "github.com/Sienna-Platform/PowerSystems.jl.git",
     target = "build",
     branch = "gh-pages",
     devbranch = "main",

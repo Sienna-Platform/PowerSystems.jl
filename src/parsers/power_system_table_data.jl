@@ -94,10 +94,10 @@ Reads in all the data stored in csv files in a `directory`
 # Arguments
 - `directory::AbstractString`: directory containing CSV files
 - `base_power::Float64`: base power for [`System`](@ref)
-- `user_descriptor_file::AbstractString`: customized input descriptor file. [Example](https://github.com/NREL-Sienna/PowerSystemsTestData/blob/master/RTS_GMLC/user_descriptors.yaml)
-- `descriptor_file=POWER_SYSTEM_DESCRIPTOR_FILE`: `PowerSystems.jl` descriptor file. [Default](https://github.com/NREL-Sienna/PowerSystems.jl/blob/main/src/descriptors/power_system_inputs.json)
-- `generator_mapping_file=GENERATOR_MAPPING_FILE_CDM`: generator mapping configuration file. [Default](https://github.com/NREL-Sienna/PowerSystems.jl/blob/main/src/parsers/generator_mapping_cdm.yaml)
-- `timeseries_metadata_file = joinpath(directory, "timeseries_pointers")`: Time series pointers .json file. [Example](https://github.com/NREL-Sienna/PowerSystemsTestData/blob/master/RTS_GMLC/timeseries_pointers.json)
+- `user_descriptor_file::AbstractString`: customized input descriptor file. [Example](https://github.com/Sienna-Platform/PowerSystemsTestData/blob/master/RTS_GMLC/user_descriptors.yaml)
+- `descriptor_file=POWER_SYSTEM_DESCRIPTOR_FILE`: `PowerSystems.jl` descriptor file. [Default](https://github.com/Sienna-Platform/PowerSystems.jl/blob/main/src/descriptors/power_system_inputs.json)
+- `generator_mapping_file=GENERATOR_MAPPING_FILE_CDM`: generator mapping configuration file. [Default](https://github.com/Sienna-Platform/PowerSystems.jl/blob/main/src/parsers/generator_mapping_cdm.yaml)
+- `timeseries_metadata_file = joinpath(directory, "timeseries_pointers")`: Time series pointers .json file. [Example](https://github.com/Sienna-Platform/PowerSystemsTestData/blob/master/RTS_GMLC/timeseries_pointers.json)
 
 The general format for data in the `directory` is:
 - bus.csv (required)
@@ -116,7 +116,7 @@ The general format for data in the `directory` is:
 Each generator will be defined as a concrete subtype of [`Generator`](@ref),
 based on the `fuel` and `type` columns in `gen.csv` and the `generator_mapping_file`.
 The default mapping file
-is [`src/parsers/generator_mapping.yaml`](https://github.com/NREL-Sienna/PowerSystems.jl/blob/main/src/parsers/generator_mapping.yaml). You can override this behavior by specifying your own file.
+is [`src/parsers/generator_mapping.yaml`](https://github.com/Sienna-Platform/PowerSystems.jl/blob/main/src/parsers/generator_mapping.yaml). You can override this behavior by specifying your own file.
 
 # Custom Column names
 
@@ -128,7 +128,7 @@ you can change the `custom_name` field under the `generator` category to
 
 To enable the parsing of a custom set of csv files, you can generate a configuration
 file (such as `user_descriptors.yaml`) from the defaults, which are stored
-in [`src/descriptors/power_system_inputs.json`](https://github.com/NREL-Sienna/PowerSystems.jl/blob/main/src/descriptors/power_system_inputs.json).
+in [`src/descriptors/power_system_inputs.json`](https://github.com/Sienna-Platform/PowerSystems.jl/blob/main/src/descriptors/power_system_inputs.json).
 
 ```python
 python ./bin/generate_config_file.py ./user_descriptors.yaml
