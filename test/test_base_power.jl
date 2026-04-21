@@ -1,15 +1,13 @@
-# TODO: re-enable once PowerSystemCaseBuilder no longer relies on PSY parsers
-# (PSB.build_system uses PSY.PowerSystemTableData internally).
-# @testset "Test zero base power correction" begin
-#     sys = @test_logs(
-#         (:warn, r".*changing device base power to match system base power.*"),
-#         match_mode = :any,
-#         build_system(PSISystems, "RTS_GMLC_DA_sys"; force_build = true)
-#     )
-#     for comp in get_components(PSY.SynchronousCondenser, sys)
-#         @test abs(get_base_power(comp)) > eps()
-#     end
-# end
+@testset "Test zero base power correction" begin
+    sys = @test_logs(
+        (:warn, r".*changing device base power to match system base power.*"),
+        match_mode = :any,
+        build_system(PSISystems, "RTS_GMLC_DA_sys"; force_build = true)
+    )
+    for comp in get_components(PSY.SynchronousCondenser, sys)
+        @test abs(get_base_power(comp)) > eps()
+    end
+end
 
 function thermal_with_base_power(bus::PSY.Bus, name::String, base_power::Float64)
     return ThermalStandard(;
@@ -34,19 +32,21 @@ function thermal_with_base_power(bus::PSY.Bus, name::String, base_power::Float64
     )
 end
 
-@testset "Test adding component with zero base power" begin
-    sys = build_system(PSISystems, "RTS_GMLC_DA_sys")
-    bus = first(get_components(PSY.Bus, sys))
-    gen = thermal_with_base_power(bus, "Test Gen with Zero Base Power", 0.0)
-    @test_logs (:warn, "Invalid range") match_mode = :any add_component!(sys, gen)
-    gen2 = thermal_with_base_power(bus, "Test Gen with Non-Zero Base Power", 100.0)
-    @test_nowarn add_component!(sys, gen2)
-    # uncomment if we correct to non-zero base power.
-    #=
-    with_units_base(sys, "SYSTEM_BASE") do
-        gen_added = PSY.get_component(PSY.ThermalStandard, sys, "Test Gen with Zero Base Power")
-        PSY.set_reactive_power!(gen_added, 0.0)
-        @test !isnan(PSY.get_reactive_power(gen_added))
-    end
-    =#
-end
+# TODO: re-enable once PowerSystemCaseBuilder no longer relies on PSY parsers
+# (PSB.build_system uses PSY.PowerSystemTableData internally).
+# @testset "Test adding component with zero base power" begin
+#     sys = build_system(PSISystems, "RTS_GMLC_DA_sys")
+#     bus = first(get_components(PSY.Bus, sys))
+#     gen = thermal_with_base_power(bus, "Test Gen with Zero Base Power", 0.0)
+#     @test_logs (:warn, "Invalid range") match_mode = :any add_component!(sys, gen)
+#     gen2 = thermal_with_base_power(bus, "Test Gen with Non-Zero Base Power", 100.0)
+#     @test_nowarn add_component!(sys, gen2)
+#     # uncomment if we correct to non-zero base power.
+#     #=
+#     with_units_base(sys, "SYSTEM_BASE") do
+#         gen_added = PSY.get_component(PSY.ThermalStandard, sys, "Test Gen with Zero Base Power")
+#         PSY.set_reactive_power!(gen_added, 0.0)
+#         @test !isnan(PSY.get_reactive_power(gen_added))
+#     end
+#     =#
+# end

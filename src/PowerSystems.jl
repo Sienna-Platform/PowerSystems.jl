@@ -603,6 +603,13 @@ export make_selector
 export rebuild_selector
 export get_groups
 export get_available_groups
+
+# exports to make parsers/ work in PSB
+export MinMax
+export GeneratorCostModels
+export TransformerControlObjective
+export supports_services
+
 #################################################################################
 # Imports
 
@@ -612,12 +619,9 @@ import Unicode: normalize
 import Logging
 import Dates
 import TimeSeries
-import DataFrames
 import DataStructures: OrderedDict, SortedDict
 import JSON3
-import UUIDs
 import Base.to_index
-import InteractiveUtils
 import PrettyTables
 
 # Import InfrastructureSystems both as full module name (needed for internal macros like @forward)

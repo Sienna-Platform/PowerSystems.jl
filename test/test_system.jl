@@ -589,72 +589,69 @@ end
     @test counts.forecast_count == 0
 end
 
-# TODO: re-enable once PowerSystemCaseBuilder no longer relies on PSY parsers
-# (PSB.build_system uses PSY.PowerSystemTableData internally).
-# @testset "Test deepcopy with time series options" begin
-#     sys = PSB.build_system(
-#         PSITestSystems,
-#         "test_RTS_GMLC_sys";
-#         time_series_in_memory = true,
-#         force_build = true,
-#     )
-#     @test sys.data.time_series_manager.data_store isa IS.InMemoryTimeSeriesStorage
-#     sys2 = deepcopy(sys)
-#     @test sys2.data.time_series_manager.data_store isa IS.InMemoryTimeSeriesStorage
-#     @test IS.compare_values(sys, sys2)
-#     # Ensure that the storage references got updated correctly.
-#     for component in get_components(x -> has_time_series(x), Component, sys2)
-#         @test component.internal.shared_system_references.time_series_manager ===
-#               sys2.data.time_series_manager
-#     end
-#
-#     sys = PSB.build_system(
-#         PSITestSystems,
-#         "test_RTS_GMLC_sys";
-#         time_series_in_memory = false,
-#         force_build = true,
-#     )
-#     @test sys.data.time_series_manager.data_store isa IS.Hdf5TimeSeriesStorage
-#     sys2 = deepcopy(sys)
-#     @test sys2.data.time_series_manager.data_store isa IS.Hdf5TimeSeriesStorage
-#     @test sys.data.time_series_manager.data_store.file_path !=
-#           sys2.data.time_series_manager.data_store.file_path
-#     @test IS.compare_values(sys, sys2)
-#     for component in get_components(x -> has_time_series(x), Component, sys2)
-#         @test component.internal.shared_system_references.time_series_manager ===
-#               sys2.data.time_series_manager
-#     end
-# end
+@testset "Test deepcopy with time series options" begin
+    sys = PSB.build_system(
+        PSITestSystems,
+        "test_RTS_GMLC_sys";
+        time_series_in_memory = true,
+        force_build = true,
+    )
+    @test sys.data.time_series_manager.data_store isa IS.InMemoryTimeSeriesStorage
+    sys2 = deepcopy(sys)
+    @test sys2.data.time_series_manager.data_store isa IS.InMemoryTimeSeriesStorage
+    @test IS.compare_values(sys, sys2)
+    # Ensure that the storage references got updated correctly.
+    for component in get_components(x -> has_time_series(x), Component, sys2)
+        @test component.internal.shared_system_references.time_series_manager ===
+              sys2.data.time_series_manager
+    end
 
-# TODO: re-enable once PowerSystemCaseBuilder no longer relies on PSY parsers.
-# @testset "Test fast deepcopy of system" begin
-#     systems = Dict(
-#         in_memory => PSB.build_system(
-#             PSITestSystems,
-#             "test_RTS_GMLC_sys";
-#             time_series_in_memory = in_memory,
-#             force_build = true,
-#         ) for in_memory in (true, false)
-#     )
-#     @testset for (in_memory, skip_ts, skip_sa) in  # Iterate over all permutations
-#                  Iterators.product(repeat([(true, false)], 3)...)
-#         sys = systems[in_memory]
-#
-#         sys2 = IS.fast_deepcopy_system(sys;
-#             skip_time_series = skip_ts, skip_supplemental_attributes = skip_sa)
-#         @test IS.compare_values(
-#             sys,
-#             sys2;
-#             exclude = Set(
-#                 [:time_series_manager, :supplemental_attribute_manager][[skip_ts, skip_sa]],
-#             ),
-#         )
-#
-#         # We copy the SystemData separately from the other System fields, so the egal-ity of these references could get broken
-#         generator = get_component(ThermalStandard, sys2, "322_CT_6")
-#         @test sys2.units_settings === generator.internal.units_info
-#     end
-# end
+    sys = PSB.build_system(
+        PSITestSystems,
+        "test_RTS_GMLC_sys";
+        time_series_in_memory = false,
+        force_build = true,
+    )
+    @test sys.data.time_series_manager.data_store isa IS.Hdf5TimeSeriesStorage
+    sys2 = deepcopy(sys)
+    @test sys2.data.time_series_manager.data_store isa IS.Hdf5TimeSeriesStorage
+    @test sys.data.time_series_manager.data_store.file_path !=
+          sys2.data.time_series_manager.data_store.file_path
+    @test IS.compare_values(sys, sys2)
+    for component in get_components(x -> has_time_series(x), Component, sys2)
+        @test component.internal.shared_system_references.time_series_manager ===
+              sys2.data.time_series_manager
+    end
+end
+
+@testset "Test fast deepcopy of system" begin
+    systems = Dict(
+        in_memory => PSB.build_system(
+            PSITestSystems,
+            "test_RTS_GMLC_sys";
+            time_series_in_memory = in_memory,
+            force_build = true,
+        ) for in_memory in (true, false)
+    )
+    @testset for (in_memory, skip_ts, skip_sa) in  # Iterate over all permutations
+                 Iterators.product(repeat([(true, false)], 3)...)
+        sys = systems[in_memory]
+
+        sys2 = IS.fast_deepcopy_system(sys;
+            skip_time_series = skip_ts, skip_supplemental_attributes = skip_sa)
+        @test IS.compare_values(
+            sys,
+            sys2;
+            exclude = Set(
+                [:time_series_manager, :supplemental_attribute_manager][[skip_ts, skip_sa]],
+            ),
+        )
+
+        # We copy the SystemData separately from the other System fields, so the egal-ity of these references could get broken
+        generator = get_component(ThermalStandard, sys2, "322_CT_6")
+        @test sys2.units_settings === generator.internal.units_info
+    end
+end
 
 @testset "Test with compression enabled" begin
     @test get_compression_settings(System(100.0)) == CompressionSettings(; enabled = false)
