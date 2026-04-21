@@ -2,7 +2,7 @@
 
 The following code will create a [`System`](@ref) from a MATPOWER .m or PSS/e .raw file:
 
-```@repl m_system
+```@example m_system
 using PowerSystems
 file_dir = joinpath(pkgdir(PowerSystems), "docs", "src", "tutorials", "tutorials_data")
 sys = System(joinpath(file_dir, "case5.m"))

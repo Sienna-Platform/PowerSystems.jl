@@ -64,7 +64,7 @@ conventions described in [Per-unit Conventions](@ref per_unit).
 The example below builds the same transformer used in Step 2 (50 MVA, 115/13.8 kV,
 $X_{pu} = 0.10$ on its own nameplate base):
 
-```@repl transformer_pu
+```@example transformer_pu
 using PowerSystems
 
 # Two buses — primary at 115 kV, secondary at 13.8 kV.
@@ -119,7 +119,7 @@ x_system_base = get_x(xfmr)
 
 To inspect the raw device-base value, switch the unit system first:
 
-```@repl transformer_pu
+```@example transformer_pu
 set_units_base_system!(sys, "DEVICE_BASE")
 x_device_base = get_x(xfmr)   # returns 0.10 — the original nameplate value
 

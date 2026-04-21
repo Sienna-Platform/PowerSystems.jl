@@ -8,7 +8,7 @@ statements should be printed to the console or a log file:
 
 **Example**: Set log output to only see error messages in the console
 
-```@repl reduce_repl_printing
+```@example reduce_repl_printing
 using PowerSystems
 using Logging
 configure_logging(; console_level = Logging.Error)

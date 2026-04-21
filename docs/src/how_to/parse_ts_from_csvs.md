@@ -16,7 +16,7 @@ sys = System(joinpath(file_dir, "case5_re.m"));
 Let's use a predefined 5-bus [`System`](@ref) with some renewable generators and loads that
 we want to add time series data to:
 
-```@repl forecasts
+```@example forecasts
 sys
 ```
 
@@ -59,7 +59,7 @@ In this example, we will use the JSON format. The example file can be found
 [here](https://github.com/NREL-Sienna/PowerSystemsTestData/blob/master/5-Bus/5bus_ts/timeseries_pointers_da.json),
 and this is what its pointers look like in the required format:
 
-```@repl forecasts
+```@example forecasts
 using PowerSystemCaseBuilder #hide
 DATA_DIR = PowerSystemCaseBuilder.DATA_DIR #hide
 FORECASTS_DIR = joinpath(DATA_DIR, "5-Bus", "5bus_ts"); #hide
@@ -71,7 +71,7 @@ end #hide
 
 ## Read and assign time series to `System` using these parameters.
 
-```@repl forecasts
+```@example forecasts
 fname = joinpath(FORECASTS_DIR, "timeseries_pointers_da.json")
 add_time_series!(sys, fname)
 ```
@@ -79,7 +79,7 @@ add_time_series!(sys, fname)
 You can print the `System` to see a new table summarizing the time series data that has been
 added:
 
-```@repl forecasts
+```@example forecasts
 sys
 ```
 

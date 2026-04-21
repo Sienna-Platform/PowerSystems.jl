@@ -10,7 +10,7 @@ and ancillary services jointly. This page showcases how to create data for this 
 
 The `make_market_bid_curve` creates an incremental or decremental offer curve from a vector of `n` power values, a vector of `n-1` marginal costs and single initial input. For example, the following code creates an incremental offer curve:
 
-```@repl market_bid_cost
+```@example market_bid_cost
 using PowerSystems, Dates
 proposed_offer_curve =
     make_market_bid_curve([0.0, 100.0, 105.0, 120.0, 130.0], [25.0, 26.0, 28.0, 30.0], 10.0)
@@ -18,7 +18,7 @@ proposed_offer_curve =
 
 Then a device with MarketBidCost can be directly instantiated using:
 
-```@repl market_bid_cost
+```@example market_bid_cost
 using PowerSystems, Dates
 bus = ACBus(1, "nodeE", true, "REF", 0, 1.0, (min = 0.9, max = 1.05), 230, nothing, nothing)
 
@@ -48,7 +48,7 @@ generator = ThermalStandard(;
 
 Similarly, a decremental offer curve can also be created directly using the same helper method:
 
-```@repl market_bid_cost
+```@example market_bid_cost
 using PowerSystems, Dates
 decremental_offer =
     make_market_bid_curve([0.0, 100.0, 105.0, 120.0, 130.0], [30.0, 28.0, 26.0, 25.0], 50.0)
@@ -65,7 +65,7 @@ only certain elements, at this point the actual energy cost bids don't need to b
 
 The code below shows an example how we can create a thermal device with MarketBidCost.
 
-```@repl market_bid_cost
+```@example market_bid_cost
 using PowerSystems, Dates
 bus = ACBus(1, "nodeE", true, "REF", 0, 1.0, (min = 0.9, max = 1.05), 230, nothing, nothing)
 
@@ -101,7 +101,7 @@ The data must be specified in natural units, that is power in MW and marginal co
 or it will not be accepted when adding to the system.
 Code below shows an example of how to build a Deterministic TimeSeries.
 
-```@repl market_bid_cost
+```@example market_bid_cost
 initial_time = Dates.DateTime("2020-01-01")
 psd1 = PiecewiseStepData([5.0, 7.33, 9.67, 12.0], [2.901, 5.8272, 8.941])
 psd2 = PiecewiseStepData([5.0, 7.33, 9.67, 12.0], [3.001, 6.0072, 9.001])
@@ -131,7 +131,7 @@ arguments for [`set_variable_cost!`](@ref) are:
 
 Currently, time series data only supports [natural units](@ref per_unit) for time series data, i.e. MW for power and $/MWh for marginal costs.
 
-```@repl market_bid_cost
+```@example market_bid_cost
 sys = System(100.0, [bus], [generator])
 set_variable_cost!(sys, generator, time_series_data, UnitSystem.NATURAL_UNITS)
 ```
@@ -146,7 +146,7 @@ The creation of the TimeSeriesData is similar to Step 2, using `PiecewiseStepDat
 Similar to adding energy market bids, for adding bids for ancillary services, use
 `set_service_bid!`.
 
-```@repl market_bid_cost
+```@example market_bid_cost
 service = VariableReserve{ReserveUp}("example_reserve", true, 0.6, 2.0)
 add_service!(sys, service, get_component(ThermalStandard, sys, "Brighton"))
 

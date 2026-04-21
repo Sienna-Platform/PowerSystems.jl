@@ -12,7 +12,7 @@ One of the main uses of `PowerSystems.jl` is not having re-run the data generati
 
 Start by loading required packages:
 
-```@repl using_jump
+```@example using_jump
 using PowerSystems
 using JuMP
 using Ipopt
@@ -27,7 +27,7 @@ Normally you would pass your local files to create the system data instead of ca
 We also use [`transform_single_time_series!`](@ref) to format time-series data as forecasts for
 this problem:
 
-```@repl using_jump
+```@example using_jump
 system_data = build_system(PSISystems, "c_sys5_pjm")
 transform_single_time_series!(system_data, Hour(24), Hour(24))
 ```
@@ -35,7 +35,7 @@ transform_single_time_series!(system_data, Hour(24), Hour(24))
 Next, we define the custom optimization problem using [`JuMP`](https://jump.dev/JuMP.jl/stable/)'s syntax.
 The constraints include each generator's minimum and maximum active power output as well as the system power balance equation, minimizing the operating cost for each step in the 24-hour horizon:
 
-```@repl using_jump
+```@example using_jump
 function ed_model(system::System, optimizer, load_scaling_factor::Float64 = 1.0)
     ed_m = Model(optimizer)
     time_periods = 1:24
@@ -82,6 +82,6 @@ end
 
 Finally, the `PowerSystems.jl` data is combined with this economic dispatch model and solved with the open-source [`Ipopt`](https://github.com/jump-dev/Ipopt.jl) solver:
 
-```@repl using_jump
+```@example using_jump
 results = ed_model(system_data, Ipopt.Optimizer)
 ```

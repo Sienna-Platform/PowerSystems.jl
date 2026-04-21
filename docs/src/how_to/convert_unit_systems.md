@@ -12,7 +12,7 @@ means, see [Per-unit Conventions](@ref per_unit).
 Use [`get_units_base`](@ref) to check the current setting and
 [`set_units_base_system!`](@ref) to change it:
 
-```@repl convert_unit_systems
+```@example convert_unit_systems
 using PowerSystems
 
 # Build a minimal system with one bus and one generator.
@@ -47,7 +47,7 @@ The three supported options are:
 
 Once the unit system is set, all getter functions return values in the corresponding units:
 
-```@repl convert_unit_systems
+```@example convert_unit_systems
 # Add a 100 MVA thermal generator to the system created in Step 1.
 gen = ThermalStandard(;
     name = "gen1",
@@ -98,7 +98,7 @@ If you only need values in a particular unit system temporarily, use
 [`with_units_base`](@ref) instead of `set_units_base_system!`. It restores the original
 unit system automatically after the block completes, even if an error occurs:
 
-```@repl convert_unit_systems
+```@example convert_unit_systems
 mw_value = with_units_base(sys, "NATURAL_UNITS") do
     get_max_active_power(gen)
 end

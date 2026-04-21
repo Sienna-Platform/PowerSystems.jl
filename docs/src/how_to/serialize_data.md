@@ -17,7 +17,7 @@ simply to illustrate the process.
 
 First, load the dependencies and a `System` from `PowerSystemCaseBuilder`:
 
-```@repl serialize_data
+```@example serialize_data
 using PowerSystems
 using PowerSystemCaseBuilder
 sys = build_system(PSISystems, "c_sys5_pjm")
@@ -25,14 +25,14 @@ sys = build_system(PSISystems, "c_sys5_pjm")
 
 Set up your target path, for example in a "mysystems" subfolder:
 
-```@repl serialize_data
+```@example serialize_data
 folder = mkdir("mysystems");
 path = joinpath(folder, "system.json")
 ```
 
 Now write the system to JSON:
 
-```@repl serialize_data
+```@example serialize_data
 to_json(sys, path)
 ```
 
@@ -95,7 +95,7 @@ jq '.data.components | .[] | select(.__metadata__.type == "ThermalStandard" and 
 
 Finally, you can read the file back in, and verify the new system has the same data as above:
 
-```@repl serialize_data
+```@example serialize_data
 sys2 = System(path)
 rm(folder; recursive = true); #hide
 ```
@@ -107,6 +107,6 @@ rm(folder; recursive = true); #hide
     [UUIDs](@ref U).  If you will modify the `System` or components after deserialization then
     it is recommended that you set this flag to generate new UUIDs.
 
-    ```@repl serialize_data
+    ```@example serialize_data
     system2 = System(path; assign_new_uuids = true)
     ```

@@ -6,7 +6,7 @@ This how-to assumes you have a [`System`](@ref) named `sys` with at least one [`
 
 Use [`get_supplemental_attributes`](@ref) with a supplemental attribute type to retrieve all matching attributes from a system.
 
-```@repl use_supplemental_attributes
+```@example use_supplemental_attributes
 using PowerSystems
 
 for outage in get_supplemental_attributes(FixedForcedOutage, sys)
@@ -20,7 +20,7 @@ The output includes the attribute type name and its [UUID](@ref U) — a unique 
 
 Use [`get_supplemental_attributes`](@ref) with a component instead of a system to retrieve only the attributes attached to that component.
 
-```@repl use_supplemental_attributes
+```@example use_supplemental_attributes
 using PowerSystems
 
 gen1 = first(get_components(ThermalStandard, sys))
@@ -35,7 +35,7 @@ The output includes the attribute type name and its [UUID](@ref U). You can also
 
 Use [`get_associated_components`](@ref) to retrieve the components attached to a single supplemental attribute.
 
-```@repl use_supplemental_attributes
+```@example use_supplemental_attributes
 using PowerSystems
 
 outage = first(get_supplemental_attributes(FixedForcedOutage, sys))
@@ -50,7 +50,7 @@ The output is the [`FixedForcedOutage`](@ref) type and name. You can also pass a
 
 Use [`get_component_supplemental_attribute_pairs`](@ref) to retrieve component/attribute pairs by type. Prefer this over nested loops iterating over components and their attributes separately.
 
-```@repl use_supplemental_attributes
+```@example use_supplemental_attributes
 using PowerSystems
 
 for (gen, outage) in get_component_supplemental_attribute_pairs(

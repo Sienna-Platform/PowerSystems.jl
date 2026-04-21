@@ -4,7 +4,7 @@ A `PowerSystems.jl` system can be created using a .RAW and a .DYR file. For a co
 
 In this example we will create a three bus system from these example files:
 
-```@repl raw_dyr_system
+```@example raw_dyr_system
 using PowerSystems
 file_dir = joinpath(pkgdir(PowerSystems), "docs", "src", "tutorials", "tutorials_data")
 RAW_dir = joinpath(file_dir, "ThreeBusNetwork.raw")
@@ -66,7 +66,7 @@ That assigns a GENROU generator and a ESST1A voltage regulator at the generator 
 
 To create the [`System`](@ref) in `PowerSystems.jl`, we pass both files directories:
 
-```@repl raw_dyr_system
+```@example raw_dyr_system
 dyn_system = System(RAW_dir, DYR_dir; runchecks = false)
 ```
 
@@ -74,7 +74,7 @@ dyn_system = System(RAW_dir, DYR_dir; runchecks = false)
 
 Please note that while PSS/e does not enforce unique bus names, `PowerSystems.jl` does. To reparse bus names to comply with this requirement the `bus_name_formatter` *kwarg  can be used in `System()` as shown in the example below:
 
-```@repl raw_dyr_system
+```@example raw_dyr_system
 dyn_system = System(
     RAW_dir,
     DYR_dir;

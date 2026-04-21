@@ -31,7 +31,7 @@ without permanently changing the system's configuration.
 
 ### Example: Getting Component Data in Natural Units
 
-```@repl use_context_managers
+```@example use_context_managers
 using PowerSystems
 using PowerSystemCaseBuilder
 
@@ -49,7 +49,7 @@ end
 
 ### Example: Setting Multiple Component Values in Natural Units
 
-```@repl use_context_managers
+```@example use_context_managers
 # Temporarily change units to add/modify multiple components in natural units
 with_units_base(sys, "NATURAL_UNITS") do
     for gen in get_components(ThermalStandard, sys)
@@ -66,7 +66,7 @@ end
 
 You can also use `with_units_base` on individual components:
 
-```@repl use_context_managers
+```@example use_context_managers
 active_power_mw = with_units_base(gen, UnitSystem.NATURAL_UNITS) do
     get_active_power(gen)
 end
@@ -89,7 +89,7 @@ consistency.
 
 ### Example: Adding Multiple Supplemental Attributes
 
-```@repl use_context_managers
+```@example use_context_managers
 using PowerSystems
 
 # Define some supplemental attributes (e.g., outage data)
@@ -117,7 +117,7 @@ end
 
 ### Example: Bulk Operations with Error Handling
 
-```@repl use_context_managers
+```@example use_context_managers
 # If an error occurs, all changes are automatically reverted
 try
     begin_supplemental_attributes_update(sys) do
@@ -154,7 +154,7 @@ If an error occurs during the update, changes are automatically reverted.
 
 ### Example: Adding Multiple Time Series
 
-```@repl use_context_managers
+```@example use_context_managers
 using PowerSystems
 using Dates
 
@@ -184,7 +184,7 @@ end
 
 ### Example: Adding Time Series from Multiple Sources
 
-```@repl use_context_managers
+```@example use_context_managers
 # When you have time series data from multiple sources
 begin_time_series_update(sys) do
     for component in get_components(Generator, sys)
@@ -222,7 +222,7 @@ end
 
  3. **Nested context managers**: You can nest context managers if needed:
 
-    ```@repl use_context_managers
+    ```@example use_context_managers
     with_units_base(sys, "NATURAL_UNITS") do
         begin_time_series_update(sys) do
             # Add time series with natural unit scaling factors
@@ -236,7 +236,7 @@ end
  4. **Error handling**: The context managers automatically handle cleanup, but you can still
     use `try-catch` blocks for application-specific error handling:
 
-    ```@repl use_context_managers
+    ```@example use_context_managers
     try
         begin_time_series_update(sys) do
             # ... operations ...

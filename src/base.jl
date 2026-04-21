@@ -2094,20 +2094,26 @@ get_forecast_window_count(sys::System) =
 """
 Return the horizon for all forecasts.
 """
-get_forecast_horizon(sys::System) =
-    IS.get_forecast_horizon(sys.data)
+get_forecast_horizon(
+    sys::System;
+    interval::Union{Nothing, Dates.Period} = nothing,
+) = IS.get_forecast_horizon(sys.data; interval = interval)
 
 """
 Return the initial timestamp for all forecasts.
 """
-get_forecast_initial_timestamp(sys::System) =
-    IS.get_forecast_initial_timestamp(sys.data)
+get_forecast_initial_timestamp(
+    sys::System;
+    interval::Union{Nothing, Dates.Period} = nothing,
+) = IS.get_forecast_initial_timestamp(sys.data; interval = interval)
 
 """
 Return the forecast interval.
 """
-get_forecast_interval(sys::System) =
-    IS.get_forecast_interval(sys.data)
+get_forecast_interval(
+    sys::System;
+    interval::Union{Nothing, Dates.Period} = nothing,
+) = IS.get_forecast_interval(sys.data; interval = interval)
 
 """
 Return a sorted Vector of distinct resolutions for all time series of the given type
@@ -2193,8 +2199,8 @@ end
 """
 Remove the time series data for a component or supplemental attribute and time series type.
 
-Use `resolution` and `features` keyword arguments to disambiguate when multiple
-time series of the same type and name exist with different resolutions or
+Use `resolution`, `interval`, and `features` keyword arguments to disambiguate when multiple
+time series of the same type and name exist with different resolutions, intervals, or
 user-defined feature tags.
 """
 function remove_time_series!(
@@ -2203,6 +2209,7 @@ function remove_time_series!(
     owner::Union{Component, SupplementalAttribute},
     name::String;
     resolution::Union{Nothing, Dates.Period} = nothing,
+    interval::Union{Nothing, Dates.Period} = nothing,
     features...,
 ) where {T <: TimeSeriesData}
     return IS.remove_time_series!(
@@ -2211,6 +2218,7 @@ function remove_time_series!(
         owner,
         name;
         resolution = resolution,
+        interval = interval,
         features...,
     )
 end
@@ -2230,8 +2238,9 @@ function remove_time_series!(
     sys::System,
     ::Type{T};
     resolution::Union{Nothing, Dates.Period} = nothing,
+    interval::Union{Nothing, Dates.Period} = nothing,
 ) where {T <: TimeSeriesData}
-    return IS.remove_time_series!(sys.data, T; resolution = resolution)
+    return IS.remove_time_series!(sys.data, T; resolution = resolution, interval = interval)
 end
 
 """
@@ -2243,18 +2252,26 @@ when actual forecasts are unavailable, without unnecessarily duplicating data.
 
 If all `SingleTimeSeries` instances cannot be transformed then none will be.
 
+By default, any existing `DeterministicSingleTimeSeries` forecasts will be deleted before the
+transform (`delete_existing = true`). Set `delete_existing = false` to preserve existing
+`DeterministicSingleTimeSeries`; entries with matching name, resolution, features, horizon,
+and interval are skipped, allowing multiple calls with different intervals to coexist.
+
 # Arguments
 - `sys::System`: System containing the components.
 - `horizon::Dates.Period`: desired [horizon](@ref H) of each forecast [window](@ref W)
 - `interval::Dates.Period`: desired [interval](@ref I) between forecast [windows](@ref W)
 - `resolution::Union{Nothing, Dates.Period} = nothing`: If set, only transform time series
    with this resolution.
+- `delete_existing::Bool = true`: If `true`, delete all existing
+   `DeterministicSingleTimeSeries` before transforming.
 """
 function transform_single_time_series!(
     sys::System,
     horizon::Dates.Period,
     interval::Dates.Period;
     resolution::Union{Nothing, Dates.Period} = nothing,
+    delete_existing::Bool = true,
 )
     IS.transform_single_time_series!(
         sys.data,
@@ -2262,6 +2279,7 @@ function transform_single_time_series!(
         horizon,
         interval;
         resolution = resolution,
+        delete_existing = delete_existing,
     )
     return
 end

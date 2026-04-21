@@ -15,7 +15,7 @@ large datasets from overwhelming system memory. However, you can change its loca
 If your dataset will fit in your computer's memory, then you can increase
 performance by storing it in memory:
 
-```@repl improve_ts_performance
+```@example improve_ts_performance
 sys = System(100.0; time_series_in_memory = true)
 ```
 
@@ -24,7 +24,7 @@ sys = System(100.0; time_series_in_memory = true)
 If the system's time series data will be larger than the amount of tmp space available, use
 the `time_series_directory` parameter to change its location.
 
-```@repl improve_ts_performance
+```@example improve_ts_performance
 sys = System(100.0; time_series_directory = "bigger_directory")
 ```
 
@@ -35,7 +35,7 @@ HDF5 compression is not enabled by default, but you can enable
 it with `enable_compression` to get significant storage savings at the cost of CPU time.
 [`CompressionSettings`](@ref) can be used to customize the HDF5 compression.
 
-```@repl improve_ts_performance
+```@example improve_ts_performance
 sys = System(100.0; enable_compression = true)
 sys = System(
     100.0;
@@ -58,7 +58,7 @@ Time series data can also be shared on a component level. Suppose a time series 
 both the `max_active_power` and `max_reactive_power` attributes of a generator. You can share the
 data.
 
-```@repl improve_ts_performance
+```@example improve_ts_performance
 resolution = Dates.Hour(1)
 data = Dict(
     DateTime("2020-01-01T00:00:00") => ones(24),
@@ -87,7 +87,7 @@ If you will add thousands of time series arrays, consider using [`begin_time_ser
 All arrays will be written with one file handle. The bulk SQLite operations are much more
 efficient.
 
-```@repl improve_ts_performance
+```@example improve_ts_performance
 begin_time_series_update(sys) do
     add_time_series!(sys, component1, time_series1)
     add_time_series!(sys, component2, time_series2)
@@ -108,7 +108,7 @@ It is highly recommended that you use this interface for modeling implementation
 particularly relevant for models using large datasets.
 For example:
 
-```@repl improve_ts_performance
+```@example improve_ts_performance
 cache = ForecastCache(Deterministic, component, "max_active_power")
 window1 = get_next_time_series_array!(cache)
 window2 = get_next_time_series_array!(cache)

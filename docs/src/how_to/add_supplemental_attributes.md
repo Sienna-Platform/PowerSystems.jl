@@ -5,7 +5,7 @@ It uses [`FixedForcedOutage`](@ref) as the example attribute type.
 
 ## Prerequisites
 
-```@repl add_supplemental_attributes
+```@example add_supplemental_attributes
 using PowerSystems
 using PowerSystemCaseBuilder
 
@@ -17,7 +17,7 @@ sys = build_system(PSISystems, "c_sys5_pjm")
 Retrieve the target component, construct the attribute, then attach it with
 [`add_supplemental_attribute!`](@ref):
 
-```@repl add_supplemental_attributes
+```@example add_supplemental_attributes
 gen = first(get_components(ThermalStandard, sys))
 outage = FixedForcedOutage(; outage_status = 0.0)  # 0.0 = available, 1.0 = outaged
 add_supplemental_attribute!(sys, gen, outage)
@@ -29,7 +29,7 @@ For adding many attributes at once, use [`begin_supplemental_attributes_update`]
 to batch the operations. This reduces index update overhead and automatically reverts
 all changes if an error occurs:
 
-```@repl add_supplemental_attributes
+```@example add_supplemental_attributes
 gens = collect(get_components(ThermalStandard, sys))
 gen1 = gens[1]
 gen2 = gens[2]
@@ -46,7 +46,7 @@ end
 
 Attach the same attribute instance to more than one component to model shared properties:
 
-```@repl add_supplemental_attributes
+```@example add_supplemental_attributes
 outage = FixedForcedOutage(; outage_status = 1.0)
 gens = collect(get_components(ThermalStandard, sys))
 gen1 = gens[1]

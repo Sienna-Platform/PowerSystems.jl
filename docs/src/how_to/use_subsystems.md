@@ -10,7 +10,7 @@ components. For background on the `System` container, see [System](@ref system_d
 
 Load a `System`, then call [`add_subsystem!`](@ref) to register named subsystems:
 
-```@repl subsystem
+```@example subsystem
 using PowerSystems;
 using PowerSystemCaseBuilder;
 sys = build_system(PSISystems, "c_sys5_pjm")
@@ -20,7 +20,7 @@ add_subsystem!(sys, "2")
 
 Assign devices to subsystems using [`add_component_to_subsystem!`](@ref):
 
-```@repl subsystem
+```@example subsystem
 g = get_component(ThermalStandard, sys, "Alta")
 add_component_to_subsystem!(sys, "1", g)
 
@@ -33,7 +33,7 @@ add_component_to_subsystem!(sys, "2", g)
 Pass the `subsystem_name` keyword argument to [`get_components`](@ref) to filter by
 subsystem:
 
-```@repl subsystem
+```@example subsystem
 gens_1 = get_components(ThermalStandard, sys; subsystem_name = "1")
 get_name.(gens_1)
 
@@ -51,7 +51,7 @@ get_name.(gens_2)
 assigned to a subsystem. This requires careful assignment of all dependencies — not just
 the devices themselves, but also any topology elements (buses, arcs) they reference.
 
-```@repl subsystem
+```@example subsystem
 from_subsystem(sys, "1")
 ```
 
@@ -70,7 +70,7 @@ A valid exported `System` requires three additional components:
     validation warning. Adding the [`PowerLoad`](@ref) connected to the slack bus
     satisfies this requirement.
 
-```@repl subsystem
+```@example subsystem
 g = get_component(ThermalStandard, sys, "Alta")
 b = get_bus(g)
 add_component_to_subsystem!(sys, "1", b)
