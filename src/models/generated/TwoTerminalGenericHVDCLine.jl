@@ -94,18 +94,23 @@ end
 get_name(value::TwoTerminalGenericHVDCLine) = value.name
 """Get [`TwoTerminalGenericHVDCLine`](@ref) `available`."""
 get_available(value::TwoTerminalGenericHVDCLine) = value.available
-"""Get [`TwoTerminalGenericHVDCLine`](@ref) `active_power_flow`."""
-get_active_power_flow(value::TwoTerminalGenericHVDCLine) = get_value(value, Val(:active_power_flow), Val(:mva))
+"""Get [`TwoTerminalGenericHVDCLine`](@ref) `active_power_flow`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
+get_active_power_flow(value::TwoTerminalGenericHVDCLine, units) = get_value(value, Val(:active_power_flow), Val(:mva), units)
+InfrastructureSystems.display_units_arg(::typeof(get_active_power_flow), ::Type{ TwoTerminalGenericHVDCLine }) = InfrastructureSystems.SU
 """Get [`TwoTerminalGenericHVDCLine`](@ref) `arc`."""
 get_arc(value::TwoTerminalGenericHVDCLine) = value.arc
-"""Get [`TwoTerminalGenericHVDCLine`](@ref) `active_power_limits_from`."""
-get_active_power_limits_from(value::TwoTerminalGenericHVDCLine) = get_value(value, Val(:active_power_limits_from), Val(:mva))
-"""Get [`TwoTerminalGenericHVDCLine`](@ref) `active_power_limits_to`."""
-get_active_power_limits_to(value::TwoTerminalGenericHVDCLine) = get_value(value, Val(:active_power_limits_to), Val(:mva))
-"""Get [`TwoTerminalGenericHVDCLine`](@ref) `reactive_power_limits_from`."""
-get_reactive_power_limits_from(value::TwoTerminalGenericHVDCLine) = get_value(value, Val(:reactive_power_limits_from), Val(:mva))
-"""Get [`TwoTerminalGenericHVDCLine`](@ref) `reactive_power_limits_to`."""
-get_reactive_power_limits_to(value::TwoTerminalGenericHVDCLine) = get_value(value, Val(:reactive_power_limits_to), Val(:mva))
+"""Get [`TwoTerminalGenericHVDCLine`](@ref) `active_power_limits_from`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
+get_active_power_limits_from(value::TwoTerminalGenericHVDCLine, units) = get_value(value, Val(:active_power_limits_from), Val(:mva), units)
+InfrastructureSystems.display_units_arg(::typeof(get_active_power_limits_from), ::Type{ TwoTerminalGenericHVDCLine }) = InfrastructureSystems.SU
+"""Get [`TwoTerminalGenericHVDCLine`](@ref) `active_power_limits_to`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
+get_active_power_limits_to(value::TwoTerminalGenericHVDCLine, units) = get_value(value, Val(:active_power_limits_to), Val(:mva), units)
+InfrastructureSystems.display_units_arg(::typeof(get_active_power_limits_to), ::Type{ TwoTerminalGenericHVDCLine }) = InfrastructureSystems.SU
+"""Get [`TwoTerminalGenericHVDCLine`](@ref) `reactive_power_limits_from`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
+get_reactive_power_limits_from(value::TwoTerminalGenericHVDCLine, units) = get_value(value, Val(:reactive_power_limits_from), Val(:mva), units)
+InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_limits_from), ::Type{ TwoTerminalGenericHVDCLine }) = InfrastructureSystems.SU
+"""Get [`TwoTerminalGenericHVDCLine`](@ref) `reactive_power_limits_to`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
+get_reactive_power_limits_to(value::TwoTerminalGenericHVDCLine, units) = get_value(value, Val(:reactive_power_limits_to), Val(:mva), units)
+InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_limits_to), ::Type{ TwoTerminalGenericHVDCLine }) = InfrastructureSystems.SU
 """Get [`TwoTerminalGenericHVDCLine`](@ref) `loss`."""
 get_loss(value::TwoTerminalGenericHVDCLine) = value.loss
 """Get [`TwoTerminalGenericHVDCLine`](@ref) `services`."""

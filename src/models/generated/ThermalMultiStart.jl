@@ -157,24 +157,31 @@ get_available(value::ThermalMultiStart) = value.available
 get_status(value::ThermalMultiStart) = value.status
 """Get [`ThermalMultiStart`](@ref) `bus`."""
 get_bus(value::ThermalMultiStart) = value.bus
-"""Get [`ThermalMultiStart`](@ref) `active_power`."""
-get_active_power(value::ThermalMultiStart) = get_value(value, Val(:active_power), Val(:mva))
-"""Get [`ThermalMultiStart`](@ref) `reactive_power`."""
-get_reactive_power(value::ThermalMultiStart) = get_value(value, Val(:reactive_power), Val(:mva))
-"""Get [`ThermalMultiStart`](@ref) `rating`."""
-get_rating(value::ThermalMultiStart) = get_value(value, Val(:rating), Val(:mva))
+"""Get [`ThermalMultiStart`](@ref) `active_power`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
+get_active_power(value::ThermalMultiStart, units) = get_value(value, Val(:active_power), Val(:mva), units)
+InfrastructureSystems.display_units_arg(::typeof(get_active_power), ::Type{ ThermalMultiStart }) = InfrastructureSystems.SU
+"""Get [`ThermalMultiStart`](@ref) `reactive_power`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
+get_reactive_power(value::ThermalMultiStart, units) = get_value(value, Val(:reactive_power), Val(:mva), units)
+InfrastructureSystems.display_units_arg(::typeof(get_reactive_power), ::Type{ ThermalMultiStart }) = InfrastructureSystems.SU
+"""Get [`ThermalMultiStart`](@ref) `rating`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
+get_rating(value::ThermalMultiStart, units) = get_value(value, Val(:rating), Val(:mva), units)
+InfrastructureSystems.display_units_arg(::typeof(get_rating), ::Type{ ThermalMultiStart }) = InfrastructureSystems.SU
 """Get [`ThermalMultiStart`](@ref) `prime_mover_type`."""
 get_prime_mover_type(value::ThermalMultiStart) = value.prime_mover_type
 """Get [`ThermalMultiStart`](@ref) `fuel`."""
 get_fuel(value::ThermalMultiStart) = value.fuel
-"""Get [`ThermalMultiStart`](@ref) `active_power_limits`."""
-get_active_power_limits(value::ThermalMultiStart) = get_value(value, Val(:active_power_limits), Val(:mva))
-"""Get [`ThermalMultiStart`](@ref) `reactive_power_limits`."""
-get_reactive_power_limits(value::ThermalMultiStart) = get_value(value, Val(:reactive_power_limits), Val(:mva))
-"""Get [`ThermalMultiStart`](@ref) `ramp_limits`."""
-get_ramp_limits(value::ThermalMultiStart) = get_value(value, Val(:ramp_limits), Val(:mva))
-"""Get [`ThermalMultiStart`](@ref) `power_trajectory`."""
-get_power_trajectory(value::ThermalMultiStart) = get_value(value, Val(:power_trajectory), Val(:mva))
+"""Get [`ThermalMultiStart`](@ref) `active_power_limits`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
+get_active_power_limits(value::ThermalMultiStart, units) = get_value(value, Val(:active_power_limits), Val(:mva), units)
+InfrastructureSystems.display_units_arg(::typeof(get_active_power_limits), ::Type{ ThermalMultiStart }) = InfrastructureSystems.SU
+"""Get [`ThermalMultiStart`](@ref) `reactive_power_limits`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
+get_reactive_power_limits(value::ThermalMultiStart, units) = get_value(value, Val(:reactive_power_limits), Val(:mva), units)
+InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_limits), ::Type{ ThermalMultiStart }) = InfrastructureSystems.SU
+"""Get [`ThermalMultiStart`](@ref) `ramp_limits`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
+get_ramp_limits(value::ThermalMultiStart, units) = get_value(value, Val(:ramp_limits), Val(:mva), units)
+InfrastructureSystems.display_units_arg(::typeof(get_ramp_limits), ::Type{ ThermalMultiStart }) = InfrastructureSystems.SU
+"""Get [`ThermalMultiStart`](@ref) `power_trajectory`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
+get_power_trajectory(value::ThermalMultiStart, units) = get_value(value, Val(:power_trajectory), Val(:mva), units)
+InfrastructureSystems.display_units_arg(::typeof(get_power_trajectory), ::Type{ ThermalMultiStart }) = InfrastructureSystems.SU
 """Get [`ThermalMultiStart`](@ref) `time_limits`."""
 get_time_limits(value::ThermalMultiStart) = value.time_limits
 """Get [`ThermalMultiStart`](@ref) `start_time_limits`."""

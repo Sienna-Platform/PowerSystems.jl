@@ -225,51 +225,50 @@ function get_series_admittance(::Union{PhaseShiftingTransformer3W, Transformer3W
 end
 
 """
-Return the max active power for a device as the max field in the named tuple returned by [`get_active_power_limits`](@ref).
+Return the max active power for a device with explicit units specified.
 """
-function get_max_active_power(d::T) where {T <: StaticInjection}
-    return get_active_power_limits(d).max
+function get_max_active_power(d::T, units) where {T <: StaticInjection}
+    return get_active_power_limits(d, units).max
 end
 
 """
-Return the max reactive power for a device as the max field in the named tuple returned by [`get_reactive_power_limits`](@ref).
+Return the max reactive power for a device with explicit units specified.
 """
-function get_max_reactive_power(d::T)::Float64 where {T <: StaticInjection}
-    if isnothing(get_reactive_power_limits(d))
-        return Inf
-    end
-    return get_reactive_power_limits(d).max
+function get_max_reactive_power(d::T, units) where {T <: StaticInjection}
+    limits = get_reactive_power_limits(d, units)
+    isnothing(limits) && return Inf * units
+    return limits.max
 end
 
 """
 Return the max reactive power for a [`RenewableDispatch`](@ref) generator calculated as the `rating` * `power_factor` if
 the field `reactive_power_limits` is `nothing`
 """
-function get_max_reactive_power(d::RenewableDispatch)
-    reactive_power_limits = get_reactive_power_limits(d)
-    if isnothing(reactive_power_limits)
-        return get_rating(d) * sin(acos(get_power_factor(d)))
+function get_max_reactive_power(d::RenewableDispatch, units)
+    limits = get_reactive_power_limits(d, units)
+    if isnothing(limits)
+        return get_rating(d, units) * sin(acos(get_power_factor(d)))
     end
-    return reactive_power_limits.max
+    return limits.max
 end
 
 """
 Generic fallback function for getting active power limits. Throws `ArgumentError` for devices
 that don't implement this function.
 """
-get_active_power_limits(::T) where {T <: Device} =
+get_active_power_limits(::T, _) where {T <: Device} =
     throw(ArgumentError("get_active_power_limits not implemented for $T"))
 """
 Generic fallback function for getting reactive power limits. Throws `ArgumentError` for devices
 that don't implement this function.
 """
-get_reactive_power_limits(::T) where {T <: Device} =
+get_reactive_power_limits(::T, _) where {T <: Device} =
     throw(ArgumentError("get_reactive_power_limits not implemented for $T"))
 """
 Generic fallback function for getting device rating. Throws `ArgumentError` for devices
 that don't implement this function.
 """
-get_rating(::T) where {T <: Device} =
+get_rating(::T, _) where {T <: Device} =
     throw(ArgumentError("get_rating not implemented for $T"))
 """
 Generic fallback function for getting power factor. Throws `ArgumentError` for devices
@@ -280,12 +279,12 @@ get_power_factor(::T) where {T <: Device} =
 
 """
 Calculate the maximum active power for a [`StandardLoad`](@ref) or [`InterruptibleStandardLoad`](@ref)
-    by summing the maximum constant, impedance, and current components assuming a 1.0 voltage magnitude at the bus.
+    with explicit units specified.
 """
-function get_max_active_power(d::Union{InterruptibleStandardLoad, StandardLoad})
-    total_load = get_max_constant_active_power(d)
-    total_load += get_max_impedance_active_power(d)
-    total_load += get_max_current_active_power(d)
+function get_max_active_power(d::Union{InterruptibleStandardLoad, StandardLoad}, units)
+    total_load = get_max_constant_active_power(d, units)
+    total_load += get_max_impedance_active_power(d, units)
+    total_load += get_max_current_active_power(d, units)
     return total_load
 end
 

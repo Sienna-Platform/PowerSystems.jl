@@ -160,26 +160,33 @@ get_bus(value::EnergyReservoirStorage) = value.bus
 get_prime_mover_type(value::EnergyReservoirStorage) = value.prime_mover_type
 """Get [`EnergyReservoirStorage`](@ref) `storage_technology_type`."""
 get_storage_technology_type(value::EnergyReservoirStorage) = value.storage_technology_type
-"""Get [`EnergyReservoirStorage`](@ref) `storage_capacity`."""
-get_storage_capacity(value::EnergyReservoirStorage) = get_value(value, Val(:storage_capacity), Val(:mva))
+"""Get [`EnergyReservoirStorage`](@ref) `storage_capacity`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
+get_storage_capacity(value::EnergyReservoirStorage, units) = get_value(value, Val(:storage_capacity), Val(:mva), units)
+InfrastructureSystems.display_units_arg(::typeof(get_storage_capacity), ::Type{ EnergyReservoirStorage }) = InfrastructureSystems.SU
 """Get [`EnergyReservoirStorage`](@ref) `storage_level_limits`."""
 get_storage_level_limits(value::EnergyReservoirStorage) = value.storage_level_limits
 """Get [`EnergyReservoirStorage`](@ref) `initial_storage_capacity_level`."""
 get_initial_storage_capacity_level(value::EnergyReservoirStorage) = value.initial_storage_capacity_level
-"""Get [`EnergyReservoirStorage`](@ref) `rating`."""
-get_rating(value::EnergyReservoirStorage) = get_value(value, Val(:rating), Val(:mva))
-"""Get [`EnergyReservoirStorage`](@ref) `active_power`."""
-get_active_power(value::EnergyReservoirStorage) = get_value(value, Val(:active_power), Val(:mva))
-"""Get [`EnergyReservoirStorage`](@ref) `input_active_power_limits`."""
-get_input_active_power_limits(value::EnergyReservoirStorage) = get_value(value, Val(:input_active_power_limits), Val(:mva))
-"""Get [`EnergyReservoirStorage`](@ref) `output_active_power_limits`."""
-get_output_active_power_limits(value::EnergyReservoirStorage) = get_value(value, Val(:output_active_power_limits), Val(:mva))
+"""Get [`EnergyReservoirStorage`](@ref) `rating`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
+get_rating(value::EnergyReservoirStorage, units) = get_value(value, Val(:rating), Val(:mva), units)
+InfrastructureSystems.display_units_arg(::typeof(get_rating), ::Type{ EnergyReservoirStorage }) = InfrastructureSystems.SU
+"""Get [`EnergyReservoirStorage`](@ref) `active_power`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
+get_active_power(value::EnergyReservoirStorage, units) = get_value(value, Val(:active_power), Val(:mva), units)
+InfrastructureSystems.display_units_arg(::typeof(get_active_power), ::Type{ EnergyReservoirStorage }) = InfrastructureSystems.SU
+"""Get [`EnergyReservoirStorage`](@ref) `input_active_power_limits`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
+get_input_active_power_limits(value::EnergyReservoirStorage, units) = get_value(value, Val(:input_active_power_limits), Val(:mva), units)
+InfrastructureSystems.display_units_arg(::typeof(get_input_active_power_limits), ::Type{ EnergyReservoirStorage }) = InfrastructureSystems.SU
+"""Get [`EnergyReservoirStorage`](@ref) `output_active_power_limits`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
+get_output_active_power_limits(value::EnergyReservoirStorage, units) = get_value(value, Val(:output_active_power_limits), Val(:mva), units)
+InfrastructureSystems.display_units_arg(::typeof(get_output_active_power_limits), ::Type{ EnergyReservoirStorage }) = InfrastructureSystems.SU
 """Get [`EnergyReservoirStorage`](@ref) `efficiency`."""
 get_efficiency(value::EnergyReservoirStorage) = value.efficiency
-"""Get [`EnergyReservoirStorage`](@ref) `reactive_power`."""
-get_reactive_power(value::EnergyReservoirStorage) = get_value(value, Val(:reactive_power), Val(:mva))
-"""Get [`EnergyReservoirStorage`](@ref) `reactive_power_limits`."""
-get_reactive_power_limits(value::EnergyReservoirStorage) = get_value(value, Val(:reactive_power_limits), Val(:mva))
+"""Get [`EnergyReservoirStorage`](@ref) `reactive_power`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
+get_reactive_power(value::EnergyReservoirStorage, units) = get_value(value, Val(:reactive_power), Val(:mva), units)
+InfrastructureSystems.display_units_arg(::typeof(get_reactive_power), ::Type{ EnergyReservoirStorage }) = InfrastructureSystems.SU
+"""Get [`EnergyReservoirStorage`](@ref) `reactive_power_limits`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
+get_reactive_power_limits(value::EnergyReservoirStorage, units) = get_value(value, Val(:reactive_power_limits), Val(:mva), units)
+InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_limits), ::Type{ EnergyReservoirStorage }) = InfrastructureSystems.SU
 """Get [`EnergyReservoirStorage`](@ref) `base_power`."""
 get_base_power(value::EnergyReservoirStorage) = value.base_power
 """Get [`EnergyReservoirStorage`](@ref) `operation_cost`."""

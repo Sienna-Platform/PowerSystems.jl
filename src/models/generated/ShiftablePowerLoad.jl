@@ -111,16 +111,21 @@ get_name(value::ShiftablePowerLoad) = value.name
 get_available(value::ShiftablePowerLoad) = value.available
 """Get [`ShiftablePowerLoad`](@ref) `bus`."""
 get_bus(value::ShiftablePowerLoad) = value.bus
-"""Get [`ShiftablePowerLoad`](@ref) `active_power`."""
-get_active_power(value::ShiftablePowerLoad) = get_value(value, Val(:active_power), Val(:mva))
-"""Get [`ShiftablePowerLoad`](@ref) `active_power_limits`."""
-get_active_power_limits(value::ShiftablePowerLoad) = get_value(value, Val(:active_power_limits), Val(:mva))
-"""Get [`ShiftablePowerLoad`](@ref) `reactive_power`."""
-get_reactive_power(value::ShiftablePowerLoad) = get_value(value, Val(:reactive_power), Val(:mva))
-"""Get [`ShiftablePowerLoad`](@ref) `max_active_power`."""
-get_max_active_power(value::ShiftablePowerLoad) = get_value(value, Val(:max_active_power), Val(:mva))
-"""Get [`ShiftablePowerLoad`](@ref) `max_reactive_power`."""
-get_max_reactive_power(value::ShiftablePowerLoad) = get_value(value, Val(:max_reactive_power), Val(:mva))
+"""Get [`ShiftablePowerLoad`](@ref) `active_power`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
+get_active_power(value::ShiftablePowerLoad, units) = get_value(value, Val(:active_power), Val(:mva), units)
+InfrastructureSystems.display_units_arg(::typeof(get_active_power), ::Type{ ShiftablePowerLoad }) = InfrastructureSystems.SU
+"""Get [`ShiftablePowerLoad`](@ref) `active_power_limits`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
+get_active_power_limits(value::ShiftablePowerLoad, units) = get_value(value, Val(:active_power_limits), Val(:mva), units)
+InfrastructureSystems.display_units_arg(::typeof(get_active_power_limits), ::Type{ ShiftablePowerLoad }) = InfrastructureSystems.SU
+"""Get [`ShiftablePowerLoad`](@ref) `reactive_power`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
+get_reactive_power(value::ShiftablePowerLoad, units) = get_value(value, Val(:reactive_power), Val(:mva), units)
+InfrastructureSystems.display_units_arg(::typeof(get_reactive_power), ::Type{ ShiftablePowerLoad }) = InfrastructureSystems.SU
+"""Get [`ShiftablePowerLoad`](@ref) `max_active_power`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
+get_max_active_power(value::ShiftablePowerLoad, units) = get_value(value, Val(:max_active_power), Val(:mva), units)
+InfrastructureSystems.display_units_arg(::typeof(get_max_active_power), ::Type{ ShiftablePowerLoad }) = InfrastructureSystems.SU
+"""Get [`ShiftablePowerLoad`](@ref) `max_reactive_power`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
+get_max_reactive_power(value::ShiftablePowerLoad, units) = get_value(value, Val(:max_reactive_power), Val(:mva), units)
+InfrastructureSystems.display_units_arg(::typeof(get_max_reactive_power), ::Type{ ShiftablePowerLoad }) = InfrastructureSystems.SU
 """Get [`ShiftablePowerLoad`](@ref) `base_power`."""
 get_base_power(value::ShiftablePowerLoad) = value.base_power
 """Get [`ShiftablePowerLoad`](@ref) `load_balance_time_horizon`."""

@@ -241,8 +241,9 @@ get_name(value::TwoTerminalLCCLine) = value.name
 get_available(value::TwoTerminalLCCLine) = value.available
 """Get [`TwoTerminalLCCLine`](@ref) `arc`."""
 get_arc(value::TwoTerminalLCCLine) = value.arc
-"""Get [`TwoTerminalLCCLine`](@ref) `active_power_flow`."""
-get_active_power_flow(value::TwoTerminalLCCLine) = get_value(value, Val(:active_power_flow), Val(:mva))
+"""Get [`TwoTerminalLCCLine`](@ref) `active_power_flow`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
+get_active_power_flow(value::TwoTerminalLCCLine, units) = get_value(value, Val(:active_power_flow), Val(:mva), units)
+InfrastructureSystems.display_units_arg(::typeof(get_active_power_flow), ::Type{ TwoTerminalLCCLine }) = InfrastructureSystems.SU
 """Get [`TwoTerminalLCCLine`](@ref) `r`."""
 get_r(value::TwoTerminalLCCLine) = value.r
 """Get [`TwoTerminalLCCLine`](@ref) `transfer_setpoint`."""
@@ -301,14 +302,18 @@ get_inverter_tap_step(value::TwoTerminalLCCLine) = value.inverter_tap_step
 get_inverter_extinction_angle(value::TwoTerminalLCCLine) = value.inverter_extinction_angle
 """Get [`TwoTerminalLCCLine`](@ref) `inverter_capacitor_reactance`."""
 get_inverter_capacitor_reactance(value::TwoTerminalLCCLine) = value.inverter_capacitor_reactance
-"""Get [`TwoTerminalLCCLine`](@ref) `active_power_limits_from`."""
-get_active_power_limits_from(value::TwoTerminalLCCLine) = get_value(value, Val(:active_power_limits_from), Val(:mva))
-"""Get [`TwoTerminalLCCLine`](@ref) `active_power_limits_to`."""
-get_active_power_limits_to(value::TwoTerminalLCCLine) = get_value(value, Val(:active_power_limits_to), Val(:mva))
-"""Get [`TwoTerminalLCCLine`](@ref) `reactive_power_limits_from`."""
-get_reactive_power_limits_from(value::TwoTerminalLCCLine) = get_value(value, Val(:reactive_power_limits_from), Val(:mva))
-"""Get [`TwoTerminalLCCLine`](@ref) `reactive_power_limits_to`."""
-get_reactive_power_limits_to(value::TwoTerminalLCCLine) = get_value(value, Val(:reactive_power_limits_to), Val(:mva))
+"""Get [`TwoTerminalLCCLine`](@ref) `active_power_limits_from`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
+get_active_power_limits_from(value::TwoTerminalLCCLine, units) = get_value(value, Val(:active_power_limits_from), Val(:mva), units)
+InfrastructureSystems.display_units_arg(::typeof(get_active_power_limits_from), ::Type{ TwoTerminalLCCLine }) = InfrastructureSystems.SU
+"""Get [`TwoTerminalLCCLine`](@ref) `active_power_limits_to`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
+get_active_power_limits_to(value::TwoTerminalLCCLine, units) = get_value(value, Val(:active_power_limits_to), Val(:mva), units)
+InfrastructureSystems.display_units_arg(::typeof(get_active_power_limits_to), ::Type{ TwoTerminalLCCLine }) = InfrastructureSystems.SU
+"""Get [`TwoTerminalLCCLine`](@ref) `reactive_power_limits_from`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
+get_reactive_power_limits_from(value::TwoTerminalLCCLine, units) = get_value(value, Val(:reactive_power_limits_from), Val(:mva), units)
+InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_limits_from), ::Type{ TwoTerminalLCCLine }) = InfrastructureSystems.SU
+"""Get [`TwoTerminalLCCLine`](@ref) `reactive_power_limits_to`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
+get_reactive_power_limits_to(value::TwoTerminalLCCLine, units) = get_value(value, Val(:reactive_power_limits_to), Val(:mva), units)
+InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_limits_to), ::Type{ TwoTerminalLCCLine }) = InfrastructureSystems.SU
 """Get [`TwoTerminalLCCLine`](@ref) `loss`."""
 get_loss(value::TwoTerminalLCCLine) = value.loss
 """Get [`TwoTerminalLCCLine`](@ref) `services`."""

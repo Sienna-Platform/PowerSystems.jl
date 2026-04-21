@@ -57,10 +57,12 @@ end
 
 """Get [`LoadZone`](@ref) `name`."""
 get_name(value::LoadZone) = value.name
-"""Get [`LoadZone`](@ref) `peak_active_power`."""
-get_peak_active_power(value::LoadZone) = get_value(value, Val(:peak_active_power), Val(:mva))
-"""Get [`LoadZone`](@ref) `peak_reactive_power`."""
-get_peak_reactive_power(value::LoadZone) = get_value(value, Val(:peak_reactive_power), Val(:mva))
+"""Get [`LoadZone`](@ref) `peak_active_power`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
+get_peak_active_power(value::LoadZone, units) = get_value(value, Val(:peak_active_power), Val(:mva), units)
+InfrastructureSystems.display_units_arg(::typeof(get_peak_active_power), ::Type{ LoadZone }) = InfrastructureSystems.SU
+"""Get [`LoadZone`](@ref) `peak_reactive_power`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
+get_peak_reactive_power(value::LoadZone, units) = get_value(value, Val(:peak_reactive_power), Val(:mva), units)
+InfrastructureSystems.display_units_arg(::typeof(get_peak_reactive_power), ::Type{ LoadZone }) = InfrastructureSystems.SU
 """Get [`LoadZone`](@ref) `ext`."""
 get_ext(value::LoadZone) = value.ext
 """Get [`LoadZone`](@ref) `internal`."""

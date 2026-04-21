@@ -106,14 +106,18 @@ get_name(value::InterruptiblePowerLoad) = value.name
 get_available(value::InterruptiblePowerLoad) = value.available
 """Get [`InterruptiblePowerLoad`](@ref) `bus`."""
 get_bus(value::InterruptiblePowerLoad) = value.bus
-"""Get [`InterruptiblePowerLoad`](@ref) `active_power`."""
-get_active_power(value::InterruptiblePowerLoad) = get_value(value, Val(:active_power), Val(:mva))
-"""Get [`InterruptiblePowerLoad`](@ref) `reactive_power`."""
-get_reactive_power(value::InterruptiblePowerLoad) = get_value(value, Val(:reactive_power), Val(:mva))
-"""Get [`InterruptiblePowerLoad`](@ref) `max_active_power`."""
-get_max_active_power(value::InterruptiblePowerLoad) = get_value(value, Val(:max_active_power), Val(:mva))
-"""Get [`InterruptiblePowerLoad`](@ref) `max_reactive_power`."""
-get_max_reactive_power(value::InterruptiblePowerLoad) = get_value(value, Val(:max_reactive_power), Val(:mva))
+"""Get [`InterruptiblePowerLoad`](@ref) `active_power`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
+get_active_power(value::InterruptiblePowerLoad, units) = get_value(value, Val(:active_power), Val(:mva), units)
+InfrastructureSystems.display_units_arg(::typeof(get_active_power), ::Type{ InterruptiblePowerLoad }) = InfrastructureSystems.SU
+"""Get [`InterruptiblePowerLoad`](@ref) `reactive_power`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
+get_reactive_power(value::InterruptiblePowerLoad, units) = get_value(value, Val(:reactive_power), Val(:mva), units)
+InfrastructureSystems.display_units_arg(::typeof(get_reactive_power), ::Type{ InterruptiblePowerLoad }) = InfrastructureSystems.SU
+"""Get [`InterruptiblePowerLoad`](@ref) `max_active_power`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
+get_max_active_power(value::InterruptiblePowerLoad, units) = get_value(value, Val(:max_active_power), Val(:mva), units)
+InfrastructureSystems.display_units_arg(::typeof(get_max_active_power), ::Type{ InterruptiblePowerLoad }) = InfrastructureSystems.SU
+"""Get [`InterruptiblePowerLoad`](@ref) `max_reactive_power`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
+get_max_reactive_power(value::InterruptiblePowerLoad, units) = get_value(value, Val(:max_reactive_power), Val(:mva), units)
+InfrastructureSystems.display_units_arg(::typeof(get_max_reactive_power), ::Type{ InterruptiblePowerLoad }) = InfrastructureSystems.SU
 """Get [`InterruptiblePowerLoad`](@ref) `base_power`."""
 get_base_power(value::InterruptiblePowerLoad) = value.base_power
 """Get [`InterruptiblePowerLoad`](@ref) `operation_cost`."""

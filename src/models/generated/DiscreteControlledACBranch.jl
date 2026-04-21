@@ -92,18 +92,23 @@ end
 get_name(value::DiscreteControlledACBranch) = value.name
 """Get [`DiscreteControlledACBranch`](@ref) `available`."""
 get_available(value::DiscreteControlledACBranch) = value.available
-"""Get [`DiscreteControlledACBranch`](@ref) `active_power_flow`."""
-get_active_power_flow(value::DiscreteControlledACBranch) = get_value(value, Val(:active_power_flow), Val(:mva))
-"""Get [`DiscreteControlledACBranch`](@ref) `reactive_power_flow`."""
-get_reactive_power_flow(value::DiscreteControlledACBranch) = get_value(value, Val(:reactive_power_flow), Val(:mva))
+"""Get [`DiscreteControlledACBranch`](@ref) `active_power_flow`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
+get_active_power_flow(value::DiscreteControlledACBranch, units) = get_value(value, Val(:active_power_flow), Val(:mva), units)
+InfrastructureSystems.display_units_arg(::typeof(get_active_power_flow), ::Type{ DiscreteControlledACBranch }) = InfrastructureSystems.SU
+"""Get [`DiscreteControlledACBranch`](@ref) `reactive_power_flow`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
+get_reactive_power_flow(value::DiscreteControlledACBranch, units) = get_value(value, Val(:reactive_power_flow), Val(:mva), units)
+InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_flow), ::Type{ DiscreteControlledACBranch }) = InfrastructureSystems.SU
 """Get [`DiscreteControlledACBranch`](@ref) `arc`."""
 get_arc(value::DiscreteControlledACBranch) = value.arc
-"""Get [`DiscreteControlledACBranch`](@ref) `r`."""
-get_r(value::DiscreteControlledACBranch) = get_value(value, Val(:r), Val(:ohm))
-"""Get [`DiscreteControlledACBranch`](@ref) `x`."""
-get_x(value::DiscreteControlledACBranch) = get_value(value, Val(:x), Val(:ohm))
-"""Get [`DiscreteControlledACBranch`](@ref) `rating`."""
-get_rating(value::DiscreteControlledACBranch) = get_value(value, Val(:rating), Val(:mva))
+"""Get [`DiscreteControlledACBranch`](@ref) `r`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
+get_r(value::DiscreteControlledACBranch, units) = get_value(value, Val(:r), Val(:ohm), units)
+InfrastructureSystems.display_units_arg(::typeof(get_r), ::Type{ DiscreteControlledACBranch }) = InfrastructureSystems.SU
+"""Get [`DiscreteControlledACBranch`](@ref) `x`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
+get_x(value::DiscreteControlledACBranch, units) = get_value(value, Val(:x), Val(:ohm), units)
+InfrastructureSystems.display_units_arg(::typeof(get_x), ::Type{ DiscreteControlledACBranch }) = InfrastructureSystems.SU
+"""Get [`DiscreteControlledACBranch`](@ref) `rating`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
+get_rating(value::DiscreteControlledACBranch, units) = get_value(value, Val(:rating), Val(:mva), units)
+InfrastructureSystems.display_units_arg(::typeof(get_rating), ::Type{ DiscreteControlledACBranch }) = InfrastructureSystems.SU
 """Get [`DiscreteControlledACBranch`](@ref) `discrete_branch_type`."""
 get_discrete_branch_type(value::DiscreteControlledACBranch) = value.discrete_branch_type
 """Get [`DiscreteControlledACBranch`](@ref) `branch_status`."""

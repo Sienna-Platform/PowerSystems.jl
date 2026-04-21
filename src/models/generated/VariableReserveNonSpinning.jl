@@ -88,8 +88,9 @@ get_name(value::VariableReserveNonSpinning) = value.name
 get_available(value::VariableReserveNonSpinning) = value.available
 """Get [`VariableReserveNonSpinning`](@ref) `time_frame`."""
 get_time_frame(value::VariableReserveNonSpinning) = value.time_frame
-"""Get [`VariableReserveNonSpinning`](@ref) `requirement`."""
-get_requirement(value::VariableReserveNonSpinning) = get_value(value, Val(:requirement), Val(:mva))
+"""Get [`VariableReserveNonSpinning`](@ref) `requirement`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
+get_requirement(value::VariableReserveNonSpinning, units) = get_value(value, Val(:requirement), Val(:mva), units)
+InfrastructureSystems.display_units_arg(::typeof(get_requirement), ::Type{ VariableReserveNonSpinning }) = InfrastructureSystems.SU
 """Get [`VariableReserveNonSpinning`](@ref) `sustained_time`."""
 get_sustained_time(value::VariableReserveNonSpinning) = value.sustained_time
 """Get [`VariableReserveNonSpinning`](@ref) `max_output_fraction`."""

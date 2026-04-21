@@ -3,13 +3,13 @@
     th = first(get_components(ThermalStandard, cdmsys))
     re = first(get_components(RenewableDispatch, cdmsys))
 
-    @test get_max_active_power(th) == get_active_power_limits(th).max
-    @test get_max_active_power(re) <= get_rating(re)
-    @test isa(get_max_reactive_power(re), Float64)
+    @test get_max_active_power(th, DU) == get_active_power_limits(th, DU).max
+    @test get_max_active_power(re, DU) <= get_rating(re, DU)
+    @test isa(get_max_reactive_power(re, DU), Number)
 
-    @test_throws MethodError get_max_active_power(TestDevice("foo"))
-    @test_throws ArgumentError get_max_active_power(TestInjector("foo"))
-    @test_throws ArgumentError get_max_active_power(TestRenDevice("foo"))
+    @test_throws MethodError get_max_active_power(TestDevice("foo"), DU)
+    @test_throws ArgumentError get_max_active_power(TestInjector("foo"), DU)
+    @test_throws ArgumentError get_max_active_power(TestRenDevice("foo"), DU)
 end
 
 @testset "Test Remove Area with Interchanges" begin
@@ -78,13 +78,20 @@ end
     dir_path = mktempdir()
     to_json(sys, joinpath(dir_path, "test_RTS_GMLC_sys.json"))
     sys2 = System(joinpath(dir_path, "test_RTS_GMLC_sys.json"))
-    @test get_active_power(get_component(ShiftablePowerLoad, sys2, "ShiftableLoadBus4")) ==
-          0.10
-    @test get_active_power(get_component(InterruptiblePowerLoad, sys2, "IloadBus")) == 0.10
+    @test get_active_power(
+        get_component(ShiftablePowerLoad, sys2, "ShiftableLoadBus4"),
+        DU,
+    ) == 0.10 * DU
+    @test get_active_power(
+        get_component(InterruptiblePowerLoad, sys2, "IloadBus"),
+        DU,
+    ) == 0.10 * DU
     @test get_active_power_limits(
         get_component(ShiftablePowerLoad, sys2, "ShiftableLoadBus4"),
-    ).min == 0.03
+        DU,
+    ).min == 0.03 * DU
     @test get_active_power_limits(
         get_component(ShiftablePowerLoad, sys2, "ShiftableLoadBus4"),
-    ).max == 0.10
+        DU,
+    ).max == 0.10 * DU
 end

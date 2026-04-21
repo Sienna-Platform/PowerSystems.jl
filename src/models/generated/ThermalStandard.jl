@@ -143,18 +143,24 @@ get_available(value::ThermalStandard) = value.available
 get_status(value::ThermalStandard) = value.status
 """Get [`ThermalStandard`](@ref) `bus`."""
 get_bus(value::ThermalStandard) = value.bus
-"""Get [`ThermalStandard`](@ref) `active_power`."""
-get_active_power(value::ThermalStandard) = get_value(value, Val(:active_power), Val(:mva))
-"""Get [`ThermalStandard`](@ref) `reactive_power`."""
-get_reactive_power(value::ThermalStandard) = get_value(value, Val(:reactive_power), Val(:mva))
-"""Get [`ThermalStandard`](@ref) `rating`."""
-get_rating(value::ThermalStandard) = get_value(value, Val(:rating), Val(:mva))
-"""Get [`ThermalStandard`](@ref) `active_power_limits`."""
-get_active_power_limits(value::ThermalStandard) = get_value(value, Val(:active_power_limits), Val(:mva))
-"""Get [`ThermalStandard`](@ref) `reactive_power_limits`."""
-get_reactive_power_limits(value::ThermalStandard) = get_value(value, Val(:reactive_power_limits), Val(:mva))
-"""Get [`ThermalStandard`](@ref) `ramp_limits`."""
-get_ramp_limits(value::ThermalStandard) = get_value(value, Val(:ramp_limits), Val(:mva))
+"""Get [`ThermalStandard`](@ref) `active_power`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
+get_active_power(value::ThermalStandard, units) = get_value(value, Val(:active_power), Val(:mva), units)
+InfrastructureSystems.display_units_arg(::typeof(get_active_power), ::Type{ ThermalStandard }) = InfrastructureSystems.SU
+"""Get [`ThermalStandard`](@ref) `reactive_power`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
+get_reactive_power(value::ThermalStandard, units) = get_value(value, Val(:reactive_power), Val(:mva), units)
+InfrastructureSystems.display_units_arg(::typeof(get_reactive_power), ::Type{ ThermalStandard }) = InfrastructureSystems.SU
+"""Get [`ThermalStandard`](@ref) `rating`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
+get_rating(value::ThermalStandard, units) = get_value(value, Val(:rating), Val(:mva), units)
+InfrastructureSystems.display_units_arg(::typeof(get_rating), ::Type{ ThermalStandard }) = InfrastructureSystems.SU
+"""Get [`ThermalStandard`](@ref) `active_power_limits`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
+get_active_power_limits(value::ThermalStandard, units) = get_value(value, Val(:active_power_limits), Val(:mva), units)
+InfrastructureSystems.display_units_arg(::typeof(get_active_power_limits), ::Type{ ThermalStandard }) = InfrastructureSystems.SU
+"""Get [`ThermalStandard`](@ref) `reactive_power_limits`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
+get_reactive_power_limits(value::ThermalStandard, units) = get_value(value, Val(:reactive_power_limits), Val(:mva), units)
+InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_limits), ::Type{ ThermalStandard }) = InfrastructureSystems.SU
+"""Get [`ThermalStandard`](@ref) `ramp_limits`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
+get_ramp_limits(value::ThermalStandard, units) = get_value(value, Val(:ramp_limits), Val(:mva), units)
+InfrastructureSystems.display_units_arg(::typeof(get_ramp_limits), ::Type{ ThermalStandard }) = InfrastructureSystems.SU
 """Get [`ThermalStandard`](@ref) `operation_cost`."""
 get_operation_cost(value::ThermalStandard) = value.operation_cost
 """Get [`ThermalStandard`](@ref) `base_power`."""

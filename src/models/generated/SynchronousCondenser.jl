@@ -94,16 +94,20 @@ get_name(value::SynchronousCondenser) = value.name
 get_available(value::SynchronousCondenser) = value.available
 """Get [`SynchronousCondenser`](@ref) `bus`."""
 get_bus(value::SynchronousCondenser) = value.bus
-"""Get [`SynchronousCondenser`](@ref) `reactive_power`."""
-get_reactive_power(value::SynchronousCondenser) = get_value(value, Val(:reactive_power), Val(:mva))
-"""Get [`SynchronousCondenser`](@ref) `rating`."""
-get_rating(value::SynchronousCondenser) = get_value(value, Val(:rating), Val(:mva))
-"""Get [`SynchronousCondenser`](@ref) `reactive_power_limits`."""
-get_reactive_power_limits(value::SynchronousCondenser) = get_value(value, Val(:reactive_power_limits), Val(:mva))
+"""Get [`SynchronousCondenser`](@ref) `reactive_power`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
+get_reactive_power(value::SynchronousCondenser, units) = get_value(value, Val(:reactive_power), Val(:mva), units)
+InfrastructureSystems.display_units_arg(::typeof(get_reactive_power), ::Type{ SynchronousCondenser }) = InfrastructureSystems.SU
+"""Get [`SynchronousCondenser`](@ref) `rating`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
+get_rating(value::SynchronousCondenser, units) = get_value(value, Val(:rating), Val(:mva), units)
+InfrastructureSystems.display_units_arg(::typeof(get_rating), ::Type{ SynchronousCondenser }) = InfrastructureSystems.SU
+"""Get [`SynchronousCondenser`](@ref) `reactive_power_limits`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
+get_reactive_power_limits(value::SynchronousCondenser, units) = get_value(value, Val(:reactive_power_limits), Val(:mva), units)
+InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_limits), ::Type{ SynchronousCondenser }) = InfrastructureSystems.SU
 """Get [`SynchronousCondenser`](@ref) `base_power`."""
 get_base_power(value::SynchronousCondenser) = value.base_power
-"""Get [`SynchronousCondenser`](@ref) `active_power_losses`."""
-get_active_power_losses(value::SynchronousCondenser) = get_value(value, Val(:active_power_losses), Val(:mva))
+"""Get [`SynchronousCondenser`](@ref) `active_power_losses`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
+get_active_power_losses(value::SynchronousCondenser, units) = get_value(value, Val(:active_power_losses), Val(:mva), units)
+InfrastructureSystems.display_units_arg(::typeof(get_active_power_losses), ::Type{ SynchronousCondenser }) = InfrastructureSystems.SU
 """Get [`SynchronousCondenser`](@ref) `services`."""
 get_services(value::SynchronousCondenser) = value.services
 """Get [`SynchronousCondenser`](@ref) `dynamic_injector`."""
