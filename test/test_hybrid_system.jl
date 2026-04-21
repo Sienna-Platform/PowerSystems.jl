@@ -149,3 +149,53 @@ end
         PSY.make_subsystem_time_series_name(thermal_unit, forecast),
     ) isa Deterministic
 end
+
+@testset "get_fuel_cost for HybridSystem delegates to thermal subunit" begin
+    # Hybrid with thermal: get_fuel_cost delegates to thermal subunit
+    sys = PSB.build_system(PSB.PSITestSystems, "c_sys5_uc"; add_forecasts = false)
+    thermal = first(get_components(ThermalStandard, sys))
+    # Ensure thermal has ThermalGenerationCost with FuelCurve
+    fc = FuelCurve(InputOutputCurve(IS.QuadraticFunctionData(1, 2, 3)), 2.5)
+    set_operation_cost!(thermal, ThermalGenerationCost(fc, 0.0, 0.0, 0.0))
+    expected_fuel_cost = get_fuel_cost(thermal)
+
+    bus = get_bus(thermal)
+    remove_component!(sys, thermal)
+    h_sys = HybridSystem(;
+        name = "HybridWithThermal",
+        available = true,
+        status = true,
+        bus = bus,
+        active_power = 1.0,
+        reactive_power = 0.0,
+        thermal_unit = thermal,
+        electric_load = nothing,
+        storage = nothing,
+        renewable_unit = nothing,
+        base_power = 100.0,
+        operation_cost = MarketBidCost(nothing),
+    )
+    add_component!(sys, h_sys)
+    @test get_fuel_cost(h_sys) == expected_fuel_cost
+end
+
+@testset "get_fuel_cost for HybridSystem without thermal throws" begin
+    sys = PSB.build_system(PSB.PSITestSystems, "c_sys14"; add_forecasts = false)
+    bus = get_component(ACBus, sys, "Bus 1")
+    h_sys = HybridSystem(;
+        name = "HybridNoThermal",
+        available = true,
+        status = true,
+        bus = bus,
+        active_power = 1.0,
+        reactive_power = 0.0,
+        thermal_unit = nothing,
+        electric_load = nothing,
+        storage = nothing,
+        renewable_unit = nothing,
+        base_power = 100.0,
+        operation_cost = MarketBidCost(nothing),
+    )
+    add_component!(sys, h_sys)
+    @test_throws ArgumentError get_fuel_cost(h_sys)
+end
