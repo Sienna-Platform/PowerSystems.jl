@@ -219,7 +219,7 @@ get_reactive_power_limits(value::HybridSystem, units) =
 """get [`HybridSystem`](@ref) interconnection efficiency"""
 get_interconnection_efficiency(value::HybridSystem) = value.interconnection_efficiency
 """Get [`HybridSystem`](@ref) `base_power`."""
-get_base_power(value::HybridSystem) = value.base_power
+_get_base_power(value::HybridSystem) = value.base_power
 """Get [`HybridSystem`](@ref) `operation_cost`."""
 get_operation_cost(value::HybridSystem) = value.operation_cost
 """Get [`HybridSystem`](@ref) `services`."""

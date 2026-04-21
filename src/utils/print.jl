@@ -16,7 +16,7 @@ function _show_accessor_value(getter_func::Function, ist::Component)
 end
 
 function Base.summary(sys::System)
-    return "System (base power $(get_base_power(sys)))"
+    return "System (base power $(_get_base_power(sys)))"
 end
 
 function Base.show(io::IO, sys::System)

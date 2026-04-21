@@ -517,7 +517,6 @@ export set_name!
 export get_component_uuids
 export get_description
 export set_description!
-export get_base_power
 export get_frequency
 export get_frequency_droop
 export set_units_base_system!

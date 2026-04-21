@@ -17,12 +17,12 @@ struct MockLine
     x::Float64
 end
 
-PSY.get_device_base_power(g::MockGen) = g.base_power
-PSY.get_system_base_power(::MockGen) = 100.0
+PSY._get_device_base_power(g::MockGen) = g.base_power
+PSY._get_system_base_power(::MockGen) = 100.0
 PSY.get_base_voltage(::MockGen) = 230.0
 
-PSY.get_device_base_power(::MockLine) = 100.0
-PSY.get_system_base_power(::MockLine) = 100.0
+PSY._get_device_base_power(::MockLine) = 100.0
+PSY._get_system_base_power(::MockLine) = 100.0
 PSY.get_base_voltage(::MockLine) = 230.0
 
 @testset "Unit categories" begin

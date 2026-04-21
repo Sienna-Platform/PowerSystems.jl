@@ -6,8 +6,6 @@ import JSON3
 import PowerSystemCaseBuilder as PSB
 const PSY = PowerSystems
 
-include("common.jl")
-
 @testset "Test plant attributes" begin
     @testset "ThermalPowerPlant construction and basic accessors" begin
         plant = ThermalPowerPlant(name = "Coal Plant A")
@@ -998,7 +996,7 @@ include("common.jl")
             sys_loaded = System(json_path)
 
             # Verify system loaded correctly
-            @test get_base_power(sys_loaded) == get_base_power(sys)
+            @test PSY._get_base_power(sys_loaded) == PSY._get_base_power(sys)
             @test length(get_components(ThermalStandard, sys_loaded)) ==
                   length(thermal_gens)
 
@@ -1059,7 +1057,7 @@ include("common.jl")
 
             # Load the round-trip system
             sys_roundtrip = System(json_path2)
-            @test get_base_power(sys_roundtrip) == get_base_power(sys)
+            @test PSY._get_base_power(sys_roundtrip) == PSY._get_base_power(sys)
 
             # Verify plant still exists after round-trip
             gen1_rt = get_component(

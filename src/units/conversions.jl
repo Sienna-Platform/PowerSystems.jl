@@ -5,8 +5,8 @@ Core abstraction: a UnitCategory defines a physical quantity (power, impedance, 
 with a natural unit and a way to compute the per-unit base value for any component.
 
 Downstream packages implement the interface functions:
-  - get_device_base_power(c) → Float64 (MVA)
-  - get_system_base_power(c) → Float64 (MVA)
+  - _get_device_base_power(c) → Float64 (MVA)
+  - _get_system_base_power(c) → Float64 (MVA)
   - get_base_voltage(c) → Float64 (kV)
 =#
 
@@ -15,18 +15,18 @@ Downstream packages implement the interface functions:
 # ============================================================
 
 """
-    get_device_base_power(component) → Float64
+    _get_device_base_power(component) → Float64
 
 Return the device's base power in MVA as a raw Float64.
 """
-function get_device_base_power end
+function _get_device_base_power end
 
 """
-    get_system_base_power(component) → Float64
+    _get_system_base_power(component) → Float64
 
 Return the system's base power in MVA as a raw Float64.
 """
-function get_system_base_power end
+function _get_system_base_power end
 
 """
     get_base_voltage(component) → Float64
@@ -73,32 +73,34 @@ natural_unit(::CurrentCategory) = u"kA"
 
 1.0 DU of this category = `base_value(c, cat)` natural units.
 """
-base_value(c, ::PowerCategory) = get_device_base_power(c)
-base_value(c, ::ImpedanceCategory) = get_base_voltage(c)^2 / get_device_base_power(c)
-base_value(c, ::AdmittanceCategory) = get_device_base_power(c) / get_base_voltage(c)^2
+base_value(c, ::PowerCategory) = _get_device_base_power(c)
+base_value(c, ::ImpedanceCategory) = get_base_voltage(c)^2 / _get_device_base_power(c)
+base_value(c, ::AdmittanceCategory) = _get_device_base_power(c) / get_base_voltage(c)^2
 base_value(c, ::VoltageCategory) = get_base_voltage(c)
-base_value(c, ::CurrentCategory) = get_device_base_power(c) / get_base_voltage(c)
+base_value(c, ::CurrentCategory) = _get_device_base_power(c) / get_base_voltage(c)
 
 """
     system_base_value(component, category) → Float64
 
 1.0 SU of this category = `system_base_value(c, cat)` natural units.
 """
-system_base_value(c, ::PowerCategory) = get_system_base_power(c)
-system_base_value(c, ::ImpedanceCategory) = get_base_voltage(c)^2 / get_system_base_power(c)
+system_base_value(c, ::PowerCategory) = _get_system_base_power(c)
+system_base_value(c, ::ImpedanceCategory) =
+    get_base_voltage(c)^2 / _get_system_base_power(c)
 system_base_value(c, ::AdmittanceCategory) =
-    get_system_base_power(c) / get_base_voltage(c)^2
+    _get_system_base_power(c) / get_base_voltage(c)^2
 system_base_value(c, ::VoltageCategory) = get_base_voltage(c)
-system_base_value(c, ::CurrentCategory) = get_system_base_power(c) / get_base_voltage(c)
+system_base_value(c, ::CurrentCategory) = _get_system_base_power(c) / get_base_voltage(c)
 
 # DU→SU ratio (voltage cancels, only power bases needed)
-_du_to_su_ratio(c, ::PowerCategory) = get_device_base_power(c) / get_system_base_power(c)
+_du_to_su_ratio(c, ::PowerCategory) = _get_device_base_power(c) / _get_system_base_power(c)
 _du_to_su_ratio(c, ::ImpedanceCategory) =
-    get_system_base_power(c) / get_device_base_power(c)
+    _get_system_base_power(c) / _get_device_base_power(c)
 _du_to_su_ratio(c, ::AdmittanceCategory) =
-    get_device_base_power(c) / get_system_base_power(c)
+    _get_device_base_power(c) / _get_system_base_power(c)
 _du_to_su_ratio(::Any, ::VoltageCategory) = 1.0
-_du_to_su_ratio(c, ::CurrentCategory) = get_system_base_power(c) / get_device_base_power(c)
+_du_to_su_ratio(c, ::CurrentCategory) =
+    _get_system_base_power(c) / _get_device_base_power(c)
 
 # ============================================================
 # Default units for 1-arg getters (downstream convention)

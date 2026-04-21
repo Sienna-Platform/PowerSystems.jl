@@ -106,7 +106,7 @@ function total_load_rating(sys::System)
         if isempty(fa_loads)
             zero(MW_ACCUMULATOR_TYPE)
         else
-            sum(real.(1.0 .* get_Y.(fa_loads))) * get_base_power(sys) * MW
+            sum(real.(1.0 .* get_Y.(fa_loads))) * _get_base_power(sys) * MW
         end
     @debug "System has $fa MW of FixedAdmittance" _group = IS.LOG_GROUP_SYSTEM_CHECKS
     sa_loads = get_available_components(SwitchedAdmittance, sys)
@@ -114,7 +114,7 @@ function total_load_rating(sys::System)
         if isempty(sa_loads)
             zero(MW_ACCUMULATOR_TYPE)
         else
-            sum(real.(1.0 .* get_Y.(sa_loads))) * get_base_power(sys) * MW
+            sum(real.(1.0 .* get_Y.(sa_loads))) * _get_base_power(sys) * MW
         end
     @debug "System has $sa MW of SwitchedAdmittance" _group = IS.LOG_GROUP_SYSTEM_CHECKS
     total_load = sl + fa + sa

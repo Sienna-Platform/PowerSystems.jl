@@ -449,9 +449,18 @@ Return a user-modifiable dictionary to store extra information.
 get_ext(sys::System) = IS.get_ext(sys.internal)
 
 """
-Return the system's base power.
+Unitless system base power (MVA) — internal anchor for unit conversion.
 """
-get_base_power(sys::System) = sys.units_settings.base_value
+_get_base_power(sys::System) = sys.units_settings.base_value
+
+"""
+Return the system's base power in the requested units (e.g. `NU`, `MW`, `SU`).
+"""
+get_base_power(sys::System, ::NaturalUnit) = _get_base_power(sys) * MVA
+get_base_power(sys::System, u::Unitful.Units) =
+    Unitful.uconvert(u, _get_base_power(sys) * MVA)
+get_base_power(sys::System, ::SystemBaseUnit) = 1.0 * SU
+get_base_power(sys::System, ::Type{Float64})::Float64 = _get_base_power(sys)
 
 """
 Return the system's frequency.
@@ -2341,7 +2350,7 @@ Returns `true` if all values are valid, `false` otherwise.
 """
 function check_ac_transmission_rate_values(sys::System)
     is_valid = true
-    base_power = get_base_power(sys)
+    base_power = _get_base_power(sys)
     for line in
         Iterators.flatten((get_components(Line, sys), get_components(MonitoredLine, sys)))
         if !check_rating_values(line, base_power)
@@ -2942,7 +2951,7 @@ end
 
 function handle_component_addition!(sys::System, dyn_injector::DynamicInjection; kwargs...)
     static_injector = kwargs[:static_injector]
-    static_base_power = get_base_power(static_injector)
+    static_base_power = _get_base_power(static_injector)
     set_base_power!(dyn_injector, static_base_power)
     set_dynamic_injector!(static_injector, dyn_injector)
     return
@@ -3267,7 +3276,7 @@ function convert_component!(
         name = get_name(old_load),
         available = get_available(old_load),
         bus = get_bus(old_load),
-        base_power = get_base_power(old_load),
+        base_power = _get_base_power(old_load),
         constant_active_power = old_load.active_power,
         constant_reactive_power = old_load.reactive_power,
         max_constant_active_power = old_load.max_active_power,

@@ -47,7 +47,7 @@ function show_system_table(io::IO, sys::System; kwargs...)
         "Name" isnothing(get_name(sys)) ? "" : get_name(sys)
         "Description" isnothing(get_description(sys)) ? "" : get_description(sys)
         "System Units Base" string(get_units_base(sys))
-        "Base Power" string(get_base_power(sys))
+        "Base Power" string(_get_base_power(sys))
         "Base Frequency" string(get_frequency(sys))
         "Num Components" string(num_components)
     ]

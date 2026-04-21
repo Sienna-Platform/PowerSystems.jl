@@ -144,7 +144,7 @@ get_avr(device::DynamicGenerator) = device.avr
 get_prime_mover(device::DynamicGenerator) = device.prime_mover
 """Get the [`PSS`](@ref) component of a [`DynamicGenerator`](@ref)."""
 get_pss(device::DynamicGenerator) = device.pss
-get_base_power(device::DynamicGenerator) = device.base_power
+_get_base_power(device::DynamicGenerator) = device.base_power
 get_ext(device::DynamicGenerator) = device.ext
 get_internal(device::DynamicGenerator) = device.internal
 get_V_ref(value::DynamicGenerator) = get_V_ref(get_avr(value))

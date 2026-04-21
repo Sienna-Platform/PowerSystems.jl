@@ -505,18 +505,18 @@ end
     @test length(dynamics) == 1
     @test dynamics[1] == Gen1AVR
     @test get_dynamic_injector(static_gen) == Gen1AVR
-    @test get_base_power(static_gen) == get_base_power(Gen1AVR)
+    @test PSY._get_base_power(static_gen) == PSY._get_base_power(Gen1AVR)
     @test PSY.compare_values(static_gen, deepcopy(static_gen))
 
     remove_component!(sys, Gen1AVR)
     @test isnothing(get_dynamic_injector(static_gen))
     add_component!(sys, Gen2AVR, static_gen)
     @test get_dynamic_injector(static_gen) === Gen2AVR
-    @test get_base_power(static_gen) == get_base_power(Gen2AVR)
+    @test PSY._get_base_power(static_gen) == PSY._get_base_power(Gen2AVR)
 
     set_base_power!(static_gen, 1234.5)
-    @test get_base_power(static_gen) == 1234.5
-    @test PSY.get_system_base_power(static_gen) == get_base_power(sys)
+    @test PSY._get_base_power(static_gen) == 1234.5
+    @test PSY._get_system_base_power(static_gen) == PSY._get_base_power(sys)
 
     # Rule: Can't set the pair injector if the current injector is already set.
     @test_throws ArgumentError set_dynamic_injector!(static_gen, Gen1AVR)
@@ -664,7 +664,7 @@ end
     # Replace the dynamic injector
     replace_dynamic_injector!(sys, static, Gen2)
     @test get_dynamic_injector(static) === Gen2
-    @test get_base_power(static) == get_base_power(Gen2)
+    @test PSY._get_base_power(static) == PSY._get_base_power(Gen2)
 
     # Old dynamic injector should be removed from the system
     @test length(collect(get_components(DynamicGenerator, sys))) == 1

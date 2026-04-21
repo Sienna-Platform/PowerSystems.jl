@@ -222,8 +222,8 @@ end
 @testset "Test explicit units API" begin
     sys = PSB.build_system(PSITestSystems, "test_RTS_GMLC_sys"; add_forecasts = false)
     gen = get_component(ThermalStandard, sys, "322_CT_6")
-    device_base = get_base_power(gen)
-    system_base = get_base_power(sys)
+    device_base = PSY._get_base_power(gen)
+    system_base = PSY._get_base_power(sys)
     raw_active = gen.active_power
 
     P_mw = get_active_power(gen, MW)
@@ -247,7 +247,7 @@ end
 @testset "Test explicit units setters" begin
     sys = PSB.build_system(PSITestSystems, "test_RTS_GMLC_sys"; add_forecasts = false)
     gen = get_component(ThermalStandard, sys, "322_CT_6")
-    device_base = get_base_power(gen)
+    device_base = PSY._get_base_power(gen)
 
     set_active_power!(gen, 50.0 * MW)
     @test gen.active_power ≈ 50.0 / device_base

@@ -32,6 +32,54 @@ function thermal_with_base_power(bus::PSY.Bus, name::String, base_power::Float64
     )
 end
 
+@testset "Test unit-aware get_base_power" begin
+    sys = PSB.build_system(PSITestSystems, "test_RTS_GMLC_sys"; add_forecasts = false)
+    gen = get_component(ThermalStandard, sys, "322_CT_6")
+    # Force a distinct device base so DU/SU ratio tests are non-trivial.
+    set_base_power!(gen, 250.0)
+    device_base = PSY._get_base_power(gen)
+    system_base = PSY._get_base_power(sys)
+    @test device_base != system_base
+
+    # 1-arg form is gone — public getter requires explicit units.
+    @test_throws MethodError get_base_power(gen)
+
+    bp_nu = get_base_power(gen, NU)
+    @test bp_nu isa Unitful.Quantity
+    @test Unitful.ustrip(bp_nu) ≈ device_base
+    # Not double-wrapped: no `device_base * MVA * MVA`.
+    @test Unitful.unit(bp_nu) == Unitful.unit(1.0 * MVA)
+
+    bp_mw = get_base_power(gen, MW)
+    @test bp_mw isa Unitful.Quantity
+    @test Unitful.ustrip(MW, bp_mw) ≈ device_base
+
+    bp_su = get_base_power(gen, SU)
+    @test bp_su isa RelativeQuantity
+    @test ustrip(bp_su) ≈ device_base / system_base
+
+    # DU is self-referential: base_power in device-base pu is always 1.
+    bp_du = get_base_power(gen, DU)
+    @test bp_du isa RelativeQuantity
+    @test ustrip(bp_du) == 1.0
+
+    # Float64 fast path returns bare Float64 in system base (like other getters).
+    bp_f64 = get_base_power(gen, Float64)
+    @test bp_f64 isa Float64
+    @test bp_f64 ≈ device_base / system_base
+
+    # Components with no base_power field fall back to system base, so DU == SU == 1.
+    bus = first(get_components(ACBus, sys))
+    @test ustrip(get_base_power(bus, SU)) ≈ 1.0
+    @test Unitful.ustrip(get_base_power(bus, NU)) ≈ system_base
+
+    # System-level unitful getter mirrors the component version.
+    @test_throws MethodError get_base_power(sys)
+    @test Unitful.ustrip(get_base_power(sys, NU)) ≈ system_base
+    @test ustrip(get_base_power(sys, SU)) == 1.0
+    @test get_base_power(sys, Float64) ≈ system_base
+end
+
 # TODO: re-enable once PowerSystemCaseBuilder no longer relies on PSY parsers
 # (PSB.build_system uses PSY.PowerSystemTableData internally).
 # @testset "Test adding component with zero base power" begin
