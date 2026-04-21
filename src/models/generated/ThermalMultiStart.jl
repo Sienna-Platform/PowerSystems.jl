@@ -190,8 +190,8 @@ get_start_time_limits(value::ThermalMultiStart) = value.start_time_limits
 get_start_types(value::ThermalMultiStart) = value.start_types
 """Get [`ThermalMultiStart`](@ref) `operation_cost`."""
 get_operation_cost(value::ThermalMultiStart) = value.operation_cost
-"""Get [`ThermalMultiStart`](@ref) `base_power`."""
-get_base_power(value::ThermalMultiStart) = value.base_power
+
+_get_base_power(value::ThermalMultiStart) = value.base_power
 """Get [`ThermalMultiStart`](@ref) `services`."""
 get_services(value::ThermalMultiStart) = value.services
 """Get [`ThermalMultiStart`](@ref) `time_at_status`."""

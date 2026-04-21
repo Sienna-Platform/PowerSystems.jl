@@ -103,8 +103,8 @@ InfrastructureSystems.display_units_arg(::typeof(get_rating), ::Type{ Synchronou
 """Get [`SynchronousCondenser`](@ref) `reactive_power_limits`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_reactive_power_limits(value::SynchronousCondenser, units) = get_value(value, Val(:reactive_power_limits), Val(:mva), units)
 InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_limits), ::Type{ SynchronousCondenser }) = InfrastructureSystems.SU
-"""Get [`SynchronousCondenser`](@ref) `base_power`."""
-get_base_power(value::SynchronousCondenser) = value.base_power
+
+_get_base_power(value::SynchronousCondenser) = value.base_power
 """Get [`SynchronousCondenser`](@ref) `active_power_losses`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_active_power_losses(value::SynchronousCondenser, units) = get_value(value, Val(:active_power_losses), Val(:mva), units)
 InfrastructureSystems.display_units_arg(::typeof(get_active_power_losses), ::Type{ SynchronousCondenser }) = InfrastructureSystems.SU

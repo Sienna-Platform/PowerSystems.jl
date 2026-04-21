@@ -164,8 +164,8 @@ InfrastructureSystems.display_units_arg(::typeof(get_active_power_limits), ::Typ
 """Get [`HydroTurbine`](@ref) `reactive_power_limits`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_reactive_power_limits(value::HydroTurbine, units) = get_value(value, Val(:reactive_power_limits), Val(:mva), units)
 InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_limits), ::Type{ HydroTurbine }) = InfrastructureSystems.SU
-"""Get [`HydroTurbine`](@ref) `base_power`."""
-get_base_power(value::HydroTurbine) = value.base_power
+
+_get_base_power(value::HydroTurbine) = value.base_power
 """Get [`HydroTurbine`](@ref) `operation_cost`."""
 get_operation_cost(value::HydroTurbine) = value.operation_cost
 """Get [`HydroTurbine`](@ref) `powerhouse_elevation`."""

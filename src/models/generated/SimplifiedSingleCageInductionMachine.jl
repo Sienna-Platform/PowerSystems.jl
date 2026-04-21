@@ -144,8 +144,8 @@ get_H(value::SimplifiedSingleCageInductionMachine) = value.H
 get_A(value::SimplifiedSingleCageInductionMachine) = value.A
 """Get [`SimplifiedSingleCageInductionMachine`](@ref) `B`."""
 get_B(value::SimplifiedSingleCageInductionMachine) = value.B
-"""Get [`SimplifiedSingleCageInductionMachine`](@ref) `base_power`."""
-get_base_power(value::SimplifiedSingleCageInductionMachine) = value.base_power
+
+_get_base_power(value::SimplifiedSingleCageInductionMachine) = value.base_power
 """Get [`SimplifiedSingleCageInductionMachine`](@ref) `ext`."""
 get_ext(value::SimplifiedSingleCageInductionMachine) = value.ext
 """Get [`SimplifiedSingleCageInductionMachine`](@ref) `C`."""

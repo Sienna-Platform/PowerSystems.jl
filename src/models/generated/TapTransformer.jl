@@ -156,8 +156,8 @@ get_tap(value::TapTransformer) = value.tap
 """Get [`TapTransformer`](@ref) `rating`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_rating(value::TapTransformer, units) = get_value(value, Val(:rating), Val(:mva), units)
 InfrastructureSystems.display_units_arg(::typeof(get_rating), ::Type{ TapTransformer }) = InfrastructureSystems.SU
-"""Get [`TapTransformer`](@ref) `base_power`."""
-get_base_power(value::TapTransformer) = value.base_power
+
+_get_base_power(value::TapTransformer) = value.base_power
 """Get [`TapTransformer`](@ref) `base_voltage_primary`."""
 get_base_voltage_primary(value::TapTransformer) = value.base_voltage_primary
 """Get [`TapTransformer`](@ref) `base_voltage_secondary`."""

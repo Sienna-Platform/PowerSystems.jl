@@ -121,8 +121,8 @@ InfrastructureSystems.display_units_arg(::typeof(get_reactive_power), ::Type{ Ex
 get_α(value::ExponentialLoad) = value.α
 """Get [`ExponentialLoad`](@ref) `β`."""
 get_β(value::ExponentialLoad) = value.β
-"""Get [`ExponentialLoad`](@ref) `base_power`."""
-get_base_power(value::ExponentialLoad) = value.base_power
+
+_get_base_power(value::ExponentialLoad) = value.base_power
 """Get [`ExponentialLoad`](@ref) `max_active_power`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_max_active_power(value::ExponentialLoad, units) = get_value(value, Val(:max_active_power), Val(:mva), units)
 InfrastructureSystems.display_units_arg(::typeof(get_max_active_power), ::Type{ ExponentialLoad }) = InfrastructureSystems.SU

@@ -143,8 +143,8 @@ get_name(value::StandardLoad) = value.name
 get_available(value::StandardLoad) = value.available
 """Get [`StandardLoad`](@ref) `bus`."""
 get_bus(value::StandardLoad) = value.bus
-"""Get [`StandardLoad`](@ref) `base_power`."""
-get_base_power(value::StandardLoad) = value.base_power
+
+_get_base_power(value::StandardLoad) = value.base_power
 """Get [`StandardLoad`](@ref) `constant_active_power`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_constant_active_power(value::StandardLoad, units) = get_value(value, Val(:constant_active_power), Val(:mva), units)
 InfrastructureSystems.display_units_arg(::typeof(get_constant_active_power), ::Type{ StandardLoad }) = InfrastructureSystems.SU

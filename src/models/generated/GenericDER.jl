@@ -338,8 +338,8 @@ get_Pfa_ref(value::GenericDER) = value.Pfa_ref
 get_Q_ref(value::GenericDER) = value.Q_ref
 """Get [`GenericDER`](@ref) `P_ref`."""
 get_P_ref(value::GenericDER) = value.P_ref
-"""Get [`GenericDER`](@ref) `base_power`."""
-get_base_power(value::GenericDER) = value.base_power
+
+_get_base_power(value::GenericDER) = value.base_power
 """Get [`GenericDER`](@ref) `states`."""
 get_states(value::GenericDER) = value.states
 """Get [`GenericDER`](@ref) `n_states`."""

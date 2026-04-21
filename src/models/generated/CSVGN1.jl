@@ -142,8 +142,8 @@ get_Vmax(value::CSVGN1) = value.Vmax
 get_Vmin(value::CSVGN1) = value.Vmin
 """Get [`CSVGN1`](@ref) `CBase`."""
 get_CBase(value::CSVGN1) = value.CBase
-"""Get [`CSVGN1`](@ref) `base_power`."""
-get_base_power(value::CSVGN1) = value.base_power
+
+_get_base_power(value::CSVGN1) = value.base_power
 """Get [`CSVGN1`](@ref) `ext`."""
 get_ext(value::CSVGN1) = value.ext
 """Get [`CSVGN1`](@ref) `R_th`."""

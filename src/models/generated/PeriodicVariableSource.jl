@@ -114,8 +114,8 @@ get_internal_angle_bias(value::PeriodicVariableSource) = value.internal_angle_bi
 get_internal_angle_frequencies(value::PeriodicVariableSource) = value.internal_angle_frequencies
 """Get [`PeriodicVariableSource`](@ref) `internal_angle_coefficients`."""
 get_internal_angle_coefficients(value::PeriodicVariableSource) = value.internal_angle_coefficients
-"""Get [`PeriodicVariableSource`](@ref) `base_power`."""
-get_base_power(value::PeriodicVariableSource) = value.base_power
+
+_get_base_power(value::PeriodicVariableSource) = value.base_power
 """Get [`PeriodicVariableSource`](@ref) `states`."""
 get_states(value::PeriodicVariableSource) = value.states
 """Get [`PeriodicVariableSource`](@ref) `n_states`."""

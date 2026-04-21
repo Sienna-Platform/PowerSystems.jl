@@ -120,8 +120,8 @@ InfrastructureSystems.display_units_arg(::typeof(get_rating), ::Type{ Interconne
 """Get [`InterconnectingConverter`](@ref) `active_power_limits`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_active_power_limits(value::InterconnectingConverter, units) = get_value(value, Val(:active_power_limits), Val(:mva), units)
 InfrastructureSystems.display_units_arg(::typeof(get_active_power_limits), ::Type{ InterconnectingConverter }) = InfrastructureSystems.SU
-"""Get [`InterconnectingConverter`](@ref) `base_power`."""
-get_base_power(value::InterconnectingConverter) = value.base_power
+
+_get_base_power(value::InterconnectingConverter) = value.base_power
 """Get [`InterconnectingConverter`](@ref) `dc_current`."""
 get_dc_current(value::InterconnectingConverter) = value.dc_current
 """Get [`InterconnectingConverter`](@ref) `max_dc_current`."""

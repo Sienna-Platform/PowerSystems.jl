@@ -107,8 +107,8 @@ InfrastructureSystems.display_units_arg(::typeof(get_active_power), ::Type{ Powe
 """Get [`PowerLoad`](@ref) `reactive_power`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_reactive_power(value::PowerLoad, units) = get_value(value, Val(:reactive_power), Val(:mva), units)
 InfrastructureSystems.display_units_arg(::typeof(get_reactive_power), ::Type{ PowerLoad }) = InfrastructureSystems.SU
-"""Get [`PowerLoad`](@ref) `base_power`."""
-get_base_power(value::PowerLoad) = value.base_power
+
+_get_base_power(value::PowerLoad) = value.base_power
 """Get [`PowerLoad`](@ref) `max_active_power`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_max_active_power(value::PowerLoad, units) = get_value(value, Val(:max_active_power), Val(:mva), units)
 InfrastructureSystems.display_units_arg(::typeof(get_max_active_power), ::Type{ PowerLoad }) = InfrastructureSystems.SU

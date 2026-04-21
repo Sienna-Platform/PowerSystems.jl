@@ -153,8 +153,8 @@ get_ramp_limits(value::HydroDispatch, units) = get_value(value, Val(:ramp_limits
 InfrastructureSystems.display_units_arg(::typeof(get_ramp_limits), ::Type{ HydroDispatch }) = InfrastructureSystems.SU
 """Get [`HydroDispatch`](@ref) `time_limits`."""
 get_time_limits(value::HydroDispatch) = value.time_limits
-"""Get [`HydroDispatch`](@ref) `base_power`."""
-get_base_power(value::HydroDispatch) = value.base_power
+
+_get_base_power(value::HydroDispatch) = value.base_power
 """Get [`HydroDispatch`](@ref) `status`."""
 get_status(value::HydroDispatch) = value.status
 """Get [`HydroDispatch`](@ref) `time_at_status`."""

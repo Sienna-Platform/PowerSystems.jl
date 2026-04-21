@@ -331,8 +331,8 @@ get_ω_ref(value::AggregateDistributedGenerationA) = value.ω_ref
 get_Q_ref(value::AggregateDistributedGenerationA) = value.Q_ref
 """Get [`AggregateDistributedGenerationA`](@ref) `P_ref`."""
 get_P_ref(value::AggregateDistributedGenerationA) = value.P_ref
-"""Get [`AggregateDistributedGenerationA`](@ref) `base_power`."""
-get_base_power(value::AggregateDistributedGenerationA) = value.base_power
+
+_get_base_power(value::AggregateDistributedGenerationA) = value.base_power
 """Get [`AggregateDistributedGenerationA`](@ref) `ext`."""
 get_ext(value::AggregateDistributedGenerationA) = value.ext
 """Get [`AggregateDistributedGenerationA`](@ref) `states`."""

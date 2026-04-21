@@ -112,8 +112,8 @@ InfrastructureSystems.display_units_arg(::typeof(get_active_power), ::Type{ Moto
 """Get [`MotorLoad`](@ref) `reactive_power`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_reactive_power(value::MotorLoad, units) = get_value(value, Val(:reactive_power), Val(:mva), units)
 InfrastructureSystems.display_units_arg(::typeof(get_reactive_power), ::Type{ MotorLoad }) = InfrastructureSystems.SU
-"""Get [`MotorLoad`](@ref) `base_power`."""
-get_base_power(value::MotorLoad) = value.base_power
+
+_get_base_power(value::MotorLoad) = value.base_power
 """Get [`MotorLoad`](@ref) `rating`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_rating(value::MotorLoad, units) = get_value(value, Val(:rating), Val(:mva), units)
 InfrastructureSystems.display_units_arg(::typeof(get_rating), ::Type{ MotorLoad }) = InfrastructureSystems.SU

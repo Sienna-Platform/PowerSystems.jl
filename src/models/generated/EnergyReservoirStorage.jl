@@ -187,8 +187,8 @@ InfrastructureSystems.display_units_arg(::typeof(get_reactive_power), ::Type{ En
 """Get [`EnergyReservoirStorage`](@ref) `reactive_power_limits`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_reactive_power_limits(value::EnergyReservoirStorage, units) = get_value(value, Val(:reactive_power_limits), Val(:mva), units)
 InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_limits), ::Type{ EnergyReservoirStorage }) = InfrastructureSystems.SU
-"""Get [`EnergyReservoirStorage`](@ref) `base_power`."""
-get_base_power(value::EnergyReservoirStorage) = value.base_power
+
+_get_base_power(value::EnergyReservoirStorage) = value.base_power
 """Get [`EnergyReservoirStorage`](@ref) `operation_cost`."""
 get_operation_cost(value::EnergyReservoirStorage) = value.operation_cost
 """Get [`EnergyReservoirStorage`](@ref) `conversion_factor`."""

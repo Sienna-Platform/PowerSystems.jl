@@ -148,8 +148,8 @@ get_name(value::InterruptibleStandardLoad) = value.name
 get_available(value::InterruptibleStandardLoad) = value.available
 """Get [`InterruptibleStandardLoad`](@ref) `bus`."""
 get_bus(value::InterruptibleStandardLoad) = value.bus
-"""Get [`InterruptibleStandardLoad`](@ref) `base_power`."""
-get_base_power(value::InterruptibleStandardLoad) = value.base_power
+
+_get_base_power(value::InterruptibleStandardLoad) = value.base_power
 """Get [`InterruptibleStandardLoad`](@ref) `operation_cost`."""
 get_operation_cost(value::InterruptibleStandardLoad) = value.operation_cost
 """Get [`InterruptibleStandardLoad`](@ref) `conformity`."""

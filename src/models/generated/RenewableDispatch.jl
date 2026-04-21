@@ -131,8 +131,8 @@ InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_limits), ::T
 get_power_factor(value::RenewableDispatch) = value.power_factor
 """Get [`RenewableDispatch`](@ref) `operation_cost`."""
 get_operation_cost(value::RenewableDispatch) = value.operation_cost
-"""Get [`RenewableDispatch`](@ref) `base_power`."""
-get_base_power(value::RenewableDispatch) = value.base_power
+
+_get_base_power(value::RenewableDispatch) = value.base_power
 """Get [`RenewableDispatch`](@ref) `services`."""
 get_services(value::RenewableDispatch) = value.services
 """Get [`RenewableDispatch`](@ref) `dynamic_injector`."""

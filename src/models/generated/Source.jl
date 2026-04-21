@@ -141,8 +141,8 @@ get_X_th(value::Source) = value.X_th
 get_internal_voltage(value::Source) = value.internal_voltage
 """Get [`Source`](@ref) `internal_angle`."""
 get_internal_angle(value::Source) = value.internal_angle
-"""Get [`Source`](@ref) `base_power`."""
-get_base_power(value::Source) = value.base_power
+
+_get_base_power(value::Source) = value.base_power
 """Get [`Source`](@ref) `operation_cost`."""
 get_operation_cost(value::Source) = value.operation_cost
 """Get [`Source`](@ref) `dynamic_injector`."""

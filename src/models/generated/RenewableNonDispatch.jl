@@ -116,8 +116,8 @@ InfrastructureSystems.display_units_arg(::typeof(get_rating), ::Type{ RenewableN
 get_prime_mover_type(value::RenewableNonDispatch) = value.prime_mover_type
 """Get [`RenewableNonDispatch`](@ref) `power_factor`."""
 get_power_factor(value::RenewableNonDispatch) = value.power_factor
-"""Get [`RenewableNonDispatch`](@ref) `base_power`."""
-get_base_power(value::RenewableNonDispatch) = value.base_power
+
+_get_base_power(value::RenewableNonDispatch) = value.base_power
 """Get [`RenewableNonDispatch`](@ref) `services`."""
 get_services(value::RenewableNonDispatch) = value.services
 """Get [`RenewableNonDispatch`](@ref) `dynamic_injector`."""

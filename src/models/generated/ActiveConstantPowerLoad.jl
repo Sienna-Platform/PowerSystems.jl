@@ -193,8 +193,8 @@ get_kiv(value::ActiveConstantPowerLoad) = value.kiv
 get_kpc(value::ActiveConstantPowerLoad) = value.kpc
 """Get [`ActiveConstantPowerLoad`](@ref) `kic`."""
 get_kic(value::ActiveConstantPowerLoad) = value.kic
-"""Get [`ActiveConstantPowerLoad`](@ref) `base_power`."""
-get_base_power(value::ActiveConstantPowerLoad) = value.base_power
+
+_get_base_power(value::ActiveConstantPowerLoad) = value.base_power
 """Get [`ActiveConstantPowerLoad`](@ref) `ext`."""
 get_ext(value::ActiveConstantPowerLoad) = value.ext
 """Get [`ActiveConstantPowerLoad`](@ref) `P_ref`."""

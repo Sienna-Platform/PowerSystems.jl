@@ -126,8 +126,8 @@ InfrastructureSystems.display_units_arg(::typeof(get_max_active_power), ::Type{ 
 """Get [`ShiftablePowerLoad`](@ref) `max_reactive_power`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_max_reactive_power(value::ShiftablePowerLoad, units) = get_value(value, Val(:max_reactive_power), Val(:mva), units)
 InfrastructureSystems.display_units_arg(::typeof(get_max_reactive_power), ::Type{ ShiftablePowerLoad }) = InfrastructureSystems.SU
-"""Get [`ShiftablePowerLoad`](@ref) `base_power`."""
-get_base_power(value::ShiftablePowerLoad) = value.base_power
+
+_get_base_power(value::ShiftablePowerLoad) = value.base_power
 """Get [`ShiftablePowerLoad`](@ref) `load_balance_time_horizon`."""
 get_load_balance_time_horizon(value::ShiftablePowerLoad) = value.load_balance_time_horizon
 """Get [`ShiftablePowerLoad`](@ref) `operation_cost`."""

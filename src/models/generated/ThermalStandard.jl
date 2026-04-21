@@ -163,8 +163,8 @@ get_ramp_limits(value::ThermalStandard, units) = get_value(value, Val(:ramp_limi
 InfrastructureSystems.display_units_arg(::typeof(get_ramp_limits), ::Type{ ThermalStandard }) = InfrastructureSystems.SU
 """Get [`ThermalStandard`](@ref) `operation_cost`."""
 get_operation_cost(value::ThermalStandard) = value.operation_cost
-"""Get [`ThermalStandard`](@ref) `base_power`."""
-get_base_power(value::ThermalStandard) = value.base_power
+
+_get_base_power(value::ThermalStandard) = value.base_power
 """Get [`ThermalStandard`](@ref) `time_limits`."""
 get_time_limits(value::ThermalStandard) = value.time_limits
 """Get [`ThermalStandard`](@ref) `must_run`."""

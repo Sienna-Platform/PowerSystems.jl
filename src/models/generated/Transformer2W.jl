@@ -144,8 +144,8 @@ InfrastructureSystems.display_units_arg(::typeof(get_primary_shunt), ::Type{ Tra
 """Get [`Transformer2W`](@ref) `rating`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_rating(value::Transformer2W, units) = get_value(value, Val(:rating), Val(:mva), units)
 InfrastructureSystems.display_units_arg(::typeof(get_rating), ::Type{ Transformer2W }) = InfrastructureSystems.SU
-"""Get [`Transformer2W`](@ref) `base_power`."""
-get_base_power(value::Transformer2W) = value.base_power
+
+_get_base_power(value::Transformer2W) = value.base_power
 """Get [`Transformer2W`](@ref) `base_voltage_primary`."""
 get_base_voltage_primary(value::Transformer2W) = value.base_voltage_primary
 """Get [`Transformer2W`](@ref) `base_voltage_secondary`."""

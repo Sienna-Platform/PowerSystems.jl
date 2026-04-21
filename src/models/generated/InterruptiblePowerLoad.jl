@@ -118,8 +118,8 @@ InfrastructureSystems.display_units_arg(::typeof(get_max_active_power), ::Type{ 
 """Get [`InterruptiblePowerLoad`](@ref) `max_reactive_power`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_max_reactive_power(value::InterruptiblePowerLoad, units) = get_value(value, Val(:max_reactive_power), Val(:mva), units)
 InfrastructureSystems.display_units_arg(::typeof(get_max_reactive_power), ::Type{ InterruptiblePowerLoad }) = InfrastructureSystems.SU
-"""Get [`InterruptiblePowerLoad`](@ref) `base_power`."""
-get_base_power(value::InterruptiblePowerLoad) = value.base_power
+
+_get_base_power(value::InterruptiblePowerLoad) = value.base_power
 """Get [`InterruptiblePowerLoad`](@ref) `operation_cost`."""
 get_operation_cost(value::InterruptiblePowerLoad) = value.operation_cost
 """Get [`InterruptiblePowerLoad`](@ref) `conformity`."""

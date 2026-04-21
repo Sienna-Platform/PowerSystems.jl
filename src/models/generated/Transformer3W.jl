@@ -354,12 +354,12 @@ InfrastructureSystems.display_units_arg(::typeof(get_r_13), ::Type{ Transformer3
 """Get [`Transformer3W`](@ref) `x_13`. The `units` argument is required (e.g. `SU`, `DU`, `MW`, or `Float64`)."""
 get_x_13(value::Transformer3W, units) = get_value(value, Val(:x_13), Val(:ohm), units)
 InfrastructureSystems.display_units_arg(::typeof(get_x_13), ::Type{ Transformer3W }) = InfrastructureSystems.SU
-"""Get [`Transformer3W`](@ref) `base_power_12`."""
-get_base_power_12(value::Transformer3W) = value.base_power_12
-"""Get [`Transformer3W`](@ref) `base_power_23`."""
-get_base_power_23(value::Transformer3W) = value.base_power_23
-"""Get [`Transformer3W`](@ref) `base_power_13`."""
-get_base_power_13(value::Transformer3W) = value.base_power_13
+
+_get_base_power_12(value::Transformer3W) = value.base_power_12
+
+_get_base_power_23(value::Transformer3W) = value.base_power_23
+
+_get_base_power_13(value::Transformer3W) = value.base_power_13
 """Get [`Transformer3W`](@ref) `base_voltage_primary`."""
 get_base_voltage_primary(value::Transformer3W) = value.base_voltage_primary
 """Get [`Transformer3W`](@ref) `base_voltage_secondary`."""
