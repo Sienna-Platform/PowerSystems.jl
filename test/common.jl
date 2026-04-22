@@ -224,6 +224,8 @@ function create_system_with_outages()
     return sys
 end
 
+# NOTE: This helper builds `test_RTS_GMLC_sys` which depends on PSY.PowerSystemTableData
+# (removed in PSY 6). All callers are currently disabled until PSB no longer requires PSY parsers.
 function create_system_with_subsystems()
     sys = PSB.build_system(
         PSITestSystems,

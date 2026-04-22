@@ -43,7 +43,9 @@ function validate_uuids(obj::T) where {T <: AbstractDict}
     return result
 end
 
-@testset "Test internal values" begin
-    sys_rts = PSB.build_system(PSITestSystems, "test_RTS_GMLC_sys")
-    @test validate_uuids(sys_rts)
-end
+# TODO: re-enable once PowerSystemCaseBuilder no longer relies on PSY parsers
+# (PSB.build_system uses PSY.PowerSystemTableData internally for test_RTS_GMLC_sys).
+# @testset "Test internal values" begin
+#     sys_rts = PSB.build_system(PSITestSystems, "test_RTS_GMLC_sys")
+#     @test validate_uuids(sys_rts)
+# end
