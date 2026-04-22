@@ -81,7 +81,7 @@ Most of the transformer changes are included to bring `PowerSystems.jl` closer t
 
   - All transformers now have additional fields for base quantities needed for the calculation of the impedances in adequate bases. See [Transformer per unit transformations](@ref transformers_pu) for more details.
   - The shunt branch in the transformer now uses a `Complex{Float64}` to model core losses as well as the core inductance.
-  - Shunt allocation in the transformer between the primary and secondary. We now allocate the shunt to the primary following PSSe's convention. See [`this issue`](https://github.com/NREL-Sienna/PowerSystems.jl/issues/1411) for a description of the discrepancy with Matpower. Note that this mostly affect the results reporting between Matpower and PSSe.
+  - Shunt allocation in the transformer between the primary and secondary. We now allocate the shunt to the primary following PSSe's convention. See [`this issue`](https://github.com/Sienna-Platform/PowerSystems.jl/issues/1411) for a description of the discrepancy with Matpower. Note that this mostly affect the results reporting between Matpower and PSSe.
 
 We also added support for [`Transformer3W`](@ref). See [`Handle 3-winding transformer data`](@ref 3wtdata) for more details.
 

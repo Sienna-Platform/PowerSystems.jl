@@ -14,7 +14,7 @@
 
 # ## Defining the Static Data Layer
 # Instead of defining the static data in the [`System`](@ref) manually, we will load an existing three-bus system using
-# [`PowerSystemCaseBuilder.jl`](https://github.com/NREL-Sienna/PowerSystemCaseBuilder.jl)
+# [`PowerSystemCaseBuilder.jl`](https://github.com/Sienna-Platform/PowerSystemCaseBuilder.jl)
 # to use as a starting point.
 # Start by importing these packages:
 

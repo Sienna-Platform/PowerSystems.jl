@@ -157,6 +157,31 @@ function _get_pm_branch_name(device_dict, bus_f::ACBus, bus_t::ACBus)
     return "$(get_name(bus_f))-$(get_name(bus_t))-i_$index"
 end
 
+function _is_psse_branch_source_id(device_dict::Dict)
+    if !haskey(device_dict, "source_id") || isempty(device_dict["source_id"])
+        return false
+    end
+
+    source_type = device_dict["source_id"][1]
+    return source_type in ("branch", "switch", "breaker", "transformer")
+end
+
+function _get_pm_branch_name_with_counter!(
+    device_dict::Dict,
+    bus_f::ACBus,
+    bus_t::ACBus,
+    branch_pair_counts::Dict{Tuple{String, String}, Int},
+)
+    if _is_psse_branch_source_id(device_dict)
+        pair_key = (get_name(bus_f), get_name(bus_t))
+        branch_pair_counts[pair_key] = get(branch_pair_counts, pair_key, 0) + 1
+        index = branch_pair_counts[pair_key]
+        return "$(pair_key[1])-$(pair_key[2])-i_$(index)"
+    end
+
+    return _get_pm_branch_name(device_dict, bus_f, bus_t)
+end
+
 """
 Internal 3WT name retrieval from pm2ps_dict
 """
@@ -1665,14 +1690,23 @@ function read_branch!(
         return
     end
 
-    _get_name = get(kwargs, :branch_name_formatter, _get_pm_branch_name)
+    _get_name = get(kwargs, :branch_name_formatter, nothing)
     ict_instances = _impedance_correction_table_lookup(data)
+    branch_pair_counts = Dict{Tuple{String, String}, Int}()
 
     source_type = data["source_type"]
     for d in values(data["branch"])
         bus_f = bus_number_to_bus[d["f_bus"]]
         bus_t = bus_number_to_bus[d["t_bus"]]
-        name = _get_name(d, bus_f, bus_t)
+        name = if isnothing(_get_name)
+            if source_type == "pti"
+                _get_pm_branch_name_with_counter!(d, bus_f, bus_t, branch_pair_counts)
+            else
+                _get_pm_branch_name(d, bus_f, bus_t)
+            end
+        else
+            _get_name(d, bus_f, bus_t)
+        end
         value = make_branch(name, d, bus_f, bus_t, source_type; kwargs...)
 
         if !isnothing(value)

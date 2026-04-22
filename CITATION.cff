@@ -15,7 +15,7 @@ title: "PowerSystems.jl — A power system data management package for large sca
 version: 1.0.0
 doi: 10.5281/zenodo.1234
 date-released: 2021-09-21
-url: "https://github.com/NREL-Sienna/PowerSystems.jl"
+url: "https://github.com/Sienna-Platform/PowerSystems.jl"
 preferred-citation:
   type: article
   authors:
