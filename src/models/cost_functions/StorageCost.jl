@@ -54,34 +54,34 @@ function StorageCost(::Nothing)
     StorageCost()
 end
 
-"""Get [`StorageCost`](@ref) `charge_variable_cost`."""
+"""Return the `charge_variable_cost` field of [`StorageCost`](@ref)."""
 get_charge_variable_cost(value::StorageCost) = value.charge_variable_cost
-"""Get [`StorageCost`](@ref) `discharge_variable_cost`."""
+"""Return the `discharge_variable_cost` field of [`StorageCost`](@ref)."""
 get_discharge_variable_cost(value::StorageCost) = value.discharge_variable_cost
-"""Get [`StorageCost`](@ref) `fixed`."""
+"""Return the `fixed` field of [`StorageCost`](@ref)."""
 get_fixed(value::StorageCost) = value.fixed
-"""Get [`StorageCost`](@ref) `start_up`."""
+"""Return the `start_up` field of [`StorageCost`](@ref)."""
 get_start_up(value::StorageCost) = value.start_up
-"""Get [`StorageCost`](@ref) `shut_down`."""
+"""Return the `shut_down` field of [`StorageCost`](@ref)."""
 get_shut_down(value::StorageCost) = value.shut_down
-"""Get [`StorageCost`](@ref) `energy_shortage_cost`."""
+"""Return the `energy_shortage_cost` field of [`StorageCost`](@ref)."""
 get_energy_shortage_cost(value::StorageCost) = value.energy_shortage_cost
-"""Get [`StorageCost`](@ref) `energy_surplus_cost`."""
+"""Return the `energy_surplus_cost` field of [`StorageCost`](@ref)."""
 get_energy_surplus_cost(value::StorageCost) = value.energy_surplus_cost
 
-"""Set [`StorageCost`](@ref) `charge_variable_cost`."""
+"""Set the `charge_variable_cost` field of [`StorageCost`](@ref)."""
 set_charge_variable_cost!(value::StorageCost, val) = value.charge_variable_cost = val
-"""Set [`StorageCost`](@ref) `discharge_variable_cost`."""
+"""Set the `discharge_variable_cost` field of [`StorageCost`](@ref)."""
 set_discharge_variable_cost!(value::StorageCost, val) = value.discharge_variable_cost = val
-"""Set [`StorageCost`](@ref) `fixed`."""
+"""Set the `fixed` field of [`StorageCost`](@ref)."""
 set_fixed!(value::StorageCost, val) = value.fixed = val
-"""Set [`StorageCost`](@ref) `start_up`."""
+"""Set the `start_up` field of [`StorageCost`](@ref)."""
 set_start_up!(value::StorageCost, val) = value.start_up = val
-"""Set [`StorageCost`](@ref) `shut_down`."""
+"""Set the `shut_down` field of [`StorageCost`](@ref)."""
 set_shut_down!(value::StorageCost, val) = value.shut_down = val
-"""Set [`StorageCost`](@ref) `energy_shortage_cost`."""
+"""Set the `energy_shortage_cost` field of [`StorageCost`](@ref)."""
 set_energy_shortage_cost!(value::StorageCost, val) =
     value.energy_shortage_cost = val
-"""Set [`StorageCost`](@ref) `energy_surplus_cost`."""
+"""Set the `energy_surplus_cost` field of [`StorageCost`](@ref)."""
 set_energy_surplus_cost!(value::StorageCost, val) =
     value.energy_surplus_cost = val

@@ -24,7 +24,15 @@ See also: [`Generator`](@ref), [`HydroUnit`](@ref), [`HydroReservoir`](@ref)
 """
 abstract type HydroGen <: Generator end
 
-""" Supertype for all Hydropower generation technologies that are represented as units (i.e. HydroTurbine and HydroPumpTurbine)"""
+"""
+    HydroUnit
+
+Supertype for all hydropower generation technologies represented as turbine-based units.
+
+Concrete subtypes include [`HydroTurbine`](@ref) and [`HydroPumpTurbine`](@ref).
+
+See also: [`HydroGen`](@ref), [`HydroReservoir`](@ref)
+"""
 abstract type HydroUnit <: HydroGen end
 
 """
@@ -63,6 +71,9 @@ end
 Return the maximum active power for a [`RenewableGen`](@ref) in per unit on the device base,
 calculated as [`get_rating`](@ref) × [`get_power_factor`](@ref).
 
+# Arguments
+- `d::RenewableGen`: The renewable generation device.
+
 See also: [`get_max_reactive_power`](@ref get_max_reactive_power(d::RenewableGen))
 """
 function get_max_active_power(d::RenewableGen)
@@ -72,6 +83,9 @@ end
 """
 Return the maximum reactive power for a [`RenewableGen`](@ref) in per unit on the device base,
 calculated as [`get_rating`](@ref) × sin(acos([`get_power_factor`](@ref))).
+
+# Arguments
+- `d::RenewableGen`: The renewable generation device.
 
 See also: [`get_max_active_power`](@ref get_max_active_power(d::RenewableGen))
 """

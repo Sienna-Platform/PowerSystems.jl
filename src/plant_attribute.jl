@@ -1,4 +1,6 @@
 """
+    PowerPlant
+
 Supertype for power plant supplemental attributes that group generating units.
 
 Concrete subtypes include [`ThermalPowerPlant`](@ref), [`HydroPowerPlant`](@ref),
@@ -7,7 +9,7 @@ Concrete subtypes include [`ThermalPowerPlant`](@ref), [`HydroPowerPlant`](@ref)
 """
 abstract type PowerPlant <: SupplementalAttribute end
 
-"""Get `internal`."""
+"""Return the `internal` field of the [`PowerPlant`](@ref)."""
 get_internal(x::PowerPlant) = x.internal
 
 """
@@ -83,11 +85,11 @@ function ThermalPowerPlant(;
     return ThermalPowerPlant(name, shaft_map, reverse_shaft_map, internal)
 end
 
-"""Get [`ThermalPowerPlant`](@ref) `name`."""
+"""Return the `name` field of [`ThermalPowerPlant`](@ref)."""
 get_name(value::ThermalPowerPlant) = value.name
-"""Get [`ThermalPowerPlant`](@ref) `shaft_map`: mapping from shaft index to the UUIDs of generators connected to that shaft."""
+"""Return the `shaft_map` field of [`ThermalPowerPlant`](@ref): mapping from shaft index to the UUIDs of generators connected to that shaft."""
 get_shaft_map(value::ThermalPowerPlant) = value.shaft_map
-"""Get [`ThermalPowerPlant`](@ref) `reverse_shaft_map`: reverse mapping from a generator's UUID to its shaft index."""
+"""Return the `reverse_shaft_map` field of [`ThermalPowerPlant`](@ref): reverse mapping from a generator's UUID to its shaft index."""
 get_reverse_shaft_map(value::ThermalPowerPlant) = value.reverse_shaft_map
 
 """
@@ -227,20 +229,20 @@ function CombinedCycleBlock(;
     )
 end
 
-"""Get [`CombinedCycleBlock`](@ref) `name`."""
+"""Return the `name` field of [`CombinedCycleBlock`](@ref)."""
 get_name(value::CombinedCycleBlock) = value.name
-"""Get [`CombinedCycleBlock`](@ref) `configuration`."""
+"""Return the `configuration` field of [`CombinedCycleBlock`](@ref)."""
 get_configuration(value::CombinedCycleBlock) = value.configuration
-"""Get [`CombinedCycleBlock`](@ref) `heat_recovery_to_steam_factor`."""
+"""Return the `heat_recovery_to_steam_factor` field of [`CombinedCycleBlock`](@ref)."""
 get_heat_recovery_to_steam_factor(value::CombinedCycleBlock) =
     value.heat_recovery_to_steam_factor
-"""Get [`CombinedCycleBlock`](@ref) `hrsg_ct_map`: mapping from HRSG index to the UUIDs of combustion turbines (CT) feeding that HRSG."""
+"""Return the `hrsg_ct_map` field of [`CombinedCycleBlock`](@ref): mapping from HRSG index to the UUIDs of combustion turbines (CT) feeding that HRSG."""
 get_hrsg_ct_map(value::CombinedCycleBlock) = value.hrsg_ct_map
-"""Get [`CombinedCycleBlock`](@ref) `hrsg_ca_map`: mapping from HRSG index to the UUIDs of combined-cycle steam turbines (CA) driven by that HRSG."""
+"""Return the `hrsg_ca_map` field of [`CombinedCycleBlock`](@ref): mapping from HRSG index to the UUIDs of combined-cycle steam turbines (CA) driven by that HRSG."""
 get_hrsg_ca_map(value::CombinedCycleBlock) = value.hrsg_ca_map
-"""Get [`CombinedCycleBlock`](@ref) `ct_hrsg_map`: reverse mapping from a combustion turbine's (CT) UUID to the indices of HRSGs it feeds."""
+"""Return the `ct_hrsg_map` field of [`CombinedCycleBlock`](@ref): reverse mapping from a combustion turbine's (CT) UUID to the indices of HRSGs it feeds."""
 get_ct_hrsg_map(value::CombinedCycleBlock) = value.ct_hrsg_map
-"""Get [`CombinedCycleBlock`](@ref) `ca_hrsg_map`: reverse mapping from a combined-cycle steam turbine's (CA) UUID to the indices of HRSGs that supply it."""
+"""Return the `ca_hrsg_map` field of [`CombinedCycleBlock`](@ref): reverse mapping from a combined-cycle steam turbine's (CA) UUID to the indices of HRSGs that supply it."""
 get_ca_hrsg_map(value::CombinedCycleBlock) = value.ca_hrsg_map
 
 """
@@ -349,14 +351,14 @@ function CombinedCycleFractional(;
     )
 end
 
-"""Get [`CombinedCycleFractional`](@ref) `name`."""
+"""Return the `name` field of [`CombinedCycleFractional`](@ref)."""
 get_name(value::CombinedCycleFractional) = value.name
-"""Get [`CombinedCycleFractional`](@ref) `configuration`."""
+"""Return the `configuration` field of [`CombinedCycleFractional`](@ref)."""
 get_configuration(value::CombinedCycleFractional) = value.configuration
-"""Get [`CombinedCycleFractional`](@ref) `operation_exclusion_map`: mapping from exclusion group index to the UUIDs of units in that group; only one unit per group may operate simultaneously."""
+"""Return the `operation_exclusion_map` field of [`CombinedCycleFractional`](@ref): mapping from exclusion group index to the UUIDs of units in that group; only one unit per group may operate simultaneously."""
 get_operation_exclusion_map(value::CombinedCycleFractional) =
     value.operation_exclusion_map
-"""Get [`CombinedCycleFractional`](@ref) `inverse_operation_exclusion_map`: reverse mapping from a unit's UUID to its exclusion group index."""
+"""Return the `inverse_operation_exclusion_map` field of [`CombinedCycleFractional`](@ref): reverse mapping from a unit's UUID to its exclusion group index."""
 get_inverse_operation_exclusion_map(value::CombinedCycleFractional) =
     value.inverse_operation_exclusion_map
 
@@ -431,11 +433,11 @@ function HydroPowerPlant(;
     return HydroPowerPlant(name, penstock_map, reverse_penstock_map, internal)
 end
 
-"""Get [`HydroPowerPlant`](@ref) `name`."""
+"""Return the `name` field of [`HydroPowerPlant`](@ref)."""
 get_name(value::HydroPowerPlant) = value.name
-"""Get [`HydroPowerPlant`](@ref) `penstock_map`: mapping from penstock index to the UUIDs of generators connected to that penstock."""
+"""Return the `penstock_map` field of [`HydroPowerPlant`](@ref): mapping from penstock index to the UUIDs of generators connected to that penstock."""
 get_penstock_map(value::HydroPowerPlant) = value.penstock_map
-"""Get [`HydroPowerPlant`](@ref) `reverse_penstock_map`: reverse mapping from a generator's UUID to its penstock index."""
+"""Return the `reverse_penstock_map` field of [`HydroPowerPlant`](@ref): reverse mapping from a generator's UUID to its penstock index."""
 get_reverse_penstock_map(value::HydroPowerPlant) = value.reverse_penstock_map
 
 """
@@ -509,11 +511,11 @@ function RenewablePowerPlant(;
     return RenewablePowerPlant(name, pcc_map, reverse_pcc_map, internal)
 end
 
-"""Get [`RenewablePowerPlant`](@ref) `name`."""
+"""Return the `name` field of [`RenewablePowerPlant`](@ref)."""
 get_name(value::RenewablePowerPlant) = value.name
-"""Get [`RenewablePowerPlant`](@ref) `pcc_map`: mapping from PCC (point of common coupling) index to the UUIDs of generators and storage devices connected to that PCC."""
+"""Return the `pcc_map` field of [`RenewablePowerPlant`](@ref): mapping from PCC (point of common coupling) index to the UUIDs of generators and storage devices connected to that PCC."""
 get_pcc_map(value::RenewablePowerPlant) = value.pcc_map
-"""Get [`RenewablePowerPlant`](@ref) `reverse_pcc_map`: reverse mapping from a component's UUID to its PCC index."""
+"""Return the `reverse_pcc_map` field of [`RenewablePowerPlant`](@ref): reverse mapping from a component's UUID to its PCC index."""
 get_reverse_pcc_map(value::RenewablePowerPlant) = value.reverse_pcc_map
 
 """

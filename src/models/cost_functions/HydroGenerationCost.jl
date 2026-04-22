@@ -24,12 +24,12 @@ end
 # Constructor for demo purposes; non-functional.
 HydroGenerationCost(::Nothing) = HydroGenerationCost(zero(CostCurve), 0.0)
 
-"""Get [`HydroGenerationCost`](@ref) `variable`."""
+"""Return the `variable` field of [`HydroGenerationCost`](@ref)."""
 get_variable(value::HydroGenerationCost) = value.variable
-"""Get [`HydroGenerationCost`](@ref) `fixed`."""
+"""Return the `fixed` field of [`HydroGenerationCost`](@ref)."""
 get_fixed(value::HydroGenerationCost) = value.fixed
 
-"""Set [`HydroGenerationCost`](@ref) `variable`."""
+"""Set the `variable` field of [`HydroGenerationCost`](@ref)."""
 set_variable!(value::HydroGenerationCost, val) = value.variable = val
-"""Set [`HydroGenerationCost`](@ref) `fixed`."""
+"""Set the `fixed` field of [`HydroGenerationCost`](@ref)."""
 set_fixed!(value::HydroGenerationCost, val) = value.fixed = val

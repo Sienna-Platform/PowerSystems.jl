@@ -1,4 +1,6 @@
 """
+    Outage
+
 Supertype for outage contingencies representing planned or unplanned equipment outages.
 
 Concrete subtypes include [`GeometricDistributionForcedOutage`](@ref),
@@ -6,15 +8,22 @@ Concrete subtypes include [`GeometricDistributionForcedOutage`](@ref),
 """
 abstract type Outage <: Contingency end
 
+"""
+    UnplannedOutage
+
+Abstract supertype for unplanned (forced) outage events.
+
+See also: [`Outage`](@ref), [`GeometricDistributionForcedOutage`](@ref), [`FixedForcedOutage`](@ref)
+"""
 abstract type UnplannedOutage <: Outage end
 
 """
-All PowerSystems [Outage](@ref) types support time series. This can be overridden for custom 
+All PowerSystems [`Outage`](@ref) types support time series. This can be overridden for custom 
 outage types that do not support time series.
 """
 supports_time_series(::Outage) = true
 
-"""Get `internal`."""
+"""Return the `internal` field of the [`Outage`](@ref)."""
 get_internal(x::Outage) = x.internal
 
 """
@@ -72,10 +81,10 @@ function GeometricDistributionForcedOutage(;
     )
 end
 
-"""Get [`GeometricDistributionForcedOutage`](@ref) `mean_time_to_recovery`."""
+"""Return the `mean_time_to_recovery` field of [`GeometricDistributionForcedOutage`](@ref)."""
 get_mean_time_to_recovery(value::GeometricDistributionForcedOutage) =
     value.mean_time_to_recovery
-"""Get [`GeometricDistributionForcedOutage`](@ref) `outage_transition_probability`."""
+"""Return the `outage_transition_probability` field of [`GeometricDistributionForcedOutage`](@ref)."""
 get_outage_transition_probability(value::GeometricDistributionForcedOutage) =
     value.outage_transition_probability
 
@@ -123,7 +132,7 @@ function PlannedOutage(;
     )
 end
 
-"""Get [`PlannedOutage`](@ref) `outage_schedule`."""
+"""Return the `outage_schedule` field of [`PlannedOutage`](@ref)."""
 get_outage_schedule(value::PlannedOutage) = value.outage_schedule
 
 """
@@ -170,5 +179,5 @@ function FixedForcedOutage(;
     return FixedForcedOutage(outage_status, internal)
 end
 
-"""Get [`FixedForcedOutage`](@ref) `outage_status`."""
+"""Return the `outage_status` field of [`FixedForcedOutage`](@ref)."""
 get_outage_status(value::FixedForcedOutage) = value.outage_status

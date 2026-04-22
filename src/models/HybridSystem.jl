@@ -178,87 +178,87 @@ function set_units_setting!(value::HybridSystem, settings::SystemUnitsSettings)
     return
 end
 
-"""Get [`HybridSystem`](@ref) `available`."""
+"""Return the `available` field of [`HybridSystem`](@ref)."""
 get_available(value::HybridSystem) = value.available
-"""Get [`HybridSystem`](@ref) `status`."""
+"""Return the `status` field of [`HybridSystem`](@ref)."""
 get_status(value::HybridSystem) = value.status
-"""Get [`HybridSystem`](@ref) `bus`."""
+"""Return the `bus` field of [`HybridSystem`](@ref)."""
 get_bus(value::HybridSystem) = value.bus
-"""Get [`HybridSystem`](@ref) `active_power`."""
+"""Return the `active_power` field of [`HybridSystem`](@ref)."""
 get_active_power(value::HybridSystem) = get_value(value, Val(:active_power), Val(:mva))
-"""Get [`HybridSystem`](@ref) `reactive_power`."""
+"""Return the `reactive_power` field of [`HybridSystem`](@ref)."""
 get_reactive_power(value::HybridSystem) = get_value(value, Val(:reactive_power), Val(:mva))
-"""Get [`HybridSystem`](@ref) thermal unit"""
+"""Return the `thermal_unit` field of [`HybridSystem`](@ref)."""
 get_thermal_unit(value::HybridSystem) = value.thermal_unit
-"""Get [`HybridSystem`](@ref) load"""
+"""Return the `electric_load` field of [`HybridSystem`](@ref)."""
 get_electric_load(value::HybridSystem) = value.electric_load
-"""Get [`HybridSystem`](@ref) storage unit"""
+"""Return the `storage` field of [`HybridSystem`](@ref)."""
 get_storage(value::HybridSystem) = value.storage
-"""Get [`HybridSystem`](@ref) renewable unit"""
+"""Return the `renewable_unit` field of [`HybridSystem`](@ref)."""
 get_renewable_unit(value::HybridSystem) = value.renewable_unit
-"""Get [`HybridSystem`](@ref) `interconnection_rating`."""
+"""Return the `interconnection_rating` field of [`HybridSystem`](@ref)."""
 get_interconnection_rating(value::HybridSystem) =
     get_value(value, Val(:interconnection_rating), Val(:mva))
-"""get [`HybridSystem`](@ref) interconnection impedance"""
+"""Return the `interconnection_impedance` field of [`HybridSystem`](@ref)."""
 get_interconnection_impedance(value::HybridSystem) = value.interconnection_impedance
-"""Get [`HybridSystem`](@ref) `input_active_power_limits`."""
+"""Return the `input_active_power_limits` field of [`HybridSystem`](@ref)."""
 get_input_active_power_limits(value::HybridSystem) =
     get_value(value, Val(:input_active_power_limits), Val(:mva))
-"""Get [`HybridSystem`](@ref) `output_active_power_limits`."""
+"""Return the `output_active_power_limits` field of [`HybridSystem`](@ref)."""
 get_output_active_power_limits(value::HybridSystem) =
     get_value(value, Val(:output_active_power_limits), Val(:mva))
-"""Get [`HybridSystem`](@ref) `reactive_power_limits`."""
+"""Return the `reactive_power_limits` field of [`HybridSystem`](@ref)."""
 get_reactive_power_limits(value::HybridSystem) =
     get_value(value, Val(:reactive_power_limits), Val(:mva))
-"""get [`HybridSystem`](@ref) interconnection efficiency"""
+"""Return the `interconnection_efficiency` field of [`HybridSystem`](@ref)."""
 get_interconnection_efficiency(value::HybridSystem) = value.interconnection_efficiency
-"""Get [`HybridSystem`](@ref) `base_power`."""
+"""Return the `base_power` field of [`HybridSystem`](@ref)."""
 get_base_power(value::HybridSystem) = value.base_power
-"""Get [`HybridSystem`](@ref) `operation_cost`."""
+"""Return the `operation_cost` field of [`HybridSystem`](@ref)."""
 get_operation_cost(value::HybridSystem) = value.operation_cost
-"""Get [`HybridSystem`](@ref) `services`."""
+"""Return the `services` field of [`HybridSystem`](@ref)."""
 get_services(value::HybridSystem) = value.services
-"""Get [`HybridSystem`](@ref) `dynamic_injector`."""
+"""Return the `dynamic_injector` field of [`HybridSystem`](@ref)."""
 get_dynamic_injector(value::HybridSystem) = value.dynamic_injector
-"""Get [`HybridSystem`](@ref) `ext`."""
+"""Return the `ext` field of [`HybridSystem`](@ref)."""
 get_ext(value::HybridSystem) = value.ext
 
-"""Get [`HybridSystem`](@ref) `internal`."""
+"""Return the `internal` field of [`HybridSystem`](@ref)."""
 get_internal(value::HybridSystem) = value.internal
 
-"""Set [`HybridSystem`](@ref) `available`."""
+"""Set the `available` field of [`HybridSystem`](@ref)."""
 set_available!(value::HybridSystem, val) = value.available = val
-"""Get [`HybridSystem`](@ref) `status`."""
+"""Set the `status` field of [`HybridSystem`](@ref)."""
 set_status!(value::HybridSystem, val) = value.status = val
-"""Set [`HybridSystem`](@ref) `bus`."""
+"""Set the `bus` field of [`HybridSystem`](@ref)."""
 set_bus!(value::HybridSystem, val) = value.bus = val
-"""Set [`HybridSystem`](@ref) `interconnection_rating`."""
+"""Set the `interconnection_rating` field of [`HybridSystem`](@ref)."""
 set_interconnection_rating!(value::HybridSystem, val) = value.interconnection_rating = val
-"""Set [`HybridSystem`](@ref) `active_power`."""
+"""Set the `active_power` field of [`HybridSystem`](@ref)."""
 set_active_power!(value::HybridSystem, val) = value.active_power = val
-"""Set [`HybridSystem`](@ref) `reactive_power`."""
+"""Set the `reactive_power` field of [`HybridSystem`](@ref)."""
 set_reactive_power!(value::HybridSystem, val) = value.reactive_power = val
-"""set [`HybridSystem`](@ref) interconnection impedance"""
+"""Set the `interconnection_impedance` field of [`HybridSystem`](@ref)."""
 set_interconnection_impedance!(value::HybridSystem, val) =
     value.interconnection_impedance = val
-"""Set [`HybridSystem`](@ref) `input_active_power_limits`."""
+"""Set the `input_active_power_limits` field of [`HybridSystem`](@ref)."""
 set_input_active_power_limits!(value::HybridSystem, val) =
     value.input_active_power_limits = val
-"""Set [`HybridSystem`](@ref) `output_active_power_limits`."""
+"""Set the `output_active_power_limits` field of [`HybridSystem`](@ref)."""
 set_output_active_power_limits!(value::HybridSystem, val) =
     value.output_active_power_limits = val
-"""Set [`HybridSystem`](@ref) `reactive_power_limits`."""
+"""Set the `reactive_power_limits` field of [`HybridSystem`](@ref)."""
 set_reactive_power_limits!(value::HybridSystem, val) = value.reactive_power_limits = val
-"""Set [`HybridSystem`](@ref) `interconnection_efficiency`."""
+"""Set the `interconnection_efficiency` field of [`HybridSystem`](@ref)."""
 set_interconnection_efficiency!(value::HybridSystem, val) =
     value.interconnection_rating = val
-"""Set [`HybridSystem`](@ref) `base_power`."""
+"""Set the `base_power` field of [`HybridSystem`](@ref)."""
 set_base_power!(value::HybridSystem, val) = value.base_power = val
-"""Set [`HybridSystem`](@ref) `operation_cost`."""
+"""Set the `operation_cost` field of [`HybridSystem`](@ref)."""
 set_operation_cost!(value::HybridSystem, val) = value.operation_cost = val
-"""Set [`HybridSystem`](@ref) `services`."""
+"""Set the `services` field of [`HybridSystem`](@ref)."""
 set_services!(value::HybridSystem, val) = value.services = val
-"""Set [`HybridSystem`](@ref) `ext`."""
+"""Set the `ext` field of [`HybridSystem`](@ref)."""
 set_ext!(value::HybridSystem, val) = value.ext = val
 
 """
@@ -283,28 +283,28 @@ function get_subcomponents(hybrid::HybridSystem)
     end
 end
 
-"""Set [`HybridSystem`](@ref) thermal unit"""
+"""Set the `thermal_unit` field of [`HybridSystem`](@ref)."""
 function set_thermal_unit!(hybrid::HybridSystem, val::ThermalGen)
     _raise_if_attached_to_system(hybrid)
     hybrid.thermal_unit = val
     return
 end
 
-"""Set [`HybridSystem`](@ref) load"""
+"""Set the `electric_load` field of [`HybridSystem`](@ref)."""
 function set_electric_load!(hybrid::HybridSystem, val::ElectricLoad)
     _raise_if_attached_to_system(hybrid)
     value.electric_load = val
     return
 end
 
-"""Set [`HybridSystem`](@ref) storage unit"""
+"""Set the `storage` field of [`HybridSystem`](@ref)."""
 function set_storage!(hybrid::HybridSystem, val::Storage)
     _raise_if_attached_to_system(hybrid)
     value.storage = val
     return
 end
 
-"""Set [`HybridSystem`](@ref) renewable unit"""
+"""Set the `renewable_unit` field of [`HybridSystem`](@ref)."""
 function set_renewable_unit!(hybrid::HybridSystem, val::RenewableGen)
     _raise_if_attached_to_system(hybrid)
     value.renewable_unit = val

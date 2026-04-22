@@ -253,7 +253,7 @@ function System(base_power::Float64, buses::Vector{ACBus}, components...; kwargs
     return sys
 end
 
-"""Constructs a non-functional System for demo purposes."""
+"""Construct a non-functional System for demo purposes."""
 function System(
     ::Nothing;
     buses = [
@@ -503,7 +503,7 @@ function filter_components_by_subsystem!(
 end
 
 """
-Serializes a system to a JSON file and saves time series to an HDF5 file.
+Serialize a system to a JSON file and saves time series to an HDF5 file.
 
 # Arguments
 - `sys::System`: system
@@ -568,7 +568,7 @@ end
 IS.assign_new_uuid!(sys::System) = IS.assign_new_uuid_internal!(sys)
 
 """
-Return the internal of the system
+Return the internal of the system.
 """
 IS.get_internal(sys::System) = sys.internal
 
@@ -624,7 +624,7 @@ _set_units_base!(system::System, settings::String) =
     _set_units_base!(system::System, UNIT_SYSTEM_MAPPING[uppercase(settings)])
 
 """
-Sets the units base for the getter functions on the devices. It modifies the behavior of all getter functions
+Set the units base for the getter functions on the devices. It modifies the behavior of all getter functions
 
 # Examples
 ```julia
@@ -643,7 +643,7 @@ end
 _get_units_base(system::System) = system.units_settings.unit_system
 
 """
-Get the system's [unit base](@ref per_unit))
+Return the system's [unit base](@ref per_unit).
 """
 function get_units_base(system::System)
     return string(_get_units_base(system))
@@ -740,7 +740,7 @@ set_description!(sys::System, description::AbstractString) =
     sys.metadata.description = description
 
 """
-Get the description of the system.
+Return the description of the system.
 """
 get_description(sys::System) = sys.metadata.description
 
@@ -1357,7 +1357,7 @@ function IS.add_time_series_from_file_metadata_internal!(
 end
 
 """
-Iterates over all components.
+Iterate over all components.
 
 # Examples
 ```julia
@@ -1514,10 +1514,10 @@ has_component(T::Type{<:Component}, sys::System, name::AbstractString) =
     has_component(sys, T, name)
 
 """
-Get the component of type T with name. Returns nothing if no component matches. If T is an abstract
+Return the component of type T with name. Returns nothing if no component matches. If T is an abstract
 type then the names of components across all subtypes of T must be unique.
 
-See [`get_components_by_name`](@ref) for abstract types with non-unique names across subtypes.
+See also: [`get_components_by_name`](@ref) for abstract types with non-unique names across subtypes.
 
 Throws ArgumentError if T is not a concrete type and there is more than one component with
     requested name
@@ -1576,7 +1576,7 @@ function IS.get_components(sys::System, attribute::SupplementalAttribute)
 end
 
 """
-Get the component by UUID.
+Return the component by UUID.
 """
 IS.get_component(sys::System, uuid::Base.UUID) = IS.get_component(sys.data, uuid)
 IS.get_component(sys::System, uuid::String) = IS.get_component(sys.data, Base.UUID(uuid))
@@ -1599,10 +1599,10 @@ function _get_components_by_name(abstract_types, data::IS.SystemData, name::Abst
 end
 
 """
-Get the components of abstract type T with name. Note that PowerSystems enforces unique
+Return the components of abstract type T with name. Note that PowerSystems enforces unique
 names on each concrete type but not across concrete types.
 
-See [`get_component`](@ref) if the concrete type is known.
+See also: [`get_component`](@ref) if the concrete type is known.
 
 Throws ArgumentError if T is not an abstract type.
 """
@@ -2371,7 +2371,7 @@ function remove_supplemental_attributes!(
 end
 
 """
-Returns an iterator of supplemental attributes. T can be concrete or abstract.
+Return an iterator of supplemental attributes. T can be concrete or abstract.
 Call collect on the result if an array is desired.
 
 # Examples
@@ -2403,19 +2403,12 @@ function get_supplemental_attributes(
 end
 
 """
-    get_associated_supplemental_attributes(obj)
-
-Retrieves supplemental attributes associated with the given object.
-
-This function extracts and returns additional metadata or auxiliary information
-that is linked to the specified object, typically used for extended functionality
-or configuration purposes.
+Return the supplemental attributes of type `attribute_type` associated with components of type `T`.
 
 # Arguments
-- `obj`: The object for which to retrieve associated supplemental attributes
-
-# Returns
-- Collection of supplemental attributes associated with the input object
+- `sys::System`: The system to query.
+- `T::Type`: The component type to match.
+- `attribute_type`: Optional supplemental attribute type to filter by.
 
 # Examples
 ```julia
@@ -2462,7 +2455,7 @@ function get_supplemental_attribute(sys::System, uuid::Base.UUID)
 end
 
 """
-Iterates over all supplemental_attributes.
+Iterate over all supplemental attributes.
 
 # Examples
 ```julia
@@ -2721,7 +2714,7 @@ end
 Check that all AC transmission [`Line`](@ref) and [`MonitoredLine`](@ref) components
 have valid rate values relative to the system base power.
 
-Returns `true` if all values are valid, `false` otherwise.
+Return `true` if all values are valid, `false` otherwise.
 """
 function check_ac_transmission_rate_values(sys::System)
     is_valid = true
@@ -2736,7 +2729,7 @@ function check_ac_transmission_rate_values(sys::System)
 end
 
 """
-Serialize a [System](@ref) instance. Returns a `Dict{String, Any}` 
+Serialize a [`System`](@ref) instance. Return a `Dict{String, Any}` 
 of the form `Dict("data_format_version" => "1.0", "field1" => serialize(sys.field1), ...)`,
 which can then be written to a JSON3 file.
 """
@@ -2756,7 +2749,7 @@ function IS.serialize(sys::T) where {T <: System}
 end
 
 """
-Deserialize a [System](@ref) instance from a JSON3 file; the reverse of [`IS.serialize`](@ref).
+Deserialize a [`System`](@ref) instance from a JSON3 file; the reverse of [`IS.serialize`](@ref).
 """
 function IS.deserialize(
     ::Type{System},
@@ -3787,13 +3780,13 @@ function _validate_or_skip!(sys, component, skip_validation)
 end
 
 """
-Returns counts of time series including attachments to components and supplemental
+Return counts of time series including attachments to components and supplemental
 attributes.
 """
 get_time_series_counts(sys::System) = IS.get_time_series_counts(sys.data)
 
 """
-Checks time series in the system for inconsistencies.
+Check time series in the system for inconsistencies.
 
 For SingleTimeSeries, returns a Tuple of initial_timestamp and length.
 

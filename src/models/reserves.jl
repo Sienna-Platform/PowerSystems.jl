@@ -1,4 +1,6 @@
 """
+    ReserveDirection
+
 Abstract supertype used to specify if a [`Reserve`](@ref) is upwards, downwards, or symmetric.
 
 Subtypes: [`ReserveUp`](@ref), [`ReserveDown`](@ref), [`ReserveSymmetric`](@ref)
@@ -6,7 +8,9 @@ Subtypes: [`ReserveUp`](@ref), [`ReserveDown`](@ref), [`ReserveSymmetric`](@ref)
 abstract type ReserveDirection end
 
 """
-An upwards reserve to increase generation or reduce load
+    ReserveUp
+
+An upwards reserve to increase generation or reduce load.
 
 Upwards reserves are used when total load exceeds its expected level,
 typically due to forecast errors or contingencies.
@@ -18,7 +22,9 @@ See also: [`ReserveDown`](@ref), [`ReserveSymmetric`](@ref)
 abstract type ReserveUp <: ReserveDirection end
 
 """
-A downwards reserve to decrease generation or increase load
+    ReserveDown
+
+A downwards reserve to decrease generation or increase load.
 
 Downwards reserves are used when total load falls below its expected level,
 typically due to forecast errors or contingencies.
@@ -30,8 +36,10 @@ See also: [`ReserveUp`](@ref), [`ReserveSymmetric`](@ref)
 abstract type ReserveDown <: ReserveDirection end
 
 """
+    ReserveSymmetric
+
 A symmetric reserve, procuring the same quantity (MW) of both upwards and downwards
-reserves
+reserves.
 
 Unlike [`ReserveUp`](@ref) and [`ReserveDown`](@ref), which can be used to specify
 different quantities of upwards and downwards reserves independently, `ReserveSymmetric`
@@ -44,6 +52,8 @@ See also: [`ReserveUp`](@ref), [`ReserveDown`](@ref)
 abstract type ReserveSymmetric <: ReserveDirection end
 
 """
+    AbstractReserve
+
 Supertype for all reserve products, both spinning and non-spinning.
 
 Concrete subtypes include [`Reserve`](@ref) (parameterized by [`ReserveDirection`](@ref))
@@ -52,6 +62,8 @@ and [`ReserveNonSpinning`](@ref).
 abstract type AbstractReserve <: Service end
 
 """
+    Reserve{T <: ReserveDirection}
+
 Abstract parametric type for all reserve products, parameterized on direction
 `T <: `[`ReserveDirection`](@ref).
 
@@ -64,6 +76,8 @@ See also: [`ConstantReserve`](@ref), [`VariableReserve`](@ref), [`ReserveDemandC
 abstract type Reserve{T <: ReserveDirection} <: AbstractReserve end
 
 """
+    ReserveNonSpinning
+
 Supertype for non-spinning (quick-start) reserve products.
 
 Non-spinning reserves can be brought online within a short time but are not

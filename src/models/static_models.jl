@@ -1,5 +1,7 @@
 """
-Abstract type for devices that [inject](@ref I) power or current
+    StaticInjection
+
+Abstract type for devices that [inject](@ref I) power or current.
 
 A [static](@ref S) injection is a steady state injection, such as modeling
 the output power of a generator held constant over a five-minute period.
@@ -17,13 +19,13 @@ abstract type StaticInjection <: Device end
 """
 Return false since most devices do not support services by default.
 
-See also [`supports_services` for `StaticInjection`](@ref supports_services(::StaticInjection)),
-[`supports_services` for `ACBranch`](@ref supports_services(::ACBranch)),
-[`supports_services` for `HydroReservoir`](@ref supports_services(::HydroReservoir)),
-[`supports_services` for `DynamicInjection`](@ref supports_services(::DynamicInjection)).
-
 # Arguments
 - `device::Device`: The device.
+
+See also: [`supports_services` for `StaticInjection`](@ref supports_services(::StaticInjection)),
+[`supports_services` for `ACBranch`](@ref supports_services(::ACBranch)),
+[`supports_services` for `HydroReservoir`](@ref supports_services(::HydroReservoir)),
+[`supports_services` for `DynamicInjection`](@ref supports_services(::DynamicInjection))
 """
 function supports_services(::Device)
     return false
@@ -32,24 +34,27 @@ end
 """
 Return true since static injection devices support services.
 
-See also [`supports_services` for `Device`](@ref supports_services(::Device)),
-[`supports_services` for `ACBranch`](@ref supports_services(::ACBranch)),
-[`supports_services` for `HydroReservoir`](@ref supports_services(::HydroReservoir)),
-[`supports_services` for `DynamicInjection`](@ref supports_services(::DynamicInjection)).
-
 # Arguments
 - `device::StaticInjection`: The device.
+
+See also: [`supports_services` for `Device`](@ref supports_services(::Device)),
+[`supports_services` for `ACBranch`](@ref supports_services(::ACBranch)),
+[`supports_services` for `HydroReservoir`](@ref supports_services(::HydroReservoir)),
+[`supports_services` for `DynamicInjection`](@ref supports_services(::DynamicInjection))
 """
 function supports_services(::StaticInjection)
     return true
 end
 
 """
-Return the services attached to a device. Returns an empty vector for devices
-that do not support services.
+Return the services attached to a device.
+
+Returns an empty vector for devices that do not support services.
 
 # Arguments
 - `device::Device`: The device.
+
+See also: [`add_service!`](@ref), [`remove_service!`](@ref), [`has_service`](@ref)
 """
 function get_services(device::Device)
     if !supports_services(device)
@@ -74,11 +79,11 @@ Return the frequency droop of the device's [`DynamicInjection`](@ref) model.
 
 Throws `ArgumentError` if no dynamic injector is attached.
 
-See also [`get_frequency_droop` for `DynamicGenerator`](@ref get_frequency_droop(::DynamicGenerator)),
-[`get_frequency_droop` for `DynamicInjection`](@ref get_frequency_droop(::V) where {V <: DynamicInjection}).
-
 # Arguments
 - `static_injector::StaticInjection`: The static injection device.
+
+See also: [`get_frequency_droop` for `DynamicGenerator`](@ref get_frequency_droop(::DynamicGenerator)),
+[`get_frequency_droop` for `DynamicInjection`](@ref get_frequency_droop(::V) where {V <: DynamicInjection})
 """
 function get_frequency_droop(static_injector::StaticInjection)
     dynamic_injector = get_dynamic_injector(static_injector)

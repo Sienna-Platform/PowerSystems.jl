@@ -85,27 +85,31 @@ abstract type DCBranch <: Branch end
 """
 Return true since AC branches support services.
 
-See also [`supports_services` for `Device`](@ref supports_services(::Device)),
+See also: [`supports_services` for `Device`](@ref supports_services(::Device)),
 [`supports_services` for `StaticInjection`](@ref supports_services(::StaticInjection)),
 [`supports_services` for `HydroReservoir`](@ref supports_services(::HydroReservoir)),
-[`supports_services` for `DynamicInjection`](@ref supports_services(::DynamicInjection)).
+[`supports_services` for `DynamicInjection`](@ref supports_services(::DynamicInjection))
 """
 function supports_services(::ACBranch)
     return true
 end
 
 """
-Return the "from" [`Bus`](@ref) of the branch.
+Return the "from" [`ACBus`](@ref) of the branch.
 
 # Arguments
 - `b::Branch`: The branch.
+
+See also: [`get_to_bus`](@ref), [`get_arc`](@ref)
 """
 get_from_bus(b::Branch) = b.arc.from
 
 """
-Return the "to" [`Bus`](@ref) of the branch.
+Return the "to" [`ACBus`](@ref) of the branch.
 
 # Arguments
 - `b::Branch`: The branch.
+
+See also: [`get_from_bus`](@ref), [`get_arc`](@ref)
 """
 get_to_bus(b::Branch) = b.arc.to

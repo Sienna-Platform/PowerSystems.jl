@@ -369,7 +369,7 @@ function get_services_bid(
 end
 
 """
-Get the fuel cost of a [`HybridSystem`](@ref)'s thermal subunit.
+Return the fuel cost of a [`HybridSystem`](@ref)'s thermal subunit.
 
 [`HybridSystem`](@ref) is a [`StaticInjectionSubsystem`](@ref) that aggregates subunits; fuel cost
 for thermal power comes from the [`ThermalGen`](@ref) subcomponent, not the hybrid's top-level

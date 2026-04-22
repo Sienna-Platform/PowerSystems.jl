@@ -25,16 +25,16 @@ RenewableGenerationCost(variable) = RenewableGenerationCost(; variable)
 # Constructor for demo purposes; non-functional.
 RenewableGenerationCost(::Nothing) = RenewableGenerationCost(zero(CostCurve))
 
-"""Get [`RenewableGenerationCost`](@ref) `variable`."""
+"""Return the `variable` field of [`RenewableGenerationCost`](@ref)."""
 get_variable(value::RenewableGenerationCost) = value.variable
-"""Get [`RenewableGenerationCost`](@ref) `curtailment_cost`."""
+"""Return the `curtailment_cost` field of [`RenewableGenerationCost`](@ref)."""
 get_curtailment_cost(value::RenewableGenerationCost) = value.curtailment_cost
-"""Get [`RenewableGenerationCost`](@ref) `fixed`."""
+"""Return the `fixed` field of [`RenewableGenerationCost`](@ref)."""
 get_fixed(value::RenewableGenerationCost) = value.fixed
 
-"""Set [`RenewableGenerationCost`](@ref) `variable`."""
+"""Set the `variable` field of [`RenewableGenerationCost`](@ref)."""
 set_variable!(value::RenewableGenerationCost, val) = value.variable = val
-"""Set [`RenewableGenerationCost`](@ref) `curtailment_cost`."""
+"""Set the `curtailment_cost` field of [`RenewableGenerationCost`](@ref)."""
 set_curtailment_cost!(value::RenewableGenerationCost, val) = value.curtailment_cost = val
-"""Set [`RenewableGenerationCost`](@ref) `fixed`."""
+"""Set the `fixed` field of [`RenewableGenerationCost`](@ref)."""
 set_fixed!(value::RenewableGenerationCost, val) = value.fixed = val

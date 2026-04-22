@@ -1,4 +1,6 @@
 """
+    DynamicComponent
+
 Abstract type for all sub-components used to compose a [`DynamicInjection`](@ref) device.
 
 Examples include machine models ([`BaseMachine`](@ref)), AVR models ([`AVRFixed`](@ref)),
@@ -9,6 +11,8 @@ See also: [`DynamicInjection`](@ref)
 abstract type DynamicComponent <: DeviceParameter end
 
 """
+    DynamicInjection
+
 Abstract type for all [Dynamic Devices](@ref dynamic_data).
 
 A [dynamic](@ref D) [injection](@ref I) is the continuous time response of a generator,
@@ -24,6 +28,9 @@ abstract type DynamicInjection <: Device end
 
 """
 Return an iterator of all [`DynamicComponent`](@ref) fields of a [`DynamicInjection`](@ref) device.
+
+# Arguments
+- `device::DynamicInjection`: The dynamic injection device.
 """
 function get_dynamic_components(device::T) where {T <: DynamicInjection}
     return (
@@ -35,10 +42,10 @@ end
 """
 Return false since dynamic injection devices do not support services.
 
-See also [`supports_services` for `Device`](@ref supports_services(::Device)),
+See also: [`supports_services` for `Device`](@ref supports_services(::Device)),
 [`supports_services` for `StaticInjection`](@ref supports_services(::StaticInjection)),
 [`supports_services` for `ACBranch`](@ref supports_services(::ACBranch)),
-[`supports_services` for `HydroReservoir`](@ref supports_services(::HydroReservoir)).
+[`supports_services` for `HydroReservoir`](@ref supports_services(::HydroReservoir))
 """
 supports_services(::DynamicInjection) = false
 
@@ -52,6 +59,9 @@ Return the [`StateTypes`](@ref) for each state of a [`DynamicComponent`](@ref).
 
 The default implementation returns `StateTypes.Differential` for all states.
 Subtypes may override this method to specify different state types.
+
+# Arguments
+- `d::DynamicComponent`: The dynamic component.
 """
 function get_states_types(d::DynamicComponent)
     return fill(StateTypes.Differential, get_n_states(d))
@@ -62,8 +72,11 @@ Return the frequency droop of a [`DynamicInjection`](@ref) device.
 
 Throws `ArgumentError` if not implemented for the specific subtype.
 
-See also [`get_frequency_droop` for `StaticInjection`](@ref get_frequency_droop(::StaticInjection)),
-[`get_frequency_droop` for `DynamicGenerator`](@ref get_frequency_droop(::DynamicGenerator)).
+# Arguments
+- `d::DynamicInjection`: The dynamic injection device.
+
+See also: [`get_frequency_droop` for `StaticInjection`](@ref get_frequency_droop(::StaticInjection)),
+[`get_frequency_droop` for `DynamicGenerator`](@ref get_frequency_droop(::DynamicGenerator))
 """
 function get_frequency_droop(::V) where {V <: DynamicInjection}
     throw(

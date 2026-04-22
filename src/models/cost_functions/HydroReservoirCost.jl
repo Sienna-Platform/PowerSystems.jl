@@ -22,19 +22,19 @@ function HydroReservoirCost(::Nothing)
     HydroReservoirCost()
 end
 
-"""Get [`HydroReservoirCost`](@ref) `level_shortage_cost`."""
+"""Return the `level_shortage_cost` field of [`HydroReservoirCost`](@ref)."""
 get_level_shortage_cost(value::HydroReservoirCost) = value.level_shortage_cost
-"""Get [`HydroReservoirCost`](@ref) `level_surplus_cost`."""
+"""Return the `level_surplus_cost` field of [`HydroReservoirCost`](@ref)."""
 get_level_surplus_cost(value::HydroReservoirCost) = value.level_surplus_cost
-"""Get [`HydroReservoirCost`](@ref) `spillage_cost`."""
+"""Return the `spillage_cost` field of [`HydroReservoirCost`](@ref)."""
 get_spillage_cost(value::HydroReservoirCost) = value.spillage_cost
 
-"""Set [`HydroReservoirCost`](@ref) `level_shortage_cost`."""
+"""Set the `level_shortage_cost` field of [`HydroReservoirCost`](@ref)."""
 set_level_shortage_cost!(value::HydroReservoirCost, val) =
     value.level_shortage_cost = val
-"""Set [`HydroReservoirCost`](@ref) `level_surplus_cost`."""
+"""Set the `level_surplus_cost` field of [`HydroReservoirCost`](@ref)."""
 set_level_surplus_cost!(value::HydroReservoirCost, val) =
     value.level_surplus_cost = val
-"""Set [`HydroReservoirCost`](@ref) `spillage_cost`."""
+"""Set the `spillage_cost` field of [`HydroReservoirCost`](@ref)."""
 set_spillage_cost!(value::HydroReservoirCost, val) =
     value.spillage_cost = val

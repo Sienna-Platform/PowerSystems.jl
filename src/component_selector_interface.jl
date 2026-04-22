@@ -3,7 +3,7 @@
 
 # get_components
 """
-Get the components of the [`System`](@ref) that make up the [`ComponentSelector`](@ref).
+Return the components of the [`System`](@ref) that make up the [`ComponentSelector`](@ref).
 Optionally specify a filter function `scope_limiter` as the first argument to limit the
 components that should be considered.
 
@@ -21,7 +21,7 @@ get_components(
     IS.get_components(scope_limiter, selector, sys)
 
 """
-Get the components of the [`System`](@ref) that make up the [`ComponentSelector`](@ref).
+Return the components of the [`System`](@ref) that make up the [`ComponentSelector`](@ref).
 
 # Arguments
 
@@ -33,7 +33,7 @@ get_components(selector::ComponentSelector, sys::System) =
 
 # get_component
 """
-Get the component of the [`System`](@ref) that makes up the
+Return the component of the [`System`](@ref) that makes up the
 [`SingularComponentSelector`](@ref); `nothing` if there is none. Optionally specify a filter
 function `scope_limiter` as the first argument to limit the components that should be
 considered.
@@ -53,7 +53,7 @@ get_component(
     IS.get_component(scope_limiter, selector, sys)
 
 """
-Get the component of the [`System`](@ref) that makes up the
+Return the component of the [`System`](@ref) that makes up the
 [`SingularComponentSelector`](@ref); `nothing` if there is none.
 
 # Arguments
@@ -115,7 +115,7 @@ get_available_component(
 
 # get_groups
 """
-Get the groups that make up the [`ComponentSelector`](@ref). Optionally specify a filter
+Return the groups that make up the [`ComponentSelector`](@ref). Optionally specify a filter
 function `scope_limiter` as the first argument to limit the components that should be
 considered.
 
@@ -133,7 +133,7 @@ get_groups(
     IS.get_groups(scope_limiter, selector, sys)
 
 """
-Get the groups that make up the [`ComponentSelector`](@ref).
+Return the groups that make up the [`ComponentSelector`](@ref).
 
 # Arguments
 

@@ -71,15 +71,15 @@ function ImpedanceCorrectionData(;
     )
 end
 
-"""Get [`ImpedanceCorrectionData`](@ref) `table_number`."""
+"""Return the `table_number` field of [`ImpedanceCorrectionData`](@ref)."""
 get_table_number(value::ImpedanceCorrectionData) = value.table_number
-"""Get [`ImpedanceCorrectionData`](@ref) `impedance_correction_curve`."""
+"""Return the `impedance_correction_curve` field of [`ImpedanceCorrectionData`](@ref)."""
 get_impedance_correction_curve(value::ImpedanceCorrectionData) =
     value.impedance_correction_curve
-"""Get [`ImpedanceCorrectionData`](@ref) `transformer_winding`."""
+"""Return the `transformer_winding` field of [`ImpedanceCorrectionData`](@ref)."""
 get_transformer_winding(value::ImpedanceCorrectionData) = value.transformer_winding
-"""Get [`ImpedanceCorrectionData`](@ref) `transformer_control_mode`."""
+"""Return the `transformer_control_mode` field of [`ImpedanceCorrectionData`](@ref)."""
 get_transformer_control_mode(value::ImpedanceCorrectionData) =
     value.transformer_control_mode
-"""Get [`ImpedanceCorrectionData`](@ref) `internal`."""
+"""Return the `internal` field of [`ImpedanceCorrectionData`](@ref)."""
 get_internal(value::ImpedanceCorrectionData) = value.internal

@@ -1,4 +1,6 @@
 """
+    Service
+
 Abstract supertype for all system services (ancillary services).
 
 Services represent additional requirements and support to ensure reliable electricity
@@ -11,13 +13,15 @@ Subtypes: [`AbstractReserve`](@ref), [`AGC`](@ref), [`TransmissionInterface`](@r
 abstract type Service <: Component end
 
 """
-All PowerSystems [Service](@ref) types support time series. This can be overridden for custom 
-types that do not support time series.
+Return true since all [`Service`](@ref) types support time series by default.
+
+Override this method for custom types that do not support time series.
 """
 supports_time_series(::Service) = true
 
 """
-All PowerSystems [Service](@ref) types support supplemental attributes. This can be overridden for 
-custom service types that do not support supplemental attributes.
+Return true since all [`Service`](@ref) types support supplemental attributes by default.
+
+Override this method for custom service types that do not support supplemental attributes.
 """
 supports_supplemental_attributes(::Service) = true

@@ -3,14 +3,14 @@ Return the system base power for the component.
 
 # Arguments
 - `c::Component`: The component.
+
+See also: [`get_base_power`](@ref)
 """
 function get_system_base_power(c::Component)
     return get_internal(c).units_info.base_value
 end
 
 """
-    get_base_power(c)
-
 Return the base power for the component.
 
 If the component does not have a `base_power` field, returns the system's base power value.
@@ -147,6 +147,8 @@ Return the field value of a component, converted using the system's unit setting
 - `c::Component`: The component.
 - `field::Val{T}`: The field name as a `Val`.
 - `conversion_unit`: The target unit for conversion.
+
+See also: [`set_value`](@ref)
 """
 function get_value(c::Component, ::Val{T}, conversion_unit) where {T}
     value = Base.getproperty(c, T)
@@ -211,6 +213,8 @@ Set the field value of a component, converting from the system's unit settings.
 - `field`: The field name.
 - `val`: The value to set.
 - `conversion_unit`: The unit of the value being set.
+
+See also: [`get_value`](@ref)
 """
 function set_value(c::Component, _, val, conversion_unit)
     return _set_value(c, val, conversion_unit)

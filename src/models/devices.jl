@@ -1,5 +1,11 @@
 """
-This function add a service to the component without checking if the component and the service are attached to the same system
+Add a [`Service`](@ref) to a [`Device`](@ref) without checking that both are attached to the same [`System`](@ref).
+
+# Arguments
+- `device::Device`: The device to which the service is added.
+- `service::Service`: The service to add.
+
+See also: [`add_service!`](@ref)
 """
 function add_service_internal!(device::Device, service::Service)
     services = get_services(device)
@@ -57,11 +63,11 @@ end
 """
 Return true if the service is attached to the device.
 
-See also [`has_service` by type](@ref has_service(::Device, ::Type{T}) where {T <: Service}).
-
 # Arguments
 - `device::Device`: The device.
 - `service::Service`: The service to check.
+
+See also: [`has_service` by type](@ref has_service(::Device, ::Type{T}) where {T <: Service})
 """
 function has_service(device::Device, service::Service)
     for _service in get_services(device)
@@ -78,11 +84,11 @@ Return true if a service of type `T` is attached to the device.
 
 Returns `false` immediately if the device does not support services.
 
-See also [`has_service` by instance](@ref has_service(::Device, ::Service)).
-
 # Arguments
 - `device::Device`: The device.
 - `T::Type{<:Service}`: The service type to check for.
+
+See also: [`has_service` by instance](@ref has_service(::Device, ::Service))
 """
 function has_service(device::Device, ::Type{T}) where {T <: Service}
     if !supports_services(device)
@@ -142,12 +148,12 @@ function clear_services!(device::Device)
 end
 
 """
-Return false since hydro reservoirs cannot provide services.
+Return false since [`HydroReservoir`](@ref) devices cannot provide services.
 
-See also [`supports_services` for `Device`](@ref supports_services(::Device)),
+See also: [`supports_services` for `Device`](@ref supports_services(::Device)),
 [`supports_services` for `StaticInjection`](@ref supports_services(::StaticInjection)),
 [`supports_services` for `ACBranch`](@ref supports_services(::ACBranch)),
-[`supports_services` for `DynamicInjection`](@ref supports_services(::DynamicInjection)).
+[`supports_services` for `DynamicInjection`](@ref supports_services(::DynamicInjection))
 """
 supports_services(::HydroReservoir) = false
 
@@ -173,13 +179,13 @@ function remove_turbine!(reservoir::HydroReservoir, device::HydroTurbine)
 end
 
 """
-Return true if the upstream turbine is attached to the reservoir.
-
-See also [`has_upstream_turbine` for any turbine](@ref has_upstream_turbine(::HydroReservoir)).
+Return true if `turbine` is among the upstream turbines of `reservoir`.
 
 # Arguments
 - `reservoir::HydroReservoir`: The hydro reservoir.
 - `turbine::HydroUnit`: The turbine to check.
+
+See also: [`has_upstream_turbine` for any turbine](@ref has_upstream_turbine(::HydroReservoir)), [`get_upstream_turbines`](@ref)
 """
 function has_upstream_turbine(reservoir::HydroReservoir, turbine::HydroUnit)
     for _turbine in get_upstream_turbines(reservoir)
@@ -192,13 +198,13 @@ function has_upstream_turbine(reservoir::HydroReservoir, turbine::HydroUnit)
 end
 
 """
-Return true if the downstream turbine is attached to the reservoir.
-
-See also [`has_downstream_turbine` for any turbine](@ref has_downstream_turbine(::HydroReservoir)).
+Return true if `turbine` is among the downstream turbines of `reservoir`.
 
 # Arguments
 - `reservoir::HydroReservoir`: The hydro reservoir.
 - `turbine::HydroUnit`: The turbine to check.
+
+See also: [`has_downstream_turbine` for any turbine](@ref has_downstream_turbine(::HydroReservoir)), [`get_downstream_turbines`](@ref)
 """
 function has_downstream_turbine(reservoir::HydroReservoir, turbine::HydroUnit)
     for _turbine in get_downstream_turbines(reservoir)
@@ -213,10 +219,10 @@ end
 """
 Return true if any upstream hydro unit is attached to the reservoir.
 
-See also [`has_upstream_turbine` for a specific turbine](@ref has_upstream_turbine(::HydroReservoir, ::HydroUnit)).
-
 # Arguments
 - `reservoir::HydroReservoir`: The hydro reservoir.
+
+See also: [`has_upstream_turbine` for a specific turbine](@ref has_upstream_turbine(::HydroReservoir, ::HydroUnit))
 """
 function has_upstream_turbine(reservoir::HydroReservoir)
     return !isempty(get_upstream_turbines(reservoir))
@@ -225,10 +231,10 @@ end
 """
 Return true if any downstream hydro unit is attached to the reservoir.
 
-See also [`has_downstream_turbine` for a specific turbine](@ref has_downstream_turbine(::HydroReservoir, ::HydroUnit)).
-
 # Arguments
 - `reservoir::HydroReservoir`: The hydro reservoir.
+
+See also: [`has_downstream_turbine` for a specific turbine](@ref has_downstream_turbine(::HydroReservoir, ::HydroUnit))
 """
 function has_downstream_turbine(reservoir::HydroReservoir)
     return !isempty(get_downstream_turbines(reservoir))
