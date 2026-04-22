@@ -6,7 +6,7 @@ Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
 DocStringExtensions = "ffbed154-4ef7-542d-bbb7-c09d3a79fcae"
 InfrastructureSystems = "2cd47ed4-ca9b-11e9-27f2-ab636a7671f1"
 InteractiveUtils = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
-JSON3 = "0f8b85d8-7281-11e9-16c2-39a750bddbf1"
+JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
 NLsolve = "2774e3e8-f4cf-5e23-947b-6d7e65073b56"
@@ -20,5 +20,9 @@ UUIDs = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
 
 [compat]
 InfrastructureSystems = "3"
+JSON = "^1.5"
 julia = "^1.10"
 
+[sources]
+InfrastructureSystems = {url = "https://github.com/NREL-Sienna/InfrastructureSystems.jl", rev = "jd/drop_json3"}
+PowerSystemCaseBuilder = {url = "https://github.com/NREL-Sienna/PowerSystemCaseBuilder.jl", rev = "psy6"}

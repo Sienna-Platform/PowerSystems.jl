@@ -2,7 +2,7 @@ using Test
 using PowerSystems
 using InfrastructureSystems
 import InfrastructureSystems as IS
-import JSON3
+import JSON
 import PowerSystemCaseBuilder as PSB
 const PSY = PowerSystems
 
@@ -989,7 +989,7 @@ include("common.jl")
 
             # Verify JSON file contains plant data
             json_data = open(json_path, "r") do io
-                JSON3.read(io)
+                JSON.parse(io; dicttype = Dict{String, Any})
             end
             @test haskey(json_data, "data_format_version")
             @test json_data["data_format_version"] == PSY.DATA_FORMAT_VERSION

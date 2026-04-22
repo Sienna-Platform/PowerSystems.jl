@@ -326,7 +326,7 @@ function validate_serialization(
         to_json(sys, path; force = true)
 
         data = open(path, "r") do io
-            JSON3.read(io)
+            JSON.parse(io; dicttype = Dict{String, Any})
         end
         @test data["data_format_version"] == PSY.DATA_FORMAT_VERSION
 
