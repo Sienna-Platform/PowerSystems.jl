@@ -286,7 +286,7 @@ function IS.from_json(
     assign_new_uuids = false,
     kwargs...,
 )
-    data = JSON3.read(io, Dict)
+    data = JSON.parse(io; dicttype = Dict{String, Any})
     sys = from_dict(System, data; kwargs...)
     _post_deserialize_handling(
         sys;
@@ -430,7 +430,7 @@ function _serialize_system_metadata_to_file(sys::System, filename, user_data)
     end
 
     open(filename, "w") do io
-        JSON3.pretty(io, metadata)
+        JSON.json(io, metadata; pretty = 2)
     end
 
     @info "Serialized System metadata to $filename"
@@ -2354,7 +2354,7 @@ end
 """
 Serialize a [System](@ref) instance. Returns a `Dict{String, Any}` 
 of the form `Dict("data_format_version" => "1.0", "field1" => serialize(sys.field1), ...)`,
-which can then be written to a JSON3 file.
+which can then be written to a JSON file.
 """
 function IS.serialize(sys::T) where {T <: System}
     data = Dict{String, Any}()
@@ -2372,7 +2372,7 @@ function IS.serialize(sys::T) where {T <: System}
 end
 
 """
-Deserialize a [System](@ref) instance from a JSON3 file; the reverse of [`IS.serialize`](@ref).
+Deserialize a [System](@ref) instance from a JSON file; the reverse of [`IS.serialize`](@ref).
 """
 function IS.deserialize(
     ::Type{System},
@@ -2380,7 +2380,7 @@ function IS.deserialize(
     kwargs...,
 )
     raw = open(filename) do io
-        JSON3.read(io, Dict)
+        JSON.parse(io; dicttype = Dict{String, Any})
     end
 
     if raw["data_format_version"] != DATA_FORMAT_VERSION
