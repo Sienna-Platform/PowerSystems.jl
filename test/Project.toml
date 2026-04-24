@@ -19,6 +19,9 @@ TimeSeries = "9e3dc215-6440-5c97-bce1-76c03772f85e"
 UUIDs = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
+[sources]
+InfrastructureSystems = {url = "https://github.com/NREL-Sienna/InfrastructureSystems.jl.git", rev = "lk/units-domain-agnostic-is4"}
+
 [compat]
 InfrastructureSystems = "3"
 julia = "^1.10"
