@@ -103,7 +103,7 @@ end
         set_operation_cost!(gen, market_bid)
         add_component!(sys, gen)
         ta = TimeSeries.TimeArray(dates, data)
-        power_units = UnitSystem.NATURAL_UNITS
+        power_units = IS.NaturalUnit()
         service = ConstantReserve{ReserveDown}(;
             name = "init_$i",
             available = false,

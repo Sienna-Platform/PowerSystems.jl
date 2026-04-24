@@ -9,7 +9,7 @@ An operating cost for time-varying market bids of energy and ancillary services.
 All cost curve fields are backed by time series data via IS.jl's time-series ValueCurve types.
 For static (non-time-varying) bids, use [`MarketBidCost`](@ref).
 """
-mutable struct MarketBidTimeSeriesCost <: OfferCurveCost
+mutable struct MarketBidTimeSeriesCost{U <: IS.AbstractUnitSystem} <: OfferCurveCost
     "No load cost (time series)"
     no_load_cost::TimeSeriesLinearCurve
     "Start-up cost stages (time series)"
@@ -17,25 +17,34 @@ mutable struct MarketBidTimeSeriesCost <: OfferCurveCost
     "Shut-down cost (time series)"
     shut_down::TimeSeriesLinearCurve
     "Sell Offer Curves data (time series)"
-    incremental_offer_curves::CostCurve{TimeSeriesPiecewiseIncrementalCurve}
+    incremental_offer_curves::CostCurve{TimeSeriesPiecewiseIncrementalCurve, U}
     "Buy Offer Curves data (time series)"
-    decremental_offer_curves::CostCurve{TimeSeriesPiecewiseIncrementalCurve}
+    decremental_offer_curves::CostCurve{TimeSeriesPiecewiseIncrementalCurve, U}
     "Bids for the ancillary services"
     ancillary_service_offers::Vector{Service}
 end
 
-MarketBidTimeSeriesCost(;
+function MarketBidTimeSeriesCost(;
     no_load_cost,
     start_up,
     shut_down,
     incremental_offer_curves,
     decremental_offer_curves,
     ancillary_service_offers = Vector{Service}(),
-) = MarketBidTimeSeriesCost(
-    no_load_cost, start_up, shut_down,
-    incremental_offer_curves, decremental_offer_curves,
-    ancillary_service_offers,
 )
+    U_inc = typeof(get_power_units(incremental_offer_curves))
+    U_dec = typeof(get_power_units(decremental_offer_curves))
+    U_inc === U_dec || throw(
+        ArgumentError(
+            "incremental_offer_curves and decremental_offer_curves must share a unit system (got $(U_inc()) vs $(U_dec()))",
+        ),
+    )
+    return MarketBidTimeSeriesCost{U_inc}(
+        no_load_cost, start_up, shut_down,
+        incremental_offer_curves, decremental_offer_curves,
+        ancillary_service_offers,
+    )
+end
 
 """Get [`MarketBidTimeSeriesCost`](@ref) `no_load_cost`."""
 get_no_load_cost(value::MarketBidTimeSeriesCost) = value.no_load_cost
@@ -77,7 +86,7 @@ Make a time-series-backed `CostCurve{TimeSeriesPiecewiseIncrementalCurve}` from
 function make_market_bid_ts_curve(
     ts_key::TimeSeriesKey,
     initial_input_key::Union{Nothing, TimeSeriesKey} = nothing,
-    power_units::UnitSystem = UnitSystem.NATURAL_UNITS;
+    power_units::IS.AbstractUnitSystem = IS.NaturalUnit();
     input_at_zero_key::Union{Nothing, TimeSeriesKey} = nothing,
 )
     vc = TimeSeriesPiecewiseIncrementalCurve(ts_key, initial_input_key, input_at_zero_key)

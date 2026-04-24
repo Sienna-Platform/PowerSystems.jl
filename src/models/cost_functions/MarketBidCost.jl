@@ -9,7 +9,7 @@ $(TYPEDFIELDS)
 An operating cost for static (non-time-varying) market bids of energy and ancillary
 services. For time-varying bids, use [`MarketBidTimeSeriesCost`](@ref).
 """
-mutable struct MarketBidCost <: OfferCurveCost
+mutable struct MarketBidCost{U <: IS.AbstractUnitSystem} <: OfferCurveCost
     "No load cost"
     no_load_cost::LinearCurve
     "Start-up cost at different stages of the thermal cycle (hot, warm, cold)"
@@ -17,27 +17,36 @@ mutable struct MarketBidCost <: OfferCurveCost
     "Shut-down cost"
     shut_down::LinearCurve
     "Sell Offer Curves data as a [`CostCurve`](@ref) of [`PiecewiseIncrementalCurve`](@ref)"
-    incremental_offer_curves::CostCurve{PiecewiseIncrementalCurve}
+    incremental_offer_curves::CostCurve{PiecewiseIncrementalCurve, U}
     "Buy Offer Curves data as a [`CostCurve`](@ref) of [`PiecewiseIncrementalCurve`](@ref)"
-    decremental_offer_curves::CostCurve{PiecewiseIncrementalCurve}
+    decremental_offer_curves::CostCurve{PiecewiseIncrementalCurve, U}
     "Bids for the ancillary services"
     ancillary_service_offers::Vector{Service}
 end
 
 const ZERO_OFFER_CURVE = CostCurve(PiecewiseIncrementalCurve(0.0, [0.0, 0.0], [0.0]))
 
-MarketBidCost(;
+function MarketBidCost(;
     no_load_cost = LinearCurve(0.0),
     start_up = (hot = 0.0, warm = 0.0, cold = 0.0),
     shut_down = LinearCurve(0.0),
     incremental_offer_curves = ZERO_OFFER_CURVE,
     decremental_offer_curves = ZERO_OFFER_CURVE,
     ancillary_service_offers = Vector{Service}(),
-) = MarketBidCost(
-    no_load_cost, start_up, shut_down,
-    incremental_offer_curves, decremental_offer_curves,
-    ancillary_service_offers,
 )
+    U_inc = typeof(get_power_units(incremental_offer_curves))
+    U_dec = typeof(get_power_units(decremental_offer_curves))
+    U_inc === U_dec || throw(
+        ArgumentError(
+            "incremental_offer_curves and decremental_offer_curves must share a unit system (got $(U_inc()) vs $(U_dec()))",
+        ),
+    )
+    return MarketBidCost{U_inc}(
+        no_load_cost, start_up, shut_down,
+        incremental_offer_curves, decremental_offer_curves,
+        ancillary_service_offers,
+    )
+end
 
 # Constructor for demo purposes; non-functional.
 function MarketBidCost(::Nothing)
@@ -109,7 +118,7 @@ Return `true` if the given [`ProductionVariableCostCurve`](@ref) is a market bid
 (a `CostCurve{PiecewiseIncrementalCurve}` as used in [`MarketBidCost`](@ref)).
 """
 function is_market_bid_curve(curve::ProductionVariableCostCurve)
-    return (curve isa CostCurve{PiecewiseIncrementalCurve})
+    return (curve isa IS.AnyCostCurve{PiecewiseIncrementalCurve})
 end
 
 """
@@ -125,7 +134,7 @@ function make_market_bid_curve(
     powers::Vector{Float64},
     marginal_costs::Vector{Float64},
     initial_input::Float64;
-    power_units::UnitSystem = UnitSystem.NATURAL_UNITS,
+    power_units::IS.AbstractUnitSystem = IS.NaturalUnit(),
     input_at_zero::Union{Nothing, Float64} = nothing,
 )
     if length(powers) == length(marginal_costs) + 1
@@ -151,7 +160,7 @@ Make a static `CostCurve{PiecewiseIncrementalCurve}` from `PiecewiseStepData`.
 function make_market_bid_curve(
     data::PiecewiseStepData,
     initial_input::Float64;
-    power_units::UnitSystem = UnitSystem.NATURAL_UNITS,
+    power_units::IS.AbstractUnitSystem = IS.NaturalUnit(),
     input_at_zero::Union{Nothing, Float64} = nothing,
 )
     cc = CostCurve(IncrementalCurve(data, initial_input, input_at_zero), power_units)

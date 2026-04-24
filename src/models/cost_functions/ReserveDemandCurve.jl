@@ -14,9 +14,10 @@ For time-varying ORDCs, use [`ReserveDemandTimeSeriesCurve`](@ref).
 When defining the reserve, the `ReserveDirection` must be specified to define this as a
 [`ReserveUp`](@ref), [`ReserveDown`](@ref), or [`ReserveSymmetric`](@ref).
 """
-mutable struct ReserveDemandCurve{T <: ReserveDirection} <: Reserve{T}
+mutable struct ReserveDemandCurve{T <: ReserveDirection, U <: IS.AbstractUnitSystem} <:
+               Reserve{T}
     "Operating reserve demand curve"
-    variable::CostCurve{PiecewiseIncrementalCurve}
+    variable::CostCurve{PiecewiseIncrementalCurve, U}
     "Name of the component"
     name::String
     "Indicator of whether the component is connected and online"
@@ -45,7 +46,8 @@ function ReserveDemandCurve{T}(
     deployed_fraction = 0.0,
     ext = Dict{String, Any}(),
 ) where {T <: ReserveDirection}
-    ReserveDemandCurve{T}(
+    U = typeof(get_power_units(variable))
+    ReserveDemandCurve{T, U}(
         variable, name, available, time_frame, sustained_time,
         max_participation_factor, deployed_fraction, ext,
         InfrastructureSystemsInternal(),
@@ -63,7 +65,27 @@ function ReserveDemandCurve{T}(;
     ext = Dict{String, Any}(),
     internal = InfrastructureSystemsInternal(),
 ) where {T <: ReserveDirection}
-    ReserveDemandCurve{T}(
+    U = typeof(get_power_units(variable))
+    ReserveDemandCurve{T, U}(
+        variable, name, available, time_frame, sustained_time,
+        max_participation_factor, deployed_fraction, ext, internal,
+    )
+end
+
+# Kwarg constructor on the fully-parameterized type — needed by deserialization,
+# which resolves `ReserveDemandCurve{T, U}` from metadata and calls it with kwargs.
+function ReserveDemandCurve{T, U}(;
+    variable,
+    name,
+    available,
+    time_frame,
+    sustained_time = 3600.0,
+    max_participation_factor = 1.0,
+    deployed_fraction = 0.0,
+    ext = Dict{String, Any}(),
+    internal = InfrastructureSystemsInternal(),
+) where {T <: ReserveDirection, U <: IS.AbstractUnitSystem}
+    ReserveDemandCurve{T, U}(
         variable, name, available, time_frame, sustained_time,
         max_participation_factor, deployed_fraction, ext, internal,
     )

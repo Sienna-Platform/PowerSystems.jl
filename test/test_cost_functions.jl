@@ -7,9 +7,9 @@
     fc = FuelCurve(InputOutputCurve(IS.QuadraticFunctionData(1, 2, 3)), 4.0)
     @test sprint(show, "text/plain", fc) ==
           sprint(show, "text/plain", fc; context = :compact => false) ==
-          "FuelCurve:\n  value_curve: QuadraticCurve (a type of InputOutputCurve) where function is: f(x) = 1.0 x^2 + 2.0 x + 3.0\n  power_units: UnitSystem.NATURAL_UNITS = 2\n  fuel_cost: 4.0\n  startup_fuel_offtake: LinearCurve (a type of InputOutputCurve) where function is: f(x) = 0.0 x + 0.0\n  vom_cost: LinearCurve (a type of InputOutputCurve) where function is: f(x) = 0.0 x + 0.0"
+          "FuelCurve:\n  value_curve: QuadraticCurve (a type of InputOutputCurve) where function is: f(x) = 1.0 x^2 + 2.0 x + 3.0\n  fuel_cost: 4.0\n  startup_fuel_offtake: LinearCurve (a type of InputOutputCurve) where function is: f(x) = 0.0 x + 0.0\n  vom_cost: LinearCurve (a type of InputOutputCurve) where function is: f(x) = 0.0 x + 0.0\n  power_units: NU"
     @test sprint(show, "text/plain", fc; context = :compact => true) ==
-          "FuelCurve with power_units UnitSystem.NATURAL_UNITS = 2, fuel_cost 4.0, startup_fuel_offtake LinearCurve(0.0, 0.0), vom_cost LinearCurve(0.0, 0.0), and value_curve:\n  QuadraticCurve (a type of InputOutputCurve) where function is: f(x) = 1.0 x^2 + 2.0 x + 3.0"
+          "FuelCurve with power_units NU, fuel_cost 4.0, startup_fuel_offtake LinearCurve(0.0, 0.0), vom_cost LinearCurve(0.0, 0.0), and value_curve:\n  QuadraticCurve (a type of InputOutputCurve) where function is: f(x) = 1.0 x^2 + 2.0 x + 3.0"
 end
 
 @testset "Test MarketBidCost direct struct creation and some scalar cost_function_timeseries interface" begin
@@ -48,10 +48,10 @@ end
             marginal_costs .* 1.5,
         ),
     )
-    set_incremental_variable_cost!(sys, generator, cc2, UnitSystem.NATURAL_UNITS)
+    set_incremental_variable_cost!(sys, generator, cc2, IS.NaturalUnit())
     @test get_incremental_variable_cost(generator, mbc) == cc2
 
-    set_decremental_variable_cost!(sys, generator, cc2, UnitSystem.NATURAL_UNITS)
+    set_decremental_variable_cost!(sys, generator, cc2, IS.NaturalUnit())
     @test get_decremental_offer_curves(mbc) == cc2
 end
 
@@ -85,7 +85,7 @@ end
 end
 
 test_costs = Dict(
-    CostCurve{QuadraticCurve} =>
+    IS.AnyCostCurve{QuadraticCurve} =>
         repeat([CostCurve(QuadraticCurve(999.0, 2.0, 1.0))], 24),
     PiecewiseStepData =>
         repeat(
@@ -138,7 +138,7 @@ end
     )
     add_component!(sys, reserve)
     @test get_variable_cost(reserve) == cc
-    @test get_variable(reserve) isa CostCurve{PiecewiseIncrementalCurve}
+    @test get_variable(reserve) isa IS.AnyCostCurve{PiecewiseIncrementalCurve}
 
     # Test set_variable_cost! with validation
     cc2 = CostCurve(
@@ -280,18 +280,18 @@ end
         build_iec_sys()
 
     new_import = make_import_curve([0.0, 50.0, 100.0], [10.0, 20.0])
-    set_import_variable_cost!(sys, source, new_import, UnitSystem.NATURAL_UNITS)
+    set_import_variable_cost!(sys, source, new_import, IS.NaturalUnit())
     @test get_import_offer_curves(ie_cost) == new_import
 
     new_export = make_export_curve([0.0, 50.0, 100.0], [20.0, 10.0])
-    set_export_variable_cost!(sys, source, new_export, UnitSystem.NATURAL_UNITS)
+    set_export_variable_cost!(sys, source, new_export, IS.NaturalUnit())
     @test get_export_offer_curves(ie_cost) == new_export
 
     # Test unit mismatch throws
     @test_throws ArgumentError set_import_variable_cost!(
-        sys, source, new_import, UnitSystem.SYSTEM_BASE)
+        sys, source, new_import, IS.SystemBaseUnit())
     @test_throws ArgumentError set_export_variable_cost!(
-        sys, source, new_export, UnitSystem.SYSTEM_BASE)
+        sys, source, new_export, IS.SystemBaseUnit())
 end
 
 @testset "Test HydroReservoirCost getters and setters" begin

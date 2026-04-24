@@ -7,14 +7,16 @@ $(TYPEDFIELDS)
 
 An operating cost for static (non-time-varying) imports/exports and ancillary services
 from neighboring areas. The data model employs a `CostCurve{PiecewiseIncrementalCurve}`
-with an implied zero cost at zero power.
+with an implied zero cost at zero power. The type parameter `U <: AbstractUnitSystem`
+is the shared unit system of the two offer curves (propagated from
+`CostCurve`'s `U` parameter); `ImportExportCost{NaturalUnit}` is the default.
 For time-varying bids, use [`ImportExportTimeSeriesCost`](@ref).
 """
-mutable struct ImportExportCost <: OfferCurveCost
+mutable struct ImportExportCost{U <: IS.AbstractUnitSystem} <: OfferCurveCost
     "Buy Price Curves data to import power"
-    import_offer_curves::CostCurve{PiecewiseIncrementalCurve}
+    import_offer_curves::CostCurve{PiecewiseIncrementalCurve, U}
     "Sell Price Curves data to export power"
-    export_offer_curves::CostCurve{PiecewiseIncrementalCurve}
+    export_offer_curves::CostCurve{PiecewiseIncrementalCurve, U}
     "Weekly limit on the amount of energy that can be imported, defined in system base p.u-hours."
     energy_import_weekly_limit::Float64
     "Weekly limit on the amount of energy that can be exported, defined in system base p.u-hours."
@@ -23,19 +25,28 @@ mutable struct ImportExportCost <: OfferCurveCost
     ancillary_service_offers::Vector{Service}
 end
 
-ImportExportCost(;
+function ImportExportCost(;
     import_offer_curves = ZERO_OFFER_CURVE,
     export_offer_curves = ZERO_OFFER_CURVE,
     energy_import_weekly_limit = INFINITE_BOUND,
     energy_export_weekly_limit = INFINITE_BOUND,
     ancillary_service_offers = Vector{Service}(),
-) = ImportExportCost(
-    import_offer_curves,
-    export_offer_curves,
-    energy_import_weekly_limit,
-    energy_export_weekly_limit,
-    ancillary_service_offers,
 )
+    U_imp = typeof(get_power_units(import_offer_curves))
+    U_exp = typeof(get_power_units(export_offer_curves))
+    U_imp === U_exp || throw(
+        ArgumentError(
+            "import_offer_curves and export_offer_curves must share a unit system (got $(U_imp()) vs $(U_exp()))",
+        ),
+    )
+    return ImportExportCost{U_imp}(
+        import_offer_curves,
+        export_offer_curves,
+        energy_import_weekly_limit,
+        energy_export_weekly_limit,
+        ancillary_service_offers,
+    )
+end
 
 # Constructor for demo purposes; non-functional.
 function ImportExportCost(::Nothing)
@@ -90,7 +101,7 @@ set_energy_export_weekly_limit!(value::ImportExportCost, val) =
     value.energy_export_weekly_limit = val
 
 function is_import_export_curve(curve::ProductionVariableCostCurve)
-    return (curve isa CostCurve{PiecewiseIncrementalCurve}) &&
+    return (curve isa IS.AnyCostCurve{PiecewiseIncrementalCurve}) &&
            iszero(get_initial_input(get_value_curve(curve))) &&
            iszero(get_input_at_zero(get_value_curve(curve))) &&
            iszero(first(get_x_coords(get_value_curve(curve))))
@@ -99,7 +110,7 @@ end
 # Internal helper: build a static import/export `CostCurve` from validated step data.
 function make_import_export_curve(
     curve::PiecewiseStepData,
-    power_units::UnitSystem = UnitSystem.NATURAL_UNITS,
+    power_units::IS.AbstractUnitSystem = IS.NaturalUnit(),
 )
     cc = CostCurve(
         PiecewiseIncrementalCurve(curve, 0.0, 0.0),
@@ -123,7 +134,7 @@ import_curve = make_import_curve([0.0, 100.0, 105.0, 120.0, 200.0], [5.0, 10.0, 
 function make_import_curve(
     power::Vector{Float64},
     price::Vector{Float64},
-    power_units::UnitSystem = UnitSystem.NATURAL_UNITS,
+    power_units::IS.AbstractUnitSystem = IS.NaturalUnit(),
 )
     curve = PiecewiseStepData(power, price)
     is_convex(curve) ||
@@ -145,7 +156,7 @@ export_curve = make_export_curve([0.0, 100.0, 105.0, 120.0, 200.0], [40.0, 20.0,
 function make_export_curve(
     power::Vector{Float64},
     price::Vector{Float64},
-    power_units::UnitSystem = UnitSystem.NATURAL_UNITS,
+    power_units::IS.AbstractUnitSystem = IS.NaturalUnit(),
 )
     curve = PiecewiseStepData(power, price)
     is_concave(curve) ||

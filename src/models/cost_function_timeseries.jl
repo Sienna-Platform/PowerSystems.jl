@@ -14,9 +14,9 @@ function _validate_import_export_cost(cost, context)
 end
 
 function _validate_reserve_demand_curve(
-    cost::CostCurve{PiecewiseIncrementalCurve},
+    cost::CostCurve{PiecewiseIncrementalCurve, U},
     name::String,
-)
+) where {U <: IS.AbstractUnitSystem}
     value_curve = get_value_curve(cost)
     function_data = get_function_data(value_curve)
     x_coords = get_x_coords(function_data)
@@ -93,9 +93,9 @@ at the given `start_time`.
 """
 function _resolve_ts_cost_curve(
     component::Component,
-    curve::CostCurve{TimeSeriesPiecewiseIncrementalCurve},
+    curve::CostCurve{TimeSeriesPiecewiseIncrementalCurve, U},
     start_time::Dates.DateTime,
-)
+) where {U <: IS.AbstractUnitSystem}
     static_vc = IS.build_static_curve(get_value_curve(curve), component, start_time)
     return CostCurve(static_vc, get_power_units(curve), get_vom_cost(curve))
 end
@@ -264,7 +264,7 @@ Auxiliary make market bid curve for timeseries with nothing inputs.
 """
 function _make_market_bid_curve(data::PiecewiseStepData;
     initial_input::Union{Nothing, Float64} = nothing,
-    power_units::UnitSystem = UnitSystem.NATURAL_UNITS,
+    power_units::IS.AbstractUnitSystem = IS.NaturalUnit(),
     input_at_zero::Union{Nothing, Float64} = nothing)
     cc = CostCurve(IncrementalCurve(data, initial_input, input_at_zero), power_units)
     @assert is_market_bid_curve(cc)
@@ -330,7 +330,10 @@ end
 
 # ── SETTER IMPLEMENTATIONS ──────────────────────────────────────────────────
 
-function _check_power_units(data::ProductionVariableCostCurve, power_units::UnitSystem)
+function _check_power_units(
+    data::ProductionVariableCostCurve,
+    power_units::IS.AbstractUnitSystem,
+)
     if get_power_units(data) != power_units
         throw(
             ArgumentError(
@@ -346,9 +349,9 @@ Set the variable cost for a `StaticInjection` device with a `MarketBidCost`.
 function set_variable_cost!(
     ::System,
     component::StaticInjection,
-    data::CostCurve{PiecewiseIncrementalCurve},
-    power_units::UnitSystem,
-)
+    data::CostCurve{PiecewiseIncrementalCurve, U},
+    power_units::IS.AbstractUnitSystem,
+) where {U <: IS.AbstractUnitSystem}
     market_bid_cost = get_operation_cost(component)
     _validate_market_bid_cost(market_bid_cost, "get_operation_cost(component)")
     _check_power_units(data, power_units)
@@ -359,26 +362,27 @@ end
 function set_variable_cost!(
     sys::System,
     component::StaticInjection,
-    data::CostCurve{PiecewiseIncrementalCurve},
-)
-    @warn "Variable Cost UnitSystem not specified for $(get_name(component)). set_variable_cost! assumes data is in UnitSystem.NATURAL_UNITS"
-    set_variable_cost!(sys, component, data, UnitSystem.NATURAL_UNITS)
+    data::CostCurve{PiecewiseIncrementalCurve, U},
+) where {U <: IS.AbstractUnitSystem}
+    @warn "Variable Cost UnitSystem not specified for $(get_name(component)). set_variable_cost! assumes data is in IS.NaturalUnit()"
+    set_variable_cost!(sys, component, data, IS.NaturalUnit())
     return
 end
 
 set_incremental_variable_cost!(
     sys::System,
     component::StaticInjection,
-    data::CostCurve{PiecewiseIncrementalCurve},
-    power_units::UnitSystem,
-) = set_variable_cost!(sys, component, data, power_units)
+    data::CostCurve{PiecewiseIncrementalCurve, U},
+    power_units::IS.AbstractUnitSystem,
+) where {U <: IS.AbstractUnitSystem} =
+    set_variable_cost!(sys, component, data, power_units)
 
 function set_decremental_variable_cost!(
     ::System,
     component::StaticInjection,
-    data::CostCurve{PiecewiseIncrementalCurve},
-    power_units::UnitSystem,
-)
+    data::CostCurve{PiecewiseIncrementalCurve, U},
+    power_units::IS.AbstractUnitSystem,
+) where {U <: IS.AbstractUnitSystem}
     market_bid_cost = get_operation_cost(component)
     _validate_market_bid_cost(market_bid_cost, "get_operation_cost(component)")
     _check_power_units(data, power_units)
@@ -389,9 +393,9 @@ end
 function set_import_variable_cost!(
     ::System,
     component::StaticInjection,
-    data::CostCurve{PiecewiseIncrementalCurve},
-    power_units::UnitSystem,
-)
+    data::CostCurve{PiecewiseIncrementalCurve, U},
+    power_units::IS.AbstractUnitSystem,
+) where {U <: IS.AbstractUnitSystem}
     import_export_cost = get_operation_cost(component)
     _validate_import_export_cost(import_export_cost, "get_operation_cost(component)")
     _check_power_units(data, power_units)
@@ -402,9 +406,9 @@ end
 function set_export_variable_cost!(
     ::System,
     component::StaticInjection,
-    data::CostCurve{PiecewiseIncrementalCurve},
-    power_units::UnitSystem,
-)
+    data::CostCurve{PiecewiseIncrementalCurve, U},
+    power_units::IS.AbstractUnitSystem,
+) where {U <: IS.AbstractUnitSystem}
     import_export_cost = get_operation_cost(component)
     _validate_import_export_cost(import_export_cost, "get_operation_cost(component)")
     _check_power_units(data, power_units)
@@ -417,8 +421,8 @@ end
 function set_variable_cost!(
     ::System,
     component::ReserveDemandCurve,
-    data::CostCurve{PiecewiseIncrementalCurve},
-)
+    data::CostCurve{PiecewiseIncrementalCurve, U},
+) where {U <: IS.AbstractUnitSystem}
     name = get_name(component)
     _validate_reserve_demand_curve(data, name)
     set_variable!(component, data)
@@ -485,7 +489,7 @@ function set_service_bid!(
     component::StaticInjection,
     service::Service,
     time_series_data::IS.TimeSeriesData,
-    power_units::UnitSystem,
+    power_units::IS.AbstractUnitSystem,
 )
     data_type = IS.eltype_data(time_series_data)
     !(data_type <: PiecewiseStepData) &&
@@ -499,7 +503,7 @@ function set_service_bid!(
             "Name provided in the TimeSeries Data $(get_name(time_series_data)), doesn't match the Service $(get_name(service)).",
         )
     end
-    if power_units != UnitSystem.NATURAL_UNITS
+    if power_units != IS.NaturalUnit()
         throw(
             ArgumentError(
                 "Power Unit specified for service market bids must be NATURAL_UNITS",

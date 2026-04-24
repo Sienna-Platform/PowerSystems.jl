@@ -10,11 +10,11 @@ areas. All offer curve fields are backed by time series data via IS.jl's time-se
 ValueCurve types.
 For static (non-time-varying) bids, use [`ImportExportCost`](@ref).
 """
-mutable struct ImportExportTimeSeriesCost <: OfferCurveCost
+mutable struct ImportExportTimeSeriesCost{U <: IS.AbstractUnitSystem} <: OfferCurveCost
     "Import price curves (time series)"
-    import_offer_curves::CostCurve{TimeSeriesPiecewiseIncrementalCurve}
+    import_offer_curves::CostCurve{TimeSeriesPiecewiseIncrementalCurve, U}
     "Export price curves (time series)"
-    export_offer_curves::CostCurve{TimeSeriesPiecewiseIncrementalCurve}
+    export_offer_curves::CostCurve{TimeSeriesPiecewiseIncrementalCurve, U}
     "Weekly limit on the amount of energy that can be imported, defined in system base p.u-hours."
     energy_import_weekly_limit::Float64
     "Weekly limit on the amount of energy that can be exported, defined in system base p.u-hours."
@@ -23,19 +23,28 @@ mutable struct ImportExportTimeSeriesCost <: OfferCurveCost
     ancillary_service_offers::Vector{Service}
 end
 
-ImportExportTimeSeriesCost(;
+function ImportExportTimeSeriesCost(;
     import_offer_curves,
     export_offer_curves,
     energy_import_weekly_limit = INFINITE_BOUND,
     energy_export_weekly_limit = INFINITE_BOUND,
     ancillary_service_offers = Vector{Service}(),
-) = ImportExportTimeSeriesCost(
-    import_offer_curves,
-    export_offer_curves,
-    energy_import_weekly_limit,
-    energy_export_weekly_limit,
-    ancillary_service_offers,
 )
+    U_imp = typeof(get_power_units(import_offer_curves))
+    U_exp = typeof(get_power_units(export_offer_curves))
+    U_imp === U_exp || throw(
+        ArgumentError(
+            "import_offer_curves and export_offer_curves must share a unit system (got $(U_imp()) vs $(U_exp()))",
+        ),
+    )
+    return ImportExportTimeSeriesCost{U_imp}(
+        import_offer_curves,
+        export_offer_curves,
+        energy_import_weekly_limit,
+        energy_export_weekly_limit,
+        ancillary_service_offers,
+    )
+end
 
 """Get [`ImportExportTimeSeriesCost`](@ref) `import_offer_curves`."""
 get_import_offer_curves(value::ImportExportTimeSeriesCost) = value.import_offer_curves
@@ -74,7 +83,7 @@ an [`ImportExportTimeSeriesCost`](@ref).
 """
 function make_import_export_ts_curve(
     ts_key::TimeSeriesKey,
-    power_units::UnitSystem = UnitSystem.NATURAL_UNITS,
+    power_units::IS.AbstractUnitSystem = IS.NaturalUnit(),
 )
     vc = TimeSeriesPiecewiseIncrementalCurve(ts_key, nothing, nothing)
     return CostCurve(vc, power_units)
