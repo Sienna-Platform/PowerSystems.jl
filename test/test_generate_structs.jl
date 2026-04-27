@@ -53,7 +53,7 @@ end
         )
     end
     data = open(descriptor_file, "r") do io
-        JSON3.read(io, Dict)
+        JSON.parse(io; dicttype = Dict{String, Any})
     end
 
     @test data["auto_generated_structs"][end]["struct_name"] == "MyThermalStandard"

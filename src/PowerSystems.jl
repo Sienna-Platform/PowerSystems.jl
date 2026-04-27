@@ -620,7 +620,7 @@ import Logging
 import Dates
 import TimeSeries
 import DataStructures: OrderedDict, SortedDict
-import JSON3
+import JSON
 import Base.to_index
 import PrettyTables
 
