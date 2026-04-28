@@ -89,7 +89,7 @@ consistency.
 
 ### Example: Adding Multiple Supplemental Attributes
 
-```@example use_context_managers
+```julia
 using PowerSystems
 
 # Define some supplemental attributes (e.g., outage data)
@@ -117,7 +117,7 @@ end
 
 ### Example: Bulk Operations with Error Handling
 
-```@example use_context_managers
+```julia
 # If an error occurs, all changes are automatically reverted
 try
     begin_supplemental_attributes_update(sys) do
@@ -222,7 +222,7 @@ end
 
  3. **Nested context managers**: You can nest context managers if needed:
 
-    ```@example use_context_managers
+    ```julia
     with_units_base(sys, "NATURAL_UNITS") do
         begin_time_series_update(sys) do
             # Add time series with natural unit scaling factors
@@ -236,7 +236,7 @@ end
  4. **Error handling**: The context managers automatically handle cleanup, but you can still
     use `try-catch` blocks for application-specific error handling:
 
-    ```@example use_context_managers
+    ```julia
     try
         begin_time_series_update(sys) do
             # ... operations ...

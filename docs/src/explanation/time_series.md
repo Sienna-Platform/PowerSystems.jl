@@ -15,7 +15,7 @@ process to obtain the data and its interpretation:
 These categories are are all subtypes of [`TimeSeriesData`](@ref) and fall within this time series
 [type hierarchy](@ref type_structure):
 
-```@repl
+```@example
 using PowerSystems #hide
 import TypeTree: tt #hide
 docs_dir = joinpath(pkgdir(PowerSystems), "docs", "src", "tutorials", "utils"); #hide
@@ -159,7 +159,7 @@ To store a time series as scaling factors, pass the appropriate getter function 
 constructing the time series. For example, to represent a renewable generator's output
 as a fraction of its maximum active power:
 
-```@repl time_series
+```julia
 ts = SingleTimeSeries(
     "max_active_power",
     ta;

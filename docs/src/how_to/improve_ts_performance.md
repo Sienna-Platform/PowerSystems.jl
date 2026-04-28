@@ -58,7 +58,7 @@ Time series data can also be shared on a component level. Suppose a time series 
 both the `max_active_power` and `max_reactive_power` attributes of a generator. You can share the
 data.
 
-```@example improve_ts_performance
+```julia
 resolution = Dates.Hour(1)
 data = Dict(
     DateTime("2020-01-01T00:00:00") => ones(24),
@@ -87,7 +87,7 @@ If you will add thousands of time series arrays, consider using [`begin_time_ser
 All arrays will be written with one file handle. The bulk SQLite operations are much more
 efficient.
 
-```@example improve_ts_performance
+```julia
 begin_time_series_update(sys) do
     add_time_series!(sys, component1, time_series1)
     add_time_series!(sys, component2, time_series2)
@@ -108,7 +108,7 @@ It is highly recommended that you use this interface for modeling implementation
 particularly relevant for models using large datasets.
 For example:
 
-```@example improve_ts_performance
+```julia
 cache = ForecastCache(Deterministic, component, "max_active_power")
 window1 = get_next_time_series_array!(cache)
 window2 = get_next_time_series_array!(cache)

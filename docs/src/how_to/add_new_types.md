@@ -186,7 +186,7 @@ In order to merge new structs to the code base, your struct needs to pass severa
 
 The following code block is an example of the code that the new struct needs to pass
 
-```@example add_new_types
+```julia
 using PowerSystems
 
 sys = System(100.0)

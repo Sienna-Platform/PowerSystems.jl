@@ -17,7 +17,8 @@ links = InterLinks(
 # This is a fallback for the docstrings that are referenced within IS docstrings
 fallbacks = ExternalFallbacks(
     "ComponentContainer" => "@extref InfrastructureSystems.ComponentContainer",
-    "InfrastructureSystemsComponent" => "@extref InfrastructureSystems.InfrastructureSystemsComponent"
+    "InfrastructureSystemsComponent" => "@extref InfrastructureSystems.InfrastructureSystemsComponent",
+    "PiecewiseLinearData" => "@ref PowerSystems.PiecewiseLinearData",
 )
 
 # This is commented out because the output is not user-friendly. Deliberation on how to best
@@ -81,7 +82,7 @@ pages = OrderedDict(
             "explanation/conforming_and_non_conforming_loads.md",
             "explanation/time_series.md",
             "explanation/dynamic_data.md",
-            "explanation/supplemental_attributes_2.md",
+            "explanation/supplemental_attributes.md",
             "explanation/plant_attributes.md",
             ],
         "Model Library" => Any[],

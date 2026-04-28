@@ -14,7 +14,7 @@ or phase shift angle.
 # Arguments
 - `table_number::Int64`: Row number of the TICT, used to link this correction entry to a
     specific transformer component.
-- `impedance_correction_curve::`[`PiecewiseLinearData`](@extref InfrastructureSystems.PiecewiseLinearData):
+- `impedance_correction_curve::`[`PiecewiseLinearData`](@ref):
     Piecewise-linear function defining impedance correction intervals as a function of tap
     ratio or phase shift angle.
 - `transformer_winding::`[`WindingCategory`](@ref): Winding of the transformer this
@@ -45,7 +45,7 @@ Construct an [`ImpedanceCorrectionData`](@ref).
 # Arguments
 - `table_number::Int64`: Row number of the TICT, used to link this correction entry to a
     specific transformer component.
-- `impedance_correction_curve::`[`PiecewiseLinearData`](@extref InfrastructureSystems.PiecewiseLinearData):
+- `impedance_correction_curve::`[`PiecewiseLinearData`](@ref):
     Piecewise-linear function defining impedance correction intervals as a function of tap
     ratio or phase shift angle.
 - `transformer_winding::`[`WindingCategory`](@ref): Winding of the transformer this

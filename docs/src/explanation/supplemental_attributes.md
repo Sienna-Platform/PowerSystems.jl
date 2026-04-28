@@ -42,7 +42,7 @@ This flexibility matches how power systems actually work, where components share
 
 Supplemental attributes can be concrete or abstract. See the [Julia Types documentation](https://docs.julialang.org/en/v1/manual/ty) for more information on these types. Here is an example using the `PowerSystems.jl` Type Tree.
 
-```@repl types
+```@example types
 using PowerSystems #hide
 import TypeTree: tt #hide
 docs_dir = joinpath(pkgdir(PowerSystems), "docs", "src", "tutorials", "utils"); #hide

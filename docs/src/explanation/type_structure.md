@@ -31,7 +31,7 @@ Each infrastructure component is represented as a [`struct`](@ref S) — a compo
 type that bundles together the fields needed to describe that component. For example, an
 [`ACBus`](@ref) carries fields for its bus number, nominal voltage, bus type, and more:
 
-```@repl types
+```@example types
 using PowerSystems #hide
 import TypeTree: tt #hide
 docs_dir = joinpath(pkgdir(PowerSystems), "docs", "src", "tutorials", "utils"); #hide

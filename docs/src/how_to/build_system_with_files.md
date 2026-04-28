@@ -34,7 +34,7 @@ before beginning, and that your data are in the given units.
 
 These are the dependencies needed for this how-to:
 
-```@example system_from_csv
+```julia
 using PowerSystems
 using CSV
 using DataFrames
@@ -44,7 +44,7 @@ using TimeSeries
 
 ## Build the base [`System`](@ref)
 
-```@example system_from_csv
+```julia
 system_base_power = 100.0
 sys = System(system_base_power)
 ```
@@ -65,7 +65,7 @@ file, `Buses.csv`. Each row is an individual bus, and there is a column for each
 Read in the contents of the CSV file `Buses.csv` to a data frame and customize
 the parameter names based on the column names in your CSV file.
 
-```@example system_from_csv
+```julia
 bus_params = CSV.read("MyData/Buses.csv", DataFrame)
 
 min_volt = "Voltage-Min (p.u.)"
@@ -80,7 +80,7 @@ In this example, we assume that the buses are sorted into `Areas`, where
 Because we will be sorting our buses into these areas as we construct the
 buses, we must first attach the areas to our [`System`](@ref).
 
-```@example system_from_csv
+```julia
 regions = unique(bus_params[:, region])
 
 for reg in regions
@@ -96,7 +96,7 @@ Now, we are ready to build the buses in the `for` loop, using the
 [`ACBus`](@ref) constructor, using the input data available in our `Buses.csv`,
 and hard coding any missing data.
 
-```@example system_from_csv
+```julia
 for row in eachrow(bus_params)
     bus = ACBus(;
         number = row[bus_number],
@@ -134,7 +134,7 @@ conventions used in the `Bus Number` column of `Buses.csv`.
 Read in the contents of the CSV file `Branches.csv` to a data frame and customize
 the parameter names based on the column names in your CSV file.
 
-```@example system_from_csv
+```julia
 branch_params = CSV.read("MyData/Branches.csv", DataFrame)
 
 branch_num = "Branch Number"
@@ -148,7 +148,7 @@ max_flow = "Max Flow (MW)"
 Build the lines and transformers using the [`Line`](@ref) and
 [`Transformer2W`](@ref) constructors.
 
-```@example system_from_csv
+```julia
 for row in eachrow(branch_params)
     bus_from = get_bus(sys, row[bus_from_col])
     bus_to = get_bus(sys, row[bus_to_col])
@@ -212,7 +212,7 @@ that the [`PrimeMovers`](@ref pm_list) in the `thermal_gens` data frame are
 consistent with EIA Form 923, and the `Fuel Type` column data are consistent
 with the [`ThermalFuels`](@ref tf_list) naming convention.
 
-```@example system_from_csv
+```julia
 thermal_gens = CSV.read("MyData/Thermal_Gens.csv", DataFrame)
 
 name = "Gen Name"
@@ -242,7 +242,7 @@ constructor and data stored in the `thermal_gens` data frame.
 Since the example data is missing base power, we set base power equal to the rating data, and the
 rating parameter to 1.0:
 
-```@example system_from_csv
+```julia
 for row in eachrow(thermal_gens)
     base = row[rate]
     thermal = ThermalStandard(;
@@ -292,7 +292,7 @@ and fuel prices. Ensure that the strings populating the `Fuel Type` column
 match the strings populating the `Fuel Type` column of the `thermal_gens`
 data frame.
 
-```@example system_from_csv
+```julia
 fuel_params = CSV.read("MyData/Thermal_Fuels_Rates.csv", DataFrame)
 
 type = "Fuel Type"
@@ -310,7 +310,7 @@ data frame.  Use this data to build the [`PiecewiseIncrementalCurve`](@ref) and
 the [`FuelCurve`](@ref) functions, and add them to their associated thermal
 generator.
 
-```@example system_from_csv
+```julia
 gen_name = "Generator Name"
 heat_rate_base = "Heat Rate Base (MMBTU/hr)"
 heat_rate = "Heat Rate (MMBTU/hr)"
@@ -322,7 +322,7 @@ shut_down_cost = "Shut Down Cost (dollar)"
 for row in eachrow(thermal_gens)
     thermal = get_component(ThermalStandard, sys, row[gen_name])
     heat_rate_curve =
-        PieceWiseIncrementalCurve(row[heat_rate_base], row[load_point], row[heat_rate])
+        PiecewiseIncrementalCurve(row[heat_rate_base], row[load_point], row[heat_rate])
     fuel_curve =
         FuelCurve(;
             value_curve = heat_rate_curve,
@@ -365,7 +365,7 @@ Read in the contents of the CSV file `Solar_Gens.csv` to a data frame, and
 customize the parameter names based on the column names in your CSV file and
 the desired prime mover type.
 
-```@example system_from_csv
+```julia
 solar_gens = CSV.read("MyData/Solar_Gens.csv", DataFrame)
 
 name = "Gen Name"
@@ -397,7 +397,7 @@ and 8784 values per column.
 Create a data frame from `Solar_Time_Series.csv` and define variables for the
 aforementioned resolution and time stamps:
 
-```@example system_from_csv
+```julia
 solar_time_series = CSV.read("MyData/Solar_Time_Series.csv", DataFrame)
 
 resolution = Dates.Hour(1);
@@ -419,7 +419,7 @@ In the same `for` loop, we will build the solar generator components using the
 [`RenewableDispatch`](@ref) constructor and data stored in the `solar_gens`
 data frame, and build and attach each solar generator's time series:
 
-```@example system_from_csv
+```julia
 for row in eachrow(solar_gens)
     norm = maximum(solar_time_series[:, row[name]])
     solar_data_MW = solar_time_series[:, row[name]]
@@ -468,7 +468,7 @@ contents of the `Bus` column must be consistent with the convention used in the
 Read in the contents of the CSV file `Hydro_Gens.csv` to a data frame and
 customize the parameter names based on the column names in your CSV file.
 
-```@example system_from_csv
+```julia
 hydro_gens = CSV.read("MyData/Hydro_Gens.csv", DataFrame)
 
 name = "Gen Name"
@@ -504,7 +504,7 @@ and 8784 values per column.
 Create a data frame from `Hydro_Time_Series.csv` and define variables for the
 aforementioned resolution and time stamps:
 
-```@example system_from_csv
+```julia
 hydro_time_series = CSV.read("MyData/Hydro_Time_Series.csv", DataFrame)
 
 resolution = Dates.Hour(1);
@@ -523,7 +523,7 @@ In the same `for` loop, we will build the hydro generator components using the
 [`HydroDispatch`](@ref) constructor and data stored in the `hydro_gens`
 data frame, and build and attach each hydro generator's time series:
 
-```@example system_from_csv
+```julia
 for row in eachrow(hydro_gens)
     norm = maximum(hydro_time_series[:, row[name]])
     hydro_data_MW = hydro_time_series[:, row[name]]
@@ -582,7 +582,7 @@ column of `Buses.csv`, and similarly for the `Region` column.
 Read in the contents of the CSV file `Loads.csv` to a data frame and customize
 the parameter names based on the column names in your CSV file.
 
-```@example system_from_csv
+```julia
 load_params = CSV.read("MyData/Loads.csv", DataFrame)
 
 region = "Region"
@@ -612,7 +612,7 @@ formatted.
 Create a data frame from `Load_Time_Series.csv` and define variables for the
 aforementioned [resolution](@ref R) and time stamps:
 
-```@example system_from_csv
+```julia
 load_time_series = CSV.read("MyData/Load_Time_Series.csv", DataFrame)
 
 resolution = Dates.Hour(1);
@@ -624,7 +624,7 @@ constructor according to their regions. Because all loads in each region share
 a time series profile, the `max_active_power` of each load will depend on the
 maximum time series value of its region and its load participation factor.
 
-```@example system_from_csv
+```julia
 for row in eachrow(load_params)
     num = row[number]
     max = maximum(load_time_series[:, row[region]])
@@ -648,7 +648,7 @@ loads' time series to every load in a region at once. Note: due to how
 `max_active_power` is defined, the time series values are normalized to its
 maximum.
 
-```@example system_from_csv
+```julia
 regions = unique(load_params[:, region])
 
 for reg in regions
