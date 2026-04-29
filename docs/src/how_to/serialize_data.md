@@ -97,7 +97,6 @@ Finally, you can read the file back in, and verify the new system has the same d
 
 ```@example serialize_data
 sys2 = System(path)
-rm(folder; recursive = true); #hide
 ```
 
 !!! tip
@@ -109,4 +108,5 @@ rm(folder; recursive = true); #hide
 
     ```@example serialize_data
     system2 = System(path; assign_new_uuids = true)
+    rm(folder; recursive = true); #hide
     ```

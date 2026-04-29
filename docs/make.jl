@@ -5,20 +5,21 @@ using DocumenterInterLinks
 using DocumenterMermaid
 
 # UPDATE FOR CURRENT MODULE NAME HERE
-const _DOCS_BASE_URL = "https://nrel-sienna.github.io/PowerSystems.jl/stable"
+const _DOCS_BASE_URL = "https://sienna-platform.github.io/PowerSystems.jl/stable"
 
 links = InterLinks(
-    "InfrastructureSystems" => "https://nrel-sienna.github.io/InfrastructureSystems.jl/stable/",
+    "InfrastructureSystems" => "https://sienna-platform.github.io/InfrastructureSystems.jl/stable/",
     # Sometimes IS docstrings @extref to PSY, and sometimes those IS docstrings are included
     # in the PSY reference, so we can have PSY @extref-ing to itself:
-    "PowerSystems" => "https://nrel-sienna.github.io/PowerSystems.jl/stable/",
+    "PowerSystems" => "https://sienna-platform.github.io/PowerSystems.jl/stable/",
 )
 
 # This is a fallback for the docstrings that are referenced within IS docstrings
 fallbacks = ExternalFallbacks(
     "ComponentContainer" => "@extref InfrastructureSystems.ComponentContainer",
     "InfrastructureSystemsComponent" => "@extref InfrastructureSystems.InfrastructureSystemsComponent",
-    "PiecewiseLinearData" => "@ref PowerSystems.PiecewiseLinearData",
+    "InfrastructureSystemsInternal" => "@extref InfrastructureSystems.InfrastructureSystemsInternal",
+    "PiecewiseLinearData" => "@extref InfrastructureSystems.PiecewiseLinearData",
 )
 
 # This is commented out because the output is not user-friendly. Deliberation on how to best

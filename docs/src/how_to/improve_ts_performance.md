@@ -1,5 +1,9 @@
 # [Improve Performance with Time Series Data](@id improve_ts_performance)
 
+```@setup improve_ts_performance
+using PowerSystems
+```
+
 Use the steps here to improve performance with small or large data sets, but
 particularly large data sets. These improvements can help handle adding
 large numbers of data sets or reduce overhead when accessing time series data

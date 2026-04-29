@@ -166,6 +166,7 @@ export DynamicInjection
 export DynamicGenerator
 
 export DynamicInverter
+export InverterComponent
 export DynamicBranch
 export HybridSystem
 

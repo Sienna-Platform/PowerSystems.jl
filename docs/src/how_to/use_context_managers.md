@@ -196,7 +196,7 @@ begin_time_series_update(sys) do
         )
 
         forecast = Deterministic(
-            "max_active_power",
+            "max_active_power_2",
             component_data,
             resolution;
             scaling_factor_multiplier = get_max_active_power,

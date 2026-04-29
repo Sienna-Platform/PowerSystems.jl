@@ -52,13 +52,14 @@ assigned to a subsystem. This requires careful assignment of all dependencies â€
 the devices themselves, but also any topology elements (buses, arcs) they reference.
 
 ```@example subsystem
-from_subsystem(sys, "1")
+from_subsystem(sys, "1"; runchecks=false)
 ```
 
 !!! warning
 
-    The system above is invalid because the bus connected to the Alta generator is not
-    part of subsystem "1". Add the bus first, then re-run [`from_subsystem`](@ref):
+    The system above was created with `runchecks=false` and is technically invalid: the bus
+    connected to the Alta generator is not part of subsystem "1". Without `runchecks=false`,
+    this call would raise an error. Add the bus first, then re-run [`from_subsystem`](@ref):
 
 A valid exported `System` requires three additional components:
 
