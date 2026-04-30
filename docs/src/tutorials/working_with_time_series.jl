@@ -107,7 +107,7 @@ wind_time_series = SingleTimeSeries(;
 
 # Note that we've chosen the name `max_active_power`, which is the default time series profile
 # name when using
-# [PowerSimulations.jl](https://nrel-sienna.github.io/PowerSimulations.jl/stable/formulation_library/RenewableGen/)
+# [PowerSimulations.jl](https://sienna-platform.github.io/PowerSimulations.jl/stable/formulation_library/RenewableGen/)
 # for simulations.
 # So far, this time series has been defined, but not attached to our [`System`](@ref) in any way. Now,
 # attach it to `wind1` using [`add_time_series!`](@ref add_time_series!(sys::System, component::Component, time_series::TimeSeriesData; features...)):

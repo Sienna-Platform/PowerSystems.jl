@@ -18,6 +18,6 @@ configure_logging(; console_level = Logging.Error)
 `flush(logger)` to make this happen.
 
 [Refer to this
-page](https://nrel-sienna.github.io/InfrastructureSystems.jl/stable/dev_guide/logging/#Use-Cases)
+page](https://sienna-platform.github.io/InfrastructureSystems.jl/stable/dev_guide/logging/#Use-Cases)
 for more logging configuration options. Note that it describes how to enable
 debug logging for some log messages but not others.

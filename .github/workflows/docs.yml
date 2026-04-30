@@ -18,6 +18,16 @@ jobs:
           version: '1'
       - name: Install dependencies
         run: julia --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
+
+      - name: Set DOCUMENTER_CURRENT_VERSION for tutorial download links
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            echo "DOCUMENTER_CURRENT_VERSION=previews/PR${{ github.event.pull_request.number }}" >> "$GITHUB_ENV"
+          elif [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            echo "DOCUMENTER_CURRENT_VERSION=${GITHUB_REF_NAME}" >> "$GITHUB_ENV"
+          elif [[ "${{ github.ref }}" == "refs/heads/main" ]] || [[ "${{ github.ref }}" =~ ^refs/heads/release- ]]; then
+            echo "DOCUMENTER_CURRENT_VERSION=dev" >> "$GITHUB_ENV"
+          fi
       - name: Build and deploy
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

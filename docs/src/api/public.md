@@ -120,7 +120,7 @@ Filter = t -> t ∉ [System]
 
 ## Advanced Component Selection
 
-The primary way to retrieve components in PowerSystems.jl is with the [`get_components`](@ref) and similar `get_*` methods above. The following `ComponentSelector` interface offers advanced, repeatable component selection primarily for multi-scenario post-processing analytics. See [`PowerAnalytics.jl`](https://nrel-sienna.github.io/PowerAnalytics.jl/stable/).
+The primary way to retrieve components in PowerSystems.jl is with the [`get_components`](@ref) and similar `get_*` methods above. The following `ComponentSelector` interface offers advanced, repeatable component selection primarily for multi-scenario post-processing analytics. See [`PowerAnalytics.jl`](https://sienna-platform.github.io/PowerAnalytics.jl/stable/).
 
 ```@autodocs
 Modules = [IS]
