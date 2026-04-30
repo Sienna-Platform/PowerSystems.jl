@@ -52,7 +52,7 @@ assigned to a subsystem. This requires careful assignment of all dependencies â€
 the devices themselves, but also any topology elements (buses, arcs) they reference.
 
 ```@example subsystem
-from_subsystem(sys, "1"; runchecks=false)
+from_subsystem(sys, "1"; runchecks = false)
 ```
 
 !!! warning

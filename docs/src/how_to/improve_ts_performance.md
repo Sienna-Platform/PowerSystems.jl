@@ -29,7 +29,7 @@ If the system's time series data will be larger than the amount of tmp space ava
 the `time_series_directory` parameter to change its location.
 
 ```@example improve_ts_performance
-sys = System(100.0; time_series_directory = "bigger_directory")
+sys = System(100.0; time_series_directory = mktempdir())
 ```
 
 You can also override the location by setting the environment
