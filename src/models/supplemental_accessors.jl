@@ -96,7 +96,7 @@ Return the base voltage (kV) of a [`Line`](@ref) or [`MonitoredLine`](@ref) by r
 `base_voltage` from both endpoints of the line's [`Arc`](@ref).
 
 If the two bus voltages are identical, that value is returned directly. If they differ but
-are within [`BRANCH_BUS_VOLTAGE_DIFFERENCE_TOL`] (percent), the value with fewer significant
+are within `BRANCH_BUS_VOLTAGE_DIFFERENCE_TOL` (percent), the value with fewer significant
 figures is returned (i.e., the rounder number). If the difference exceeds the tolerance, an
 error is thrown.
 """
