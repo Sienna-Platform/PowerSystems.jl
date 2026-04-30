@@ -2241,7 +2241,8 @@ when actual forecasts are unavailable, without unnecessarily duplicating data.
 
 If all `SingleTimeSeries` instances cannot be transformed then none will be.
 
-Any existing `DeterministicSingleTimeSeries` forecasts will be deleted before the transform.
+Any existing `DeterministicSingleTimeSeries` forecasts will be deleted before the transform
+when `delete_existing = true` (the default).
 
 # Arguments
 - `sys::System`: System containing the components.
@@ -2249,12 +2250,15 @@ Any existing `DeterministicSingleTimeSeries` forecasts will be deleted before th
 - `interval::Dates.Period`: desired [interval](@ref I) between forecast [windows](@ref W)
 - `resolution::Union{Nothing, Dates.Period} = nothing`: If set, only transform time series
    with this resolution.
+- `delete_existing::Bool = true`: If `true`, delete any existing `DeterministicSingleTimeSeries`
+   before transforming.
 """
 function transform_single_time_series!(
     sys::System,
     horizon::Dates.Period,
     interval::Dates.Period;
     resolution::Union{Nothing, Dates.Period} = nothing,
+    delete_existing::Bool = true,
 )
     IS.transform_single_time_series!(
         sys.data,
@@ -2262,6 +2266,7 @@ function transform_single_time_series!(
         horizon,
         interval;
         resolution = resolution,
+        delete_existing = delete_existing,
     )
     return
 end
