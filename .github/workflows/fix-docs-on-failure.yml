@@ -131,7 +131,7 @@ jobs:
               '',
               'Follow these guidelines when making documentation changes:',
               '- [Sienna documentation practices](https://github.com/Sienna-Platform/InfrastructureSystems.jl/blob/main/.claude/Sienna.md) (see "Documentation Practices and Requirements")',
-              '- [Sienna docs best practices](https://nrel-sienna.github.io/InfrastructureSystems.jl/stable/docs_best_practices/explanation/)',
+              '- [Sienna docs best practices](https://sienna-platform.github.io/InfrastructureSystems.jl/stable/docs_best_practices/explanation/)',
               '- [Diataxis framework](https://diataxis.fr/)',
               '',
               '### Failure Details',

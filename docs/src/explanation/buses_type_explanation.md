@@ -34,7 +34,7 @@ There is a nuanced distinction between a slack bus and a reference bus. In most 
       + Unknown: Real Power ($P$) and Reactive Power ($Q$). These values are calculated as residuals after the power flow solution converges to account for system losses and imbalances when there is a single slack bus that matches the reference bus.
       + Serves as the "reference" for all other bus voltage angles in the AC interconnected system.
 
-For the study of large interconnected areas that include different asynchronous AC networks connected through HVDC, the system can contain multiple reference buses. Since not all modeling efforts require a properly set reference bus, e.g., Zonal Modeling, **PowerSystems.jl does not perform a verification that the system buses are adequately set. This feature is implemented in [`PowerNetworkMatrices.jl`](https://nrel-sienna.github.io/PowerNetworkMatrices.jl/stable/).**
+For the study of large interconnected areas that include different asynchronous AC networks connected through HVDC, the system can contain multiple reference buses. Since not all modeling efforts require a properly set reference bus, e.g., Zonal Modeling, **PowerSystems.jl does not perform a verification that the system buses are adequately set. This feature is implemented in [`PowerNetworkMatrices.jl`](https://sienna-platform.github.io/PowerNetworkMatrices.jl/stable/).**
 
 ## Isolated Buses and the `available` field
 

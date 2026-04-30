@@ -117,7 +117,7 @@ Omitting `interval` when multiple intervals exist for the same name will raise a
 By default PowerSystems stores time series data in an HDF5 file.
 This prevents
 large datasets from overwhelming system memory. Refer to this
-[page](https://nrel-sienna.github.io/InfrastructureSystems.jl/stable/dev_guide/time_series/#Data-Format)
+[page](https://sienna-platform.github.io/InfrastructureSystems.jl/stable/dev_guide/time_series/#Data-Format)
 for details on how the time series data is stored in HDF5 files.
 
 Time series data can be stored actual component values (for instance MW) or scaling
@@ -138,4 +138,4 @@ store a scaling factor time series that will get multiplied by the maximum activ
 rather than the magnitudes of the maximum active power time series.
 
 Examples of how to create and add time series to system can be found in the
-[Add Time Series Example](https://nrel-sienna.github.io/PowerSystems.jl/stable/tutorials/add_forecasts/)
+[Add Time Series Example](https://sienna-platform.github.io/PowerSystems.jl/stable/tutorials/add_forecasts/)

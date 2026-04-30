@@ -33,7 +33,7 @@ Parameters of the Inner Control part of the REECB model in PSS/E
 - `dbd_pnts::Tuple{Float64, Float64}`: Voltage error deadband thresholds `(dbd1, dbd2)`
 - `K_qv::Float64`: Reactive current injection gain during over and undervoltage conditions, validation range: `(0, nothing)`
 - `Iqinj_lim::MinMax`: Limits for Iqinj `(I_qh1, I_ql1)`
-- `V_ref0::Float64`: User defined reference. If 0, [`PowerSimulationsDynamics.jl`](https://nrel-sienna.github.io/PowerSimulationsDynamics.jl/stable/) initializes to initial terminal voltage, validation range: `(0, nothing)`
+- `V_ref0::Float64`: User defined reference. If 0, [`PowerSimulationsDynamics.jl`](https://sienna-platform.github.io/PowerSimulationsDynamics.jl/stable/) initializes to initial terminal voltage, validation range: `(0, nothing)`
 - `K_vp::Float64`: Voltage regulator proportional gain (used when QFlag = 1), validation range: `(0, nothing)`
 - `K_vi::Float64`: Voltage regulator integral gain (used when QFlag = 1), validation range: `(0, nothing)`
 - `T_iq::Float64`: Time constant for low-pass filter for state q_V when QFlag = 0, validation range: `(0, nothing)`
@@ -57,7 +57,7 @@ mutable struct RECurrentControlB <: InnerControl
     K_qv::Float64
     "Limits for Iqinj `(I_qh1, I_ql1)`"
     Iqinj_lim::MinMax
-    "User defined reference. If 0, [`PowerSimulationsDynamics.jl`](https://nrel-sienna.github.io/PowerSimulationsDynamics.jl/stable/) initializes to initial terminal voltage"
+    "User defined reference. If 0, [`PowerSimulationsDynamics.jl`](https://sienna-platform.github.io/PowerSimulationsDynamics.jl/stable/) initializes to initial terminal voltage"
     V_ref0::Float64
     "Voltage regulator proportional gain (used when QFlag = 1)"
     K_vp::Float64
