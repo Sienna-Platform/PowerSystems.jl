@@ -380,3 +380,39 @@ end
 function supports_services(::AreaInterchange)
     return true
 end
+
+# supports_active_power overrides for types without controllable active power
+supports_active_power(::SynchronousCondenser) = false
+supports_active_power(::FixedAdmittance) = false
+supports_active_power(::SwitchedAdmittance) = false
+
+# supports_reactive_power overrides for types without controllable reactive power
+supports_reactive_power(::InterconnectingConverter) = false
+supports_reactive_power(::FixedAdmittance) = false
+
+# FACTSControlDevice reactive power and voltage control depend on control_mode.
+# control_mode is nothing for uninitialized devices (e.g. FACTSControlDevice(nothing)).
+_facts_is_active(d::FACTSControlDevice) =
+    (mode = get_control_mode(d); !isnothing(mode) && mode != FACTSOperationModes.OOS)
+
+# In NML mode both Series and Shunt links operate, enabling active power control.
+# In BYP mode the Series link is bypassed and the Shunt acts as a STATCOM (reactive only).
+function supports_active_power(d::FACTSControlDevice)
+    mode = get_control_mode(d)
+    return !isnothing(mode) && mode == FACTSOperationModes.NML
+end
+
+supports_reactive_power(d::FACTSControlDevice) = _facts_is_active(d)
+
+# supports_voltage_control overrides for types that can control voltage
+supports_voltage_control(::Generator) = true
+supports_voltage_control(::Source) = true
+supports_voltage_control(::Storage) = true
+supports_voltage_control(::StaticInjectionSubsystem) = true
+
+supports_voltage_control(d::FACTSControlDevice) = _facts_is_active(d)
+
+function supports_voltage_control(d::SynchronousCondenser)
+    bustype = get_bustype(get_bus(d))
+    return bustype ∈ (ACBusTypes.PV, ACBusTypes.REF, ACBusTypes.SLACK)
+end

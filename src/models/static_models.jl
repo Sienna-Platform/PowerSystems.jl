@@ -26,6 +26,21 @@ function get_services(device::Device)
     return Vector{Service}()
 end
 
+"""
+Return `true` if the device has active power as a controllable parameter.
+"""
+supports_active_power(::StaticInjection) = true
+
+"""
+Return `true` if the device has reactive power as a controllable parameter.
+"""
+supports_reactive_power(::StaticInjection) = true
+
+"""
+Return `true` if the device can control voltage at its connected bus.
+"""
+supports_voltage_control(::StaticInjection) = false
+
 get_dynamic_injector(d::StaticInjection) = nothing
 
 function get_frequency_droop(static_injector::StaticInjection)

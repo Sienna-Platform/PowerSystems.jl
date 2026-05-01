@@ -459,6 +459,9 @@ export get_time_series_array
 export get_time_series_resolutions
 export supports_time_series
 export supports_supplemental_attributes
+export supports_active_power
+export supports_reactive_power
+export supports_voltage_control
 export get_time_series_timestamps
 export get_time_series_values
 export get_time_series_counts
