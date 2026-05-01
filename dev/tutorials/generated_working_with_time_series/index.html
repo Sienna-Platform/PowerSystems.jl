@@ -166,20 +166,20 @@ wind_timearray = TimeArray(timestamps, wind_values);</code></pre><p>Now, use the
     DateTime(&quot;2020-01-01T08:30:00&quot;) =&gt; [9.0, 9, 9, 9, 8, 7, 6, 5, 4, 5, 4, 4],
     DateTime(&quot;2020-01-01T09:00:00&quot;) =&gt; [6.0, 6, 5, 5, 4, 5, 6, 7, 7, 7, 6, 6],
 );</code></pre><p>Define the <a href="../../api/public/#InfrastructureSystems.Deterministic"><code>Deterministic</code></a> forecast and attach it to <code>wind1</code>:</p><pre><code class="language-julia hljs">wind_forecast = Deterministic(&quot;max_active_power&quot;, wind_forecast_data, resolution);
-add_time_series!(system, wind1, wind_forecast);</code></pre><p>Let&#39;s call <code>show_time_series</code> once again:</p><pre><code class="language-julia hljs">show_time_series(wind1)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">┌──────────────────┬──────────────────┬─────────────────────┬──────────────┬────
-│<span class="sgr1"> time_series_type </span>│<span class="sgr1">             name </span>│<span class="sgr1">   initial_timestamp </span>│<span class="sgr1">   resolution </span>│<span class="sgr1">  </span> ⋯
-│<span class="sgr90">           String </span>│<span class="sgr90">           String </span>│<span class="sgr90">      Dates.DateTime </span>│<span class="sgr90"> Dates.Minute </span>│<span class="sgr90"> D</span> ⋯
-├──────────────────┼──────────────────┼─────────────────────┼──────────────┼────
-│    Deterministic │ max_active_power │ 2020-01-01T08:00:00 │    5 minutes │   ⋯
-└──────────────────┴──────────────────┴─────────────────────┴──────────────┴────
-<span class="sgr36">                                                               4 columns omitted</span>
-┌──────────────────┬──────────────────┬─────────────────────┬───────────────────
+add_time_series!(system, wind1, wind_forecast);</code></pre><p>Let&#39;s call <code>show_time_series</code> once again:</p><pre><code class="language-julia hljs">show_time_series(wind1)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">┌──────────────────┬──────────────────┬─────────────────────┬───────────────────
 │<span class="sgr1"> time_series_type </span>│<span class="sgr1">             name </span>│<span class="sgr1">   initial_timestamp </span>│<span class="sgr1">          resolut</span> ⋯
 │<span class="sgr90">           String </span>│<span class="sgr90">           String </span>│<span class="sgr90">      Dates.DateTime </span>│<span class="sgr90">   Dates.Millisec</span> ⋯
 ├──────────────────┼──────────────────┼─────────────────────┼───────────────────
 │ SingleTimeSeries │ max_active_power │ 2020-01-01T08:00:00 │ 300000 milliseco ⋯
 └──────────────────┴──────────────────┴─────────────────────┴───────────────────
-<span class="sgr36">                                                               3 columns omitted</span></code></pre><p>Notice that we now have two types of time series listed – the single time series and the forecasts. Finally, let&#39;s retrieve the forecast data to double check it was added properly, specifying the initial time to get the 2nd forecast window starting at 8:30:</p><pre><code class="language-julia hljs">get_time_series_array(
+<span class="sgr36">                                                               3 columns omitted</span>
+┌──────────────────┬──────────────────┬─────────────────────┬──────────────┬────
+│<span class="sgr1"> time_series_type </span>│<span class="sgr1">             name </span>│<span class="sgr1">   initial_timestamp </span>│<span class="sgr1">   resolution </span>│<span class="sgr1">  </span> ⋯
+│<span class="sgr90">           String </span>│<span class="sgr90">           String </span>│<span class="sgr90">      Dates.DateTime </span>│<span class="sgr90"> Dates.Minute </span>│<span class="sgr90"> D</span> ⋯
+├──────────────────┼──────────────────┼─────────────────────┼──────────────┼────
+│    Deterministic │ max_active_power │ 2020-01-01T08:00:00 │    5 minutes │   ⋯
+└──────────────────┴──────────────────┴─────────────────────┴──────────────┴────
+<span class="sgr36">                                                               4 columns omitted</span></code></pre><p>Notice that we now have two types of time series listed – the single time series and the forecasts. Finally, let&#39;s retrieve the forecast data to double check it was added properly, specifying the initial time to get the 2nd forecast window starting at 8:30:</p><pre><code class="language-julia hljs">get_time_series_array(
     Deterministic,
     wind1,
     &quot;max_active_power&quot;;
@@ -300,20 +300,20 @@ load_timearray = TimeArray(timestamps, load_values);</code></pre><p>Again, defin
     system,
     Dates.Hour(1), # horizon
     Dates.Minute(30), # interval
-);</code></pre><p>Let&#39;s see the results for <code>load1</code>&#39;s time series summary:</p><pre><code class="language-julia hljs">show_time_series(load1)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">┌───────────────────────────────┬──────────────────┬─────────────────────┬──────
-│<span class="sgr1">              time_series_type </span>│<span class="sgr1">             name </span>│<span class="sgr1">   initial_timestamp </span>│<span class="sgr1">    </span> ⋯
-│<span class="sgr90">                        String </span>│<span class="sgr90">           String </span>│<span class="sgr90">      Dates.DateTime </span>│<span class="sgr90">   D</span> ⋯
-├───────────────────────────────┼──────────────────┼─────────────────────┼──────
-│ DeterministicSingleTimeSeries │ max_active_power │ 2020-01-01T08:00:00 │ 300 ⋯
-└───────────────────────────────┴──────────────────┴─────────────────────┴──────
-<span class="sgr36">                                                               5 columns omitted</span>
-┌──────────────────┬──────────────────┬─────────────────────┬───────────────────
+);</code></pre><p>Let&#39;s see the results for <code>load1</code>&#39;s time series summary:</p><pre><code class="language-julia hljs">show_time_series(load1)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">┌──────────────────┬──────────────────┬─────────────────────┬───────────────────
 │<span class="sgr1"> time_series_type </span>│<span class="sgr1">             name </span>│<span class="sgr1">   initial_timestamp </span>│<span class="sgr1">          resolut</span> ⋯
 │<span class="sgr90">           String </span>│<span class="sgr90">           String </span>│<span class="sgr90">      Dates.DateTime </span>│<span class="sgr90">   Dates.Millisec</span> ⋯
 ├──────────────────┼──────────────────┼─────────────────────┼───────────────────
 │ SingleTimeSeries │ max_active_power │ 2020-01-01T08:00:00 │ 300000 milliseco ⋯
 └──────────────────┴──────────────────┴─────────────────────┴───────────────────
-<span class="sgr36">                                                               3 columns omitted</span></code></pre><p>Notice we now have a load forecast data set with the resolution, horizon, and, interval matching our wind forecasts. Retrieve the first forecast window:</p><pre><code class="language-julia hljs">get_time_series_array(
+<span class="sgr36">                                                               3 columns omitted</span>
+┌───────────────────────────────┬──────────────────┬─────────────────────┬──────
+│<span class="sgr1">              time_series_type </span>│<span class="sgr1">             name </span>│<span class="sgr1">   initial_timestamp </span>│<span class="sgr1">    </span> ⋯
+│<span class="sgr90">                        String </span>│<span class="sgr90">           String </span>│<span class="sgr90">      Dates.DateTime </span>│<span class="sgr90">   D</span> ⋯
+├───────────────────────────────┼──────────────────┼─────────────────────┼──────
+│ DeterministicSingleTimeSeries │ max_active_power │ 2020-01-01T08:00:00 │ 300 ⋯
+└───────────────────────────────┴──────────────────┴─────────────────────┴──────
+<span class="sgr36">                                                               5 columns omitted</span></code></pre><p>Notice we now have a load forecast data set with the resolution, horizon, and, interval matching our wind forecasts. Retrieve the first forecast window:</p><pre><code class="language-julia hljs">get_time_series_array(
     DeterministicSingleTimeSeries,
     load1,
     &quot;max_active_power&quot;;
@@ -339,21 +339,21 @@ load_timearray = TimeArray(timestamps, load_values);</code></pre><p>Again, defin
     Dates.Hour(1), # horizon
     Dates.Hour(1); # a longer interval
     delete_existing = false,
-);</code></pre><p>Now <code>load1</code> has two <a href="../../api/public/#InfrastructureSystems.DeterministicSingleTimeSeries"><code>DeterministicSingleTimeSeries</code></a> forecasts with different intervals. Let&#39;s verify:</p><pre><code class="language-julia hljs">show_time_series(load1)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">┌───────────────────────────────┬──────────────────┬─────────────────────┬──────
+);</code></pre><p>Now <code>load1</code> has two <a href="../../api/public/#InfrastructureSystems.DeterministicSingleTimeSeries"><code>DeterministicSingleTimeSeries</code></a> forecasts with different intervals. Let&#39;s verify:</p><pre><code class="language-julia hljs">show_time_series(load1)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">┌──────────────────┬──────────────────┬─────────────────────┬───────────────────
+│<span class="sgr1"> time_series_type </span>│<span class="sgr1">             name </span>│<span class="sgr1">   initial_timestamp </span>│<span class="sgr1">          resolut</span> ⋯
+│<span class="sgr90">           String </span>│<span class="sgr90">           String </span>│<span class="sgr90">      Dates.DateTime </span>│<span class="sgr90">   Dates.Millisec</span> ⋯
+├──────────────────┼──────────────────┼─────────────────────┼───────────────────
+│ SingleTimeSeries │ max_active_power │ 2020-01-01T08:00:00 │ 300000 milliseco ⋯
+└──────────────────┴──────────────────┴─────────────────────┴───────────────────
+<span class="sgr36">                                                               3 columns omitted</span>
+┌───────────────────────────────┬──────────────────┬─────────────────────┬──────
 │<span class="sgr1">              time_series_type </span>│<span class="sgr1">             name </span>│<span class="sgr1">   initial_timestamp </span>│<span class="sgr1">    </span> ⋯
 │<span class="sgr90">                        String </span>│<span class="sgr90">           String </span>│<span class="sgr90">      Dates.DateTime </span>│<span class="sgr90">   D</span> ⋯
 ├───────────────────────────────┼──────────────────┼─────────────────────┼──────
 │ DeterministicSingleTimeSeries │ max_active_power │ 2020-01-01T08:00:00 │ 300 ⋯
 │ DeterministicSingleTimeSeries │ max_active_power │ 2020-01-01T08:00:00 │ 300 ⋯
 └───────────────────────────────┴──────────────────┴─────────────────────┴──────
-<span class="sgr36">                                                               5 columns omitted</span>
-┌──────────────────┬──────────────────┬─────────────────────┬───────────────────
-│<span class="sgr1"> time_series_type </span>│<span class="sgr1">             name </span>│<span class="sgr1">   initial_timestamp </span>│<span class="sgr1">          resolut</span> ⋯
-│<span class="sgr90">           String </span>│<span class="sgr90">           String </span>│<span class="sgr90">      Dates.DateTime </span>│<span class="sgr90">   Dates.Millisec</span> ⋯
-├──────────────────┼──────────────────┼─────────────────────┼───────────────────
-│ SingleTimeSeries │ max_active_power │ 2020-01-01T08:00:00 │ 300000 milliseco ⋯
-└──────────────────┴──────────────────┴─────────────────────┴───────────────────
-<span class="sgr36">                                                               3 columns omitted</span></code></pre><p>When multiple intervals exist for the same name, you must specify <code>interval</code> to disambiguate retrieval:</p><pre><code class="language-julia hljs">get_time_series_array(
+<span class="sgr36">                                                               5 columns omitted</span></code></pre><p>When multiple intervals exist for the same name, you must specify <code>interval</code> to disambiguate retrieval:</p><pre><code class="language-julia hljs">get_time_series_array(
     DeterministicSingleTimeSeries,
     load1,
     &quot;max_active_power&quot;;
@@ -382,20 +382,20 @@ load_timearray = TimeArray(timestamps, load_values);</code></pre><p>Again, defin
     &quot;max_active_power&quot;;
     interval = Dates.Hour(1),
 );
-show_time_series(load1)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">┌───────────────────────────────┬──────────────────┬─────────────────────┬──────
-│<span class="sgr1">              time_series_type </span>│<span class="sgr1">             name </span>│<span class="sgr1">   initial_timestamp </span>│<span class="sgr1">    </span> ⋯
-│<span class="sgr90">                        String </span>│<span class="sgr90">           String </span>│<span class="sgr90">      Dates.DateTime </span>│<span class="sgr90">   D</span> ⋯
-├───────────────────────────────┼──────────────────┼─────────────────────┼──────
-│ DeterministicSingleTimeSeries │ max_active_power │ 2020-01-01T08:00:00 │ 300 ⋯
-└───────────────────────────────┴──────────────────┴─────────────────────┴──────
-<span class="sgr36">                                                               5 columns omitted</span>
-┌──────────────────┬──────────────────┬─────────────────────┬───────────────────
+show_time_series(load1)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">┌──────────────────┬──────────────────┬─────────────────────┬───────────────────
 │<span class="sgr1"> time_series_type </span>│<span class="sgr1">             name </span>│<span class="sgr1">   initial_timestamp </span>│<span class="sgr1">          resolut</span> ⋯
 │<span class="sgr90">           String </span>│<span class="sgr90">           String </span>│<span class="sgr90">      Dates.DateTime </span>│<span class="sgr90">   Dates.Millisec</span> ⋯
 ├──────────────────┼──────────────────┼─────────────────────┼───────────────────
 │ SingleTimeSeries │ max_active_power │ 2020-01-01T08:00:00 │ 300000 milliseco ⋯
 └──────────────────┴──────────────────┴─────────────────────┴───────────────────
-<span class="sgr36">                                                               3 columns omitted</span></code></pre><p>The 30-minute interval forecast is still present while the 1-hour one has been removed.</p><h1 id="Finding,-Retrieving,-and-Inspecting-Time-Series"><a class="docs-heading-anchor" href="#Finding,-Retrieving,-and-Inspecting-Time-Series">Finding, Retrieving, and Inspecting Time Series</a><a id="Finding,-Retrieving,-and-Inspecting-Time-Series-1"></a><a class="docs-heading-anchor-permalink" href="#Finding,-Retrieving,-and-Inspecting-Time-Series" title="Permalink"></a></h1><p>Now, let&#39;s complete this tutorial by doing a few sanity checks on the data that we&#39;ve added, where are we will also examine components with time series and retrieve the time series data in a few more ways. First, recall that we can print a component to check its <code>has_time_series</code> field:</p><pre><code class="language-julia hljs">load1</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">PowerLoad: load1:
+<span class="sgr36">                                                               3 columns omitted</span>
+┌───────────────────────────────┬──────────────────┬─────────────────────┬──────
+│<span class="sgr1">              time_series_type </span>│<span class="sgr1">             name </span>│<span class="sgr1">   initial_timestamp </span>│<span class="sgr1">    </span> ⋯
+│<span class="sgr90">                        String </span>│<span class="sgr90">           String </span>│<span class="sgr90">      Dates.DateTime </span>│<span class="sgr90">   D</span> ⋯
+├───────────────────────────────┼──────────────────┼─────────────────────┼──────
+│ DeterministicSingleTimeSeries │ max_active_power │ 2020-01-01T08:00:00 │ 300 ⋯
+└───────────────────────────────┴──────────────────┴─────────────────────┴──────
+<span class="sgr36">                                                               5 columns omitted</span></code></pre><p>The 30-minute interval forecast is still present while the 1-hour one has been removed.</p><h1 id="Finding,-Retrieving,-and-Inspecting-Time-Series"><a class="docs-heading-anchor" href="#Finding,-Retrieving,-and-Inspecting-Time-Series">Finding, Retrieving, and Inspecting Time Series</a><a id="Finding,-Retrieving,-and-Inspecting-Time-Series-1"></a><a class="docs-heading-anchor-permalink" href="#Finding,-Retrieving,-and-Inspecting-Time-Series" title="Permalink"></a></h1><p>Now, let&#39;s complete this tutorial by doing a few sanity checks on the data that we&#39;ve added, where are we will also examine components with time series and retrieve the time series data in a few more ways. First, recall that we can print a component to check its <code>has_time_series</code> field:</p><pre><code class="language-julia hljs">load1</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">PowerLoad: load1:
    name: load1
    available: true
    bus: ACBus: bus1
@@ -591,7 +591,7 @@ show_time_series(load1)</code></pre><pre class="documenter-example-output"><code
 │    Deterministic │ max_active_power │ 2020-01-01T08:00:00 │    5 minutes │   ⋯
 └──────────────────┴──────────────────┴─────────────────────┴──────────────┴────
 <span class="sgr36">                                                               4 columns omitted</span></code></pre><p>See that it only has the <a href="../../api/public/#InfrastructureSystems.Deterministic"><code>Deterministic</code></a> forecast, as expected. Finally, let&#39;s do a last data sanity check on the forecasts. Since we defined the wind time series in MW instead of scaling factors, let&#39;s make sure none of our forecasts exceeds the <code>max_active_power</code> parameter. Instead of using <code>get_time_series_array</code> where we need to remember some details of the time series we&#39;re looking up, let&#39;s use <a href="../../api/public/#InfrastructureSystems.get_time_series_keys-Tuple{Union{InfrastructureSystems.InfrastructureSystemsComponent, SupplementalAttribute}}"><code>get_time_series_keys</code></a> to refresh our memories:</p><pre><code class="language-julia hljs">keys = get_time_series_keys(wind1)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">1-element Vector{ForecastKey}:
- ForecastKey(Deterministic, &quot;max_active_power&quot;, Dates.DateTime(&quot;2020-01-01T08:00:00&quot;), Dates.Minute(5), Dates.Minute(60), Dates.Millisecond(1800000), 3, Dict{String, Any}())</code></pre><p>See the forecast key is first, so let&#39;s retrieve it using <a href="../../api/public/#InfrastructureSystems.get_time_series-Tuple{Union{InfrastructureSystems.InfrastructureSystemsComponent, SupplementalAttribute}, TimeSeriesKey}"><code>get_time_series</code></a>:</p><pre><code class="language-julia hljs">forecast = get_time_series(wind1, keys[1])</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Deterministic(&quot;max_active_power&quot;, DataStructures.SortedDict(Dates.DateTime(&quot;2020-01-01T08:00:00&quot;) =&gt; [5.0, 6.0, 7.0, 7.0, 7.0, 8.0, 9.0, 10.0, 10.0, 9.0, 7.0, 5.0], Dates.DateTime(&quot;2020-01-01T08:30:00&quot;) =&gt; [9.0, 9.0, 9.0, 9.0, 8.0, 7.0, 6.0, 5.0, 4.0, 5.0, 4.0, 4.0], Dates.DateTime(&quot;2020-01-01T09:00:00&quot;) =&gt; [6.0, 6.0, 5.0, 5.0, 4.0, 5.0, 6.0, 7.0, 7.0, 7.0, 6.0, 6.0]), Dates.Minute(5), Dates.Millisecond(1800000), nothing, InfrastructureSystems.InfrastructureSystemsInternal(Base.UUID(&quot;8cc08c12-0fdf-48d4-a305-7ff75b77999e&quot;), nothing, nothing, nothing))</code></pre><p>See that unlike when we used <code>get_time_series_array</code>, this returns an object we can manipulate. Use <a href="../../api/public/#InfrastructureSystems.iterate_windows-Tuple{Deterministic}"><code>iterate_windows</code></a> to cycle through the 3 forecast windows and inspect the peak value:</p><pre><code class="language-julia hljs">for window in iterate_windows(forecast)
+ ForecastKey(Deterministic, &quot;max_active_power&quot;, Dates.DateTime(&quot;2020-01-01T08:00:00&quot;), Dates.Minute(5), Dates.Minute(60), Dates.Millisecond(1800000), 3, Dict{String, Any}())</code></pre><p>See the forecast key is first, so let&#39;s retrieve it using <a href="../../api/public/#InfrastructureSystems.get_time_series-Tuple{Union{InfrastructureSystems.InfrastructureSystemsComponent, SupplementalAttribute}, TimeSeriesKey}"><code>get_time_series</code></a>:</p><pre><code class="language-julia hljs">forecast = get_time_series(wind1, keys[1])</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Deterministic(&quot;max_active_power&quot;, DataStructures.SortedDict(Dates.DateTime(&quot;2020-01-01T08:00:00&quot;) =&gt; [5.0, 6.0, 7.0, 7.0, 7.0, 8.0, 9.0, 10.0, 10.0, 9.0, 7.0, 5.0], Dates.DateTime(&quot;2020-01-01T08:30:00&quot;) =&gt; [9.0, 9.0, 9.0, 9.0, 8.0, 7.0, 6.0, 5.0, 4.0, 5.0, 4.0, 4.0], Dates.DateTime(&quot;2020-01-01T09:00:00&quot;) =&gt; [6.0, 6.0, 5.0, 5.0, 4.0, 5.0, 6.0, 7.0, 7.0, 7.0, 6.0, 6.0]), Dates.Minute(5), Dates.Millisecond(1800000), nothing, InfrastructureSystems.InfrastructureSystemsInternal(Base.UUID(&quot;21059b72-3dd4-4046-942d-46bcbb0724eb&quot;), nothing, nothing, nothing))</code></pre><p>See that unlike when we used <code>get_time_series_array</code>, this returns an object we can manipulate. Use <a href="../../api/public/#InfrastructureSystems.iterate_windows-Tuple{Deterministic}"><code>iterate_windows</code></a> to cycle through the 3 forecast windows and inspect the peak value:</p><pre><code class="language-julia hljs">for window in iterate_windows(forecast)
     @show values(maximum(window))
 end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">values(maximum(window)) = [10.0]
 values(maximum(window)) = [9.0]
@@ -600,4 +600,4 @@ mermaid.initialize({
     startOnLoad: true,
     theme: "neutral"
 });
-</script></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../generated_manipulating_datasets/">« Manipulating Data Sets</a><a class="docs-footer-nextpage" href="../generated_add_dynamic_data/">Adding Data for Dynamic Simulations »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.15.0 on <span class="colophon-date" title="Thursday 30 April 2026 21:56">Thursday 30 April 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+</script></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../generated_manipulating_datasets/">« Manipulating Data Sets</a><a class="docs-footer-nextpage" href="../generated_add_dynamic_data/">Adding Data for Dynamic Simulations »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.15.0 on <span class="colophon-date" title="Friday 1 May 2026 19:04">Friday 1 May 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
