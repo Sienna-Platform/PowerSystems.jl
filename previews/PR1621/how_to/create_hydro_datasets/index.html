@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>...define hydro generators with reservoirs · PowerSystems.jl</title><meta name="title" content="...define hydro generators with reservoirs · PowerSystems.jl"/><meta property="og:title" content="...define hydro generators with reservoirs · PowerSystems.jl"/><meta property="twitter:title" content="...define hydro generators with reservoirs · PowerSystems.jl"/><meta name="description" content="Documentation for PowerSystems.jl."/><meta property="og:description" content="Documentation for PowerSystems.jl."/><meta property="twitter:description" content="Documentation for PowerSystems.jl."/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.png" alt="PowerSystems.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../../">PowerSystems.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Welcome Page</a></li><li><span class="tocitem">Tutorials</span><ul><li><a class="tocitem" href="../../tutorials/creating_system/">Create and Explore a Power <code>System</code></a></li><li><a class="tocitem" href="../../tutorials/manipulating_datasets/">Manipulating Data Sets</a></li><li><a class="tocitem" href="../../tutorials/working_with_time_series/">Working with Time Series</a></li><li><a class="tocitem" href="../../tutorials/add_dynamic_data/">Adding Data for Dynamic Simulations</a></li></ul></li><li><span class="tocitem">How to...</span><ul><li><input class="collapse-toggle" id="menuitem-3-1" type="checkbox"/><label class="tocitem" for="menuitem-3-1"><span class="docs-label">...import data</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../parse_matpower_psse/">Parse a MATPOWER or PSS/e file</a></li><li><a class="tocitem" href="../parse_dynamic_data/">Parse PSS/e dynamic data</a></li><li><a class="tocitem" href="../build_system_with_files/">Build a <code>System</code> using .csv files</a></li><li><a class="tocitem" href="../serialize_data/">Save and read data with a JSON</a></li></ul></li><li><a class="tocitem" href="../add_component_natural_units/">...add a component using natural units (MW)</a></li><li><a class="tocitem" href="../use_context_managers/">...use context managers for bulk operations</a></li><li><a class="tocitem" href="../adding_additional_fields/">...add additional data to a component</a></li><li><input class="collapse-toggle" id="menuitem-3-5" type="checkbox"/><label class="tocitem" for="menuitem-3-5"><span class="docs-label">...add time-series data</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../parse_ts_from_csvs/">Parse time series data from .csv files</a></li><li><a class="tocitem" href="../improve_ts_performance/">Improve performance with time series data</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-3-6" type="checkbox"/><label class="tocitem" for="menuitem-3-6"><span class="docs-label">...add cost data</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../add_cost_curve/">Add an Operating Cost</a></li><li><a class="tocitem" href="../market_bid_cost/">Add a market bid</a></li><li><a class="tocitem" href="../create_system_with_source_import_export_cost/">Add costs for imported/exported power</a></li><li><a class="tocitem" href="../add_fuel_curve_timeseries/">Add time series fuel costs</a></li></ul></li><li><a class="tocitem" href="../add_new_types/">...customize or add a new Type</a></li><li class="is-active"><a class="tocitem" href>...define hydro generators with reservoirs</a><ul class="internal"><li><a class="tocitem" href="#Shared-Upstream-Reservoir"><span>Shared Upstream Reservoir</span></a></li><li><a class="tocitem" href="#Head-and-Tail-Reservoirs-for-Pumped-Hydropower-Plants"><span>Head and Tail Reservoirs for Pumped Hydropower Plants</span></a></li><li><a class="tocitem" href="#Key-Component-Fields"><span>Key Component Fields</span></a></li><li><a class="tocitem" href="#Helper-Functions"><span>Helper Functions</span></a></li></ul></li><li><a class="tocitem" href="../handle_3W_transformers/">...handle 3-Winding Transformers</a></li><li><a class="tocitem" href="../jump/">...use PowerSystems.jl with JuMP.jl</a></li><li><a class="tocitem" href="../reduce_repl_printing/">...reduce REPL printing</a></li><li><input class="collapse-toggle" id="menuitem-3-12" type="checkbox"/><label class="tocitem" for="menuitem-3-12"><span class="docs-label">...update to a new <code>PowerSystems.jl</code> version</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../migrating_to_psy5/">Migrate from version 4.0 to 5.0</a></li></ul></li></ul></li><li><span class="tocitem">Explanation</span><ul><li><a class="tocitem" href="../../explanation/system/">System</a></li><li><a class="tocitem" href="../../explanation/type_structure/">Type Structure</a></li><li><a class="tocitem" href="../../explanation/buses_type_explanation/">Understanding ACBusTypes</a></li><li><a class="tocitem" href="../../explanation/per_unit/">Per-unit Conventions</a></li><li><a class="tocitem" href="../../explanation/conforming_and_non_conforming_loads/">Conforming and Non-Conforming Loads</a></li><li><a class="tocitem" href="../../explanation/transformer_per_unit_models/">Transformer per unit transformations</a></li><li><a class="tocitem" href="../../explanation/time_series/">Time Series Data</a></li><li><a class="tocitem" href="../../explanation/dynamic_data/">Dynamic Devices</a></li><li><a class="tocitem" href="../../explanation/supplemental_attributes/">Supplemental Attributes</a></li></ul></li><li><span class="tocitem">Model Library</span><ul><li><input class="collapse-toggle" id="menuitem-5-1" type="checkbox"/><label class="tocitem" for="menuitem-5-1"><span class="docs-label">DynamicInverterComponent</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../model_library/generated_Converter/">Converter</a></li><li><a class="tocitem" href="../../model_library/generated_DCSource/">DCSource</a></li><li><a class="tocitem" href="../../model_library/generated_Filter/">Filter</a></li><li><a class="tocitem" href="../../model_library/generated_FrequencyEstimator/">FrequencyEstimator</a></li><li><a class="tocitem" href="../../model_library/generated_InnerControl/">InnerControl</a></li><li><a class="tocitem" href="../../model_library/generated_OutputCurrentLimiter/">OutputCurrentLimiter</a></li><li><a class="tocitem" href="../../model_library/outer_control/">OuterControl</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-5-2" type="checkbox"/><label class="tocitem" for="menuitem-5-2"><span class="docs-label">StaticInjection</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../model_library/generated_FixedAdmittance/">FixedAdmittance</a></li><li><a class="tocitem" href="../../model_library/generated_InterruptiblePowerLoad/">InterruptiblePowerLoad</a></li><li><a class="tocitem" href="../../model_library/generated_InterruptibleStandardLoad/">InterruptibleStandardLoad</a></li><li><a class="tocitem" href="../../model_library/generated_ShiftablePowerLoad/">ShiftablePowerLoad</a></li><li><a class="tocitem" href="../../model_library/generated_ExponentialLoad/">ExponentialLoad</a></li><li><a class="tocitem" href="../../model_library/generated_MotorLoad/">MotorLoad</a></li><li><a class="tocitem" href="../../model_library/generated_PowerLoad/">PowerLoad</a></li><li><a class="tocitem" href="../../model_library/generated_StandardLoad/">StandardLoad</a></li><li><a class="tocitem" href="../../model_library/generated_SwitchedAdmittance/">SwitchedAdmittance</a></li><li><a class="tocitem" href="../../model_library/generated_FACTSControlDevice/">FACTSControlDevice</a></li><li><a class="tocitem" href="../../model_library/generated_HydroDispatch/">HydroDispatch</a></li><li><a class="tocitem" href="../../model_library/generated_HydroPumpTurbine/">HydroPumpTurbine</a></li><li><a class="tocitem" href="../../model_library/generated_HydroTurbine/">HydroTurbine</a></li><li><a class="tocitem" href="../../model_library/generated_RenewableDispatch/">RenewableDispatch</a></li><li><a class="tocitem" href="../../model_library/generated_RenewableNonDispatch/">RenewableNonDispatch</a></li><li><a class="tocitem" href="../../model_library/generated_ThermalMultiStart/">ThermalMultiStart</a></li><li><a class="tocitem" href="../../model_library/generated_ThermalStandard/">ThermalStandard</a></li><li><a class="tocitem" href="../../model_library/generated_InterconnectingConverter/">InterconnectingConverter</a></li><li><a class="tocitem" href="../../model_library/generated_Source/">Source</a></li><li><a class="tocitem" href="../../model_library/generated_EnergyReservoirStorage/">EnergyReservoirStorage</a></li><li><a class="tocitem" href="../../model_library/generated_SynchronousCondenser/">SynchronousCondenser</a></li><li><a class="tocitem" href="../../model_library/hybrid_system/">HybridSystem</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-5-3" type="checkbox"/><label class="tocitem" for="menuitem-5-3"><span class="docs-label">Operating Costs</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../model_library/thermal_generation_cost/">ThermalGenerationCost</a></li><li><a class="tocitem" href="../../model_library/hydro_generation_cost/">HydroGenerationCost</a></li><li><a class="tocitem" href="../../model_library/hydro_reservoir_cost/">HydroReservoirCost</a></li><li><a class="tocitem" href="../../model_library/renewable_generation_cost/">RenewableGenerationCost</a></li><li><a class="tocitem" href="../../model_library/storage_cost/">StorageCost</a></li><li><a class="tocitem" href="../../model_library/load_cost/">LoadCost</a></li><li><a class="tocitem" href="../../model_library/market_bid_cost/">MarketBidCost</a></li><li><a class="tocitem" href="../../model_library/import_export_cost/">ImportExportCost</a></li><li><a class="tocitem" href="../../model_library/offer_curve_cost/">OfferCurveCost</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-5-4" type="checkbox"/><label class="tocitem" for="menuitem-5-4"><span class="docs-label">Topology</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../model_library/generated_Area/">Area</a></li><li><a class="tocitem" href="../../model_library/generated_LoadZone/">LoadZone</a></li><li><a class="tocitem" href="../../model_library/generated_Arc/">Arc</a></li><li><a class="tocitem" href="../../model_library/generated_ACBus/">ACBus</a></li><li><a class="tocitem" href="../../model_library/generated_DCBus/">DCBus</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-5-5" type="checkbox"/><label class="tocitem" for="menuitem-5-5"><span class="docs-label">DynamicInjection</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../model_library/generated_ActiveConstantPowerLoad/">ActiveConstantPowerLoad</a></li><li><a class="tocitem" href="../../model_library/generated_AggregateDistributedGenerationA/">AggregateDistributedGenerationA</a></li><li><a class="tocitem" href="../../model_library/generated_CSVGN1/">CSVGN1</a></li><li><a class="tocitem" href="../../model_library/generated_DynamicExponentialLoad/">DynamicExponentialLoad</a></li><li><a class="tocitem" href="../../model_library/generated_GenericDER/">GenericDER</a></li><li><a class="tocitem" href="../../model_library/generated_PeriodicVariableSource/">PeriodicVariableSource</a></li><li><a class="tocitem" href="../../model_library/generated_SimplifiedSingleCageInductionMachine/">SimplifiedSingleCageInductionMachine</a></li><li><a class="tocitem" href="../../model_library/generated_SingleCageInductionMachine/">SingleCageInductionMachine</a></li><li><a class="tocitem" href="../../model_library/dynamic_inverter/">Dynamic Inverter</a></li><li><a class="tocitem" href="../../model_library/dynamic_generator/">Dynamic Generator</a></li></ul></li><li><a class="tocitem" href="../../model_library/hydro_reservoir/">HydroReservoir</a></li><li><input class="collapse-toggle" id="menuitem-5-7" type="checkbox"/><label class="tocitem" for="menuitem-5-7"><span class="docs-label">Service</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../model_library/generated_AGC/">AGC</a></li><li><a class="tocitem" href="../../model_library/generated_ConstantReserveNonSpinning/">ConstantReserveNonSpinning</a></li><li><a class="tocitem" href="../../model_library/generated_VariableReserveNonSpinning/">VariableReserveNonSpinning</a></li><li><a class="tocitem" href="../../model_library/generated_TransmissionInterface/">TransmissionInterface</a></li><li><a class="tocitem" href="../../model_library/reserves/">Reserves</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-5-8" type="checkbox"/><label class="tocitem" for="menuitem-5-8"><span class="docs-label">Branch</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../model_library/generated_DiscreteControlledACBranch/">DiscreteControlledACBranch</a></li><li><a class="tocitem" href="../../model_library/generated_Line/">Line</a></li><li><a class="tocitem" href="../../model_library/generated_MonitoredLine/">MonitoredLine</a></li><li><a class="tocitem" href="../../model_library/generated_PhaseShiftingTransformer3W/">PhaseShiftingTransformer3W</a></li><li><a class="tocitem" href="../../model_library/generated_Transformer3W/">Transformer3W</a></li><li><a class="tocitem" href="../../model_library/generated_PhaseShiftingTransformer/">PhaseShiftingTransformer</a></li><li><a class="tocitem" href="../../model_library/generated_TapTransformer/">TapTransformer</a></li><li><a class="tocitem" href="../../model_library/generated_Transformer2W/">Transformer2W</a></li><li><a class="tocitem" href="../../model_library/generated_TwoTerminalGenericHVDCLine/">TwoTerminalGenericHVDCLine</a></li><li><a class="tocitem" href="../../model_library/generated_TwoTerminalLCCLine/">TwoTerminalLCCLine</a></li><li><a class="tocitem" href="../../model_library/generated_TwoTerminalVSCLine/">TwoTerminalVSCLine</a></li><li><a class="tocitem" href="../../model_library/generated_AreaInterchange/">AreaInterchange</a></li><li><a class="tocitem" href="../../model_library/generated_TModelHVDCLine/">TModelHVDCLine</a></li><li><a class="tocitem" href="../../model_library/dynamic_branch/">Dynamic Lines</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-5-9" type="checkbox"/><label class="tocitem" for="menuitem-5-9"><span class="docs-label">DynamicGeneratorComponent</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../model_library/generated_AVR/">AVR</a></li><li><a class="tocitem" href="../../model_library/generated_Machine/">Machine</a></li><li><a class="tocitem" href="../../model_library/generated_PSS/">PSS</a></li><li><a class="tocitem" href="../../model_library/generated_Shaft/">Shaft</a></li><li><a class="tocitem" href="../../model_library/generated_TurbineGov/">TurbineGov</a></li></ul></li></ul></li><li><span class="tocitem">Reference</span><ul><li><a class="tocitem" href="../../api/public/">Public API</a></li><li><a class="tocitem" href="../../api/glossary/">Glossary and Acronyms</a></li><li><a class="tocitem" href="../../api/type_tree/">Type Tree</a></li><li><a class="tocitem" href="../../api/valuecurve_options/"><code>ValueCurve</code> Options</a></li><li><a class="tocitem" href="../../api/enumerated_types/">Specifying the category of...</a></li><li><a class="tocitem" href="../../api/psse_models/">Supported PSS/e Models</a></li><li><a class="tocitem" href="../../api/static_injection_subtypes/">Comparison of Load, Generator, and Storage Types</a></li><li><a class="tocitem" href="../../api/citation/">Citation</a></li><li><input class="collapse-toggle" id="menuitem-6-9" type="checkbox"/><label class="tocitem" for="menuitem-6-9"><span class="docs-label">Developers</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../api/developer_guidelines/">Developer Guidelines</a></li><li><a class="tocitem" href="../../api/internal/">Internals</a></li></ul></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">How to...</a></li><li class="is-active"><a href>...define hydro generators with reservoirs</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>...define hydro generators with reservoirs</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/NREL-Sienna/PowerSystems.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/NREL-Sienna/PowerSystems.jl/blob/main/docs/src/how_to/create_hydro_datasets.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="hydro_resv"><a class="docs-heading-anchor" href="#hydro_resv">Define Hydro Generators with Reservoirs</a><a id="hydro_resv-1"></a><a class="docs-heading-anchor-permalink" href="#hydro_resv" title="Permalink"></a></h1><p>In the current version of <code>PowerSystems.jl</code> there is support and testing for hydropower generation plants with the following structures:</p><h2 id="Shared-Upstream-Reservoir"><a class="docs-heading-anchor" href="#Shared-Upstream-Reservoir">Shared Upstream Reservoir</a><a id="Shared-Upstream-Reservoir-1"></a><a class="docs-heading-anchor-permalink" href="#Shared-Upstream-Reservoir" title="Permalink"></a></h2><div class="mermaid">flowchart TB
+ subgraph s1[&quot;Hydro Plant 2&quot;]
+        B[&quot;Turbine A&quot;]
+        C[&quot;Turbine B&quot;]
+  end
+ subgraph s2[&quot;HydroPlant 1&quot;]
+        D[&quot;Turbine C&quot;]
+  end
+    A --- C
+    A[&quot;Reservoir&quot;] --- B &amp; D
+</div><p>For this model, attach an upstream <a href="../../model_library/hydro_reservoir/#PowerSystems.HydroReservoir"><code>HydroReservoir</code></a> to any number of <a href="../../model_library/generated_HydroTurbine/#PowerSystems.HydroTurbine"><code>HydroTurbine</code></a>s. This can model different power house elevations to consider the effect of the elevation and pressure heads on the specific turbines inside of a power plant.</p><h3 id="Example:-Single-Turbine-with-Single-Reservoir"><a class="docs-heading-anchor" href="#Example:-Single-Turbine-with-Single-Reservoir">Example: Single Turbine with Single Reservoir</a><a id="Example:-Single-Turbine-with-Single-Reservoir-1"></a><a class="docs-heading-anchor-permalink" href="#Example:-Single-Turbine-with-Single-Reservoir" title="Permalink"></a></h3><pre><code class="language-julia hljs">using PowerSystems
+import PowerSystems as PSY
+
+# Create a system
+sys = System(100.0)
+set_units_base_system!(sys, &quot;NATURAL_UNITS&quot;)
+
+# Create and add a bus
+bus = ACBus(;
+    number = 1,
+    name = &quot;bus1&quot;,
+    available = true,
+    bustype = ACBusTypes.PV,
+    angle = 0.0,
+    magnitude = 1.0,
+    voltage_limits = (min = 0.9, max = 1.1),
+    base_voltage = 230.0,
+    area = nothing,
+    load_zone = nothing,
+)
+add_component!(sys, bus)
+
+# Create a HydroTurbine
+turbine = HydroTurbine(;
+    name = &quot;Turbine1&quot;,
+    available = true,
+    bus = bus,
+    active_power = 50.0,
+    reactive_power = 10.0,
+    rating = 100.0,
+    base_power = 100.0,
+    active_power_limits = (min = 10.0, max = 100.0),
+    reactive_power_limits = (min = -50.0, max = 50.0),
+    powerhouse_elevation = 500.0,  # meters above sea level
+    efficiency = 0.9,
+    conversion_factor = 1.0,
+    outflow_limits = (min = 0.0, max = 1000.0),  # m³/s
+    travel_time = 0.5,  # hours
+)
+add_component!(sys, turbine)
+
+# Create a HydroReservoir
+reservoir = HydroReservoir(;
+    name = &quot;Reservoir1&quot;,
+    available = true,
+    storage_level_limits = (min = 1000.0, max = 10000.0),  # m³
+    initial_level = 0.8,  # 80% of max
+    spillage_limits = (min = 0.0, max = 500.0),
+    inflow = 100.0,  # m³/h
+    outflow = 50.0,  # m³/h
+    level_targets = 0.7,
+    intake_elevation = 600.0,  # meters above sea level
+    head_to_volume_factor = LinearCurve(1.0),
+)
+add_component!(sys, reservoir)
+
+# Link the turbine to the reservoir as a downstream turbine
+set_downstream_turbine!(reservoir, turbine)
+
+# Verify the connection
+@assert has_downstream_turbine(reservoir, turbine)
+@assert length(get_connected_head_reservoirs(sys, turbine)) == 1</code></pre><h3 id="Example:-Multiple-Turbines-with-Single-Reservoir"><a class="docs-heading-anchor" href="#Example:-Multiple-Turbines-with-Single-Reservoir">Example: Multiple Turbines with Single Reservoir</a><a id="Example:-Multiple-Turbines-with-Single-Reservoir-1"></a><a class="docs-heading-anchor-permalink" href="#Example:-Multiple-Turbines-with-Single-Reservoir" title="Permalink"></a></h3><pre><code class="language-julia hljs">
+sys = System(100.0)
+set_units_base_system!(sys, &quot;NATURAL_UNITS&quot;)
+
+# Create and add a bus
+bus = ACBus(;
+    number = 1,
+    name = &quot;bus1&quot;,
+    available = true,
+    bustype = ACBusTypes.PV,
+    angle = 0.0,
+    magnitude = 1.0,
+    voltage_limits = (min = 0.9, max = 1.1),
+    base_voltage = 230.0,
+    area = nothing,
+    load_zone = nothing,
+)
+add_component!(sys, bus)
+# Create multiple turbines and connect them to a single reservoir
+turbines = []
+for i in 1:5
+    turbine = HydroTurbine(;
+        name = &quot;Turbine$i&quot;,
+        available = true,
+        bus = bus,
+        active_power = 20.0,
+        reactive_power = 5.0,
+        rating = 50.0,
+        base_power = 100.0,
+        active_power_limits = (min = 5.0, max = 50.0),
+        reactive_power_limits = nothing,
+        powerhouse_elevation = 500.0 + i * 10.0,  # Different elevations
+        efficiency = 0.85 + i * 0.02,
+    )
+    add_component!(sys, turbine)
+    push!(turbines, turbine)
+end
+
+# Link all turbines at once
+set_downstream_turbines!(reservoir, turbines)
+
+# Verify connections
+@assert has_downstream_turbine(reservoir)
+@assert length(get_downstream_turbines(reservoir)) == 5</code></pre><h2 id="Head-and-Tail-Reservoirs-for-Pumped-Hydropower-Plants"><a class="docs-heading-anchor" href="#Head-and-Tail-Reservoirs-for-Pumped-Hydropower-Plants">Head and Tail Reservoirs for Pumped Hydropower Plants</a><a id="Head-and-Tail-Reservoirs-for-Pumped-Hydropower-Plants-1"></a><a class="docs-heading-anchor-permalink" href="#Head-and-Tail-Reservoirs-for-Pumped-Hydropower-Plants" title="Permalink"></a></h2><p>For this model, attach two <a href="../../model_library/hydro_reservoir/#PowerSystems.HydroReservoir"><code>HydroReservoir</code></a>s to any number of <a href="../../model_library/generated_HydroPumpTurbine/#PowerSystems.HydroPumpTurbine"><code>HydroPumpTurbine</code></a>s. The turbine and reservoir structs store the elevations to calculate the elevation and pressure heads for the facility.</p><div class="mermaid">flowchart TB
+ subgraph s1[&quot;Pumped Hydro Plant&quot;]
+        B[&quot;Turbine A&quot;]
+        C[&quot;Turbine B&quot;]
+  end
+    A[&quot;Head Reservoir&quot;] --- B
+    A --- C
+    C --- D
+    B --- D[&quot;Tail Reservoir&quot;]</div><h3 id="Example:-Pumped-Hydro-with-Head-and-Tail-Reservoirs"><a class="docs-heading-anchor" href="#Example:-Pumped-Hydro-with-Head-and-Tail-Reservoirs">Example: Pumped Hydro with Head and Tail Reservoirs</a><a id="Example:-Pumped-Hydro-with-Head-and-Tail-Reservoirs-1"></a><a class="docs-heading-anchor-permalink" href="#Example:-Pumped-Hydro-with-Head-and-Tail-Reservoirs" title="Permalink"></a></h3><pre><code class="language-julia hljs"># Create a HydroPumpTurbine
+pump_turbine = HydroPumpTurbine(;
+    name = &quot;PumpTurbine1&quot;,
+    available = true,
+    bus = bus,
+    active_power = 50.0,
+    reactive_power = 10.0,
+    rating = 200.0,
+    active_power_limits = (min = 20.0, max = 200.0),  # Generation mode
+    reactive_power_limits = (min = -100.0, max = 100.0),
+    active_power_limits_pump = (min = 30.0, max = 180.0),  # Pumping mode
+    outflow_limits = (min = 0.0, max = 500.0),
+    powerhouse_elevation = 400.0,
+    base_power = 100.0,
+    ramp_limits = (up = 20.0, down = 20.0),
+    time_limits = nothing,
+    status = PSY.PumpHydroStatusModule.PumpHydroStatus.OFF,
+    time_at_status = 0.0,
+    efficiency = (turbine = 0.9, pump = 0.85),
+    transition_time = (turbine = 0.25, pump = 0.25),  # hours
+    minimum_time = (turbine = 1.0, pump = 1.0),  # hours
+    conversion_factor = 1.0,
+)
+add_component!(sys, pump_turbine)
+
+# Create head (upper) reservoir
+head_reservoir = HydroReservoir(;
+    name = &quot;HeadReservoir&quot;,
+    available = true,
+    storage_level_limits = (min = 5000.0, max = 50000.0),
+    initial_level = 0.6,
+    spillage_limits = nothing,
+    inflow = 200.0,
+    outflow = 100.0,
+    level_targets = 0.5,
+    intake_elevation = 800.0,
+    head_to_volume_factor = LinearCurve(1.0),
+)
+add_component!(sys, head_reservoir)
+
+# Create tail (lower) reservoir
+tail_reservoir = HydroReservoir(;
+    name = &quot;TailReservoir&quot;,
+    available = true,
+    storage_level_limits = (min = 3000.0, max = 30000.0),
+    initial_level = 0.4,
+    spillage_limits = nothing,
+    inflow = 50.0,
+    outflow = 100.0,
+    level_targets = 0.5,
+    intake_elevation = 200.0,
+    head_to_volume_factor = LinearCurve(1.0),
+)
+add_component!(sys, tail_reservoir)
+
+# Link reservoirs to pump-turbine
+# Head reservoir feeds into the turbine (downstream)
+set_downstream_turbine!(head_reservoir, pump_turbine)
+
+# Tail reservoir receives flow from the turbine (upstream)
+set_upstream_turbine!(tail_reservoir, pump_turbine)
+
+# Verify connections
+@assert has_downstream_turbine(head_reservoir, pump_turbine)
+@assert has_upstream_turbine(tail_reservoir, pump_turbine)
+@assert length(get_connected_head_reservoirs(sys, pump_turbine)) == 1
+@assert length(get_connected_tail_reservoirs(sys, pump_turbine)) == 1</code></pre><h2 id="Key-Component-Fields"><a class="docs-heading-anchor" href="#Key-Component-Fields">Key Component Fields</a><a id="Key-Component-Fields-1"></a><a class="docs-heading-anchor-permalink" href="#Key-Component-Fields" title="Permalink"></a></h2><h3 id="HydroTurbine"><a class="docs-heading-anchor" href="#HydroTurbine">HydroTurbine</a><a id="HydroTurbine-1"></a><a class="docs-heading-anchor-permalink" href="#HydroTurbine" title="Permalink"></a></h3><p>Key fields for <a href="../../model_library/generated_HydroTurbine/#PowerSystems.HydroTurbine"><code>HydroTurbine</code></a>:</p><ul><li><code>powerhouse_elevation::Float64</code>: Height in meters above sea level of the powerhouse</li><li><code>efficiency::Float64</code>: Turbine efficiency [0, 1.0]</li><li><code>turbine_type::HydroTurbineType</code>: Type of turbine (e.g., <code>HydroTurbineType.UNKNOWN</code>, <code>HydroTurbineType.FRANCIS</code>, <code>HydroTurbineType.PELTON</code>, <code>HydroTurbineType.KAPLAN</code>)</li><li><code>conversion_factor::Float64</code>: Conversion factor from flow/volume to energy (m³ -&gt; p.u-hr)</li><li><code>outflow_limits::Union{Nothing, MinMax}</code>: Turbine outflow limits in m³/s</li><li><code>travel_time::Union{Nothing, Float64}</code>: Downstream travel time in hours from reservoir to turbine</li></ul><h3 id="HydroReservoir"><a class="docs-heading-anchor" href="#HydroReservoir">HydroReservoir</a><a id="HydroReservoir-1"></a><a class="docs-heading-anchor-permalink" href="#HydroReservoir" title="Permalink"></a></h3><p>Key fields for <a href="../../model_library/hydro_reservoir/#PowerSystems.HydroReservoir"><code>HydroReservoir</code></a>:</p><ul><li><code>storage_level_limits::MinMax</code>: Storage level limits (in m³, m, or MWh based on <code>level_data_type</code>)</li><li><code>initial_level::Float64</code>: Initial level as fraction of <code>storage_level_limits.max</code></li><li><code>inflow::Float64</code>: Water refilling the reservoir (m³/h or MW)</li><li><code>outflow::Float64</code>: Water naturally leaving the reservoir (m³/h or MW)</li><li><code>spillage_limits::Union{Nothing, MinMax}</code>: Water spillage limits</li><li><code>level_targets::Union{Nothing, Float64}</code>: Target level at simulation end as fraction of max</li><li><code>intake_elevation::Float64</code>: Height of intake in meters above sea level</li><li><code>head_to_volume_factor::ValueCurve</code>: Head to volume relationship</li><li><code>upstream_turbines::Vector{HydroUnit}</code>: Turbines feeding into this reservoir (tail reservoir)</li><li><code>downstream_turbines::Vector{HydroUnit}</code>: Turbines fed by this reservoir (head reservoir)</li><li><code>upstream_reservoirs::Vector{Device}</code>: Reservoirs feeding spillage into this reservoir</li><li><code>level_data_type::ReservoirDataType</code>: Data type (e.g., <code>ReservoirDataType.USABLE_VOLUME</code>, <code>ReservoirDataType.HEAD</code>, <code>ReservoirDataType.ENERGY</code>)</li></ul><h3 id="HydroPumpTurbine"><a class="docs-heading-anchor" href="#HydroPumpTurbine">HydroPumpTurbine</a><a id="HydroPumpTurbine-1"></a><a class="docs-heading-anchor-permalink" href="#HydroPumpTurbine" title="Permalink"></a></h3><p>Key fields specific to <a href="../../model_library/generated_HydroPumpTurbine/#PowerSystems.HydroPumpTurbine"><code>HydroPumpTurbine</code></a>:</p><ul><li><code>active_power_limits::MinMax</code>: Power limits for turbine (generation) mode</li><li><code>active_power_limits_pump::MinMax</code>: Power limits for pump mode</li><li><code>status::PumpHydroStatus</code>: Operating status (<code>PumpHydroStatus.OFF</code>, <code>PumpHydroStatus.PUMP</code>, <code>PumpHydroStatus.GEN</code>)</li><li><code>efficiency::TurbinePump</code>: Separate efficiencies for turbine and pump modes <code>(turbine = 0.9, pump = 0.85)</code></li><li><code>transition_time::TurbinePump</code>: Time to switch modes <code>(turbine = 0.25, pump = 0.25)</code></li><li><code>minimum_time::TurbinePump</code>: Minimum operating time in each mode <code>(turbine = 1.0, pump = 1.0)</code></li></ul><h2 id="Helper-Functions"><a class="docs-heading-anchor" href="#Helper-Functions">Helper Functions</a><a id="Helper-Functions-1"></a><a class="docs-heading-anchor-permalink" href="#Helper-Functions" title="Permalink"></a></h2><h3 id="Linking-Turbines-to-Reservoirs"><a class="docs-heading-anchor" href="#Linking-Turbines-to-Reservoirs">Linking Turbines to Reservoirs</a><a id="Linking-Turbines-to-Reservoirs-1"></a><a class="docs-heading-anchor-permalink" href="#Linking-Turbines-to-Reservoirs" title="Permalink"></a></h3><ul><li><code>set_downstream_turbine!(reservoir, turbine)</code>: Link a single turbine as downstream of reservoir</li><li><code>set_downstream_turbines!(reservoir, turbines)</code>: Link multiple turbines as downstream</li><li><code>set_upstream_turbine!(reservoir, turbine)</code>: Link a single turbine as upstream of reservoir</li><li><code>set_upstream_turbines!(reservoir, turbines)</code>: Link multiple turbines as upstream</li></ul><h3 id="Checking-Connections"><a class="docs-heading-anchor" href="#Checking-Connections">Checking Connections</a><a id="Checking-Connections-1"></a><a class="docs-heading-anchor-permalink" href="#Checking-Connections" title="Permalink"></a></h3><ul><li><code>has_downstream_turbine(reservoir)</code>: Check if any downstream turbines are attached</li><li><code>has_downstream_turbine(reservoir, turbine)</code>: Check if specific turbine is downstream</li><li><code>has_upstream_turbine(reservoir)</code>: Check if any upstream turbines are attached</li><li><code>has_upstream_turbine(reservoir, turbine)</code>: Check if specific turbine is upstream</li></ul><h3 id="Retrieving-Connected-Components"><a class="docs-heading-anchor" href="#Retrieving-Connected-Components">Retrieving Connected Components</a><a id="Retrieving-Connected-Components-1"></a><a class="docs-heading-anchor-permalink" href="#Retrieving-Connected-Components" title="Permalink"></a></h3><ul><li><code>get_downstream_turbines(reservoir)</code>: Get vector of downstream turbines</li><li><code>get_upstream_turbines(reservoir)</code>: Get vector of upstream turbines</li><li><code>get_connected_head_reservoirs(sys, turbine)</code>: Get reservoirs where turbine is downstream</li><li><code>get_connected_tail_reservoirs(sys, turbine)</code>: Get reservoirs where turbine is upstream</li><li><code>get_turbine_head_reservoirs_mapping(sys)</code>: Get mapping of all turbines to head reservoirs</li><li><code>get_turbine_tail_reservoirs_mapping(sys)</code>: Get mapping of all turbines to tail reservoirs</li></ul><h3 id="Removing-Connections"><a class="docs-heading-anchor" href="#Removing-Connections">Removing Connections</a><a id="Removing-Connections-1"></a><a class="docs-heading-anchor-permalink" href="#Removing-Connections" title="Permalink"></a></h3><ul><li><code>remove_turbine!(reservoir, turbine)</code>: Remove a specific turbine connection</li><li><code>clear_turbines!(reservoir)</code>: Remove all turbine connections from reservoir</li></ul><script type="module">import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+mermaid.initialize({
+    startOnLoad: true,
+    theme: "neutral"
+});
+</script></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../add_new_types/">« ...customize or add a new Type</a><a class="docs-footer-nextpage" href="../handle_3W_transformers/">...handle 3-Winding Transformers »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.15.0 on <span class="colophon-date" title="Thursday 22 January 2026 20:49">Thursday 22 January 2026</span>. Using Julia version 1.12.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

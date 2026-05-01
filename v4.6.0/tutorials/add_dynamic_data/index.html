@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Adding Data for Dynamic Simulations · PowerSystems.jl</title><meta name="title" content="Adding Data for Dynamic Simulations · PowerSystems.jl"/><meta property="og:title" content="Adding Data for Dynamic Simulations · PowerSystems.jl"/><meta property="twitter:title" content="Adding Data for Dynamic Simulations · PowerSystems.jl"/><meta name="description" content="Documentation for PowerSystems.jl."/><meta property="og:description" content="Documentation for PowerSystems.jl."/><meta property="twitter:description" content="Documentation for PowerSystems.jl."/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.png" alt="PowerSystems.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../../">PowerSystems.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Welcome Page</a></li><li><span class="tocitem">Tutorials</span><ul><li><a class="tocitem" href="../creating_system/">Create and Explore a Power <code>System</code></a></li><li><a class="tocitem" href="../manipulating_datasets/">Manipulating Data Sets</a></li><li><a class="tocitem" href="../working_with_time_series/">Working with Time Series</a></li><li class="is-active"><a class="tocitem" href>Adding Data for Dynamic Simulations</a><ul class="internal"><li><a class="tocitem" href="#Defining-the-Static-Data-Layer"><span>Defining the Static Data Layer</span></a></li><li><a class="tocitem" href="#Add-an-Infinite-Voltage-Source"><span>Add an Infinite Voltage Source</span></a></li><li><a class="tocitem" href="#Adding-a-Dynamic-Generator"><span>Adding a Dynamic Generator</span></a></li><li><a class="tocitem" href="#Adding-a-Dynamic-Inverter"><span>Adding a Dynamic Inverter</span></a></li><li><a class="tocitem" href="#Adding-Dynamic-Lines"><span>Adding Dynamic Lines</span></a></li><li><a class="tocitem" href="#Next-Steps"><span>Next Steps</span></a></li></ul></li></ul></li><li><span class="tocitem">How to...</span><ul><li><a class="tocitem" href="../../how_to/install/">...install PowerSystems.jl</a></li><li><a class="tocitem" href="../../how_to/powersystembuilder/">...load a <code>system</code> from <code>PowerSystemCaseBuilder</code></a></li><li><a class="tocitem" href="../../how_to/parse_matpower_psse/">...parse data from MATPOWER or PSS/e files</a></li><li><a class="tocitem" href="../../how_to/parse_dynamic_data/">...parse PSS/e dynamic data</a></li><li><a class="tocitem" href="../../how_to/parse_tabular_data/">...parse tabular data from .csv files</a></li><li><a class="tocitem" href="../../how_to/parse_ts_from_csvs/">...parse time series data from .csv files</a></li><li><a class="tocitem" href="../../how_to/add_component_natural_units/">...add a component using natural units (MW)</a></li><li><a class="tocitem" href="../../how_to/get_buses/">...get all the buses in a system</a></li><li><a class="tocitem" href="../../how_to/get_available_generators/">...get the available generators in a system</a></li><li><a class="tocitem" href="../../how_to/add_cost_curve/">...add an Operating Cost</a></li><li><a class="tocitem" href="../../how_to/market_bid_cost/">...add a market bid</a></li><li><a class="tocitem" href="../../how_to/adding_additional_fields/">...add additional data to a component</a></li><li><a class="tocitem" href="../../how_to/add_new_types/">...customize or add a new Type</a></li><li><a class="tocitem" href="../../how_to/improve_ts_performance/">...improve performance with time series data</a></li><li><a class="tocitem" href="../../how_to/serialize_data/">...write and read data with a JSON</a></li><li><a class="tocitem" href="../../how_to/reduce_repl_printing/">...reduce REPL printing</a></li><li><a class="tocitem" href="../../how_to/migrating_to_psy4/">...migrate from version 3.0 to 4.0</a></li></ul></li><li><span class="tocitem">Explanation</span><ul><li><a class="tocitem" href="../../explanation/system/">System</a></li><li><a class="tocitem" href="../../explanation/type_structure/">Type Structure</a></li><li><a class="tocitem" href="../../explanation/per_unit/">Per-unit Conventions</a></li><li><a class="tocitem" href="../../explanation/time_series/">Time Series Data</a></li><li><a class="tocitem" href="../../explanation/dynamic_data/">Dynamic Devices</a></li></ul></li><li><span class="tocitem">Model Library</span><ul><li><input class="collapse-toggle" id="menuitem-5-1" type="checkbox"/><label class="tocitem" for="menuitem-5-1"><span class="docs-label">DynamicInverterComponent</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../model_library/generated_Converter/">Converter</a></li><li><a class="tocitem" href="../../model_library/generated_DCSource/">DCSource</a></li><li><a class="tocitem" href="../../model_library/generated_Filter/">Filter</a></li><li><a class="tocitem" href="../../model_library/generated_FrequencyEstimator/">FrequencyEstimator</a></li><li><a class="tocitem" href="../../model_library/generated_InnerControl/">InnerControl</a></li><li><a class="tocitem" href="../../model_library/generated_OutputCurrentLimiter/">OutputCurrentLimiter</a></li><li><a class="tocitem" href="../../model_library/outer_control/">OuterControl</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-5-2" type="checkbox"/><label class="tocitem" for="menuitem-5-2"><span class="docs-label">StaticInjection</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../model_library/generated_FixedAdmittance/">FixedAdmittance</a></li><li><a class="tocitem" href="../../model_library/generated_InterruptiblePowerLoad/">InterruptiblePowerLoad</a></li><li><a class="tocitem" href="../../model_library/generated_ExponentialLoad/">ExponentialLoad</a></li><li><a class="tocitem" href="../../model_library/generated_PowerLoad/">PowerLoad</a></li><li><a class="tocitem" href="../../model_library/generated_StandardLoad/">StandardLoad</a></li><li><a class="tocitem" href="../../model_library/generated_SwitchedAdmittance/">SwitchedAdmittance</a></li><li><a class="tocitem" href="../../model_library/generated_HydroDispatch/">HydroDispatch</a></li><li><a class="tocitem" href="../../model_library/generated_HydroEnergyReservoir/">HydroEnergyReservoir</a></li><li><a class="tocitem" href="../../model_library/generated_HydroPumpedStorage/">HydroPumpedStorage</a></li><li><a class="tocitem" href="../../model_library/generated_RenewableDispatch/">RenewableDispatch</a></li><li><a class="tocitem" href="../../model_library/generated_RenewableNonDispatch/">RenewableNonDispatch</a></li><li><a class="tocitem" href="../../model_library/generated_ThermalMultiStart/">ThermalMultiStart</a></li><li><a class="tocitem" href="../../model_library/generated_ThermalStandard/">ThermalStandard</a></li><li><a class="tocitem" href="../../model_library/generated_InterconnectingConverter/">InterconnectingConverter</a></li><li><a class="tocitem" href="../../model_library/generated_Source/">Source</a></li><li><a class="tocitem" href="../../model_library/generated_EnergyReservoirStorage/">EnergyReservoirStorage</a></li><li><a class="tocitem" href="../../model_library/hybrid_system/">HybridSystem</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-5-3" type="checkbox"/><label class="tocitem" for="menuitem-5-3"><span class="docs-label">Operating Costs</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../model_library/thermal_generation_cost/">ThermalGenerationCost</a></li><li><a class="tocitem" href="../../model_library/hydro_generation_cost/">HydroGenerationCost</a></li><li><a class="tocitem" href="../../model_library/renewable_generation_cost/">RenewableGenerationCost</a></li><li><a class="tocitem" href="../../model_library/storage_cost/">StorageCost</a></li><li><a class="tocitem" href="../../model_library/load_cost/">LoadCost</a></li><li><a class="tocitem" href="../../model_library/market_bid_cost/">MarketBidCost</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-5-4" type="checkbox"/><label class="tocitem" for="menuitem-5-4"><span class="docs-label">Topology</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../model_library/generated_Area/">Area</a></li><li><a class="tocitem" href="../../model_library/generated_LoadZone/">LoadZone</a></li><li><a class="tocitem" href="../../model_library/generated_Arc/">Arc</a></li><li><a class="tocitem" href="../../model_library/generated_ACBus/">ACBus</a></li><li><a class="tocitem" href="../../model_library/generated_DCBus/">DCBus</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-5-5" type="checkbox"/><label class="tocitem" for="menuitem-5-5"><span class="docs-label">DynamicInjection</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../model_library/generated_ActiveConstantPowerLoad/">ActiveConstantPowerLoad</a></li><li><a class="tocitem" href="../../model_library/generated_AggregateDistributedGenerationA/">AggregateDistributedGenerationA</a></li><li><a class="tocitem" href="../../model_library/generated_CSVGN1/">CSVGN1</a></li><li><a class="tocitem" href="../../model_library/generated_DynamicExponentialLoad/">DynamicExponentialLoad</a></li><li><a class="tocitem" href="../../model_library/generated_GenericDER/">GenericDER</a></li><li><a class="tocitem" href="../../model_library/generated_PeriodicVariableSource/">PeriodicVariableSource</a></li><li><a class="tocitem" href="../../model_library/generated_SimplifiedSingleCageInductionMachine/">SimplifiedSingleCageInductionMachine</a></li><li><a class="tocitem" href="../../model_library/generated_SingleCageInductionMachine/">SingleCageInductionMachine</a></li><li><a class="tocitem" href="../../model_library/dynamic_inverter/">Dynamic Inverter</a></li><li><a class="tocitem" href="../../model_library/dynamic_generator/">Dynamic Generator</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-5-6" type="checkbox"/><label class="tocitem" for="menuitem-5-6"><span class="docs-label">Service</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../model_library/generated_AGC/">AGC</a></li><li><a class="tocitem" href="../../model_library/generated_ConstantReserveNonSpinning/">ConstantReserveNonSpinning</a></li><li><a class="tocitem" href="../../model_library/generated_VariableReserveNonSpinning/">VariableReserveNonSpinning</a></li><li><a class="tocitem" href="../../model_library/generated_TransmissionInterface/">TransmissionInterface</a></li><li><a class="tocitem" href="../../model_library/reserves/">Reserves</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-5-7" type="checkbox"/><label class="tocitem" for="menuitem-5-7"><span class="docs-label">Branch</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../model_library/generated_Line/">Line</a></li><li><a class="tocitem" href="../../model_library/generated_MonitoredLine/">MonitoredLine</a></li><li><a class="tocitem" href="../../model_library/generated_PhaseShiftingTransformer/">PhaseShiftingTransformer</a></li><li><a class="tocitem" href="../../model_library/generated_TapTransformer/">TapTransformer</a></li><li><a class="tocitem" href="../../model_library/generated_Transformer2W/">Transformer2W</a></li><li><a class="tocitem" href="../../model_library/generated_TwoTerminalHVDCLine/">TwoTerminalHVDCLine</a></li><li><a class="tocitem" href="../../model_library/generated_TwoTerminalVSCDCLine/">TwoTerminalVSCDCLine</a></li><li><a class="tocitem" href="../../model_library/generated_AreaInterchange/">AreaInterchange</a></li><li><a class="tocitem" href="../../model_library/generated_TModelHVDCLine/">TModelHVDCLine</a></li><li><a class="tocitem" href="../../model_library/dynamic_branch/">Dynamic Lines</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-5-8" type="checkbox"/><label class="tocitem" for="menuitem-5-8"><span class="docs-label">DynamicGeneratorComponent</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../model_library/generated_AVR/">AVR</a></li><li><a class="tocitem" href="../../model_library/generated_Machine/">Machine</a></li><li><a class="tocitem" href="../../model_library/generated_PSS/">PSS</a></li><li><a class="tocitem" href="../../model_library/generated_Shaft/">Shaft</a></li><li><a class="tocitem" href="../../model_library/generated_TurbineGov/">TurbineGov</a></li></ul></li></ul></li><li><span class="tocitem">Reference</span><ul><li><a class="tocitem" href="../../api/public/">Public API</a></li><li><a class="tocitem" href="../../api/glossary/">Glossary and Acronyms</a></li><li><a class="tocitem" href="../../api/type_tree/">Type Tree</a></li><li><a class="tocitem" href="../../api/valuecurve_options/"><code>ValueCurve</code> Options</a></li><li><a class="tocitem" href="../../api/enumerated_types/">Specifying the category of...</a></li><li><a class="tocitem" href="../../api/citation/">Citation</a></li><li><input class="collapse-toggle" id="menuitem-6-7" type="checkbox"/><label class="tocitem" for="menuitem-6-7"><span class="docs-label">Developers</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../api/developer_guidelines/">Developer Guidelines</a></li><li><a class="tocitem" href="../../api/internal/">Internals</a></li></ul></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Tutorials</a></li><li class="is-active"><a href>Adding Data for Dynamic Simulations</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Adding Data for Dynamic Simulations</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/NREL-Sienna/PowerSystems.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/NREL-Sienna/PowerSystems.jl/blob/main/docs/src/tutorials/add_dynamic_data.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Adding-Data-for-Dynamic-Simulations"><a class="docs-heading-anchor" href="#Adding-Data-for-Dynamic-Simulations">Adding Data for Dynamic Simulations</a><a id="Adding-Data-for-Dynamic-Simulations-1"></a><a class="docs-heading-anchor-permalink" href="#Adding-Data-for-Dynamic-Simulations" title="Permalink"></a></h1><p>In this tutorial, we are going to add dynamic data to a power <a href="../../api/public/#System"><code>System</code></a>, including a dynamic generator suitable for phasor-type simulations, as well as a dynamic inverter and dynamic lines necessary for more complex EMT (electro-magnetic transient) simulations.</p><p>To run a dynamic simulation in Sienna\Dyn using <a href="https://nrel-sienna.github.io/PowerSimulationsDynamics.jl/stable/"><code>PowerSimulationsDynamics.jl</code></a>, two data layers are required:</p><ol><li>A base layer of <a href="../../api/glossary/#S">static</a> components, which includes the data needed to run a power flow problem</li><li>An additional layer of <a href="../../api/glossary/#D">dynamic</a> components, which define differential equations to run a transient simulation</li></ol><p>We&#39;ll define these two layers sequentially.</p><h2 id="Defining-the-Static-Data-Layer"><a class="docs-heading-anchor" href="#Defining-the-Static-Data-Layer">Defining the Static Data Layer</a><a id="Defining-the-Static-Data-Layer-1"></a><a class="docs-heading-anchor-permalink" href="#Defining-the-Static-Data-Layer" title="Permalink"></a></h2><p>Instead of defining the static data in the <code>System</code> manually, we will load an existing three-bus system using <a href="https://github.com/NREL-Sienna/PowerSystemCaseBuilder.jl"><code>PowerSystemCaseBuilder.jl</code></a> to use as a starting point.</p><p>Start by importing these packages:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; using PowerSystems</code><code class="nohighlight hljs ansi" style="display:block;"></code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; using PowerSystemCaseBuilder</code><code class="nohighlight hljs ansi" style="display:block;"></code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; const PSY = PowerSystems;</code><code class="nohighlight hljs ansi" style="display:block;"></code></pre><p>To create the system, load pre-existing data for a 3-bus system using <code>PowerSystemCaseBuilder.jl</code>:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; threebus_sys = build_system(PSIDSystems, &quot;3 Bus Inverter Base&quot;)</code><code class="nohighlight hljs ansi" style="display:block;"><span class="sgr36"><span class="sgr1">┌ Info: </span></span>Building new system 3 Bus Inverter Base from raw data
+<span class="sgr36"><span class="sgr1">└ </span></span>  sys_descriptor.raw_data = &quot;/home/runner/.julia/artifacts/45fbc4fe058ae508e0d03c697ca276c3484a9c5e/PowerSystemsTestData-3.2/psid_tests/data_examples&quot;
+<span class="sgr36"><span class="sgr1">[ Info: </span></span>Did not find a PowerFlows.jl PSS/E export metadata file at /home/runner/.julia/artifacts/45fbc4fe058ae508e0d03c697ca276c3484a9c5e/PowerSystemsTestData-3.2/psid_tests/data_examples/ThreeBusInverter_export_metadata.json, will not do any remapping
+<span class="sgr36"><span class="sgr1">[ Info: </span></span>The PSS(R)E parser currently supports buses, loads, shunts, generators, branches, transformers, and dc lines
+<span class="sgr36"><span class="sgr1">[ Info: </span></span>The PSS(R)E parser currently supports buses, loads, shunts, generators, branches, transformers, and dc lines
+<span class="sgr36"><span class="sgr1">[ Info: </span></span>Parsing PSS(R)E Bus data into a PowerModels Dict...
+<span class="sgr36"><span class="sgr1">[ Info: </span></span>Parsing PSS(R)E Load data into a PowerModels Dict...
+<span class="sgr36"><span class="sgr1">[ Info: </span></span>Parsing PSS(R)E Shunt data into a PowerModels Dict...
+<span class="sgr36"><span class="sgr1">[ Info: </span></span>Parsing PSS(R)E Generator data into a PowerModels Dict...
+<span class="sgr36"><span class="sgr1">[ Info: </span></span>Parsing PSS(R)E Branch data into a PowerModels Dict...
+<span class="sgr36"><span class="sgr1">[ Info: </span></span>Parsing PSS(R)E Transformer data into a PowerModels Dict...
+<span class="sgr36"><span class="sgr1">[ Info: </span></span>Parsing PSS(R)E Two-Terminal and VSC DC line data into a PowerModels Dict...
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>This PSS(R)E parser currently doesn&#39;t support Storage data parsing...
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ PowerSystems ~/work/PowerSystems.jl/PowerSystems.jl/src/parsers/pm_io/psse.jl:998</span>
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>This PSS(R)E parser currently doesn&#39;t support Switch data parsing...
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ PowerSystems ~/work/PowerSystems.jl/PowerSystems.jl/src/parsers/pm_io/psse.jl:1004</span>
+<span class="sgr36"><span class="sgr1">[ Info: </span></span>angmin and angmax values are 0, widening these values on branch 1 to +/- 60.0 deg.
+<span class="sgr36"><span class="sgr1">[ Info: </span></span>angmin and angmax values are 0, widening these values on branch 2 to +/- 60.0 deg.
+<span class="sgr36"><span class="sgr1">[ Info: </span></span>angmin and angmax values are 0, widening these values on branch 3 to +/- 60.0 deg.
+<span class="sgr36"><span class="sgr1">┌ Info: </span></span>Constructing System from Power Models
+<span class="sgr36"><span class="sgr1">│ </span></span>  data[&quot;name&quot;] = &quot;threebusinverter&quot;
+<span class="sgr36"><span class="sgr1">└ </span></span>  data[&quot;source_type&quot;] = &quot;pti&quot;
+<span class="sgr36"><span class="sgr1">[ Info: </span></span>Reading bus data
+<span class="sgr36"><span class="sgr1">[ Info: </span></span>Reading Load data in PowerModels dict to populate System ...
+<span class="sgr36"><span class="sgr1">[ Info: </span></span>Reading LoadZones data in PowerModels dict to populate System ...
+<span class="sgr36"><span class="sgr1">[ Info: </span></span>Reading generator data
+<span class="sgr36"><span class="sgr1">[ Info: </span></span>Reading branch data
+<span class="sgr36"><span class="sgr1">[ Info: </span></span>Reading shunt data
+<span class="sgr36"><span class="sgr1">[ Info: </span></span>Reading DC Line data
+<span class="sgr36"><span class="sgr1">[ Info: </span></span>Reading storage data
+<span class="sgr36"><span class="sgr1">[ Info: </span></span>Serialized System to /home/runner/.julia/packages/PowerSystemCaseBuilder/dJGb8/data/serialized_system/e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855/3 Bus Inverter Base.json
+<span class="sgr36"><span class="sgr1">[ Info: </span></span>Serialized System metadata to /home/runner/.julia/packages/PowerSystemCaseBuilder/dJGb8/data/serialized_system/e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855/3 Bus Inverter Base_metadata.json
+<span class="sgr1">System
+┌───────────────────┬─────────────┐
+│ Property          │ Value       │
+├───────────────────┼─────────────┤
+│ Name              │             │
+│ Description       │             │
+│ System Units Base │ SYSTEM_BASE │
+│ Base Power        │ 100.0       │
+│ Base Frequency    │ 60.0        │
+│ Num Components    │ 16          │
+└───────────────────┴─────────────┘
+
+Static Components
+┌─────────────────┬───────┐
+│ Type            │ Count │
+├─────────────────┼───────┤
+│ ACBus           │ 3     │
+│ Arc             │ 3     │
+│ Area            │ 1     │
+│ Line            │ 3     │
+│ LoadZone        │ 1     │
+│ StandardLoad    │ 3     │
+│ ThermalStandard │ 2     │
+└─────────────────┴───────┘</span></code></pre><p>See that there is a table of &quot;Static Components&quot;, but no &quot;Dynamic&quot; data yet.</p><p>Let&#39;s view the generators in the system with <a href="../../api/public/#PowerSystems.show_components"><code>show_components</code></a>, including which bus they are connected at:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; show_components(ThermalStandard, threebus_sys, [:bus])</code><code class="nohighlight hljs ansi" style="display:block;"><span class="sgr1">ThermalStandard
+┌─────────────────┬───────────┬──────────────┐
+│ name            │ available │ bus          │
+├─────────────────┼───────────┼──────────────┤
+│ generator-102-1 │ true      │ ACBus: BUS 2 │
+│ generator-103-1 │ true      │ ACBus: BUS 3 │
+└─────────────────┴───────────┴──────────────┘</span></code></pre><p>Notice that there are generators connected at Buses 2 and 3, but not Bus 1.</p><p>Now, we are going to add the data needed to run an EMT simulation. We will add an infinite voltage source to Bus 1, which is the last component we need to complete the static data layer. Then, we will a dynamic generator or inverter model to the two generators, as well as adding dynamic lines.</p><h2 id="Add-an-Infinite-Voltage-Source"><a class="docs-heading-anchor" href="#Add-an-Infinite-Voltage-Source">Add an Infinite Voltage Source</a><a id="Add-an-Infinite-Voltage-Source-1"></a><a class="docs-heading-anchor-permalink" href="#Add-an-Infinite-Voltage-Source" title="Permalink"></a></h2><p>Add a infinite voltage source with small impedance to Bus 1 (the reference bus). First, retrieve the reference bus using <a href="../../api/public/#PowerSystems.get_components-Tuple{ComponentSelector, System}"><code>get_components</code></a>:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; slack_bus = first(get_components(x -&gt; get_bustype(x) == ACBusTypes.REF, Bus, threebus_sys))</code><code class="nohighlight hljs ansi" style="display:block;">ACBus: BUS 1:
+   number: 101
+   name: BUS 1
+   bustype: ACBusTypes.REF = 3
+   angle: 0.0
+   magnitude: 1.02
+   voltage_limits: (min = 0.9, max = 1.1)
+   base_voltage: 138.0
+   area: Area: 1
+   load_zone: LoadZone: 1
+   ext: Dict{String, Any}()
+   InfrastructureSystems.SystemUnitsSettings:
+      base_value: 100.0
+      unit_system: UnitSystem.SYSTEM_BASE = 0
+   has_supplemental_attributes: false
+   has_time_series: false</code></pre><p>Notice we filtered by the <a href="../../api/enumerated_types/#acbustypes_list">bus type</a> to get the bus(es) we wanted.</p><p>Next, manually define a <a href="../../model_library/generated_Source/#Source"><code>Source</code></a>:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; inf_source = Source(;
+           name = &quot;InfBus&quot;, #name
+           available = true, #availability
+           active_power = 0.0,
+           reactive_power = 0.0,
+           bus = slack_bus, #bus
+           R_th = 0.0, #Rth
+           X_th = 5e-6, #Xth
+       );</code><code class="nohighlight hljs ansi" style="display:block;"></code></pre><p>And add it to the system:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; add_component!(threebus_sys, inf_source)</code><code class="nohighlight hljs ansi" style="display:block;"></code></pre><p>This completes the first layer of <a href="../../api/glossary/#S">static</a> data, using components similar to those we added manually in the <a href="../creating_system/#Create-and-Explore-a-Power-System">Create and Explore a Power <code>System</code></a> tutorial.</p><h2 id="Adding-a-Dynamic-Generator"><a class="docs-heading-anchor" href="#Adding-a-Dynamic-Generator">Adding a Dynamic Generator</a><a id="Adding-a-Dynamic-Generator-1"></a><a class="docs-heading-anchor-permalink" href="#Adding-a-Dynamic-Generator" title="Permalink"></a></h2><p>Now, we will connect a classic machine model to the generator at bus 102. Dynamic generator devices are composed by 5 components: a <a href="../../model_library/generated_Machine/#Machine">Machine</a>, <a href="../../model_library/generated_Shaft/#Shaft">Shaft</a>, <a href="../../model_library/generated_AVR/#AVR">Automatic Voltage Regulator</a> (AVR), <a href="../../model_library/generated_PSS/#PSS">Power System Stabilizer</a> (PSS), and <a href="../../model_library/generated_TurbineGov/#TurbineGov">Prime Mover and Turbine Governor</a>. For each of those 5 components, we will select a specific model that defines the data and differential equations for that component, and then use those 5 components to define the complete dynamic generator.</p><img src="../../assets/gen_metamodel.png" width="75%"/><div class="admonition is-info"><header class="admonition-header">Note</header><div class="admonition-body"><p>When defining dynamic data, by convention <code>PowerSystems.jl</code> assumes that all data is in <a href="../../explanation/per_unit/#per_unit"><code>DEVICE_BASE</code></a>.</p></div></div><p>First, define a <a href="../../model_library/generated_Machine/#Machine">Machine</a> that describes the the stator electro-magnetic dynamics:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; # Create the machine
+       machine_oneDoneQ = OneDOneQMachine(;
+           R = 0.0,
+           Xd = 1.3125,
+           Xq = 1.2578,
+           Xd_p = 0.1813,
+           Xq_p = 0.25,
+           Td0_p = 5.89,
+           Tq0_p = 0.6,
+       )</code><code class="nohighlight hljs ansi" style="display:block;">OneDOneQMachine(0.0, 1.3125, 1.2578, 0.1813, 0.25, 5.89, 0.6, Dict{String, Any}(), [:eq_p, :ed_p], 2, InfrastructureSystems.InfrastructureSystemsInternal(Base.UUID(&quot;7661a059-1d15-4881-97fb-039fa009a8cc&quot;), nothing, nothing, nothing))</code></pre><p>Notice that we selected a specific model, <a href="../../model_library/generated_Machine/#OneDOneQMachine"><code>OneDOneQMachine</code></a>, with the parameters tailored to a One-d-one-q dynamic machine model.</p><p>Next, define a specific <a href="../../model_library/generated_Shaft/#Shaft">Shaft</a> model, <a href="../../model_library/generated_Shaft/#SingleMass"><code>SingleMass</code></a> that describes the rotor electro-mechanical dynamics:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; # Shaft
+       shaft_no_damping = SingleMass(;
+           H = 3.01, #(M = 6.02 -&gt; H = M/2)
+           D = 0.0,
+       )</code><code class="nohighlight hljs ansi" style="display:block;">SingleMass(3.01, 0.0, Dict{String, Any}(), [:δ, :ω], 2, InfrastructureSystems.InfrastructureSystemsInternal(Base.UUID(&quot;0def61c3-6d07-4921-b3b8-965b58426dc9&quot;), nothing, nothing, nothing))</code></pre><p>Represent the electromotive dynamics of the AVR controller using a specific <a href="../../model_library/generated_AVR/#AVR">Automatic Voltage Regulator</a> model, <a href="../../model_library/generated_AVR/#AVRTypeI"><code>AVRTypeI</code></a>:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; # AVR: Type I: Resembles a DC1 AVR
+       avr_type1 = AVRTypeI(;
+           Ka = 20.0,
+           Ke = 0.01,
+           Kf = 0.063,
+           Ta = 0.2,
+           Te = 0.314,
+           Tf = 0.35,
+           Tr = 0.001,
+           Va_lim = (min = -5.0, max = 5.0),
+           Ae = 0.0039, #1st ceiling coefficient
+           Be = 1.555, #2nd ceiling coefficient
+       )</code><code class="nohighlight hljs ansi" style="display:block;">AVRTypeI(20.0, 0.01, 0.063, 0.2, 0.314, 0.35, 0.001, (min = -5.0, max = 5.0), 0.0039, 1.555, 1.0, Dict{String, Any}(), [:Vf, :Vr1, :Vr2, :Vm], 4, StateTypes[StateTypes.Differential = 1, StateTypes.Differential = 1, StateTypes.Differential = 1, StateTypes.Differential = 1], InfrastructureSystems.InfrastructureSystemsInternal(Base.UUID(&quot;db87d91c-5132-4e3c-b7a2-0c95be272dce&quot;), nothing, nothing, nothing))</code></pre><p>Define a fixed efficiency <a href="../../model_library/generated_TurbineGov/#TurbineGov">Prime Mover and Turbine Governor</a> with <a href="../../model_library/generated_TurbineGov/#TGFixed"><code>TGFixed</code></a>:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; #No TG
+       tg_none = TGFixed(; efficiency = 1.0) #efficiency</code><code class="nohighlight hljs ansi" style="display:block;">TGFixed(1.0, 1.0, Dict{String, Any}(), Symbol[], 0, InfrastructureSystems.InfrastructureSystemsInternal(Base.UUID(&quot;9fdef262-c1db-47ca-97e7-d509993e4c14&quot;), nothing, nothing, nothing))</code></pre><p>See that we are modeling a machine that does not include a Turbine Governor (or PSS below), but you must define components for them to build a complete machine model.</p><p>Similarly, define a PSS using <a href="../../model_library/generated_PSS/#PSSFixed"><code>PSSFixed</code></a>, which is used to describe the stabilization signal for the AVR:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; #No PSS
+       pss_none = PSSFixed(; V_pss = 0.0)</code><code class="nohighlight hljs ansi" style="display:block;">PSSFixed(0.0, Dict{String, Any}(), Symbol[], 0, InfrastructureSystems.InfrastructureSystemsInternal(Base.UUID(&quot;2a3f92d9-32a8-4a89-ab3f-13074cfe9b50&quot;), nothing, nothing, nothing))</code></pre><p>Now, we are ready to add a dynamic generator to the static generator at bus 102. First, let&#39;s get that static generator:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; static_gen = get_component(Generator, threebus_sys, &quot;generator-102-1&quot;)</code><code class="nohighlight hljs ansi" style="display:block;">ThermalStandard: generator-102-1:
+   name: generator-102-1
+   available: true
+   status: true
+   bus: ACBus: BUS 2
+   active_power: 0.7
+   reactive_power: 0.0
+   rating: 3.333526661060325
+   active_power_limits: (min = 0.0, max = 3.18)
+   reactive_power_limits: (min = -1.0, max = 1.0)
+   ramp_limits: (up = 3.18, down = 3.18)
+   operation_cost: ThermalGenerationCost composed of variable: CostCurve{QuadraticCurve}
+   base_power: 100.0
+   time_limits: nothing
+   must_run: false
+   prime_mover_type: PrimeMovers.OT = 19
+   fuel: ThermalFuels.OTHER = 14
+   services: 0-element Vector{Service}
+   time_at_status: 10000.0
+   dynamic_injector: nothing
+   ext: Dict{String, Any}(&quot;z_source&quot; =&gt; (r = 0.0, x = 1.0))
+   InfrastructureSystems.SystemUnitsSettings:
+      base_value: 100.0
+      unit_system: UnitSystem.SYSTEM_BASE = 0
+   has_supplemental_attributes: false
+   has_time_series: false</code></pre><p>Notice that its <code>dynamic_injector</code> field is currently <code>nothing</code>.</p><p>Use its name and the 5 components above to define its <a href="../../model_library/dynamic_generator/#DynamicGenerator"><code>DynamicGenerator</code></a> model:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; dynamic_gen = DynamicGenerator(;
+           name = get_name(static_gen),
+           ω_ref = 1.0, # frequency reference set-point
+           machine = machine_oneDoneQ,
+           shaft = shaft_no_damping,
+           avr = avr_type1,
+           prime_mover = tg_none,
+           pss = pss_none,
+       )</code><code class="nohighlight hljs ansi" style="display:block;">
+DynamicGenerator: generator-102-1:
+   name: generator-102-1
+   ω_ref: 1.0
+   machine: OneDOneQMachine
+   shaft: SingleMass
+   avr: AVRTypeI
+   prime_mover: TGFixed
+   pss: PSSFixed
+   base_power: 100.0
+   n_states: 8
+   states: [:eq_p, :ed_p, :δ, :ω, :Vf, :Vr1, :Vr2, :Vm]
+   ext: Dict{String, Any}()
+   internal: InfrastructureSystems.InfrastructureSystemsInternal
+   has_supplemental_attributes: false
+   has_time_series: false</code></pre><p>See that the specific component models that we selected and defined above were used to specify the states needed to model this generator in a dynamic simulation.</p><p>Finally, use the dynamic version of <a href="../../api/public/#PowerSystems.add_component!-Tuple{System, DynamicInjection, StaticInjection}"><code>add_component!</code></a> to add this data to the <code>System</code>:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; add_component!(threebus_sys, dynamic_gen, static_gen)</code><code class="nohighlight hljs ansi" style="display:block;"><span class="sgr33"><span class="sgr1">┌ Warning: </span></span>struct DynamicGenerator does not exist in validation configuration file, validation skipped
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ InfrastructureSystems ~/.julia/packages/InfrastructureSystems/nVUI1/src/validation.jl:51</span></code></pre><p>Notice that unlike static components, which are just added to the <code>System</code>, this dynamic component is added to a specific static component within the <code>System</code>.</p><div class="admonition is-success"><header class="admonition-header">Tip</header><div class="admonition-body"><p>To define identical dynamic devices for multiple generators at once, define the pieces of the generator model as <em>functions</em>, such as:</p><pre><code class="nohighlight hljs">avr_type1() = AVRTypeI(...</code></pre><p>When called in the <code>DynamicGenerator</code> constructor, this will create a new AVR for each generator, so they are different in memory. Later, if you decide to modify the AVR parameters for a specific generator, it will not modify the AVR in another generator.</p></div></div><p>Recall that you can print the system to see a summary of its data:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; threebus_sys</code><code class="nohighlight hljs ansi" style="display:block;"><span class="sgr1">System
+┌───────────────────┬─────────────┐
+│ Property          │ Value       │
+├───────────────────┼─────────────┤
+│ Name              │             │
+│ Description       │             │
+│ System Units Base │ SYSTEM_BASE │
+│ Base Power        │ 100.0       │
+│ Base Frequency    │ 60.0        │
+│ Num Components    │ 18          │
+└───────────────────┴─────────────┘
+
+Static Components
+┌─────────────────┬───────┐
+│ Type            │ Count │
+├─────────────────┼───────┤
+│ ACBus           │ 3     │
+│ Arc             │ 3     │
+│ Area            │ 1     │
+│ Line            │ 3     │
+│ LoadZone        │ 1     │
+│ Source          │ 1     │
+│ StandardLoad    │ 3     │
+│ ThermalStandard │ 2     │
+└─────────────────┴───────┘
+
+Dynamic Components
+┌────────────────────────────────────────────────────────────────────────────┬──
+│ Type                                                                       │ ⋯
+├────────────────────────────────────────────────────────────────────────────┼──
+│ DynamicGenerator{OneDOneQMachine, SingleMass, AVRTypeI, TGFixed, PSSFixed} │ ⋯
+└────────────────────────────────────────────────────────────────────────────┴──
+<span class="sgr36">                                                                1 column omitted</span></span></code></pre><p>See that a new table has been added: &quot;Dynamic Components.&quot;</p><p>Also, print the static generator to double-check the dynamic layer has been added:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; static_gen</code><code class="nohighlight hljs ansi" style="display:block;">ThermalStandard: generator-102-1:
+   name: generator-102-1
+   available: true
+   status: true
+   bus: ACBus: BUS 2
+   active_power: 0.7
+   reactive_power: 0.0
+   rating: 3.333526661060325
+   active_power_limits: (min = 0.0, max = 3.18)
+   reactive_power_limits: (min = -1.0, max = 1.0)
+   ramp_limits: (up = 3.18, down = 3.18)
+   operation_cost: ThermalGenerationCost composed of variable: CostCurve{QuadraticCurve}
+   base_power: 100.0
+   time_limits: nothing
+   must_run: false
+   prime_mover_type: PrimeMovers.OT = 19
+   fuel: ThermalFuels.OTHER = 14
+   services: 0-element Vector{Service}
+   time_at_status: 10000.0
+   dynamic_injector: DynamicGenerator: generator-102-1
+   ext: Dict{String, Any}(&quot;z_source&quot; =&gt; (r = 0.0, x = 1.0))
+   InfrastructureSystems.SystemUnitsSettings:
+      base_value: 100.0
+      unit_system: UnitSystem.SYSTEM_BASE = 0
+   has_supplemental_attributes: false
+   has_time_series: false</code></pre><p>Verify that <code>dynamic_injector</code> now contains our dynamic generator model.</p><p>Up to this point, you have added the dynamic data necessary to do a phaser-type simulation, which focuses on machine behavior. Now we will also add dynamic inverters and lines to enable EMT simulations.</p><h2 id="Adding-a-Dynamic-Inverter"><a class="docs-heading-anchor" href="#Adding-a-Dynamic-Inverter">Adding a Dynamic Inverter</a><a id="Adding-a-Dynamic-Inverter-1"></a><a class="docs-heading-anchor-permalink" href="#Adding-a-Dynamic-Inverter" title="Permalink"></a></h2><p>Next we will connect a Virtual Synchronous Generator Inverter at bus 103.</p><p>An inverter is composed of <a href="../../model_library/generated_Converter/#Converter">Converter</a>, <a href="../../model_library/outer_control/#OuterControl">OuterControl</a>, <a href="../../model_library/generated_InnerControl/#InnerControl">InnerControl</a>, <a href="../../model_library/generated_DCSource/#DCSource">DCSource</a>, <a href="../../model_library/generated_FrequencyEstimator/#FrequencyEstimator">FrequencyEstimator</a>, and <a href="../../model_library/generated_Filter/#Filter">Filter</a> components:</p><img src="../../assets/inv_metamodel.png" width="75%"/><p>As we did for the generator, we will define each of these six components with a specific model, which defines its differential equations.</p><p>First, define an <a href="../../model_library/generated_Converter/#AverageConverter"><code>AverageConverter</code></a> as the specific model for the <a href="../../model_library/generated_Converter/#Converter">Converter</a> component:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; converter_high_power() = AverageConverter(;
+           rated_voltage = 138.0,
+           rated_current = 100.0,
+       )</code><code class="nohighlight hljs ansi" style="display:block;">converter_high_power (generic function with 1 method)</code></pre><p>Recall from the tip above that we can define these components as <em>functions</em> instead of objects for reusability across multiple generators, and notice that that is what we have done here.</p><p>Define <a href="../../model_library/outer_control/#OuterControl">OuterControl</a> using <a href="../../model_library/outer_control/#Virtual-Inertia">Virtual Inertia</a> for the active power control and <a href="../../model_library/outer_control/#PowerSystems.ReactivePowerDroop">ReactivePowerDroop</a> for the reactive power control:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; outer_control() = OuterControl(
+           VirtualInertia(; Ta = 2.0, kd = 400.0, kω = 20.0),
+           ReactivePowerDroop(; kq = 0.2, ωf = 1000.0),
+       )</code><code class="nohighlight hljs ansi" style="display:block;">outer_control (generic function with 1 method)</code></pre><p>Define an <a href="../../model_library/generated_InnerControl/#InnerControl">InnerControl</a> as a Voltage+Current Controller with Virtual Impedance, using <a href="../../model_library/generated_InnerControl/#VoltageModeControl"><code>VoltageModeControl</code></a>:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; inner_control() = VoltageModeControl(;
+           kpv = 0.59,     #Voltage controller proportional gain
+           kiv = 736.0,    #Voltage controller integral gain
+           kffv = 0.0,     #Binary variable enabling voltage feed-forward in current controllers
+           rv = 0.0,       #Virtual resistance in pu
+           lv = 0.2,       #Virtual inductance in pu
+           kpc = 1.27,     #Current controller proportional gain
+           kic = 14.3,     #Current controller integral gain
+           kffi = 0.0,     #Binary variable enabling the current feed-forward in output of current controllers
+           ωad = 50.0,     #Active damping low pass filter cut-off frequency
+           kad = 0.2,      #Active damping gain
+       )</code><code class="nohighlight hljs ansi" style="display:block;">inner_control (generic function with 1 method)</code></pre><p>Define a <a href="../../model_library/generated_DCSource/#FixedDCSource"><code>FixedDCSource</code></a> for the <a href="../../model_library/generated_DCSource/#DCSource">DCSource</a>:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; dc_source_lv() = FixedDCSource(; voltage = 600.0)</code><code class="nohighlight hljs ansi" style="display:block;">dc_source_lv (generic function with 1 method)</code></pre><p>Define a <a href="../../model_library/generated_FrequencyEstimator/#FrequencyEstimator">FrequencyEstimator</a> as a phase-locked loop (PLL) using <a href="../../model_library/generated_FrequencyEstimator/#KauraPLL"><code>KauraPLL</code></a>:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; pll() = KauraPLL(;
+           ω_lp = 500.0, #Cut-off frequency for LowPass filter of PLL filter.
+           kp_pll = 0.084,  #PLL proportional gain
+           ki_pll = 4.69,   #PLL integral gain
+       )</code><code class="nohighlight hljs ansi" style="display:block;">pll (generic function with 1 method)</code></pre><p>Finally, define an <a href="../../model_library/generated_Filter/#LCLFilter"><code>LCLFilter</code></a> for the <a href="../../model_library/generated_Filter/#Filter">Filter</a>:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; filt() = LCLFilter(;
+           lf = 0.08,
+           rf = 0.003,
+           cf = 0.074,
+           lg = 0.2,
+           rg = 0.01,
+       )</code><code class="nohighlight hljs ansi" style="display:block;">filt (generic function with 1 method)</code></pre><p>Now, use those six functions to define a complete dynamic inverter by getting the static component at bus 103:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; gen_103 = get_component(Generator, threebus_sys, &quot;generator-103-1&quot;);</code><code class="nohighlight hljs ansi" style="display:block;"></code></pre><p>using it and our six functions to define a <a href="../../model_library/dynamic_inverter/#DynamicInverter"><code>DynamicInverter</code></a>:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; dynamic_inv = DynamicInverter(;
+           name = get_name(gen_103),
+           ω_ref = 1.0, # frequency reference set-point
+           converter = converter_high_power(),
+           outer_control = outer_control(),
+           inner_control = inner_control(),
+           dc_source = dc_source_lv(),
+           freq_estimator = pll(),
+           filter = filt(),
+       )</code><code class="nohighlight hljs ansi" style="display:block;">
+DynamicInverter: generator-103-1:
+   name: generator-103-1
+   ω_ref: 1.0
+   converter: AverageConverter
+   outer_control: OuterControl{VirtualInertia, ReactivePowerDroop}
+   inner_control: VoltageModeControl
+   dc_source: FixedDCSource
+   freq_estimator: KauraPLL
+   filter: LCLFilter
+   limiter: nothing
+   base_power: 100.0
+   n_states: 19
+   states: [:θ_oc, :ω_oc, :q_oc, :ξd_ic, :ξq_ic, :γd_ic, :γq_ic, :ϕd_ic, :ϕq_ic, :vd_pll, :vq_pll, :ε_pll, :θ_pll, :ir_cnv, :ii_cnv, :vr_filter, :vi_filter, :ir_filter, :ii_filter]
+   ext: Dict{String, Any}()
+   internal: InfrastructureSystems.InfrastructureSystemsInternal
+   has_supplemental_attributes: false
+   has_time_series: false</code></pre><p>and adding it to the <code>System</code>:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; add_component!(threebus_sys, dynamic_inv, gen_103)</code><code class="nohighlight hljs ansi" style="display:block;"><span class="sgr33"><span class="sgr1">┌ Warning: </span></span>struct DynamicInverter does not exist in validation configuration file, validation skipped
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ InfrastructureSystems ~/.julia/packages/InfrastructureSystems/nVUI1/src/validation.jl:51</span></code></pre><p>Both generators have now been updated with dynamic data. Let&#39;s complete the <code>System</code> updates by adding dynamic lines.</p><h2 id="Adding-Dynamic-Lines"><a class="docs-heading-anchor" href="#Adding-Dynamic-Lines">Adding Dynamic Lines</a><a id="Adding-Dynamic-Lines-1"></a><a class="docs-heading-anchor-permalink" href="#Adding-Dynamic-Lines" title="Permalink"></a></h2><div class="admonition is-warning"><header class="admonition-header">Warning</header><div class="admonition-body"><p>A <code>System</code> must have at least two buses and one branch to run a dynamic simulation in <a href="https://nrel-sienna.github.io/PowerSimulationsDynamics.jl/stable/"><code>PowerSimulationsDynamics.jl</code></a>.</p></div></div><p>Let&#39;s review the AC branches currently in the system:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; get_components(ACBranch, threebus_sys)</code><code class="nohighlight hljs ansi" style="display:block;">ACBranch Counts:
+Line: 3</code></pre><p>Notice that we have three static <code>Line</code> components.</p><p>Let&#39;s also print the first line to review its format:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; first(get_components(Line, threebus_sys))</code><code class="nohighlight hljs ansi" style="display:block;">Line: BUS 1-BUS 3-i_1:
+   name: BUS 1-BUS 3-i_1
+   available: true
+   active_power_flow: 0.0
+   reactive_power_flow: 0.0
+   arc: Arc: BUS 1 -&gt; BUS 3
+   r: 0.01
+   x: 0.12
+   b: (from = 0.1, to = 0.1)
+   rating: 2.5
+   angle_limits: (min = -1.0472, max = 1.0472)
+   g: (from = 0.0, to = 0.0)
+   services: 0-element Vector{Service}
+   ext: Dict{String, Any}()
+   InfrastructureSystems.SystemUnitsSettings:
+      base_value: 100.0
+      unit_system: UnitSystem.SYSTEM_BASE = 0
+   has_supplemental_attributes: false
+   has_time_series: false</code></pre><p>See that these components do not have the fields for dynamic modeling, such as fields for different <a href="../../api/glossary/#S">states</a>.</p><p>Let&#39;s update that by cycling through these lines and using <a href="../../model_library/dynamic_branch/#PowerSystems.DynamicBranch"><code>DynamicBranch</code></a> to extend each static line with the necessary fields:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; for l in get_components(Line, threebus_sys)
+           # create a dynamic branch
+           dyn_branch = DynamicBranch(l)
+           # add dynamic branch to the system, replacing the static branch
+           add_component!(threebus_sys, dyn_branch)
+       end</code><code class="nohighlight hljs ansi" style="display:block;"><span class="sgr33"><span class="sgr1">┌ Warning: </span></span>struct DynamicBranch does not exist in validation configuration file, validation skipped
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ InfrastructureSystems ~/.julia/packages/InfrastructureSystems/nVUI1/src/validation.jl:51</span>
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>struct DynamicBranch does not exist in validation configuration file, validation skipped
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ InfrastructureSystems ~/.julia/packages/InfrastructureSystems/nVUI1/src/validation.jl:51</span>
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>struct DynamicBranch does not exist in validation configuration file, validation skipped
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ InfrastructureSystems ~/.julia/packages/InfrastructureSystems/nVUI1/src/validation.jl:51</span></code></pre><p>Take a look at the AC branches in the system again:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; branches = get_components(ACBranch, threebus_sys)</code><code class="nohighlight hljs ansi" style="display:block;">ACBranch Counts:
+DynamicBranch: 3</code></pre><p>Notice that now there are 3 <code>DynamicBranch</code> components instead the <code>Line</code> components.</p><p>Let&#39;s take a look by printing first one:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; first(branches)</code><code class="nohighlight hljs ansi" style="display:block;">DynamicBranch: BUS 1-BUS 3-i_1:
+   branch: Line: BUS 1-BUS 3-i_1
+   n_states: 2
+   states: [:Il_R, :Il_I]
+   InfrastructureSystems.SystemUnitsSettings:
+      base_value: 100.0
+      unit_system: UnitSystem.SYSTEM_BASE = 0
+   has_supplemental_attributes: false
+   has_time_series: false</code></pre><p>Observe that this is a wrapper around the static data, with the additional states data for dynamic modeling.</p><p>Finally, let&#39;s print the <code>System</code> again to summarize our additions:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; threebus_sys</code><code class="nohighlight hljs ansi" style="display:block;"><span class="sgr1">System
+┌───────────────────┬─────────────┐
+│ Property          │ Value       │
+├───────────────────┼─────────────┤
+│ Name              │             │
+│ Description       │             │
+│ System Units Base │ SYSTEM_BASE │
+│ Base Power        │ 100.0       │
+│ Base Frequency    │ 60.0        │
+│ Num Components    │ 19          │
+└───────────────────┴─────────────┘
+
+Static Components
+┌─────────────────┬───────┐
+│ Type            │ Count │
+├─────────────────┼───────┤
+│ ACBus           │ 3     │
+│ Arc             │ 3     │
+│ Area            │ 1     │
+│ DynamicBranch   │ 3     │
+│ LoadZone        │ 1     │
+│ Source          │ 1     │
+│ StandardLoad    │ 3     │
+│ ThermalStandard │ 2     │
+└─────────────────┴───────┘
+
+Dynamic Components
+┌───────────────────────────────────────────────────────────────────────────────
+│ Type                                                                         ⋯
+├───────────────────────────────────────────────────────────────────────────────
+│ DynamicGenerator{OneDOneQMachine, SingleMass, AVRTypeI, TGFixed, PSSFixed}   ⋯
+│ DynamicInverter{AverageConverter, OuterControl{VirtualInertia, ReactivePower ⋯
+└───────────────────────────────────────────────────────────────────────────────
+<span class="sgr36">                                                               2 columns omitted</span></span></code></pre><p>Verify that the additions were successful, with an added voltage <code>Source</code>, <code>DynamicBranch</code>es replacing the static <code>Lines</code>, and two new dynamic components with the generator and inverter models.</p><h2 id="Next-Steps"><a class="docs-heading-anchor" href="#Next-Steps">Next Steps</a><a id="Next-Steps-1"></a><a class="docs-heading-anchor-permalink" href="#Next-Steps" title="Permalink"></a></h2><p>In this tutorial, you have updated a static system with a second dynamic data layer. The data you added can enable a phasor-based simulation using the dynamic generator, or a more complex EMT simulation with the additional dynamic inverter and dynamic lines.</p><p>Next, you might like to:</p><ul><li>Read more about the static and dynamic data layers and the dynamic data format in <a href="../../explanation/dynamic_data/#Dynamic-Devices">Dynamic Devices</a>.</li><li>Review the specific sub-system models available in <code>PowerSystems.jl</code> for <a href="../../model_library/generated_Machine/#Machine">Machine</a>, <a href="../../model_library/generated_Shaft/#Shaft">Shaft</a>, <a href="../../model_library/generated_AVR/#AVR">AVR</a>, <a href="../../model_library/generated_PSS/#PSS">PSS</a>, <a href="../../model_library/generated_TurbineGov/#TurbineGov">Prime Mover and Turbine Governor</a>, <a href="../../model_library/generated_Converter/#Converter">Converter</a>, <a href="../../model_library/outer_control/#OuterControl">OuterControl</a>, <a href="../../model_library/generated_InnerControl/#InnerControl">InnerControl</a>, <a href="../../model_library/generated_DCSource/#DCSource">DCSource</a>, <a href="../../model_library/generated_FrequencyEstimator/#FrequencyEstimator">FrequencyEstimator</a>, and <a href="../../model_library/generated_Filter/#Filter">Filter</a> components</li><li>Explore <a href="https://nrel-sienna.github.io/PowerSimulationsDynamics.jl/stable/"><code>PowerSimulationsDynamics.jl</code></a> for dynamics modeling in Sienna\Dyn</li></ul></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../working_with_time_series/">« Working with Time Series</a><a class="docs-footer-nextpage" href="../../how_to/install/">...install PowerSystems.jl »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.8.0 on <span class="colophon-date" title="Wednesday 5 February 2025 16:48">Wednesday 5 February 2025</span>. Using Julia version 1.11.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

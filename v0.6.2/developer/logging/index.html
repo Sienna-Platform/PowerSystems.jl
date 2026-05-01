@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Logging · PowerSystems.jl</title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link href="../../assets/documenter.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><a href="../../"><img class="logo" src="../../assets/logo.png" alt="PowerSystems.jl logo"/></a><h1>PowerSystems.jl</h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" id="search-form" action="../../search/"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li><a class="toctext" href="../../">Introduction</a></li><li><span class="toctext">User Guide</span><ul><li><a class="toctext" href="../../man/data/">Saving and Viewing PowerSystems Data</a></li></ul></li><li><span class="toctext">Developer</span><ul><li><a class="toctext" href="../tests/">Tests</a></li><li class="current"><a class="toctext" href>Logging</a><ul class="internal"><li><a class="toctext" href="#Use-Cases-1">Use Cases</a></li></ul></li><li><a class="toctext" href="../style/">Style Guide</a></li></ul></li><li><span class="toctext">API</span><ul><li><a class="toctext" href="../../api/PowerSystems/">PowerSystems</a></li></ul></li></ul></nav><article id="docs"><header><nav><ul><li>Developer</li><li><a href>Logging</a></li></ul><a class="edit-page" href="https://github.com/NREL/PowerSystems.jl/blob/master/docs/src/developer/logging.md"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>Logging</span><a class="fa fa-bars" href="#"></a></div></header><h1><a class="nav-anchor" id="Logging-1" href="#Logging-1">Logging</a></h1><p>This document describes logging facilities available in the PowerSystems module. The examples assume the following imports:</p><pre><code class="language-julia">import Logging
+import PowerSystems: configure_logging, open_file_logger, MultiLogger, LogEventTracker</code></pre><h2><a class="nav-anchor" id="Use-Cases-1" href="#Use-Cases-1">Use Cases</a></h2><h3><a class="nav-anchor" id="Enable-logging-in-REPL-or-Jupyter-Notebook-1" href="#Enable-logging-in-REPL-or-Jupyter-Notebook-1">Enable logging in REPL or Jupyter Notebook</a></h3><p>Use <code>configure_logging</code> to create a logger with your preferences (console and/or file, levels, etc.).</p><p><strong>Note:</strong> log messages are not automatically flushed to files. Call <code>flush(logger)</code> to make this happen.</p><h4><a class="nav-anchor" id="Example-1" href="#Example-1">Example</a></h4><pre><code class="language-julia">logger = configure_logging(; filename=&quot;log.txt&quot;)
+@info &quot;hello world&quot;
+flush(logger)
+@error &quot;some error&quot;
+close(logger)</code></pre><p>The function provides lots of customization. Refer to the docstring for complete details.</p><h3><a class="nav-anchor" id="Log-to-console-and-file-in-an-application-or-unit-test-environment.-1" href="#Log-to-console-and-file-in-an-application-or-unit-test-environment.-1">Log to console and file in an application or unit test environment.</a></h3><p>Create a <code>MultiLogger</code> from <code>Logging.ConsoleLogger</code> and <code>Logging.SimpleLogger</code>. Use <code>open_file_logger</code> to guarantee that all messages get flushed to the file.</p><h4><a class="nav-anchor" id="Example-2" href="#Example-2">Example</a></h4><pre><code class="language-julia">console_logger = ConsoleLogger(stderr, Logging.Error)
+
+open_file_logger(&quot;log.txt&quot;, Logging.Info) do file_logger
+    multi_logger = MultiLogger([console_logger, file_logger])
+    global_logger(multi_logger)
+    
+    do_stuff()
+end</code></pre><p><strong>Note:</strong> If someone may execute the code in the REPL then wrap that code in a try/finally block and reset the global logger upon exit.</p><h4><a class="nav-anchor" id="Example-3" href="#Example-3">Example</a></h4><pre><code class="language-julia">function run_tests()
+    console_logger = ConsoleLogger(stderr, Logging.Error)
+    
+    open_file_logger(&quot;log.txt&quot;, Logging.Info) do file_logger
+        multi_logger = MultiLogger([console_logger, file_logger])
+        global_logger(multi_logger)
+        
+        do_stuff()
+    end
+end
+
+logger = global_logger()
+
+try
+    run_tests()
+finally
+    # Guarantee that the global logger is reset.
+    global_logger(logger)
+    nothing
+end</code></pre><h3><a class="nav-anchor" id="Suppress-frequent-messages-1" href="#Suppress-frequent-messages-1">Suppress frequent messages</a></h3><p>The standard Logging module in Julia provides a method to suppress messages. Tag the log message with maxlog=X.</p><h4><a class="nav-anchor" id="Example-4" href="#Example-4">Example</a></h4><pre><code class="language-julia">for i in range(1, length=100)
+    @error &quot;something happened&quot; i maxlog=2
+end</code></pre><p>Only 2 messages will get logged.</p><h3><a class="nav-anchor" id="Get-a-summary-of-log-messages-1" href="#Get-a-summary-of-log-messages-1">Get a summary of log messages</a></h3><p>By default a <code>MultiLogger</code> creates a <code>LogEventTracker</code> that keeps counts of all messages. Call <code>report_log_summary</code> after execution.</p><h4><a class="nav-anchor" id="Example-5" href="#Example-5">Example</a></h4><pre><code class="language-julia">logger = configure_logging(; filename=&quot;log.txt&quot;)
+@info &quot;hello world&quot;
+
+# Include a summary in the log file.
+@info report_log_summary(logger)
+close(logger)</code></pre><h5><a class="nav-anchor" id="Example-output-1" href="#Example-output-1">Example output</a></h5><pre><code class="language-none">julia&gt; for i in range(1, length=100)
+           @info &quot;hello&quot; maxlog=2
+           @warn &quot;beware&quot; maxlog=2
+       end
+julia&gt; @info report_log_summary(logger)
+┌ Info:
+│ Log message summary:
+│
+│ 0 Error events:
+│
+│ 1 Warn events:
+│   count=100 at REPL[19]:3
+│     example message=&quot;beware&quot;
+│     suppressed=98
+│
+│ 1 Info events:
+│   count=100 at REPL[19]:2
+│     example message=&quot;hello&quot;
+└     suppressed=98</code></pre><footer><hr/><a class="previous" href="../tests/"><span class="direction">Previous</span><span class="title">Tests</span></a><a class="next" href="../style/"><span class="direction">Next</span><span class="title">Style Guide</span></a></footer></article></body></html>
