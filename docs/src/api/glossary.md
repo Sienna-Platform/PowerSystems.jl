@@ -117,11 +117,9 @@
 
   - *PPA*: Power purchase agreement
 
-  - *Probabilistic*: mathematical model in which the outcomes represent random phenomenon. For contrast, see the definition of [Deterministic](@ref D).
+  - *PSI*: [`PowerSimulations.jl`](https://sienna-platform.github.io/PowerSimulations.jl/latest/)
 
-  - *PSI*: [`PowerSimulations.jl`](https://nrel-sienna.github.io/PowerSimulations.jl/latest/)
-
-  - *PSID*: [`PowerSimulationsDynamics.jl`](https://nrel-sienna.github.io/PowerSimulationsDynamics.jl/stable/)
+  - *PSID*: [`PowerSimulationsDynamics.jl`](https://sienna-platform.github.io/PowerSimulationsDynamics.jl/stable/)
 
   - *PSLF*: GE Vernova's Positive Sequence Load Flow Software
 
@@ -150,9 +148,18 @@
   - *ST*: Steam Turbine
 
   - *States*: Correspond to the set of inputs, outputs or variables, that evolve dynamically in
-    [`PowerSimulationsDynamics.jl`](https://nrel-sienna.github.io/PowerSimulationsDynamics.jl/stable/), commonly via a differential-algebraic system of equations. In `PowerSystems.jl`, a component associated to a `DynamicInjector` (for example an AVR) specifies the set of states that specific component requires to be modeled accurately.
+    [`PowerSimulationsDynamics.jl`](https://sienna-platform.github.io/PowerSimulationsDynamics.jl/stable/),
+    commonly via a differential-algebraic system of equations. In `PowerSystems.jl`, a component
+    associated to a `DynamicInjector` (for example an AVR) specifies the set of states that specific
+    component requires to be modeled accurately.
 
-  - *Static*: Typically refers to steady state data or models where the power system and each of its components are assumed to be operating at a steady state equilibrium point. This includes both power flow data for a single time point simulation as well as quasi-static time   series data and models, where the power system is at an equilibrium point at each time step. Static data can be used as the input to single time point power flow models and production cost models with, for example, 5-minute, 15-minute, or 1-hour [Resolution](@ref R).    For contrast, see the definition for [Dynamic](@ref D) data.
+  - *Static*: Typically refers to steady state data or models where the power system
+    and each of its components are assumed to be operating at a steady state equilibrium point. This
+    includes both power flow data for a single time point simulation as well as quasi-static time
+    series data and models, where the power system is at an equilibrium point at each time step.
+    Static data can be used as the input to single time point power flow models and production
+    cost models with, for example, 5-minute, 15-minute, or 1-hour [Resolution](@ref R).
+    For contrast, see the definition for [Dynamic](@ref D) data.
 
   - *STAB*: Speed Sensitive Stabilizing PSS Model
 

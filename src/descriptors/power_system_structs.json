@@ -7259,7 +7259,7 @@
                 },
                 {
                     "name": "contributing_services",
-                    "comment": "Services that contribute to this group requirement. Services must be added for this constraint to have an effect when conducting simulations in [`PowerSimulations.jl`](https://nrel-sienna.github.io/PowerSimulations.jl/latest/)",
+                    "comment": "Services that contribute to this group requirement. Services must be added for this constraint to have an effect when conducting simulations in [`PowerSimulations.jl`](https://sienna-platform.github.io/PowerSimulations.jl/latest/)",
                     "data_type": "Vector{Service}",
                     "null_value": "Vector{Service}()",
                     "default": "Vector{Service}()",
@@ -19057,7 +19057,7 @@
                 },
                 {
                     "name": "V_ref0",
-                    "comment": "User defined reference. If 0, [`PowerSimulationsDynamics.jl`](https://nrel-sienna.github.io/PowerSimulationsDynamics.jl/stable/) initializes to initial terminal voltage",
+                    "comment": "User defined reference. If 0, [`PowerSimulationsDynamics.jl`](https://sienna-platform.github.io/PowerSimulationsDynamics.jl/stable/) initializes to initial terminal voltage",
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
@@ -19618,7 +19618,7 @@
                 },
                 {
                     "name": "V_ref",
-                    "comment": "User defined voltage reference. If 0, [`PowerSimulationsDynamics.jl`](https://nrel-sienna.github.io/PowerSimulationsDynamics.jl/stable/) initializes to initial terminal voltage",
+                    "comment": "User defined voltage reference. If 0, [`PowerSimulationsDynamics.jl`](https://sienna-platform.github.io/PowerSimulationsDynamics.jl/stable/) initializes to initial terminal voltage",
                     "null_value": 0,
                     "default": "1.0",
                     "data_type": "Float64",

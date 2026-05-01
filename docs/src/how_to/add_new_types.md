@@ -11,7 +11,7 @@ supertype for your new [struct](@ref S).
 ## Interfaces
 
 Refer to the
-[managing components guide](https://nrel-sienna.github.io/InfrastructureSystems.jl/stable/dev_guide/components_and_container/)
+[managing components guide](https://sienna-platform.github.io/InfrastructureSystems.jl/stable/dev_guide/components_and_container/)
 for component requirements.
 
 In particular, please note the methods `supports_time_series` (default = false) and
@@ -174,7 +174,7 @@ probably want to write it manually.
 
 Please refer to the docstrings for the functions `generate_struct`
 and `generate_structs`. Full details are in the InfrastructureSystems documentation at
-[https://nrel-sienna.github.io/InfrastructureSystems.jl/stable/dev_guide/auto_generation/](https://nrel-sienna.github.io/InfrastructureSystems.jl/stable/dev_guide/auto_generation/).
+[https://sienna-platform.github.io/InfrastructureSystems.jl/stable/dev_guide/auto_generation/](https://sienna-platform.github.io/InfrastructureSystems.jl/stable/dev_guide/auto_generation/).
 
 ### Testing the addition of new struct to the code base
 

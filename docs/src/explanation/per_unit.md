@@ -50,7 +50,7 @@ input data in natural units (e.g., MW or MVA) to per-unit.
 By default, `PowerSystems.jl` uses `"SYSTEM_BASE"` because many optimization problems won't
 converge when using natural units. If you change the unit setting, it's suggested that you
 switch back to `"SYSTEM_BASE"` before solving an optimization problem (for example in
-[`PowerSimulations.jl`](https://nrel-sienna.github.io/PowerSimulations.jl/stable/)).
+[`PowerSimulations.jl`](https://sienna-platform.github.io/PowerSimulations.jl/stable/)).
 
 ## [Transformer per unit transformations](@id transformers_pu_per_unit)
 
