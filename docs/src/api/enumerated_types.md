@@ -1,7 +1,7 @@
 # Specifying the type of...
 
 Some fields in PowerSystems.jl are specified with an option from a pre-defined list
-(Specified with [`IS.scoped_enums`](https://nrel-sienna.github.io/InfrastructureSystems.jl/stable/InfrastructureSystems/#InfrastructureSystems.@scoped_enum-Tuple%7BAny,%20Vararg%7BAny,%20N%7D%20where%20N%7D)).
+(Specified with [`IS.scoped_enums`](https://sienna-platform.github.io/InfrastructureSystems.jl/stable/InfrastructureSystems/#InfrastructureSystems.@scoped_enum-Tuple%7BAny,%20Vararg%7BAny,%20N%7D%20where%20N%7D)).
 
 Example syntax:
 
@@ -182,7 +182,7 @@ tap changer, which can be used to determine the tap position during power flow c
 ## [Dynamic States](@id states_list)
 
 `StateTypes` are used to denote the type of dynamic equation a specific [state](@ref S) is subject
-to in [`PowerSimulationsDynamics.jl`](https://nrel-sienna.github.io/PowerSimulationsDynamics.jl/stable/).
+to in [`PowerSimulationsDynamics.jl`](https://sienna-platform.github.io/PowerSimulationsDynamics.jl/stable/).
 `StateTypes` has the options:
 
 | Name           | Description                                                                      |

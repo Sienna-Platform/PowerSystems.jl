@@ -4,7 +4,7 @@
 [![codecov](https://codecov.io/gh/Sienna-Platform/PowerSystems.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/Sienna-Platform/PowerSystems.jl)
 [![Documentation](https://github.com/Sienna-Platform/PowerSystems.jl/actions/workflows/docs.yml/badge.svg)](https://github.com/Sienna-Platform/PowerSystems.jl/actions/workflows/docs.yml)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.17703517.svg)](https://doi.org/10.5281/zenodo.17703517)
-[<img src="https://img.shields.io/badge/slack-@Sienna/PSY-sienna.svg?logo=slack">](https://join.slack.com/t/nrel-sienna/shared_invite/zt-glam9vdu-o8A9TwZTZqqNTKHa7q3BpQ)
+[<img src="https://img.shields.io/badge/slack-@Sienna/PSY-sienna.svg?logo=slack">](https://join.slack.com/t/core-sienna/shared_invite/zt-glam9vdu-o8A9TwZTZqqNTKHa7q3BpQ)
 [![PowerSystems.jl Downloads](https://img.shields.io/badge/dynamic/json?url=http%3A%2F%2Fjuliapkgstats.com%2Fapi%2Fv1%2Ftotal_downloads%2FPowerSystems&query=total_requests&label=Downloads)](http://juliapkgstats.com/pkg/PowerSystems)
 
 
@@ -28,7 +28,7 @@ The `PowerSystems.jl` package provides a rigorous data model using Julia structu
 - Dynamic Generators Models
 - Dynamic Inverter Models
 
-For information on using the package and a more extensive list of device data enabled, see the [stable documentation](https://nrel-sienna.github.io/PowerSystems.jl/stable/). Use the [in-development documentation](https://nrel-sienna.github.io/PowerSystems.jl/dev/) for the version of the documentation which contains the unreleased features.
+For information on using the package and a more extensive list of device data enabled, see the [stable documentation](https://sienna-platform.github.io/PowerSystems.jl/stable/). Use the [in-development documentation](https://sienna-platform.github.io/PowerSystems.jl/dev/) for the version of the documentation which contains the unreleased features.
 
 ## Parsing capabilities in PowerSystems
 

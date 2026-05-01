@@ -1,6 +1,6 @@
 # [Modeling with JuMP](@id modeling_with_jump)
 
-This guide is for users who are interested in writing custom optimization problems directly in [JuMP](https://jump.dev/JuMP.jl/stable/), using data formatted with `PowerSystems.jl`. Check out [`PowerSimulations.jl`](https://nrel-sienna.github.io/PowerSimulations.jl/stable/) for developing reusable templates for optimization problems within the Sienna platform.
+This guide is for users who are interested in writing custom optimization problems directly in [JuMP](https://jump.dev/JuMP.jl/stable/), using data formatted with `PowerSystems.jl`. Check out [`PowerSimulations.jl`](https://sienna-platform.github.io/PowerSimulations.jl/stable/) for developing reusable templates for optimization problems within the Sienna platform.
 
 This page shows a minimal example to develop a Economic Dispatch model. The code shows the stages to develop modeling code:
 
@@ -21,7 +21,7 @@ using Dates
 ```
 
 For this example, we'll load an existing data set using
-[`PowerSystemCaseBuilder.jl`](https://nrel-sienna.github.io/PowerSystemCaseBuilder.jl/stable),
+[`PowerSystemCaseBuilder.jl`](https://sienna-platform.github.io/PowerSystemCaseBuilder.jl/stable),
 which is a helper library that makes it easier to reproduce examples.
 Normally you would pass your local files to create the system data instead of calling the function `build_system`.
 We also use [`transform_single_time_series!`](@ref) to format time-series data as forecasts for

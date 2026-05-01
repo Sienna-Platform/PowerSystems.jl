@@ -4,7 +4,7 @@
 # [`get_components`](@ref), and getter (`get_*`) and setter (`set_*`) functions for component fields.
 
 # ## Viewing Components in the System
-# We are going to begin by loading in a test case [`System`](@ref) from [`PowerSystemCaseBuilder.jl`](https://nrel-sienna.github.io/PowerSystemCaseBuilder.jl/stable/):
+# We are going to begin by loading in a test case [`System`](@ref) from [`PowerSystemCaseBuilder.jl`](https://sienna-platform.github.io/PowerSystemCaseBuilder.jl/stable/):
 
 using PowerSystems;
 using PowerSystemCaseBuilder;
@@ -51,7 +51,7 @@ get_fuel(solitude)
 #     Using the "dot" access to get a field value from a component is actively discouraged, use `get_*` functions instead.
 #     Julia syntax enables access to this data using the "dot" access (e.g., `solitude.fuel`), however this is discouraged for two reasons:
 #      1. We make no guarantees on the stability of component structure definitions. We will maintain version stability on the accessor methods.
-#      2. Per-unit conversions are made in the return of data from the accessor functions. (see the [per-unit](https://nrel-sienna.github.io/PowerSystems.jl/stable/explanation/per_unit/#per_unit) section for more details)
+#      2. Per-unit conversions are made in the return of data from the accessor functions. (see the [per-unit](https://sienna-platform.github.io/PowerSystems.jl/stable/explanation/per_unit/#per_unit) section for more details)
 # To update a field we can use a specific `set_*`, or setter function, which are defined for each component field.
 # We can use [`set_fuel!`](@ref set_fuel!(value::ThermalStandard, val)) to update the `fuel` field of Solitude to natural gas.
 

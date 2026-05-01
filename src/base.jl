@@ -91,7 +91,7 @@ System(; kwargs...)
 - `branch_name_formatter`: A function that takes a `Dict` of branch data, a from-bus (`ACBus`), and a to-bus (`ACBus`), and returns a `String` to use as the branch name when [parsing PSSe or Matpower files](@ref pm_data).
 - `pm_data_corrections::Bool`: A function that applies the correction to the data from [`PowerModels.jl`](https://lanl-ansi.github.io/PowerModels.jl/stable/).
 - `import_all::Bool`: A boolean flag to indicate whether to import all available data when [parsing PSSe or Matpower files](@ref pm_data). The additional data will be stored in the `ext` dictionary and can be retrieved using [`get_ext`](@ref)
-- `internal::IS.InfrastructureSystemsInternal`: Internal structure for [`InfrastructureSystems.jl`](https://nrel-sienna.github.io/InfrastructureSystems.jl/stable/). This is used only during JSON de-seralization, do not pass it when building a `System` manually.
+- `internal::IS.InfrastructureSystemsInternal`: Internal structure for [`InfrastructureSystems.jl`](https://sienna-platform.github.io/InfrastructureSystems.jl/stable/). This is used only during JSON de-seralization, do not pass it when building a `System` manually.
 
 By default, time series data is stored in an HDF5 file in the tmp file system to prevent
 large datasets from overwhelming system memory (see [Data Storage](@ref)).

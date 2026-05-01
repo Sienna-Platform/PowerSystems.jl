@@ -4,8 +4,6 @@ using Literate
 using DocumenterInterLinks
 using DocumenterMermaid
 
-# UPDATE FOR CURRENT MODULE NAME HERE
-const _DOCS_BASE_URL = "https://sienna-platform.github.io/PowerSystems.jl/stable"
 
 links = InterLinks(
     "InfrastructureSystems" => "https://sienna-platform.github.io/InfrastructureSystems.jl/stable/",

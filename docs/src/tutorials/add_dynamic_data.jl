@@ -4,7 +4,7 @@
 # and dynamic lines necessary for more complex EMT (electro-magnetic transient)
 # simulations.
 # To run a dynamic simulation in Sienna\Dyn using
-# [`PowerSimulationsDynamics.jl`](https://nrel-sienna.github.io/PowerSimulationsDynamics.jl/stable/),
+# [`PowerSimulationsDynamics.jl`](https://sienna-platform.github.io/PowerSimulationsDynamics.jl/stable/),
 # two data layers are required:
 #  1. A base layer of [static](@ref S) components, which includes the data needed to run a
 #     power flow problem
@@ -282,7 +282,7 @@ add_component!(threebus_sys, dynamic_inv, gen_103)
 # ## Adding Dynamic Lines
 # !!! warning
 #     A [`System`](@ref) must have at least two buses and one branch to run a dynamic simulation in
-#     [`PowerSimulationsDynamics.jl`](https://nrel-sienna.github.io/PowerSimulationsDynamics.jl/stable/).
+#     [`PowerSimulationsDynamics.jl`](https://sienna-platform.github.io/PowerSimulationsDynamics.jl/stable/).
 # Let's review the AC branches currently in the system:
 
 get_components(ACBranch, threebus_sys)
@@ -334,5 +334,5 @@ threebus_sys
 #     [Prime Mover and Turbine Governor](@ref TurbineGov), [Converter](@ref),
 #     [OuterControl](@ref), [InnerControl](@ref), [DCSource](@ref),
 #     [FrequencyEstimator](@ref), and [Filter](@ref) components
-#   - Explore [`PowerSimulationsDynamics.jl`](https://nrel-sienna.github.io/PowerSimulationsDynamics.jl/stable/)
+#   - Explore [`PowerSimulationsDynamics.jl`](https://sienna-platform.github.io/PowerSimulationsDynamics.jl/stable/)
 #     for dynamics modeling in Sienna\Dyn

@@ -3,46 +3,59 @@ using Literate
 using DataFrames
 using PrettyTables
 
-# Override show for DataFrames to limit output size during doc builds
-# This ensures large DataFrames are truncated when displayed as expression results in @example blocks
-# Explicit show() calls in tutorials with their own arguments are NOT affected (they use their own kwargs)
-# We override both text/plain and text/html since Documenter may use either
-# 
-# Strategy: Call PrettyTables.pretty_table directly with explicit row/column limits.
-# This bypasses DataFrames' default display logic and gives us full control.
+# Limit DataFrame rendering during docs generation to avoid huge literal outputs.
+# Notes:
+# - Environment-variable approaches tested (`DATAFRAMES_ROWS`, `DATAFRAMES_COLUMNS`,
+#   `LINES`, `COLUMNS`) did not constrain DataFrames output in this pipeline.
+# - We keep a docs-local Base.show override as a fallback and accept `kwargs...`
+#   so explicit show(...; kwargs) calls do not error on unsupported keywords.
+function _env_int(name::String, default::Int)
+    parsed = tryparse(Int, get(ENV, name, string(default)))
+    return something(parsed, default)
+end
 
-function Base.show(io::IO, mime::MIME"text/plain", df::DataFrame)
-    # Call PrettyTables directly with row/column limits
-    # This ensures only 10 rows are shown regardless of DataFrame size
+const _DF_MAX_ROWS = _env_int("SIENNA_DOCS_DF_MAX_ROWS", 10)
+const _DF_MAX_COLS = _env_int("SIENNA_DOCS_DF_MAX_COLS", 80)
+
+function Base.show(io::IO, mime::MIME"text/plain", df::DataFrame; kwargs...)
+    # Keep docs output bounded while allowing explicit caller kwargs.
     PrettyTables.pretty_table(io, df;
         backend = :text,
-        maximum_number_of_rows = 10,
-        maximum_number_of_columns = 80,
+        maximum_number_of_rows = _DF_MAX_ROWS,
+        maximum_number_of_columns = _DF_MAX_COLS,
         show_omitted_cell_summary = true,
         compact_printing = false,
-        limit_printing = true)
+        limit_printing = true,
+        kwargs...)
 end
 
-function Base.show(io::IO, mime::MIME"text/html", df::DataFrame)
-    # For HTML output (which Documenter prefers for large outputs)
-    # Use PrettyTables HTML backend with explicit row/column limits
+function Base.show(io::IO, mime::MIME"text/html", df::DataFrame; kwargs...)
     PrettyTables.pretty_table(io, df;
         backend = :html,
-        maximum_number_of_rows = 10,
-        maximum_number_of_columns = 80,
+        maximum_number_of_rows = _DF_MAX_ROWS,
+        maximum_number_of_columns = _DF_MAX_COLS,
         show_omitted_cell_summary = true,
         compact_printing = false,
-        limit_printing = true)
+        limit_printing = true,
+        kwargs...)
 end
 
-# Function to clean up old generated files
+# Remove previously generated tutorial artifacts so a docs build only reflects
+# current source tutorials.
+#
+# Input:
+# - dir: tutorial output directory that can contain generated_*.md/ipynb.
+# Output:
+# - Deletes matching files in-place and logs each deletion.
 function clean_old_generated_files(dir::String)
     if !isdir(dir)
         @warn "Directory does not exist: $dir"
         return
     end
     generated_files = filter(
-        f -> startswith(f, "generated_") && (endswith(f, ".md") || endswith(f, ".ipynb")),
+        f ->
+            startswith(f, "generated_") &&
+                (endswith(f, ".md") || endswith(f, ".ipynb")),
         readdir(dir),
     )
     for file in generated_files
@@ -55,12 +68,77 @@ end
 # Literate post-processing functions for tutorial generation
 #########################################################
 
-# postprocess function to insert md
+# Compute docs base URL from Documenter deploy context.
+#
+# Behavior:
+# - previews/PR123 -> .../previews/PR123
+# - dev (or custom DOCUMENTER_DEVURL) -> .../dev
+# - tagged versions like v0.9 -> .../v0.9
+# - fallback -> .../stable
+#
+# This keeps generated download/view-online links correct across preview, dev,
+# tagged, and stable deployments.
+function _compute_docs_base_url()
+    base = "https://sienna-platform.github.io/PowerSystems.jl"
+
+    current_version = get(ENV, "DOCUMENTER_CURRENT_VERSION", "")
+
+    # Preview builds (e.g. "previews/PR123")
+    if startswith(current_version, "previews/PR")
+        return "$base/$current_version"
+    end
+
+    # Dev builds
+    if current_version == "dev"
+        dev_suffix = get(ENV, "DOCUMENTER_DEVURL", "dev")
+        return "$base/$dev_suffix"
+    end
+
+    # Tagged/versioned builds (e.g. "v0.9", "v1.2.3")
+    if !isempty(current_version) && current_version != "stable"
+        return "$base/$current_version"
+    end
+
+    # Default to stable
+    return "$base/stable"
+end
+
+const _DOCS_BASE_URL = _compute_docs_base_url()
+
+"""
+Choose how tutorial download links are written in generated markdown.
+
+- **Absolute** (under `_DOCS_BASE_URL/tutorials/`): CI / Documenter context (`GITHUB_ACTIONS` or
+  non-empty `DOCUMENTER_CURRENT_VERSION`) so previews, `dev`, and versioned URLs match
+  `_compute_docs_base_url()`.
+- **Relative** (bare filenames): local/offline builds; files sit next to `generated_*.md`
+  under `docs/src/tutorials/`.
+
+Override: `SIENNA_DOCS_DOWNLOAD_LINKS`=`absolute` or `relative`.
+"""
+function _downloads_use_absolute_urls()
+    o = get(ENV, "SIENNA_DOCS_DOWNLOAD_LINKS", "")
+    o == "absolute" && return true
+    o == "relative" && return false
+    haskey(ENV, "GITHUB_ACTIONS") && return true
+    !isempty(get(ENV, "DOCUMENTER_CURRENT_VERSION", "")) && return true
+    return false
+end
+
+# Replace APPEND_MARKDOWN("path/to/file.md") placeholders with file contents.
+#
+# Sample input:
+#   "Before\nAPPEND_MARKDOWN(\"docs/src/tutorials/_snippet.md\")\nAfter"
+# Sample output:
+#   "Before\n<contents of _snippet.md>\nAfter"
+#
+# Notes:
+# - Uses a non-greedy-safe capture (`[^\"]*`) so multiple placeholders can be
+#   replaced independently.
 function insert_md(content)
-    m = match(r"APPEND_MARKDOWN\(\"(.*)\"\)", content)
-    if !isnothing(m)
-        md_content = read(m.captures[1], String)
-        content = replace(content, r"APPEND_MARKDOWN\(\"(.*)\"\)" => md_content)
+    pattern = r"APPEND_MARKDOWN\(\"([^\"]*)\"\)"
+    if occursin(pattern, content)
+        content = replace(content, pattern => m -> read(m.captures[1], String))
     end
     return content
 end
@@ -87,7 +165,8 @@ function preprocess_admonitions_for_notebook(str::AbstractString)
     out = String[]
     i = 1
     n = length(lines)
-    admonition_start = r"^# !!! (note|info|tip|warning|danger|compat|todo|details)(?:\s+\"([^\"]*)\")?\s*$"
+    admonition_start =
+        r"^# !!! (note|info|tip|warning|danger|compat|todo|details)(?:\s+\"([^\"]*)\")?\s*$"
     content_line = r"^#     (.*)$"  # Documenter admonition body: # then 4 spaces
     blank_comment = r"^#\s*$"      # # or # with only spaces
 
@@ -126,12 +205,26 @@ function preprocess_admonitions_for_notebook(str::AbstractString)
     return join(out, '\n')
 end
 
-# Function to add download links to generated markdown
+# Inject a short "download tutorial files" sentence after the first markdown
+# heading in generated tutorial pages.
+#
+# Sample input:
+#   "# Title\nBody..."
+# Sample output (conceptual):
+#   "# Title\n\n*To follow along... [Julia script](.../tutorial.jl)...*\n\nBody..."
+#
+# Download links:
+# - **Deployed / CI**: absolute URLs under `_DOCS_BASE_URL` when `_downloads_use_absolute_urls()` is true.
+# - **Local**: bare filenames (siblings of `generated_*.md` in `docs/src/tutorials/`).
 function add_download_links(content, jl_file, ipynb_file)
-    # Add download links at the top of the file after the first heading
+    script_link, notebook_link = if _downloads_use_absolute_urls()
+        ("$_DOCS_BASE_URL/tutorials/$(jl_file)", "$_DOCS_BASE_URL/tutorials/$(ipynb_file)")
+    else
+        (jl_file, ipynb_file)
+    end
     download_section = """
 
-*To follow along, you can download this tutorial as a [Julia script (.jl)]($(jl_file)) or [Jupyter notebook (.ipynb)]($(ipynb_file)).*
+*To follow along, you can download this tutorial as a [Julia script (.jl)]($(script_link)) or [Jupyter notebook (.ipynb)]($(notebook_link)).*
 
 """
     # Insert after the first heading (which should be the title)
@@ -144,7 +237,12 @@ function add_download_links(content, jl_file, ipynb_file)
     return content
 end
 
-# Function to add Pkg.status() to notebook within the first markdown cell
+# Insert a setup preface and captured `Pkg.status()` into the first markdown
+# cell of a generated notebook, immediately after the first heading.
+#
+# Sample effect:
+# - First markdown cell gains a "Set up" blockquote and an embedded code block
+#   containing package versions from the docs build environment.
 function add_pkg_status_to_notebook(nb::Dict)
     cells = get(nb, "cells", [])
     if isempty(cells)
@@ -242,8 +340,11 @@ end
 
 # Add italicized "view online" comment after each image from ```@raw html ... ``` (or
 # the raw HTML / markdown form Literate writes). Used as a postprocess in Literate.notebook.
-# Expects _DOCS_BASE_URL to be defined by the includer (e.g. in make.jl).
 # Literate strips the backtick wrapper and outputs raw HTML; we match that multi-line block.
+# Sample effect:
+# - If a markdown cell contains one or more image fragments, append exactly one
+#   "view online" fallback note at the end of that cell.
+# - If the note already exists in the cell, no change is applied.
 function add_image_links(nb::Dict, outputfile_base::AbstractString)
     tutorial_url = "$_DOCS_BASE_URL/tutorials/$(outputfile_base)/"
     msg = "_If image is not available when viewing in a Jupyter notebook, view the tutorial online [here]($tutorial_url)._"
@@ -257,17 +358,36 @@ function add_image_links(nb::Dict, outputfile_base::AbstractString)
         contains(text, "If image is not available when viewing in a Jupyter notebook") &&
             continue
         suffix = "\n\n" * msg * "\n"
-        append_after = m -> string(m) * suffix
-        # Use a single non-overlapping regex to match image-containing fragments:
-        # - <p...>...<img...>...</p> (Literate raw HTML paragraphs)
-        # - ```@raw html ... ``` blocks
-        # - Markdown images ![...](...)
-        # - standalone <img> tags (only if not already matched by <p> wrapper)
-        text = replace(
-            text,
-            r"(?:<p[^>]*>[\s\S]*?<img[\s\S]*?</p>|```@raw html[\s\S]*?```|!\[[^\]]*\]\([^\)]*\)|<img[^>]*?/?>)" =>
-                append_after,
+        # If the cell has any of the image shapes below, we append one "view online" note.
+        # We build one alternation pattern from sub-patterns (each line is one case).
+        #
+        # HTML paragraph wrapping an <img> (Literate often emits <p>…<img>…</p>).
+        #   <p[^>]*>     — opening <p> and attributes
+        #   [\s\S]*?     — any chars, non-greedy, up to the first <img
+        #   <img…</p>   — from <img through closing </p>
+        p_with_img_pattern = r"<p[^>]*>[\s\S]*?<img[\s\S]*?</p>"
+        # Documenter @raw html chunk that Literate inlines in the notebook (backticks removed in output).
+        #   ```@raw html  — start marker
+        #   [\s\S]*?     — block body, non-greedy
+        #   ```          — end fence
+        raw_html_block_pattern = r"```@raw html[\s\S]*?```"
+        # Standard markdown image: ![alt text](url)
+        #   !\[…\]  — alt in brackets;  \(…\)  — path in parens
+        markdown_image_pattern = r"!\[[^\]]*\]\([^\)]*\)"
+        # A bare <img ...> not already covered by the <p>…<img>…</p> case above.
+        #   <img   — tag start;  [^>]*?  — attributes;  /?>  — self-closing or >
+        standalone_img_pattern = r"<img[^>]*?/?>"
+        # Union of the four cases: (?: A | B | C | D )
+        image_fragment_pattern = Regex(
+            "(?:" *
+            p_with_img_pattern.pattern * "|" *
+            raw_html_block_pattern.pattern * "|" *
+            markdown_image_pattern.pattern * "|" *
+            standalone_img_pattern.pattern * ")",
         )
+        if occursin(image_fragment_pattern, text)
+            text *= suffix
+        end
         # Convert back to notebook source array (lines, last without trailing \n if non-empty)
         lines = split(text, "\n"; keepempty = true)
         new_source = String[]
@@ -289,31 +409,35 @@ end
 # Process tutorials with Literate
 #########################################################
 
-# Markdown files are postprocessed to add download links for the Julia script and Jupyter notebook
-# Jupyter notebooks are postprocessed to add image links and pkg.status()
+# Generate tutorial markdown + notebook artifacts from literate .jl sources.
+#
+# Pipeline:
+# 1) discover tutorial .jl files (excluding helper files starting with "_")
+# 2) generate Documenter-flavored markdown with injected download links
+# 3) generate notebook with admonition conversion, setup preface, and image note
 function make_tutorials()
+    tutorials_dir = abspath(joinpath(@__DIR__, "src", "tutorials"))
     # Exclude helper scripts that start with "_"
-    if isdir("docs/src/tutorials")
+    if isdir(tutorials_dir)
         tutorial_files =
             filter(
-                x -> occursin(".jl", x) && !startswith(x, "_"),
-                readdir("docs/src/tutorials"),
+                x -> endswith(x, ".jl") && !startswith(x, "_"),
+                readdir(tutorials_dir),
             )
         if !isempty(tutorial_files)
             # Clean up old generated tutorial files
-            tutorial_outputdir = joinpath(pwd(), "docs", "src", "tutorials")
+            tutorial_outputdir = tutorials_dir
             clean_old_generated_files(tutorial_outputdir)
 
             for file in tutorial_files
                 @show file
-                infile_path = joinpath(pwd(), "docs", "src", "tutorials", file)
+                infile_path = joinpath(tutorials_dir, file)
                 execute =
                     if occursin("EXECUTE = TRUE", uppercase(readline(infile_path)))
                         true
                     else
                         false
                     end
-                execute && include(infile_path)
 
                 outputfile = string("generated_", replace("$file", ".jl" => ""))
 
@@ -342,7 +466,8 @@ function make_tutorials()
                     credit = false,
                     execute = false,
                     preprocess = preprocess_admonitions_for_notebook,
-                    postprocess = nb -> add_image_links(add_pkg_status_to_notebook(nb), outputfile))
+                    postprocess = nb ->
+                        add_image_links(add_pkg_status_to_notebook(nb), outputfile))
             end
         end
     end

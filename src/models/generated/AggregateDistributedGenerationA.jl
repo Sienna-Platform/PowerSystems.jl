@@ -91,7 +91,7 @@ Parameters of the DERA1 model in PSS/E
 - `Tv::Float64`: Time constant on the output of the multiplier (s), validation range: `(0, nothing)`
 - `Vpr::Float64`: Voltage below which frequency tripping is disabled (pu), validation range: `(0, nothing)`
 - `Iq_lim::MinMax`: Reactive current injection limits (Iqll, Iqhl)
-- `V_ref::Float64`: (default: `1.0`) User defined voltage reference. If 0, [`PowerSimulationsDynamics.jl`](https://nrel-sienna.github.io/PowerSimulationsDynamics.jl/stable/) initializes to initial terminal voltage, validation range: `(0, nothing)`
+- `V_ref::Float64`: (default: `1.0`) User defined voltage reference. If 0, [`PowerSimulationsDynamics.jl`](https://sienna-platform.github.io/PowerSimulationsDynamics.jl/stable/) initializes to initial terminal voltage, validation range: `(0, nothing)`
 - `Pfa_ref::Float64`: (default: `0.0`) Reference power factor, validation range: `(0, nothing)`
 - `ω_ref::Float64`: (default: `1.0`) Reference Frequency (pu), validation range: `(0, nothing)`
 - `Q_ref::Float64`: (default: `0.0`) Reference reactive power, in pu, validation range: `(0, nothing)`
@@ -173,7 +173,7 @@ mutable struct AggregateDistributedGenerationA <: DynamicInjection
     Vpr::Float64
     "Reactive current injection limits (Iqll, Iqhl)"
     Iq_lim::MinMax
-    "User defined voltage reference. If 0, [`PowerSimulationsDynamics.jl`](https://nrel-sienna.github.io/PowerSimulationsDynamics.jl/stable/) initializes to initial terminal voltage"
+    "User defined voltage reference. If 0, [`PowerSimulationsDynamics.jl`](https://sienna-platform.github.io/PowerSimulationsDynamics.jl/stable/) initializes to initial terminal voltage"
     V_ref::Float64
     "Reference power factor"
     Pfa_ref::Float64

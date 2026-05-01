@@ -48,34 +48,17 @@ misleading results in large or radially structured networks.
 
   - `SLACK`:
 
-      + **Known:** Voltage magnitude ($|V|$) and voltage angle ($\delta$) *only when the
-        slack and the reference coincide*; otherwise both are unknown.
-      + **Unknown:** Real power ($P$) and reactive power ($Q$), which are calculated as
-        residuals after the power flow solution converges. Losses and generation-load
-        imbalances are distributed across slack buses using participation factors.
-      + A system can have multiple slack buses. In large interconnected cases, distributing
-        the power mismatch across several buses is more physically realistic than
-        concentrating it at one.
+      + Known: Voltage Magnitude ($|V|$) and Voltage Angle ($\delta$) **when the slack and the reference are the same bus, otherwise is unknown**.
+      + Unknown: Real Power ($P$) and Reactive Power ($Q$). These values are calculated as residuals after the power flow solution converges to account for system losses and imbalances and are allocated using participation factors in the model formulation.
+      + This kind of bus absorbs or supplies the difference between the total generation and total load plus losses in the system. There can be several slack buses in a system.
 
-  - `REF`:
+  - Ref:
 
-      + **Known:** Voltage magnitude ($|V|$) and voltage angle ($\delta$). By convention
-        the angle is set to 0 radians and the voltage to a fixed per-unit value, providing
-        the angular reference against which all other bus angles are measured.
-      + **Unknown:** Real power ($P$) and reactive power ($Q$) when the reference bus is
-        also the sole slack bus.
-      + In systems that span multiple asynchronous AC networks connected through HVDC,
-        each island needs its own reference bus.
+      + Known: Voltage Magnitude ($|V|$) and Voltage Angle ($\delta$). Typically, the angle is set to 0 degrees for simplicity, and the voltage is set to a fixed value per unit.0 degrees for simplicity and the voltage is set to a fixed value per unit.
+      + Unknown: Real Power ($P$) and Reactive Power ($Q$). These values are calculated as residuals after the power flow solution converges to account for system losses and imbalances when there is a single slack bus that matches the reference bus.
+      + Serves as the "reference" for all other bus voltage angles in the AC interconnected system.
 
-`PowerSystems.jl` treats `SLACK` and `REF` as distinct designations, leaving it to the
-application developer to decide whether a reference bus should also absorb power mismatch.
-Because not all modeling workflows require a properly configured reference bus — zonal
-production cost models, for example, do not — **`PowerSystems.jl` does not verify that
-the system buses are adequately set. That validation is implemented in
-[`PowerNetworkMatrices.jl`](https://nrel-sienna.github.io/PowerNetworkMatrices.jl/stable/).**
-
-For worked examples of constructing reference and slack buses and adding them to a system,
-see the [Create and Explore a Power System](@ref "Create and Explore a Power `System`") tutorial.
+For the study of large interconnected areas that include different asynchronous AC networks connected through HVDC, the system can contain multiple reference buses. Since not all modeling efforts require a properly set reference bus, e.g., Zonal Modeling, **PowerSystems.jl does not perform a verification that the system buses are adequately set. This feature is implemented in [`PowerNetworkMatrices.jl`](https://sienna-platform.github.io/PowerNetworkMatrices.jl/stable/).**
 
 ## Isolated Buses and the `available` field
 

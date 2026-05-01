@@ -114,64 +114,28 @@ Omitting `interval` when multiple intervals exist for the same name will raise a
 
 ## Data Storage
 
-### Why Sienna Stores Time Series as Scaling Factors
+By default PowerSystems stores time series data in an HDF5 file.
+This prevents
+large datasets from overwhelming system memory. Refer to this
+[page](https://sienna-platform.github.io/InfrastructureSystems.jl/stable/dev_guide/time_series/#Data-Format)
+for details on how the time series data is stored in HDF5 files.
 
-In power system models, many components share the same *shape* of time-varying behavior
-but differ only in their rated capacity. For example, ten wind turbines at the same site
-may all follow the same hourly generation profile, but each has a different nameplate
-maximum power output. Storing ten separate time series of absolute MW values wastes
-memory and makes the data harder to maintain.
+Time series data can be stored actual component values (for instance MW) or scaling
+factors intended to be multiplied by a scalar to generate the component values.
+By default PowerSystems treats the values in the time
+series data as physical units. In order to specify them as scaling factors, you
+must pass the accessor function that provides the multiplier value (e.g.,
+`get_time_series_array`). The scaling factor multiplier
+must be passed into the forecast when you create it to use this option.
 
-`PowerSystems.jl` addresses this with **scaling factors** — normalized time series whose
-values represent a fraction of a component's rated capacity at each time step rather than
-an absolute physical quantity. The actual value at any time is obtained by multiplying:
+The time series contains fields for `scaling_factor_multiplier` and `data`
+to identify the details of  th `Component` field that the time series describes, and the
+time series `data`. For example: we commonly want to use a time series to
+describe the maximum active power capability of a renewable generator. In this case, we
+can create a `SingleTimeSeries` with a `TimeArray` and an accessor function to the
+maximum active power field in the struct describing the generator. In this way, we can
+store a scaling factor time series that will get multiplied by the maximum active power
+rather than the magnitudes of the maximum active power time series.
 
-```math
-\text{actual value}(t) = \text{scaling factor}(t) \times \text{multiplier}
-```
-
-For example, a wind generator with a maximum active power of 100 MW and a scaling factor
-of 0.73 at a given hour is producing 73 MW.
-
-Scaling factors are worth the added complexity for two key reasons:
-
-  - **Reusability:** A single time series profile can be shared by many components. If
-    ten turbines at the same site follow the same normalized wind profile, only one copy
-    of the data needs to be stored; each turbine supplies its own multiplier (its rated
-    capacity) at retrieval time. This also means that updating a profile — say, after
-    a better forecast becomes available — automatically affects every component that
-    references it.
-
-  - **Memory efficiency:** By default, PowerSystems stores time series data in an
-    [HDF5 file](https://nrel-sienna.github.io/InfrastructureSystems.jl/stable/dev_guide/time_series/#Data-Format)
-    to prevent large datasets from overwhelming system memory. Scaling factors amplify
-    this benefit: one normalized profile replaces many absolute-value duplicates, keeping
-    both on-disk and in-memory footprints small.
-
-### How Scaling Factors Work in `PowerSystems.jl`
-
-Every time series object has two relevant fields: `data` (the stored values) and
-`scaling_factor_multiplier` (a getter function that identifies which component field
-provides the multiplier). By default, if no multiplier is specified, `PowerSystems.jl` treats
-the stored values as physical units directly.
-
-To store a time series as scaling factors, pass the appropriate getter function when
-constructing the time series. For example, to represent a renewable generator's output
-as a fraction of its maximum active power:
-
-```julia
-ts = SingleTimeSeries(
-    "max_active_power",
-    ta;
-    scaling_factor_multiplier = get_max_active_power,
-)
-add_time_series!(sys, gen, ts)
-```
-
-When you later retrieve values using [`get_time_series_array`](@ref), `PowerSystems.jl`
-automatically multiplies the stored scaling factors by the current value returned by
-[`get_max_active_power`](@ref) on the component, returning physical MW values transparently.
-
-Examples of how to create and add time series to a system can be found in the
-[Working with Time Series Data](https://nrel-sienna.github.io/PowerSystems.jl/stable/tutorials/generated_working_with_time_series/)
-tutorial.
+Examples of how to create and add time series to system can be found in the
+[Add Time Series Example](https://sienna-platform.github.io/PowerSystems.jl/stable/tutorials/add_forecasts/)

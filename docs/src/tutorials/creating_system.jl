@@ -7,7 +7,7 @@
 
 # ## Setup
 # To get started, ensure you have followed the
-# [installation instructions](https://nrel-sienna.github.io/Sienna/SiennaDocs/docs/build/how-to/install/).
+# [installation instructions](https://sienna-platform.github.io/Sienna/SiennaDocs/docs/build/how-to/install/).
 # Start Julia from the command line if you haven't already:
 # ```
 # $ julia

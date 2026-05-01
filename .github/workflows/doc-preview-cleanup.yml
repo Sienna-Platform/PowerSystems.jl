@@ -12,6 +12,7 @@ concurrency:
 jobs:
   doc-preview-cleanup:
     runs-on: ubuntu-latest
+    if: github.event.pull_request.head.repo.fork == false
     # This workflow pushes to gh-pages; permissions are per-job and independent of docs.yml
     permissions:
       contents: write
