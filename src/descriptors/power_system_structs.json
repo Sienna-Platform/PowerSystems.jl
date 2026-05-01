@@ -5085,6 +5085,15 @@
                     "validation_action": "warn"
                 },
                 {
+                    "name": "reactive_power_limits",
+                    "comment": "Minimum and maximum reactive power limits. Set to `Nothing` if not applicable",
+                    "null_value": "nothing",
+                    "data_type": "Union{Nothing, MinMax}",
+                    "needs_conversion": true,
+                    "conversion_unit": ":mva",
+                    "default": "nothing"
+                },
+                {
                     "name": "dc_current",
                     "comment": "DC current (A) on the converter",
                     "null_value": "0.0",
