@@ -2077,6 +2077,28 @@ function add_supplemental_attribute!(
     return IS.add_supplemental_attribute!(sys.data, component, attribute)
 end
 
+function add_supplemental_attribute!(
+    sys::System,
+    component::Component,
+    outage::Outage,
+)
+    if get_runchecks(sys)
+        for uuid in get_monitored_components(outage)
+            comp = IS.get_component(sys, uuid)  # throws ArgumentError on miss
+            if !(comp isa Device)
+                throw(
+                    ArgumentError(
+                        "monitored_components on $(typeof(outage)) references UUID " *
+                        "$(uuid), which resolves to $(typeof(comp)); only " *
+                        "Device subtypes are allowed",
+                    ),
+                )
+            end
+        end
+    end
+    return IS.add_supplemental_attribute!(sys.data, component, outage)
+end
+
 """
 Begin an update of supplemental attributes. Use this function when adding
 or removing many supplemental attributes in order to improve performance.
@@ -2432,7 +2454,7 @@ function check_ac_transmission_rate_values(sys::System)
 end
 
 """
-Serialize a [System](@ref) instance. Returns a `Dict{String, Any}` 
+Serialize a [System](@ref) instance. Returns a `Dict{String, Any}`
 of the form `Dict("data_format_version" => "1.0", "field1" => serialize(sys.field1), ...)`,
 which can then be written to a JSON3 file.
 """
