@@ -118,11 +118,11 @@ end
 supports_services(::HydroReservoir) = false
 
 """
-Remove a reservoir from a device.
+Remove a hydro turbine from a hydro reservoir.
 
-Throws ArgumentError if the reservoir is not attached to the device.
+Throws ArgumentError if the hydro turbine is not attached to the reservoir.
 """
-function remove_turbine!(reservoir::HydroReservoir, device::HydroTurbine)
+function remove_turbine!(reservoir::HydroReservoir, device::HydroUnit)
     if !_remove_turbine!(reservoir, device)
         throw(
             ArgumentError(
