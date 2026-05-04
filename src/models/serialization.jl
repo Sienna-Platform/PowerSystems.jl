@@ -165,10 +165,3 @@ function deserialize_uuid_handling(field_type, val, component_cache)
 
     return value
 end
-
-# IS serializes a Base.UUID as Dict("value" => string). The default
-# deserialize(::Type{T}, ::Any) = deepcopy(data) leaves the dicts unconverted,
-# so structs with Vector{Base.UUID} fields (e.g. Outage.monitored_components)
-# would receive Vector{Dict} at construction time. Convert each element here.
-IS.deserialize(::Type{Vector{Base.UUID}}, data::AbstractVector) =
-    Base.UUID[IS.deserialize(Base.UUID, x) for x in data]
