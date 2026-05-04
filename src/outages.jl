@@ -31,7 +31,7 @@ get_monitored_components(value::Outage) = value.monitored_components
 
 """
 Populate the monitored-components list for an [`Outage`](@ref). Accepts any iterable
-whose elements are [`Base.UUID`](@ref) or [`Device`](@ref) (e.g., a `Vector`, a
+whose elements are `Base.UUID` or [`Device`](@ref) (e.g., a `Vector`, a
 generator, or the iterator returned by [`get_components`](@ref)). Devices are
 converted to their UUIDs internally.
 
@@ -64,7 +64,7 @@ function clear_monitored_components!(value::Outage)
 end
 
 """
-Append a [`Base.UUID`](@ref) or [`Device`](@ref) to the monitored-components list of
+Append a `Base.UUID` or [`Device`](@ref) to the monitored-components list of
 an [`Outage`](@ref). Duplicate UUIDs are ignored.
 """
 function add_monitored_component!(value::Outage, x::Union{Base.UUID, Device})
@@ -76,7 +76,7 @@ function add_monitored_component!(value::Outage, x::Union{Base.UUID, Device})
 end
 
 """
-Append every element of `items` (each a [`Base.UUID`](@ref) or [`Device`](@ref)) to
+Append every element of `items` (each a `Base.UUID` or [`Device`](@ref)) to
 the monitored-components list of an [`Outage`](@ref). Accepts any iterable, including
 the iterator returned by [`get_components`](@ref). Duplicate UUIDs are ignored.
 """
@@ -88,7 +88,7 @@ function add_monitored_components!(value::Outage, items)
 end
 
 """
-Remove a [`Base.UUID`](@ref) or [`Device`](@ref) from the monitored-components list
+Remove a `Base.UUID` or [`Device`](@ref) from the monitored-components list
 of an [`Outage`](@ref). No-op when the entry is not present.
 """
 function remove_monitored_component!(value::Outage, x::Union{Base.UUID, Device})
@@ -99,7 +99,7 @@ function remove_monitored_component!(value::Outage, x::Union{Base.UUID, Device})
 end
 
 """
-Remove every element of `items` (each a [`Base.UUID`](@ref) or [`Device`](@ref)) from
+Remove every element of `items` (each a `Base.UUID` or [`Device`](@ref)) from
 the monitored-components list of an [`Outage`](@ref). Accepts any iterable.
 """
 function remove_monitored_components!(value::Outage, items)
@@ -135,7 +135,7 @@ Construct a [`GeometricDistributionForcedOutage`](@ref).
 # Arguments
 - `mean_time_to_recovery::Float64`: (default: `0.0`) Time elapsed to recovery after a failure in Milliseconds.
 - `outage_transition_probability::Float64`: (default: `0.0`) Characterizes the probability of failure (1 - p) in the geometric distribution.
-- `monitored_components`: (default: `Base.UUID[]`) Any iterable of [`Base.UUID`](@ref) or [`Device`](@ref). Devices are converted to their UUIDs internally.
+- `monitored_components`: (default: `Base.UUID[]`) Any iterable of `Base.UUID` or [`Device`](@ref). Devices are converted to their UUIDs internally.
 - `internal::InfrastructureSystemsInternal`: (default: `InfrastructureSystemsInternal()`) (**Do not modify.**) PowerSystems internal reference
 """
 function GeometricDistributionForcedOutage(;
@@ -180,7 +180,7 @@ Construct a [`PlannedOutage`](@ref).
 
 # Arguments
 - `outage_schedule::String`: String name of the time series used for the scheduled outages
-- `monitored_components`: (default: `Base.UUID[]`) Any iterable of [`Base.UUID`](@ref) or [`Device`](@ref). Devices are converted to their UUIDs internally.
+- `monitored_components`: (default: `Base.UUID[]`) Any iterable of `Base.UUID` or [`Device`](@ref). Devices are converted to their UUIDs internally.
 - `internal::InfrastructureSystemsInternal`: (default: `InfrastructureSystemsInternal()`) (**Do not modify.**) PowerSystems internal reference
 """
 function PlannedOutage(;
@@ -220,7 +220,7 @@ Construct a [`FixedForcedOutage`](@ref).
 
 # Arguments
 - `outage_status::Float64`: The forced outage status in the model. 1 represents outaged and 0 represents available.
-- `monitored_components`: (default: `Base.UUID[]`) Any iterable of [`Base.UUID`](@ref) or [`Device`](@ref). Devices are converted to their UUIDs internally.
+- `monitored_components`: (default: `Base.UUID[]`) Any iterable of `Base.UUID` or [`Device`](@ref). Devices are converted to their UUIDs internally.
 - `internal::InfrastructureSystemsInternal`: (default: `InfrastructureSystemsInternal()`) (**Do not modify.**) PowerSystems internal reference
 """
 function FixedForcedOutage(;
