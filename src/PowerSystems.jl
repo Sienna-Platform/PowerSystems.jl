@@ -113,6 +113,7 @@ export HydroReservoirCost
 export get_fuel_cost, set_fuel_cost!, get_vom_cost
 export is_market_bid_curve, make_market_bid_curve
 export make_import_curve, make_export_curve
+export StartUpStages
 export get_no_load_cost, set_no_load_cost!, get_start_up, set_start_up!
 export set_shut_down!
 export get_curtailment_cost
@@ -165,6 +166,7 @@ export DynamicInjection
 export DynamicGenerator
 
 export DynamicInverter
+export InverterComponent
 export DynamicBranch
 export HybridSystem
 
@@ -790,7 +792,17 @@ provide a constructor that allows existing values to be deserialized.
 """
 abstract type Component <: IS.InfrastructureSystemsComponent end
 
-""" Supertype for "devices" (bus, line, etc.) """
+"""
+    Device
+
+Supertype for all physical equipment in a power system.
+
+Subtypes include [`Branch`](@ref) (transmission elements) and [`StaticInjection`](@ref)
+(generators, loads, and storage). All `Device` subtypes support time series and
+supplemental attributes.
+
+See also: [`Branch`](@ref), [`StaticInjection`](@ref), [`Component`](@ref)
+"""
 abstract type Device <: Component end
 
 """

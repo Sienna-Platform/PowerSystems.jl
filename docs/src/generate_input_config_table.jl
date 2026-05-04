@@ -45,7 +45,7 @@ function create_md()
         for item in items
             extra_cols = setdiff(keys(item), columns)
             if !isempty(extra_cols)
-                # make sure that there arent unexpected entries
+                # make sure that there aren't unexpected entries
                 throw(@error "config file fields not included in header" extra_cols)
             end
             row = []

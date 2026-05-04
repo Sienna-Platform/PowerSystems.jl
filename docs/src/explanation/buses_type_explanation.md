@@ -1,26 +1,50 @@
 # [Understanding ACBusTypes](@id bustypes)
 
-`PowerSystems.jl` supports multiple types of AC buses, [listed here](@ref acbustypes_list).
-When creating nodal datasets, the definitions for AC Buses can have a significant impact on the
-topology logic for the network.
+In AC power flow analysis, every bus in the network has four associated quantities: real
+power injection ($P$), reactive power injection ($Q$), voltage magnitude ($|V|$), and
+voltage angle ($\delta$). The power flow problem is solvable only when exactly two of
+these four quantities are specified at each bus — the other two are determined by the
+solver. The [`ACBusTypes`](@ref) of a bus declares which two quantities are known, and therefore
+shapes how the power flow problem is formulated across the whole network.
 
-## Voltage Control Types
+`PowerSystems.jl` supports five [`ACBusTypes`](@ref)s, [listed here](@ref acbustypes_list). The
+choice of bus type for each bus in a dataset has a direct effect on solver behavior,
+convergence, and the interpretation of results.
+
+## [Voltage Control Types](https://en.wikipedia.org/wiki/Voltage_control_and_reactive_power_management)
+
+Most buses in a network fall into one of two voltage control categories, depending on
+whether the equipment connected can actively regulate its terminal voltage.
 
   - `PQ`:
 
-      + **Known:** Real Power Injection ($P$) and Reactive Power Injection ($Q$). These are typically the loads at that bus or fixed power factor generators.
-      + **Unknown:** Voltage Magnitude ($|V|$) and Voltage Angle ($\delta$).
-      + Represents a bus where the voltage magnitude and angle are free to vary based on the system conditions.
+      + **Known:** Real power injection ($P$) and reactive power injection ($Q$). These
+        are typically fixed loads or generators operating at a fixed power factor.
+      + **Unknown:** Voltage magnitude ($|V|$) and voltage angle ($\delta$), which are
+        determined by the power flow solution.
+      + This is the most common bus type. Because $|V|$ is unconstrained, the voltage at
+        a `PQ` bus reflects the state of the surrounding network rather than any local
+        control action.
 
   - `PV`:
 
-      + **Known:** Real Power Injection ($P$) and Voltage Magnitude ($|V|$).
-      + **Unknown:** Reactive Power Injection ($Q$) and Voltage Angle ($\delta$).
-      + Typically represents a bus with an injector connected, where the injector controls the reactive power output and regulates the bus voltage magnitude to a setpoint.
+      + **Known:** Real power injection ($P$) and voltage magnitude ($|V|$).
+      + **Unknown:** Reactive power injection ($Q$) and voltage angle ($\delta$).
+      + Represents a bus with a generator or other device actively regulating its
+        terminal voltage to a setpoint. The reactive power output floats to whatever
+        value is needed to hold that voltage. This is the typical representation of a
+        synchronous generator with an automatic voltage regulator (AVR).
+
+The distinction matters because placing a generator on a `PV` bus rather than a `PQ` bus
+allows the power flow solver to use the voltage setpoint as a constraint, which is closer
+to how real generators operate and tends to produce more physically meaningful results.
 
 ## Reference and Slack Buses
 
-There is a nuanced distinction between a slack bus and a reference bus. In most small test sytems and academic discussions, the system has a single slack bus which is also the reference bus. However, for large interconnected cases or cases with a very radial structure, having a single bus that takes on all the real power mistmatch in the system can lead to erroneous results. In PowerSystems.jl we distinguish the posibility of having slacks and reference buses. Is up to the modeler to decide how to handle the classifications inside of the applications. In other words, wether a reference bus is also a slack or viceversa is left to the application developer.
+Every power flow problem also requires buses that handle system-wide power balance and
+provide an angular reference. `PowerSystems.jl` distinguishes between these two roles,
+because conflating them — as many textbooks and smaller test systems do — can produce
+misleading results in large or radially structured networks.
 
   - `SLACK`:
 
@@ -38,8 +62,20 @@ For the study of large interconnected areas that include different asynchronous 
 
 ## Isolated Buses and the `available` field
 
-In certain modeling applications, particularly power flow modeling tools, the designation of
-"isolated" is used to signal that the bus is temporarily disconnected from the network, as are any other components attached to it. However, in `PowerSystems.jl`, a bus and its components can be excluded from an analysis or optimization without changing the underlying network topology by setting the `available` field to false: `set_available!(bus, false)`.
+Many power flow tools use an "isolated" designation to signal that a bus is temporarily
+disconnected from the network. `PowerSystems.jl` keeps this concept but separates it from
+the question of whether a component participates in a given analysis.
 
-In PowerSystems.jl the `ISOLATED` type means exactly that: The bus is not connected to the network. In
-resource analysis where systems contain isolated subsystems that can be ignored for the purposes of the power flow but are relevant when performing optimization, the `ISOLATED` designation provides the capability to describe those situations in precise terms. `ISOLATED` buses can also be made unavailable to make the components attached to them also unavailable.
+In `PowerSystems.jl`, `ISOLATED` means precisely that the bus is structurally
+disconnected from the network — it has no active connections. This is distinct from
+*excluding* a bus from a particular analysis, which is handled by setting the `available`
+field to `false` via `set_available!(bus, false)`. Setting `available = false` removes the
+bus and its attached components from consideration without altering the underlying network
+topology, which is important when the same dataset is used across multiple modeling
+contexts.
+
+This design supports resource analysis workflows where isolated subsystems exist in the
+data — perhaps representing planned expansions or decommissioned equipment — and must be
+represented precisely while being excluded from active power flow or optimization runs.
+`ISOLATED` buses can additionally be made unavailable, which propagates the exclusion to
+all components attached to them.

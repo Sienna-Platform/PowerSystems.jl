@@ -20,8 +20,8 @@ To begin, the user must make 2 or 3 decisions before defining the operating cost
 
           * If you have data in terms of heat rate or water flow, use [`FuelCurve`](@ref).
           * If you have data in units of currency, such as \$/MWh, use [`CostCurve`](@ref).
-            If you selected another `OperationalCost` type, the variable cost is represented
-            as a `CostCurve`.
+            If you selected another [`OperationalCost`](@ref) type, the variable cost is represented
+            as a [`CostCurve`](@ref).
 
  2. Select a [`ValueCurve`](@ref) to represent the variable cost data by comparing the format
     of your variable cost data to the [Variable Cost Representations table](@ref curve_table)
@@ -44,10 +44,10 @@ Following the decision steps above:
  1. We select [`RenewableGenerationCost`](@ref) to represent this renewable generator.
  2. We select a [`LinearCurve`](@ref) to represent the \$22/MWh variable cost.
 
-Following the implementation steps, we define `RenewableGenerationCost` by nesting the
+Following the implementation steps, we define [`RenewableGenerationCost`](@ref "RenewableGenerationCost") by nesting the
 definitions:
 
-```@repl costcurve
+```@example costcurve
 RenewableGenerationCost(; variable = CostCurve(; value_curve = LinearCurve(22.0)))
 ```
 
@@ -67,19 +67,19 @@ Following the decision steps above:
 
 This time, we'll define each step individually, beginning with the heat rate curve:
 
-```@repl costcurve
+```@example costcurve
 heat_rate_curve = PiecewisePointCurve([(100.0, 1400.0), (200.0, 2200.0)])
 ```
 
 Use the heat rate to define the fuel curve, including the cost of fuel:
 
-```@repl costcurve
+```@example costcurve
 fuel_curve = FuelCurve(; value_curve = heat_rate_curve, fuel_cost = 20.0)
 ```
 
 Finally, define the full operating cost:
 
-```@repl costcurve
+```@example costcurve
 cost = ThermalGenerationCost(;
     variable = fuel_curve,
     fixed = 6.0,
@@ -101,14 +101,14 @@ heat rate of 8 GJ/MWh across the operating range (100 MW - 200 MW).
 In this case, we can specify the heat rate curve with [`PiecewiseIncrementalCurve`](@ref) via the marginal
 heat rate directly:
 
-```@repl costcurve
+```@example costcurve
 heat_rate_curve = PiecewiseIncrementalCurve(1400.0, [100.0, 200.0], [8.0])
 ```
 
 The [`FuelCurve`](@ref) and [`ThermalGenerationCost`](@ref) are specified in the same way despite the
 differing representation of the value curve:
 
-```@repl costcurve
+```@example costcurve
 fuel_curve = FuelCurve(; value_curve = heat_rate_curve, fuel_cost = 20.0)
 cost = ThermalGenerationCost(;
     variable = fuel_curve,

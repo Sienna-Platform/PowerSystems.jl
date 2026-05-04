@@ -36,18 +36,7 @@ and Power System Stabilizer ([PSS](@ref)). It must be attached to a
 response.
 
 # Arguments
-- `name::String`: Name of generator.
-- `ω_ref::Float64`: Frequency reference set-point in pu.
-- `machine <: Machine`: [Machine](@ref) model for modeling the electro-magnetic phenomena.
-- `shaft <: Shaft`: [Shaft](@ref) model for modeling the electro-mechanical phenomena.
-- `avr <: AVR`: [AVR](@ref) model of the excitacion system.
-- `prime_mover <: TurbineGov`: [Prime Mover and Turbine Governor model](@ref "TurbineGov") for mechanical power.
-- `pss <: PSS`: [PSS](@ref) model.
-- `base_power::Float64`: (default: `100.0`) Base power of the unit (MVA) for [per unitization](@ref per_unit). Although this has a default, in almost all cases `base_power` should be updated to equal the `base_power` field of the [`StaticInjection`](@ref) device that this dynamic generator will be attached to.
-- `n_states::Int`: (**Do not modify.**)  Number of states (will depend on the inputs above).
-- `states::Vector{Symbol}`: (**Do not modify.**) Vector of states (will depend on the inputs above).
-- `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation
-- `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
+$(TYPEDFIELDS)
 """
 mutable struct DynamicGenerator{
     M <: Machine,
@@ -56,17 +45,29 @@ mutable struct DynamicGenerator{
     TG <: TurbineGov,
     P <: PSS,
 } <: DynamicInjection
+    "Name of the generator"
     name::String
+    "Frequency reference set-point in pu"
     ω_ref::Float64
+    "[Machine](@ref) model for modeling the electro-magnetic phenomena"
     machine::M
+    "[Shaft](@ref) model for modeling the electro-mechanical phenomena"
     shaft::S
+    "[AVR](@ref) model of the excitation system"
     avr::A
+    "[Prime Mover and Turbine Governor](@ref TurbineGov) model for mechanical power"
     prime_mover::TG
+    "[PSS](@ref) model"
     pss::P
+    "(default: `100.0`) Base power of the unit (MVA) for [per unitization](@ref per_unit). In almost all cases, this should match the `base_power` of the attached [`StaticInjection`](@ref) device"
     base_power::Float64
+    "(**Do not modify.**) Number of states (will depend on the components above)"
     n_states::Int
+    "(**Do not modify.**) Vector of states (will depend on the components above)"
     states::Vector{Symbol}
+    "(default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation"
     ext::Dict{String, Any}
+    "(**Do not modify.**) PowerSystems.jl internal reference"
     internal::InfrastructureSystemsInternal
 end
 
@@ -134,15 +135,15 @@ get_name(device::DynamicGenerator) = device.name
 get_states(device::DynamicGenerator) = device.states
 get_n_states(device::DynamicGenerator) = device.n_states
 get_ω_ref(device::DynamicGenerator) = device.ω_ref
-"""Get the [`Machine`](@ref) component of a [`DynamicGenerator`](@ref)."""
+"""Return the [`Machine`](@ref) component of a [`DynamicGenerator`](@ref)."""
 get_machine(device::DynamicGenerator) = device.machine
-"""Get the [`Shaft`](@ref) component of a [`DynamicGenerator`](@ref)."""
+"""Return the [`Shaft`](@ref) component of a [`DynamicGenerator`](@ref)."""
 get_shaft(device::DynamicGenerator) = device.shaft
-"""Get the [`AVR`](@ref) component of a [`DynamicGenerator`](@ref)."""
+"""Return the [`AVR`](@ref) component of a [`DynamicGenerator`](@ref)."""
 get_avr(device::DynamicGenerator) = device.avr
-"""Get the [`TurbineGov`](@ref) (prime mover) component of a [`DynamicGenerator`](@ref)."""
+"""Return the [`TurbineGov`](@ref) (prime mover) component of a [`DynamicGenerator`](@ref)."""
 get_prime_mover(device::DynamicGenerator) = device.prime_mover
-"""Get the [`PSS`](@ref) component of a [`DynamicGenerator`](@ref)."""
+"""Return the [`PSS`](@ref) component of a [`DynamicGenerator`](@ref)."""
 get_pss(device::DynamicGenerator) = device.pss
 get_base_power(device::DynamicGenerator) = device.base_power
 get_ext(device::DynamicGenerator) = device.ext
@@ -181,7 +182,12 @@ function get_degov1_states(droop_flag::Int)
 end
 
 """
-Get the frequency droop parameter from the prime mover of a [`DynamicGenerator`](@ref).
+Return the frequency droop parameter from the prime mover of a [`DynamicGenerator`](@ref).
+
+# Arguments
+- `dyn_gen::DynamicGenerator`: The dynamic generator.
+
+See also: [`get_frequency_droop`](@ref get_frequency_droop(::V) where {V <: DynamicInjection})
 """
 function get_frequency_droop(dyn_gen::DynamicGenerator)
     return get_frequency_droop(get_prime_mover(dyn_gen))

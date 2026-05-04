@@ -1,4 +1,4 @@
-# Reduce REPL printing
+# [Reduce REPL printing](@id reduce_repl_printing)
 
 By default `PowerSystems.jl` outputs to the REPL all Logging statements, which can be
 overwhelming in some cases.
@@ -8,7 +8,7 @@ statements should be printed to the console or a log file:
 
 **Example**: Set log output to only see error messages in the console
 
-```julia
+```@example reduce_repl_printing
 using PowerSystems
 using Logging
 configure_logging(; console_level = Logging.Error)

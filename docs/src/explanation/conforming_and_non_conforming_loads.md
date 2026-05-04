@@ -1,35 +1,65 @@
 # [Conforming and Non-Conforming Loads](@id conf_loads)
 
-The difference between conforming and non-conforming loads is not particularly significant for how PowerSystems.jl manages data, as loads can be assigned either aggregate or individual time series.
+At its core, the distinction between conforming and non-conforming loads is about
+forecastability. The definitions and practical criteria used here draw from the
+[CAISO EIM's "Non-Conforming Load FAQ"](https://www.westerneim.com/Documents/EIM-Non-Conforming-Load-FAQ.pdf).
 
-## Definitions and use cases
+**Conforming loads** are typically residential and commercial loads that, in aggregate,
+follow a predictable daily and seasonal pattern influenced by time of day, day of the week,
+and weather conditions. This predictability allows modelers to use aggregate forecasts of
+the total area load with a high degree of accuracy and then disaggregate the curve using
+participation factors.
 
-At its core, the distinction is about forecastability. The De Facto-Criteria and Practical Uses of this distinction comes from CAISO's Energy Imbalance Market (EIM) definitions. This section draws from the [CAISO EIM's "Non-Conforming Load FAQ"](https://www.westerneim.com/Documents/EIM-Non-Conforming-Load-FAQ.pdf) document.
+**Non-conforming loads** have consumption patterns that don't follow the aggregate system
+behavior and can fluctuate independently of the total system load. These are often large
+industrial processes with unique operational cycles, for example:
 
-Conforming loads are the typically residential and commercial loads that, in aggregate, follow a predictable daily and seasonal pattern influenced by factors like time of day, day of the week, and weather conditions. This predictability allows modelers to use aggregate forecasts of the total area load with a high degree of accuracy and then desagregate the curve using participation factors.
+  - **Electric Arc Furnaces:** Used in steel manufacturing, electric arc furnaces cause
+    massive, sudden spikes in power demand when in operation. Depending on the time-scale
+    of modeling, these loads can require a consumption pattern that matches the underlying
+    industrial process.
 
-Non-conforming loads, on the other hand have patterns of consumption that don't follow the aggregate behavior. Their consumption does not follow typical patterns and can fluctuate with different rates as the total system load. These are often large industrial processes with unique operational cycles. For example:
+  - **Large Data Centers:** While having a relatively constant base load, the computational
+    demands of large data centers almost never change with the patterns of the rest of the
+    system. These loads tend to be flat and in some advanced models include the behavior of
+    compute load dispatch algorithms that conduct geographic price arbitrage.
 
-  - Electric Arc Furnaces: Used in steel manufacturing, electric arc furnaces cause massive, sudden spikes in power demand when they are in operation. Depending on the time-scale of modeling these loads can require a consumption pattern that mathches the underlying industrial process.
+  - **Traction Loads for Railways:** The movement of electric trains results in fluctuating
+    power demand along railway lines based on transportation demand.
 
-  - Large Data Centers: While having a relatively constant base load, the computational demands of large data centers almost never change with the patterns from the rest of the system. These loads tend to be flat and in some advanced models include the behavior of compute load dispatch algorithms that conduct geographic price arbitrage.
-
-  - Traction Loads for Railways: The movement of electric trains results in fluctuating power demand along the railway lines based on the transportation demand.
-
-  - Pumping Loads: Similarly to tranction loads, pumping loads can change according to water or gas demand and supply needs and not system level behavior. In its data collection manuals, WECC specifies that pumping loads are typically modeled as non-conforming in power flow cases.
+  - **Pumping Loads:** Pumping loads can change according to water or gas demand and supply
+    needs rather than system-level behavior. [WECC](@ref W) specifies in its data collection manuals
+    that pumping loads are typically modeled as non-conforming in power flow cases.
 
 ## Modeling using PowerSystems.jl
 
-Drawing again from CAISO's EIM procedures, the management of non-conforming loads involves:
+In practice — following conventions established by markets such as
+[CAISO's EIM](https://www.westerneim.com/Documents/EIM-Non-Conforming-Load-FAQ.pdf) —
+non-conforming loads are handled differently from conforming ones in three key ways:
+their historical data is segregated from the aggregate load before training forecast models;
+they are forecasted or scheduled independently rather than by disaggregating an area
+forecast; and in some market contexts they are represented as dispatchable negative
+generation rather than passive demand. This is also known as "Dispatchable Demand Response" (DDR) in the CAISO market.
 
- 1. **Segregated Data Submission**: The historical consumption data for the non-conforming load must be separated from the general, or "conforming," load data. This "cleanses" the historical data used to train weather-based load forecasting models, thereby improving their accuracy for the bulk of the system's load.
+In `PowerSystems.jl`, these distinctions surface in two places:
 
- 2. **Independent Forecasting**: While the system operator forecasts the aggregate conforming load, the entity responsible for the non-conforming load is often required to submit its own forecast or schedule.
+ 1. **The `conformity` field.** Concrete subtypes of [`StaticLoad`](@ref) carry a
+    `conformity` field that records whether a load is conforming or non-conforming (see the
+    [options listed here](@ref loadconform_list)). This field exists for monitoring and
+    bookkeeping purposes — it allows downstream tools and analysts to identify which loads
+    were treated as non-conforming without needing to inspect the time series data directly.
 
- 3. **Specialized Modeling**: In market and operational models, non-conforming loads are often treated as a type of resource. For instance, in the CAISO market, they are represented as "Dispatchable Demand Response" (DDR) resources, which are essentially modeled as negative generation. This allows their behavior to be explicitly accounted for in market clearing and dispatch instructions.
+ 2. **Time series assignment.** The behavioral difference between conforming and
+    non-conforming loads is expressed through time series. A conforming load typically
+    shares an aggregate area forecast that is then scaled by a participation factor; a
+    non-conforming load carries its own individual time series. `PowerSystems.jl` supports
+    both patterns equally — the `conformity` flag declares the intent, while the time series
+    assignment carries it out.
 
-If a modeler wants to account for the differences in behavior between various loads, they only need to assign a distinct time series to each load. In `PowerSystems.jl`, we keep track of data related to "conformity" for monitoring purposes. This data is defined in the `conformity` field for concrete subtypes of [`StaticLoad`](@ref) and has the [options listed here](@ref loadconform_list). However, the behavioral variations described in the literature are already taken into consideration through the ways modelers can manage these time series assignments.
+This design means that modeling the distinction requires no special data structures or
+separate code paths: assigning a distinct time series to a non-conforming load is
+sufficient to capture its independent behavior.
 
-### See also:
+### See also
 
-  - Parsing [time series](@ref parsing_time_series)
+  - [Parsing time series](@ref parsing_time_series)

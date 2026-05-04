@@ -1,8 +1,10 @@
-# # [Working with Time Series Data](@id tutorial_time_series)
+# # Working with Time Series Data
 # In this tutorial, we will manually add, retrieve, and inspect time-series data in
 # different formats, including identifying which components in a power [`System`](@ref) have time
 # series data. Along the way, we will also use workarounds for missing forecast data and
 # reuse identical time series profiles to avoid unnecessary memory usage.
+# For a conceptual overview of how time series data is structured in `PowerSystems.jl`,
+# see [Time Series Data](@ref ts_data).
 
 # ## Example Data and Setup
 # We will make an example [`System`](@ref) with a wind generator and two loads, and
@@ -275,56 +277,14 @@ get_time_series_array(
 )
 
 # See that `load1`'s scaling factor multiplier is still being applied as expected.
-# # Transform with Multiple Intervals
-# PowerSystems supports creating multiple forecast transforms from the same
-# [`SingleTimeSeries`](@ref), each with a different [interval](@ref I). This is useful when
-# a component needs forecasts updated at different frequencies.
-# Use `delete_existing = false` to preserve the existing transform and add a second one
-# with a different interval:
+# You can also query the system-wide forecast parameters:
 
-transform_single_time_series!(
-    system,
-    Dates.Hour(1), # horizon
-    Dates.Hour(1); # a longer interval
-    delete_existing = false,
-);
-
-# Now `load1` has two [`DeterministicSingleTimeSeries`](@ref) forecasts with different
-# intervals. Let's verify:
-
-show_time_series(load1)
-
-# When multiple intervals exist for the same name, you must specify `interval` to
-# disambiguate retrieval:
-
-get_time_series_array(
-    DeterministicSingleTimeSeries,
-    load1,
-    "max_active_power";
-    start_time = DateTime("2020-01-01T08:00:00"),
-    interval = Dates.Minute(30),
-)
-
-# You can also query forecast parameters for a specific interval:
-
-get_forecast_horizon(system; interval = Dates.Hour(1))
+get_forecast_horizon(system)
 
 #
 
-get_forecast_interval(system; interval = Dates.Minute(30))
+get_forecast_interval(system)
 
-# To selectively remove one interval's forecasts while keeping the other:
-
-remove_time_series!(
-    system,
-    DeterministicSingleTimeSeries,
-    load1,
-    "max_active_power";
-    interval = Dates.Hour(1),
-);
-show_time_series(load1)
-
-# The 30-minute interval forecast is still present while the 1-hour one has been removed.
 # # Finding, Retrieving, and Inspecting Time Series
 # Now, let's complete this tutorial by doing a few sanity checks on the data that we've added,
 # where are we will also examine components with time series and retrieve
@@ -381,6 +341,54 @@ get_max_active_power(wind1)
 #     `max_active_power` field, so check
 #     [`get_max_active_power`](@ref get_max_active_power(d::RenewableGen))
 #     to see how its calculated.
+# ## Getting Timestamps and Values Separately
+# When working with a retrieved time series object, you can extract the timestamps and
+# values independently rather than always working with the combined `TimeArray`.
+# Use [`get_time_series_timestamps`](@ref) to get just the timestamps for a time series:
+
+get_time_series_timestamps(SingleTimeSeries, load1, "max_active_power")
+
+# Use [`get_time_series_values`](@ref) to get just the numeric values. Note the
+# scaling factor multiplier is still applied:
+
+get_time_series_values(SingleTimeSeries, load1, "max_active_power")
+
+# The same functions work for forecasts -- just pass a `start_time` to select the window:
+
+get_time_series_timestamps(
+    Deterministic,
+    wind1,
+    "max_active_power";
+    start_time = DateTime("2020-01-01T08:00:00"),
+)
+
+get_time_series_values(
+    Deterministic,
+    wind1,
+    "max_active_power";
+    start_time = DateTime("2020-01-01T08:00:00"),
+)
+
+# ## Inspecting Time Series Metadata
+# Rather than retrieving the full data, you can inspect the structural metadata of a time
+# series object returned by [`get_time_series`](@ref).
+# Let's retrieve the wind forecast object again and inspect its properties:
+
+forecast = get_time_series(wind1, keys[1])
+
+# Get the [resolution](@ref R) (time step between values):
+
+get_resolution(forecast)
+
+# Get the [horizon](@ref H) (total duration of one forecast window):
+
+get_horizon(forecast)
+
+# Similarly, for the load [`SingleTimeSeries`](@ref):
+
+sts = get_time_series(SingleTimeSeries, load1, "max_active_power")
+get_resolution(sts)
+
 # # Next Steps
 # In this tutorial, you defined, added, and retrieved four time series data
 # sets, including static time series and deterministic forecasts. Along the way, we
@@ -389,6 +397,6 @@ get_max_active_power(wind1)
 # forecast data.
 # Next you might like to:
 #   - [Parse many timeseries data sets from CSV's](@ref parsing_time_series)
-#   - [See how to improve performance efficiency with your own time series data](@ref "Improve Performance with Time Series Data")
+#   - [See how to improve performance efficiency with your own time series data](@ref improve_ts_performance)
 #   - [Review the available time series data formats](@ref ts_data)
 #   - [Learn more about how times series data is stored](@ref "Data Storage")

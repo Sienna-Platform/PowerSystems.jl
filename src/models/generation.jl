@@ -1,21 +1,61 @@
-""" Supertype for all generation technologies"""
+"""
+    Generator
+
+Supertype for all generation technologies.
+
+Abstract subtypes include [`HydroGen`](@ref), [`RenewableGen`](@ref), and
+[`ThermalGen`](@ref).
+
+See also: [`StaticInjection`](@ref), [`HydroGen`](@ref), [`RenewableGen`](@ref), [`ThermalGen`](@ref)
+"""
 abstract type Generator <: StaticInjection end
 const Generators = Array{<:Generator, 1}
 
-""" Supertype for all Hydropower generation technologies"""
+"""
+    HydroGen
+
+Supertype for all hydropower generation technologies.
+
+The abstract subtype [`HydroUnit`](@ref) covers turbine-based units
+([`HydroTurbine`](@ref), [`HydroPumpTurbine`](@ref)). The concrete subtype
+[`HydroDispatch`](@ref) also inherits directly from `HydroGen`.
+
+See also: [`Generator`](@ref), [`HydroUnit`](@ref), [`HydroReservoir`](@ref)
+"""
 abstract type HydroGen <: Generator end
 
-""" Supertype for all Hydropower generation technologies that are represented as units (i.e. HydroTurbine and HydroPumpTurbine)"""
+"""
+    HydroUnit
+
+Supertype for all hydropower generation technologies represented as turbine-based units.
+
+Concrete subtypes include [`HydroTurbine`](@ref) and [`HydroPumpTurbine`](@ref).
+
+See also: [`HydroGen`](@ref), [`HydroReservoir`](@ref)
+"""
 abstract type HydroUnit <: HydroGen end
 
 """
-Supertype for all renewable generation technologies
+    RenewableGen
 
-Requires the implementation of `get_rating`and `get_power_factor` methods
+Supertype for all renewable generation technologies.
+
+Concrete subtypes include [`RenewableDispatch`](@ref) and [`RenewableNonDispatch`](@ref).
+All subtypes must implement `get_rating` and `get_power_factor` methods.
+
+See also: [`Generator`](@ref), [`ThermalGen`](@ref)
 """
 abstract type RenewableGen <: Generator end
 
-""" Supertype for all Thermal generation technologies"""
+"""
+    ThermalGen
+
+Supertype for all thermal generation technologies.
+
+Concrete subtypes include [`ThermalStandard`](@ref) and [`ThermalMultiStart`](@ref).
+
+See also: [`Generator`](@ref), [`HydroGen`](@ref), [`RenewableGen`](@ref)
+"""
 abstract type ThermalGen <: Generator end
 
 function IS.get_limits(
@@ -28,15 +68,27 @@ function IS.get_limits(
 end
 
 """
-Return the max active power for the Renewable Generation calculated as the `rating` * `power_factor`
+Return the maximum active power for a [`RenewableGen`](@ref) in per unit on the device base,
+calculated as [`get_rating`](@ref) × [`get_power_factor`](@ref).
+
+# Arguments
+- `d::RenewableGen`: The renewable generation device.
+
+See also: [`get_max_reactive_power`](@ref get_max_reactive_power(d::RenewableGen))
 """
-function get_max_active_power(d::T) where {T <: RenewableGen}
+function get_max_active_power(d::RenewableGen)
     return get_rating(d) * get_power_factor(d)
 end
 
 """
-Return the max reactive power for the Renewable Generation calculated as the `rating` * sin(acos(`power_factor`))
+Return the maximum reactive power for a [`RenewableGen`](@ref) in per unit on the device base,
+calculated as [`get_rating`](@ref) × sin(acos([`get_power_factor`](@ref))).
+
+# Arguments
+- `d::RenewableGen`: The renewable generation device.
+
+See also: [`get_max_active_power`](@ref get_max_active_power(d::RenewableGen))
 """
-function get_max_reactive_power(d::T) where {T <: RenewableGen}
+function get_max_reactive_power(d::RenewableGen)
     return get_rating(d) * sin(acos(get_power_factor(d)))
 end

@@ -21,12 +21,12 @@ end
 # Constructor for demo purposes; non-functional.
 LoadCost(::Nothing) = LoadCost(zero(CostCurve), 0.0)
 
-"""Get [`LoadCost`](@ref) `variable`."""
+"""Return the `variable` field of [`LoadCost`](@ref)."""
 get_variable(value::LoadCost) = value.variable
-"""Get [`LoadCost`](@ref) `fixed`."""
+"""Return the `fixed` field of [`LoadCost`](@ref)."""
 get_fixed(value::LoadCost) = value.fixed
 
-"""Set [`LoadCost`](@ref) `variable`."""
+"""Set the `variable` field of [`LoadCost`](@ref)."""
 set_variable!(value::LoadCost, val) = value.variable = val
-"""Set [`LoadCost`](@ref) `fixed`."""
+"""Set the `fixed` field of [`LoadCost`](@ref)."""
 set_fixed!(value::LoadCost, val) = value.fixed = val

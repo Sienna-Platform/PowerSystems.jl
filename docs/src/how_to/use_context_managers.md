@@ -1,16 +1,16 @@
-# Use Context Managers for Efficient Bulk Operations
+# [Use Context Managers for Efficient Bulk Operations](@id use_context_managers)
 
 `PowerSystems.jl` provides several "context manager" functions that help you perform bulk
 operations more efficiently and safely. These functions temporarily change system settings or
 optimize batch operations, then automatically restore the original state when complete.
 
-Context managers in PowerSystems follow a pattern similar to `Logging.with_logger` in Julia.
+Context managers in `PowerSystems.jl` follow a pattern similar to `Logging.with_logger` in Julia.
 They accept a function (typically as a `do` block) that executes with modified settings,
 ensuring cleanup even if errors occur.
 
 ## Available Context Managers
 
-PowerSystems provides three main context managers:
+`PowerSystems.jl` provides three main context managers:
 
  1. [`with_units_base`](@ref) - Temporarily change unit system for getting/setting component data
  2. [`begin_supplemental_attributes_update`](@ref) - Optimize bulk addition/removal of supplemental attributes
@@ -19,7 +19,7 @@ PowerSystems provides three main context managers:
 ## Using `with_units_base`
 
 The [`with_units_base`](@ref) function temporarily changes the [unit system](@ref per_unit)
-for a `System` or `Component`, executes your code, then automatically restores the original
+for a [`System`](@ref) or [`Component`](@ref), executes your code, then automatically restores the original
 unit system. This is useful when you need to retrieve or set values in a specific unit system
 without permanently changing the system's configuration.
 
@@ -31,7 +31,7 @@ without permanently changing the system's configuration.
 
 ### Example: Getting Component Data in Natural Units
 
-```julia
+```@example use_context_managers
 using PowerSystems
 using PowerSystemCaseBuilder
 
@@ -49,7 +49,7 @@ end
 
 ### Example: Setting Multiple Component Values in Natural Units
 
-```julia
+```@example use_context_managers
 # Temporarily change units to add/modify multiple components in natural units
 with_units_base(sys, "NATURAL_UNITS") do
     for gen in get_components(ThermalStandard, sys)
@@ -66,7 +66,7 @@ end
 
 You can also use `with_units_base` on individual components:
 
-```julia
+```@example use_context_managers
 active_power_mw = with_units_base(gen, UnitSystem.NATURAL_UNITS) do
     get_active_power(gen)
 end
@@ -154,7 +154,7 @@ If an error occurs during the update, changes are automatically reverted.
 
 ### Example: Adding Multiple Time Series
 
-```julia
+```@example use_context_managers
 using PowerSystems
 using Dates
 
@@ -184,7 +184,7 @@ end
 
 ### Example: Adding Time Series from Multiple Sources
 
-```julia
+```@example use_context_managers
 # When you have time series data from multiple sources
 begin_time_series_update(sys) do
     for component in get_components(Generator, sys)
@@ -196,7 +196,7 @@ begin_time_series_update(sys) do
         )
 
         forecast = Deterministic(
-            "max_active_power",
+            "max_active_power_2",
             component_data,
             resolution;
             scaling_factor_multiplier = get_max_active_power,
@@ -250,6 +250,6 @@ end
 ## See Also
 
   - [Per-unit Conventions](@ref per_unit) - Learn more about unit systems
-  - [Supplemental Attributes](@ref supplemental_attributes) - Details on supplemental attribute usage
-  - [Working with Time Series Data](@ref tutorial_time_series) - Tutorial on time series handling
-  - [Improve Performance with Time Series Data](@ref) - Additional time series performance tips
+  - [Supplemental Attributes](@ref supplemental_attributes_explanation) - Details on supplemental attribute usage
+  - [Working with Time Series Data](@ref "Working with Time Series Data") - Tutorial on time series handling
+  - [Improve Performance with Time Series Data](@ref improve_ts_performance) - Additional time series performance tips

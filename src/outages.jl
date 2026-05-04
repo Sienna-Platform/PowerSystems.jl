@@ -1,4 +1,6 @@
 """
+    Outage
+
 Supertype for outage contingencies representing planned or unplanned equipment outages.
 
 Concrete subtypes include [`GeometricDistributionForcedOutage`](@ref),
@@ -6,26 +8,47 @@ Concrete subtypes include [`GeometricDistributionForcedOutage`](@ref),
 """
 abstract type Outage <: Contingency end
 
+"""
+    UnplannedOutage
+
+Abstract supertype for unplanned (forced) outage events.
+
+See also: [`Outage`](@ref), [`GeometricDistributionForcedOutage`](@ref), [`FixedForcedOutage`](@ref)
+"""
 abstract type UnplannedOutage <: Outage end
 
 """
-All PowerSystems [Outage](@ref) types support time series. This can be overridden for custom 
+All PowerSystems [`Outage`](@ref) types support time series. This can be overridden for custom 
 outage types that do not support time series.
 """
 supports_time_series(::Outage) = true
 
-"""Get `internal`."""
+"""Return the `internal` field of the [`Outage`](@ref)."""
 get_internal(x::Outage) = x.internal
 
 """
-Attribute that contains information regarding forced outages where the transition probabilities
-are modeled with geometric distributions. The outage probabilities and recovery probabilities can be modeled as time
-series.
+    struct GeometricDistributionForcedOutage <: UnplannedOutage
+        mean_time_to_recovery::Float64
+        outage_transition_probability::Float64
+        internal::InfrastructureSystemsInternal
+    end
+
+Supplemental attribute for unplanned forced outages with transition probabilities modeled
+by geometric distributions. Both the outage probability and the recovery probability can
+vary over time and be attached as time series data.
 
 # Arguments
-- `mean_time_to_recovery::Float64`: Time elapsed to recovery after a failure in Milliseconds.
-- `outage_transition_probability::Float64`: Characterizes the probability of failure (1 - p) in the geometric distribution.
-- `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems internal reference
+- `mean_time_to_recovery::Float64`: Expected time elapsed to recovery after a failure, in
+    milliseconds.
+- `outage_transition_probability::Float64`: Per-timestep probability of failure;
+    parameterizes the geometric distribution as `(1 - p)`.
+- `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal
+    reference.
+
+# See Also
+- [`FixedForcedOutage`](@ref): Unplanned outage type with a fixed (deterministic) outage
+    status.
+- [`PlannedOutage`](@ref): Scheduled outage type driven by a time series.
 """
 struct GeometricDistributionForcedOutage <: UnplannedOutage
     mean_time_to_recovery::Float64
@@ -39,9 +62,12 @@ end
 Construct a [`GeometricDistributionForcedOutage`](@ref).
 
 # Arguments
-- `mean_time_to_recovery::Float64`: (default: `0.0`) Time elapsed to recovery after a failure in Milliseconds.
-- `outage_transition_probability::Float64`: (default: `0.0`) Characterizes the probability of failure (1 - p) in the geometric distribution.
-- `internal::InfrastructureSystemsInternal`: (default: `InfrastructureSystemsInternal()`) (**Do not modify.**) PowerSystems internal reference
+- `mean_time_to_recovery::Float64`: (default: `0.0`) Expected time elapsed to recovery
+    after a failure, in milliseconds.
+- `outage_transition_probability::Float64`: (default: `0.0`) Per-timestep probability of
+    failure; parameterizes the geometric distribution as `(1 - p)`.
+- `internal::InfrastructureSystemsInternal`: (default: `InfrastructureSystemsInternal()`)
+    (**Do not modify.**) PowerSystems.jl internal reference.
 """
 function GeometricDistributionForcedOutage(;
     mean_time_to_recovery = 0.0,
@@ -55,19 +81,31 @@ function GeometricDistributionForcedOutage(;
     )
 end
 
-"""Get [`GeometricDistributionForcedOutage`](@ref) `time_to_recovery`."""
+"""Return the `mean_time_to_recovery` field of [`GeometricDistributionForcedOutage`](@ref)."""
 get_mean_time_to_recovery(value::GeometricDistributionForcedOutage) =
     value.mean_time_to_recovery
-"""Get [`GeometricDistributionForcedOutage`](@ref) `outage_transition_probability`."""
+"""Return the `outage_transition_probability` field of [`GeometricDistributionForcedOutage`](@ref)."""
 get_outage_transition_probability(value::GeometricDistributionForcedOutage) =
     value.outage_transition_probability
 
 """
-Attribute that contains information regarding planned outages.
+    struct PlannedOutage <: Outage
+        outage_schedule::String
+        internal::InfrastructureSystemsInternal
+    end
+
+Supplemental attribute for planned (scheduled) outages. The outage schedule is stored as
+a time series identified by the `outage_schedule` name string.
 
 # Arguments
-- `outage_schedule::String`: String name of the time series used for the scheduled outages
-- `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems internal reference
+- `outage_schedule::String`: Name of the time series containing the outage schedule.
+- `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal
+    reference.
+
+# See Also
+- [`GeometricDistributionForcedOutage`](@ref): Unplanned outage type with geometric
+    distribution transition probabilities.
+- [`FixedForcedOutage`](@ref): Unplanned outage type with a fixed outage status.
 """
 struct PlannedOutage <: Outage
     outage_schedule::String
@@ -80,8 +118,9 @@ end
 Construct a [`PlannedOutage`](@ref).
 
 # Arguments
-- `outage_schedule::String`: String name of the time series used for the scheduled outages
-- `internal::InfrastructureSystemsInternal`: (default: `InfrastructureSystemsInternal()`) (**Do not modify.**) PowerSystems internal reference
+- `outage_schedule::String`: Name of the time series containing the outage schedule.
+- `internal::InfrastructureSystemsInternal`: (default: `InfrastructureSystemsInternal()`)
+    (**Do not modify.**) PowerSystems.jl internal reference.
 """
 function PlannedOutage(;
     outage_schedule,
@@ -93,16 +132,29 @@ function PlannedOutage(;
     )
 end
 
-"""Get [`PlannedOutage`](@ref) `outage_schedule`."""
+"""Return the `outage_schedule` field of [`PlannedOutage`](@ref)."""
 get_outage_schedule(value::PlannedOutage) = value.outage_schedule
 
 """
-Attribute that contains the representation of the status of the component forced outage.
-The time series data for fixed outages can be obtained from the simulation of a stochastic process or historical information.
+    struct FixedForcedOutage <: UnplannedOutage
+        outage_status::Float64
+        internal::InfrastructureSystemsInternal
+    end
+
+Supplemental attribute for forced outages with a deterministic (fixed) outage status.
+The status value can be derived from stochastic process simulations or historical data,
+and may vary over time via attached time series data.
 
 # Arguments
-- `outage_status::Float64`: The forced outage status in the model. 1 represents outaged and 0 represents available.
-- `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems internal reference
+- `outage_status::Float64`: Forced outage status of the component: `1.0` indicates
+    outaged (unavailable), `0.0` indicates available.
+- `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal
+    reference.
+
+# See Also
+- [`GeometricDistributionForcedOutage`](@ref): Unplanned outage type with geometric
+    distribution transition probabilities.
+- [`PlannedOutage`](@ref): Scheduled outage type driven by a time series.
 """
 struct FixedForcedOutage <: UnplannedOutage
     outage_status::Float64
@@ -115,8 +167,10 @@ end
 Construct a [`FixedForcedOutage`](@ref).
 
 # Arguments
-- `outage_status::Float64`: The forced outage status in the model. 1 represents outaged and 0 represents available.
-- `internal::InfrastructureSystemsInternal`: (default: `InfrastructureSystemsInternal()`) (**Do not modify.**) PowerSystems internal reference
+- `outage_status::Float64`: Forced outage status of the component: `1.0` indicates
+    outaged (unavailable), `0.0` indicates available.
+- `internal::InfrastructureSystemsInternal`: (default: `InfrastructureSystemsInternal()`)
+    (**Do not modify.**) PowerSystems.jl internal reference.
 """
 function FixedForcedOutage(;
     outage_status,
@@ -125,5 +179,5 @@ function FixedForcedOutage(;
     return FixedForcedOutage(outage_status, internal)
 end
 
-"""Get [`FixedForcedOutage`](@ref) `outage_status`."""
+"""Return the `outage_status` field of [`FixedForcedOutage`](@ref)."""
 get_outage_status(value::FixedForcedOutage) = value.outage_status

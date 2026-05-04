@@ -1,4 +1,7 @@
-"""Accepts angle_limits as a Float64."""
+"""
+Construct a [`Line`](@ref) accepting `angle_limits` as a `Float64`, converting it to a
+symmetric `(min = -angle_limits, max = angle_limits)` named tuple.
+"""
 function Line(
     name,
     available::Bool,
@@ -25,7 +28,11 @@ function Line(
     )
 end
 
-"""Allows construction with bus type specified as a string for legacy code."""
+"""
+Construct an [`ACBus`](@ref) with `bustype` specified as a `String` for legacy compatibility.
+
+The string is converted to the corresponding [`ACBusTypes`](@ref) enum value.
+"""
 function ACBus(
     number,
     name,
@@ -55,7 +62,12 @@ function ACBus(
     )
 end
 
-"""Allows construction with bus type specified as a string for legacy code."""
+"""
+Construct a [`DiscreteControlledACBranch`](@ref) with enum types specified as strings for legacy compatibility.
+
+The `discrete_branch_type` and `branch_status` strings are converted to the corresponding
+[`DiscreteControlledBranchType`](@ref) and [`DiscreteControlledBranchStatus`](@ref) enum values.
+"""
 function DiscreteControlledACBranch(
     name,
     available,
@@ -86,7 +98,11 @@ function DiscreteControlledACBranch(
     )
 end
 
-"""Allows construction of FACT Devices with control modes."""
+"""
+Construct a [`FACTSControlDevice`](@ref) with `control_mode` specified as a string.
+
+The string is converted to the corresponding [`FACTSOperationModes`](@ref) enum value.
+"""
 function FACTSControlDevice(
     name,
     available,
@@ -115,7 +131,9 @@ function FACTSControlDevice(
     )
 end
 
-"""Allows construction of a reserve from an iterator."""
+"""
+Construct a [`ConstantReserve`](@ref) from a `contributingdevices` iterator, collecting it into a vector.
+"""
 function ConstantReserve(
     name,
     contributingdevices::IS.FlattenIteratorWrapper,
@@ -134,7 +152,11 @@ function ConstantReserve(
     )
 end
 
-"""Allows construction of a EnergyReservoirStorage without the specification of a cost."""
+"""
+Construct an [`EnergyReservoirStorage`](@ref) without an explicit operational cost.
+
+Uses a default [`StorageCost`](@ref) when `operation_cost` is `nothing`.
+"""
 function EnergyReservoirStorage(
     name::AbstractString,
     available::Bool,

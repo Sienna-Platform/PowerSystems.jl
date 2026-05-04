@@ -1,4 +1,4 @@
-# Add costs for imported/exported power
+# [Add costs for imported/exported power](@id import_export_cost)
 
 This how-to guide explains how to add an [`ImportExportCost`](@ref) to a [`Source`](@ref)
 component to model imports and exports with neighboring areas or external grids.
@@ -34,7 +34,7 @@ You can define import and export curves in several ways, depending on your data 
 
 For a simple constant price over a power range:
 
-```@repl source_ie_cost
+```@example source_ie_cost
 # Import curve: buy power at $25/MWh up to 200 MW
 import_curve = make_import_curve(; power = 200.0, price = 25.0)
 
@@ -46,7 +46,7 @@ export_curve = make_export_curve(; power = 200.0, price = 30.0)
 
 For more complex pricing with multiple segments:
 
-```@repl source_ie_cost
+```@example source_ie_cost
 # Import curve with increasing prices as more power is imported
 import_curve = make_import_curve(;
     power = [0.0, 100.0, 105.0, 120.0, 200.0],
@@ -70,7 +70,7 @@ export_curve = make_export_curve(;
 
 Use the curves to create an [`ImportExportCost`](@ref):
 
-```@repl source_ie_cost
+```@example source_ie_cost
 ie_cost = ImportExportCost(;
     import_offer_curves = import_curve,
     export_offer_curves = export_curve,
@@ -84,7 +84,7 @@ ie_cost = ImportExportCost(;
 Define a [`Source`](@ref) component with the import/export cost, or alternatively use
 [`set_operation_cost!`](@ref) to add the cost to an existing source:
 
-```@repl source_ie_cost
+```@example source_ie_cost
 source = Source(;
     name = "external_grid",
     available = true,
@@ -111,13 +111,13 @@ source = Source(;
 
 Add the source component to your system:
 
-```@repl source_ie_cost
+```@example source_ie_cost
 add_component!(sys, source)
 ```
 
 Verify the source was added correctly:
 
-```@repl source_ie_cost
+```@example source_ie_cost
 get_component(Source, sys, "external_grid")
 get_operation_cost(get_component(Source, sys, "external_grid"))
 ```

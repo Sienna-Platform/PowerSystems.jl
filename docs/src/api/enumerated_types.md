@@ -92,7 +92,7 @@ EIA Annual Energy Review. `ThermalFuels` has the options:
 | `BLACK_LIQUOR`                                                                                                                     | BLQ           | Black Liquor                                                                                                                        |
 | `WOOD_WASTE_LIQUIDS`                                                                                                               | WDL           | Wood Waste Liquids excluding Black Liquor (includes red liquor, sludge wood, spent sulfite liquor, and other wood-based liquids)    |
 | `LANDFILL_GAS`                                                                                                                     | LFG           | Landfill Gas                                                                                                                        |
-| `OTHEHR_BIOMASS_GAS`                                                                                                               | OBG           | Other Biomass Gas (includes digester gas, methane, and other biomass gasses)                                                        |
+| `OTHER_BIOMASS_GAS`                                                                                                                | OBG           | Other Biomass Gas (includes digester gas, methane, and other biomass gasses)                                                        |
 | `NUCLEAR`                                                                                                                          | NUC           | Nuclear Uranium, Plutonium, Thorium                                                                                                 |
 | `WASTE_HEAT`                                                                                                                       | WH            | Waste heat not directly attributed to a fuel source                                                                                 |
 | `TIREDERIVED_FUEL`                                                                                                                 | TDF           | Tire-derived Fuels                                                                                                                  |
@@ -159,7 +159,7 @@ the different alternatives of `ReservoirDataType`, which has the options:
 | `CONFORMING`     | Conforming load                                                   |
 | `UNDEFINED`      | Undefined or unknown whether load is conforming or non-conforming |
 
-## [Tranformer Control Objectives](@id xtf_crtl)
+## [Transformer Control Objectives](@id xtf_crtl)
 
 `TransformerControlObjective` is used to select the control objective for a transformer's
 tap changer, which can be used to determine the tap position during power flow calculations.

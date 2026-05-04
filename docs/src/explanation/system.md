@@ -1,14 +1,33 @@
 # [System](@id system_doc)
 
-The `System` is the main container of components and the time series data references.
-`PowerSystems.jl` uses a hybrid approach to data storage, where the component data and time
-series references are stored in volatile memory while the actual time series data is stored
-in an HDF5 file. This design loads into memory the portions of the data that are relevant
-at time of the query, and so avoids overwhelming the memory resources.
+## What is a `System`?
+
+The [`System`](@ref) is the central data container in `PowerSystems.jl`. It holds all
+[`Component`](@ref)s — the objects that describe the physical and logical elements of a
+power network — together with references to any associated time series data. For the most
+basic walkthrough of creating a system from scratch, see the
+[Create and Explore a Power System](@ref "Create and Explore a Power `System`") tutorial.
+
+`PowerSystems.jl` uses a hybrid approach to data storage: component data and time series
+references are stored in volatile memory, while the actual time series data is stored in
+an HDF5 file. This design loads only the portions of the data that are relevant at the
+time of the query, avoiding unnecessary memory overhead for large datasets.
 
 ```@raw html
-<img src="../../assets/System.png" width="50%"/>
+<img src="../../assets/System.png" style="zoom: 150%;"/>
 ```
+
+## What is a `Component`?
+
+A [`Component`](@ref) is any element of a power system model — generators, loads, buses,
+transmission lines, services, and more. Every component in `PowerSystems.jl` belongs to an
+abstract type hierarchy that organizes components by their role in the system (see
+[Type Structure](@ref type_structure) for details).
+
+A key constraint of the data model is that **a component instance can belong to at most
+one [`System`](@ref) at a time**. Adding a component to a second [`System`](@ref) without first removing
+it from the first will raise an error. This ensures that ownership of component data is
+unambiguous and prevents silent aliasing between systems.
 
 ## Accessing components stored in the `System`
 
@@ -16,81 +35,29 @@ at time of the query, and so avoids overwhelming the memory resources.
 aid in data manipulation. Most of these use the [Type Structure](@ref type_structure) to
 retrieve all components of a certain `Type`.
 
-For example, the most common search function is [`get_components`](@ref), which
-takes a desired device `Type` (concrete or abstract) and retrieves all components in that
-category from the `System`. It also accepts filter functions for a more
-refined search.
+The most common retrieval function is [`get_components`](@ref), which accepts a concrete or
+abstract component `Type` and returns all matching components from the [`System`](@ref). It also
+accepts filter functions for more refined searches.
 
-Given the potential size of the return,
-`PowerSystems.jl` returns Julia iterators in order to avoid unnecessary memory allocations.
-The container is optimized for iteration over abstract or concrete component
-types as described by the [Type Structure](@ref type_structure).
+Because a system can contain a large number of components, `PowerSystems.jl` returns
+Julia iterators rather than materialized collections, avoiding unnecessary memory
+allocations. The container is internally optimized for iteration over both abstract and
+concrete component types.
 
 ## [Accessing data stored in a component](@id dot_access)
 
-__Using the "dot" access to get a parameter value from a component is actively discouraged, use "getter" functions instead__
+__Using the "dot" access to get a parameter value from a component is actively discouraged, use getter functions instead__
 
-Using code autogeneration, `PowerSystems.jl` implements accessor (or "getter") functions to
+Using code autogeneration, `PowerSystems.jl` implements getter functions to
 enable the retrieval of parameters defined in the component struct fields. Julia syntax enables
 access to this data using the "dot" access (e.g. `component.field`), however
 _this is actively discouraged_ for two reasons:
 
- 1. We make no guarantees on the stability of component structure definitions. We will maintain version stability on the accessor methods.
- 2. Per-unit conversions are made in the return of data from the accessor functions. (see the [per-unit section](@ref per_unit) for more details)
+ 1. We make no guarantees on the stability of component structure definitions. We will maintain version stability on the getter methods.
+ 2. Per-unit conversions are made in the return of data from the getter functions. (see the [per-unit section](@ref per_unit) for more details)
 
-## [Using subsystems](@id subsystems)
+## Subsystems
 
-For certain applications, such as those that employ dispatch coordination methods or decomposition approaches, it is useful to be able to split components into subsystems based upon user-defined criteria. The  `System` provides `subsystem` containers for this purpose. Each subsystem is defined by a name and can hold references to any number of components.
-
-The following commands demonstrate how to create subsystems and add components.
-
-```@repl subsystem
-using PowerSystems;
-using PowerSystemCaseBuilder;
-sys = build_system(PSISystems, "c_sys5_pjm")
-add_subsystem!(sys, "1")
-add_subsystem!(sys, "2")
-```
-
-Devices in the system can be assigned to the subsystems in the following way using the function [`add_component_to_subsystem!`](@ref)
-
-```@repl subsystem
-g = get_component(ThermalStandard, sys, "Alta")
-add_component_to_subsystem!(sys, "1", g)
-
-g = get_component(ThermalStandard, sys, "Sundance")
-add_component_to_subsystem!(sys, "2", g)
-```
-
-To retrieve components assigned to a specific subsystem, add the `subsystem_name` keyword argument to `get_components`.
-
-```@repl subsystem
-gens_1 = get_components(ThermalStandard, sys; subsystem_name = "1")
-get_name.(gens_1)
-
-gens_2 = get_components(ThermalStandard, sys; subsystem_name = "2")
-get_name.(gens_2)
-```
-
-One useful feature that requires care when used is generating a new [`System`](@ref) from a `subsystem` assignment.
-
-The function [`from_subsystem`](@ref) will allow the user to produce a new [`System`](@ref) that can be used or exported.
-This functionality requires careful subsystem assignemnt of the devices and its dependencies. Following from the example in this document, you can export a system as follows:
-
-```@repl subsystem
-from_subsystem(sys, "1")
-```
-
-!!! warning
-
-    The system is invalid because the bus connected to the Alta generator is not part of the subsystem. We can add it, and then run [`from_subsystem`](@ref) again
-
-```@repl subsystem
-g = get_component(ThermalStandard, sys, "Alta")
-b = get_bus(g)
-add_component_to_subsystem!(sys, "1", b)
-from_subsystem(sys, "1")
-```
-
-Advanced users can use the keyword `runchecks=false` and avoid any topological check in the process.
-It is highly recommended that users only do this if they clearly understand how to validate the resulting system before using it for modeling.
+The [`System`](@ref) also supports partitioning components into named *subsystems*, which is
+useful for decomposition approaches or dispatch coordination workflows. For a hands-on walkthrough of working with a [`System`](@ref), its components, and the accessor functions, see the
+[Manipulating Datasets](@ref "Manipulating Datasets") tutorial. For a step-by-step guide, see [Use subsystems](@ref use_subsystems).

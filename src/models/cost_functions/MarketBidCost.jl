@@ -84,7 +84,7 @@ MarketBidCost(
         ancillary_service_offers,
     )
 
-"""Auxiliary Constructor for TestData"""
+"""Construct a [`MarketBidCost`](@ref) for testing purposes."""
 MarketBidCost(
     no_load_cost::Float64,
     start_up::Union{TimeSeriesKey, StartUpStages},
@@ -157,53 +157,53 @@ function MarketBidCost(
     )
 end
 
-"""Get [`MarketBidCost`](@ref) `no_load_cost`."""
+"""Return the `no_load_cost` field of [`MarketBidCost`](@ref)."""
 get_no_load_cost(value::MarketBidCost) = value.no_load_cost
-"""Get [`MarketBidCost`](@ref) `start_up`."""
+"""Return the `start_up` field of [`MarketBidCost`](@ref)."""
 get_start_up(value::MarketBidCost) = value.start_up
-"""Get [`MarketBidCost`](@ref) `shut_down`."""
+"""Return the `shut_down` field of [`MarketBidCost`](@ref)."""
 get_shut_down(value::MarketBidCost) = value.shut_down
-"""Get [`MarketBidCost`](@ref) `incremental_offer_curves`."""
+"""Return the `incremental_offer_curves` field of [`MarketBidCost`](@ref)."""
 get_incremental_offer_curves(value::MarketBidCost) = value.incremental_offer_curves
-"""Get [`MarketBidCost`](@ref) `decremental_offer_curves`."""
+"""Return the `decremental_offer_curves` field of [`MarketBidCost`](@ref)."""
 get_decremental_offer_curves(value::MarketBidCost) = value.decremental_offer_curves
-"""Get [`MarketBidCost`](@ref) `incremental_initial_input`."""
+"""Return the `incremental_initial_input` field of [`MarketBidCost`](@ref)."""
 get_incremental_initial_input(value::MarketBidCost) = value.incremental_initial_input
-"""Get [`MarketBidCost`](@ref) `decremental_initial_input`."""
+"""Return the `decremental_initial_input` field of [`MarketBidCost`](@ref)."""
 get_decremental_initial_input(value::MarketBidCost) = value.decremental_initial_input
-"""Get [`MarketBidCost`](@ref) `ancillary_service_offers`."""
+"""Return the `ancillary_service_offers` field of [`MarketBidCost`](@ref)."""
 get_ancillary_service_offers(value::MarketBidCost) = value.ancillary_service_offers
 
-"""Set [`MarketBidCost`](@ref) `no_load_cost`."""
+"""Set the `no_load_cost` field of [`MarketBidCost`](@ref)."""
 set_no_load_cost!(value::MarketBidCost, val) = value.no_load_cost = val
-"""Set [`MarketBidCost`](@ref) `start_up`."""
+"""Set the `start_up` field of [`MarketBidCost`](@ref)."""
 set_start_up!(value::MarketBidCost, val) = value.start_up = val
-"""Set [`MarketBidCost`](@ref) `shut_down`."""
+"""Set the `shut_down` field of [`MarketBidCost`](@ref)."""
 set_shut_down!(value::MarketBidCost, val) = value.shut_down = val
-"""Set [`MarketBidCost`](@ref) `incremental_offer_curves`."""
+"""Set the `incremental_offer_curves` field of [`MarketBidCost`](@ref)."""
 set_incremental_offer_curves!(value::MarketBidCost, val) =
     value.incremental_offer_curves = val
-"""Set [`MarketBidCost`](@ref) `incremental_initial_input`."""
+"""Set the `incremental_initial_input` field of [`MarketBidCost`](@ref)."""
 set_incremental_initial_input!(value::MarketBidCost, val) =
     value.incremental_initial_input = val
-"""Set [`MarketBidCost`](@ref) `incremental_offer_curves`."""
+"""Set the `decremental_offer_curves` field of [`MarketBidCost`](@ref)."""
 set_decremental_offer_curves!(value::MarketBidCost, val) =
     value.decremental_offer_curves = val
-"""Set [`MarketBidCost`](@ref) `decremental_initial_input`."""
+"""Set the `decremental_initial_input` field of [`MarketBidCost`](@ref)."""
 set_decremental_initial_input!(value::MarketBidCost, val) =
     value.decremental_initial_input = val
-"""Set [`MarketBidCost`](@ref) `ancillary_service_offers`."""
+"""Set the `ancillary_service_offers` field of [`MarketBidCost`](@ref)."""
 set_ancillary_service_offers!(value::MarketBidCost, val) =
     value.ancillary_service_offers = val
 
-"""Auxiliary Method for setting up start up that are not multi-start"""
+"""Set the `start_up` field of [`MarketBidCost`](@ref) using a single value, with `warm` and `cold` stages set to `0.0`."""
 function set_start_up!(value::MarketBidCost, val::Real)
     start_up_multi = single_start_up_to_stages(val)
     set_start_up!(value, start_up_multi)
 end
 
 """
-Return `true` if the given [`ProductionVariableCostCurve`](@ref) is a market bid curve
+Return `true` if the given `ProductionVariableCostCurve` is a market bid curve
 (a `CostCurve{PiecewiseIncrementalCurve}` as used in [`MarketBidCost`](@ref)).
 """
 function is_market_bid_curve(curve::ProductionVariableCostCurve)

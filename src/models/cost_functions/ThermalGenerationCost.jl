@@ -33,20 +33,20 @@ function ThermalGenerationCost(::Nothing)
     )
 end
 
-"""Get [`ThermalGenerationCost`](@ref) `variable`."""
+"""Return the `variable` field of [`ThermalGenerationCost`](@ref)."""
 get_variable(value::ThermalGenerationCost) = value.variable
-"""Get [`ThermalGenerationCost`](@ref) `fixed`."""
+"""Return the `fixed` field of [`ThermalGenerationCost`](@ref)."""
 get_fixed(value::ThermalGenerationCost) = value.fixed
-"""Get [`ThermalGenerationCost`](@ref) `start_up`."""
+"""Return the `start_up` field of [`ThermalGenerationCost`](@ref)."""
 get_start_up(value::ThermalGenerationCost) = value.start_up
-"""Get [`ThermalGenerationCost`](@ref) `shut_down`."""
+"""Return the `shut_down` field of [`ThermalGenerationCost`](@ref)."""
 get_shut_down(value::ThermalGenerationCost) = value.shut_down
 
-"""Set [`ThermalGenerationCost`](@ref) `variable`."""
+"""Set the `variable` field of [`ThermalGenerationCost`](@ref)."""
 set_variable!(value::ThermalGenerationCost, val) = value.variable = val
-"""Set [`ThermalGenerationCost`](@ref) `fixed`."""
+"""Set the `fixed` field of [`ThermalGenerationCost`](@ref)."""
 set_fixed!(value::ThermalGenerationCost, val) = value.fixed = val
-"""Set [`ThermalGenerationCost`](@ref) `start_up`."""
+"""Set the `start_up` field of [`ThermalGenerationCost`](@ref)."""
 set_start_up!(value::ThermalGenerationCost, val) = value.start_up = val
-"""Set [`ThermalGenerationCost`](@ref) `shut_down`."""
+"""Set the `shut_down` field of [`ThermalGenerationCost`](@ref)."""
 set_shut_down!(value::ThermalGenerationCost, val) = value.shut_down = val

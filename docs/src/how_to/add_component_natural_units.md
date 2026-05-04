@@ -1,4 +1,4 @@
-# Add a Component in Natural Units
+# [Add a Component in Natural Units](@id add_component_natural_units)
 
 ```@setup add_in_nu
 using PowerSystems; #hide
@@ -19,9 +19,9 @@ for users who prefer to define data using `"NATURAL_UNITS"` (e.g., MW, MVA, MVAR
 
 ### Step 1: Set Units Base
 
-Set your (previously-defined) `System`'s units base to `"NATURAL_UNITS"`:
+Set your (previously-defined) [`System`](@ref)'s units base to `"NATURAL_UNITS"`:
 
-```@repl add_in_nu
+```@example add_in_nu
 set_units_base_system!(system, "NATURAL_UNITS")
 ```
 
@@ -35,7 +35,7 @@ Define an empty component with `0.0` or `nothing` for all the power-related fiel
 
 For example:
 
-```@repl add_in_nu
+```@example add_in_nu
 gas1 = ThermalStandard(;
     name = "gas1",
     available = true,
@@ -58,9 +58,9 @@ gas1 = ThermalStandard(;
 
 ### Step 3: Attach the Component
 
-Attach the component to your `System`:
+Attach the component to your [`System`](@ref):
 
-```@repl add_in_nu
+```@example add_in_nu
 add_component!(system, gas1)
 ```
 
@@ -69,7 +69,7 @@ add_component!(system, gas1)
 Use individual "setter" functions to set each the value of each numeric field in natural
 units:
 
-```@repl add_in_nu
+```@example add_in_nu
 set_rating!(gas1, 30.0) #MVA
 set_active_power_limits!(gas1, (min = 6.0, max = 30.0)) # MW
 set_reactive_power_limits!(gas1, (min = 6.0, max = 30.0)) # MVAR
@@ -88,4 +88,4 @@ done the per-unit conversion into `"DEVICE_BASE"` behind the scenes.
 
   - [Read more to understand per-unitization in PowerSystems.jl](@ref per_unit)
   - Learn how to use the default constructors and explore the per-unitization settings in
-    [Create and Explore a Power `System`](@ref)
+    [Create and Explore a Power `System`](@ref "Create and Explore a Power `System`")

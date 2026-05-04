@@ -3,15 +3,16 @@
         base_machine::SalientPoleMachine
         saturation_coeffs::Tuple{Float64, Float64}
 
-3-states salient-pole synchronous machine with exponential saturation:
+3-states salient-pole synchronous machine with quadratic saturation:
 IEEE Std 1110 §5.3.2 (Model 2.1). GENSAL in PSSE and PSLF.
 
-# Arguments:
-- `base_machine::SalientPoleMachine`: Salient Pole Machine model.
-- `saturation_coeffs::Tuple{Float64, Float64}``: Saturation coefficients for quadratic model.
+# Arguments
+$(TYPEDFIELDS)
 """
 mutable struct SalientPoleQuadratic <: Machine
+    "Salient Pole machine parameters"
     base_machine::SalientPoleMachine
+    "Derived saturation coefficients for the quadratic saturation model, computed from the `Se` input"
     saturation_coeffs::Tuple{Float64, Float64}
 end
 IS.@forward((SalientPoleQuadratic, :base_machine), SalientPoleMachine)

@@ -1,16 +1,19 @@
 """
-Abstract type for a subsystem that contains multiple instances of StaticInjection
+Abstract type for a grouped set of [`StaticInjection`](@ref) devices treated as a
+single injection unit.
 
-Subtypes must implement:
-- get_subcomponents(subsystem::StaticInjectionSubsystem)
+Subtypes must implement `get_subcomponents` to return the individual component members,
+which must be attached to the [`System`](@ref) as masked components.
 
-The subcomponents in subtypes must be attached to the System as masked components.
+See also: [`StaticInjection`](@ref), [`HybridSystem`](@ref)
 """
 abstract type StaticInjectionSubsystem <: StaticInjection end
 
 """
-Efficiently add all time series data in the subcomponent to the subsystem by copying the
-underlying references.
+Copy all time series data from a subcomponent to the subsystem by copying the underlying
+references rather than duplicating the data.
+
+See also: [`StaticInjectionSubsystem`](@ref)
 """
 function copy_subcomponent_time_series!(
     subsystem::StaticInjectionSubsystem,

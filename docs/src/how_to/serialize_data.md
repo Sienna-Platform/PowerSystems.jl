@@ -1,4 +1,4 @@
-# Write, View, and Load Data with a JSON
+# [Write, View, and Load Data with a JSON](@id serialize_data)
 
 `PowerSystems.jl` provides functionality to serialize an entire [`System`](@ref) to a JSON
 file and then deserialize it back to a `System`. The main benefit is that
@@ -17,7 +17,7 @@ simply to illustrate the process.
 
 First, load the dependencies and a `System` from `PowerSystemCaseBuilder`:
 
-```@repl serialize_data
+```@example serialize_data
 using PowerSystems
 using PowerSystemCaseBuilder
 sys = build_system(PSISystems, "c_sys5_pjm")
@@ -25,14 +25,14 @@ sys = build_system(PSISystems, "c_sys5_pjm")
 
 Set up your target path, for example in a "mysystems" subfolder:
 
-```@repl serialize_data
+```@example serialize_data
 folder = mkdir("mysystems");
 path = joinpath(folder, "system.json")
 ```
 
 Now write the system to JSON:
 
-```@repl serialize_data
+```@example serialize_data
 to_json(sys, path)
 ```
 
@@ -95,18 +95,18 @@ jq '.data.components | .[] | select(.__metadata__.type == "ThermalStandard" and 
 
 Finally, you can read the file back in, and verify the new system has the same data as above:
 
-```@repl serialize_data
+```@example serialize_data
 sys2 = System(path)
-rm(folder; recursive = true); #hide
 ```
 
 !!! tip
 
-    PowerSystems generates UUIDs for the `System` and all components in order to have
+    PowerSystems generates [UUIDs](@ref U) for the `System` and all components in order to have
     a way to uniquely identify objects. During deserialization it restores the same
-    UUIDs.  If you will modify the `System` or components after deserialization then
+    [UUIDs](@ref U).  If you will modify the `System` or components after deserialization then
     it is recommended that you set this flag to generate new UUIDs.
 
-    ```julia
+    ```@example serialize_data
     system2 = System(path; assign_new_uuids = true)
+    rm(folder; recursive = true); #hide
     ```

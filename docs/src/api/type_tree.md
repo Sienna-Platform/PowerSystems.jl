@@ -2,7 +2,7 @@
 
 Here is the complete `PowerSystems.jl` type hierarchy:
 
-```@repl types
+```@example types
 using PowerSystems #hide
 import TypeTree: tt #hide
 docs_dir = joinpath(pkgdir(PowerSystems), "docs", "src", "tutorials", "utils"); #hide

@@ -1,7 +1,7 @@
 # Glossary and Acronyms
 
-[A](@ref) | [D](@ref) | [E](@ref) | [F](@ref) | [H](@ref) | [I](@ref) | [O](@ref) | [P](@ref) | [R](@ref) |
-[S](@ref) | [V](@ref) | [W](@ref) | [Z](@ref)
+[A](@ref) | [C](@ref) | [D](@ref) | [E](@ref) | [F](@ref) | [H](@ref) | [I](@ref) | [O](@ref) | [P](@ref) | [R](@ref) |
+[S](@ref) | [U](@ref) | [V](@ref) | [W](@ref) | [Z](@ref)
 
 ### A
 
@@ -13,11 +13,23 @@
 
   - *AVR*: Automatic Voltage Regulator
 
+### C
+
+  - *CA*: EIA prime mover code for the steam turbine (combined cycle steam) portion of a combined cycle plant
+
+  - *CAISO*: California Independent System Operator
+
+  - *CC*: EIA prime mover code for combined cycle units
+
+  - *CT*: Combustion Turbine
+
 ### D
 
   - *DC*: Direct current
 
   - *DERA1*:
+
+  - *Deterministic*: mathematical model in which the outcomes are precisely determined through known relationships among states and events. For contrast, see the definition of [Probabilistic](@ref P).
 
   - *Dynamic*: Refers to data and simulations for power system transient simulations using differential
     equations. Common examples include signal stability analysis to verify the power system will
@@ -26,12 +38,22 @@
 
 ### E
 
+  - *EIA*: U.S. Energy Information Administration
+
+  - *EIM*: Energy Imbalance Market
+
   - *EMF*: Electromotive force
+
   - *ESAC*: IEEE Type AC Excitation System model
+
   - *ESDC*: IEEE Type DC Excitation System model
+
   - *EXAC*: IEEE Type AC Excitation System (modified) model
+
   - *EXPIC*: Proportional/Integral Excitation System from PSS/E
+
   - *EXST*: IEEE Type ST (Static) Excitation System model
+
   - *EX4VSA*: IEEE Excitation System for Voltage Security Assessment with Over-Excitation Limits.
 
 ### F
@@ -52,6 +74,8 @@
     for the next day, which would have a horizon of `Dates.Hour(24)` or `Dates.Day(1)`. If the
     forecast included the next day plus a 24-hour lookahead window, the horizon would be
     `Dates.Hour(48)` or `Dates.Day(2)`. See the article on [`Time Series Data`](@ref ts_data).
+
+  - *HRSG*: Heat Recovery Steam Generator
 
   - *HVDC*: High-voltage DC
 
@@ -83,6 +107,8 @@
 
 ### P
 
+  - *PCC*: Point of Common Coupling. The point where a generator or plant connects to the grid.
+
   - *PLL*: Phase-locked loop
 
   - *PSS*: Power System Stabilizer
@@ -101,6 +127,8 @@
 
   - *pu* or *p.u.*: Per-unit
 
+  - *PWM*: Pulse-width modulation. A switching technique used in power converters to synthesize a desired AC output voltage by rapidly toggling switches at a high frequency.
+
 ### R
 
   - *REECB1*: Renewable Energy Electric Controller Type B1
@@ -116,6 +144,8 @@
   - *SEXS*: Simplified Excitation System model from PSS/E
 
   - *SIL*: Surge impedance loading
+
+  - *ST*: Steam Turbine
 
   - *States*: Correspond to the set of inputs, outputs or variables, that evolve dynamically in
     [`PowerSimulationsDynamics.jl`](https://sienna-platform.github.io/PowerSimulationsDynamics.jl/stable/),
@@ -133,6 +163,16 @@
 
   - *STAB*: Speed Sensitive Stabilizing PSS Model
 
+  - *Struct*: A composite data type in Julia that can store multiple values in a single object. See the Julia documentation on [`struct`](https://docs.julialang.org/en/v1/base/base/#struct)
+    and [Composite Types](https://docs.julialang.org/en/v1/manual/types/#Composite-Types).
+
+  - *SVM*: Space vector modulation. A control algorithm for three-phase inverters that represents the desired output voltage as a vector in the complex plane and selects switching states to approximate it, achieving lower harmonic distortion than basic [PWM](@ref D).
+
+### U
+
+  - *UUID*: Universally Unique Identifier. A 128-bit identifier formatted as a 32-character
+    hexadecimal string (e.g. `5f180c4c-cd81-4b80-8c60-627c28aef8b0`).
+
 ### V
 
   - *VSCLine*: Voltage-Source Converter HVDC Line
@@ -140,6 +180,8 @@
   - *VSM*: Virtual Synchronous Machine
 
 ### W
+
+  - *WECC*: Western Electricity Coordinating Council
 
   - *Window*: A forecast window is one forecast run that starts at one [initial time](@ref I)
     and extends through the forecast [horizon](@ref H). Typically, a forecast data set

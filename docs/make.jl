@@ -15,7 +15,9 @@ links = InterLinks(
 # This is a fallback for the docstrings that are referenced within IS docstrings
 fallbacks = ExternalFallbacks(
     "ComponentContainer" => "@extref InfrastructureSystems.ComponentContainer",
-    "InfrastructureSystemsComponent" => "@extref InfrastructureSystems.InfrastructureSystemsComponent"
+    "InfrastructureSystemsComponent" => "@extref InfrastructureSystems.InfrastructureSystemsComponent",
+    "InfrastructureSystemsInternal" => "@extref InfrastructureSystems.InfrastructureSystemsInternal",
+    "PiecewiseLinearData" => "@extref InfrastructureSystems.PiecewiseLinearData",
 )
 
 # This is commented out because the output is not user-friendly. Deliberation on how to best
@@ -40,8 +42,15 @@ pages = OrderedDict(
                 "Save and read data with a JSON" => "how_to/serialize_data.md",
             ],
             "...add a component using natural units (MW)" => "how_to/add_component_natural_units.md",
+            "...read component values in different unit systems" => "how_to/convert_unit_systems.md",
+            "...convert transformer impedances between per-unit bases" => "how_to/convert_transformer_impedance.md",
+            "...use subsystems" => "how_to/use_subsystems.md",
             "...use context managers for bulk operations" => "how_to/use_context_managers.md",
-            "...add additional data to a component" => "how_to/adding_additional_fields.md",
+            "...add additional data to a component" => Any[
+                "Add Supplemental Attributes to a System" => "how_to/add_supplemental_attributes.md",
+                "Use Supplemental Attributes" => "how_to/use_supplemental_attributes.md",
+                "Add additional fields to a component" => "how_to/adding_additional_fields.md",
+            ],
             "...add time-series data" => Any[
                 "Parse time series data from .csv files" => "how_to/parse_ts_from_csvs.md",
                 "Improve performance with time series data" => "how_to/improve_ts_performance.md",
@@ -70,7 +79,6 @@ pages = OrderedDict(
             "explanation/per_unit.md",
             "explanation/power_concepts.md",
             "explanation/conforming_and_non_conforming_loads.md",
-            "explanation/transformer_per_unit_models.md",
             "explanation/time_series.md",
             "explanation/dynamic_data.md",
             "explanation/supplemental_attributes.md",

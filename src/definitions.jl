@@ -5,6 +5,19 @@ const FromTo = NamedTuple{(:from, :to), Tuple{Float64, Float64}}
 const TurbinePump = NamedTuple{(:turbine, :pump), Tuple{Float64, Float64}}
 # Exception to CamelCase convention for aliases due to confusssing reading of FromToToFrom
 const FromTo_ToFrom = NamedTuple{(:from_to, :to_from), Tuple{Float64, Float64}}
+"""
+    StartUpStages
+
+`NamedTuple{(:hot, :warm, :cold), NTuple{3, Float64}}` representing the start-up costs (\$)
+for a multi-start thermal generator at each temperature stage:
+
+- `hot`: cost when the unit is hot (shortest off-time)
+- `warm`: cost when the unit is warm (medium off-time)
+- `cold`: cost when the unit is cold (longest off-time)
+
+For single-stage generators, only the `hot` field is meaningful. See also
+[`single_start_up_to_stages`](@ref).
+"""
 const StartUpStages = NamedTuple{(:hot, :warm, :cold), NTuple{3, Float64}}
 
 # Intended for use with generators that are not multi-start (e.g. ThermalStandard).
@@ -24,49 +37,43 @@ IS.@scoped_enum(AngleUnits, DEGREES = 1, RADIANS = 2,)
 @doc"
 AngleUnits
 
-An enumeration of angular measurement units used throughout the PowerSystems package.
+Enumeration of angular measurement units used throughout PowerSystems.jl.
 
-Values
-- `DEGREES`: Angles expressed in degrees.
-- `RADIANS`: Angles expressed in radians.
+- `DEGREES` (1): Angles expressed in degrees.
+- `RADIANS` (2): Angles expressed in radians.
 
-Usage
-Use `AngleUnits` to make unit semantics explicit for functions, fields, and APIs that accept or return angular values. When performing trigonometric calculations with Base functions (`sin`, `cos`, etc.), convert degrees to radians (e.g., `θ * π/180`) if the unit is `DEGREES`.
-
-Examples
-julia> unit = AngleUnits.DEGREES
-AngleUnits.DEGREES
-
-julia> θ = 30.0
-julia> θ_rad = unit == AngleUnits.DEGREES ? θ * (π/180) : θ
+# Notes
+When performing trigonometric calculations with Julia's built-in functions (`sin`, `cos`,
+etc.), convert degrees to radians first (e.g., `θ * π/180`) if the unit is `DEGREES`.
 " AngleUnits
 
 IS.@scoped_enum(ACBusTypes, PQ = 1, PV = 2, REF = 3, ISOLATED = 4, SLACK = 5,)
 @doc"
 ACBusTypes
 
-Enumeration of AC power system bus types (MATPOWER Table B‑1).
+Enumeration of AC power system bus types (MATPOWER Table B-1).
 Each variant corresponds to a standard bus classification used in power flow
-and steady‑state network models:
+and steady-state network models. Set on an [`ACBus`](@ref) via the `bustype` field.
 
-- PQ (1): Load bus — active (P) and reactive (Q) power injections are specified;
-    the bus voltage magnitude and angle are solved by the power‑flow algorithm.
-- PV (2): Generator (PV) bus — active power (P) and voltage magnitude (V) are
+- `PQ` (1): Load bus — active (P) and reactive (Q) power injections are specified;
+    the bus voltage magnitude and angle are solved by the power-flow algorithm.
+- `PV` (2): Generator bus — active power (P) and voltage magnitude (V) are
     specified; reactive power (Q) and voltage angle are solved.
-- REF (3): Reference bus — a named reference for the system voltage angle; often
-    equivalent to a slack bus in semantics but provided separately for clarity.
-- ISOLATED (4): Isolated bus — not connected to the main network (islanded or
-    disconnected); typically excluded from the global power‑flow solution.
-- SLACK (5): Slack bus — balances the system active and reactive power mismatch
-    and sets the reference voltage angle (commonly one per connected network).
+- `REF` (3): Reference bus — provides a named reference for the system voltage
+    angle; often used interchangeably with `SLACK` but kept separate for clarity.
+- `ISOLATED` (4): Isolated bus — not connected to the main network; typically
+    excluded from the global power-flow solution.
+- `SLACK` (5): Slack bus — balances system active and reactive power mismatch and
+    sets the reference voltage angle (typically one per connected network).
 
-Notes
+# Notes
 - Numeric values follow the MATPOWER convention for bus type codes.
 - Use the enum members (e.g., `ACBusTypes.PQ`, `ACBusTypes.SLACK`) when
-    constructing or interpreting network data structures to ensure clarity and
-    compatibility with MATPOWER-based data conventions.
+    constructing or interpreting network data to ensure compatibility with
+    MATPOWER-based data conventions.
 
-Reference: MATPOWER manual, Table B‑1 (http://www.pserc.cornell.edu/matpower/MATPOWER-manual.pdf).
+# References
+- [MATPOWER manual, Table B-1](http://www.pserc.cornell.edu/matpower/MATPOWER-manual.pdf)
 " ACBusTypes
 
 IS.@scoped_enum(
@@ -75,23 +82,24 @@ IS.@scoped_enum(
     CONFORMING = 1,
     UNDEFINED = 2,
 )
-@doc"""
-    LoadConformity
+@doc"
+LoadConformity
 
 WECC-defined enumeration for load conformity classification used in dynamic modeling.
 
 Load conformity indicates whether a load follows system voltage and frequency variations
 according to WECC modeling standards:
 
-- `NON_CONFORMING = 0`: Load that does not respond predictably to voltage and frequency changes,
-  typically representing constant power loads or loads with complex control systems
-- `CONFORMING = 1`: Load that responds predictably to voltage and frequency variations,
-  following standard load modeling practices for dynamic studies
-- `UNDEFINED = 2`: Load conformity status is not specified or unknown
+- `NON_CONFORMING` (0): Load that does not respond predictably to voltage and frequency
+    changes, typically representing constant power loads or loads with complex controls.
+- `CONFORMING` (1): Load that responds predictably to voltage and frequency variations,
+    following standard load modeling practices for dynamic studies.
+- `UNDEFINED` (2): Load conformity status is not specified or unknown.
 
-This classification is essential for WECC dynamic studies as it determines how loads are
-modeled during system disturbances and stability analysis.
-""" LoadConformity
+# See Also
+- [`MotorLoadTechnology`](@ref): Related enumeration for motor load technology
+    classification.
+" LoadConformity
 
 # "From PSSE POM v33 Manual"
 IS.@scoped_enum(
@@ -101,16 +109,18 @@ IS.@scoped_enum(
     BYP = 2, # Series link is bypassed (i.e., like a zero impedance line) and Shunt link operates as a STATCOM.
 )
 @doc"
-    FACTSOperationModes
+FACTSOperationModes
 
-Enumeration defining the operational modes for FACTS (Flexible AC Transmission System) devices.
-Based on PSSE POM v33 Manual specifications.
+Enumeration of operational modes for FACTS (Flexible AC Transmission System) devices,
+as defined in the PSS/E POM v33 Manual.
 
-# Values
-- `OOS = 0`: Out-of-service mode where both Series and Shunt links are open
-- `NML = 1`: Normal mode of operation where both Series and Shunt links are operating
-- `BYP = 2`: Bypass mode where Series link is bypassed (acts like zero impedance line)
-  and Shunt link operates as a STATCOM
+- `OOS` (0): Out-of-service — both Series and Shunt links are open.
+- `NML` (1): Normal operation — both Series and Shunt links are active.
+- `BYP` (2): Bypass mode — Series link is bypassed (acts as a zero-impedance line)
+    and Shunt link operates as a STATCOM.
+
+# References
+- PSS/E Power Operations Manual v33, FACTS device specification.
 " FACTSOperationModes
 
 IS.@scoped_enum(
@@ -120,14 +130,19 @@ IS.@scoped_enum(
     OTHER = 2,
 )
 @doc"
-    DiscreteControlledBranchType
+DiscreteControlledBranchType
 
-An enumeration representing different types of discrete controlled branches in power systems.
+Enumeration of discrete controlled branch device types.
 
-# Values
-- `SWITCH = 0`: Represents a switch device that can be opened or closed
-- `BREAKER = 1`: Represents a circuit breaker that can interrupt current flow
-- `OTHER = 2`: Represents other types of discrete controlled branch devices
+- `SWITCH` (0): Switching device that can be opened or closed to connect or isolate a
+    circuit segment.
+- `BREAKER` (1): Circuit breaker capable of interrupting fault current.
+- `OTHER` (2): Other discrete branch device not covered by the above categories.
+
+# See Also
+- [`DiscreteControlledACBranch`](@ref): Branch type that uses this enumeration.
+- [`DiscreteControlledBranchStatus`](@ref): Enumeration of the open/closed status for
+    these devices.
 " DiscreteControlledBranchType
 
 IS.@scoped_enum(
@@ -138,18 +153,15 @@ IS.@scoped_enum(
 @doc"
 DiscreteControlledBranchStatus
 
-Enumeration describing the controlled (commanded) status of a branch device
-(such as a breaker or a switch) in a power system model.
+Enumeration describing the controlled (commanded) status of a branch device such as a
+breaker or switch. Used with [`DiscreteControlledACBranch`](@ref).
 
-Values
-- OPEN = 0: The device is open (interrupting state) — the branch is non-conducting.
-- CLOSED = 1: The device is closed (conducting state) — the branch provides a normal conduction path.
+- `OPEN` (0): The device is open (non-conducting).
+- `CLOSED` (1): The device is closed (conducting).
 
-Notes
-- This enum represents the intended or commanded state used by control and protection
-    logic; it may differ from actual measured/telemetry state during faults or failures.
-- The integer encoding (0/1) is chosen for compact storage and interop with serialization
-    or external data formats.
+# Notes
+Represents the intended or commanded state used by control and protection logic; it may
+differ from the actual measured/telemetry state during faults or failures.
 " DiscreteControlledBranchStatus
 
 IS.@scoped_enum(
@@ -160,19 +172,23 @@ IS.@scoped_enum(
     TERTIARY_WINDING = 3,   # Tertiary winding of Trasnformer3W associated with a TICT
 )
 @doc"
-    WindingCategory
+WindingCategory
 
-An enumeration representing different types of transformer windings used in power system analysis.
-Reflects how to interpret the Transformer Impedance Correction Table (TICT) winding association as described in [`ImpedanceCorrectionData`](@ref).
+Enumeration of transformer winding roles used to interpret a
+[`ImpedanceCorrectionData`](@ref) (Transformer Impedance Correction Table) association.
 
-# Values
-- `TR2W_WINDING = 0`: Winding associated with a two-winding transformer (Transformer2W) connected to a tap-changing transformer's [`ImpedanceCorrectionData`](@ref)
-- `PRIMARY_WINDING = 1`: Primary winding of a three-winding transformer (Transformer3W) associated with a [`ImpedanceCorrectionData`](@ref)
-- `SECONDARY_WINDING = 2`: Secondary winding of a three-winding transformer (Transformer3W) associated with a [`ImpedanceCorrectionData`](@ref)
-- `TERTIARY_WINDING = 3`: Tertiary winding of a three-winding transformer (Transformer3W) associated with a [`ImpedanceCorrectionData`](@ref)
+- `TR2W_WINDING` (0): The winding of a two-winding transformer connected to an
+    [`ImpedanceCorrectionData`](@ref).
+- `PRIMARY_WINDING` (1): Primary winding of a three-winding transformer connected to an
+    [`ImpedanceCorrectionData`](@ref).
+- `SECONDARY_WINDING` (2): Secondary winding of a three-winding transformer connected to
+    an [`ImpedanceCorrectionData`](@ref).
+- `TERTIARY_WINDING` (3): Tertiary winding of a three-winding transformer connected to an
+    [`ImpedanceCorrectionData`](@ref).
 
-This enumeration is used to categorize transformer windings based on their role and configuration
-in the power system model, particularly in relation to tap-changing transformers.
+# See Also
+- [`ImpedanceCorrectionTransformerControlMode`](@ref): Enumeration of control modes used
+    alongside winding impedance corrections.
 " WindingCategory
 
 IS.@scoped_enum(
@@ -186,25 +202,26 @@ IS.@scoped_enum(
     GROUP_11 = 11, # 30 Degrees
 )
 @doc"
-    WindingGroupNumber
+WindingGroupNumber
 
-Enumeration defining transformer winding group numbers based on IEC 60076-1 standard.
-These numbers represent the phase displacement between primary and secondary windings
-of three-phase transformers.
+Enumeration of transformer winding group numbers representing the phase displacement
+between primary and secondary windings of three-phase transformers, per IEC 60076-1.
 
-# Valid Values
-- `UNDEFINED = -99`: Undefined or unspecified winding group
-- `GROUP_0 = 0`: 0° phase displacement (Yy0, Dd0, Dz0)
-- `GROUP_1 = 1`: -30° phase displacement (Yy1, Dd1, Dz1)
-- `GROUP_5 = 5`: -150° phase displacement (Yy5, Dd5, Dz5)
-- `GROUP_6 = 6`: 180° phase displacement (Yy6, Dd6, Dz6)
-- `GROUP_7 = 7`: 150° phase displacement (Yy7, Dd7, Dz7)
-- `GROUP_11 = 11`: 30° phase displacement (Yy11, Dd11, Dz11)
+- `UNDEFINED` (-99): Winding group not specified.
+- `GROUP_0` (0): 0° phase displacement (e.g., Yy0, Dd0, Dz0).
+- `GROUP_1` (1): −30° phase displacement (e.g., Dy1, Yd1, Yz1).
+- `GROUP_5` (5): −150° phase displacement (e.g., Dy5, Yd5, Yz5).
+- `GROUP_6` (6): 180° phase displacement (e.g., Yy6, Dd6, Dz6).
+- `GROUP_7` (7): 150° phase displacement (e.g., Dy7, Yd7, Yz7).
+- `GROUP_11` (11): 30° phase displacement (e.g., Dy11, Yd11, Yz11).
 
 # Notes
-The phase displacement is measured from the primary to secondary winding, with
-positive angles representing a lead and negative angles representing a lag.
-Clock notation follows the convention where each hour represents 30°.
+- Phase displacement is measured from primary to secondary winding; positive angles
+    lead and negative angles lag.
+- Clock notation: each clock hour represents 30°.
+
+# References
+- IEC 60076-1: Power transformers — General.
 " WindingGroupNumber
 
 IS.@scoped_enum(
@@ -212,25 +229,20 @@ IS.@scoped_enum(
     PHASE_SHIFT_ANGLE = 1,
     TAP_RATIO = 2,
 )
-@doc"""
-    ImpedanceCorrectionTransformerControlMode
+@doc"
+ImpedanceCorrectionTransformerControlMode
 
-Enumeration defining the control modes for impedance correction in transformers,
-based on PSS/E transformer control definitions.
+Enumeration of control modes for impedance correction in transformers, as defined
+in the PSS/E transformer control specifications.
 
-# Values
-- `PHASE_SHIFT_ANGLE = 1`: Control mode for phase-shifting transformers where the
-  impedance correction is applied based on the phase shift angle. Used when the
-  transformer primarily controls power flow through phase angle adjustment.
-- `TAP_RATIO = 2`: Control mode for tap-changing transformers where the impedance
-  correction is applied based on the tap ratio. Used when the transformer primarily
-  controls voltage magnitude through tap position changes.
+- `PHASE_SHIFT_ANGLE` (1): Impedance correction is applied as a function of the phase
+    shift angle. Used for phase-shifting transformers that control active power flow.
+- `TAP_RATIO` (2): Impedance correction is applied as a function of the tap ratio.
+    Used for tap-changing transformers that control voltage magnitude.
 
-# Notes
-This enumeration corresponds to PSS/E transformer control field definitions for
-determining how impedance corrections are calculated and applied in power flow
-and dynamic simulation studies.
-""" ImpedanceCorrectionTransformerControlMode
+# See Also
+- [`ImpedanceCorrectionData`](@ref): Supplemental attribute that uses this control mode.
+" ImpedanceCorrectionTransformerControlMode
 
 IS.@scoped_enum(
     TransformerControlObjective, # COD1 or COD2 in PSS\e
@@ -282,14 +294,18 @@ IS.@scoped_enum(
     UNDETERMINED = 3,
 )
 @doc"
-    MotorLoadTechnology
+MotorLoadTechnology
 
-An enumeration representing different motor load technologies used in industrial applications.
+Enumeration of motor load technology types used in power system dynamic load modeling.
 
-# Values
-- `INDUCTION`: Induction motor technology, commonly used for general-purpose applications
-- `SYNCHRONOUS`: Synchronous motor technology, used for applications requiring constant speed
-- `UNDETERMINED`: Motor technology type is not specified or unknown
+- `INDUCTION` (1): Induction motor, commonly used for general-purpose industrial
+    applications.
+- `SYNCHRONOUS` (2): Synchronous motor, used for constant-speed or power-factor
+    correction applications.
+- `UNDETERMINED` (3): Motor technology type is not specified or unknown.
+
+# See Also
+- [`LoadConformity`](@ref): Related enumeration for load conformity classification.
 " MotorLoadTechnology
 
 IS.@scoped_enum(
@@ -319,23 +335,24 @@ IS.@scoped_enum(
     WS = 23,  # Wind Turbine, Offshore
 )
 @doc"
-    PrimeMovers
+PrimeMovers
 
 Enumeration of prime mover types used in electric power generation, as defined by the
 U.S. Energy Information Administration (EIA) Form 923 instructions.
 
 Prime movers are the engines, turbines, water wheels, or similar machines that drive
-electric generators or provide mechanical energy for other purposes. This enumeration
-provides standardized codes for different types of prime movers used in power plants.
+electric generators or provide mechanical energy for other purposes.
 
-PVe is used for photovoltaic systems renaming from EIA PV to avoid conflict with BusType.PV
+# Notes
+`PVe` is used for photovoltaic systems, renamed from the EIA code `PV` to avoid a
+naming conflict with [`ACBusTypes`](@ref) `PV`.
 
 # References
 - [EIA Form 923 Instructions](https://www.eia.gov/survey/form/eia_923/instructions.pdf)
 
 # See Also
-- [`ThermalStandard`](@ref): Uses prime mover information for generator specifications
-- [`ThermalMultiStart`](@ref): Uses prime mover information for generator specifications
+- [`ThermalStandard`](@ref): Uses prime mover information for generator specifications.
+- [`ThermalMultiStart`](@ref): Uses prime mover information for generator specifications.
 " PrimeMovers
 
 IS.@scoped_enum(
@@ -377,23 +394,25 @@ IS.@scoped_enum(
 )
 
 @doc"
-    ThermalFuels
+ThermalFuels
 
-Enumeration of thermal fuel types based on AER (Aggregated Energy Reporting) fuel codes
-as defined by the U.S. Energy Information Administration (EIA) Form 923.
+Enumeration of thermal fuel types, using EIA Form 923 fuel codes for standardized
+reporting of fuel consumption in electric power generation.
 
-The fuel codes represent standardized categories for reporting fuel consumption in
-electric power generation, covering major thermal fuel types including:
+Categories include: coal and coal-derived fuels, petroleum products, natural gas, nuclear,
+biomass and waste-derived fuels, geothermal, and other thermal energy sources.
 
-- Coal and coal-derived fuels
-- Natural gas and petroleum products
-- Nuclear fuel
-- Biomass and waste fuels
-- Other thermal energy sources
+# Notes
+`COAL` (general coal) and `GEOTHERMAL` codes are not directly from the current EIA 923
+form but are retained for compatibility with older data.
 
-Reference: EIA Form 923 Instructions (https://www.eia.gov/survey/form/eia_923/instructions.pdf)
-General Coal and Geothermal codes not directly from the current EIA 923 form but kept for compatibility with older versions of the form.
-See also: [`ThermalStandard`](@ref)
+# References
+- [EIA Form 923 Instructions](https://www.eia.gov/survey/form/eia_923/instructions.pdf)
+
+# See Also
+- [`ThermalStandard`](@ref): Generator type that uses this fuel enumeration.
+- [`ThermalMultiStart`](@ref): Generator type that uses this fuel enumeration.
+- [`PrimeMovers`](@ref): Companion enumeration for generator prime mover type.
 " ThermalFuels
 
 IS.@scoped_enum(
@@ -411,25 +430,24 @@ IS.@scoped_enum(
     OTHER_THERM = 11, # Thermal Storage
 )
 @doc"
-    StorageTech
+StorageTech
 
-Enumeration of energy storage technologies used in power systems.
+Enumeration of energy storage technologies used in power system modeling.
 
-# Values
-- `PTES`: Pumped thermal energy storage
-- `LIB`: Lithium-ion Battery
-- `LAB`: Lead Acid Battery
-- `FLWB`: Redox Flow Battery
-- `SIB`: Sodium Ion Battery
-- `ZIB`: Zinc Ion Battery
-- `HGS`: Hydrogen Gas Storage
-- `LAES`: Liquid Air Energy Storage
-- `OTHER_CHEM`: Chemical Storage (other than specified)
-- `OTHER_MECH`: Mechanical Storage (other than specified)
-- `OTHER_THERM`: Thermal Storage (other than specified)
+- `PTES` (1): Pumped thermal energy storage.
+- `LIB` (2): Lithium-ion battery.
+- `LAB` (3): Lead-acid battery.
+- `FLWB` (4): Redox flow battery.
+- `SIB` (5): Sodium-ion battery.
+- `ZIB` (6): Zinc-ion battery.
+- `HGS` (7): Hydrogen gas storage.
+- `LAES` (8): Liquid air energy storage.
+- `OTHER_CHEM` (9): Other chemical storage technologies.
+- `OTHER_MECH` (10): Other mechanical storage technologies.
+- `OTHER_THERM` (11): Other thermal storage technologies.
 
-This enumeration is used to classify different types of energy storage systems
-based on their underlying technology and storage mechanism.
+# See Also
+- [`EnergyReservoirStorage`](@ref): Storage component using this enumeration.
 " StorageTech
 
 IS.@scoped_enum(
@@ -454,6 +472,21 @@ Notes
 " PumpHydroStatus
 
 IS.@scoped_enum(StateTypes, Differential = 1, Algebraic = 2, Hybrid = 3,)
+@doc"
+StateTypes
+
+Enumeration of state variable types for dynamic components.
+
+- `Differential` (1): State governed by a differential equation (evolves continuously
+    in time).
+- `Algebraic` (2): State determined by an algebraic constraint (no time derivative).
+- `Hybrid` (3): State that can behave as either differential or algebraic depending on
+    operating conditions.
+
+# See Also
+- [`DynamicComponent`](@ref): Abstract base type whose states are classified by this
+    enumeration.
+" StateTypes
 
 @doc """
 Categorization of dynamic state variables.
@@ -474,17 +507,16 @@ IS.@scoped_enum(
 @doc"
 ReservoirDataType
 
-Enumeration of reservoir accounting unit classes.
+Enumeration of the quantity type used to represent the state of a [`HydroReservoir`](@ref).
 
-This enum identifies the type of data recorded or tracked for a reservoir. Use these values when specifying
-the kind of measurement or accounting quantity associated with a reservoir (for example in time series,
-storage models, reporting, or data exchange).
+- `USABLE_VOLUME` (1): Volume available for operations and dispatch (active storage),
+    typically in cubic meters (m³).
+- `TOTAL_VOLUME` (2): Total reservoir volume including dead and active storage, in m³.
+- `HEAD` (3): Hydraulic head or water surface elevation relative to a datum, in meters (m).
+- `ENERGY` (4): Stored or deliverable energy associated with the reservoir, in MWh or GWh.
 
-Values
-- USABLE_VOLUME: Volume available for operations and dispatch (active storage). Typically reported in cubic meters (m³) or other volumetric units.
-- TOTAL_VOLUME: Total reservoir volume including dead and active storage. Reported in the same volumetric units as USABLE_VOLUME.
-- HEAD: Hydraulic head or water surface elevation relative to a datum, typically reported in meters (m).
-- ENERGY: Stored or deliverable energy associated with the reservoir (e.g., potential energy or expected generation), often expressed in MWh, GWh, or joules.
+# See Also
+- [`ReservoirLocation`](@ref): Enumeration of reservoir location relative to the turbine.
 " ReservoirDataType
 
 IS.@scoped_enum(
@@ -501,26 +533,24 @@ IS.@scoped_enum(
     OTHER = 9             # Catch-all for less common designs
 )
 @doc"
-    HydroTurbineType
+HydroTurbineType
 
-Enumeration of hydro turbine types supported in `PowerSystems.jl`.
+Enumeration of hydroelectric turbine designs, used to classify hydro generating units
+by operating head range and flow characteristics.
 
-This type is used to categorize hydroelectric generators by their
-turbine design and operating head. It provides a standardized set
-of turbine types to ensure consistent modeling and data handling
-across different systems.
+- `UNKNOWN` (0): Turbine type is not specified.
+- `PELTON` (1): Impulse turbine for high-head, low-flow sites.
+- `FRANCIS` (2): Reaction turbine, widely used for medium-head applications.
+- `KAPLAN` (3): Adjustable-blade propeller turbine for low-head, high-flow sites.
+- `TURGO` (4): Impulse turbine similar to Pelton but suitable for higher flow rates.
+- `CROSSFLOW` (5): Banki-Michell (crossflow) impulse turbine, robust for small hydro.
+- `BULB` (6): Compact Kaplan variant for low-head run-of-river plants.
+- `DERIAZ` (7): Diagonal flow reaction turbine with variable pitch blades.
+- `PROPELLER` (8): Fixed-blade propeller turbine.
+- `OTHER` (9): Placeholder for less common or custom turbine designs.
 
-# Values
-- `UNKNOWN`   : Default value when the turbine type is not specified.
-- `PELTON`    : Impulse turbine, typically used for high-head, low-flow sites.
-- `FRANCIS`   : Reaction turbine, widely used for medium-head applications.
-- `KAPLAN`    : Adjustable-blade propeller turbine for low-head, high-flow sites.
-- `TURGO`     : Impulse turbine similar to Pelton but suitable for higher flow rates.
-- `CROSSFLOW` : Banki-Michell (crossflow) impulse turbine, robust for small hydro.
-- `BULB`      : Compact Kaplan variant, typically installed in low-head run-of-river plants.
-- `DERIAZ`    : Diagonal flow reaction turbine with variable pitch blades.
-- `PROPELLER` : Fixed-blade propeller turbine, simpler than Kaplan but less efficient at part load.
-- `OTHER`     : Placeholder for less common or custom turbine designs.
+# See Also
+- [`HydroTurbine`](@ref): Hydro generator component using this enumeration.
 " HydroTurbineType
 
 IS.@scoped_enum(
@@ -531,12 +561,15 @@ IS.@scoped_enum(
 @doc"
 ReservoirLocation
 
-Enumeration representing the location of a hydro reservoir relative to its associated turbine.
+Enumeration representing the location of a [`HydroReservoir`](@ref) relative to its
+associated turbine unit.
 
-# Values
-- `HEAD`: The reservoir is located upstream of the turbine, typically at a higher elevation.
-- `TAIL`: The reservoir is located downstream of the turbine at a lower or same elevation.
+- `HEAD` (1): The reservoir is located upstream of the turbine (higher elevation).
+- `TAIL` (2): The reservoir is located downstream of the turbine (lower elevation).
 
+# See Also
+- [`ReservoirDataType`](@ref): Enumeration of the quantity used to represent reservoir
+    state.
 " ReservoirLocation
 
 IS.@scoped_enum(
@@ -547,6 +580,21 @@ IS.@scoped_enum(
     TripleCombustionOneSteam = 4,
     Other = 5,
 )
+@doc"
+    CombinedCycleConfiguration
+
+Enumeration describing the physical layout of a combined cycle power plant.
+
+- `SingleShaftCombustionSteam` (1): Single combustion turbine on a common shaft with one steam turbine.
+- `SeparateShaftCombustionSteam` (2): One combustion turbine and one steam turbine on separate shafts.
+- `DoubleCombustionOneSteam` (3): Two combustion turbines exhausting into one steam turbine.
+- `TripleCombustionOneSteam` (4): Three combustion turbines exhausting into one steam turbine.
+- `Other` (5): Any other combined cycle configuration not covered by the above values.
+
+# See Also
+- [`CombinedCycleBlock`](@ref): Plant attribute for combined cycle block-level configurations.
+- [`CombinedCycleFractional`](@ref): Plant attribute for combined cycle fractional configurations.
+" CombinedCycleConfigurationModule.CombinedCycleConfiguration
 
 @doc """
 Configuration types for combined cycle power plants.

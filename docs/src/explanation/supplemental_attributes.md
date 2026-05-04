@@ -1,9 +1,34 @@
-# [Supplemental Attributes](@id supplemental_attributes)
+# [About Supplemental Attributes](@id supplemental_attributes_explanation)
 
-While the [`ext` field is a mechanism](@ref additional_fields) for adding arbitrary metadata. PowerSystems.jl, has moved towards a more structured and formalized way of handling supplemental data using `SupplementalAttribute` structs. This is designed to store metadata in a more organized fashion than a generic dictionary. These attributes are intended to be attached to a [`Component`](@ref) types.
+Supplemental attributes help PowerSystems.jl manage the relationships between power system components and their metadata. Instead of putting everything into basic component definitions, this system keeps electrical data separate from contextual information like location, outages, or plant groupings.
 
-Supplemmental attributes can be shared between components or have 1-1 relationships. This is particularly
-useful to represent components in the same geographic location or outages for multiple components. Conversely, components can contain many attributes.
+## Why Use Supplemental Attributes?
+
+Power system components exist in multiple contexts. A generator isn't just defined by its electrical properties—it also has a geographic location, belongs to a plant, and may share infrastructure with other units.
+
+Traditional approaches used generic dictionary fields to store this extra information. But this created problems:
+
+  - Data inconsistency across large systems
+  - Maintenance difficulties
+  - No validation of the information stored
+
+Supplemental attributes solve this by using structured types instead of loose dictionaries. This provides:
+
+**Clean separation**: Electrical behavior stays in component definitions. Everything else goes in attributes.
+
+**Clear relationships**: The connections between components and their contexts are explicit and easy to query.
+
+**Type safety**: The system validates data and gives helpful error messages when something's wrong.
+
+## How Relationships Work
+
+Supplemental attributes use many-to-many relationships. One attribute can connect to multiple components, and one component can have multiple attributes.
+
+For example:
+
+  - Multiple generators at the same plant share geographic coordinates
+  - One weather pattern affects several plants in a region
+  - Each generator might have its own maintenance schedule
 
 ```mermaid
 flowchart LR
@@ -13,150 +38,45 @@ flowchart LR
     E["Attribute C"] -->  F["Component 3"]
 ```
 
-Supplemental attributes can also contain timeseries in the same fashion that a component can allowing the user to model time varying attributes like outage time series or weather dependent probabilities. See the section [`Working with Time Series Data`](@ref tutorial_time_series) for details on time series handling.
+This flexibility matches how power systems actually work, where components share resources and are affected by common factors.
 
-## Getting the attributes in a system
+Supplemental attributes can be concrete or abstract. See the [Julia Types documentation](https://docs.julialang.org/en/v1/manual/ty) for more information on these types. Here is an example using the `PowerSystems.jl` Type Tree.
 
-You can retrieve the attributes in a system using the function [`get_supplemental_attributes`](@ref).
-You must pass a supplemental attribute type, which can be concrete or abstract. If you pass an abstract type, all concrete types
-that are subtypes of the abstract type will be returned.
-
-```julia
-for outage in get_supplemental_attributes(FixedForcedOutage, system)
-    @show summary(outage)
-end
+```@example types
+using PowerSystems #hide
+import TypeTree: tt #hide
+docs_dir = joinpath(pkgdir(PowerSystems), "docs", "src", "tutorials", "utils"); #hide
+include(joinpath(docs_dir, "docs_utils.jl")); #hide
+print(join(tt(PowerSystems.IS.InfrastructureSystemsType), "")) #hide
 ```
 
-You can optionally pass a filter function to reduce the returned attributes. This example will
-return only FixedForcedOutage instances that have a mean time to recovery greater than or equal to 0.5.
+The concrete supplemental attributes are the last ones listed in a section. For example, following the first few lines of the type tree: InfrastructureSystems.InfrastructureSystemsType > InfrastructureSystems.AbstractTimeSeriesParameters > InfrastructureSystems.ForecastParameters . InfrastructureSystems.ForecastParameters is the concrete supplemental attribute, and the abstract supplemental attribute is InfrastructureSystems.AbstractTimeSeriesParameters. Providing another example with: InfrastructureSystems.InfrastructureSystemsType > InfrastructureSystems.DeviceParameter > DynamicComponent > PowerSystems.DynamicGeneratorComponent > AVR > AVRFixed . AVRFixed is the concrete supplemental attributes, and the abstract supplemental attributes are the higher up layers.
 
-```julia
-for outage in get_supplemental_attributes(
-    x -> get_mean_time_to_recovery(x) >= 0.5,
-    FixedForcedOutage,
-    system,
-)
-    @show summary(outage)
-end
-```
+## Time Series Support
 
-## Getting the attributes associated with a component
+Attributes can include time series data like weather patterns and planned outages.
 
-You can retrieve the attributes associated with a component using the function [`get_supplemental_attributes`](@ref).
-This method signatures are identical to the versions above that operate on a system; just swap the system for a component.
+## Benefits for Modelers
 
-You must pass a supplemental attribute type, which can be concrete or abstract. If you pass an abstract type, all concrete types
-that are subtypes of the abstract type will be returned.
+This design changes how you build power system models:
 
-```julia
-gen1 = get_component(ThermalStandard, system, "gen1")
-for outage in get_supplemental_attributes(FixedForcedOutage, gen)
-    @show summary(outage)
-end
-```
+**Build in layers**: Start with electrical models, then add contextual information separately.
 
-You can optionally pass a filter function to reduce the returned attributes. This example will
-return only FixedForcedOutage instances that have a mean time to recovery greater than or equal to 0.5.
+**Reuse data**: Geographic info and weather patterns can be applied to multiple systems.
 
-```julia
-for outage in get_supplemental_attributes(
-    x -> get_mean_time_to_recovery(x) >= 0.5,
-    gen,
-    FixedForcedOutage,
-)
-    @show summary(outage)
-end
-```
+**Work in teams**: Different people can work on electrical models and contextual data independently.
 
-## Getting the attributes associated with a component type
+**Easy updates**: Change outage schedules or weather data without touching electrical models.
 
-You can retrieve the attributes associated with any component of a given type
-using the function [`get_associated_supplemental_attributes`](@ref). If one attribute is attached to
-multiple components of the given type, it will still only appear once in the result.
+## Compared to Other Approaches
 
- 1. Get all the attributes associated with all components of a given type.
+Other power system tools handle this differently:
 
-    ```julia
-    for outage in get_associated_supplemental_attributes(system, ThermalStandard)
-        @show summary(outage)
-    end
-    ```
+**Heavy objects approach**: Some tools put all contextual data directly into component definitions. This makes objects large and unwieldy for big systems.
 
- 2. Same as #1, but filter the results by attribute type, which can be concrete or abstract.
+**External database approach**: Others store relationships in separate databases. This can slow things down and complicate deployment.
 
-    ```julia
-    for outage in
-        get_associated_supplemental_attributes(
-        system,
-        ThermalStandard;
-        attribute_type = FixedForcedOutage,
-    )
-        @show summary(outage)
-    end
-    ```
-
-## Getting the components associated with an attribute
-
-You can retrieve the components associated with a single supplemental attribute using the
-function [`get_associated_components`](@ref).
-
- 1. Get all components associated with a single supplemental attribute.
-
-    ```julia
-    outage = first(get_supplemental_attributes(FixedForcedOutage, system))
-    for component in get_associated_components(system, outage)
-        @show summary(component)
-    end
-    ```
-
- 2. Same as #1, but filter the results by component type, which can be concrete or abstract.
-
-    ```julia
-    outage = first(get_supplemental_attributes(FixedForcedOutage, system))
-    for component in get_associated_components(system, outage; component_type = ThermalStandard)
-        @show summary(component)
-    end
-    ```
-
-## Getting the components associated with an attribute type
-
-You can retrieve the components associated with any supplemental attribute of a given type
-using the function [`get_associated_components`](@ref).
-
- 1. Get all components associated with any supplemental attribute of a given type.
-
-    ```julia
-    for component in get_associated_components(system, FixedForcedOutage)
-        @show summary(component)
-    end
-    ```
-
- 2. Same as #1, but filter the results by component type, which can be concrete or abstract.
-
-    ```julia
-    for component in
-        get_associated_components(system, FixedForcedOutage; component_type = ThermalStandard)
-        @show summary(component)
-    end
-    ```
-
-## Getting component / supplemental attribute pairs
-
-The function [`get_component_supplemental_attribute_pairs`](@ref) returns a vector of component / supplemental
-attribute pairs based on types and optional filters. This can be more efficient than double for loops
-that iterate over components and their associated attributes independently.
-
-```julia
-for (gen, outage) in get_component_supplemental_attribute_pairs(
-    ThermalStandard,
-    FixedForcedOutage,
-    system,
-)
-    @show summary(gen) summary(outage)
-end
-```
-
-## Adding Time Series to an attribute
+**PowerSystems.jl's approach**: Combines the speed of in-memory data with the relationship modeling power typically found only in databases. This works well for interactive analysis.
 
 ## Existing Supplemental Attributes in PowerSystems
 
@@ -180,3 +100,8 @@ for detailed documentation.
   - [`CombinedCycleFractional`](@ref) - Combined cycle plants with aggregate heat rate and exclusion groups
   - [`HydroPowerPlant`](@ref) - Hydro plants with shared penstocks
   - [`RenewablePowerPlant`](@ref) - Renewable plants with shared PCCs
+
+## Learn More
+
+  - [Add Supplemental Attributes to a System](@ref add_supplemental_attributes) -- step-by-step guide for attaching attributes to components
+  - [Supplemental Attributes](@ref) API reference -- complete listing of all supplemental attribute types, their fields, and associated functions

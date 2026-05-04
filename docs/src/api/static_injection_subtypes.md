@@ -41,7 +41,7 @@ This document summarizes the similarities and differences between [`StaticInject
 
 ² EnergyReservoirStorage uses `input_active_power_limits` and `output_active_power_limits` instead
 
-Here, "`MinMax` (optional)" means `Union{MinMax, Nothing}`, with `nothing` repesenting "no limits" and being the default.
+Here, "`MinMax` (optional)" means `Union{MinMax, Nothing}`, with `nothing` representing "no limits" and being the default.
 
 ⊕ = Split across 3 ZIP fields: `*_constant_*`, `*_impedance_*`, `*_current_*`
 

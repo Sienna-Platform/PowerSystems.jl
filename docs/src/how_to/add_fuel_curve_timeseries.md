@@ -94,7 +94,7 @@ To add time-varying fuel costs, you need to:
 
   - The generator must use a [`FuelCurve`](@ref) (not a [`CostCurve`](@ref)) in its
     [`ThermalGenerationCost`](@ref) to enable time series fuel costs
-  - Time series resolution should match your simulation resolution (e.g., Hour(1) for
+  - Time series [resolution](@ref R) should match your simulation resolution (e.g., Hour(1) for
     hourly simulations)
   - Fuel cost units should be in \$/GJ (or \$/MBtu, etc.) and heat rate in GJ/MWh (or
     MBtu/MWh); their product gives the effective cost in \$/MWh
@@ -104,7 +104,7 @@ To add time-varying fuel costs, you need to:
 Create time series data representing fuel costs that vary throughout the day. This example
 uses hourly natural gas prices with [`SingleTimeSeries`](@ref):
 
-```@repl fuelcosts
+```@example fuelcosts
 # Define the initial time and resolution
 initial_time = DateTime("2024-01-01T00:00:00")
 resolution = Hour(1)
@@ -137,7 +137,7 @@ fuel_cost_timeseries = SingleTimeSeries(;
 Use the [`set_fuel_cost!`](@ref) function to attach the time series data to your
 previously defined [`System`](@ref) and generator (e.g., [`ThermalStandard`](@ref)):
 
-```@repl fuelcosts
+```@example fuelcosts
 # Add the time series fuel cost to the generator
 set_fuel_cost!(sys, generator, fuel_cost_timeseries)
 ```
@@ -146,7 +146,7 @@ set_fuel_cost!(sys, generator, fuel_cost_timeseries)
 
 Now the generator has time-varying fuel costs. You can retrieve the time series data:
 
-```@repl fuelcosts
+```@example fuelcosts
 # Get the fuel cost time series starting at the initial time
 fuel_forecast = get_fuel_cost(generator; start_time = initial_time)
 
@@ -156,7 +156,7 @@ first(TimeSeries.values(fuel_forecast), 6)
 
 You can also query for a specific time window:
 
-```@repl fuelcosts
+```@example fuelcosts
 # Get fuel costs for a specific 12-hour period starting at 6 AM
 morning_time = DateTime("2024-01-01T06:00:00")
 fuel_forecast_morning = get_fuel_cost(generator; start_time = morning_time, len = 12)
@@ -169,6 +169,6 @@ TimeSeries.values(fuel_forecast_morning)
 
   - [Add an Operating Cost](@ref cost_how_to) - General guide for adding operational costs
   - [Parse Time Series Data from .csv files](@ref parsing_time_series) - How to load time series from CSV files
-  - [Working with Time Series Data](@ref tutorial_time_series) - Tutorial on time series data in PowerSystems
+  - [Working with Time Series Data](@ref "Working with Time Series Data") - Tutorial on time series data in PowerSystems
   - [`ThermalGenerationCost`](@ref) - API reference for thermal generation costs
   - [`FuelCurve`](@ref) - API reference for fuel curves

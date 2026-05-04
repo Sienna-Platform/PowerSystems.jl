@@ -28,6 +28,9 @@ const _ENCODE_AS_UUID_B =
     )
 @assert length(_ENCODE_AS_UUID_A) == length(_ENCODE_AS_UUID_B)
 
+"""
+Return true if the value should be encoded as a UUID during serialization.
+"""
 should_encode_as_uuid(val) = any(x -> val isa x, _ENCODE_AS_UUID_B)
 should_encode_as_uuid(::Type{T}) where {T} = any(x -> T <: x, _ENCODE_AS_UUID_A)
 
@@ -60,7 +63,9 @@ function IS.serialize(component::T) where {T <: _CONTAINS_SHOULD_ENCODE}
 end
 
 """
-Serialize the value, encoding as UUIDs where necessary.
+Serialize `val`, encoding cross-referenced components as UUIDs instead of full objects.
+
+See also: [`deserialize_uuid_handling`](@ref)
 """
 function serialize_uuid_handling(val)
     if should_encode_as_uuid(val)
@@ -127,7 +132,15 @@ function _check_uuid_in_component_cache(uuid::Base.UUID, component_cache)
 end
 
 """
-Deserialize the value, converting UUIDs to components where necessary.
+Deserialize `val` of `field_type`, replacing UUID values with the corresponding components
+from `component_cache` where applicable.
+
+# Arguments
+- `field_type`: The expected type of the field.
+- `val`: The raw serialized value.
+- `component_cache`: A dictionary mapping UUIDs to already-deserialized components.
+
+See also: [`serialize_uuid_handling`](@ref)
 """
 function deserialize_uuid_handling(field_type, val, component_cache)
     @debug "deserialize_uuid_handling" _group = IS.LOG_GROUP_SERIALIZATION field_type val

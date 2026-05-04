@@ -1,28 +1,50 @@
 """
-Abstract type to represent the structure and interconnectedness of the system
+    Topology
+
+Abstract supertype for network topology elements.
+
+Subtypes: [`AggregationTopology`](@ref) (e.g., [`Area`](@ref), [`LoadZone`](@ref)),
+[`Bus`](@ref) (e.g., [`ACBus`](@ref), [`DCBus`](@ref)), and [`Arc`](@ref)
 """
 abstract type Topology <: Component end
 
 """
-Represents a geographical region of system components.
+    AggregationTopology
 
-All subtypes must implement the method `get_aggregation_topology_accessor`.
+Abstract supertype for geographical or electrical aggregation regions.
+
+Subtypes: [`Area`](@ref), [`LoadZone`](@ref)
+
+See also: [`Topology`](@ref)
 """
 abstract type AggregationTopology <: Topology end
 
 """
-All PowerSystems [AggregationTopology](@ref) types support time series. This can be overridden for specific custom 
-aggregation topology types that do not support time series.
+Return true since all [`AggregationTopology`](@ref) types support time series by default.
+
+Override this method for specific custom aggregation topology types that do not support time series.
 """
 supports_time_series(::AggregationTopology) = true
 
 """
-Abstract type to represent any type of Bus, AC or DC.
+    Bus
+
+Abstract supertype for all bus types in a power system network.
+
+Subtypes: [`ACBus`](@ref), [`DCBus`](@ref)
+
+See also: [`Arc`](@ref), [`Topology`](@ref)
 """
 abstract type Bus <: Topology end
 
 """
-Return the method to be called on a ACBus to get its AggregationTopology value for this type.
+Abstract interface method — return the accessor function to call on an [`ACBus`](@ref)
+to retrieve its [`AggregationTopology`](@ref) value for subtype `T`.
+
+Throws an error if not implemented for `T`. Concrete subtypes of [`AggregationTopology`](@ref)
+must provide a method for this function.
+
+See also: [`get_area`](@ref), [`get_load_zone`](@ref)
 """
 function get_aggregation_topology_accessor(::Type{T}) where {T <: AggregationTopology}
     error("get_aggregation_topology_accessor must be implemented for $T")

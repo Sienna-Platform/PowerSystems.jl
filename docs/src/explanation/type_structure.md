@@ -1,14 +1,37 @@
 # [Type Structure](@id type_structure)
 
-PowerSystems.jl provides a type hierarchy to contain power system data.
+`PowerSystems.jl` organizes power system data through a type hierarchy built around the
+**behavior and role** of each component in the network. Understanding this hierarchy
+explains how to retrieve components effectively and how to write code that works across
+many different component types without modification.
 
-## Types in PowerSystems
+## Why a type hierarchy?
 
-In PowerSystems.jl, data that describes infrastructure components is held in `struct`s.
-For example, an `ACBus` is a `struct` with the following parameters to describe a bus
-on an AC network:
+Power systems contain a wide variety of physical equipment — generators, loads, buses,
+transmission lines, transformers, storage devices, and more — each with different data
+requirements and modeling roles. Rather than treating all components as untyped records,
+`PowerSystems.jl` places them into an abstract type hierarchy. This design provides two
+key benefits:
 
-```@repl types
+ 1. **Categorization by behavior:** Components that serve the same modeling role share a
+    common abstract supertype. Code can retrieve all components of a given category — all
+    generators, all transmission branches — without enumerating every specific technology
+    type.
+
+ 2. **Generic and extensible model logic:** Downstream packages such as
+    [`PowerSimulations.jl`](https://nrel-sienna.github.io/PowerSimulations.jl/stable/)
+    define optimization formulations against abstract types. A new concrete component type
+    slots into existing model formulations automatically, as long as it implements the
+    expected interface. This means users can define technologies not yet in the package and
+    have them work with existing tools.
+
+## How components are stored
+
+Each infrastructure component is represented as a [`struct`](@ref S) — a composite data
+type that bundles together the fields needed to describe that component. For example, an
+[`ACBus`](@ref) carries fields for its bus number, nominal voltage, bus type, and more:
+
+```@example types
 using PowerSystems #hide
 import TypeTree: tt #hide
 docs_dir = joinpath(pkgdir(PowerSystems), "docs", "src", "tutorials", "utils"); #hide
@@ -16,50 +39,83 @@ include(joinpath(docs_dir, "docs_utils.jl")); #hide
 print_struct(ACBus) #hide
 ```
 
-## Type Hierarchy
+Getter and setter functions are generated for every field (e.g., `get_name`,
+`get_base_voltage`). Using these functions rather than direct field access is important:
+they apply [per-unit conversions](@ref per_unit) automatically and provide a stable
+interface across package versions. See the [System](@ref system_doc) explanation for more
+details on why direct field access is discouraged.
 
-PowerSystems is intended to organize data by the behavior of the devices that
-the data represents. A type hierarchy has been defined with several levels of
-abstract types starting with `InfrastructureSystemsType`. There are a bunch of subtypes of
-`InfrastructureSystemsType`, but the important ones to know about are:
+## The abstract type hierarchy
 
-  - `System`: overarching `struct` that collects all of the `Component`s
+The hierarchy is rooted at `InfrastructureSystemsType`. The subtypes most relevant to
+`PowerSystems.jl` users are:
 
-  - `Component`: includes all elements of power system data
+  - [`System`](@ref): the top-level data container that holds all [`Component`](@ref)s
+    and their associated time series data. See the [System](@ref system_doc) explanation
+    for a full description.
 
-      + `Topology`: includes non physical elements describing network connectivity
-      + `Service`: includes descriptions of system requirements (other than energy balance)
-      + `Device`: includes descriptions of all the physical devices in a power system
+  - [`Component`](@ref): the abstract supertype for all power system elements:
 
-  - `InfrastructureSystems.DeviceParameter`: includes structs that hold data describing the
-    dynamic, or economic capabilities of `Device`.
+      + [`Topology`](@ref): non-physical elements that describe network connectivity,
+        including [`ACBus`](@ref), [`Arc`](@ref), [`Area`](@ref), and
+        [`LoadZone`](@ref). Topology is kept separate from physical devices so that
+        network structure can be defined and manipulated independently of the equipment
+        attached to it.
 
-  - `TimeSeriesData`: Includes all time series types
+      + [`Device`](@ref): physical equipment installed in the network, including
+        generators, loads, storage, and transmission branches.
 
-      + `Forecast`: includes structs to define time series of forecasted data where multiple
-        values can represent each time stamp
-      + `StaticTimeSeries`: includes structs to define time series with a single value for each
-        time stamp
+      + [`Service`](@ref): system-level requirements beyond energy balance, such as
+        operating reserves, [`AGC`](@ref), and transmission interface limits. Separating
+        services from devices reflects the fact that a service is a requirement that
+        *devices contribute to*, rather than a physical component itself.
 
-The abstract hierarchy enables categorization of the devices by their operational
-characteristics and modeling requirements.
+  - `DeviceParameter`: [`struct`](@ref S)s that carry data describing
+    the dynamic or economic characteristics of a `Device`, such as cost function curves or
+    dynamic machine parameters. Decoupling these from the device [`struct`](@ref S) itself allows the
+    same physical device to carry different parameter sets depending on the modeling
+    context.
 
-For instance, generation is classified by the distinctive
-data requirements for modeling in three categories: [`ThermalGen`](@ref), [`RenewableGen`](@ref),
-and [`HydroGen`](@ref).
+  - [`TimeSeriesData`](@ref): the abstract supertype for all time-varying data associated
+    with components:
 
-`PowerSystems.jl` has a category [`Topology`](@ref) of topological components
-(e.g., [`ACBus`](@ref), [`Arc`](@ref)), separate from the physical components.
+      + [`Forecast`](@ref): time series where multiple values can represent each time
+        stamp, for look-ahead or scenario-based modeling.
+      + [`StaticTimeSeries`](@ref): time series with a single value per time stamp, for
+        historical or deterministic data.
 
-The hierarchy also includes components absent in standard data models, such as services.
-The services category includes reserves, transfers and [`AGC`](@ref). The power of `PowerSystems.jl`
-lies in providing the abstraction without an implicit mathematical representation of the component.
+## How the generation hierarchy illustrates the design
 
-As a result of this design, developers can define model logic entirely based on abstract
-types and create generic code to support modeling technologies that are not yet
-implemented in the package.
+Generation is a useful example of how the hierarchy reflects real modeling distinctions.
+Generators are grouped into three abstract super types based on their dispatch behavior and
+data requirements:
 
-```@raw html
-<img src="../../assets/AbstractTree.png" width="75%"/>
-``` ⠀
+  - [`ThermalGen`](@ref): dispatchable units with fuel-based costs and startup/shutdown
+    characteristics.
+  - [`RenewableGen`](@ref): generation driven by a variable resource, with limited or no
+    direct dispatch control.
+  - [`HydroGen`](@ref): hydro units, which share properties of both dispatchable and
+    resource-constrained generation but have unique reservoir and hydrology constraints.
+
+An optimization formulation written against [`ThermalGen`](@ref) applies to `ThermalStandard`,
+`ThermalMultiStart`, and any user-defined thermal subtype without modification. This is
+the intended extension mechanism: new technologies are introduced by defining a concrete
+type under the appropriate abstract supertype.
+
+## What this means for developers
+
+The `PowerSystems.jl` type hierarchy deliberately provides **abstractions without
+encoding a specific mathematical model** for any component. The [`struct`](@ref S) for a
+`ThermalStandard` generator holds the data describing that unit; it does not prescribe
+how the unit should be represented in a particular simulation. The mathematical
+formulation is entirely the responsibility of the downstream tool.
+
+This separation allows the same data model to simultaneously support power flow analysis,
+production cost modeling, and transient stability simulation through different downstream
+packages, without any modification to the underlying data.
+
+For a hands-on introduction to navigating the type hierarchy, see the
+[Create and Explore a Power System](@ref "Create and Explore a Power `System`") tutorial.
+
+```
 ```

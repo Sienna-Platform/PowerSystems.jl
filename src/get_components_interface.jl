@@ -34,10 +34,18 @@
 
 # get_components
 """
-Return an iterator of components of a given `Type` from a [`System`](@ref).
+    get_components(::Type{T}, sys::System; subsystem_name) where {T <: Component}
+
+Return an iterator of components of type `T` from a [`System`](@ref).
 
 `T` can be a concrete or abstract [`Component`](@ref) type from the [Type Tree](@ref).
-Call collect on the result if an array is desired.
+Call `collect` on the result if an array is desired.
+
+# Arguments
+- `T`: The component type to retrieve. Can be concrete or abstract.
+- `sys::System`: The system to search.
+- `subsystem_name::Union{Nothing, String}`: (default: `nothing`) If provided, restrict
+    results to the named subsystem.
 
 # Examples
 ```julia
@@ -58,14 +66,22 @@ get_components(::Type{T}, sys::System; subsystem_name = nothing) where {T <: Com
     IS.get_components(T, sys; subsystem_name = subsystem_name)
 
 """
-Return a vector of components that are attached to the supplemental attribute.
+    get_associated_components(sys::System, attribute::SupplementalAttribute; component_type)
+
+Return a vector of components attached to the given supplemental attribute.
 
 # Arguments
-- `sys::System`: the `System` to search
-- `attribute::SupplementalAttribute`: Only return components associated with this attribute.
-- `component_type::Union{Nothing, <:Component}`: Optional type of the components to return.
-  Can be concrete or abstract. If not provided, all components associated with the attribute
-  will be returned.
+- `sys::System`: The system to search.
+- `attribute::SupplementalAttribute`: The supplemental attribute whose associated components
+    are returned.
+- `component_type::Union{Nothing, Type{<:Component}}`: (default: `nothing`) If provided,
+    only return components of this type. Can be concrete or abstract.
+
+See also: [`get_associated_components(sys, attribute_type)`](@ref get_associated_components(
+    sys::System,
+    attribute_type::Type{<:SupplementalAttribute};
+    component_type,
+)), [`add_supplemental_attribute!`](@ref)
 """
 function get_associated_components(
     sys::System,
@@ -85,8 +101,23 @@ end
 )
 
 """
-Return a vector of components that are associated to one or more supplemental attributes of
-the given type.
+    get_associated_components(sys::System, attribute_type::Type{<:SupplementalAttribute}; component_type)
+
+Return a vector of components that have at least one supplemental attribute of
+`attribute_type` attached.
+
+# Arguments
+- `sys::System`: The system to search.
+- `attribute_type::Type{<:SupplementalAttribute}`: The supplemental attribute type to
+    filter by. Can be concrete or abstract.
+- `component_type::Union{Nothing, Type{<:Component}}`: (default: `nothing`) If provided,
+    only return components of this type. Can be concrete or abstract.
+
+See also: [`get_associated_components(sys, attribute)`](@ref get_associated_components(
+    sys::System,
+    attribute::SupplementalAttribute;
+    component_type,
+)), [`add_supplemental_attribute!`](@ref)
 """
 function get_associated_components(
     sys::System,
@@ -101,11 +132,21 @@ function get_associated_components(
 end
 
 """
-Return an iterator of components of a given `Type` from a [`System`](@ref), using an
-additional filter
+    get_components(filter_func::Function, ::Type{T}, sys::System; subsystem_name) where {T <: Component}
+
+Return an iterator of components of type `T` from a [`System`](@ref) that satisfy
+`filter_func`.
 
 `T` can be a concrete or abstract [`Component`](@ref) type from the [Type Tree](@ref).
-Call collect on the result if an array is desired.
+Call `collect` on the result if an array is desired.
+
+# Arguments
+- `filter_func::Function`: A single-argument function returning `true` for components to
+    include.
+- `T`: The component type to retrieve. Can be concrete or abstract.
+- `sys::System`: The system to search.
+- `subsystem_name::Union{Nothing, String}`: (default: `nothing`) If provided, restrict
+    results to the named subsystem.
 
 # Examples
 ```julia
@@ -131,32 +172,74 @@ get_components(
 
 # get_component
 """
-Get the component by UUID.
+    get_component(sys::System, uuid::Union{Base.UUID, String})
+
+Return the component with the given UUID, or `nothing` if not found.
+
+# Arguments
+- `sys::System`: The system to search.
+- `uuid::Union{Base.UUID, String}`: The UUID of the component.
+
+See also: [`get_component(T, sys, name)`](@ref get_component(
+    ::Type{T},
+    sys::System,
+    name::AbstractString,
+) where {T <: Component})
 """
 get_component(sys::System, uuid::Base.UUID) = IS.get_component(sys, uuid)
 get_component(sys::System, uuid::String) = IS.get_component(sys, uuid)
 
 """
-Get the component of type T with name. Returns nothing if no component matches. If T is an abstract
-type then the names of components across all subtypes of T must be unique.
+    get_component(::Type{T}, sys::System, name::AbstractString) where {T <: Component}
 
-See [`get_components_by_name`](@ref) for abstract types with non-unique names across subtypes.
+Return the component of type `T` with the given name, or `nothing` if no match is found.
 
-Throws ArgumentError if T is not a concrete type and there is more than one component with
-    requested name
+If `T` is an abstract type, names must be unique across all subtypes. Use
+[`get_components_by_name`](@ref) when names are not unique across subtypes.
+
+# Arguments
+- `T`: The component type to retrieve. Can be concrete or abstract.
+- `sys::System`: The system to search.
+- `name::AbstractString`: The name of the component.
+
+# Throws
+- `ArgumentError`: if `T` is abstract and more than one component with the given name
+    exists across subtypes.
+
+See also: [`get_component(sys, uuid)`](@ref get_component(sys::System, uuid::Base.UUID)),
+[`get_components_by_name`](@ref)
 """
 get_component(::Type{T}, sys::System, name::AbstractString) where {T <: Component} =
     IS.get_component(T, sys, name)
 
 # get_available_components
 """
-Like [`get_components`](@ref get_components(
+    get_available_components(::Type{T}, sys::System; subsystem_name) where {T <: Component}
+
+Return an iterator of available components of type `T` from a [`System`](@ref). A component
+is available when [`get_available`](@ref) returns `true`. Equivalent to
+[`get_components`](@ref) with a filter on availability.
+
+`T` can be a concrete or abstract [`Component`](@ref) type from the [Type Tree](@ref).
+Call `collect` on the result if an array is desired.
+
+# Arguments
+- `T`: The component type to retrieve. Can be concrete or abstract.
+- `sys::System`: The system to search.
+- `subsystem_name::Union{Nothing, String}`: (default: `nothing`) If provided, restrict
+    results to the named subsystem.
+
+# Examples
+```julia
+gens = get_available_components(ThermalStandard, sys)
+gens = get_available_components(Generator, sys)
+```
+
+See also: [`get_components`](@ref get_components(
     ::Type{T},
     sys::System;
     subsystem_name = nothing,
-    ) where {T <: Component}
-) but returns only components that are [`get_available`](@ref).
-```
+) where {T <: Component}), [`get_available`](@ref)
 """
 get_available_components(
     ::Type{T},
@@ -166,22 +249,49 @@ get_available_components(
     IS.get_available_components(T, sys; subsystem_name = subsystem_name)
 
 """
-Like [`get_components`](@ref get_components(
-    sys::System,
-    attribute::SupplementalAttribute
-) but returns only components that are [`get_available`](@ref).
+    get_available_components(sys::System, attribute::SupplementalAttribute)
+
+Return an iterator of available components attached to a given supplemental attribute.
+A component is available when [`get_available`](@ref) returns `true`.
+
+# Arguments
+- `sys::System`: The system to search.
+- `attribute::SupplementalAttribute`: The supplemental attribute whose available associated
+    components are returned.
+
+See also: [`get_associated_components`](@ref), [`get_available`](@ref)
 """
 get_available_components(sys::System, attribute::SupplementalAttribute) =
     IS.get_available_components(sys, attribute)
 
 """
-Like [`get_components`](@ref get_components(
+    get_available_components(filter_func::Function, ::Type{T}, sys::System; subsystem_name) where {T <: Component}
+
+Return an iterator of available components of type `T` that also satisfy `filter_func`.
+A component is available when [`get_available`](@ref) returns `true`.
+
+`T` can be a concrete or abstract [`Component`](@ref) type from the [Type Tree](@ref).
+Call `collect` on the result if an array is desired.
+
+# Arguments
+- `filter_func::Function`: A single-argument function returning `true` for components to
+    include.
+- `T`: The component type to retrieve. Can be concrete or abstract.
+- `sys::System`: The system to search.
+- `subsystem_name::Union{Nothing, String}`: (default: `nothing`) If provided, restrict
+    results to the named subsystem.
+
+# Examples
+```julia
+gens = get_available_components(x -> get_fuel(x) == ThermalFuels.COAL, ThermalStandard, sys)
+```
+
+See also: [`get_components`](@ref get_components(
     filter_func::Function,
     ::Type{T},
     sys::System;
     subsystem_name = nothing,
-    ) where {T <: Component}
-) but returns only components that are [`get_available`](@ref).
+) where {T <: Component}), [`get_available`](@ref)
 """
 get_available_components(
     filter_func::Function,
@@ -193,14 +303,36 @@ get_available_components(
 
 # get_available_component
 """
-Get the available component by UUID.
+    get_available_component(sys::System, uuid::Union{Base.UUID, String})
+
+Return the component with the given UUID if it is available, otherwise return `nothing`.
+A component is available when [`get_available`](@ref) returns `true`.
+
+# Arguments
+- `sys::System`: The system to search.
+- `uuid::Union{Base.UUID, String}`: The UUID of the component to retrieve.
+
+See also: [`get_component(sys, uuid)`](@ref get_component(sys::System, uuid::Base.UUID)),
+[`get_available`](@ref)
 """
 get_available_component(sys::System, uuid::Base.UUID) =
     IS.get_available_component(sys, uuid)
 get_available_component(sys::System, uuid::String) = IS.get_available_component(sys, uuid)
 
 """
-Like [`get_component`](@ref) but also returns `nothing` if the component is not [`get_available`](@ref).
+    get_available_component(::Type{T}, sys::System, name::AbstractString) where {T <: Component}
+
+Return the component of type `T` with the given name if it is available, otherwise return
+`nothing`. A component is available when [`get_available`](@ref) returns `true`.
+
+If `T` is an abstract type, names must be unique across all subtypes.
+
+# Arguments
+- `T`: The component type to retrieve. Can be concrete or abstract.
+- `sys::System`: The system to search.
+- `name::AbstractString`: The name of the component.
+
+See also: [`get_component`](@ref), [`get_available`](@ref)
 """
 get_available_component(::Type{T}, sys::System, args...; kwargs...) where {T <: Component} =
     IS.get_available_component(T, sys, args...; kwargs...)

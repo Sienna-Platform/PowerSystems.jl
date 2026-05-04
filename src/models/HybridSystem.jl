@@ -31,59 +31,55 @@ A Hybrid System that includes a combination of renewable generation, load, therm
 generation and/or energy storage.
 
 # Arguments
-- `name::String`: Name of the component. Components of the same type (e.g., `PowerLoad`) must have unique names, but components of different types (e.g., `PowerLoad` and `ACBus`) can have the same name
-- `available::Bool`: Indicator of whether the component is connected and online (`true`) or disconnected, offline, or down (`false`). Unavailable components are excluded during simulations
-- `status::Bool`: Initial commitment condition at the start of a simulation (`true` = on or `false` = off)
-- `bus::ACBus`: Bus that this component is connected to
-- `active_power::Float64`: Initial active power set point of the unit in MW. For power flow, this is the steady state operating point of the system. For production cost modeling, this may or may not be used as the initial starting point for the solver, depending on the solver used
-- `reactive_power::Float64`: Initial reactive power set point of the unit (MVAR)
-- `base_power::Float64`: Base power of the unit (MVA) for per unitization, which is commonly the same as `rating`
-- `operation_cost::MarketBidCost`: Market bid cost to operate, [`MarketBidCost`](@ref)
-- `thermal_unit::Union{Nothing, ThermalGen}`: A thermal generator with supertype [`ThermalGen`](@ref)
-- `electric_load::Union{Nothing, ElectricLoad}`: A load with supertype [`ElectricLoad`](@ref)
-- `storage::Union{Nothing, Storage}`: An energy storage system with supertype [`Storage`](@ref)
-- `renewable_unit::Union{Nothing, RenewableGen}`: A renewable generator with supertype [`RenewableGen`](@ref)
-- `interconnection_impedance::ComplexF64`: Impedance (typically in p.u.) between the hybrid system and the grid interconnection
-- `interconnection_rating::Union{Nothing, Float64}`: Maximum rating of the hybrid system's interconnection with the transmission network (MVA)
-- `input_active_power_limits::MinMax`: Minimum and maximum stable input active power levels (MW)
-- `output_active_power_limits::MinMax`: Minimum and maximum stable output active power levels (MW)
-- `reactive_power_limits::Union{Nothing, MinMax}`: Minimum and maximum reactive power limits (MVAR). Set to `Nothing` if not applicable.
-- `interconnection_efficiency::Union{Nothing, NamedTuple{(:in, :out), Tuple{Float64, Float64}},}`: Efficiency [0, 1.0] at the grid interconnection to model losses `in` and `out` of the common DC-side conversion
-- `services::Vector{Service}`: (optional) Services that this device contributes to
-- `dynamic_injector::Union{Nothing, DynamicInjection}`: (optional) corresponding dynamic injection device
-- `ext::Dict{String, Any}`: (optional) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
-- `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference.
+$(TYPEDFIELDS)
 """
 mutable struct HybridSystem <: StaticInjectionSubsystem
+    "Name of the component. Components of the same type (e.g., `PowerLoad`) must have unique names, but components of different types (e.g., `PowerLoad` and `ACBus`) can have the same name"
     name::String
+    "Indicator of whether the component is connected and online (`true`) or disconnected, offline, or down (`false`). Unavailable components are excluded during simulations"
     available::Bool
+    "Initial commitment condition at the start of a simulation (`true` = on or `false` = off)"
     status::Bool
+    "Bus that this component is connected to"
     bus::ACBus
+    "Initial active power set point of the unit in MW. For power flow, this is the steady state operating point of the system. For production cost modeling, this may or may not be used as the initial starting point for the solver, depending on the solver used"
     active_power::Float64
+    "Initial reactive power set point of the unit (MVAR)"
     reactive_power::Float64
+    "Base power of the unit (MVA) for per unitization, which is commonly the same as `rating`"
     base_power::Float64
+    "Market bid cost to operate, [`MarketBidCost`](@ref)"
     operation_cost::MarketBidCost
+    "A thermal generator with supertype [`ThermalGen`](@ref)"
     thermal_unit::Union{Nothing, ThermalGen}
+    "A load with supertype [`ElectricLoad`](@ref)"
     electric_load::Union{Nothing, ElectricLoad}
+    "An energy storage system with supertype [`Storage`](@ref)"
     storage::Union{Nothing, Storage}
+    "A renewable generator with supertype [`RenewableGen`](@ref)"
     renewable_unit::Union{Nothing, RenewableGen}
-    # interconnection Data
-    "Thermal limited MVA Power Output of the unit. <= Capacity"
+    "Impedance (typically in p.u.) between the hybrid system and the grid interconnection"
     interconnection_impedance::ComplexF64
+    "Maximum rating of the hybrid system's interconnection with the transmission network (MVA)"
     interconnection_rating::Union{Nothing, Float64}
+    "Minimum and maximum stable input active power levels (MW)"
     input_active_power_limits::Union{Nothing, MinMax}
+    "Minimum and maximum stable output active power levels (MW)"
     output_active_power_limits::Union{Nothing, MinMax}
+    "Minimum and maximum reactive power limits (MVAR). Set to `Nothing` if not applicable"
     reactive_power_limits::Union{Nothing, MinMax}
+    "Efficiency [0, 1.0] at the grid interconnection to model losses `in` and `out` of the common DC-side conversion"
     interconnection_efficiency::Union{
         Nothing,
         NamedTuple{(:in, :out), Tuple{Float64, Float64}},
     }
-    "corresponding dynamic injection device"
+    "(optional) Services that this device contributes to"
     services::Vector{Service}
+    "(optional) Corresponding dynamic injection device"
     dynamic_injector::Union{Nothing, DynamicInjection}
+    "(optional) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation"
     ext::Dict{String, Any}
-    "internal forecast storage"
-    "power system internal reference, do not modify"
+    "(**Do not modify.**) PowerSystems.jl internal reference"
     internal::InfrastructureSystemsInternal
 end
 
@@ -182,87 +178,87 @@ function set_units_setting!(value::HybridSystem, settings::SystemUnitsSettings)
     return
 end
 
-"""Get [`HybridSystem`](@ref) `available`."""
+"""Return the `available` field of [`HybridSystem`](@ref)."""
 get_available(value::HybridSystem) = value.available
-"""Get [`HybridSystem`](@ref) `status`."""
+"""Return the `status` field of [`HybridSystem`](@ref)."""
 get_status(value::HybridSystem) = value.status
-"""Get [`HybridSystem`](@ref) `bus`."""
+"""Return the `bus` field of [`HybridSystem`](@ref)."""
 get_bus(value::HybridSystem) = value.bus
-"""Get [`HybridSystem`](@ref) `active_power`."""
+"""Return the `active_power` field of [`HybridSystem`](@ref)."""
 get_active_power(value::HybridSystem) = get_value(value, Val(:active_power), Val(:mva))
-"""Get [`HybridSystem`](@ref) `reactive_power`."""
+"""Return the `reactive_power` field of [`HybridSystem`](@ref)."""
 get_reactive_power(value::HybridSystem) = get_value(value, Val(:reactive_power), Val(:mva))
-"""Get [`HybridSystem`](@ref) thermal unit"""
+"""Return the `thermal_unit` field of [`HybridSystem`](@ref)."""
 get_thermal_unit(value::HybridSystem) = value.thermal_unit
-"""Get [`HybridSystem`](@ref) load"""
+"""Return the `electric_load` field of [`HybridSystem`](@ref)."""
 get_electric_load(value::HybridSystem) = value.electric_load
-"""Get [`HybridSystem`](@ref) storage unit"""
+"""Return the `storage` field of [`HybridSystem`](@ref)."""
 get_storage(value::HybridSystem) = value.storage
-"""Get [`HybridSystem`](@ref) renewable unit"""
+"""Return the `renewable_unit` field of [`HybridSystem`](@ref)."""
 get_renewable_unit(value::HybridSystem) = value.renewable_unit
-"""Get [`HybridSystem`](@ref) `interconnection_rating`."""
+"""Return the `interconnection_rating` field of [`HybridSystem`](@ref)."""
 get_interconnection_rating(value::HybridSystem) =
     get_value(value, Val(:interconnection_rating), Val(:mva))
-"""get [`HybridSystem`](@ref) interconnection impedance"""
+"""Return the `interconnection_impedance` field of [`HybridSystem`](@ref)."""
 get_interconnection_impedance(value::HybridSystem) = value.interconnection_impedance
-"""Get [`HybridSystem`](@ref) `input_active_power_limits`."""
+"""Return the `input_active_power_limits` field of [`HybridSystem`](@ref)."""
 get_input_active_power_limits(value::HybridSystem) =
     get_value(value, Val(:input_active_power_limits), Val(:mva))
-"""Get [`HybridSystem`](@ref) `output_active_power_limits`."""
+"""Return the `output_active_power_limits` field of [`HybridSystem`](@ref)."""
 get_output_active_power_limits(value::HybridSystem) =
     get_value(value, Val(:output_active_power_limits), Val(:mva))
-"""Get [`HybridSystem`](@ref) `reactive_power_limits`."""
+"""Return the `reactive_power_limits` field of [`HybridSystem`](@ref)."""
 get_reactive_power_limits(value::HybridSystem) =
     get_value(value, Val(:reactive_power_limits), Val(:mva))
-"""get [`HybridSystem`](@ref) interconnection efficiency"""
+"""Return the `interconnection_efficiency` field of [`HybridSystem`](@ref)."""
 get_interconnection_efficiency(value::HybridSystem) = value.interconnection_efficiency
-"""Get [`HybridSystem`](@ref) `base_power`."""
+"""Return the `base_power` field of [`HybridSystem`](@ref)."""
 get_base_power(value::HybridSystem) = value.base_power
-"""Get [`HybridSystem`](@ref) `operation_cost`."""
+"""Return the `operation_cost` field of [`HybridSystem`](@ref)."""
 get_operation_cost(value::HybridSystem) = value.operation_cost
-"""Get [`HybridSystem`](@ref) `services`."""
+"""Return the `services` field of [`HybridSystem`](@ref)."""
 get_services(value::HybridSystem) = value.services
-"""Get [`HybridSystem`](@ref) `dynamic_injector`."""
+"""Return the `dynamic_injector` field of [`HybridSystem`](@ref)."""
 get_dynamic_injector(value::HybridSystem) = value.dynamic_injector
-"""Get [`HybridSystem`](@ref) `ext`."""
+"""Return the `ext` field of [`HybridSystem`](@ref)."""
 get_ext(value::HybridSystem) = value.ext
 
-"""Get [`HybridSystem`](@ref) `internal`."""
+"""Return the `internal` field of [`HybridSystem`](@ref)."""
 get_internal(value::HybridSystem) = value.internal
 
-"""Set [`HybridSystem`](@ref) `available`."""
+"""Set the `available` field of [`HybridSystem`](@ref)."""
 set_available!(value::HybridSystem, val) = value.available = val
-"""Get [`HybridSystem`](@ref) `status`."""
+"""Set the `status` field of [`HybridSystem`](@ref)."""
 set_status!(value::HybridSystem, val) = value.status = val
-"""Set [`HybridSystem`](@ref) `bus`."""
+"""Set the `bus` field of [`HybridSystem`](@ref)."""
 set_bus!(value::HybridSystem, val) = value.bus = val
-"""Set [`HybridSystem`](@ref) `interconnection_rating`."""
+"""Set the `interconnection_rating` field of [`HybridSystem`](@ref)."""
 set_interconnection_rating!(value::HybridSystem, val) = value.interconnection_rating = val
-"""Set [`HybridSystem`](@ref) `active_power`."""
+"""Set the `active_power` field of [`HybridSystem`](@ref)."""
 set_active_power!(value::HybridSystem, val) = value.active_power = val
-"""Set [`HybridSystem`](@ref) `reactive_power`."""
+"""Set the `reactive_power` field of [`HybridSystem`](@ref)."""
 set_reactive_power!(value::HybridSystem, val) = value.reactive_power = val
-"""set [`HybridSystem`](@ref) interconnection impedance"""
+"""Set the `interconnection_impedance` field of [`HybridSystem`](@ref)."""
 set_interconnection_impedance!(value::HybridSystem, val) =
     value.interconnection_impedance = val
-"""Set [`HybridSystem`](@ref) `input_active_power_limits`."""
+"""Set the `input_active_power_limits` field of [`HybridSystem`](@ref)."""
 set_input_active_power_limits!(value::HybridSystem, val) =
     value.input_active_power_limits = val
-"""Set [`HybridSystem`](@ref) `output_active_power_limits`."""
+"""Set the `output_active_power_limits` field of [`HybridSystem`](@ref)."""
 set_output_active_power_limits!(value::HybridSystem, val) =
     value.output_active_power_limits = val
-"""Set [`HybridSystem`](@ref) `reactive_power_limits`."""
+"""Set the `reactive_power_limits` field of [`HybridSystem`](@ref)."""
 set_reactive_power_limits!(value::HybridSystem, val) = value.reactive_power_limits = val
-"""Set [`HybridSystem`](@ref) `interconnection_efficiency`."""
+"""Set the `interconnection_efficiency` field of [`HybridSystem`](@ref)."""
 set_interconnection_efficiency!(value::HybridSystem, val) =
     value.interconnection_rating = val
-"""Set [`HybridSystem`](@ref) `base_power`."""
+"""Set the `base_power` field of [`HybridSystem`](@ref)."""
 set_base_power!(value::HybridSystem, val) = value.base_power = val
-"""Set [`HybridSystem`](@ref) `operation_cost`."""
+"""Set the `operation_cost` field of [`HybridSystem`](@ref)."""
 set_operation_cost!(value::HybridSystem, val) = value.operation_cost = val
-"""Set [`HybridSystem`](@ref) `services`."""
+"""Set the `services` field of [`HybridSystem`](@ref)."""
 set_services!(value::HybridSystem, val) = value.services = val
-"""Set [`HybridSystem`](@ref) `ext`."""
+"""Set the `ext` field of [`HybridSystem`](@ref)."""
 set_ext!(value::HybridSystem, val) = value.ext = val
 
 """
@@ -287,28 +283,28 @@ function get_subcomponents(hybrid::HybridSystem)
     end
 end
 
-"""Set [`HybridSystem`](@ref) thermal unit"""
+"""Set the `thermal_unit` field of [`HybridSystem`](@ref)."""
 function set_thermal_unit!(hybrid::HybridSystem, val::ThermalGen)
     _raise_if_attached_to_system(hybrid)
     hybrid.thermal_unit = val
     return
 end
 
-"""Set [`HybridSystem`](@ref) load"""
+"""Set the `electric_load` field of [`HybridSystem`](@ref)."""
 function set_electric_load!(hybrid::HybridSystem, val::ElectricLoad)
     _raise_if_attached_to_system(hybrid)
     value.electric_load = val
     return
 end
 
-"""Set [`HybridSystem`](@ref) storage unit"""
+"""Set the `storage` field of [`HybridSystem`](@ref)."""
 function set_storage!(hybrid::HybridSystem, val::Storage)
     _raise_if_attached_to_system(hybrid)
     value.storage = val
     return
 end
 
-"""Set [`HybridSystem`](@ref) renewable unit"""
+"""Set the `renewable_unit` field of [`HybridSystem`](@ref)."""
 function set_renewable_unit!(hybrid::HybridSystem, val::RenewableGen)
     _raise_if_attached_to_system(hybrid)
     value.renewable_unit = val

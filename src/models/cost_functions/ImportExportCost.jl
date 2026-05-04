@@ -50,30 +50,30 @@ function ImportExportCost(::Nothing)
     ImportExportCost()
 end
 
-"""Get [`ImportExportCost`](@ref) `import_offer_curves`."""
+"""Return the `import_offer_curves` field of [`ImportExportCost`](@ref)."""
 get_import_offer_curves(value::ImportExportCost) = value.import_offer_curves
-"""Get [`ImportExportCost`](@ref) `export_offer_curves`."""
+"""Return the `export_offer_curves` field of [`ImportExportCost`](@ref)."""
 get_export_offer_curves(value::ImportExportCost) = value.export_offer_curves
-"""Get [`ImportExportCost`](@ref) `ancillary_service_offers`."""
+"""Return the `ancillary_service_offers` field of [`ImportExportCost`](@ref)."""
 get_ancillary_service_offers(value::ImportExportCost) = value.ancillary_service_offers
-"""Get [`ImportExportCost`](@ref) `energy_import_weekly_limit`."""
+"""Return the `energy_import_weekly_limit` field of [`ImportExportCost`](@ref)."""
 get_energy_import_weekly_limit(value::ImportExportCost) = value.energy_import_weekly_limit
-"""Get [`ImportExportCost`](@ref) `energy_export_weekly_limits`."""
+"""Return the `energy_export_weekly_limits` field of [`ImportExportCost`](@ref)."""
 get_energy_export_weekly_limit(value::ImportExportCost) = value.energy_export_weekly_limit
 
-"""Set [`ImportExportCost`](@ref) `import_offer_curves`."""
+"""Set the `import_offer_curves` field of [`ImportExportCost`](@ref)."""
 set_import_offer_curves!(value::ImportExportCost, val) =
     value.import_offer_curves = val
-"""Set [`ImportExportCost`](@ref) `export_offer_curves`."""
+"""Set the `export_offer_curves` field of [`ImportExportCost`](@ref)."""
 set_export_offer_curves!(value::ImportExportCost, val) =
     value.export_offer_curves = val
-"""Set [`ImportExportCost`](@ref) `ancillary_service_offers`."""
+"""Set the `ancillary_service_offers` field of [`ImportExportCost`](@ref)."""
 set_ancillary_service_offers!(value::ImportExportCost, val) =
     value.ancillary_service_offers = val
-"""Set [`ImportExportCost`](@ref) `energy_import_weekly_limit`."""
+"""Set the `energy_import_weekly_limit` field of [`ImportExportCost`](@ref)."""
 set_energy_import_weekly_limit!(value::ImportExportCost, val) =
     value.energy_import_weekly_limit = val
-"""Set [`ImportExportCost`](@ref) `energy_export_weekly_limits`."""
+"""Set the `energy_export_weekly_limits` field of [`ImportExportCost`](@ref)."""
 set_energy_export_weekly_limit!(value::ImportExportCost, val) =
     value.energy_export_weekly_limit = val
 

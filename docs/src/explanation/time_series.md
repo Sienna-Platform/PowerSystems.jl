@@ -12,10 +12,10 @@ process to obtain the data and its interpretation:
   - [Static Time Series Data](@ref)
   - [Forecasts](@ref)
 
-These categories are are all subtypes of `TimeSeriesData` and fall within this time series
-type hierarchy:
+These categories are are all subtypes of [`TimeSeriesData`](@ref) and fall within this time series
+[type hierarchy](@ref type_structure):
 
-```@repl
+```@example
 using PowerSystems #hide
 import TypeTree: tt #hide
 docs_dir = joinpath(pkgdir(PowerSystems), "docs", "src", "tutorials", "utils"); #hide
@@ -26,7 +26,7 @@ print(join(tt(TimeSeriesData), "")) #hide
 ### Static Time Series Data
 
 A static time series data is a single column of data where each time period has a single
-value assigned to a component field, such as its maximum active power. This data commonly
+value assigned to a component field, such as its [maximum active power](@ref power_concepts). This data commonly
 is obtained from historical information or the realization of a time-varying quantity.
 
 Static time series usually comes in the following format, with a set [resolution](@ref R)
@@ -40,7 +40,7 @@ between the time-stamps:
 
 This example is a 1-hour resolution static time-series.
 
-In PowerSystems, a static time series is represented using [`SingleTimeSeries`](@ref).
+In `PowerSystems.jl`, a static time series is represented using [`SingleTimeSeries`](@ref).
 
 ### Forecasts
 
@@ -65,7 +65,7 @@ represent the forecasted values at each step in the forecast [horizon](@ref H).
 
 This example forecast has a [interval](@ref I) of 1 hour and a [horizon](@ref H) of 8.
 
-PowerSystems defines the following Julia structs to represent forecasts:
+`PowerSystems.jl` defines the following Julia [structs](@ref S) to represent forecasts:
 
   - [`Deterministic`](@ref): Point forecast without any uncertainty representation.
   - [`Probabilistic`](@ref): Stores a discretized cumulative distribution functions
