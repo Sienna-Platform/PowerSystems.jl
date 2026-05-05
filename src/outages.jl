@@ -3,6 +3,20 @@ Supertype for outage contingencies representing planned or unplanned equipment o
 
 Concrete subtypes include [`GeometricDistributionForcedOutage`](@ref),
 [`PlannedOutage`](@ref), and [`FixedForcedOutage`](@ref).
+
+# Interface for custom subtypes
+
+Subtypes are expected to provide the following fields, or override the matching
+accessors via multiple dispatch:
+
+- `monitored_components::Vector{Base.UUID}` — UUIDs of devices whose
+  post-contingency state should be modeled. The default
+  [`get_monitored_components`](@ref) reads `value.monitored_components`; override
+  it if your subtype does not carry the field directly.
+- `internal::InfrastructureSystemsInternal` — accessed via `get_internal`.
+
+The default [`supports_time_series`](@ref) returns `true`; override for custom
+outage types that do not support time series.
 """
 abstract type Outage <: Contingency end
 
@@ -30,24 +44,15 @@ nothing" or "monitor everything".
 get_monitored_components(value::Outage) = value.monitored_components
 
 """
-Populate the monitored-components list for an [`Outage`](@ref). Accepts any iterable
-whose elements are `Base.UUID` or [`Device`](@ref) (e.g., a `Vector`, a
-generator, or the iterator returned by [`get_components`](@ref)). Devices are
-converted to their UUIDs internally.
-
-Throws `ArgumentError` if the list is non-empty. Call
-[`clear_monitored_components!`](@ref) first to replace an existing list.
+Replace the monitored-components list for an [`Outage`](@ref) with the contents
+of `items`. Accepts any iterable whose elements are `Base.UUID` or
+[`Device`](@ref) (e.g., a `Vector`, a generator, or the iterator returned by
+[`get_components`](@ref)). Devices are converted to their UUIDs internally.
+Pass an empty iterable (or call [`clear_monitored_components!`](@ref)) to
+clear the list.
 """
 function set_monitored_components!(value::Outage, items)
-    if !isempty(value.monitored_components)
-        throw(
-            ArgumentError(
-                "monitored_components on $(typeof(value)) is non-empty " *
-                "($(length(value.monitored_components)) entries); call " *
-                "clear_monitored_components! before set_monitored_components!",
-            ),
-        )
-    end
+    empty!(value.monitored_components)
     for x in items
         push!(value.monitored_components, _as_uuid(x))
     end
