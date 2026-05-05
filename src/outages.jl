@@ -100,7 +100,8 @@ function remove_monitored_component!(value::Outage, x::Union{Base.UUID, Device})
     uuid = _as_uuid(x)
     idx = findfirst(==(uuid), value.monitored_components)
     isnothing(idx) || deleteat!(value.monitored_components, idx)
-    return value.monitored_components
+    value.monitored_components
+    return
 end
 
 """
@@ -111,7 +112,8 @@ function remove_monitored_components!(value::Outage, items)
     for x in items
         remove_monitored_component!(value, x)
     end
-    return value.monitored_components
+    value.monitored_components
+    return
 end
 
 """
