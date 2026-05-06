@@ -174,7 +174,7 @@ end
         outage_transition_probability = 0.5,
         monitored_components = [uuid1, uuid2],
     )
-    @test get_monitored_components(fo_uuid) == [uuid1, uuid2]
+    @test get_monitored_components(fo_uuid) == Set([uuid1, uuid2])
 
     # Construct with Device references
     fo_dev = GeometricDistributionForcedOutage(;
@@ -182,7 +182,7 @@ end
         outage_transition_probability = 0.5,
         monitored_components = [gen1, gen2],
     )
-    @test get_monitored_components(fo_dev) == [uuid1, uuid2]
+    @test get_monitored_components(fo_dev) == Set([uuid1, uuid2])
 
     # Construct with the FlattenIteratorWrapper returned by get_components
     fo_iter = GeometricDistributionForcedOutage(;
@@ -190,47 +190,56 @@ end
         outage_transition_probability = 0.5,
         monitored_components = get_components(ThermalStandard, sys),
     )
-    @test Set(get_monitored_components(fo_iter)) == Set(IS.get_uuid.(gens))
+    @test get_monitored_components(fo_iter) == Set(IS.get_uuid.(gens))
+
+    # Construction silently dedups duplicate UUIDs
+    fo_dup = GeometricDistributionForcedOutage(;
+        mean_time_to_recovery = 1.0,
+        outage_transition_probability = 0.5,
+        monitored_components = [uuid1, uuid1, uuid2],
+    )
+    @test get_monitored_components(fo_dup) == Set([uuid1, uuid2])
 
     # Same for PlannedOutage and FixedForcedOutage
     po = PlannedOutage(; outage_schedule = "1", monitored_components = [gen1])
-    @test get_monitored_components(po) == [uuid1]
+    @test get_monitored_components(po) == Set([uuid1])
     ff = FixedForcedOutage(; outage_status = 1.0, monitored_components = [uuid2])
-    @test get_monitored_components(ff) == [uuid2]
+    @test get_monitored_components(ff) == Set([uuid2])
 
     # set_monitored_components! accepts UUID and Device iterables
     o = FixedForcedOutage(; outage_status = 0.0)
     set_monitored_components!(o, [uuid1])
-    @test get_monitored_components(o) == [uuid1]
+    @test get_monitored_components(o) == Set([uuid1])
     set_monitored_components!(o, [gen2])
-    @test get_monitored_components(o) == [uuid2]
+    @test get_monitored_components(o) == Set([uuid2])
     set_monitored_components!(o, Base.UUID[])
     @test isempty(get_monitored_components(o))
     # set_ also accepts a FlattenIteratorWrapper from get_components
     set_monitored_components!(o, get_components(ThermalStandard, sys))
-    @test Set(get_monitored_components(o)) == Set(IS.get_uuid.(gens))
+    @test get_monitored_components(o) == Set(IS.get_uuid.(gens))
     set_monitored_components!(o, Base.UUID[])
 
-    # add_monitored_component! with single UUID or Device, including dedupe
+    # add_monitored_component! with single UUID or Device, including dedup
     add_monitored_component!(o, uuid1)
     add_monitored_component!(o, gen2)
-    @test get_monitored_components(o) == [uuid1, uuid2]
+    @test get_monitored_components(o) == Set([uuid1, uuid2])
     add_monitored_component!(o, gen1)  # duplicate, should no-op
-    @test get_monitored_components(o) == [uuid1, uuid2]
+    @test get_monitored_components(o) == Set([uuid1, uuid2])
+    @test length(get_monitored_components(o)) == 2
 
     # add_monitored_components! with iterables: Vector, generator, FlattenIteratorWrapper
     o2 = FixedForcedOutage(; outage_status = 0.0)
     add_monitored_components!(o2, [uuid1, gen2])  # mixed UUID + Device
-    @test get_monitored_components(o2) == [uuid1, uuid2]
+    @test get_monitored_components(o2) == Set([uuid1, uuid2])
     add_monitored_components!(o2, (g for g in gens[1:2]))  # generator, all already present
-    @test get_monitored_components(o2) == [uuid1, uuid2]
+    @test get_monitored_components(o2) == Set([uuid1, uuid2])
     o3 = FixedForcedOutage(; outage_status = 0.0)
     add_monitored_components!(o3, get_components(ThermalStandard, sys))
-    @test Set(get_monitored_components(o3)) == Set(IS.get_uuid.(gens))
+    @test get_monitored_components(o3) == Set(IS.get_uuid.(gens))
 
     # remove_monitored_component! with single UUID or Device
     remove_monitored_component!(o, uuid1)
-    @test get_monitored_components(o) == [uuid2]
+    @test get_monitored_components(o) == Set([uuid2])
     remove_monitored_component!(o, gen2)
     @test isempty(get_monitored_components(o))
     # Removing absent UUID is a no-op
@@ -287,14 +296,15 @@ end
     to_json(sys, path; force = true)
     sys2 = System(path)
 
-    # Every outage must come back with the same monitored UUIDs in the same
-    # order, and each UUID must still resolve to a Device in the new system.
-    expected_uuids = IS.get_uuid.(gens)
+    # Every outage must come back with the same monitored UUIDs (set semantics —
+    # order is not preserved), and each UUID must still resolve to a Device in
+    # the new system.
+    expected_uuids = Set(IS.get_uuid.(gens))
     outages2 = collect(get_supplemental_attributes(Outage, sys2))
     @test length(outages2) == 4
     for outage in outages2
         uuids = get_monitored_components(outage)
-        @test eltype(uuids) === Base.UUID
+        @test uuids isa Set{Base.UUID}
         @test uuids == expected_uuids
         for uuid in uuids
             comp = IS.get_component(sys2, uuid)
