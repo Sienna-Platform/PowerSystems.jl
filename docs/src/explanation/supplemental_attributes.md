@@ -169,6 +169,62 @@ end
   - [`GeometricDistributionForcedOutage`](@ref)
   - [`PlannedOutage`](@ref)
 
+#### Narrowing post-contingency monitoring
+
+Every concrete [`Outage`](@ref) carries a `monitored_components` field of type
+`Vector{Base.UUID}`. It identifies the [`Device`](@ref)s whose post-contingency
+state a downstream simulation package (e.g., PowerSimulations) should model when
+this outage occurs. Limiting the list reduces the number of post-outage variables
+and constraints in security-constrained models.
+
+PowerSystems itself does not attach meaning to the contents of the list. In
+particular, an empty `monitored_components` is left for the consumer to
+interpret — typical conventions are "monitor nothing" (skip post-contingency
+modeling) or "monitor everything" (preserve full N-1 behavior). Pick the policy
+that matches your downstream model.
+
+The constructor accepts any iterable whose elements are `Base.UUID` or
+`Device` — for example a `Vector`, a generator expression, or the iterator
+returned by [`get_components`](@ref). Devices are converted to UUIDs
+internally:
+
+```julia
+gen1 = get_component(ThermalStandard, system, "gen1")
+gen2 = get_component(ThermalStandard, system, "gen2")
+outage = FixedForcedOutage(;
+    outage_status = 0.0,
+    monitored_components = [gen1, gen2],
+)
+add_supplemental_attribute!(system, gen1, outage)
+
+# Equivalent — every ThermalStandard in the system:
+outage_all = FixedForcedOutage(;
+    outage_status = 0.0,
+    monitored_components = get_components(ThermalStandard, system),
+)
+```
+
+Use the dedicated accessors to inspect or update the list at any time. The
+singular `add_/remove_*!` methods take one `UUID` or `Device`; the plural
+`add_/remove_*s!` and `set_` methods take any iterable of either.
+`set_monitored_components!` requires the list to be empty — call
+`clear_monitored_components!` first to replace an existing list:
+
+```julia
+get_monitored_components(outage)                                  # → Vector{UUID}
+clear_monitored_components!(outage)                               # wipe
+set_monitored_components!(outage, get_components(Line, system))   # populate (must be empty)
+add_monitored_component!(outage, gen2)                            # append one (deduped)
+add_monitored_components!(outage, [gen1, gen2])                   # append many
+remove_monitored_component!(outage, gen1)                         # remove one
+remove_monitored_components!(outage, [gen1, gen2])                # remove many
+```
+
+When `system.runchecks == true`, `add_supplemental_attribute!` resolves each
+UUID against the parent system and raises an `ArgumentError` for any UUID that
+does not point to a `Device` in the system. With `runchecks = false`, UUIDs are
+accepted as-is and resolution is deferred to the consumer.
+
 ### Plant Attributes
 
 Plant attributes are a specialized category of supplemental attributes for grouping individual

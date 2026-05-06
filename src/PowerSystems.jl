@@ -311,6 +311,13 @@ export FixedForcedOutage
 export get_mean_time_to_recovery
 export get_outage_transition_probability
 export get_outage_schedule
+export get_monitored_components
+export set_monitored_components!
+export clear_monitored_components!
+export add_monitored_component!
+export add_monitored_components!
+export remove_monitored_component!
+export remove_monitored_components!
 
 # Impedance Correction Data
 export ImpedanceCorrectionData
