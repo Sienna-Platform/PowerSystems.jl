@@ -293,4 +293,24 @@ end
     @test get_regulated_bus_number(sa_kw) == 7
     set_control_mode!(sa_kw, SwitchedAdmittanceControlMode.CONTINUOUS_VOLTAGE)
     @test get_control_mode(sa_kw) == SwitchedAdmittanceControlMode.CONTINUOUS_VOLTAGE
+
+    # SwitchedAdmittance: number_engaged (PSS/E Si) and solved_admittance (PSS/E BINIT).
+    # Both default to their unset values, and power flow writes back to each.
+    @test get_number_engaged(sa) == Int[]
+    @test isnothing(get_solved_admittance(sa))
+
+    sa_solved = SwitchedAdmittance(;
+        name = "sa2", available = true, bus = ACBus(nothing), Y = 1.0 + 0.0im,
+        number_engaged = [2, 1],
+        number_of_steps = [4, 3],
+        Y_increase = [0.0 + 0.1im, 0.0 + 0.2im],
+        solved_admittance = 0.35,
+    )
+    @test get_number_engaged(sa_solved) == [2, 1]
+    @test get_solved_admittance(sa_solved) == 0.35
+    # Both fields are written back by the power flow solve, so both stay settable.
+    set_number_engaged!(sa_solved, [3, 0])
+    @test get_number_engaged(sa_solved) == [3, 0]
+    set_solved_admittance!(sa_solved, nothing)
+    @test isnothing(get_solved_admittance(sa_solved))
 end

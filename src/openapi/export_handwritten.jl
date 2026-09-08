@@ -684,6 +684,9 @@ end
 # Mirrors `FixedAdmittance`: `Y`/`Y_increase` are fixed-natural COMPONENT_MVAR-on-system-base
 # in both methods, so `NaturalUnit` delegates to `DeviceBaseUnit`.
 
+_switched_admittance_solved_po(value, base_power) =
+    isnothing(value) ? nothing : value * base_power
+
 function to_openapi(shunt::SwitchedAdmittance, refs::OpenAPIRefs, ::DeviceBaseUnit)
     base_power = get_base_power(refs)
     y_increase = [
@@ -696,9 +699,13 @@ function to_openapi(shunt::SwitchedAdmittance, refs::OpenAPIRefs, ::DeviceBaseUn
         bus = component_id(refs, get_bus(shunt)),
         admittance_units = "COMPONENT_MVAR",
         Y = _complex_number_po(get_Y(shunt) * base_power),
-        initial_status = get_initial_status(shunt),
+        number_engaged = get_number_engaged(shunt),
         number_of_steps = get_number_of_steps(shunt),
         Y_increase = y_increase,
+        solved_admittance = _switched_admittance_solved_po(
+            get_solved_admittance(shunt),
+            base_power,
+        ),
         admittance_limits = _minmax_po(get_admittance_limits(shunt)),
         control_mode = string(get_control_mode(shunt)),
         regulated_bus_number = get_regulated_bus_number(shunt),
