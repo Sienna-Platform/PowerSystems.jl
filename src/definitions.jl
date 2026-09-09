@@ -105,8 +105,8 @@ modeled during system disturbances and stability analysis.
 IS.@scoped_enum(
     OperationalStates,
     OFFLINE = 0,
-    STARTUP = 1,
-    ONLINE = 2,
+    ONLINE = 1,
+    STARTUP = 2,
     SHUTDOWN = 3,
 )
 @doc"
@@ -115,8 +115,8 @@ The running on/off lifecycle of an in-service committable unit. Mutually exclusi
 | Value      | Description                                    |
 |:---------- |:----------------------------------------------- |
 | `OFFLINE`  | Shut down and not synchronized                  |
-| `STARTUP`  | In its start-up sequence                        |
 | `ONLINE`   | Synchronized and able to produce                |
+| `STARTUP`  | In its start-up sequence                        |
 | `SHUTDOWN` | In its shut-down sequence                       |
 
 Availability is not one of these values: a unit on outage is `available = false`, and an
@@ -561,7 +561,8 @@ IS.@scoped_enum(
 @doc"
 HydroPumpTurbineStatus
 
-Operating status of a pumped‑storage hydro unit.
+Which mode a pumped‑storage hydro unit is operating in, stored in its `operating_mode` field.
+The on/off lifecycle is separate, in `status::OperationalStates`.
 
 Values
 - OFF = 0: Unit is idle — neither generating nor pumping.

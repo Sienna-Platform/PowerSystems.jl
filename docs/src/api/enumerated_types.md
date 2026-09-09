@@ -103,25 +103,31 @@ EIA Annual Energy Review. `ThermalFuels` has the options:
 
 ## [Operational States](@id opstate_list)
 
-Each committable [`ThermalGen`](@ref) generator, as well as [`HydroDispatch`](@ref) and
-[`HybridSystem`](@ref), has a field for `status::OperationalStates`, the running on/off
-lifecycle of an in-service unit. `OperationalStates` values are mutually exclusive:
+Each committable [`ThermalGen`](@ref) generator, as well as [`HydroDispatch`](@ref),
+[`HydroTurbine`](@ref), [`HydroPumpTurbine`](@ref) and [`HybridSystem`](@ref), has a field
+for `status::OperationalStates`, the running on/off lifecycle of an in-service unit.
+`OperationalStates` values are mutually exclusive:
 
 | Name       | Description                      |
 |:---------- |:-------------------------------- |
 | `OFFLINE`  | Shut down and not synchronized   |
-| `STARTUP`  | In its start-up sequence         |
 | `ONLINE`   | Synchronized and able to produce |
+| `STARTUP`  | In its start-up sequence         |
 | `SHUTDOWN` | In its shut-down sequence        |
 
 Availability is not one of these values: a unit on outage is `available = false`, and an
 `OFFLINE` unit that is `available = true` is in service and eligible for re-commitment.
 
+[`HydroPumpTurbine`](@ref) keeps its pumping/generating mode in a separate
+`operating_mode::HydroPumpTurbineStatus` field; `status` there is the same lifecycle as
+everywhere else.
+
 ## [Commitment Modes](@id commit_list)
 
-Each committable [`ThermalGen`](@ref) generator has a field for
-`commitment_mode::CommitmentModes`, why the unit is (or would be) committed, orthogonal to
-`OperationalStates`. `CommitmentModes` has the options:
+Each committable [`ThermalGen`](@ref) generator, as well as [`HydroTurbine`](@ref) and
+[`HydroPumpTurbine`](@ref), has a field for `commitment_mode::CommitmentModes`, why the unit
+is (or would be) committed, orthogonal to `OperationalStates`. `CommitmentModes` has the
+options:
 
 | Name             | Description                                                                                        |
 |:---------------- |:-------------------------------------------------------------------------------------------------- |

@@ -709,6 +709,7 @@ export get_normal_branch_status
 export get_number
 export get_number_of_steps
 export get_number_of_tap_positions
+export get_operating_mode
 export get_operation_cost
 export get_outflow
 export get_outflow_limits
@@ -1425,6 +1426,7 @@ export set_normal_branch_status!
 export set_number!
 export set_number_of_steps!
 export set_number_of_tap_positions!
+export set_operating_mode!
 export set_operation_cost!
 export set_outflow!
 export set_outflow_limits!

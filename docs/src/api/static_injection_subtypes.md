@@ -54,8 +54,9 @@ Here, "`MinMax` (optional)" means `Union{MinMax, Nothing}`, with `nothing` repes
 | `rating`           | ✅        | ✅                           | ✅                              | ✅                       | ✅                      | ✅                          |
 | `prime_mover_type` | ✅        | ✅                           | ✅                              | ✅                       | ✅                      | ✅                          |
 | `fuel`             | ✅        | ❌                           | ❌                              | ❌                       | ❌                      | ❌                          |
-| `status`           | ✅        | ❌                           | ❌                              | ✅                       | ❌                      | ✅                          |
-| `commitment_mode`  | ✅        | ❌                           | ❌                              | ❌                       | ❌                      | ✅                          |
+| `status`           | ✅        | ❌                           | ❌                              | ✅                       | ✅                      | ✅                          |
+| `operating_mode`   | ❌        | ❌                           | ❌                              | ❌                       | ❌                      | ✅                          |
+| `commitment_mode`  | ✅        | ❌                           | ❌                              | ❌                       | ✅                      | ✅                          |
 | `ramp_limits`      | ✅        | ❌                           | ❌                              | ✅                       | ✅                      | ✅                          |
 | `time_limits`      | ✅        | ❌                           | ❌                              | ✅                       | ✅                      | ✅                          |
 | `power_factor`     | ❌        | ✅                           | ✅                              | ❌                       | ❌                      | ❌                          |
