@@ -23,16 +23,18 @@ const STRING_TO_UNIT = Dict{String, Any}(
     "DU" => DU,
     "SU" => SU,
     # Canonical Unitful (matches output of `string(unit)`)
-    "MW" => MW,
+    "MW" => u"MW",
+    # PSY's own `@unit` definitions; `u"MVA"`/`u"MVAr"` resolve downstream but not
+    # here, since `Unitful.register(PowerSystems)` runs after this file precompiles.
     "MVAr" => MVAr,
     "MVA" => MVA,
-    "kV" => kV,
-    "Ω" => OHMS,
-    "S" => SIEMENS,
+    "kV" => u"kV",
+    "Ω" => u"Ω",
+    "S" => u"S",
     "kA" => u"kA",
     # Aliases
-    "ohm" => OHMS,
-    "siemens" => SIEMENS,
+    "ohm" => u"Ω",
+    "siemens" => u"S",
 )
 
 """

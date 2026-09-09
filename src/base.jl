@@ -471,8 +471,8 @@ _get_base_power(sys::System) = sys.base_power
 Return the system's base power as a bare `Float64` in natural units (MVA).
 
 Like the component accessor, `base_power` is always natural units: an optional
-units argument must be `NU` or a power-dimensioned `Unitful` unit (e.g. `MW`,
-`MVA`). Per-unit bases (`SU`, `DU`) and non-power units error. For the
+units argument must be `NU` or a power-dimensioned `Unitful` unit (e.g. `u"MW"`,
+`u"MVA"`). Per-unit bases (`SU`, `DU`) and non-power units error. For the
 unit-bearing value see [`get_base_power_unitful`](@ref).
 """
 get_base_power(sys::System) = _get_base_power(sys)

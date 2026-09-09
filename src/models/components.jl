@@ -105,14 +105,14 @@ get_base_voltage(c::ThreeWindingTransformer) = error(
 # expressing it in a per-unit base (`SU`/`DU`) is circular. Unlike every other
 # field accessor, `get_base_power`/`set_base_power!` therefore need *no* units
 # argument; an explicit one is accepted only when it denotes natural units —
-# `NU`, or a power-dimensioned `Unitful` unit such as `MW`/`MVA`.
+# `NU`, or a power-dimensioned `Unitful` unit such as `u"MW"`/`u"MVA"`.
 
 """
 Get a component's `base_power` as a bare `Float64` in natural units (MVA).
 
 `get_base_power(c)` returns the stored MVA value. An optional units argument is
 accepted but must denote natural units: `NU`, or a power-dimensioned `Unitful`
-unit (e.g. `MW`, `MVA`). Per-unit bases (`SU`, `DU`) and non-power units error —
+unit (e.g. `u"MW"`, `u"MVA"`). Per-unit bases (`SU`, `DU`) and non-power units error —
 `base_power` is only meaningful in absolute power. See
 [`get_base_power_unitful`](@ref) for the unit-bearing value.
 """
@@ -136,7 +136,7 @@ get_base_power_unitful(::Component, u::AbstractRelativeUnit) =
 Set a component's `base_power` (stored as a bare MVA `Float64`).
 
 Accepts a bare `Float64` (interpreted as MVA) or a power-dimensioned
-`Unitful.Quantity` (e.g. `80.0 * MW`, `90.0 * MVA`). Per-unit inputs (`SU`, `DU`)
+`Unitful.Quantity` (e.g. `80.0 * u"MW"`, `90.0 * u"MVA"`). Per-unit inputs (`SU`, `DU`)
 and non-power units error: `base_power` is only meaningful in absolute power.
 """
 set_base_power!(c::Component, val::Float64) = _set_base_power!(base_power_kind(c), c, val)
@@ -162,7 +162,7 @@ function _base_power_units_error(u)
     throw(
         ArgumentError(
             "base_power is always in natural units (MVA). Pass no units, `NU`, " *
-            "or a power-dimensioned Unitful unit such as `MW` or `MVA`; got `$u`. " *
+            "or a power-dimensioned Unitful unit such as `u\"MW\"` or `u\"MVA\"`; got `$u`. " *
             "Per-unit bases (`SU`, `DU`) are not valid for base_power.",
         ),
     )
@@ -182,7 +182,7 @@ IS.default_units(::Component) = SU
 # Units-aware get_value / set_value
 #
 # Fields are stored internally in device base (DU); `get_value` converts from
-# DU to a requested target (e.g., MW, SU).
+# DU to a requested target (e.g., `u"MW"`, `SU`).
 #######################################################
 
 """
@@ -190,7 +190,7 @@ IS.default_units(::Component) = SU
 
 Get `c`'s field value, converting from device-base storage to `units`.
 Returns a `RelativeQuantity` (for DU/SU targets) or a `Unitful.Quantity` (for
-natural units like MW). Public getters wrap this in `_strip_units` for the
+natural units like `u"MW"`). Public getters wrap this in `_strip_units` for the
 bare-number form, with `_unitful` companions returning the wrapped value.
 """
 function get_value(c::UnitsBearer, field::Val{T}, conversion_unit, units::UnitArg) where {T}
@@ -378,11 +378,11 @@ _unit_category(::Val{:siemens}) = ADMITTANCE
 #######################################################
 
 # Natural unit to suggest for each conversion-unit token.
-_natural_unit_example(::Val{:mw}) = "MW"
-_natural_unit_example(::Val{:mvar}) = "MVAr"
-_natural_unit_example(::Val{:mva}) = "MVA"
-_natural_unit_example(::Val{:ohm}) = "OHMS"
-_natural_unit_example(::Val{:siemens}) = "SIEMENS"
+_natural_unit_example(::Val{:mw}) = "u\"MW\""
+_natural_unit_example(::Val{:mvar}) = "u\"MVAr\""
+_natural_unit_example(::Val{:mva}) = "u\"MVA\""
+_natural_unit_example(::Val{:ohm}) = "u\"Ω\""
+_natural_unit_example(::Val{:siemens}) = "u\"S\""
 
 # Which field the message is about. `field` is a `Val` on the generated paths and
 # `nothing` where a hand-written caller did not supply one.

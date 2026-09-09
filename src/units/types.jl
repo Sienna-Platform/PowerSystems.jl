@@ -5,21 +5,24 @@
 # `RelativeQuantity`) live in InfrastructureSystems and are re-exported from
 # this package. This file adds the power-domain Unitful units and the
 # `UnitArg` convenience union.
+#
+# Natural units are spelled with Unitful's `u"..."` string macro only — there
+# are no `MW`/`kV`/`OHMS`/`SIEMENS` constants to export. One notation, and it is
+# Unitful's own, so `u"kW"`, `u"mΩ"` and every other Unitful spelling work the
+# same way the handful of aliases used to.
 ###############################
 
-# Power-system-specific natural units (same dimension as MW, different display)
+# Power-system-specific natural units (same dimension as MW, different display).
+# `Unitful.register(PowerSystems)` in `__init__` makes these reachable from the
+# `u"..."` string macro downstream (`u"MVA"`, `u"MVAr"`). Registration happens at
+# load time, though, so PSY's own source cannot spell them that way during its
+# precompile — internal call sites use the bare constants these define.
 @unit MVAr "MVAr" MVAr 1u"MW" false
 @unit MVA "MVA" MVA 1u"MW" false
 
-# Re-export common Unitful units for power systems
-const MW = u"MW"
-const kV = u"kV"
-const OHMS = u"Ω"
-const SIEMENS = u"S"
-
 """
 Accepted target-unit argument for unit-aware getters/setters: a Unitful unit
-(e.g. `MW`, `kV`) or a relative per-unit marker (`DU`, `SU`, `NU`).
+(e.g. `u"MW"`, `u"kV"`) or a relative per-unit marker (`DU`, `SU`, `NU`).
 """
 const UnitArg = Union{Unitful.Units, IS.AbstractUnitSystem}
 

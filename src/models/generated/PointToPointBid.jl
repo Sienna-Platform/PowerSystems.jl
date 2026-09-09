@@ -143,6 +143,10 @@ function from_openapi(po::PO.PointToPointBid, refs::OpenAPIRefs, ::NaturalUnit)
     )
 end
 
+function from_openapi(po::PO.PointToPointBid, refs::OpenAPIRefs)
+    return from_openapi(po, refs, DU)
+end
+
 function to_openapi(value::PointToPointBid, refs::OpenAPIRefs, ::DeviceBaseUnit)
     return PO.PointToPointBid(;
         id = component_id(refs, value),

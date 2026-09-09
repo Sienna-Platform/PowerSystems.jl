@@ -1008,8 +1008,8 @@ end
     add_component!(sys_100, refs_100[31])
     tmodel_100 = PSY.from_openapi(tmodel_po, refs_100)
     add_component!(sys_100, tmodel_100)
-    @test get_active_power_flow(tmodel_100, MW) == 125.0
-    @test get_active_power_limits_from(tmodel_100, MW) == (min = -250.0, max = 250.0)
+    @test get_active_power_flow(tmodel_100, u"MW") == 125.0
+    @test get_active_power_limits_from(tmodel_100, u"MW") == (min = -250.0, max = 250.0)
     @test get_base_current(tmodel_100) == 200.0
 
     # Default import kwarg is 100.0 (see `from_openapi(::Type{System}, doc)`); a mismatched
@@ -1020,8 +1020,8 @@ end
     add_component!(sys_250, refs_250[31])
     tmodel_250 = PSY.from_openapi(tmodel_po, refs_250)
     add_component!(sys_250, tmodel_250)
-    @test get_active_power_flow(tmodel_250, MW) == 125.0
-    @test get_active_power_limits_to(tmodel_250, MW) == (min = -250.0, max = 250.0)
+    @test get_active_power_flow(tmodel_250, u"MW") == 125.0
+    @test get_active_power_limits_to(tmodel_250, u"MW") == (min = -250.0, max = 250.0)
 end
 
 @testset "OpenAPI converters: AreaInterchange (generated)" begin

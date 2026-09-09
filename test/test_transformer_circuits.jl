@@ -58,9 +58,9 @@ end
 
     # Ω input divides by the circuit impedance base V²/base_power.
     z_base = 138.0^2 / 20.0
-    set_x!(c, 0.3 * z_base * OHMS)
+    set_x!(c, 0.3 * z_base * u"Ω")
     @test get_x(c, DU) ≈ 0.3
-    @test get_x(c, OHMS) ≈ 0.3 * z_base
+    @test get_x(c, u"Ω") ≈ 0.3 * z_base
 end
 
 @testset "TransformerCircuit detached errors cleanly on SU" begin
@@ -219,7 +219,7 @@ end
     @test get_magnetizing_shunt(t, NU) ≈ 0.05 * (20.0 / 138.0^2)
     # S input divides by the admittance base base_power/V².
     y_base = 20.0 / 138.0^2
-    set_magnetizing_shunt!(t, (4.0 * y_base) * SIEMENS)
+    set_magnetizing_shunt!(t, (4.0 * y_base) * u"S")
     @test get_magnetizing_shunt(t, DU) ≈ 4.0
 end
 
@@ -232,7 +232,7 @@ end
     @test get_magnetizing_shunt(t, SU) ≈ 0.05 * (15.0 / 100.0)
     @test get_magnetizing_shunt(t, NU) ≈ 0.05 * (15.0 / 230.0^2)
     y_base = 15.0 / 230.0^2
-    set_magnetizing_shunt!(t, (3.0 * y_base) * SIEMENS)
+    set_magnetizing_shunt!(t, (3.0 * y_base) * u"S")
     @test get_magnetizing_shunt(t, DU) ≈ 3.0
 end
 

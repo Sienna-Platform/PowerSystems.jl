@@ -45,7 +45,7 @@ abstract type UnitCategory end
 Supertype of the three power categories. Active, reactive, and apparent power share
 one dimension and one per-unit base (the device/system base power), so every base and
 ratio rule below is written once against this supertype; the categories differ only in
-which natural unit they print as (`MW` / `MVAr` / `MVA`).
+which natural unit they print as (`u"MW"` / `u"MVAr"` / `u"MVA"`).
 """
 abstract type AbstractPowerCategory <: UnitCategory end
 
@@ -74,7 +74,10 @@ const CURRENT = CurrentCategory()
 
 The natural (physical) unit for this category.
 """
-natural_unit(::ActivePowerCategory) = MW
+# `MVAr`/`MVA` are PSY's own `@unit` definitions, reachable downstream as
+# `u"MVAr"`/`u"MVA"` but not from `u"..."` inside PSY itself — registration with
+# Unitful happens in `__init__`, after this file has been precompiled.
+natural_unit(::ActivePowerCategory) = u"MW"
 natural_unit(::ReactivePowerCategory) = MVAr
 natural_unit(::ApparentPowerCategory) = MVA
 natural_unit(::ImpedanceCategory) = u"Ω"
@@ -135,8 +138,8 @@ Convert a value between unit systems.
 
 # Examples
 ```julia
-convert_units(gen, 0.6, ACTIVE_POWER, DU, MW)       # → 30.0 MW
-convert_units(gen, 30.0MW, ACTIVE_POWER, MW, DU)    # → 0.6 DU
+convert_units(gen, 0.6, ACTIVE_POWER, DU, u"MW")       # → 30.0 MW
+convert_units(gen, 30.0u"MW", ACTIVE_POWER, u"MW", DU) # → 0.6 DU
 convert_units(gen, 0.6, ACTIVE_POWER, DU, SU)       # → 0.3 SU
 ```
 """
