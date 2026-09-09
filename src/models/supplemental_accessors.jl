@@ -211,17 +211,17 @@ supports_reactive_power(::InterconnectingConverter) = false
 # threshold, so negligible admittances do not force their host bus to be kept.
 _nonzero_admittance(x::Real) = abs(x) > ZERO_ADMITTANCE_THRESHOLD
 
-# FixedAdmittance / SwitchedAdmittance support active power via conductance
+# FixedAdmittance supports active power via conductance
 # (real(Y)) and reactive power via susceptance (imag(Y)), so capability is
 # parameter-dependent rather than a fixed type property.
 supports_active_power(d::FixedAdmittance) = _nonzero_admittance(real(get_Y(d)))
 supports_reactive_power(d::FixedAdmittance) = _nonzero_admittance(imag(get_Y(d)))
 
-# SwitchedAdmittance can also shift admittance via per-block switchable steps, so
-# capability includes the base Y and any block with steps and an above-threshold
-# increment in the relevant component.
+# SwitchedAdmittance has no fixed admittance: it shifts admittance only via the
+# per-block switchable steps, so capability is any block with steps and an
+# above-threshold increment in the relevant component. `solved_admittance` is a
+# susceptance, so it can additionally establish reactive support.
 function supports_active_power(d::SwitchedAdmittance)
-    _nonzero_admittance(real(get_Y(d))) && return true
     return any(
         n > 0 && _nonzero_admittance(real(yi))
         for (n, yi) in zip(get_number_of_steps(d), get_Y_increase(d))
@@ -229,7 +229,8 @@ function supports_active_power(d::SwitchedAdmittance)
 end
 
 function supports_reactive_power(d::SwitchedAdmittance)
-    _nonzero_admittance(imag(get_Y(d))) && return true
+    solved = get_solved_admittance(d)
+    !isnothing(solved) && _nonzero_admittance(solved) && return true
     return any(
         n > 0 && _nonzero_admittance(imag(yi))
         for (n, yi) in zip(get_number_of_steps(d), get_Y_increase(d))

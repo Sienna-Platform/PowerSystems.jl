@@ -2969,7 +2969,7 @@
         },
         {
             "struct_name": "SwitchedAdmittance",
-            "docstring": "A switched admittance, with discrete steps to adjust the admittance.\n\nMost often used in power flow studies, iterating over the steps to see impacts of admittance on the results. Total admittance is calculated as: `Y` + `number_engaged` * `Y_increase`, unless `solved_admittance` is set, in which case that value is the effective admittance",
+            "docstring": "A switched admittance, with discrete steps to adjust the admittance.\n\nMost often used in power flow studies, iterating over the steps to see impacts of admittance on the results. Total admittance is `number_engaged` * `Y_increase`, unless `solved_admittance` is set, in which case that value is the effective admittance. There is no fixed base admittance: a PSS/E SWITCHED SHUNT record carries only BINIT and the per-block increments",
             "fields": [
                 {
                     "null_value": "init",
@@ -2989,12 +2989,6 @@
                     "comment": "Bus that this component is connected to",
                     "null_value": "ACBus(nothing)",
                     "data_type": "ACBus"
-                },
-                {
-                    "name": "Y",
-                    "comment": "Initial admittance at N = 0",
-                    "null_value": "0.0 + 0.0im",
-                    "data_type": "Complex{Float64}"
                 },
                 {
                     "name": "number_engaged",
@@ -3019,7 +3013,7 @@
                 },
                 {
                     "name": "solved_admittance",
-                    "comment": "Solved-case switched shunt admittance (PSS/E `BINIT`), or `nothing` when unset. When non-`nothing`, this value is the shunt's effective admittance, used in place of `Y` + `number_engaged` \u22c5 `Y_increase`; power flow writes the solved-for admittance back to this field. Set it only when the case is to be treated as solved as read in, or when the device is locked (`control_mode == SwitchedAdmittanceControlMode.FIXED`).",
+                    "comment": "Solved-case switched shunt admittance (PSS/E `BINIT`), or `nothing` when unset. When non-`nothing`, this value is the shunt's effective admittance, used in place of `number_engaged` \u22c5 `Y_increase`; power flow writes the solved-for admittance back to this field. Set it only when the case is to be treated as solved as read in, or when the device is locked (`control_mode == SwitchedAdmittanceControlMode.FIXED`).",
                     "null_value": "nothing",
                     "data_type": "Union{Nothing, Float64}",
                     "default": "nothing"

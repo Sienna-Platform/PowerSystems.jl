@@ -124,19 +124,20 @@ end
         FixedAdmittance(; name = "fa_tiny", available = true, bus = ACBus(nothing),
             Y = 1e-6 + 1e-6im),
     ) == false
-    @test supports_active_power(SwitchedAdmittance(nothing)) == false  # Y = 0, no blocks
-    @test supports_active_power(
-        SwitchedAdmittance(; name = "sa_g", available = true, bus = ACBus(nothing),
-            Y = 1.0 + 0.0im),
-    ) == true
-    # Zero base Y, but a switchable block adds real (active) admittance.
+    @test supports_active_power(SwitchedAdmittance(nothing)) == false  # no blocks
+    # A switchable block adds real (active) admittance.
     @test supports_active_power(
         SwitchedAdmittance(; name = "sa_gstep", available = true, bus = ACBus(nothing),
-            Y = 0.0 + 0.0im, number_of_steps = [2], Y_increase = [1.0 + 0.0im]),
+            number_of_steps = [2], Y_increase = [1.0 + 0.0im]),
     ) == true
     @test supports_active_power(
         SwitchedAdmittance(; name = "sa_bstep", available = true, bus = ACBus(nothing),
-            Y = 0.0 + 0.0im, number_of_steps = [2], Y_increase = [0.0 + 1.0im]),
+            number_of_steps = [2], Y_increase = [0.0 + 1.0im]),
+    ) == false
+    # A solved susceptance is reactive only: it never establishes active support.
+    @test supports_active_power(
+        SwitchedAdmittance(; name = "sa_solved_g", available = true, bus = ACBus(nothing),
+            solved_admittance = 1.0),
     ) == false
 
     # FACTSControlDevice active power depends on control_mode (true only for NML)
@@ -173,20 +174,25 @@ end
         FixedAdmittance(; name = "fa_tiny2", available = true, bus = ACBus(nothing),
             Y = 1e-6 + 1e-6im),
     ) == false
-    @test supports_reactive_power(SwitchedAdmittance(nothing)) == false  # Y = 0, no blocks
-    @test supports_reactive_power(
-        SwitchedAdmittance(; name = "sa_b", available = true, bus = ACBus(nothing),
-            Y = 0.0 + 1.0im),
-    ) == true
-    # Zero base Y, but a switchable block adds susceptance (reactive).
+    @test supports_reactive_power(SwitchedAdmittance(nothing)) == false  # no blocks
+    # A switchable block adds susceptance (reactive).
     @test supports_reactive_power(
         SwitchedAdmittance(; name = "sa_bstep2", available = true, bus = ACBus(nothing),
-            Y = 0.0 + 0.0im, number_of_steps = [2], Y_increase = [0.0 + 1.0im]),
+            number_of_steps = [2], Y_increase = [0.0 + 1.0im]),
     ) == true
     # A block with steps but a below-threshold increment does not count.
     @test supports_reactive_power(
         SwitchedAdmittance(; name = "sa_tinystep", available = true, bus = ACBus(nothing),
-            Y = 0.0 + 0.0im, number_of_steps = [2], Y_increase = [0.0 + 1e-6im]),
+            number_of_steps = [2], Y_increase = [0.0 + 1e-6im]),
+    ) == false
+    # A solved susceptance establishes reactive support on its own.
+    @test supports_reactive_power(
+        SwitchedAdmittance(; name = "sa_solved_b", available = true, bus = ACBus(nothing),
+            solved_admittance = 1.0),
+    ) == true
+    @test supports_reactive_power(
+        SwitchedAdmittance(; name = "sa_solved_tiny", available = true,
+            bus = ACBus(nothing), solved_admittance = 1e-6),
     ) == false
 
     # FACTSControlDevice reactive power depends on control_mode
@@ -285,7 +291,7 @@ end
     @test get_regulated_bus_number(sa) == 0
 
     sa_kw = SwitchedAdmittance(;
-        name = "sa1", available = true, bus = ACBus(nothing), Y = 1.0 + 0.0im,
+        name = "sa1", available = true, bus = ACBus(nothing),
         control_mode = SwitchedAdmittanceControlMode.DISCRETE_VOLTAGE,
         regulated_bus_number = 7,
     )
@@ -300,7 +306,7 @@ end
     @test isnothing(get_solved_admittance(sa))
 
     sa_solved = SwitchedAdmittance(;
-        name = "sa2", available = true, bus = ACBus(nothing), Y = 1.0 + 0.0im,
+        name = "sa2", available = true, bus = ACBus(nothing),
         number_engaged = [2, 1],
         number_of_steps = [4, 3],
         Y_increase = [0.0 + 0.1im, 0.0 + 0.2im],
