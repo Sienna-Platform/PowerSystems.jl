@@ -192,32 +192,38 @@ function test_accessors(component)
 end
 
 """
-Round-trip `sys` through a `to_file`/`from_file` bundle (`format = :json`, default) or archive
-(`format = :sienna`) and return the rebuilt system.
+Round-trip `sys` through `to_file`/`from_file` and return the rebuilt system.
+
+`form` picks which of the three `to_file` writes to exercise: `:directory` (default),
+`:document` (a `.json` file plus its stem-named sidecar) or `:archive` (a `.sn` file).
 
 The serde itself is tested once, in `test_openapi_file_io.jl`. Use this only where a test needs
 a restored system to check that some *component* survives conversion. A document carries
 component ids rather than UUIDs and does not carry component `ext`, so neither survives.
-`format = :sienna` only ever writes `:component_base`, same as `to_file` itself — passing a
-non-default `unit_system` with it throws.
+`:archive` only ever writes on `DU`, same as `to_file` itself — passing any other `units` with
+it throws.
 """
 function roundtrip_system(
     sys::System;
-    format::Symbol = :json,
-    unit_system::Symbol = :component_base,
+    form::Symbol = :directory,
+    units::IS.AbstractUnitSystem = PSY.DU,
     kwargs...,
 )
     dir = mktempdir()
-    if format === :json
+    if form === :directory
         bundle = joinpath(dir, "case")
-        to_file(sys, bundle; unit_system = unit_system, force = true)
+        to_file(sys, bundle; units = units, force = true)
         return from_file(bundle; kwargs...)
-    elseif format === :sienna
+    elseif form === :document
+        document = joinpath(dir, "case.json")
+        to_file(sys, document; units = units, force = true)
+        return from_file(document; kwargs...)
+    elseif form === :archive
         archive = joinpath(dir, "case.sn")
-        to_file(sys, archive; format = :sienna, unit_system = unit_system, force = true)
+        to_file(sys, archive; units = units, force = true)
         return from_file(archive; kwargs...)
     else
-        error("format = $format is not supported")
+        error("form = $form is not supported. Use :directory, :document or :archive.")
     end
 end
 

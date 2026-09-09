@@ -256,26 +256,27 @@ function System(file_path::AbstractString; kwargs...)
     if ext == ".json"
         throw(
             DataFormatError(
-                "System($(repr(file_path))) no longer deserializes a system. The old " *
-                "single-file native JSON format has no reader anymore. from_file reads a " *
-                "bundle directory or a $SIENNA_ARCHIVE_EXTENSION archive written by to_file — " *
-                "a single .json path is neither. A system serialized in the old format must " *
-                "be rebuilt from source and re-serialized with the current to_file.",
+                "System($(repr(file_path))) no longer deserializes a system. Use " *
+                "from_file($(repr(file_path))) instead — but note it reads the OpenAPI " *
+                "document written by to_file, not the old single-file native JSON format, " *
+                "which has no reader anymore. A system serialized in that format must be " *
+                "rebuilt from source and re-serialized with the current to_file.",
             ),
         )
     elseif ext in (".raw", ".m")
         throw(
             DataFormatError(
-                "PowerSystems.jl no longer parses $ext files. Use PowerFlowFileParser.jl to " *
-                "parse this file into a System.",
+                "PowerSystems.jl no longer parses $ext files. Parsing is two steps and two " *
+                "packages: PowerFlowFileParser.jl reads the file into an OpenAPI system " *
+                "document, and from_openapi/from_file builds the System from it.",
             ),
         )
     else
         throw(
             DataFormatError(
                 "$(repr(file_path)) is not a supported way to construct a System. Use " *
-                "from_file for a serialized bundle/archive, or PowerFlowFileParser.jl for a " *
-                "Matpower/PSSE file.",
+                "from_file for a serialized bundle/archive, or PowerFlowFileParser.jl " *
+                "followed by from_openapi for a Matpower/PSSE file.",
             ),
         )
     end

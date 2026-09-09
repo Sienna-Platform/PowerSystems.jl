@@ -842,7 +842,7 @@ end
 
     # to_openapi's output is from_openapi's input directly: both sides speak SystemDocument,
     # so the round-trip needs no re-serialization through JSON.
-    out = PSY.to_openapi(sys; power_units = :component_base)
+    out = PSY.to_openapi(sys; units = DU)
     sys2 = PSY.from_openapi(System, out)
     group2 = only(get_components(GroupReserve, sys2))
     @test get_name.(get_contributing_services(group2)) == ["spin_up_member"]
@@ -851,7 +851,7 @@ end
 @testset "OpenAPI export: TradingHub membership round-trip" begin
     sys, b1, b2, hub = _market_hub_fixture()
 
-    out = PSY.to_openapi(sys; power_units = :component_base)
+    out = PSY.to_openapi(sys; units = DU)
     sys2 = PSY.from_openapi(System, out)
     hub2 = only(get_components(TradingHub, sys2))
     @test get_name.(get_associated_buses(hub2)) == ["b1", "b2"]
@@ -859,7 +859,7 @@ end
 
 @testset "OpenAPI import: duplicate trading hub bus association errors loudly" begin
     sys, b1, b2, hub = _market_hub_fixture()
-    out = PSY.to_openapi(sys; power_units = :component_base)
+    out = PSY.to_openapi(sys; units = DU)
     duplicate_row = deepcopy(first(out.trading_hub_associations))
     push!(out.trading_hub_associations, duplicate_row)
     @test_throws ArgumentError PSY.from_openapi(System, out)
@@ -997,7 +997,7 @@ end
         device_doc = deepcopy(doc)
         set_all_power_units!(device_doc, "COMPONENT_BASE")
         sys = PSY.from_openapi(System, to_test_document(device_doc))
-        out = PSY.to_openapi(sys; power_units = :component_base)
+        out = PSY.to_openapi(sys; units = DU)
         gen_out = only(PSY.PD.get_components(out, "ThermalStandard"))
         @test gen_out.power_units == "COMPONENT_BASE"
         @test gen_out.active_power == 50.0
@@ -1009,7 +1009,7 @@ end
 
     @testset "NATURAL_UNITS -> PSY -> NATURAL_UNITS is approximate only" begin
         sys = PSY.from_openapi(System, to_test_document(doc))
-        out = PSY.to_openapi(sys; power_units = :natural_units)
+        out = PSY.to_openapi(sys; units = NU)
         gen_out = only(PSY.PD.get_components(out, "ThermalStandard"))
         @test gen_out.power_units == "NATURAL_UNITS"
         gen_in = only(doc["components"]["ThermalStandard"])
@@ -1022,7 +1022,7 @@ end
 
     @testset "bustype SLACK round-trips as SLACK" begin
         sys = PSY.from_openapi(System, to_test_document(doc))
-        out = PSY.to_openapi(sys; power_units = :natural_units)
+        out = PSY.to_openapi(sys; units = NU)
         bus1_out = first(b for b in PSY.PD.get_components(out, "ACBus") if b.number == 1)
         @test bus1_out.bustype == "SLACK"
     end
@@ -1030,7 +1030,7 @@ end
     @testset "to_openapi with an unmapped power_units errors" begin
         sys = System(100.0)
         add_component!(sys, ACBus(nothing))
-        @test_throws ErrorException PSY.to_openapi(sys; power_units = :bogus_units)
+        @test_throws ErrorException PSY.to_openapi(sys; units = SU)
     end
 
     @testset "Line.base_power on export == get_base_power(sys) exactly" begin
@@ -1048,7 +1048,7 @@ end
             angle_limits = (min = -1.57, max = 1.57),
         )
         add_component!(sys, line)
-        out = PSY.to_openapi(sys; power_units = :natural_units)
+        out = PSY.to_openapi(sys; units = NU)
         line_out = only(PSY.PD.get_components(out, "Line"))
         @test line_out.base_power == PSY.get_base_power(sys)
     end
@@ -1065,12 +1065,12 @@ end
     )
     add_component!(sys, load)
 
-    out_device = PSY.to_openapi(sys; power_units = :component_base)
+    out_device = PSY.to_openapi(sys; units = DU)
     load_out = only(PSY.PD.get_components(out_device, "PowerLoad"))
     @test load_out.power_units == "COMPONENT_BASE"
     @test load_out.active_power == 0.3
 
-    out_natural = PSY.to_openapi(sys; power_units = :natural_units)
+    out_natural = PSY.to_openapi(sys; units = NU)
     load_out_nat = only(PSY.PD.get_components(out_natural, "PowerLoad"))
     @test load_out_nat.power_units == "NATURAL_UNITS"
     @test load_out_nat.active_power == 30.0
@@ -1178,7 +1178,7 @@ end
         ts_out_path = joinpath(dir, "export_time_series_storage.h5")
         out = PSY.to_openapi(
             sys;
-            power_units = :natural_units,
+            units = NU,
             time_series_storage_path = ts_out_path,
         )
 
@@ -1255,7 +1255,7 @@ end
 
         ts_out_path = joinpath(dir, "forecast_time_series_storage.h5")
         doc = PSY.to_openapi(
-            sys; power_units = :component_base, time_series_storage_path = ts_out_path,
+            sys; units = DU, time_series_storage_path = ts_out_path,
         )
         @test isfile(ts_out_path)
         # 3 rows: the "load_hist" SingleTimeSeries, the DeterministicSingleTimeSeries its
@@ -1377,7 +1377,7 @@ end
 end
 
 @testset "OpenAPI export: TwoTerminalVSCLine survives a document round trip" begin
-    for power_units in (:natural_units, :component_base)
+    for units in (NU, DU)
         bus1 = _export_bus(; number = 1)
         bus2 = _export_bus(; number = 2, bustype = ACBusTypes.PQ)
         arc = Arc(; from = bus1, to = bus2)
@@ -1388,7 +1388,7 @@ end
         end
 
         dir = mktempdir()
-        PSY.to_file(sys, dir; unit_system = power_units, force = true)
+        PSY.to_file(sys, dir; units = units, force = true)
         restored = get_component(TwoTerminalVSCLine, PSY.from_file(dir), "vsc1")
         for field in fieldnames(TwoTerminalVSCLine)
             field in (:internal, :arc, :services) && continue
@@ -1401,7 +1401,7 @@ end
     # `ac_control_*` on `AC_VOLTAGE` with a non-zero `rated_ac_voltage_from`/`_to`: the wire
     # row must carry both bases (not just convert the setpoints through them) for a
     # PSY→doc→PSY round trip to reproduce the same PSY values back.
-    for power_units in (:natural_units, :component_base)
+    for units in (NU, DU)
         bus1 = _export_bus(; number = 1)
         bus2 = _export_bus(; number = 2, bustype = ACBusTypes.PQ)
         arc = Arc(; from = bus1, to = bus2)
@@ -1418,7 +1418,7 @@ end
         end
 
         dir = mktempdir()
-        PSY.to_file(sys, dir; unit_system = power_units, force = true)
+        PSY.to_file(sys, dir; units = units, force = true)
         restored = get_component(TwoTerminalVSCLine, PSY.from_file(dir), "vsc1")
         for field in fieldnames(TwoTerminalVSCLine)
             field in (:internal, :arc, :services) && continue
@@ -1470,7 +1470,7 @@ end
     # fallbacks are symmetric only for the degenerate `g == 0.0` case, which never needed
     # tolerating in the first place.
     dir = mktempdir()
-    PSY.to_file(sys, dir; unit_system = :natural_units, force = true)
+    PSY.to_file(sys, dir; units = NU, force = true)
     @test_throws ErrorException PSY.from_file(dir)
 end
 
@@ -1507,7 +1507,7 @@ _export_thermal_gen(bus; name = "gen1") = ThermalStandard(;
 
         ts_out_path = joinpath(dir, "attr_owned_series.h5")
         doc = PSY.to_openapi(
-            sys; power_units = :component_base, time_series_storage_path = ts_out_path,
+            sys; units = DU, time_series_storage_path = ts_out_path,
         )
         @test isfile(ts_out_path)
         ts_row = only(doc.time_series_associations).value
@@ -1558,7 +1558,7 @@ end
             (:warn, r"omitting 1 time series row"),
             match_mode = :any,
             PSY.to_openapi(
-                sys; power_units = :component_base,
+                sys; units = DU,
                 time_series_storage_path = ts_out_path,
             ),
         )

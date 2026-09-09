@@ -8,10 +8,10 @@ _close_sidecar_store!(sys::System) =
     sys = _file_io_fixture()
     mktempdir() do dir
         bundle = joinpath(dir, "case")
-        to_file(sys, bundle; unit_system = :component_base)
+        to_file(sys, bundle)
 
         # All members present, and nothing else. Two, not three: the document carries the
-        # association rows, so `:json` writes no `.sqlite` — that is a `:sienna`-only member.
+        # association rows, so a document form writes no `.sqlite` — that is archive-only.
         @test sort(readdir(bundle)) == ["system.json", "time_series.h5"]
 
         sys2 = from_file(bundle)
@@ -39,11 +39,97 @@ _close_sidecar_store!(sys::System) =
     end
 end
 
+@testset "to_file/from_file: .json document round trip" begin
+    sys = _file_io_fixture()
+    mktempdir() do dir
+        document = joinpath(dir, "case.json")
+        to_file(sys, document)
+
+        # The sidecar takes the document's stem and sits beside it, rather than under a
+        # directory of conventional member names.
+        @test sort(readdir(dir)) == ["case.h5", "case.json"]
+
+        sys2 = from_file(document)
+        @test get_name(sys2) == "bundle-fixture"
+        @test get_description(sys2) == "round-trip check"
+        @test get_base_power(sys2) == get_base_power(sys)
+        @test length(collect(get_components(Component, sys2))) ==
+              length(collect(get_components(Component, sys)))
+
+        gen2 = get_component(ThermalStandard, sys2, "g1")
+        @test length(PSY.get_supplemental_attributes(gen2)) == 1
+        ts = get_time_series(SingleTimeSeries, gen2, "max_active_power")
+        @test TimeSeries.values(PSY.get_data(ts)) == [0.1, 0.2, 0.3, 0.4, 0.5, 0.6]
+        _close_sidecar_store!(sys2)
+    end
+end
+
+@testset "to_file: two .json documents share one directory" begin
+    mktempdir() do dir
+        # The whole point of the stem-named sidecar: the directory form could not do this,
+        # because both systems would claim the same `system.json`/`time_series.h5`.
+        for name in ("rts", "texas")
+            sys = _file_io_fixture()
+            set_name!(sys, name)
+            to_file(sys, joinpath(dir, "$name.json"))
+        end
+        @test sort(readdir(dir)) == ["rts.h5", "rts.json", "texas.h5", "texas.json"]
+
+        for name in ("rts", "texas")
+            sys = from_file(joinpath(dir, "$name.json"))
+            @test get_name(sys) == name
+            _close_sidecar_store!(sys)
+        end
+    end
+end
+
+@testset "to_file: .json document respects force" begin
+    sys = _file_io_fixture(; with_time_series = false)
+    mktempdir() do dir
+        document = joinpath(dir, "case.json")
+        to_file(sys, document)
+        @test_throws IS.DataFormatError to_file(sys, document)
+        @test isnothing(to_file(sys, document; force = true))
+    end
+end
+
+@testset "to_file: .json document with no time series gets no sidecar" begin
+    sys = _file_io_fixture(; with_time_series = false)
+    mktempdir() do dir
+        document = joinpath(dir, "case.json")
+        to_file(sys, document)
+        @test readdir(dir) == ["case.json"]
+        @test isnothing(PSY.PD.get_time_series_storage_file(PSY.PD.read_document(document)))
+    end
+end
+
+@testset "to_file: .json document creates missing parent directories" begin
+    sys = _file_io_fixture(; with_time_series = false)
+    mktempdir() do dir
+        document = joinpath(dir, "out", "sub", "case.json")
+        @test isnothing(to_file(sys, document))
+        @test isfile(document)
+    end
+end
+
+@testset "to_file: .json honors units on the way out" begin
+    sys = _file_io_fixture(; with_time_series = false)
+    mktempdir() do dir
+        for (marker, stamp) in ((DU, "COMPONENT_BASE"), (NU, "NATURAL_UNITS"))
+            document = joinpath(dir, "case.json")
+            to_file(sys, document; units = marker, force = true)
+            doc = PSY.PD.read_document(document)
+            gen = only(PSY.PD.get_components(doc, "ThermalStandard"))
+            @test gen.power_units == stamp
+        end
+    end
+end
+
 @testset "to_file/from_file: .sn archive round trip" begin
     sys = _file_io_fixture()
     mktempdir() do dir
         archive = joinpath(dir, "case.sn")
-        to_file(sys, archive; format = :sienna, unit_system = :component_base)
+        to_file(sys, archive)
         @test isfile(archive)
 
         sys2 = from_file(archive)
@@ -61,34 +147,32 @@ end
     sys = _file_io_fixture(; with_time_series = false)
     mktempdir() do dir
         archive = joinpath(dir, "case.sn")
-        to_file(sys, archive; format = :sienna)
-        @test_throws IS.DataFormatError to_file(sys, archive; format = :sienna)
-        @test isnothing(to_file(sys, archive; format = :sienna, force = true))
+        to_file(sys, archive)
+        @test_throws IS.DataFormatError to_file(sys, archive)
+        @test isnothing(to_file(sys, archive; force = true))
     end
 end
 
-@testset "to_file: unsupported format errors" begin
+@testset "to_file: an unrecognized extension names the three forms" begin
     sys = _file_io_fixture(; with_time_series = false)
     mktempdir() do dir
-        @test_throws ErrorException to_file(sys, joinpath(dir, "case"); format = :bogus)
+        # A path that is neither extensionless, .json nor .sn is refused rather than guessed
+        # at — the form is inferred from the extension and there is no default.
+        @test_throws ErrorException to_file(sys, joinpath(dir, "case.bogus"))
+        @test !ispath(joinpath(dir, "case.bogus"))
     end
 end
 
-@testset "to_file: .sn refuses a non-default unit_system" begin
+@testset "to_file: .sn refuses any units but DU" begin
     sys = _file_io_fixture(; with_time_series = false)
     mktempdir() do dir
         archive = joinpath(dir, "case.sn")
-        # The default is fine: it is what :sienna always writes anyway.
+        # The default is fine: it is what an archive always writes anyway.
         @test isnothing(
-            to_file(sys, archive; format = :sienna, unit_system = :component_base),
+            to_file(sys, archive),
         )
-        @test_throws ErrorException to_file(
-            sys,
-            archive;
-            format = :sienna,
-            unit_system = :natural_units,
-            force = true,
-        )
+        @test_throws ErrorException to_file(sys, archive; units = NU, force = true)
+        @test_throws ErrorException to_file(sys, archive; units = SU, force = true)
     end
 end
 
@@ -98,12 +182,12 @@ end
     end
 end
 
-@testset "to_file: .sn requires the .sn extension" begin
+@testset "to_file: a near-miss archive extension is still refused" begin
     sys = _file_io_fixture(; with_time_series = false)
     mktempdir() do dir
         @test_throws(
             "$(IS.SIENNA_ARCHIVE_EXTENSION)",
-            to_file(sys, joinpath(dir, "case.tar.gz"); format = :sienna),
+            to_file(sys, joinpath(dir, "case.tar.gz")),
         )
         @test !isfile(joinpath(dir, "case.tar.gz"))
     end
@@ -114,7 +198,7 @@ end
     mktempdir() do dir
         target = joinpath(dir, "case.sn")
         mkpath(target)
-        @test_throws IS.DataFormatError to_file(sys, target; format = :sienna)
+        @test_throws IS.DataFormatError to_file(sys, target)
     end
 end
 
@@ -122,7 +206,7 @@ end
     sys = _file_io_fixture(; with_time_series = false)
     mktempdir() do dir
         archive = joinpath(dir, "out", "sub", "case.sn")
-        @test isnothing(to_file(sys, archive; format = :sienna))
+        @test isnothing(to_file(sys, archive))
         @test isfile(archive)
     end
 end
@@ -179,7 +263,7 @@ end
         to_file(freq_sys, bundle)
         @test get_frequency(from_file(bundle)) == 50.0
         archive = joinpath(dir, "case.sn")
-        to_file(freq_sys, archive; format = :sienna)
+        to_file(freq_sys, archive)
         @test get_frequency(from_file(archive)) == 50.0
     end
 
@@ -195,7 +279,7 @@ end
     sys = _file_io_fixture()
     mktempdir() do dir
         bundle = joinpath(dir, "case")
-        to_file(sys, bundle; unit_system = :component_base)
+        to_file(sys, bundle)
 
         sys2 = from_file(bundle; time_series_read_only = true)
 
@@ -218,7 +302,7 @@ end
     sys = _file_io_fixture(; with_time_series = false)
     mktempdir() do dir
         bundle = joinpath(dir, "case")
-        to_file(sys, bundle; unit_system = :component_base)
+        to_file(sys, bundle)
 
         @test readdir(bundle) == ["system.json"]
         # The document must say so rather than name a file that is not there.
@@ -236,10 +320,10 @@ end
     # Writing twice without force must not silently clobber the first bundle.
     mktempdir() do dir
         bundle = joinpath(dir, "case")
-        to_file(sys, bundle; unit_system = :component_base)
-        @test_throws IS.DataFormatError to_file(sys, bundle; unit_system = :component_base)
+        to_file(sys, bundle)
+        @test_throws IS.DataFormatError to_file(sys, bundle)
         # ... and force makes it succeed.
-        @test isnothing(to_file(sys, bundle; unit_system = :component_base, force = true))
+        @test isnothing(to_file(sys, bundle; units = DU, force = true))
     end
 
     # A directory that is not a bundle.
@@ -251,7 +335,7 @@ end
     # quietly missing every time series the document declared.
     mktempdir() do dir
         bundle = joinpath(dir, "case")
-        to_file(_file_io_fixture(), bundle; unit_system = :component_base)
+        to_file(_file_io_fixture(), bundle)
         rm(joinpath(bundle, "time_series.h5"))
         @test_throws IS.DataFormatError from_file(bundle)
     end
@@ -263,14 +347,13 @@ end
     # point into the file it just replaced. So `force` has to clear it.
     mktempdir() do dir
         bundle = joinpath(dir, "case")
-        to_file(_file_io_fixture(), bundle; unit_system = :component_base)
+        to_file(_file_io_fixture(), bundle)
         @test sort(readdir(bundle)) == ["system.json", "time_series.h5"]
         touch(joinpath(bundle, "time_series.h5.sqlite"))  # what an older PSY left
 
         to_file(
             _file_io_fixture(; with_time_series = false),
             bundle;
-            unit_system = :component_base,
             force = true,
         )
         @test readdir(bundle) == ["system.json"]
@@ -282,7 +365,7 @@ end
     # exactly one thing. A private attribute counter previously issued attribute id 1
     # alongside component id 1.
     sys = _file_io_fixture(; with_time_series = false)
-    doc = to_openapi(sys; power_units = :component_base)
+    doc = to_openapi(sys; units = DU)
 
     component_ids = Int[]
     for type_name in PSY.PD.component_type_names(doc)
@@ -321,7 +404,7 @@ end
 
     # And back out again, unchanged. A component's document id is its IS component id, which
     # import set from the document, so bus1 is id 3 on the way out as well.
-    exported = to_openapi(sys; power_units = :natural_units)
+    exported = to_openapi(sys; units = NU)
     @test PSY.PD.get_ext(exported, 3) == extras
     @test isempty(PSY.PD.get_ext(exported, 4))
 end
@@ -346,14 +429,13 @@ _gen_power_units(doc) = only(PSY.PD.get_components(doc, "ThermalStandard")).powe
 
     # Both remaining conventions are reachable on the same ledger-free System, and they are
     # exactly the document schema's two legal values.
-    for (sym, declared) in
-        ((:component_base, "COMPONENT_BASE"), (:natural_units, "NATURAL_UNITS"))
-        @test _gen_power_units(to_openapi(sys; power_units = sym)) == declared
+    for (marker, declared) in ((DU, "COMPONENT_BASE"), (NU, "NATURAL_UNITS"))
+        @test _gen_power_units(to_openapi(sys; units = marker)) == declared
     end
 
-    # `:original` is gone rather than quietly reinterpreted: a System records no unit system
-    # of its own, so there is nothing left to reproduce it from.
-    @test_throws ErrorException to_openapi(sys; power_units = :original)
+    # `SU` is refused rather than quietly reinterpreted: the wire enum has no system-base
+    # member, so there is nothing for it to stamp.
+    @test_throws ErrorException to_openapi(sys; units = SU)
 
     # A hand-built System with time series writes a bundle, reads back, and re-exports.
     with_ts = _file_io_fixture()

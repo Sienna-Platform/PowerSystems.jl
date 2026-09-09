@@ -4,12 +4,18 @@
 [`System`](@ref) and deserialize it back. The main benefit is that deserializing is
 significantly faster than reconstructing the `System` from raw data files.
 
-There are two formats:
+There are three forms, chosen by the extension of the path you pass to `to_file`:
 
-  - `format = :json` (default) — a directory holding `system.json` (an OpenAPI document) plus,
-    when the system has time series, `time_series.h5` and its `time_series.h5.sqlite` catalog.
-  - `format = :sienna` — the same three members, tar+gzip'd into one file (conventionally named
-    `*.sn`).
+  - **a directory** (no extension) — holds `system.json`, an OpenAPI document, plus
+    `time_series.h5` when the system has time series.
+  - **a `.json` file** — the same two members, with the sidecar named after the document
+    (`mysystem.json` and `mysystem.h5`) and sitting beside it, so several systems can share one
+    directory.
+  - **a `.sn` file** — those two plus InfraStore's own `time_series.h5.sqlite` catalog and
+    `sienna_extras.json`, tar+gzip'd into a single file. This is the lossless form.
+
+The two document forms are readable by any client that can read the OpenAPI schema; the archive
+is Sienna-only, because reading it means reading InfraStore's catalog.
 
 !!! warning
 
@@ -18,9 +24,11 @@ There are two formats:
     written before this format. A `System` serialized in either old shape must be rebuilt from
     source and re-serialized with the current `to_file`.
 
-    A round trip through `to_file`/`from_file` also does not yet preserve a `System`'s
-    user-defined subsystems or masked components (for example, some internal use of
-    `HybridSystem` subcomponents). `to_file` warns when it detects either, but does not error.
+    Only the `.sn` archive preserves a `System`'s user-defined subsystems; the two document
+    forms warn (they do not error) when the system has any, because the document has no
+    representation for them. Masked components — for example some internal uses of
+    `HybridSystem` subcomponents — survive every form, being re-masked on read when their owning
+    `StaticInjectionSubsystem` is added.
 
 ## Write data
 
@@ -47,18 +55,26 @@ gen = ThermalStandard(;
 add_component!(sys, gen)
 ```
 
-Write it as a `:json` bundle:
+`to_file` picks the form from the extension of the path you give it — there is no `format`
+keyword. Write it as a directory:
 
 ```@repl serialize_data
-bundle = mkdir("mysystem")
+bundle = "mysystem"
 to_file(sys, bundle)
 readdir(bundle)
 ```
 
-Or as a single `:sienna` archive:
+Or as a single `.json` document, whose sidecar takes the document's stem and sits beside it —
+so several systems can share one directory:
 
 ```@repl serialize_data
-to_file(sys, "mysystem.sn"; format = :sienna)
+to_file(sys, "mysystem.json")
+```
+
+Or as a single lossless `.sn` archive, the only form that keeps subsystems:
+
+```@repl serialize_data
+to_file(sys, "mysystem.sn")
 ```
 
 ## Viewing the document in JSON format
@@ -92,14 +108,17 @@ Filter on a field value:
 jq '.components.ThermalStandard[] | select(.active_power > 2.3)' system.json
 ```
 
-## Read a bundle or archive back into a `System`
+## Read a bundle, document or archive back into a `System`
 
-`from_file` infers the format from `path` — a directory reads as a `:json` bundle, a `.sn`
-file reads as a `:sienna` archive:
+`from_file` infers the form from `path` the same way `to_file` does — a directory, a `.json`
+document, or a `.sn` archive:
 
 ```@repl serialize_data
 sys2 = from_file(bundle)
-sys3 = from_file("mysystem.sn")
+sys3 = from_file("mysystem.json")
+sys4 = from_file("mysystem.sn")
 rm(bundle; recursive = true); #hide
+rm("mysystem.json");
+rm("mysystem.h5"; force = true); #hide
 rm("mysystem.sn"); #hide
 ```

@@ -165,22 +165,15 @@ function warn_unexportable_components(sys::System)
     return nothing
 end
 
-# ── power_units resolution ───────────────────────────────────────────────────────
+# ── export unit system ───────────────────────────────────────────────────────────
 
-"""Resolve the `power_units` kwarg to the `DU`/`NU` marker every exported component blob is
-stamped with — a uniform stamp per export, since PSY does not record a per-component creation
-basis."""
-function _resolve_export_power_units(power_units::Symbol)
-    if power_units === :component_base
-        return DU
-    elseif power_units === :natural_units
-        return NU
-    else
-        error(
-            "to_openapi(sys; power_units=$power_units): unmapped — expected " *
-            ":component_base or :natural_units",
-        )
-    end
+"""Reject a unit system with no wire representation before any blob is written.
+
+[`_power_units_string`](@ref) is the authority on which markers export; calling it here only
+moves its error to the entry point, so a rejected unit system leaves nothing half-written."""
+function _check_export_units(units::IS.AbstractUnitSystem)
+    _power_units_string(units)
+    return nothing
 end
 
 # ── id assignment ────────────────────────────────────────────────────────────────
@@ -659,19 +652,18 @@ Returns the typed container, not JSON: writing it to disk belongs to
 — components and supplemental attributes alike — comes from the document's single counter, since
 consumers key a row by id without its type.
 
-`power_units` selects the basis every value is written on, and the stamp each blob carries:
+`units` selects the basis every value is written on, and the stamp each blob carries:
 
-  - `:component_base` (default) stamps every power-bearing blob `"COMPONENT_BASE"` and writes
-    each component's values on its own `base_power` — what PSY stores natively, so no
-    conversion runs and the numbers on disk are the numbers in memory.
-  - `:natural_units` stamps `"NATURAL_UNITS"` and converts to physical units (MW, MVAr, MVA).
+  - `DU` (default) stamps every power-bearing blob `"COMPONENT_BASE"` and writes each
+    component's values on its own `base_power` — what PSY stores natively, so no conversion
+    runs and the numbers on disk are the numbers in memory.
+  - `NU` stamps `"NATURAL_UNITS"` and converts to physical units (MW, MVAr, MVA).
 
-Anything else errors: the mapping to the internal `DU`/`NU` markers is explicit, so an
-unrecognized symbol is refused rather than defaulted.
+`SU` errors: the wire enum has no system-base member, so there is nothing to stamp.
 
 The stamp is uniform across an export because PSY records no per-component creation basis.
-Reading is not uniform: `from_openapi` honors the `power_units` on each individual blob, so a
-document written elsewhere with a mixed basis loads correctly, and a blob that omits the field
+Reading is not uniform: `from_openapi` honors the `power_units` stamp on each individual blob, so
+a document written elsewhere with a mixed basis loads correctly, and a blob that omits the field
 is an error — `OpenAPI.from_json` does not enforce the schema's `required`, so the check is
 made explicitly rather than defaulting to a basis and silently rescaling the value.
 
@@ -688,17 +680,17 @@ dropping data: a time series with no `time_series_storage_path` given.
 `write_catalog` decides whether InfraStore's `<sidecar>.sqlite` is written beside the arrays:
 `false` (default) writes the arrays alone, `true` keeps the catalog too and makes it
 authoritative on read. Either way the rows appear in `doc.time_series_associations` — the
-keyword adds a file, it does not move them. The format notes at the top of
-`src/openapi/file_io.jl` say which bundle uses which and why.
+keyword adds a file, it does not move them. The notes at the top of `src/openapi/file_io.jl` say
+which of the three written forms uses which, and why.
 """
 function to_openapi(
     sys::System;
-    power_units::Symbol = :component_base,
+    units::IS.AbstractUnitSystem = DU,
     time_series_storage_path = nothing,
     write_catalog::Bool = false,
 )
     warn_unexportable_components(sys)
-    val = _resolve_export_power_units(power_units)
+    _check_export_units(units)
     refs = _build_export_refs(sys)
 
     doc = PD.SystemDocument(;
@@ -709,7 +701,7 @@ function to_openapi(
     )
     emitted = Set{Int}()
     task_local_storage(_EMITTED_ASSOCIATION_IDS_KEY, emitted) do
-        _export_components!(doc, refs, sys, val)
+        _export_components!(doc, refs, sys, units)
         _export_market_bid_service_offers!(doc, refs)
         supplemental_attributes,
         supplemental_attribute_associations,

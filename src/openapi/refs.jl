@@ -171,6 +171,16 @@ end
 _power_units_string(::DeviceBaseUnit) = "COMPONENT_BASE"
 _power_units_string(::NaturalUnit) = "NATURAL_UNITS"
 
+"""The wire enum has no system-base member, so `SU` has nothing to stamp. A method rather than
+a narrowed signature upstream: every marker reaching export answers this, and a marker added
+later fails here by name instead of silently matching a two-type union."""
+function _power_units_string(::SystemBaseUnit)
+    return error(
+        "cannot export on SystemBaseUnit(): the OpenAPI power_units enum accepts only " *
+        "COMPONENT_BASE and NATURAL_UNITS. Write the document on DU or NU instead.",
+    )
+end
+
 """
 `po.base_power`, required: every power-bearing component blob must state its own.
 `OpenAPI.from_json` does not enforce the schema's `required`, so a blob whose `base_power`
