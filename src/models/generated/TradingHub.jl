@@ -75,9 +75,6 @@ function from_openapi(po::PO.TradingHub, refs::OpenAPIRefs, ::NaturalUnit)
     )
 end
 
-function from_openapi(po::PO.TradingHub, refs::OpenAPIRefs)
-    return from_openapi(po, refs, DU)
-end
 
 function to_openapi(value::TradingHub, refs::OpenAPIRefs, ::DeviceBaseUnit)
     return PO.TradingHub(;

@@ -136,6 +136,13 @@ function from_openapi(po::{{{openapi_po_type}}}, refs::OpenAPIRefs, ::NaturalUni
     )
 end
 
+{{! `exclude_openapi_import_selector` (struct-level, like the field-level
+    `exclude_getter`/`exclude_setter`) means "the plain 2-argument selector is
+    hand-written elsewhere", not "there is none" -- see the market components in
+    import_handwritten.jl, whose wire basis is natural units rather than the
+    component base defaulted to below. Emitting both would be a duplicate
+    definition, which precompilation rejects. }}
+{{^exclude_openapi_import_selector}}
 {{#has_power_units}}
 function from_openapi(po::{{{openapi_po_type}}}, refs::OpenAPIRefs)
     return from_openapi(po, refs, _power_units_marker("{{struct_name}}", po.id, po.power_units))
@@ -146,6 +153,7 @@ function from_openapi(po::{{{openapi_po_type}}}, refs::OpenAPIRefs)
     return from_openapi(po, refs, DU)
 end
 {{/has_power_units}}
+{{/exclude_openapi_import_selector}}
 
 function to_openapi(value::{{struct_name}}, refs::OpenAPIRefs, ::DeviceBaseUnit)
     return PO.{{struct_name}}(;

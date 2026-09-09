@@ -130,9 +130,6 @@ function from_openapi(po::PO.VirtualParticipant, refs::OpenAPIRefs, ::NaturalUni
     )
 end
 
-function from_openapi(po::PO.VirtualParticipant, refs::OpenAPIRefs)
-    return from_openapi(po, refs, DU)
-end
 
 function to_openapi(value::VirtualParticipant, refs::OpenAPIRefs, ::DeviceBaseUnit)
     return PO.VirtualParticipant(;
