@@ -263,39 +263,46 @@ set_value(c::UnitsBearer, field, val::RelativeQuantity{<:Any, SystemBaseUnit}, c
         convert_units(_conversion_base(c, field), ustrip(val), _unit_category(cu), SU, DU),
     )
 
-# ---- Bare Float64 is rejected: callers must attach units explicitly ----
-set_value(::UnitsBearer, ::Any, ::Float64, ::Val) = throw(
+# ---- Bare numbers are rejected: callers must attach units explicitly ----
+# Generated setters intercept this one level up (`_units_tag_required`) so the
+# message can name the setter; this method catches the same mistake inside a
+# compound field's elements, where only the field is known. `_UntaggedNumber`
+# rather than `Float64` so an integer literal (or a bare complex, on the two
+# `Complex` fields) gets the message instead of a `MethodError`.
+set_value(c::UnitsBearer, field, ::_UntaggedNumber, cu::Val) = throw(
     ArgumentError(
-        "setter requires explicit units (e.g. `val * SU`, `val * DU`, `val * MW`)",
+        "Setting $(_field_description(c, field)) requires a units-tagged value: " *
+        "$(_tag_menu(cu)).",
     ),
 )
 
 # ---- Compound field types for setters ----
-_to_device_base(c::UnitsBearer, val, cu) = set_value(c, nothing, val, cu)
+# The field is threaded through so a bare element reports which field it belongs to.
+_to_device_base(c::UnitsBearer, field, val, cu) = set_value(c, field, val, cu)
 
 set_value(c::UnitsBearer, field, val::NamedTuple{(:min, :max)}, cu::Val) = (
-    min = _to_device_base(c, val.min, cu),
-    max = _to_device_base(c, val.max, cu),
+    min = _to_device_base(c, field, val.min, cu),
+    max = _to_device_base(c, field, val.max, cu),
 )
 
 set_value(c::UnitsBearer, field, val::NamedTuple{(:up, :down)}, cu::Val) = (
-    up = _to_device_base(c, val.up, cu),
-    down = _to_device_base(c, val.down, cu),
+    up = _to_device_base(c, field, val.up, cu),
+    down = _to_device_base(c, field, val.down, cu),
 )
 
 set_value(c::UnitsBearer, field, val::NamedTuple{(:from_to, :to_from)}, cu::Val) = (
-    from_to = _to_device_base(c, val.from_to, cu),
-    to_from = _to_device_base(c, val.to_from, cu),
+    from_to = _to_device_base(c, field, val.from_to, cu),
+    to_from = _to_device_base(c, field, val.to_from, cu),
 )
 
 set_value(c::UnitsBearer, field, val::NamedTuple{(:from, :to)}, cu::Val) = (
-    from = _to_device_base(c, val.from, cu),
-    to = _to_device_base(c, val.to, cu),
+    from = _to_device_base(c, field, val.from, cu),
+    to = _to_device_base(c, field, val.to, cu),
 )
 
 set_value(c::UnitsBearer, field, val::NamedTuple{(:startup, :shutdown)}, cu::Val) = (
-    startup = _to_device_base(c, val.startup, cu),
-    shutdown = _to_device_base(c, val.shutdown, cu),
+    startup = _to_device_base(c, field, val.startup, cu),
+    shutdown = _to_device_base(c, field, val.shutdown, cu),
 )
 
 # ---- Nothing passthrough ----
@@ -343,6 +350,12 @@ set_r!(t::TwoWindingTransformer, val) = set_r!(get_circuit(t), val)
 get_x(t::TwoWindingTransformer, units) = get_x(get_circuit(t), units)
 get_x_unitful(t::TwoWindingTransformer, units) = get_x_unitful(get_circuit(t), units)
 set_x!(t::TwoWindingTransformer, val) = set_x!(get_circuit(t), val)
+get_r(t::TwoWindingTransformer) = get_r(get_circuit(t))
+get_r_unitful(t::TwoWindingTransformer) = get_r_unitful(get_circuit(t))
+get_x(t::TwoWindingTransformer) = get_x(get_circuit(t))
+get_x_unitful(t::TwoWindingTransformer) = get_x_unitful(get_circuit(t))
+set_r!(t::TwoWindingTransformer, val::Real) = set_r!(get_circuit(t), val)
+set_x!(t::TwoWindingTransformer, val::Real) = set_x!(get_circuit(t), val)
 
 # Physical category implied by a field's conversion unit. The three power tokens
 # share a per-unit base and differ only in the natural unit they print as, so a
@@ -353,6 +366,93 @@ _unit_category(::Val{:mvar}) = REACTIVE_POWER
 _unit_category(::Val{:mva}) = APPARENT_POWER
 _unit_category(::Val{:ohm}) = IMPEDANCE
 _unit_category(::Val{:siemens}) = ADMITTANCE
+
+#######################################################
+# Explicit-units error messages
+#
+# Every convertible field's accessors are generated in pairs: the working
+# `(component, units)` getter and setter, plus a fallback method that lands here
+# when the units are missing. The fallbacks exist purely so the failure names the
+# accessor, the field and the units that would have worked — Julia's own
+# `MethodError` lists signatures but never says what a valid unit argument is.
+#######################################################
+
+# Natural unit to suggest for each conversion-unit token.
+_natural_unit_example(::Val{:mw}) = "MW"
+_natural_unit_example(::Val{:mvar}) = "MVAr"
+_natural_unit_example(::Val{:mva}) = "MVA"
+_natural_unit_example(::Val{:ohm}) = "OHMS"
+_natural_unit_example(::Val{:siemens}) = "SIEMENS"
+
+# Which field the message is about. `field` is a `Val` on the generated paths and
+# `nothing` where a hand-written caller did not supply one.
+_field_description(c, ::Val{T}) where {T} = "`$(nameof(typeof(c)))`'s `$T`"
+_field_description(c, ::Any) = "this `$(nameof(typeof(c)))` field"
+
+# The units a getter accepts. Setters take the same units as tags on the value,
+# except `NU`, which exists only as a getter target (there is no `val * NU`).
+_units_menu(conversion_unit::Val) =
+    "`DU` (per unit on the device base), `SU` (per unit on the system base), `NU` " *
+    "or the natural unit `$(_natural_unit_example(conversion_unit))`"
+
+_tag_menu(conversion_unit::Val) =
+    "pass `val * DU` (per unit on the device base), `val * SU` (per unit on the " *
+    "system base), or a natural unit such as `val * $(_natural_unit_example(conversion_unit))`"
+
+# The bare and unit-bearing getters point at each other, so the message always
+# names the companion the caller did not use.
+function _companion_getter_hint(getter)
+    name = string(getter)
+    endswith(name, "_unitful") && return "For a bare number instead of a unit-bearing " *
+           "quantity, use `$(chopsuffix(name, "_unitful"))(component, units)`."
+    return "For the unit-bearing value instead of a bare number, use " *
+           "`$(name)_unitful(component, units)`."
+end
+
+"""
+    _units_arg_required(getter, value, field, conversion_unit)
+
+Throw the explanatory error for a unit-bearing getter called without its `units`
+argument. Every convertible field's generated accessor has a one-argument method
+that lands here, so `get_active_power(gen)` reports what to pass instead of
+surfacing a bare `MethodError` that lists the two-argument signatures.
+"""
+function _units_arg_required(getter, value, field::Symbol, conversion_unit::Val)
+    throw(
+        ArgumentError(
+            "`$getter` requires an explicit units argument: " *
+            "`$getter(component, units)`. `$(nameof(typeof(value)))`'s `$field` is a " *
+            "per-unit quantity with no default unit system, so the units must be " *
+            "named at the call site: $(_units_menu(conversion_unit)). " *
+            "$(_companion_getter_hint(getter))",
+        ),
+    )
+end
+
+"""
+    _units_tag_required(setter, value, field, conversion_unit, val)
+
+Throw the explanatory error for a unit-bearing setter called with an untagged
+number. The getter counterpart is [`_units_arg_required`](@ref); both are reached
+from generated fallback methods, here one matching an untagged number — or, on a
+compound field only, a `NamedTuple` whose elements are all untagged.
+"""
+function _units_tag_required(setter, value, field::Symbol, conversion_unit::Val, val)
+    compound_hint = if val isa NamedTuple
+        " A compound field takes one tagged value per element, e.g. " *
+        "`(" * join(("$k = $(getfield(val, k)) * DU" for k in keys(val)), ", ") * ")`."
+    else
+        ""
+    end
+    throw(
+        ArgumentError(
+            "`$setter` requires a units-tagged value: " *
+            "`$setter(component, val * units)`. `$(nameof(typeof(value)))`'s `$field` " *
+            "is a per-unit quantity with no default unit system, so the units must be " *
+            "named at the call site: $(_tag_menu(conversion_unit)).$compound_hint",
+        ),
+    )
+end
 
 # Base provider for the pairwise impedance fields of a ThreeWindingTransformer.
 # Convention: Z_ij is pu on base_power_ij referenced to the first-index circuit's

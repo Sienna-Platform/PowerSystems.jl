@@ -336,7 +336,9 @@ function to_openapi(conv::InterconnectingConverter, refs::OpenAPIRefs, ::DeviceB
         reactive_power_limits = _minmax_po_optional(get_reactive_power_limits(conv, DU)),
         dc_current = get_dc_current(conv, DU),
         max_dc_current = get_max_dc_current(conv, DU),
-        loss_function = convert_cost_to_openapi(get_loss_function(conv)),
+        loss_function = convert_cost_to_openapi(
+            loss_curve_to_openapi(get_loss_function(conv)),
+        ),
         dc_control = string(get_dc_control(conv)),
         ac_control = string(get_ac_control(conv)),
         voltage_setpoint_units = "COMPONENT_BASE",
@@ -368,7 +370,9 @@ function to_openapi(conv::InterconnectingConverter, refs::OpenAPIRefs, ::Natural
         ),
         dc_current = get_dc_current(conv, DU) * dbp,
         max_dc_current = get_max_dc_current(conv, DU) * dbp,
-        loss_function = convert_cost_to_openapi(get_loss_function(conv)),
+        loss_function = convert_cost_to_openapi(
+            loss_curve_to_openapi(get_loss_function(conv)),
+        ),
         dc_control = string(get_dc_control(conv)),
         ac_control = string(get_ac_control(conv)),
         voltage_setpoint_units = "COMPONENT_BASE",
@@ -776,8 +780,8 @@ end
 # type allows both (a `System` built directly, not round-tripped, may hold either), so export
 # supports both rather than narrowing to what import currently reads.
 
-_hvdc_loss_to_openapi(curve::Union{InputOutputCurve, IncrementalCurve}) =
-    PC.TwoTerminalLoss(convert_cost_to_openapi(curve))
+_hvdc_loss_to_openapi(loss::AnyLossCurve) =
+    PC.TwoTerminalLoss(convert_cost_to_openapi(loss_curve_to_openapi(loss)))
 
 function to_openapi(
     hvdc::TwoTerminalGenericHVDCLine,
@@ -1079,7 +1083,9 @@ function _two_terminal_vsc_line_to_openapi(vsc::TwoTerminalVSCLine, refs::OpenAP
             vsc, get_ac_setpoint_from(vsc), Val(ac_control_from),
         ),
         rated_ac_voltage_from = get_rated_ac_voltage_from(vsc),
-        converter_loss_from = convert_cost_to_openapi(get_converter_loss_from(vsc)),
+        converter_loss_from = convert_cost_to_openapi(
+            loss_curve_to_openapi(get_converter_loss_from(vsc)),
+        ),
         max_dc_current_from = get_max_dc_current_from(vsc),
         rating_from = _vsc_power_to_openapi(get_rating_from(vsc, SU), base_power, unit),
         reactive_power_limits_from = _vsc_minmax_to_openapi(
@@ -1103,7 +1109,9 @@ function _two_terminal_vsc_line_to_openapi(vsc::TwoTerminalVSCLine, refs::OpenAP
             vsc, get_ac_setpoint_to(vsc), Val(ac_control_to),
         ),
         rated_ac_voltage_to = get_rated_ac_voltage_to(vsc),
-        converter_loss_to = convert_cost_to_openapi(get_converter_loss_to(vsc)),
+        converter_loss_to = convert_cost_to_openapi(
+            loss_curve_to_openapi(get_converter_loss_to(vsc)),
+        ),
         max_dc_current_to = get_max_dc_current_to(vsc),
         rating_to = _vsc_power_to_openapi(get_rating_to(vsc, SU), base_power, unit),
         reactive_power_limits_to = _vsc_minmax_to_openapi(

@@ -86,6 +86,8 @@ get_available(value::AreaInterchange) = value.available
 get_active_power_flow(value::AreaInterchange, units) = InfrastructureSystems._strip_units(get_value(value, Val(:active_power_flow), Val(:mw), units))
 """Get [`AreaInterchange`](@ref) `active_power_flow` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `MW`). For a bare number see [`get_active_power_flow`](@ref)."""
 get_active_power_flow_unitful(value::AreaInterchange, units) = get_value(value, Val(:active_power_flow), Val(:mw), units)
+get_active_power_flow(value::AreaInterchange) = _units_arg_required(get_active_power_flow, value, :active_power_flow, Val(:mw))
+get_active_power_flow_unitful(value::AreaInterchange) = _units_arg_required(get_active_power_flow_unitful, value, :active_power_flow, Val(:mw))
 InfrastructureSystems.display_units_arg(::typeof(get_active_power_flow), ::Type{AreaInterchange}) = InfrastructureSystems.SU
 InfrastructureSystems.display_units_arg(::typeof(get_active_power_flow_unitful), ::Type{AreaInterchange}) = InfrastructureSystems.SU
 """Get [`AreaInterchange`](@ref) `from_area`."""
@@ -96,6 +98,8 @@ get_to_area(value::AreaInterchange) = value.to_area
 get_flow_limits(value::AreaInterchange, units) = InfrastructureSystems._strip_units(get_value(value, Val(:flow_limits), Val(:mw), units))
 """Get [`AreaInterchange`](@ref) `flow_limits` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `MW`). For a bare number see [`get_flow_limits`](@ref)."""
 get_flow_limits_unitful(value::AreaInterchange, units) = get_value(value, Val(:flow_limits), Val(:mw), units)
+get_flow_limits(value::AreaInterchange) = _units_arg_required(get_flow_limits, value, :flow_limits, Val(:mw))
+get_flow_limits_unitful(value::AreaInterchange) = _units_arg_required(get_flow_limits_unitful, value, :flow_limits, Val(:mw))
 InfrastructureSystems.display_units_arg(::typeof(get_flow_limits), ::Type{AreaInterchange}) = InfrastructureSystems.SU
 InfrastructureSystems.display_units_arg(::typeof(get_flow_limits_unitful), ::Type{AreaInterchange}) = InfrastructureSystems.SU
 
@@ -111,12 +115,15 @@ get_internal(value::AreaInterchange) = value.internal
 set_available!(value::AreaInterchange, val) = value.available = val
 """Set [`AreaInterchange`](@ref) `active_power_flow`."""
 set_active_power_flow!(value::AreaInterchange, val) = value.active_power_flow = set_value(value, Val(:active_power_flow), val, Val(:mw))
+set_active_power_flow!(value::AreaInterchange, val::_UntaggedNumber) = _units_tag_required(set_active_power_flow!, value, :active_power_flow, Val(:mw), val)
 """Set [`AreaInterchange`](@ref) `from_area`."""
 set_from_area!(value::AreaInterchange, val) = value.from_area = val
 """Set [`AreaInterchange`](@ref) `to_area`."""
 set_to_area!(value::AreaInterchange, val) = value.to_area = val
 """Set [`AreaInterchange`](@ref) `flow_limits`."""
 set_flow_limits!(value::AreaInterchange, val) = value.flow_limits = set_value(value, Val(:flow_limits), val, Val(:mw))
+set_flow_limits!(value::AreaInterchange, val::_UntaggedNumber) = _units_tag_required(set_flow_limits!, value, :flow_limits, Val(:mw), val)
+set_flow_limits!(value::AreaInterchange, val::NamedTuple{(:from_to, :to_from), <:Tuple{Vararg{_UntaggedNumber}}}) = _units_tag_required(set_flow_limits!, value, :flow_limits, Val(:mw), val)
 """Set [`AreaInterchange`](@ref) `services`."""
 set_services!(value::AreaInterchange, val) = value.services = val
 """Set [`AreaInterchange`](@ref) `ext`."""

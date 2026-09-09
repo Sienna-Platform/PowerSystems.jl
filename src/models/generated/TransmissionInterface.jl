@@ -73,6 +73,8 @@ get_available(value::TransmissionInterface) = value.available
 get_active_power_flow_limits(value::TransmissionInterface, units) = InfrastructureSystems._strip_units(get_value(value, Val(:active_power_flow_limits), Val(:mw), units))
 """Get [`TransmissionInterface`](@ref) `active_power_flow_limits` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `MW`). For a bare number see [`get_active_power_flow_limits`](@ref)."""
 get_active_power_flow_limits_unitful(value::TransmissionInterface, units) = get_value(value, Val(:active_power_flow_limits), Val(:mw), units)
+get_active_power_flow_limits(value::TransmissionInterface) = _units_arg_required(get_active_power_flow_limits, value, :active_power_flow_limits, Val(:mw))
+get_active_power_flow_limits_unitful(value::TransmissionInterface) = _units_arg_required(get_active_power_flow_limits_unitful, value, :active_power_flow_limits, Val(:mw))
 InfrastructureSystems.display_units_arg(::typeof(get_active_power_flow_limits), ::Type{TransmissionInterface}) = InfrastructureSystems.SU
 InfrastructureSystems.display_units_arg(::typeof(get_active_power_flow_limits_unitful), ::Type{TransmissionInterface}) = InfrastructureSystems.SU
 """Get [`TransmissionInterface`](@ref) `violation_penalty`."""
@@ -88,6 +90,8 @@ get_internal(value::TransmissionInterface) = value.internal
 set_available!(value::TransmissionInterface, val) = value.available = val
 """Set [`TransmissionInterface`](@ref) `active_power_flow_limits`."""
 set_active_power_flow_limits!(value::TransmissionInterface, val) = value.active_power_flow_limits = set_value(value, Val(:active_power_flow_limits), val, Val(:mw))
+set_active_power_flow_limits!(value::TransmissionInterface, val::_UntaggedNumber) = _units_tag_required(set_active_power_flow_limits!, value, :active_power_flow_limits, Val(:mw), val)
+set_active_power_flow_limits!(value::TransmissionInterface, val::NamedTuple{(:min, :max), <:Tuple{Vararg{_UntaggedNumber}}}) = _units_tag_required(set_active_power_flow_limits!, value, :active_power_flow_limits, Val(:mw), val)
 """Set [`TransmissionInterface`](@ref) `violation_penalty`."""
 set_violation_penalty!(value::TransmissionInterface, val) = value.violation_penalty = val
 """Set [`TransmissionInterface`](@ref) `direction_mapping`."""

@@ -135,18 +135,24 @@ get_bus(value::HydroDispatch) = value.bus
 get_active_power(value::HydroDispatch, units) = InfrastructureSystems._strip_units(get_value(value, Val(:active_power), Val(:mw), units))
 """Get [`HydroDispatch`](@ref) `active_power` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `MW`). For a bare number see [`get_active_power`](@ref)."""
 get_active_power_unitful(value::HydroDispatch, units) = get_value(value, Val(:active_power), Val(:mw), units)
+get_active_power(value::HydroDispatch) = _units_arg_required(get_active_power, value, :active_power, Val(:mw))
+get_active_power_unitful(value::HydroDispatch) = _units_arg_required(get_active_power_unitful, value, :active_power, Val(:mw))
 InfrastructureSystems.display_units_arg(::typeof(get_active_power), ::Type{HydroDispatch}) = InfrastructureSystems.SU
 InfrastructureSystems.display_units_arg(::typeof(get_active_power_unitful), ::Type{HydroDispatch}) = InfrastructureSystems.SU
 """Get [`HydroDispatch`](@ref) `reactive_power` as a bare number in the requested `units` (e.g. `SU`, `DU`; domain-provided units such as `MW` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_reactive_power_unitful`](@ref)."""
 get_reactive_power(value::HydroDispatch, units) = InfrastructureSystems._strip_units(get_value(value, Val(:reactive_power), Val(:mvar), units))
 """Get [`HydroDispatch`](@ref) `reactive_power` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `MW`). For a bare number see [`get_reactive_power`](@ref)."""
 get_reactive_power_unitful(value::HydroDispatch, units) = get_value(value, Val(:reactive_power), Val(:mvar), units)
+get_reactive_power(value::HydroDispatch) = _units_arg_required(get_reactive_power, value, :reactive_power, Val(:mvar))
+get_reactive_power_unitful(value::HydroDispatch) = _units_arg_required(get_reactive_power_unitful, value, :reactive_power, Val(:mvar))
 InfrastructureSystems.display_units_arg(::typeof(get_reactive_power), ::Type{HydroDispatch}) = InfrastructureSystems.SU
 InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_unitful), ::Type{HydroDispatch}) = InfrastructureSystems.SU
 """Get [`HydroDispatch`](@ref) `rating` as a bare number in the requested `units` (e.g. `SU`, `DU`; domain-provided units such as `MW` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_rating_unitful`](@ref)."""
 get_rating(value::HydroDispatch, units) = InfrastructureSystems._strip_units(get_value(value, Val(:rating), Val(:mva), units))
 """Get [`HydroDispatch`](@ref) `rating` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `MW`). For a bare number see [`get_rating`](@ref)."""
 get_rating_unitful(value::HydroDispatch, units) = get_value(value, Val(:rating), Val(:mva), units)
+get_rating(value::HydroDispatch) = _units_arg_required(get_rating, value, :rating, Val(:mva))
+get_rating_unitful(value::HydroDispatch) = _units_arg_required(get_rating_unitful, value, :rating, Val(:mva))
 InfrastructureSystems.display_units_arg(::typeof(get_rating), ::Type{HydroDispatch}) = InfrastructureSystems.DU
 InfrastructureSystems.display_units_arg(::typeof(get_rating_unitful), ::Type{HydroDispatch}) = InfrastructureSystems.DU
 """Get [`HydroDispatch`](@ref) `prime_mover_type`."""
@@ -155,18 +161,24 @@ get_prime_mover_type(value::HydroDispatch) = value.prime_mover_type
 get_active_power_limits(value::HydroDispatch, units) = InfrastructureSystems._strip_units(get_value(value, Val(:active_power_limits), Val(:mw), units))
 """Get [`HydroDispatch`](@ref) `active_power_limits` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `MW`). For a bare number see [`get_active_power_limits`](@ref)."""
 get_active_power_limits_unitful(value::HydroDispatch, units) = get_value(value, Val(:active_power_limits), Val(:mw), units)
+get_active_power_limits(value::HydroDispatch) = _units_arg_required(get_active_power_limits, value, :active_power_limits, Val(:mw))
+get_active_power_limits_unitful(value::HydroDispatch) = _units_arg_required(get_active_power_limits_unitful, value, :active_power_limits, Val(:mw))
 InfrastructureSystems.display_units_arg(::typeof(get_active_power_limits), ::Type{HydroDispatch}) = InfrastructureSystems.SU
 InfrastructureSystems.display_units_arg(::typeof(get_active_power_limits_unitful), ::Type{HydroDispatch}) = InfrastructureSystems.SU
 """Get [`HydroDispatch`](@ref) `reactive_power_limits` as a bare number in the requested `units` (e.g. `SU`, `DU`; domain-provided units such as `MW` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_reactive_power_limits_unitful`](@ref)."""
 get_reactive_power_limits(value::HydroDispatch, units) = InfrastructureSystems._strip_units(get_value(value, Val(:reactive_power_limits), Val(:mvar), units))
 """Get [`HydroDispatch`](@ref) `reactive_power_limits` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `MW`). For a bare number see [`get_reactive_power_limits`](@ref)."""
 get_reactive_power_limits_unitful(value::HydroDispatch, units) = get_value(value, Val(:reactive_power_limits), Val(:mvar), units)
+get_reactive_power_limits(value::HydroDispatch) = _units_arg_required(get_reactive_power_limits, value, :reactive_power_limits, Val(:mvar))
+get_reactive_power_limits_unitful(value::HydroDispatch) = _units_arg_required(get_reactive_power_limits_unitful, value, :reactive_power_limits, Val(:mvar))
 InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_limits), ::Type{HydroDispatch}) = InfrastructureSystems.SU
 InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_limits_unitful), ::Type{HydroDispatch}) = InfrastructureSystems.SU
 """Get [`HydroDispatch`](@ref) `ramp_limits` as a bare number in the requested `units` (e.g. `SU`, `DU`; domain-provided units such as `MW` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_ramp_limits_unitful`](@ref)."""
 get_ramp_limits(value::HydroDispatch, units) = InfrastructureSystems._strip_units(get_value(value, Val(:ramp_limits), Val(:mw), units))
 """Get [`HydroDispatch`](@ref) `ramp_limits` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `MW`). For a bare number see [`get_ramp_limits`](@ref)."""
 get_ramp_limits_unitful(value::HydroDispatch, units) = get_value(value, Val(:ramp_limits), Val(:mw), units)
+get_ramp_limits(value::HydroDispatch) = _units_arg_required(get_ramp_limits, value, :ramp_limits, Val(:mw))
+get_ramp_limits_unitful(value::HydroDispatch) = _units_arg_required(get_ramp_limits_unitful, value, :ramp_limits, Val(:mw))
 InfrastructureSystems.display_units_arg(::typeof(get_ramp_limits), ::Type{HydroDispatch}) = InfrastructureSystems.SU
 InfrastructureSystems.display_units_arg(::typeof(get_ramp_limits_unitful), ::Type{HydroDispatch}) = InfrastructureSystems.SU
 """Get [`HydroDispatch`](@ref) `time_limits`."""
@@ -194,18 +206,27 @@ set_available!(value::HydroDispatch, val) = value.available = val
 set_bus!(value::HydroDispatch, val) = value.bus = val
 """Set [`HydroDispatch`](@ref) `active_power`."""
 set_active_power!(value::HydroDispatch, val) = value.active_power = set_value(value, Val(:active_power), val, Val(:mw))
+set_active_power!(value::HydroDispatch, val::_UntaggedNumber) = _units_tag_required(set_active_power!, value, :active_power, Val(:mw), val)
 """Set [`HydroDispatch`](@ref) `reactive_power`."""
 set_reactive_power!(value::HydroDispatch, val) = value.reactive_power = set_value(value, Val(:reactive_power), val, Val(:mvar))
+set_reactive_power!(value::HydroDispatch, val::_UntaggedNumber) = _units_tag_required(set_reactive_power!, value, :reactive_power, Val(:mvar), val)
 """Set [`HydroDispatch`](@ref) `rating`."""
 set_rating!(value::HydroDispatch, val) = value.rating = set_value(value, Val(:rating), val, Val(:mva))
+set_rating!(value::HydroDispatch, val::_UntaggedNumber) = _units_tag_required(set_rating!, value, :rating, Val(:mva), val)
 """Set [`HydroDispatch`](@ref) `prime_mover_type`."""
 set_prime_mover_type!(value::HydroDispatch, val) = value.prime_mover_type = val
 """Set [`HydroDispatch`](@ref) `active_power_limits`."""
 set_active_power_limits!(value::HydroDispatch, val) = value.active_power_limits = set_value(value, Val(:active_power_limits), val, Val(:mw))
+set_active_power_limits!(value::HydroDispatch, val::_UntaggedNumber) = _units_tag_required(set_active_power_limits!, value, :active_power_limits, Val(:mw), val)
+set_active_power_limits!(value::HydroDispatch, val::NamedTuple{(:min, :max), <:Tuple{Vararg{_UntaggedNumber}}}) = _units_tag_required(set_active_power_limits!, value, :active_power_limits, Val(:mw), val)
 """Set [`HydroDispatch`](@ref) `reactive_power_limits`."""
 set_reactive_power_limits!(value::HydroDispatch, val) = value.reactive_power_limits = set_value(value, Val(:reactive_power_limits), val, Val(:mvar))
+set_reactive_power_limits!(value::HydroDispatch, val::_UntaggedNumber) = _units_tag_required(set_reactive_power_limits!, value, :reactive_power_limits, Val(:mvar), val)
+set_reactive_power_limits!(value::HydroDispatch, val::NamedTuple{(:min, :max), <:Tuple{Vararg{_UntaggedNumber}}}) = _units_tag_required(set_reactive_power_limits!, value, :reactive_power_limits, Val(:mvar), val)
 """Set [`HydroDispatch`](@ref) `ramp_limits`."""
 set_ramp_limits!(value::HydroDispatch, val) = value.ramp_limits = set_value(value, Val(:ramp_limits), val, Val(:mw))
+set_ramp_limits!(value::HydroDispatch, val::_UntaggedNumber) = _units_tag_required(set_ramp_limits!, value, :ramp_limits, Val(:mw), val)
+set_ramp_limits!(value::HydroDispatch, val::NamedTuple{(:up, :down), <:Tuple{Vararg{_UntaggedNumber}}}) = _units_tag_required(set_ramp_limits!, value, :ramp_limits, Val(:mw), val)
 """Set [`HydroDispatch`](@ref) `time_limits`."""
 set_time_limits!(value::HydroDispatch, val) = value.time_limits = val
 """Set [`HydroDispatch`](@ref) `status`."""

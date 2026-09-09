@@ -21,7 +21,7 @@ This file is auto-generated. Do not edit.
         dc_setpoint_from::Float64
         ac_setpoint_from::Float64
         rated_ac_voltage_from::Float64
-        converter_loss_from::Union{LinearCurve, QuadraticCurve}
+        converter_loss_from::Union{AnyLossCurve{LinearCurve}, AnyLossCurve{QuadraticCurve}}
         max_dc_current_from::Float64
         rating_from::Float64
         reactive_power_limits_from::MinMax
@@ -34,7 +34,7 @@ This file is auto-generated. Do not edit.
         dc_setpoint_to::Float64
         ac_setpoint_to::Float64
         rated_ac_voltage_to::Float64
-        converter_loss_to::Union{LinearCurve, QuadraticCurve}
+        converter_loss_to::Union{AnyLossCurve{LinearCurve}, AnyLossCurve{QuadraticCurve}}
         max_dc_current_to::Float64
         rating_to::Float64
         reactive_power_limits_to::MinMax
@@ -72,7 +72,7 @@ This model is appropriate for operational simulations with a linearized DC power
 - `dc_setpoint_from::Float64`: (default: `0.0`) Converter DC setpoint on the `from` bus converter, in per-unit. For a DC-voltage-controlling mode (`dc_control_from` is `DC_VOLTAGE` or `DC_VOLTAGE_DROOP`) this is the DC-side voltage in per-unit of `rated_dc_voltage`. For `DC_POWER` this is the active-power demand in per-unit ([`SYSTEM_BASE`](@ref per_unit)); positive means the converter supplies power to the AC network at the `from` bus, negative means it withdraws.
 - `ac_setpoint_from::Float64`: (default: `1.0`) Converter AC setpoint in the `from` bus converter. When `ac_control_from` is `AC_VOLTAGE` this is the AC voltage on the AC side of the converter, in per-unit of `rated_ac_voltage_from`. When `ac_control_from` is `AC_REACTIVE_POWER`, this value is the power factor setpoint.
 - `rated_ac_voltage_from::Float64`: (default: `0.0`) Rated (base) AC voltage at the `from` converter's AC terminal in kV. Used as the AC voltage base for interpreting `ac_setpoint_from` when `ac_control_from` is `AC_VOLTAGE`; `0.0` means unspecified (the setpoint is taken as per-unit directly).
-- `converter_loss_from::Union{LinearCurve, QuadraticCurve}`: (default: `LinearCurve(0.0)`) Loss model coefficients in the `from` bus converter. It accepts a linear model or quadratic. Same converter data is used in both ends.
+- `converter_loss_from::Union{AnyLossCurve{LinearCurve}, AnyLossCurve{QuadraticCurve}}`: (default: `LossCurve(LinearCurve(0.0), NaturalUnit())`) Loss model coefficients in the `from` bus converter. It accepts a linear model or quadratic. Same converter data is used in both ends.
 - `max_dc_current_from::Float64`: (default: `1e8`) Maximum stable dc current limits (A).
 - `rating_from::Float64`: (default: `1e8`) Converter rating in MVA in the `from` bus.
 - `reactive_power_limits_from::MinMax`: (default: `(min=0.0, max=0.0)`) Limits on the Reactive Power at the `from` side.
@@ -85,7 +85,7 @@ This model is appropriate for operational simulations with a linearized DC power
 - `dc_setpoint_to::Float64`: (default: `0.0`) Converter DC setpoint on the `to` bus converter, in per-unit. For a DC-voltage-controlling mode (`dc_control_to` is `DC_VOLTAGE` or `DC_VOLTAGE_DROOP`) this is the DC-side voltage in per-unit of `rated_dc_voltage`. For `DC_POWER` this is the active-power demand in per-unit ([`SYSTEM_BASE`](@ref per_unit)); positive means the converter supplies power to the AC network at the `to` bus, negative means it withdraws.
 - `ac_setpoint_to::Float64`: (default: `1.0`) Converter AC setpoint in the `to` bus converter. When `ac_control_to` is `AC_VOLTAGE` this is the AC voltage on the AC side of the converter, in per-unit of `rated_ac_voltage_to`. When `ac_control_to` is `AC_REACTIVE_POWER`, this value is the power factor setpoint.
 - `rated_ac_voltage_to::Float64`: (default: `0.0`) Rated (base) AC voltage at the `to` converter's AC terminal in kV. Used as the AC voltage base for interpreting `ac_setpoint_to` when `ac_control_to` is `AC_VOLTAGE`; `0.0` means unspecified (the setpoint is taken as per-unit directly).
-- `converter_loss_to::Union{LinearCurve, QuadraticCurve}`: (default: `LinearCurve(0.0)`) Loss model coefficients in the `to` bus converter. It accepts a linear model or quadratic. Same converter data is used in both ends.
+- `converter_loss_to::Union{AnyLossCurve{LinearCurve}, AnyLossCurve{QuadraticCurve}}`: (default: `LossCurve(LinearCurve(0.0), NaturalUnit())`) Loss model coefficients in the `to` bus converter. It accepts a linear model or quadratic. Same converter data is used in both ends.
 - `max_dc_current_to::Float64`: (default: `1e8`) Maximum stable dc current limits (A).
 - `rating_to::Float64`: (default: `1e8`) Converter rating in MVA in the `to` bus.
 - `reactive_power_limits_to::MinMax`: (default: `(min=0.0, max=0.0)`) Limits on the Reactive Power at the `to` side.
@@ -134,7 +134,7 @@ mutable struct TwoTerminalVSCLine <: TwoTerminalHVDC
     "Rated (base) AC voltage at the `from` converter's AC terminal in kV. Used as the AC voltage base for interpreting `ac_setpoint_from` when `ac_control_from` is `AC_VOLTAGE`; `0.0` means unspecified (the setpoint is taken as per-unit directly)."
     rated_ac_voltage_from::Float64
     "Loss model coefficients in the `from` bus converter. It accepts a linear model or quadratic. Same converter data is used in both ends."
-    converter_loss_from::Union{LinearCurve, QuadraticCurve}
+    converter_loss_from::Union{AnyLossCurve{LinearCurve}, AnyLossCurve{QuadraticCurve}}
     "Maximum stable dc current limits (A)."
     max_dc_current_from::Float64
     "Converter rating in MVA in the `from` bus."
@@ -160,7 +160,7 @@ mutable struct TwoTerminalVSCLine <: TwoTerminalHVDC
     "Rated (base) AC voltage at the `to` converter's AC terminal in kV. Used as the AC voltage base for interpreting `ac_setpoint_to` when `ac_control_to` is `AC_VOLTAGE`; `0.0` means unspecified (the setpoint is taken as per-unit directly)."
     rated_ac_voltage_to::Float64
     "Loss model coefficients in the `to` bus converter. It accepts a linear model or quadratic. Same converter data is used in both ends."
-    converter_loss_to::Union{LinearCurve, QuadraticCurve}
+    converter_loss_to::Union{AnyLossCurve{LinearCurve}, AnyLossCurve{QuadraticCurve}}
     "Maximum stable dc current limits (A)."
     max_dc_current_to::Float64
     "Converter rating in MVA in the `to` bus."
@@ -193,11 +193,11 @@ mutable struct TwoTerminalVSCLine <: TwoTerminalHVDC
     internal::InfrastructureSystemsInternal
 end
 
-function TwoTerminalVSCLine(name, available, arc, active_power_flow, rating, active_power_limits_from, active_power_limits_to, g=0.0, dc_current=0.0, reactive_power_from=0.0, dc_control_from=VSCDCControlModes.DC_VOLTAGE, ac_control_from=VSCACControlModes.AC_VOLTAGE, dc_setpoint_from=0.0, ac_setpoint_from=1.0, rated_ac_voltage_from=0.0, converter_loss_from=LinearCurve(0.0), max_dc_current_from=1e8, rating_from=1e8, reactive_power_limits_from=(min=0.0, max=0.0), power_factor_weighting_fraction_from=1.0, voltage_limits_from=(min=0.0, max=999.9), dc_voltage_droop_from=0.0, reactive_power_to=0.0, dc_control_to=VSCDCControlModes.DC_VOLTAGE, ac_control_to=VSCACControlModes.AC_VOLTAGE, dc_setpoint_to=0.0, ac_setpoint_to=1.0, rated_ac_voltage_to=0.0, converter_loss_to=LinearCurve(0.0), max_dc_current_to=1e8, rating_to=1e8, reactive_power_limits_to=(min=0.0, max=0.0), power_factor_weighting_fraction_to=1.0, voltage_limits_to=(min=0.0, max=999.9), dc_voltage_droop_to=0.0, rated_dc_voltage=0.0, remote_bus_control_from=nothing, remote_bus_control_to=nothing, rmpct_from=100.0, rmpct_to=100.0, services=Device[], base_power=100.0, ext=Dict{String, Any}(), )
+function TwoTerminalVSCLine(name, available, arc, active_power_flow, rating, active_power_limits_from, active_power_limits_to, g=0.0, dc_current=0.0, reactive_power_from=0.0, dc_control_from=VSCDCControlModes.DC_VOLTAGE, ac_control_from=VSCACControlModes.AC_VOLTAGE, dc_setpoint_from=0.0, ac_setpoint_from=1.0, rated_ac_voltage_from=0.0, converter_loss_from=LossCurve(LinearCurve(0.0), NaturalUnit()), max_dc_current_from=1e8, rating_from=1e8, reactive_power_limits_from=(min=0.0, max=0.0), power_factor_weighting_fraction_from=1.0, voltage_limits_from=(min=0.0, max=999.9), dc_voltage_droop_from=0.0, reactive_power_to=0.0, dc_control_to=VSCDCControlModes.DC_VOLTAGE, ac_control_to=VSCACControlModes.AC_VOLTAGE, dc_setpoint_to=0.0, ac_setpoint_to=1.0, rated_ac_voltage_to=0.0, converter_loss_to=LossCurve(LinearCurve(0.0), NaturalUnit()), max_dc_current_to=1e8, rating_to=1e8, reactive_power_limits_to=(min=0.0, max=0.0), power_factor_weighting_fraction_to=1.0, voltage_limits_to=(min=0.0, max=999.9), dc_voltage_droop_to=0.0, rated_dc_voltage=0.0, remote_bus_control_from=nothing, remote_bus_control_to=nothing, rmpct_from=100.0, rmpct_to=100.0, services=Device[], base_power=100.0, ext=Dict{String, Any}(), )
     TwoTerminalVSCLine(name, available, arc, active_power_flow, rating, active_power_limits_from, active_power_limits_to, g, dc_current, reactive_power_from, dc_control_from, ac_control_from, dc_setpoint_from, ac_setpoint_from, rated_ac_voltage_from, converter_loss_from, max_dc_current_from, rating_from, reactive_power_limits_from, power_factor_weighting_fraction_from, voltage_limits_from, dc_voltage_droop_from, reactive_power_to, dc_control_to, ac_control_to, dc_setpoint_to, ac_setpoint_to, rated_ac_voltage_to, converter_loss_to, max_dc_current_to, rating_to, reactive_power_limits_to, power_factor_weighting_fraction_to, voltage_limits_to, dc_voltage_droop_to, rated_dc_voltage, remote_bus_control_from, remote_bus_control_to, rmpct_from, rmpct_to, services, base_power, ext, InfrastructureSystemsInternal(), )
 end
 
-function TwoTerminalVSCLine(; name, available, arc, active_power_flow, rating, active_power_limits_from, active_power_limits_to, g=0.0, dc_current=0.0, reactive_power_from=0.0, dc_control_from=VSCDCControlModes.DC_VOLTAGE, ac_control_from=VSCACControlModes.AC_VOLTAGE, dc_setpoint_from=0.0, ac_setpoint_from=1.0, rated_ac_voltage_from=0.0, converter_loss_from=LinearCurve(0.0), max_dc_current_from=1e8, rating_from=1e8, reactive_power_limits_from=(min=0.0, max=0.0), power_factor_weighting_fraction_from=1.0, voltage_limits_from=(min=0.0, max=999.9), dc_voltage_droop_from=0.0, reactive_power_to=0.0, dc_control_to=VSCDCControlModes.DC_VOLTAGE, ac_control_to=VSCACControlModes.AC_VOLTAGE, dc_setpoint_to=0.0, ac_setpoint_to=1.0, rated_ac_voltage_to=0.0, converter_loss_to=LinearCurve(0.0), max_dc_current_to=1e8, rating_to=1e8, reactive_power_limits_to=(min=0.0, max=0.0), power_factor_weighting_fraction_to=1.0, voltage_limits_to=(min=0.0, max=999.9), dc_voltage_droop_to=0.0, rated_dc_voltage=0.0, remote_bus_control_from=nothing, remote_bus_control_to=nothing, rmpct_from=100.0, rmpct_to=100.0, services=Device[], base_power=100.0, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), )
+function TwoTerminalVSCLine(; name, available, arc, active_power_flow, rating, active_power_limits_from, active_power_limits_to, g=0.0, dc_current=0.0, reactive_power_from=0.0, dc_control_from=VSCDCControlModes.DC_VOLTAGE, ac_control_from=VSCACControlModes.AC_VOLTAGE, dc_setpoint_from=0.0, ac_setpoint_from=1.0, rated_ac_voltage_from=0.0, converter_loss_from=LossCurve(LinearCurve(0.0), NaturalUnit()), max_dc_current_from=1e8, rating_from=1e8, reactive_power_limits_from=(min=0.0, max=0.0), power_factor_weighting_fraction_from=1.0, voltage_limits_from=(min=0.0, max=999.9), dc_voltage_droop_from=0.0, reactive_power_to=0.0, dc_control_to=VSCDCControlModes.DC_VOLTAGE, ac_control_to=VSCACControlModes.AC_VOLTAGE, dc_setpoint_to=0.0, ac_setpoint_to=1.0, rated_ac_voltage_to=0.0, converter_loss_to=LossCurve(LinearCurve(0.0), NaturalUnit()), max_dc_current_to=1e8, rating_to=1e8, reactive_power_limits_to=(min=0.0, max=0.0), power_factor_weighting_fraction_to=1.0, voltage_limits_to=(min=0.0, max=999.9), dc_voltage_droop_to=0.0, rated_dc_voltage=0.0, remote_bus_control_from=nothing, remote_bus_control_to=nothing, rmpct_from=100.0, rmpct_to=100.0, services=Device[], base_power=100.0, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), )
     TwoTerminalVSCLine(name, available, arc, active_power_flow, rating, active_power_limits_from, active_power_limits_to, g, dc_current, reactive_power_from, dc_control_from, ac_control_from, dc_setpoint_from, ac_setpoint_from, rated_ac_voltage_from, converter_loss_from, max_dc_current_from, rating_from, reactive_power_limits_from, power_factor_weighting_fraction_from, voltage_limits_from, dc_voltage_droop_from, reactive_power_to, dc_control_to, ac_control_to, dc_setpoint_to, ac_setpoint_to, rated_ac_voltage_to, converter_loss_to, max_dc_current_to, rating_to, reactive_power_limits_to, power_factor_weighting_fraction_to, voltage_limits_to, dc_voltage_droop_to, rated_dc_voltage, remote_bus_control_from, remote_bus_control_to, rmpct_from, rmpct_to, services, base_power, ext, internal, )
 end
 
@@ -219,7 +219,7 @@ function TwoTerminalVSCLine(::Nothing)
         dc_setpoint_from=0.0,
         ac_setpoint_from=0.0,
         rated_ac_voltage_from=0.0,
-        converter_loss_from=LinearCurve(0.0),
+        converter_loss_from=LossCurve(LinearCurve(0.0), NaturalUnit()),
         max_dc_current_from=0.0,
         rating_from=0.0,
         reactive_power_limits_from=(min=0.0, max=0.0),
@@ -232,7 +232,7 @@ function TwoTerminalVSCLine(::Nothing)
         dc_setpoint_to=0.0,
         ac_setpoint_to=0.0,
         rated_ac_voltage_to=0.0,
-        converter_loss_to=LinearCurve(0.0),
+        converter_loss_to=LossCurve(LinearCurve(0.0), NaturalUnit()),
         max_dc_current_to=0.0,
         rating_to=0.0,
         reactive_power_limits_to=(min=0.0, max=0.0),
@@ -260,24 +260,32 @@ get_arc(value::TwoTerminalVSCLine) = value.arc
 get_active_power_flow(value::TwoTerminalVSCLine, units) = InfrastructureSystems._strip_units(get_value(value, Val(:active_power_flow), Val(:mw), units))
 """Get [`TwoTerminalVSCLine`](@ref) `active_power_flow` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `MW`). For a bare number see [`get_active_power_flow`](@ref)."""
 get_active_power_flow_unitful(value::TwoTerminalVSCLine, units) = get_value(value, Val(:active_power_flow), Val(:mw), units)
+get_active_power_flow(value::TwoTerminalVSCLine) = _units_arg_required(get_active_power_flow, value, :active_power_flow, Val(:mw))
+get_active_power_flow_unitful(value::TwoTerminalVSCLine) = _units_arg_required(get_active_power_flow_unitful, value, :active_power_flow, Val(:mw))
 InfrastructureSystems.display_units_arg(::typeof(get_active_power_flow), ::Type{TwoTerminalVSCLine}) = InfrastructureSystems.SU
 InfrastructureSystems.display_units_arg(::typeof(get_active_power_flow_unitful), ::Type{TwoTerminalVSCLine}) = InfrastructureSystems.SU
 """Get [`TwoTerminalVSCLine`](@ref) `rating` as a bare number in the requested `units` (e.g. `SU`, `DU`; domain-provided units such as `MW` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_rating_unitful`](@ref)."""
 get_rating(value::TwoTerminalVSCLine, units) = InfrastructureSystems._strip_units(get_value(value, Val(:rating), Val(:mva), units))
 """Get [`TwoTerminalVSCLine`](@ref) `rating` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `MW`). For a bare number see [`get_rating`](@ref)."""
 get_rating_unitful(value::TwoTerminalVSCLine, units) = get_value(value, Val(:rating), Val(:mva), units)
+get_rating(value::TwoTerminalVSCLine) = _units_arg_required(get_rating, value, :rating, Val(:mva))
+get_rating_unitful(value::TwoTerminalVSCLine) = _units_arg_required(get_rating_unitful, value, :rating, Val(:mva))
 InfrastructureSystems.display_units_arg(::typeof(get_rating), ::Type{TwoTerminalVSCLine}) = InfrastructureSystems.DU
 InfrastructureSystems.display_units_arg(::typeof(get_rating_unitful), ::Type{TwoTerminalVSCLine}) = InfrastructureSystems.DU
 """Get [`TwoTerminalVSCLine`](@ref) `active_power_limits_from` as a bare number in the requested `units` (e.g. `SU`, `DU`; domain-provided units such as `MW` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_active_power_limits_from_unitful`](@ref)."""
 get_active_power_limits_from(value::TwoTerminalVSCLine, units) = InfrastructureSystems._strip_units(get_value(value, Val(:active_power_limits_from), Val(:mw), units))
 """Get [`TwoTerminalVSCLine`](@ref) `active_power_limits_from` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `MW`). For a bare number see [`get_active_power_limits_from`](@ref)."""
 get_active_power_limits_from_unitful(value::TwoTerminalVSCLine, units) = get_value(value, Val(:active_power_limits_from), Val(:mw), units)
+get_active_power_limits_from(value::TwoTerminalVSCLine) = _units_arg_required(get_active_power_limits_from, value, :active_power_limits_from, Val(:mw))
+get_active_power_limits_from_unitful(value::TwoTerminalVSCLine) = _units_arg_required(get_active_power_limits_from_unitful, value, :active_power_limits_from, Val(:mw))
 InfrastructureSystems.display_units_arg(::typeof(get_active_power_limits_from), ::Type{TwoTerminalVSCLine}) = InfrastructureSystems.SU
 InfrastructureSystems.display_units_arg(::typeof(get_active_power_limits_from_unitful), ::Type{TwoTerminalVSCLine}) = InfrastructureSystems.SU
 """Get [`TwoTerminalVSCLine`](@ref) `active_power_limits_to` as a bare number in the requested `units` (e.g. `SU`, `DU`; domain-provided units such as `MW` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_active_power_limits_to_unitful`](@ref)."""
 get_active_power_limits_to(value::TwoTerminalVSCLine, units) = InfrastructureSystems._strip_units(get_value(value, Val(:active_power_limits_to), Val(:mw), units))
 """Get [`TwoTerminalVSCLine`](@ref) `active_power_limits_to` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `MW`). For a bare number see [`get_active_power_limits_to`](@ref)."""
 get_active_power_limits_to_unitful(value::TwoTerminalVSCLine, units) = get_value(value, Val(:active_power_limits_to), Val(:mw), units)
+get_active_power_limits_to(value::TwoTerminalVSCLine) = _units_arg_required(get_active_power_limits_to, value, :active_power_limits_to, Val(:mw))
+get_active_power_limits_to_unitful(value::TwoTerminalVSCLine) = _units_arg_required(get_active_power_limits_to_unitful, value, :active_power_limits_to, Val(:mw))
 InfrastructureSystems.display_units_arg(::typeof(get_active_power_limits_to), ::Type{TwoTerminalVSCLine}) = InfrastructureSystems.SU
 InfrastructureSystems.display_units_arg(::typeof(get_active_power_limits_to_unitful), ::Type{TwoTerminalVSCLine}) = InfrastructureSystems.SU
 """Get [`TwoTerminalVSCLine`](@ref) `g`."""
@@ -288,6 +296,8 @@ get_dc_current(value::TwoTerminalVSCLine) = value.dc_current
 get_reactive_power_from(value::TwoTerminalVSCLine, units) = InfrastructureSystems._strip_units(get_value(value, Val(:reactive_power_from), Val(:mvar), units))
 """Get [`TwoTerminalVSCLine`](@ref) `reactive_power_from` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `MW`). For a bare number see [`get_reactive_power_from`](@ref)."""
 get_reactive_power_from_unitful(value::TwoTerminalVSCLine, units) = get_value(value, Val(:reactive_power_from), Val(:mvar), units)
+get_reactive_power_from(value::TwoTerminalVSCLine) = _units_arg_required(get_reactive_power_from, value, :reactive_power_from, Val(:mvar))
+get_reactive_power_from_unitful(value::TwoTerminalVSCLine) = _units_arg_required(get_reactive_power_from_unitful, value, :reactive_power_from, Val(:mvar))
 InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_from), ::Type{TwoTerminalVSCLine}) = InfrastructureSystems.SU
 InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_from_unitful), ::Type{TwoTerminalVSCLine}) = InfrastructureSystems.SU
 """Get [`TwoTerminalVSCLine`](@ref) `dc_control_from`."""
@@ -308,12 +318,16 @@ get_max_dc_current_from(value::TwoTerminalVSCLine) = value.max_dc_current_from
 get_rating_from(value::TwoTerminalVSCLine, units) = InfrastructureSystems._strip_units(get_value(value, Val(:rating_from), Val(:mva), units))
 """Get [`TwoTerminalVSCLine`](@ref) `rating_from` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `MW`). For a bare number see [`get_rating_from`](@ref)."""
 get_rating_from_unitful(value::TwoTerminalVSCLine, units) = get_value(value, Val(:rating_from), Val(:mva), units)
+get_rating_from(value::TwoTerminalVSCLine) = _units_arg_required(get_rating_from, value, :rating_from, Val(:mva))
+get_rating_from_unitful(value::TwoTerminalVSCLine) = _units_arg_required(get_rating_from_unitful, value, :rating_from, Val(:mva))
 InfrastructureSystems.display_units_arg(::typeof(get_rating_from), ::Type{TwoTerminalVSCLine}) = InfrastructureSystems.SU
 InfrastructureSystems.display_units_arg(::typeof(get_rating_from_unitful), ::Type{TwoTerminalVSCLine}) = InfrastructureSystems.SU
 """Get [`TwoTerminalVSCLine`](@ref) `reactive_power_limits_from` as a bare number in the requested `units` (e.g. `SU`, `DU`; domain-provided units such as `MW` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_reactive_power_limits_from_unitful`](@ref)."""
 get_reactive_power_limits_from(value::TwoTerminalVSCLine, units) = InfrastructureSystems._strip_units(get_value(value, Val(:reactive_power_limits_from), Val(:mvar), units))
 """Get [`TwoTerminalVSCLine`](@ref) `reactive_power_limits_from` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `MW`). For a bare number see [`get_reactive_power_limits_from`](@ref)."""
 get_reactive_power_limits_from_unitful(value::TwoTerminalVSCLine, units) = get_value(value, Val(:reactive_power_limits_from), Val(:mvar), units)
+get_reactive_power_limits_from(value::TwoTerminalVSCLine) = _units_arg_required(get_reactive_power_limits_from, value, :reactive_power_limits_from, Val(:mvar))
+get_reactive_power_limits_from_unitful(value::TwoTerminalVSCLine) = _units_arg_required(get_reactive_power_limits_from_unitful, value, :reactive_power_limits_from, Val(:mvar))
 InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_limits_from), ::Type{TwoTerminalVSCLine}) = InfrastructureSystems.SU
 InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_limits_from_unitful), ::Type{TwoTerminalVSCLine}) = InfrastructureSystems.SU
 """Get [`TwoTerminalVSCLine`](@ref) `power_factor_weighting_fraction_from`."""
@@ -326,6 +340,8 @@ get_dc_voltage_droop_from(value::TwoTerminalVSCLine) = value.dc_voltage_droop_fr
 get_reactive_power_to(value::TwoTerminalVSCLine, units) = InfrastructureSystems._strip_units(get_value(value, Val(:reactive_power_to), Val(:mvar), units))
 """Get [`TwoTerminalVSCLine`](@ref) `reactive_power_to` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `MW`). For a bare number see [`get_reactive_power_to`](@ref)."""
 get_reactive_power_to_unitful(value::TwoTerminalVSCLine, units) = get_value(value, Val(:reactive_power_to), Val(:mvar), units)
+get_reactive_power_to(value::TwoTerminalVSCLine) = _units_arg_required(get_reactive_power_to, value, :reactive_power_to, Val(:mvar))
+get_reactive_power_to_unitful(value::TwoTerminalVSCLine) = _units_arg_required(get_reactive_power_to_unitful, value, :reactive_power_to, Val(:mvar))
 InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_to), ::Type{TwoTerminalVSCLine}) = InfrastructureSystems.SU
 InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_to_unitful), ::Type{TwoTerminalVSCLine}) = InfrastructureSystems.SU
 """Get [`TwoTerminalVSCLine`](@ref) `dc_control_to`."""
@@ -346,12 +362,16 @@ get_max_dc_current_to(value::TwoTerminalVSCLine) = value.max_dc_current_to
 get_rating_to(value::TwoTerminalVSCLine, units) = InfrastructureSystems._strip_units(get_value(value, Val(:rating_to), Val(:mva), units))
 """Get [`TwoTerminalVSCLine`](@ref) `rating_to` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `MW`). For a bare number see [`get_rating_to`](@ref)."""
 get_rating_to_unitful(value::TwoTerminalVSCLine, units) = get_value(value, Val(:rating_to), Val(:mva), units)
+get_rating_to(value::TwoTerminalVSCLine) = _units_arg_required(get_rating_to, value, :rating_to, Val(:mva))
+get_rating_to_unitful(value::TwoTerminalVSCLine) = _units_arg_required(get_rating_to_unitful, value, :rating_to, Val(:mva))
 InfrastructureSystems.display_units_arg(::typeof(get_rating_to), ::Type{TwoTerminalVSCLine}) = InfrastructureSystems.SU
 InfrastructureSystems.display_units_arg(::typeof(get_rating_to_unitful), ::Type{TwoTerminalVSCLine}) = InfrastructureSystems.SU
 """Get [`TwoTerminalVSCLine`](@ref) `reactive_power_limits_to` as a bare number in the requested `units` (e.g. `SU`, `DU`; domain-provided units such as `MW` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_reactive_power_limits_to_unitful`](@ref)."""
 get_reactive_power_limits_to(value::TwoTerminalVSCLine, units) = InfrastructureSystems._strip_units(get_value(value, Val(:reactive_power_limits_to), Val(:mvar), units))
 """Get [`TwoTerminalVSCLine`](@ref) `reactive_power_limits_to` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `MW`). For a bare number see [`get_reactive_power_limits_to`](@ref)."""
 get_reactive_power_limits_to_unitful(value::TwoTerminalVSCLine, units) = get_value(value, Val(:reactive_power_limits_to), Val(:mvar), units)
+get_reactive_power_limits_to(value::TwoTerminalVSCLine) = _units_arg_required(get_reactive_power_limits_to, value, :reactive_power_limits_to, Val(:mvar))
+get_reactive_power_limits_to_unitful(value::TwoTerminalVSCLine) = _units_arg_required(get_reactive_power_limits_to_unitful, value, :reactive_power_limits_to, Val(:mvar))
 InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_limits_to), ::Type{TwoTerminalVSCLine}) = InfrastructureSystems.SU
 InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_limits_to_unitful), ::Type{TwoTerminalVSCLine}) = InfrastructureSystems.SU
 """Get [`TwoTerminalVSCLine`](@ref) `power_factor_weighting_fraction_to`."""
@@ -385,18 +405,25 @@ set_available!(value::TwoTerminalVSCLine, val) = value.available = val
 set_arc!(value::TwoTerminalVSCLine, val) = value.arc = val
 """Set [`TwoTerminalVSCLine`](@ref) `active_power_flow`."""
 set_active_power_flow!(value::TwoTerminalVSCLine, val) = value.active_power_flow = set_value(value, Val(:active_power_flow), val, Val(:mw))
+set_active_power_flow!(value::TwoTerminalVSCLine, val::_UntaggedNumber) = _units_tag_required(set_active_power_flow!, value, :active_power_flow, Val(:mw), val)
 """Set [`TwoTerminalVSCLine`](@ref) `rating`."""
 set_rating!(value::TwoTerminalVSCLine, val) = value.rating = set_value(value, Val(:rating), val, Val(:mva))
+set_rating!(value::TwoTerminalVSCLine, val::_UntaggedNumber) = _units_tag_required(set_rating!, value, :rating, Val(:mva), val)
 """Set [`TwoTerminalVSCLine`](@ref) `active_power_limits_from`."""
 set_active_power_limits_from!(value::TwoTerminalVSCLine, val) = value.active_power_limits_from = set_value(value, Val(:active_power_limits_from), val, Val(:mw))
+set_active_power_limits_from!(value::TwoTerminalVSCLine, val::_UntaggedNumber) = _units_tag_required(set_active_power_limits_from!, value, :active_power_limits_from, Val(:mw), val)
+set_active_power_limits_from!(value::TwoTerminalVSCLine, val::NamedTuple{(:min, :max), <:Tuple{Vararg{_UntaggedNumber}}}) = _units_tag_required(set_active_power_limits_from!, value, :active_power_limits_from, Val(:mw), val)
 """Set [`TwoTerminalVSCLine`](@ref) `active_power_limits_to`."""
 set_active_power_limits_to!(value::TwoTerminalVSCLine, val) = value.active_power_limits_to = set_value(value, Val(:active_power_limits_to), val, Val(:mw))
+set_active_power_limits_to!(value::TwoTerminalVSCLine, val::_UntaggedNumber) = _units_tag_required(set_active_power_limits_to!, value, :active_power_limits_to, Val(:mw), val)
+set_active_power_limits_to!(value::TwoTerminalVSCLine, val::NamedTuple{(:min, :max), <:Tuple{Vararg{_UntaggedNumber}}}) = _units_tag_required(set_active_power_limits_to!, value, :active_power_limits_to, Val(:mw), val)
 """Set [`TwoTerminalVSCLine`](@ref) `g`."""
 set_g!(value::TwoTerminalVSCLine, val) = value.g = val
 """Set [`TwoTerminalVSCLine`](@ref) `dc_current`."""
 set_dc_current!(value::TwoTerminalVSCLine, val) = value.dc_current = val
 """Set [`TwoTerminalVSCLine`](@ref) `reactive_power_from`."""
 set_reactive_power_from!(value::TwoTerminalVSCLine, val) = value.reactive_power_from = set_value(value, Val(:reactive_power_from), val, Val(:mvar))
+set_reactive_power_from!(value::TwoTerminalVSCLine, val::_UntaggedNumber) = _units_tag_required(set_reactive_power_from!, value, :reactive_power_from, Val(:mvar), val)
 """Set [`TwoTerminalVSCLine`](@ref) `dc_control_from`."""
 set_dc_control_from!(value::TwoTerminalVSCLine, val) = value.dc_control_from = val
 """Set [`TwoTerminalVSCLine`](@ref) `ac_control_from`."""
@@ -413,8 +440,11 @@ set_converter_loss_from!(value::TwoTerminalVSCLine, val) = value.converter_loss_
 set_max_dc_current_from!(value::TwoTerminalVSCLine, val) = value.max_dc_current_from = val
 """Set [`TwoTerminalVSCLine`](@ref) `rating_from`."""
 set_rating_from!(value::TwoTerminalVSCLine, val) = value.rating_from = set_value(value, Val(:rating_from), val, Val(:mva))
+set_rating_from!(value::TwoTerminalVSCLine, val::_UntaggedNumber) = _units_tag_required(set_rating_from!, value, :rating_from, Val(:mva), val)
 """Set [`TwoTerminalVSCLine`](@ref) `reactive_power_limits_from`."""
 set_reactive_power_limits_from!(value::TwoTerminalVSCLine, val) = value.reactive_power_limits_from = set_value(value, Val(:reactive_power_limits_from), val, Val(:mvar))
+set_reactive_power_limits_from!(value::TwoTerminalVSCLine, val::_UntaggedNumber) = _units_tag_required(set_reactive_power_limits_from!, value, :reactive_power_limits_from, Val(:mvar), val)
+set_reactive_power_limits_from!(value::TwoTerminalVSCLine, val::NamedTuple{(:min, :max), <:Tuple{Vararg{_UntaggedNumber}}}) = _units_tag_required(set_reactive_power_limits_from!, value, :reactive_power_limits_from, Val(:mvar), val)
 """Set [`TwoTerminalVSCLine`](@ref) `power_factor_weighting_fraction_from`."""
 set_power_factor_weighting_fraction_from!(value::TwoTerminalVSCLine, val) = value.power_factor_weighting_fraction_from = val
 """Set [`TwoTerminalVSCLine`](@ref) `voltage_limits_from`."""
@@ -423,6 +453,7 @@ set_voltage_limits_from!(value::TwoTerminalVSCLine, val) = value.voltage_limits_
 set_dc_voltage_droop_from!(value::TwoTerminalVSCLine, val) = value.dc_voltage_droop_from = val
 """Set [`TwoTerminalVSCLine`](@ref) `reactive_power_to`."""
 set_reactive_power_to!(value::TwoTerminalVSCLine, val) = value.reactive_power_to = set_value(value, Val(:reactive_power_to), val, Val(:mvar))
+set_reactive_power_to!(value::TwoTerminalVSCLine, val::_UntaggedNumber) = _units_tag_required(set_reactive_power_to!, value, :reactive_power_to, Val(:mvar), val)
 """Set [`TwoTerminalVSCLine`](@ref) `dc_control_to`."""
 set_dc_control_to!(value::TwoTerminalVSCLine, val) = value.dc_control_to = val
 """Set [`TwoTerminalVSCLine`](@ref) `ac_control_to`."""
@@ -439,8 +470,11 @@ set_converter_loss_to!(value::TwoTerminalVSCLine, val) = value.converter_loss_to
 set_max_dc_current_to!(value::TwoTerminalVSCLine, val) = value.max_dc_current_to = val
 """Set [`TwoTerminalVSCLine`](@ref) `rating_to`."""
 set_rating_to!(value::TwoTerminalVSCLine, val) = value.rating_to = set_value(value, Val(:rating_to), val, Val(:mva))
+set_rating_to!(value::TwoTerminalVSCLine, val::_UntaggedNumber) = _units_tag_required(set_rating_to!, value, :rating_to, Val(:mva), val)
 """Set [`TwoTerminalVSCLine`](@ref) `reactive_power_limits_to`."""
 set_reactive_power_limits_to!(value::TwoTerminalVSCLine, val) = value.reactive_power_limits_to = set_value(value, Val(:reactive_power_limits_to), val, Val(:mvar))
+set_reactive_power_limits_to!(value::TwoTerminalVSCLine, val::_UntaggedNumber) = _units_tag_required(set_reactive_power_limits_to!, value, :reactive_power_limits_to, Val(:mvar), val)
+set_reactive_power_limits_to!(value::TwoTerminalVSCLine, val::NamedTuple{(:min, :max), <:Tuple{Vararg{_UntaggedNumber}}}) = _units_tag_required(set_reactive_power_limits_to!, value, :reactive_power_limits_to, Val(:mvar), val)
 """Set [`TwoTerminalVSCLine`](@ref) `power_factor_weighting_fraction_to`."""
 set_power_factor_weighting_fraction_to!(value::TwoTerminalVSCLine, val) = value.power_factor_weighting_fraction_to = val
 """Set [`TwoTerminalVSCLine`](@ref) `voltage_limits_to`."""

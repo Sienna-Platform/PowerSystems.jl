@@ -105,12 +105,16 @@ get_bus(value::PowerLoad) = value.bus
 get_active_power(value::PowerLoad, units) = InfrastructureSystems._strip_units(get_value(value, Val(:active_power), Val(:mw), units))
 """Get [`PowerLoad`](@ref) `active_power` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `MW`). For a bare number see [`get_active_power`](@ref)."""
 get_active_power_unitful(value::PowerLoad, units) = get_value(value, Val(:active_power), Val(:mw), units)
+get_active_power(value::PowerLoad) = _units_arg_required(get_active_power, value, :active_power, Val(:mw))
+get_active_power_unitful(value::PowerLoad) = _units_arg_required(get_active_power_unitful, value, :active_power, Val(:mw))
 InfrastructureSystems.display_units_arg(::typeof(get_active_power), ::Type{PowerLoad}) = InfrastructureSystems.SU
 InfrastructureSystems.display_units_arg(::typeof(get_active_power_unitful), ::Type{PowerLoad}) = InfrastructureSystems.SU
 """Get [`PowerLoad`](@ref) `reactive_power` as a bare number in the requested `units` (e.g. `SU`, `DU`; domain-provided units such as `MW` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_reactive_power_unitful`](@ref)."""
 get_reactive_power(value::PowerLoad, units) = InfrastructureSystems._strip_units(get_value(value, Val(:reactive_power), Val(:mvar), units))
 """Get [`PowerLoad`](@ref) `reactive_power` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `MW`). For a bare number see [`get_reactive_power`](@ref)."""
 get_reactive_power_unitful(value::PowerLoad, units) = get_value(value, Val(:reactive_power), Val(:mvar), units)
+get_reactive_power(value::PowerLoad) = _units_arg_required(get_reactive_power, value, :reactive_power, Val(:mvar))
+get_reactive_power_unitful(value::PowerLoad) = _units_arg_required(get_reactive_power_unitful, value, :reactive_power, Val(:mvar))
 InfrastructureSystems.display_units_arg(::typeof(get_reactive_power), ::Type{PowerLoad}) = InfrastructureSystems.SU
 InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_unitful), ::Type{PowerLoad}) = InfrastructureSystems.SU
 
@@ -119,12 +123,16 @@ _get_base_power(value::PowerLoad) = value.base_power
 get_max_active_power(value::PowerLoad, units) = InfrastructureSystems._strip_units(get_value(value, Val(:max_active_power), Val(:mw), units))
 """Get [`PowerLoad`](@ref) `max_active_power` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `MW`). For a bare number see [`get_max_active_power`](@ref)."""
 get_max_active_power_unitful(value::PowerLoad, units) = get_value(value, Val(:max_active_power), Val(:mw), units)
+get_max_active_power(value::PowerLoad) = _units_arg_required(get_max_active_power, value, :max_active_power, Val(:mw))
+get_max_active_power_unitful(value::PowerLoad) = _units_arg_required(get_max_active_power_unitful, value, :max_active_power, Val(:mw))
 InfrastructureSystems.display_units_arg(::typeof(get_max_active_power), ::Type{PowerLoad}) = InfrastructureSystems.SU
 InfrastructureSystems.display_units_arg(::typeof(get_max_active_power_unitful), ::Type{PowerLoad}) = InfrastructureSystems.SU
 """Get [`PowerLoad`](@ref) `max_reactive_power` as a bare number in the requested `units` (e.g. `SU`, `DU`; domain-provided units such as `MW` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_max_reactive_power_unitful`](@ref)."""
 get_max_reactive_power(value::PowerLoad, units) = InfrastructureSystems._strip_units(get_value(value, Val(:max_reactive_power), Val(:mvar), units))
 """Get [`PowerLoad`](@ref) `max_reactive_power` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `MW`). For a bare number see [`get_max_reactive_power`](@ref)."""
 get_max_reactive_power_unitful(value::PowerLoad, units) = get_value(value, Val(:max_reactive_power), Val(:mvar), units)
+get_max_reactive_power(value::PowerLoad) = _units_arg_required(get_max_reactive_power, value, :max_reactive_power, Val(:mvar))
+get_max_reactive_power_unitful(value::PowerLoad) = _units_arg_required(get_max_reactive_power_unitful, value, :max_reactive_power, Val(:mvar))
 InfrastructureSystems.display_units_arg(::typeof(get_max_reactive_power), ::Type{PowerLoad}) = InfrastructureSystems.SU
 InfrastructureSystems.display_units_arg(::typeof(get_max_reactive_power_unitful), ::Type{PowerLoad}) = InfrastructureSystems.SU
 """Get [`PowerLoad`](@ref) `conformity`."""
@@ -144,12 +152,16 @@ set_available!(value::PowerLoad, val) = value.available = val
 set_bus!(value::PowerLoad, val) = value.bus = val
 """Set [`PowerLoad`](@ref) `active_power`."""
 set_active_power!(value::PowerLoad, val) = value.active_power = set_value(value, Val(:active_power), val, Val(:mw))
+set_active_power!(value::PowerLoad, val::_UntaggedNumber) = _units_tag_required(set_active_power!, value, :active_power, Val(:mw), val)
 """Set [`PowerLoad`](@ref) `reactive_power`."""
 set_reactive_power!(value::PowerLoad, val) = value.reactive_power = set_value(value, Val(:reactive_power), val, Val(:mvar))
+set_reactive_power!(value::PowerLoad, val::_UntaggedNumber) = _units_tag_required(set_reactive_power!, value, :reactive_power, Val(:mvar), val)
 """Set [`PowerLoad`](@ref) `max_active_power`."""
 set_max_active_power!(value::PowerLoad, val) = value.max_active_power = set_value(value, Val(:max_active_power), val, Val(:mw))
+set_max_active_power!(value::PowerLoad, val::_UntaggedNumber) = _units_tag_required(set_max_active_power!, value, :max_active_power, Val(:mw), val)
 """Set [`PowerLoad`](@ref) `max_reactive_power`."""
 set_max_reactive_power!(value::PowerLoad, val) = value.max_reactive_power = set_value(value, Val(:max_reactive_power), val, Val(:mvar))
+set_max_reactive_power!(value::PowerLoad, val::_UntaggedNumber) = _units_tag_required(set_max_reactive_power!, value, :max_reactive_power, Val(:mvar), val)
 """Set [`PowerLoad`](@ref) `conformity`."""
 set_conformity!(value::PowerLoad, val) = value.conformity = val
 """Set [`PowerLoad`](@ref) `services`."""

@@ -23,6 +23,14 @@ Accepted target-unit argument for unit-aware getters/setters: a Unitful unit
 """
 const UnitArg = Union{Unitful.Units, IS.AbstractUnitSystem}
 
+"""
+A number carrying no units: what a unit-aware setter must reject. Both quantity
+wrappers are `Number`s but neither is a `Real` (nor a `Complex`), so this alias
+selects exactly the untagged values. Convertible fields are `Float64` or
+`Complex{Float64}`, so both are covered.
+"""
+const _UntaggedNumber = Union{Real, Complex{<:Real}}
+
 # One public strip generic for both quantity kinds: Unitful's `ustrip` works on
 # `RelativeQuantity` too (IS deliberately does not define its own `ustrip`).
 Unitful.ustrip(q::IS.RelativeQuantity) = IS._strip_units(q)

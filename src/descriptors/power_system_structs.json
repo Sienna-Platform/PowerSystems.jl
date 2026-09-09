@@ -1540,9 +1540,9 @@
                 {
                     "name": "loss",
                     "comment": "Loss model coefficients. It accepts a linear model with a constant loss (MW) and a proportional loss rate (MW of loss per MW of flow). It also accepts a Piecewise loss, with N segments to specify different proportional losses for different segments.",
-                    "null_value": "LinearCurve(0.0)",
-                    "data_type": "Union{LinearCurve, PiecewiseIncrementalCurve}",
-                    "default": "LinearCurve(0.0)"
+                    "null_value": "LossCurve(LinearCurve(0.0), NaturalUnit())",
+                    "data_type": "Union{AnyLossCurve{LinearCurve}, AnyLossCurve{PiecewiseIncrementalCurve}}",
+                    "default": "LossCurve(LinearCurve(0.0), NaturalUnit())"
                 },
                 {
                     "name": "services",
@@ -1704,9 +1704,9 @@
                 {
                     "name": "converter_loss_from",
                     "comment": "Loss model coefficients in the `from` bus converter. It accepts a linear model or quadratic. Same converter data is used in both ends.",
-                    "null_value": "LinearCurve(0.0)",
-                    "data_type": "Union{LinearCurve, QuadraticCurve}",
-                    "default": "LinearCurve(0.0)"
+                    "null_value": "LossCurve(LinearCurve(0.0), NaturalUnit())",
+                    "data_type": "Union{AnyLossCurve{LinearCurve}, AnyLossCurve{QuadraticCurve}}",
+                    "default": "LossCurve(LinearCurve(0.0), NaturalUnit())"
                 },
                 {
                     "name": "max_dc_current_from",
@@ -1806,9 +1806,9 @@
                 {
                     "name": "converter_loss_to",
                     "comment": "Loss model coefficients in the `to` bus converter. It accepts a linear model or quadratic. Same converter data is used in both ends.",
-                    "null_value": "LinearCurve(0.0)",
-                    "data_type": "Union{LinearCurve, QuadraticCurve}",
-                    "default": "LinearCurve(0.0)"
+                    "null_value": "LossCurve(LinearCurve(0.0), NaturalUnit())",
+                    "data_type": "Union{AnyLossCurve{LinearCurve}, AnyLossCurve{QuadraticCurve}}",
+                    "default": "LossCurve(LinearCurve(0.0), NaturalUnit())"
                 },
                 {
                     "name": "max_dc_current_to",
@@ -2204,9 +2204,9 @@
                 {
                     "name": "loss",
                     "comment": "A generic loss model coefficients. It accepts a linear model with a constant loss (MW) and a proportional loss rate (MW of loss per MW of flow). It also accepts a Piecewise loss, with N segments to specify different proportional losses for different segments.",
-                    "null_value": "LinearCurve(0.0)",
-                    "data_type": "Union{LinearCurve, PiecewiseIncrementalCurve}",
-                    "default": "LinearCurve(0.0)"
+                    "null_value": "LossCurve(LinearCurve(0.0), NaturalUnit())",
+                    "data_type": "Union{AnyLossCurve{LinearCurve}, AnyLossCurve{PiecewiseIncrementalCurve}}",
+                    "default": "LossCurve(LinearCurve(0.0), NaturalUnit())"
                 },
                 {
                     "name": "services",
@@ -4375,9 +4375,9 @@
                 {
                     "name": "loss_function",
                     "comment": "Linear or quadratic loss function with respect to the converter current",
-                    "null_value": "LinearCurve(0.0)",
-                    "data_type": "Union{LinearCurve, QuadraticCurve}",
-                    "default": "LinearCurve(0.0)"
+                    "null_value": "LossCurve(LinearCurve(0.0), NaturalUnit())",
+                    "data_type": "Union{AnyLossCurve{LinearCurve}, AnyLossCurve{QuadraticCurve}}",
+                    "default": "LossCurve(LinearCurve(0.0), NaturalUnit())"
                 },
                 {
                     "name": "dc_control",

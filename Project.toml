@@ -41,7 +41,7 @@ InfraStore = "6aee0376-896a-4a59-96ff-12f221c99746"
 # InfrastructureTimeSeriesOpenAPIModels, uncommitted — the pushed IS4 branch still requires
 # the old (now-unregistered) PowerTimeSeriesOpenAPIModels and fails to resolve. Revert to the
 # git rev once IS4 is pushed.
-InfrastructureSystems = {url = "https://github.com/Sienna-Platform/InfrastructureSystems.jl.git", rev = "IS4"}
+InfrastructureSystems = {url = "https://github.com/Sienna-Platform/InfrastructureSystems.jl.git", rev = "lk/loss-curve-units-v2"}
 # LOCAL PATH CO-DEV PINS (temporary): the InfrastructureCore/InfrastructureTimeSeries package
 # split exists only on local disk, not pushed to jd/schemas-0.1.0 yet. Revert to the git pins
 # once pushed/merged.

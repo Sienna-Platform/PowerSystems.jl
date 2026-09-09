@@ -73,6 +73,8 @@ get_circuit(value::TwoWindingTransformer) = value.circuit
 get_magnetizing_shunt(value::TwoWindingTransformer, units) = InfrastructureSystems._strip_units(get_value(value, Val(:magnetizing_shunt), Val(:siemens), units))
 """Get [`TwoWindingTransformer`](@ref) `magnetizing_shunt` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `MW`). For a bare number see [`get_magnetizing_shunt`](@ref)."""
 get_magnetizing_shunt_unitful(value::TwoWindingTransformer, units) = get_value(value, Val(:magnetizing_shunt), Val(:siemens), units)
+get_magnetizing_shunt(value::TwoWindingTransformer) = _units_arg_required(get_magnetizing_shunt, value, :magnetizing_shunt, Val(:siemens))
+get_magnetizing_shunt_unitful(value::TwoWindingTransformer) = _units_arg_required(get_magnetizing_shunt_unitful, value, :magnetizing_shunt, Val(:siemens))
 InfrastructureSystems.display_units_arg(::typeof(get_magnetizing_shunt), ::Type{TwoWindingTransformer}) = InfrastructureSystems.SU
 InfrastructureSystems.display_units_arg(::typeof(get_magnetizing_shunt_unitful), ::Type{TwoWindingTransformer}) = InfrastructureSystems.SU
 """Get [`TwoWindingTransformer`](@ref) `shunt_location`."""
@@ -86,6 +88,7 @@ get_internal(value::TwoWindingTransformer) = value.internal
 
 """Set [`TwoWindingTransformer`](@ref) `magnetizing_shunt`."""
 set_magnetizing_shunt!(value::TwoWindingTransformer, val) = value.magnetizing_shunt = set_value(value, Val(:magnetizing_shunt), val, Val(:siemens))
+set_magnetizing_shunt!(value::TwoWindingTransformer, val::_UntaggedNumber) = _units_tag_required(set_magnetizing_shunt!, value, :magnetizing_shunt, Val(:siemens), val)
 """Set [`TwoWindingTransformer`](@ref) `shunt_location`."""
 set_shunt_location!(value::TwoWindingTransformer, val) = value.shunt_location = val
 """Set [`TwoWindingTransformer`](@ref) `services`."""

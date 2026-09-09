@@ -122,6 +122,197 @@ end
     @test get_ramp_limits_unitful(gen, NU) === nothing
 end
 
+@testset "Generated getters: omitting the units argument explains what to pass" begin
+    sys, gen = _sys_with_thermal(; system_base = 100.0, device_base = 250.0)
+
+    for f in (get_active_power, get_active_power_unitful, get_rating, get_rating_unitful)
+        @test_throws ArgumentError f(gen)
+    end
+
+    msg = try
+        get_active_power(gen)
+    catch e
+        sprint(showerror, e)
+    end
+    # The message must name the getter, the field, the relative markers and the
+    # field's natural unit; a bare MethodError names none of them.
+    @test occursin("get_active_power", msg)
+    @test occursin("active_power", msg)
+    @test occursin("ThermalStandard", msg)
+    for u in ("`DU`", "`SU`", "`NU`", "`MW`")
+        @test occursin(u, msg)
+    end
+    @test occursin("get_active_power_unitful(component, units)", msg)
+
+    # The `_unitful` companion points back at the bare getter, not at itself.
+    msg_u = try
+        get_active_power_unitful(gen)
+    catch e
+        sprint(showerror, e)
+    end
+    @test occursin("get_active_power(component, units)", msg_u)
+    @test !occursin("_unitful_unitful", msg_u)
+
+    # Impedance fields advertise their own natural unit.
+    msg_x = try
+        get_x(Line(nothing))
+    catch e
+        sprint(showerror, e)
+    end
+    @test occursin("`OHMS`", msg_x)
+end
+
+@testset "Generated setters: untagged values explain what to pass" begin
+    sys, gen = _sys_with_thermal(; system_base = 100.0, device_base = 250.0)
+
+    # A bare float, a bare integer and an all-untagged compound are all rejected.
+    @test_throws ArgumentError set_active_power!(gen, 0.5)
+    @test_throws ArgumentError set_active_power!(gen, 1)
+    @test_throws ArgumentError set_active_power_limits!(gen, (min = 0.0, max = 1.0))
+
+    msg = try
+        set_active_power!(gen, 0.5)
+    catch e
+        sprint(showerror, e)
+    end
+    @test occursin("set_active_power!", msg)
+    @test occursin("active_power", msg)
+    @test occursin("ThermalStandard", msg)
+    for tag in ("`val * DU`", "`val * SU`", "`val * MW`")
+        @test occursin(tag, msg)
+    end
+    # `NU` is a getter target only; there is no `val * NU`.
+    @test !occursin("val * NU", msg)
+
+    # A compound field spells out the per-element form.
+    msg_c = try
+        set_active_power_limits!(gen, (min = 0.0, max = 1.0))
+    catch e
+        sprint(showerror, e)
+    end
+    @test occursin("set_active_power_limits!", msg_c)
+    @test occursin("min = 0.0 * DU", msg_c)
+
+    # A partially tagged compound is caught one level down and still names the field.
+    msg_p = try
+        set_active_power_limits!(gen, (min = 0.0 * DU, max = 1.0))
+    catch e
+        sprint(showerror, e)
+    end
+    @test occursin("active_power_limits", msg_p)
+    @test occursin("`val * DU`", msg_p)
+
+    # Impedance setters advertise their own natural unit.
+    msg_x = try
+        set_x!(Line(nothing), 0.1)
+    catch e
+        sprint(showerror, e)
+    end
+    @test occursin("`val * OHMS`", msg_x)
+
+    # The compound fallback exists only where a NamedTuple is a valid value: a
+    # scalar field must not advertise one, or the error would tell the caller to
+    # tag the elements of a value the field can never hold.
+    minmax_t = NamedTuple{(:min, :max), Tuple{Float64, Float64}}
+    updown_t = NamedTuple{(:up, :down), Tuple{Float64, Float64}}
+    # `hasmethod` would be true either way -- the generic `set_X!(value, val)`
+    # takes anything -- so ask which method a NamedTuple actually selects.
+    selected(f, t) = which(f, Tuple{ThermalStandard, t}).sig.parameters[3]
+    @test selected(set_active_power!, minmax_t) === Any
+    @test selected(set_rating!, minmax_t) === Any
+    @test selected(set_active_power_limits!, minmax_t) <: NamedTuple
+    @test selected(set_ramp_limits!, updown_t) <: NamedTuple
+    # ...and it is keyed to that field's own element names.
+    @test selected(set_active_power_limits!, updown_t) === Any
+
+    # A `Complex` field is untagged in the same way a real one is.
+    @test_throws ArgumentError set_magnetizing_shunt!(
+        TwoWindingTransformer(nothing),
+        0.1 + 0.2im,
+    )
+
+    # Tagged values still round-trip through every accepted form.
+    set_active_power!(gen, 0.6 * DU)
+    @test get_active_power(gen, DU) ≈ 0.6
+    set_active_power!(gen, 0.3 * SU)
+    @test get_active_power(gen, SU) ≈ 0.3
+    set_active_power!(gen, 60.0 * MW)
+    @test get_active_power(gen, MW) ≈ 60.0
+    set_active_power_limits!(gen, (min = 0.0 * DU, max = 1.0 * DU))
+    @test get_active_power_limits(gen, DU) == (min = 0.0, max = 1.0)
+end
+
+# The error messages name a natural unit per conversion category. That name is only
+# useful if it is a symbol the caller actually has and the accessors actually take,
+# so each case here reads the unit out of the message itself and round-trips it.
+@testset "Suggested natural units are what the accessors accept" begin
+    sys, gen = _sys_with_thermal(; system_base = 100.0, device_base = 250.0)
+    bus1 = get_component(ACBus, sys, "b1")
+    bus2 = ACBus(;
+        number = 2, name = "b2", available = true,
+        bustype = ACBusTypes.PV, angle = 0.0, magnitude = 1.0,
+        voltage_limits = (min = 0.9, max = 1.1), base_voltage = 138.0,
+    )
+    add_component!(sys, bus2)
+    line = Line(;
+        name = "l1", available = true, active_power_flow = 0.0,
+        reactive_power_flow = 0.0, arc = Arc(; from = bus1, to = bus2),
+        r = 0.01, x = 0.1, b = (from = 0.001, to = 0.001),
+        rating = 2.0, angle_limits = (min = -1.0, max = 1.0),
+    )
+    add_component!(sys, line)
+
+    # One field per conversion category: active, reactive and apparent power,
+    # impedance, admittance. Voltage and current have no convertible fields --
+    # `base_voltage` is stored natural and read with a plain one-argument getter --
+    # so no message ever suggests a unit for them.
+    cases = (
+        (:mw, get_active_power, set_active_power!, gen),
+        (:mvar, get_reactive_power, set_reactive_power!, gen),
+        (:mva, get_rating, set_rating!, gen),
+        (:ohm, get_x, set_x!, line),
+        (:siemens, get_b, set_b!, line),
+    )
+    for (token, getter, setter, comp) in cases
+        get_msg = try
+            getter(comp)
+        catch e
+            sprint(showerror, e)
+        end
+        suggested = match(r"the natural unit `([^`]+)`", get_msg)
+        @test suggested !== nothing
+        name = Symbol(suggested.captures[1])
+
+        # The suggestion must be a name the caller has from `using PowerSystems`.
+        @test name in names(PowerSystems)
+        units = getfield(PowerSystems, name)
+
+        # The getter takes exactly what its message suggested...
+        before = getter(comp, units)
+        @test _unwrap_units(before) == before
+
+        # ...and the setter takes `val * <that same unit>`, as its own message says.
+        set_msg = try
+            setter(comp, 1.0)
+        catch e
+            sprint(showerror, e)
+        end
+        @test occursin("`val * $name`", set_msg)
+        setter(comp, before isa NamedTuple ? map(x -> x * units, before) : before * units)
+        @test getter(comp, units) == before
+    end
+
+    # The suggested names are the `u"..."` literals, not separate constants, and a
+    # unit named as a string is not accepted by either form.
+    @test MW === Unitful.@u_str("MW")
+    @test MVAr === Unitful.@u_str("MVAr")
+    @test MVA === Unitful.@u_str("MVA")
+    @test OHMS === Unitful.@u_str("Ω")
+    @test SIEMENS === Unitful.@u_str("S")
+    @test get_active_power(gen, Unitful.@u_str("MW")) == get_active_power(gen, MW)
+    @test_throws MethodError get_active_power(gen, "MW")
+end
+
 # Regression guard for the explicit-units performance contract (PR #1695):
 # the internal per-unit conversions must compile away so that a literal unit
 # argument yields a type-stable, allocation-free `Float64`, and `ustrip` of the

@@ -103,6 +103,8 @@ get_available(value::TModelHVDCLine) = value.available
 get_active_power_flow(value::TModelHVDCLine, units) = InfrastructureSystems._strip_units(get_value(value, Val(:active_power_flow), Val(:mw), units))
 """Get [`TModelHVDCLine`](@ref) `active_power_flow` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `MW`). For a bare number see [`get_active_power_flow`](@ref)."""
 get_active_power_flow_unitful(value::TModelHVDCLine, units) = get_value(value, Val(:active_power_flow), Val(:mw), units)
+get_active_power_flow(value::TModelHVDCLine) = _units_arg_required(get_active_power_flow, value, :active_power_flow, Val(:mw))
+get_active_power_flow_unitful(value::TModelHVDCLine) = _units_arg_required(get_active_power_flow_unitful, value, :active_power_flow, Val(:mw))
 InfrastructureSystems.display_units_arg(::typeof(get_active_power_flow), ::Type{TModelHVDCLine}) = InfrastructureSystems.SU
 InfrastructureSystems.display_units_arg(::typeof(get_active_power_flow_unitful), ::Type{TModelHVDCLine}) = InfrastructureSystems.SU
 """Get [`TModelHVDCLine`](@ref) `arc`."""
@@ -117,12 +119,16 @@ get_c(value::TModelHVDCLine) = value.c
 get_active_power_limits_from(value::TModelHVDCLine, units) = InfrastructureSystems._strip_units(get_value(value, Val(:active_power_limits_from), Val(:mw), units))
 """Get [`TModelHVDCLine`](@ref) `active_power_limits_from` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `MW`). For a bare number see [`get_active_power_limits_from`](@ref)."""
 get_active_power_limits_from_unitful(value::TModelHVDCLine, units) = get_value(value, Val(:active_power_limits_from), Val(:mw), units)
+get_active_power_limits_from(value::TModelHVDCLine) = _units_arg_required(get_active_power_limits_from, value, :active_power_limits_from, Val(:mw))
+get_active_power_limits_from_unitful(value::TModelHVDCLine) = _units_arg_required(get_active_power_limits_from_unitful, value, :active_power_limits_from, Val(:mw))
 InfrastructureSystems.display_units_arg(::typeof(get_active_power_limits_from), ::Type{TModelHVDCLine}) = InfrastructureSystems.SU
 InfrastructureSystems.display_units_arg(::typeof(get_active_power_limits_from_unitful), ::Type{TModelHVDCLine}) = InfrastructureSystems.SU
 """Get [`TModelHVDCLine`](@ref) `active_power_limits_to` as a bare number in the requested `units` (e.g. `SU`, `DU`; domain-provided units such as `MW` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_active_power_limits_to_unitful`](@ref)."""
 get_active_power_limits_to(value::TModelHVDCLine, units) = InfrastructureSystems._strip_units(get_value(value, Val(:active_power_limits_to), Val(:mw), units))
 """Get [`TModelHVDCLine`](@ref) `active_power_limits_to` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `MW`). For a bare number see [`get_active_power_limits_to`](@ref)."""
 get_active_power_limits_to_unitful(value::TModelHVDCLine, units) = get_value(value, Val(:active_power_limits_to), Val(:mw), units)
+get_active_power_limits_to(value::TModelHVDCLine) = _units_arg_required(get_active_power_limits_to, value, :active_power_limits_to, Val(:mw))
+get_active_power_limits_to_unitful(value::TModelHVDCLine) = _units_arg_required(get_active_power_limits_to_unitful, value, :active_power_limits_to, Val(:mw))
 InfrastructureSystems.display_units_arg(::typeof(get_active_power_limits_to), ::Type{TModelHVDCLine}) = InfrastructureSystems.SU
 InfrastructureSystems.display_units_arg(::typeof(get_active_power_limits_to_unitful), ::Type{TModelHVDCLine}) = InfrastructureSystems.SU
 """Get [`TModelHVDCLine`](@ref) `base_current`."""
@@ -138,6 +144,7 @@ get_internal(value::TModelHVDCLine) = value.internal
 set_available!(value::TModelHVDCLine, val) = value.available = val
 """Set [`TModelHVDCLine`](@ref) `active_power_flow`."""
 set_active_power_flow!(value::TModelHVDCLine, val) = value.active_power_flow = set_value(value, Val(:active_power_flow), val, Val(:mw))
+set_active_power_flow!(value::TModelHVDCLine, val::_UntaggedNumber) = _units_tag_required(set_active_power_flow!, value, :active_power_flow, Val(:mw), val)
 """Set [`TModelHVDCLine`](@ref) `arc`."""
 set_arc!(value::TModelHVDCLine, val) = value.arc = val
 """Set [`TModelHVDCLine`](@ref) `r`."""
@@ -148,8 +155,12 @@ set_l!(value::TModelHVDCLine, val) = value.l = val
 set_c!(value::TModelHVDCLine, val) = value.c = val
 """Set [`TModelHVDCLine`](@ref) `active_power_limits_from`."""
 set_active_power_limits_from!(value::TModelHVDCLine, val) = value.active_power_limits_from = set_value(value, Val(:active_power_limits_from), val, Val(:mw))
+set_active_power_limits_from!(value::TModelHVDCLine, val::_UntaggedNumber) = _units_tag_required(set_active_power_limits_from!, value, :active_power_limits_from, Val(:mw), val)
+set_active_power_limits_from!(value::TModelHVDCLine, val::NamedTuple{(:min, :max), <:Tuple{Vararg{_UntaggedNumber}}}) = _units_tag_required(set_active_power_limits_from!, value, :active_power_limits_from, Val(:mw), val)
 """Set [`TModelHVDCLine`](@ref) `active_power_limits_to`."""
 set_active_power_limits_to!(value::TModelHVDCLine, val) = value.active_power_limits_to = set_value(value, Val(:active_power_limits_to), val, Val(:mw))
+set_active_power_limits_to!(value::TModelHVDCLine, val::_UntaggedNumber) = _units_tag_required(set_active_power_limits_to!, value, :active_power_limits_to, Val(:mw), val)
+set_active_power_limits_to!(value::TModelHVDCLine, val::NamedTuple{(:min, :max), <:Tuple{Vararg{_UntaggedNumber}}}) = _units_tag_required(set_active_power_limits_to!, value, :active_power_limits_to, Val(:mw), val)
 """Set [`TModelHVDCLine`](@ref) `base_current`."""
 set_base_current!(value::TModelHVDCLine, val) = value.base_current = val
 """Set [`TModelHVDCLine`](@ref) `services`."""

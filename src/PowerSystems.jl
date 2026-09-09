@@ -114,6 +114,7 @@ export InputOutputCurve, IncrementalCurve, AverageRateCurve
 export LinearCurve, QuadraticCurve
 export PiecewisePointCurve, PiecewiseIncrementalCurve, PiecewiseAverageCurve
 export ProductionVariableCostCurve, CostCurve, FuelCurve
+export LossCurve, AnyLossCurve
 export get_function_data, get_initial_input, get_input_at_zero
 export get_value_curve, get_power_units
 
@@ -927,6 +928,8 @@ import InfrastructureSystems:
     AverageRateCurve,
     LinearCurve,
     QuadraticCurve,
+    LossCurve,
+    AnyLossCurve,
     PiecewisePointCurve,
     PiecewiseIncrementalCurve,
     PiecewiseAverageCurve,
