@@ -912,7 +912,7 @@ end
         max_active_power = 50.0,
         spread_bid = MarketBidCost(;
             curve_style = CurveStyles.FIXED,
-            curve_multihour = CurveMultiHour.MULTI_HOUR,
+            curve_multistep = CurveMultiStep.MULTI_STEP,
         ),
         price_limits = (min = -50.0, max = 50.0), linked_crr = "crr1")
     add_component!(sys, ptp)
@@ -927,7 +927,7 @@ end
         @test get_max_active_power(ptp2) == 50.0
         @test get_price_limits(ptp2) == (min = -50.0, max = 50.0)
         @test get_curve_style(get_spread_bid(ptp2)) == CurveStyles.FIXED
-        @test get_curve_multihour(get_spread_bid(ptp2)) == CurveMultiHour.MULTI_HOUR
+        @test get_curve_multistep(get_spread_bid(ptp2)) == CurveMultiStep.MULTI_STEP
         @test get_linked_crr(ptp2) == "crr1"
     end
 end

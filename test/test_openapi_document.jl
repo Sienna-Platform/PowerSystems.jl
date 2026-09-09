@@ -355,8 +355,8 @@ end
     @test get_decremental_offer_curves(mbc2) == get_decremental_offer_curves(mbc)
     @test get_incremental_slope(mbc2)
     @test !get_decremental_slope(mbc2)
-    @test get_curve_style(mbc2) == CurveStyles.CURVE
-    @test get_curve_multihour(mbc2) == CurveMultiHour.SINGLE_HOUR
+    @test get_curve_style(mbc2) == CurveStyles.VARIABLE
+    @test get_curve_multistep(mbc2) == CurveMultiStep.SINGLE_STEP
     offers = get_ancillary_service_offers(mbc2)
     @test length(offers) == 1
     @test get_name(only(offers)) == "RESERVE"
@@ -429,23 +429,25 @@ end
         to_file(sys, dir; force = true)
         document_path = joinpath(dir, "system.json")
         txt = read(document_path, String)
-        write(document_path, replace(txt, "\"curve_style\":0" => "\"curve_style\":7"))
-        @test_throws "curve_style 7 is not a valid CurveStyles value" from_file(System, dir)
+        # 2 was VARIABLE under the former three-way split; the collapse to VARIABLE/FIXED
+        # made it invalid rather than silently remapping it.
+        write(document_path, replace(txt, "\"curve_style\":0" => "\"curve_style\":2"))
+        @test_throws "curve_style 2 is not a valid CurveStyles value" from_file(System, dir)
     end
 end
 
-@testset "_curve_multihour_from_wire rejects an out-of-range integer" begin
+@testset "_curve_multistep_from_wire rejects an out-of-range integer" begin
     sys, gen = _market_bid_cost_fixture()
     mktempdir() do dir
         to_file(sys, dir; force = true)
         document_path = joinpath(dir, "system.json")
         txt = read(document_path, String)
-        @test occursin("\"curve_multihour\":0", txt)
+        @test occursin("\"curve_multistep\":0", txt)
         write(
             document_path,
-            replace(txt, "\"curve_multihour\":0" => "\"curve_multihour\":2"),
+            replace(txt, "\"curve_multistep\":0" => "\"curve_multistep\":2"),
         )
-        @test_throws "curve_multihour 2 is not a valid CurveMultiHour value" from_file(
+        @test_throws "curve_multistep 2 is not a valid CurveMultiStep value" from_file(
             System, dir,
         )
     end
@@ -591,14 +593,14 @@ end
         @test mbtc2 isa MarketBidTimeSeriesCost
         @test get_incremental_slope(mbtc2)
         @test !get_decremental_slope(mbtc2)
-        @test get_curve_style(mbtc2) == CurveStyles.CURVE
+        @test get_curve_style(mbtc2) == CurveStyles.VARIABLE
     end
 end
 
 @testset "MarketBidTimeSeriesCost round trip: curve_style" begin
     sys, gen = _mbtc_extension_fixture(; curve_style = CurveStyles.FIXED)
 
-    # The wire representation is a plain integer (0/1/2), not a string enum.
+    # The wire representation is a plain integer (0/1), not a string enum.
     wire = PSY.convert_cost_to_openapi(get_operation_cost(gen))
     @test wire.curve_style == 1
 
@@ -614,16 +616,16 @@ end
     end
 end
 
-@testset "MarketBidTimeSeriesCost round trip: curve_multihour" begin
+@testset "MarketBidTimeSeriesCost round trip: curve_multistep" begin
     sys, gen = _mbtc_extension_fixture(;
         curve_style = CurveStyles.VARIABLE,
-        curve_multihour = CurveMultiHour.MULTI_HOUR,
+        curve_multistep = CurveMultiStep.MULTI_STEP,
     )
 
     # Same wire convention as curve_style: a plain integer (0/1).
     wire = PSY.convert_cost_to_openapi(get_operation_cost(gen))
-    @test wire.curve_style == 2
-    @test wire.curve_multihour == 1
+    @test wire.curve_style == 0
+    @test wire.curve_multistep == 1
 
     mktempdir() do dir
         to_file(sys, dir; force = true)
@@ -632,7 +634,7 @@ end
         mbtc2 = get_operation_cost(gen2)
         @test mbtc2 isa MarketBidTimeSeriesCost
         @test get_curve_style(mbtc2) == CurveStyles.VARIABLE
-        @test get_curve_multihour(mbtc2) == CurveMultiHour.MULTI_HOUR
+        @test get_curve_multistep(mbtc2) == CurveMultiStep.MULTI_STEP
     end
 end
 

@@ -182,26 +182,29 @@ tap changer, which can be used to determine the tap position during power flow c
 ## [Market Bid Curve Styles](@id curvestyles_list)
 
 `CurveStyles` is the curve-clearing style of a [`MarketBidCost`](@ref) or
-[`MarketBidTimeSeriesCost`](@ref), the quantity structure of the bid: a divisible curve, a
-fixed block, or a variable block. A non-`CURVE` value is mutually exclusive with
-linear interpolation (`incremental_slope`/`decremental_slope`). `CurveStyles` has the options:
+[`MarketBidTimeSeriesCost`](@ref), the quantity structure of the bid. `FIXED` is mutually
+exclusive with linear interpolation (`incremental_slope`/`decremental_slope`) and requires a
+single-segment offer curve. `MarketBidCost` checks the segment count at construction.
+`MarketBidTimeSeriesCost` holds time series keys, so it does not check it at construction;
+the rule is enforced when the curves are resolved with a `start_time`. `CurveStyles` has the
+options:
 
-| Name       | Description                                                              |
-|:---------- |:------------------------------------------------------------------------ |
-| `CURVE`    | Ordinary divisible price-setting curve (default)                         |
-| `FIXED`    | The bid clears as one indivisible all-or-nothing package over its period |
-| `VARIABLE` | Divisible quantity, block-priced; cannot set the settlement-point price  |
+| Name       | Description                                             |
+|:---------- |:------------------------------------------------------- |
+| `VARIABLE` | Continuous quantity with one or more segments (default) |
+| `FIXED`    | All-or-nothing block with a single segment              |
 
-## [Market Bid Multi-Hour Blocks](@id curvemultihour_list)
+## [Market Bid Multi-Step Blocks](@id curvemultistep_list)
 
-`CurveMultiHour` is the multi-hour block indicator of a [`MarketBidCost`](@ref) or
-[`MarketBidTimeSeriesCost`](@ref), the time structure of the bid. It is independent of
-`CurveStyles`: the two switches compose. `CurveMultiHour` has the options:
+`CurveMultiStep` is the multi-step block indicator of a [`MarketBidCost`](@ref) or
+[`MarketBidTimeSeriesCost`](@ref), the time structure of the bid counted in model steps so
+it applies at any resolution. It is independent of `CurveStyles`: the two switches compose.
+`CurveMultiStep` has the options:
 
 | Name          | Description                                                      |
 |:------------- |:---------------------------------------------------------------- |
-| `SINGLE_HOUR` | Each hour of the bid clears independently (default)              |
-| `MULTI_HOUR`  | The bid must be awarded as one block across every hour it covers |
+| `SINGLE_STEP` | Each step of the bid clears independently (default)              |
+| `MULTI_STEP`  | The bid must be awarded as one block across every step it covers |
 
 ## [Dynamic States](@id states_list)
 

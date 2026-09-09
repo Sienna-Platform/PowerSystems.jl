@@ -2,8 +2,8 @@
 $(TYPEDEF)
 $(TYPEDFIELDS)
 
-    MarketBidTimeSeriesCost(minimum_energy_offer, start_up, shut_down, incremental_offer_curves, decremental_offer_curves, ancillary_service_offers, incremental_slope, decremental_slope, curve_style, curve_multihour)
-    MarketBidTimeSeriesCost(; minimum_energy_offer, start_up, shut_down, incremental_offer_curves, decremental_offer_curves, ancillary_service_offers, incremental_slope, decremental_slope, curve_style, curve_multihour)
+    MarketBidTimeSeriesCost(minimum_energy_offer, start_up, shut_down, incremental_offer_curves, decremental_offer_curves, ancillary_service_offers, incremental_slope, decremental_slope, curve_style, curve_multistep)
+    MarketBidTimeSeriesCost(; minimum_energy_offer, start_up, shut_down, incremental_offer_curves, decremental_offer_curves, ancillary_service_offers, incremental_slope, decremental_slope, curve_style, curve_multistep)
 
 An operating cost for time-varying market bids of energy and ancillary services.
 All cost curve fields are backed by time series data via IS.jl's time-series ValueCurve types.
@@ -29,10 +29,10 @@ mutable struct MarketBidTimeSeriesCost{U <: IS.AbstractUnitSystem} <: OfferCurve
     incremental_slope::Bool
     "Linear-interpolation flag for the corresponding offer curve; false (default) is the step interpretation. Mutually exclusive with block groups on the same curve."
     decremental_slope::Bool
-    "Curve-clearing style for the bid ([`CurveStyles`](@ref)); CURVE (default) is ordinary divisible price-setting. A non-CURVE value is mutually exclusive with linear interpolation (`incremental_slope`/`decremental_slope`) on either offer curve."
+    "Curve-clearing style for the bid ([`CurveStyles`](@ref)); VARIABLE (default) is a continuous curve with one or more segments, FIXED an all-or-nothing block with a single segment. FIXED is mutually exclusive with linear interpolation (`incremental_slope`/`decremental_slope`). The offer curves are time series keys, so the single-segment rule for FIXED is not checked at construction; it is enforced when the curves are resolved against their data (`get_variable_cost`/`get_decremental_variable_cost` with a `start_time`)."
     curve_style::CurveStyles
-    "Multi-hour block indicator for the bid ([`CurveMultiHour`](@ref)); SINGLE_HOUR (default) clears each hour independently, MULTI_HOUR must be awarded as one block across every hour the bid covers. Independent of `curve_style`."
-    curve_multihour::CurveMultiHour
+    "Multi-step block indicator for the bid ([`CurveMultiStep`](@ref)); SINGLE_STEP (default) clears each step independently, MULTI_STEP must be awarded as one block across every step the bid covers. Independent of `curve_style`."
+    curve_multistep::CurveMultiStep
 end
 
 function MarketBidTimeSeriesCost(;
@@ -44,8 +44,8 @@ function MarketBidTimeSeriesCost(;
     ancillary_service_offers = Vector{Service}(),
     incremental_slope = false,
     decremental_slope = false,
-    curve_style = CurveStyles.CURVE,
-    curve_multihour = CurveMultiHour.SINGLE_HOUR,
+    curve_style = CurveStyles.VARIABLE,
+    curve_multistep = CurveMultiStep.SINGLE_STEP,
 )
     U_inc = typeof(get_power_units(incremental_offer_curves))
     U_dec = typeof(get_power_units(decremental_offer_curves))
@@ -59,7 +59,7 @@ function MarketBidTimeSeriesCost(;
         minimum_energy_offer, start_up, shut_down,
         incremental_offer_curves, decremental_offer_curves,
         ancillary_service_offers,
-        incremental_slope, decremental_slope, curve_style, curve_multihour,
+        incremental_slope, decremental_slope, curve_style, curve_multistep,
     )
 end
 
@@ -84,8 +84,8 @@ get_incremental_slope(value::MarketBidTimeSeriesCost) = value.incremental_slope
 get_decremental_slope(value::MarketBidTimeSeriesCost) = value.decremental_slope
 """Get [`MarketBidTimeSeriesCost`](@ref) `curve_style`."""
 get_curve_style(value::MarketBidTimeSeriesCost) = value.curve_style
-"""Get [`MarketBidTimeSeriesCost`](@ref) `curve_multihour`."""
-get_curve_multihour(value::MarketBidTimeSeriesCost) = value.curve_multihour
+"""Get [`MarketBidTimeSeriesCost`](@ref) `curve_multistep`."""
+get_curve_multistep(value::MarketBidTimeSeriesCost) = value.curve_multistep
 
 """Set [`MarketBidTimeSeriesCost`](@ref) `minimum_energy_offer`."""
 set_minimum_energy_offer!(value::MarketBidTimeSeriesCost, val) =
@@ -112,9 +112,9 @@ set_decremental_slope!(value::MarketBidTimeSeriesCost, val) =
 """Set [`MarketBidTimeSeriesCost`](@ref) `curve_style`."""
 set_curve_style!(value::MarketBidTimeSeriesCost, val) =
     value.curve_style = val
-"""Set [`MarketBidTimeSeriesCost`](@ref) `curve_multihour`."""
-set_curve_multihour!(value::MarketBidTimeSeriesCost, val) =
-    value.curve_multihour = val
+"""Set [`MarketBidTimeSeriesCost`](@ref) `curve_multistep`."""
+set_curve_multistep!(value::MarketBidTimeSeriesCost, val) =
+    value.curve_multistep = val
 
 """
 Make a time-series-backed `CostCurve{<:TimeSeriesPiecewiseIncrementalCurve}` from
