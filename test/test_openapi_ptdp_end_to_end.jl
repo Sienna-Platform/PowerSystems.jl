@@ -485,7 +485,7 @@ end
         @test length(doc1.supplemental_attribute_associations) == attribute_rows + 2
 
         # (4) LOAD, on the default path: no time_series_read_only.
-        sys2 = from_file(System, dir)
+        sys2 = from_file(dir)
 
         # Pre-declared here, not inside the testset below: `@testset` bodies are `let`
         # blocks, so a name first assigned inside one is invisible to a sibling `@testset` —
@@ -545,7 +545,7 @@ end
             to_file(sys2, dir2; force = true)
             @test isfile(joinpath(dir2, "system.json"))
 
-            sys3 = from_file(System, dir2)
+            sys3 = from_file(dir2)
             doc2 = PSY.PD.read_document(joinpath(dir2, "system.json"))
 
             # Same components, same attributes, same series — described by PSY this time.

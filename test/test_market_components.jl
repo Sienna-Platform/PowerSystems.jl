@@ -16,9 +16,7 @@ end
     @test_throws ArgumentError add_component!(sys, bad)
 
     # serialization round-trip: buses encode as ids, resolve on read-back
-    path = joinpath(mktempdir(), "hub_sys.json")
-    to_json(sys, path)
-    sys2 = System(path)
+    sys2 = roundtrip_system(sys)
     hub2 = get_component(TradingHub, sys2, "western_hub")
     @test get_name.(get_associated_buses(hub2)) == ["b1", "b2"]
 end
@@ -140,9 +138,7 @@ end
     )
     set_operation_cost!(gen, mbc)
 
-    path = joinpath(mktempdir(), "curve_style_sys.json")
-    to_json(sys, path)
-    sys2 = System(path)
+    sys2 = roundtrip_system(sys)
     gen2 = get_component(ThermalStandard, sys2, "curve_style_gen")
     @test get_curve_style(get_operation_cost(gen2)) == CurveStyles.FIXED
 end
@@ -178,33 +174,7 @@ end
     set_operation_cost!(gen, mbtc)
     original_su_values = get_time_series_values(gen, su_key)
 
-    path = joinpath(mktempdir(), "mbtc_round_trip.json")
-    to_json(sys, path)
-
-    # The keys cross the wire as an association-id envelope, carrying no time series name.
-    raw = open(path) do io
-        return JSON.parse(io; dicttype = Dict{String, Any})
-    end
-    gen_json = only(
-        filter(
-            c -> get(c, "name", "") == "market_gen",
-            raw["data"]["components"],
-        ),
-    )
-    op_json = gen_json["operation_cost"]
-    @test op_json["start_up"] isa Dict
-    @test Set(keys(op_json["start_up"])) ==
-          Set(["association_id", "element_type", "time_series_type"])
-    @test op_json["start_up"]["association_id"] == IS.get_association_id(su_key)
-    @test op_json["start_up"]["time_series_type"] == "SingleTimeSeries"
-
-    # A regression to field-by-field key serialization would put these back in the JSON.
-    json_text = read(path, String)
-    @test !occursin("owner_category", json_text)
-    @test !occursin("start_up_stages_rt", json_text)
-    @test !occursin("inc_offer_rt", json_text)
-
-    sys2 = System(path)
+    sys2 = roundtrip_system(sys)
     gen2 = get_component(ThermalStandard, sys2, "market_gen")
     cost2 = get_operation_cost(gen2)
     su_key2 = get_start_up(cost2)
@@ -282,9 +252,7 @@ end
     vp3 = VirtualParticipant(; name = "vp3", available = true, settlement_point = b2,
         max_supply = 10.0, max_demand = 10.0, operation_cost = MarketBidCost(nothing))
     add_component!(sys, vp3)
-    path = joinpath(mktempdir(), "vp_sys.json")
-    to_json(sys, path)
-    sys2 = System(path)
+    sys2 = roundtrip_system(sys)
     @test get_name(get_settlement_point(get_component(VirtualParticipant, sys2, "vp3"))) ==
           "b2"
     @test get_name.(get_trading_hubs(get_component(VirtualParticipant, sys2, "vp1"))) ==
@@ -382,9 +350,7 @@ end
             price_limits = (min = 0.0, max = 1.0)))
 
     # round-trip
-    path = joinpath(mktempdir(), "ptp_sys.json")
-    to_json(sys, path)
-    sys2 = System(path)
+    sys2 = roundtrip_system(sys)
     ptp2 = get_component(PointToPointBid, sys2, "utc1")
     @test get_name(get_from(ptp2)) == "b1"
     @test get_name(get_to(ptp2)) == "western_hub"

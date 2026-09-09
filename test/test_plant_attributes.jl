@@ -2,7 +2,6 @@ using Test
 using PowerSystems
 using InfrastructureSystems
 import InfrastructureSystems as IS
-import JSON
 import PowerSystemCaseBuilder as PSB
 const PSY = PowerSystems
 
@@ -987,103 +986,76 @@ const PSY = PowerSystems
             @test has_supplemental_attributes(renewable_gens[1])
         end
 
-        # Test to_json serialization
-        test_dir = mktempdir()
-        json_path = joinpath(test_dir, "system_with_plants.json")
+        sys_loaded = roundtrip_system(sys)
 
-        try
-            # Serialize using to_json
-            to_json(sys, json_path; force = true)
-            @test isfile(json_path)
+        # Verify system loaded correctly
+        @test PSY._get_base_power(sys_loaded) == PSY._get_base_power(sys)
+        @test length(get_components(ThermalStandard, sys_loaded)) ==
+              length(thermal_gens)
 
-            # Verify JSON file contains plant data
-            json_data = open(json_path, "r") do io
-                JSON.parse(io; dicttype = Dict{String, Any})
-            end
-            @test haskey(json_data, "data_format_version")
-            @test json_data["data_format_version"] == PSY.DATA_FORMAT_VERSION
+        # Verify thermal power plant is preserved
+        gen1_loaded = get_component(
+            ThermalStandard,
+            sys_loaded,
+            get_name(thermal_gens[1]),
+        )
+        @test gen1_loaded !== nothing
+        @test has_supplemental_attributes(gen1_loaded)
 
-            # Test System(file) constructor
-            sys_loaded = System(json_path)
+        attrs_loaded = get_supplemental_attributes(ThermalPowerPlant, gen1_loaded)
+        plant_loaded = only(attrs_loaded)
+        @test get_name(plant_loaded) == "Test Coal Plant"
 
-            # Verify system loaded correctly
-            @test PSY._get_base_power(sys_loaded) == PSY._get_base_power(sys)
-            @test length(get_components(ThermalStandard, sys_loaded)) ==
-                  length(thermal_gens)
+        # Verify shaft mappings are preserved
+        shaft_map = get_shaft_map(plant_loaded)
+        reverse_map = get_reverse_shaft_map(plant_loaded)
+        @test length(shaft_map) == 2
+        @test length(reverse_map) == 2
 
-            # Verify thermal power plant is preserved
-            gen1_loaded = get_component(
-                ThermalStandard,
+        gen1_uuid = IS.get_id(gen1_loaded)
+        gen2_loaded = get_component(
+            ThermalStandard,
+            sys_loaded,
+            get_name(thermal_gens[2]),
+        )
+        gen2_uuid = IS.get_id(gen2_loaded)
+
+        @test reverse_map[gen1_uuid] == 1
+        @test reverse_map[gen2_uuid] == 2
+        @test gen1_uuid in shaft_map[1]
+        @test gen2_uuid in shaft_map[2]
+
+        # Verify renewable plant if it was added
+        if length(renewable_gens) >= 1
+            ren1_loaded = get_component(
+                RenewableGen,
                 sys_loaded,
-                get_name(thermal_gens[1]),
+                get_name(renewable_gens[1]),
             )
-            @test gen1_loaded !== nothing
-            @test has_supplemental_attributes(gen1_loaded)
+            @test has_supplemental_attributes(ren1_loaded)
 
-            attrs_loaded = get_supplemental_attributes(ThermalPowerPlant, gen1_loaded)
-            plant_loaded = only(attrs_loaded)
-            @test get_name(plant_loaded) == "Test Coal Plant"
+            ren_attrs = get_supplemental_attributes(RenewablePowerPlant, ren1_loaded)
+            ren_plant_loaded = only(ren_attrs)
+            @test get_name(ren_plant_loaded) == "Test Wind Farm"
 
-            # Verify shaft mappings are preserved
-            shaft_map = get_shaft_map(plant_loaded)
-            reverse_map = get_reverse_shaft_map(plant_loaded)
-            @test length(shaft_map) == 2
-            @test length(reverse_map) == 2
-
-            gen1_uuid = IS.get_id(gen1_loaded)
-            gen2_loaded = get_component(
-                ThermalStandard,
-                sys_loaded,
-                get_name(thermal_gens[2]),
-            )
-            gen2_uuid = IS.get_id(gen2_loaded)
-
-            @test reverse_map[gen1_uuid] == 1
-            @test reverse_map[gen2_uuid] == 2
-            @test gen1_uuid in shaft_map[1]
-            @test gen2_uuid in shaft_map[2]
-
-            # Verify renewable plant if it was added
-            if length(renewable_gens) >= 1
-                ren1_loaded = get_component(
-                    RenewableGen,
-                    sys_loaded,
-                    get_name(renewable_gens[1]),
-                )
-                @test has_supplemental_attributes(ren1_loaded)
-
-                ren_attrs = get_supplemental_attributes(RenewablePowerPlant, ren1_loaded)
-                ren_plant_loaded = only(ren_attrs)
-                @test get_name(ren_plant_loaded) == "Test Wind Farm"
-
-                pcc_map = get_pcc_map(ren_plant_loaded)
-                @test length(pcc_map) == 1
-                @test IS.get_id(ren1_loaded) in pcc_map[1]
-            end
-
-            # Test that we can serialize the loaded system again (round-trip)
-            json_path2 = joinpath(test_dir, "system_roundtrip.json")
-            to_json(sys_loaded, json_path2; force = true)
-            @test isfile(json_path2)
-
-            # Load the round-trip system
-            sys_roundtrip = System(json_path2)
-            @test PSY._get_base_power(sys_roundtrip) == PSY._get_base_power(sys)
-
-            # Verify plant still exists after round-trip
-            gen1_rt = get_component(
-                ThermalStandard,
-                sys_roundtrip,
-                get_name(thermal_gens[1]),
-            )
-            @test has_supplemental_attributes(gen1_rt)
-            attrs_rt = get_supplemental_attributes(ThermalPowerPlant, gen1_rt)
-            @test get_name(only(attrs_rt)) == "Test Coal Plant"
-
-        finally
-            # Clean up temporary files
-            rm(test_dir; recursive = true, force = true)
+            pcc_map = get_pcc_map(ren_plant_loaded)
+            @test length(pcc_map) == 1
+            @test IS.get_id(ren1_loaded) in pcc_map[1]
         end
+
+        # Test that we can serialize the loaded system again (round-trip)
+        sys_roundtrip = roundtrip_system(sys_loaded)
+        @test PSY._get_base_power(sys_roundtrip) == PSY._get_base_power(sys)
+
+        # Verify plant still exists after round-trip
+        gen1_rt = get_component(
+            ThermalStandard,
+            sys_roundtrip,
+            get_name(thermal_gens[1]),
+        )
+        @test has_supplemental_attributes(gen1_rt)
+        attrs_rt = get_supplemental_attributes(ThermalPowerPlant, gen1_rt)
+        @test get_name(only(attrs_rt)) == "Test Coal Plant"
 
         # A plant attribute survives a document round trip: `group_index` rides on its
         # `PlantAssociation` row, and import dispatches shaft_number back from it.

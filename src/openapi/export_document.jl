@@ -595,23 +595,12 @@ function _check_costs_reference_declared_series!(doc::PD.SystemDocument, emitted
     )
 end
 
-"""
-Write the System's time series to `time_series_storage_path` and describe them in the
-document.
-
-Both halves matter and neither is redundant: the sidecar holds the values, and the document
-lists one row per series so a consumer can see what a bundle contains — and in what units, on
-what basis — without opening the store.
-
-The rows come from ONE store call, already sorted by identity and each stamped with the
-store's own `uri`/`data_hash`. Row `id`s are the store's own catalog rowids, carried through
-unchanged: they are informational, not part of the document's component/attribute id space.
-
-Rows whose owner has no document id are skipped and counted when that is tolerated (see
-[`_absent_owner_is_tolerated`](@ref)); the skips are reported in ONE `@warn` after the loop,
-since those series stay in the sidecar but cannot survive a round trip.
-"""
-function _export_all_time_series(sys::System, refs::OpenAPIRefs, time_series_storage_path)
+function _export_all_time_series(
+    sys::System,
+    refs::OpenAPIRefs,
+    time_series_storage_path,
+    write_catalog::Bool,
+)
     rows = PTS.TimeSeriesAssociation[]
     # Counted, not `isempty(store)`: one store holds the supplemental attribute associations
     # as well, so a System with attributes and no series has a non-empty store and would
@@ -645,9 +634,15 @@ function _export_all_time_series(sys::System, refs::OpenAPIRefs, time_series_sto
               "no OpenAPI converter ($types) — they remain in the sidecar but are not " *
               "described in the document and will not survive a round trip"
     end
-    IS.serialize(
-        sys.data.time_series_manager.data_store, String(time_series_storage_path),
-    )
+    # The rows above go into the document either way; `write_catalog` decides only whether
+    # InfraStore's own `.sqlite` is written beside the arrays as well. See `to_file`.
+    store = IS.get_data_store(sys.data)
+    path = String(time_series_storage_path)
+    if write_catalog
+        IS.serialize(store, path)
+    else
+        IS.serialize_arrays(store, path)
+    end
     return rows
 end
 
@@ -689,11 +684,18 @@ requirement — every id already exists or is assigned fresh before it is ever r
 
 Component `ext` is written through verbatim to `doc.ext`. Errors loudly rather than silently
 dropping data: a time series with no `time_series_storage_path` given.
+
+`write_catalog` decides whether InfraStore's `<sidecar>.sqlite` is written beside the arrays:
+`false` (default) writes the arrays alone, `true` keeps the catalog too and makes it
+authoritative on read. Either way the rows appear in `doc.time_series_associations` — the
+keyword adds a file, it does not move them. The format notes at the top of
+`src/openapi/file_io.jl` say which bundle uses which and why.
 """
 function to_openapi(
     sys::System;
     power_units::Symbol = :component_base,
     time_series_storage_path = nothing,
+    write_catalog::Bool = false,
 )
     warn_unexportable_components(sys)
     val = _resolve_export_power_units(power_units)
@@ -728,7 +730,7 @@ function to_openapi(
         )
         append!(
             doc.time_series_associations,
-            _export_all_time_series(sys, refs, time_series_storage_path),
+            _export_all_time_series(sys, refs, time_series_storage_path, write_catalog),
         )
         _reserve_ids!(doc, refs)
     end

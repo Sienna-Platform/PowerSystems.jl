@@ -396,9 +396,7 @@ end
         txt = read(document_path, String)
         @test occursin("\"curve_style\":0", txt)
         write(document_path, replace(txt, "\"curve_style\":0" => "\"curve_style\":null"))
-        @test_throws "MarketBidCost.curve_style is required and missing" from_file(
-            System, dir,
-        )
+        @test_throws "MarketBidCost.curve_style is required and missing" from_file(dir)
     end
 end
 
@@ -414,7 +412,7 @@ end
             replace(txt, "\"incremental_slope\":false" => "\"incremental_slope\":null"),
         )
         @test_throws "MarketBidCost.incremental_slope is required and missing" from_file(
-            System, dir,
+            dir,
         )
     end
 end
@@ -426,7 +424,7 @@ end
         document_path = joinpath(dir, "system.json")
         txt = read(document_path, String)
         write(document_path, replace(txt, "\"curve_style\":0" => "\"curve_style\":7"))
-        @test_throws "curve_style 7 is not a valid CurveStyles value" from_file(System, dir)
+        @test_throws "curve_style 7 is not a valid CurveStyles value" from_file(dir)
     end
 end
 
@@ -508,7 +506,7 @@ end
         gen_row.operation_cost.value.ancillary_service_offers = Int64[svc_id]
         PSY.PD.write_document(doc, document_path; force = true)
 
-        sys2 = from_file(System, dir)
+        sys2 = from_file(dir)
         gen2 = get_component(ThermalStandard, sys2, "gen1")
         mbtc2 = get_operation_cost(gen2)
         @test mbtc2 isa MarketBidTimeSeriesCost
@@ -564,7 +562,7 @@ end
     sys, gen = _mbtc_extension_fixture(; incremental_slope = true)
     mktempdir() do dir
         to_file(sys, dir; force = true)
-        sys2 = from_file(System, dir)
+        sys2 = from_file(dir)
         gen2 = get_component(ThermalStandard, sys2, "gen1")
         mbtc2 = get_operation_cost(gen2)
         @test mbtc2 isa MarketBidTimeSeriesCost
@@ -583,7 +581,7 @@ end
 
     mktempdir() do dir
         to_file(sys, dir; force = true)
-        sys2 = from_file(System, dir)
+        sys2 = from_file(dir)
         gen2 = get_component(ThermalStandard, sys2, "gen1")
         mbtc2 = get_operation_cost(gen2)
         @test mbtc2 isa MarketBidTimeSeriesCost

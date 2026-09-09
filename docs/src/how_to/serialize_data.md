@@ -1,112 +1,105 @@
-# Write, View, and Load Data with a JSON
+# Write, View, and Load Data as a Bundle or Archive
 
-`PowerSystems.jl` provides functionality to serialize an entire [`System`](@ref) to a JSON
-file and then deserialize it back to a `System`. The main benefit is that
-deserializing is significantly faster than reconstructing the `System` from raw
-data files.
+`PowerSystems.jl` provides [`to_file`](@ref)/[`from_file`](@ref) to serialize an entire
+[`System`](@ref) and deserialize it back. The main benefit is that deserializing is
+significantly faster than reconstructing the `System` from raw data files.
 
-The sections below show how to write data to a JSON, explore the data while it is in
-JSON format, and load Data saved in a JSON back into `PowerSystems.jl`.
+There are two formats:
 
-## Write data to a JSON
+  - `format = :json` (default) — a directory holding `system.json` (an OpenAPI document) plus,
+    when the system has time series, `time_series.h5` and its `time_series.h5.sqlite` catalog.
+  - `format = :sienna` — the same three members, tar+gzip'd into one file (conventionally named
+    `*.sn`).
 
-You can do this to save your own custom `System`, but we'll use an existing
-dataset from
-[`PowerSystemCaseBuilder.jl`](https://github.com/Sienna-Platform/PowerSystemCaseBuilder.jl),
-simply to illustrate the process.
+!!! warning
 
-First, load the dependencies and a `System` from `PowerSystemCaseBuilder`:
+    There is no migration path from the old single-file native JSON format (written by the
+    removed `IS.to_json`/`System(path)` constructor) or from a `to_file`/`from_file` bundle
+    written before this format. A `System` serialized in either old shape must be rebuilt from
+    source and re-serialized with the current `to_file`.
+
+    A round trip through `to_file`/`from_file` also does not yet preserve a `System`'s
+    user-defined subsystems or masked components (for example, some internal use of
+    `HybridSystem` subcomponents). `to_file` warns when it detects either, but does not error.
+
+## Write data
+
+Build (or load) the `System` you want to save. Here's a small hand-built one to illustrate
+the process:
 
 ```@repl serialize_data
 using PowerSystems
-using PowerSystemCaseBuilder
-sys = build_system(PSISystems, "c_sys5_pjm")
+sys = System(100.0)
+bus = ACBus(;
+    number = 1, name = "bus1", available = true, bustype = ACBusTypes.REF,
+    angle = 0.0, magnitude = 1.0, voltage_limits = (min = 0.9, max = 1.1),
+    base_voltage = 230.0,
+)
+add_component!(sys, bus)
+gen = ThermalStandard(;
+    name = "107_CC_1", available = true, status = true, bus = bus,
+    active_power = 1.0, reactive_power = 0.0, rating = 2.5,
+    active_power_limits = (min = 0.0, max = 2.5),
+    reactive_power_limits = (min = -1.0, max = 1.0),
+    ramp_limits = nothing, operation_cost = ThermalGenerationCost(nothing),
+    base_power = 100.0,
+)
+add_component!(sys, gen)
 ```
 
-Set up your target path, for example in a "mysystems" subfolder:
+Write it as a `:json` bundle:
 
 ```@repl serialize_data
-folder = mkdir("mysystems");
-path = joinpath(folder, "system.json")
+bundle = mkdir("mysystem")
+to_file(sys, bundle)
+readdir(bundle)
 ```
 
-Now write the system to JSON:
+Or as a single `:sienna` archive:
 
 ```@repl serialize_data
-to_json(sys, path)
+to_file(sys, "mysystem.sn"; format = :sienna)
 ```
 
-Notice in the `Info` statements that the serialization process stores 3 files:
+## Viewing the document in JSON format
 
- 1. System data file (`*.json` file)
- 2. Validation data file (`*.json` file)
- 3. Time Series data files (`*.h5` file with a `*.sqlite` catalog)
+Some users prefer to view and filter the data while it is in JSON format. There are many
+tools available to browse JSON data — for example the command line utility
+[jq](https://stedolan.github.io/jq/). Below are some example commands, called from the command
+line within the `mysystem` directory. Components are grouped by type name:
 
-## Viewing `PowerSystems` Data in JSON Format
-
-Some users prefer to view and filter the `PowerSystems.jl` data while it is in JSON format.
-There are many tools available to browse JSON data.
-
-Here is an example [GUI tool](http://jsonviewer.stack.hu) that is available
-online in a browser.
-
-The command line utility [jq](https://stedolan.github.io/jq/) offers even more
-features. Below are some example commands, called from the command line within the
-"mysystems" subfolder:
-
-View the entire file pretty-printed:
+View the component types present:
 
 ```zsh
-jq . system.json
+jq '.components | keys' system.json
 ```
 
-View the `PowerSystems` component types:
+View all components of one type:
 
 ```zsh
-jq '.data.components | .[] | .__metadata__ | .type' system.json | sort | uniq
+jq '.components.ThermalStandard' system.json
 ```
 
-View specific components:
+View one component by name:
 
 ```zsh
-jq '.data.components | .[] | select(.__metadata__.type == "ThermalStandard")' system.json
-```
-
-Get the count of a component type:
-
-```zsh
-# There is almost certainly a better way.
-jq '.data.components | .[] | select(.__metadata__.type == "ThermalStandard")' system.json | grep -c ThermalStandard
-```
-
-View specific component by name:
-
-```zsh
-jq '.data.components | .[] | select(.__metadata__.type == "ThermalStandard" and .name == "107_CC_1")' system.json
+jq '.components.ThermalStandard[] | select(.name == "107_CC_1")' system.json
 ```
 
 Filter on a field value:
 
 ```zsh
-jq '.data.components | .[] | select(.__metadata__.type == "ThermalStandard" and .active_power > 2.3)' system.json
+jq '.components.ThermalStandard[] | select(.active_power > 2.3)' system.json
 ```
 
-## Read the JSON file and create a new `System`
+## Read a bundle or archive back into a `System`
 
-Finally, you can read the file back in, and verify the new system has the same data as above:
+`from_file` infers the format from `path` — a directory reads as a `:json` bundle, a `.sn`
+file reads as a `:sienna` archive:
 
 ```@repl serialize_data
-sys2 = System(path)
-rm(folder; recursive = true); #hide
+sys2 = from_file(bundle)
+sys3 = from_file("mysystem.sn")
+rm(bundle; recursive = true); #hide
+rm("mysystem.sn"); #hide
 ```
-
-!!! tip
-
-    PowerSystems generates UUIDs for the `System` and all components in order to have
-    a way to uniquely identify objects. During deserialization it restores the same
-    UUIDs.  If you will modify the `System` or components after deserialization then
-    it is recommended that you set this flag to generate new UUIDs.
-
-    ```julia
-    system2 = System(path; assign_new_uuids = true)
-    ```

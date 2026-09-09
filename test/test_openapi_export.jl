@@ -889,7 +889,7 @@ end
 
     mktempdir() do dir
         to_file(sys, dir; force = true)
-        sys2 = from_file(System, dir)
+        sys2 = from_file(dir)
 
         hub2 = only(get_components(TradingHub, sys2))
         vp_hub2 = get_component(VirtualParticipant, sys2, "vp_hub")
@@ -916,7 +916,7 @@ end
 
     mktempdir() do dir
         to_file(sys, dir; force = true)
-        sys2 = from_file(System, dir)
+        sys2 = from_file(dir)
 
         ptp2 = get_component(PointToPointBid, sys2, "utc1")
         @test get_name(get_from(ptp2)) == "b1"
@@ -1388,8 +1388,8 @@ end
         end
 
         dir = mktempdir()
-        PSY.to_file(sys, dir; power_units = power_units, force = true)
-        restored = get_component(TwoTerminalVSCLine, PSY.from_file(System, dir), "vsc1")
+        PSY.to_file(sys, dir; unit_system = power_units, force = true)
+        restored = get_component(TwoTerminalVSCLine, PSY.from_file(dir), "vsc1")
         for field in fieldnames(TwoTerminalVSCLine)
             field in (:internal, :arc, :services) && continue
             @test getfield(restored, field) == getfield(vsc, field)
@@ -1418,8 +1418,8 @@ end
         end
 
         dir = mktempdir()
-        PSY.to_file(sys, dir; power_units = power_units, force = true)
-        restored = get_component(TwoTerminalVSCLine, PSY.from_file(System, dir), "vsc1")
+        PSY.to_file(sys, dir; unit_system = power_units, force = true)
+        restored = get_component(TwoTerminalVSCLine, PSY.from_file(dir), "vsc1")
         for field in fieldnames(TwoTerminalVSCLine)
             field in (:internal, :arc, :services) && continue
             @test getfield(restored, field) == getfield(vsc, field)
@@ -1470,8 +1470,8 @@ end
     # fallbacks are symmetric only for the degenerate `g == 0.0` case, which never needed
     # tolerating in the first place.
     dir = mktempdir()
-    PSY.to_file(sys, dir; power_units = :natural_units, force = true)
-    @test_throws ErrorException PSY.from_file(System, dir)
+    PSY.to_file(sys, dir; unit_system = :natural_units, force = true)
+    @test_throws ErrorException PSY.from_file(dir)
 end
 
 _export_thermal_gen(bus; name = "gen1") = ThermalStandard(;
@@ -1629,7 +1629,7 @@ end
 
     mktempdir() do dir
         PSY.to_file(sys, dir; force = true)
-        sys3 = PSY.from_file(System, dir)
+        sys3 = PSY.from_file(dir)
         block3 = only(get_supplemental_attributes(CombinedCycleBlock, sys3))
         @test get_hrsg_ct_map(block3) == get_hrsg_ct_map(block)
         @test get_hrsg_ca_map(block3) == get_hrsg_ca_map(block)
@@ -1656,7 +1656,7 @@ end
     end
     mktempdir() do dir
         to_file(sys, dir; force = true)
-        sys2 = from_file(System, dir)
+        sys2 = from_file(dir)
         zone2 = get_component(LoadZone, sys2, "lz1")
         @test get_time_series_values(
             SingleTimeSeries, zone2, "factor"; features = Dict("bus" => 1),

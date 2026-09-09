@@ -467,9 +467,7 @@ end
     @test IS.get_base_value(new_circuit) == 100.0
 
     # anchor is never serialized; it is repopulated on attach during load
-    path = joinpath(mktempdir(), "anchor_sys.json")
-    to_json(sys, path)
-    sys2 = System(path)
+    sys2 = roundtrip_system(sys)
     t2 = only(get_components(ThreeWindingTransformer, sys2))
     for w in get_circuits(t2)
         @test IS.get_base_value(w) == 100.0

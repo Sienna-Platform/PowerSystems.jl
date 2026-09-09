@@ -327,9 +327,7 @@ end
         contributing_services = Service[sub_a, sub_b])
     add_service!(sys, group)
 
-    path = joinpath(mktempdir(), "group_roundtrip.json")
-    to_json(sys, path)
-    sys2 = System(path)
+    sys2 = roundtrip_system(sys)
     group2 = get_component(GroupReserve{ReserveUp}, sys2, "GROUP")
     @test !isnothing(group2)
     @test sort!(get_name.(get_contributing_services(group2))) == ["SUB_A", "SUB_B"]

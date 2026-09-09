@@ -15,9 +15,6 @@ const SYSTEM_KWARGS = Set((
     :description,
 ))
 
-# This will be used in the future to handle serialization changes.
-const DATA_FORMAT_VERSION = "5.0.0"
-
 mutable struct SystemMetadata <: IS.InfrastructureSystemsType
     name::Union{Nothing, String}
     description::Union{Nothing, String}
@@ -249,82 +246,38 @@ function System(
     )
 end
 
-"""Constructs a System from a JSON file path ending with .json.
-
-`assign_new_ids = true` will generate new integer IDs for all components.
 """
-function System(
-    file_path::AbstractString;
-    assign_new_ids = false,
-    kwargs...,
-)
+`System(::AbstractString)` no longer constructs a System — it always errors, pointing at the
+supported alternative. Use [`from_file`](@ref) to read a serialized `System` bundle/archive, or
+PowerSystems.jl's `PowerFlowFileParser.jl` companion package to parse a Matpower/PSSE file.
+"""
+function System(file_path::AbstractString; kwargs...)
     ext = lowercase(splitext(file_path)[2])
-    if ext != ".json"
+    if ext == ".json"
         throw(
             DataFormatError(
-                "$file_path is not a supported file type. Only .json files are supported.",
+                "System($(repr(file_path))) no longer deserializes a system. The old " *
+                "single-file native JSON format has no reader anymore. from_file reads a " *
+                "bundle directory or a $SIENNA_ARCHIVE_EXTENSION archive written by to_file — " *
+                "a single .json path is neither. A system serialized in the old format must " *
+                "be rebuilt from source and re-serialized with the current to_file.",
             ),
         )
-    end
-    unsupported = setdiff(keys(kwargs), SYSTEM_KWARGS)
-    !isempty(unsupported) && error("Unsupported kwargs = $unsupported")
-    runchecks = get(kwargs, :runchecks, true)
-    time_series_read_only = get(kwargs, :time_series_read_only, false)
-    time_series_directory = get(kwargs, :time_series_directory, nothing)
-    config_path = get(kwargs, :config_path, POWER_SYSTEM_STRUCT_DESCRIPTOR_FILE)
-    sys = deserialize(
-        System,
-        file_path;
-        time_series_read_only = time_series_read_only,
-        runchecks = runchecks,
-        time_series_directory = time_series_directory,
-        config_path = config_path,
-    )
-    _post_deserialize_handling(
-        sys;
-        runchecks = runchecks,
-        assign_new_ids = assign_new_ids,
-    )
-    return sys
-end
-
-"""
-If assign_new_ids = true, generate new integer IDs for all components.
-
-Warning: time series data is not restored by this method. If that is needed, use the normal
-process to construct the system from a serialized JSON file instead, such as with
-`System("sys.json")`.
-"""
-function IS.from_json(
-    io::Union{IO, String},
-    ::Type{System};
-    runchecks = true,
-    assign_new_ids = false,
-    kwargs...,
-)
-    data = JSON.parse(io; dicttype = Dict{String, Any})
-    sys = from_dict(System, data; kwargs...)
-    _post_deserialize_handling(
-        sys;
-        runchecks = runchecks,
-        assign_new_ids = assign_new_ids,
-    )
-    return sys
-end
-
-function _post_deserialize_handling(sys::System; runchecks = true, assign_new_ids = false)
-    runchecks && check(sys)
-    if assign_new_ids
-        assign_new_uuid!(sys)
-        for component in get_components(Component, sys)
-            IS.assign_new_id!(sys, component)
-        end
-        for component in
-            IS.get_masked_components(InfrastructureSystemsComponent, sys.data)
-            IS.assign_new_id!(sys, component)
-        end
-        # Note: this does not change UUIDs for time series data because they are
-        # shared with components.
+    elseif ext in (".raw", ".m")
+        throw(
+            DataFormatError(
+                "PowerSystems.jl no longer parses $ext files. Use PowerFlowFileParser.jl to " *
+                "parse this file into a System.",
+            ),
+        )
+    else
+        throw(
+            DataFormatError(
+                "$(repr(file_path)) is not a supported way to construct a System. Use " *
+                "from_file for a serialized bundle/archive, or PowerFlowFileParser.jl for a " *
+                "Matpower/PSSE file.",
+            ),
+        )
     end
 end
 
@@ -386,70 +339,6 @@ function filter_components_by_subsystem!(
         check(sys)
         check_components(sys)
     end
-end
-
-"""
-Serializes a system to a JSON file and saves time series to an HDF5 file.
-
-# Arguments
-- `sys::System`: system
-- `filename::AbstractString`: filename to write
-
-# Keyword arguments
-- `user_data::Union{Nothing, Dict} = nothing`: optional metadata to record
-- `pretty::Bool = false`: whether to pretty-print the JSON
-- `force::Bool = false`: whether to overwrite existing files
-- `check::Bool = false`: whether to run system validation checks
-
-Refer to [`check_component`](@ref) for exceptions thrown if `check = true`.
-"""
-function IS.to_json(
-    sys::System,
-    filename::AbstractString;
-    user_data = nothing,
-    pretty = false,
-    force = false,
-    runchecks = false,
-)
-    if runchecks
-        check(sys)
-        check_components(sys)
-    end
-
-    IS.prepare_for_serialization_to_file!(sys.data, filename; force = force)
-    data = to_json(sys; pretty = pretty)
-    open(filename, "w") do io
-        write(io, data)
-    end
-
-    mfile = joinpath(dirname(filename), splitext(basename(filename))[1] * "_metadata.json")
-    @info "Serialized System to $filename"
-    _serialize_system_metadata_to_file(sys, mfile, user_data)
-    return
-end
-
-function _serialize_system_metadata_to_file(sys::System, filename, user_data)
-    name = get_name(sys)
-    description = get_description(sys)
-    resolutions = [x.value for x in get_time_series_resolutions(sys)]
-    metadata = OrderedDict(
-        "name" => isnothing(name) ? "" : name,
-        "description" => isnothing(description) ? "" : description,
-        "uuid" => string(get_system_uuid(sys)),
-        "frequency" => sys.frequency,
-        "time_series_resolutions_milliseconds" => resolutions,
-        "component_counts" => IS.get_component_counts_by_type(sys.data),
-        "time_series_counts" => IS.get_time_series_counts_by_type(sys.data),
-    )
-    if !isnothing(user_data)
-        metadata["user_data"] = user_data
-    end
-
-    open(filename, "w") do io
-        JSON.json(io, metadata; pretty = 2)
-    end
-
-    @info "Serialized System metadata to $filename"
 end
 
 """
@@ -2289,308 +2178,6 @@ function check_ac_transmission_rate_values(sys::System)
     return is_valid
 end
 
-"""
-Serialize a [System](@ref) instance. Returns a `Dict{String, Any}`
-of the form `Dict("data_format_version" => "1.0", "field1" => serialize(sys.field1), ...)`,
-which can then be written to a JSON file.
-"""
-function IS.serialize(sys::T) where {T <: System}
-    data = Dict{String, Any}()
-    data["data_format_version"] = DATA_FORMAT_VERSION
-    for field in fieldnames(T)
-        # Exclude bus_numbers because they will get rebuilt during deserialization.
-        # Exclude time_series_directory because the system may get deserialized on a
-        # different system.
-        if field != :bus_numbers && field != :time_series_directory
-            data[string(field)] = serialize(getfield(sys, field))
-        end
-    end
-
-    return data
-end
-
-"""
-Deserialize a [System](@ref) instance from a JSON file; the reverse of [`IS.serialize`](@ref).
-"""
-function IS.deserialize(
-    ::Type{System},
-    filename::AbstractString;
-    kwargs...,
-)
-    raw = open(filename) do io
-        JSON.parse(io; dicttype = Dict{String, Any})
-    end
-
-    if raw["data_format_version"] != DATA_FORMAT_VERSION
-        pre_read_conversion!(raw)
-    end
-
-    # These file paths are relative to the system file.
-    directory = dirname(filename)
-    for file_key in ("time_series_storage_file",)
-        if haskey(raw["data"], file_key) && !isabspath(raw["data"][file_key])
-            raw["data"][file_key] = joinpath(directory, raw["data"][file_key])
-        end
-    end
-
-    return from_dict(System, raw; kwargs...)
-end
-
-function from_dict(
-    ::Type{System},
-    raw::Dict{String, Any};
-    time_series_read_only = false,
-    time_series_directory = nothing,
-    config_path = POWER_SYSTEM_STRUCT_DESCRIPTOR_FILE,
-    kwargs...,
-)
-    # Read any field that is defined in System but optional for the constructors and not
-    # already handled here.
-    handled = (
-        "data",
-        "base_power",
-        "bus_numbers",
-        "internal",
-        "data_format_version",
-        "metadata",
-        "name",
-        "description",
-    )
-    parsed_kwargs = Dict{Symbol, Any}()
-    for field in setdiff(keys(raw), handled)
-        parsed_kwargs[Symbol(field)] = raw[field]
-    end
-
-    # The user can override the serialized runchecks value by passing a kwarg here.
-    if haskey(kwargs, :runchecks)
-        parsed_kwargs[:runchecks] = kwargs[:runchecks]
-    end
-
-    base_power = raw["base_power"]
-    data = IS.deserialize(
-        IS.SystemData,
-        raw["data"];
-        time_series_read_only = time_series_read_only,
-        time_series_directory = time_series_directory,
-        validation_descriptor_file = config_path,
-    )
-    metadata = get(raw, "metadata", Dict())
-    name = get(metadata, "name", nothing)
-    description = get(metadata, "description", nothing)
-    if !haskey(metadata, "uuid")
-        throw(
-            DataFormatError(
-                "The serialized System metadata has no \"uuid\" field. Regenerate the " *
-                "serialized system with this version of PowerSystems.",
-            ),
-        )
-    end
-    uuid = IS.deserialize(Base.UUID, metadata["uuid"])
-    internal = IS.deserialize(InfrastructureSystemsInternal, raw["internal"])
-    sys = System(
-        data,
-        base_power,
-        internal;
-        name = name,
-        description = description,
-        uuid = uuid,
-        parsed_kwargs...,
-    )
-
-    if raw["data_format_version"] != DATA_FORMAT_VERSION
-        pre_deserialize_conversion!(raw, sys)
-    end
-
-    ext = get_ext(sys)
-    ext["deserialization_in_progress"] = true
-    try
-        # Keys serialize as self-contained dicts (association id + element type) under
-        # the association-id world, so no scoped store is needed to resolve them back.
-        deserialize_components!(sys, raw["data"])
-    finally
-        pop!(ext, "deserialization_in_progress")
-        isempty(ext) && clear_ext!(sys)
-    end
-
-    if !get_runchecks(sys)
-        @warn "The System was deserialized with checks disabled, and so was not validated."
-    end
-
-    if raw["data_format_version"] != DATA_FORMAT_VERSION
-        post_deserialize_conversion!(sys, raw)
-    end
-
-    return sys
-end
-
-function deserialize_components!(sys::System, raw)
-    # Convert the array of components into type-specific arrays to allow addition by type.
-    data = Dict{Any, Vector{Dict}}()
-    # This field was not present in older versions.
-    masked_components = get(raw, "masked_components", [])
-    for component in Iterators.Flatten((raw["components"], masked_components))
-        type = IS.get_type_from_serialization_data(component)
-        components = get(data, type, nothing)
-        if components === nothing
-            components = Vector{Dict}()
-            data[type] = components
-        end
-        push!(components, component)
-    end
-
-    # Maintain a lookup of id to component because some component types encode composed
-    # types as ids instead of actual types.
-    component_cache = Dict{Int, Component}()
-
-    # Add each type to this as we parse.
-    parsed_types = Set()
-
-    function is_matching_type(type, types)
-        return any(x -> type <: x, types)
-    end
-
-    function deserialize_and_add!(;
-        skip_types = nothing,
-        include_types = nothing,
-        post_add_func = nothing,
-    )
-        for (type, components) in data
-            type in parsed_types && continue
-            if !isnothing(skip_types) && is_matching_type(type, skip_types)
-                continue
-            end
-            if !isnothing(include_types) && !is_matching_type(type, include_types)
-                continue
-            end
-            components =
-                _handle_hydro_reservoirs_deserialization_special_cases(components, type)
-            for component in components
-                handle_deserialization_special_cases!(component, type)
-                comp = deserialize(type, component, component_cache)
-                add_component!(sys, comp)
-                component_cache[IS.get_id(comp)] = comp
-                if !isnothing(post_add_func)
-                    post_add_func(comp)
-                end
-            end
-            push!(parsed_types, type)
-        end
-    end
-
-    # Run in order based on type composition.
-    # Bus instances can have areas and LoadZones.
-    # AGC instances can have areas and contributing reserves
-    # Most components have buses.
-    # Static injection devices can contain dynamic injection devices.
-    # StaticInjectionSubsystem instances have StaticInjection subcomponents.
-    deserialize_and_add!(; include_types = [Area, LoadZone])
-    # GroupReserve is an AbstractReserve but references its contributing services by UUID,
-    # so it waits for its dedicated stage below, after every other service exists.
-    deserialize_and_add!(;
-        include_types = [AbstractReserve],
-        skip_types = [GroupReserve],
-    )
-    deserialize_and_add!(; include_types = [AGC])
-    deserialize_and_add!(; include_types = [Bus])
-    deserialize_and_add!(; include_types = [TradingHub])
-    deserialize_and_add!(;
-        include_types = [Arc, Service],
-        skip_types = [GroupReserve],
-    )
-    deserialize_and_add!(;
-        include_types = [HydroTurbine, HydroPumpTurbine],
-        skip_types = [GroupReserve, HydroReservoir],
-    )
-    deserialize_and_add!(; include_types = [HydroReservoir])
-    deserialize_and_add!(; include_types = [Branch])
-    deserialize_and_add!(; include_types = [GroupReserve, DynamicInjection])
-    deserialize_and_add!(; skip_types = [StaticInjectionSubsystem])
-    deserialize_and_add!()
-
-    for subsystem in get_components(StaticInjectionSubsystem, sys)
-        # This normally happens when the subsytem is added to the system.
-        # Workaround for deserialization.
-        for subcomponent in get_subcomponents(subsystem)
-            IS.mask_component!(sys.data, subcomponent)
-        end
-    end
-end
-
-"""
-Allow types to implement handling of special cases during deserialization.
-
-# Arguments
-- `component::Dict`: The component serialized as a dictionary.
-- `::Type`: The type of the component.
-"""
-handle_deserialization_special_cases!(component::Dict, ::Type{<:Component}) = nothing
-
-# This function does an iterative union find to handle the ordering of the reservoir chains
-function _handle_hydro_reservoirs_deserialization_special_cases(
-    components::Vector{Dict},
-    ::Type{HydroReservoir},
-)
-    # Build parent mapping for union-find (each reservoir points to its upstream reservoir)
-    parent = Dict{Int, Int}()
-    for component in components
-        id = Int(component["internal"]["id"])
-        upstream_ids = component["upstream_reservoirs"]
-
-        if isempty(upstream_ids)
-            parent[id] = id  # Root of its own chain
-        else
-            # Assume single upstream reservoir for simplicity
-            parent[id] = Int(upstream_ids[1])
-        end
-    end
-
-    # Find root of each chain iteratively
-    function find_root(id::Int)
-        current = id
-        while parent[current] != current
-            current = parent[current]
-        end
-        return current
-    end
-
-    # Group components by their chain root
-    chains = Dict{Int, Vector{Dict}}()
-    for component in components
-        root = find_root(Int(component["internal"]["id"]))
-        push!(get!(chains, root, Vector{Dict}()), component)
-    end
-
-    # Order each chain from upstream (root) to downstream
-    ordered_components = Vector{Dict}()
-    for chain in values(chains)
-        # Sort chain by dependency order - upstream reservoirs first
-        chain_ordered = Vector{Dict}()
-        chain_ids = Set{Int}()
-        remaining = Set(chain)
-
-        while !isempty(remaining)
-            # Find next component whose upstream is already processed or is a root
-            for component in remaining
-                upstream_ids = component["upstream_reservoirs"]
-                can_add = all(Int(id) in chain_ids for id in upstream_ids)
-
-                if can_add
-                    push!(chain_ordered, component)
-                    push!(chain_ids, Int(component["internal"]["id"]))
-                    delete!(remaining, component)
-                    break
-                end
-            end
-        end
-
-        append!(ordered_components, chain_ordered)
-    end
-    return ordered_components
-end
-
-_handle_hydro_reservoirs_deserialization_special_cases(
-    components::Vector{Dict},
-    ::Type{<:Component}) = components
 """
 Return [`ACBus`](@ref) with `name`.
 """
