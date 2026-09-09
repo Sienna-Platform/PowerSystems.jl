@@ -34,7 +34,7 @@ _export_vsc(
     ac_control_from = ac_control_from,
     dc_setpoint_from = 0.4, ac_setpoint_from = 0.95,
     rated_ac_voltage_from = rated_ac_voltage_from,
-    converter_loss_from = LinearCurve(1.2, 0.5),
+    converter_loss_from = LossCurve(LinearCurve(1.2, 0.5), NaturalUnit()),
     max_dc_current_from = 1000.0, rating_from = 2.0,
     reactive_power_limits_from = (min = -1.0, max = 1.0),
     power_factor_weighting_fraction_from = 0.5,
@@ -44,7 +44,7 @@ _export_vsc(
     ac_control_to = ac_control_to,
     dc_setpoint_to = 1.02, ac_setpoint_to = 0.98,
     rated_ac_voltage_to = rated_ac_voltage_to,
-    converter_loss_to = QuadraticCurve(0.01, 1.1, 0.4),
+    converter_loss_to = LossCurve(QuadraticCurve(0.01, 1.1, 0.4), NaturalUnit()),
     max_dc_current_to = 1000.0, rating_to = 2.0,
     reactive_power_limits_to = (min = -1.0, max = 1.0),
     power_factor_weighting_fraction_to = 0.5,
@@ -349,7 +349,7 @@ end
         active_power_limits_to = (min = -1.0, max = 1.0),
         reactive_power_limits_from = (min = -0.5, max = 0.5),
         reactive_power_limits_to = (min = -0.5, max = 0.5),
-        loss = LinearCurve(0.01, 0.0),
+        loss = LossCurve(LinearCurve(0.01, 0.0), NaturalUnit()),
     )
     sys = System(100.0)
     add_component!(sys, bus1)

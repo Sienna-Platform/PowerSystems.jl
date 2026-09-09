@@ -17,7 +17,7 @@ This file is auto-generated. Do not edit.
         reactive_power_limits::Union{Nothing, MinMax}
         dc_current::Float64
         max_dc_current::Float64
-        loss_function::Union{LinearCurve, QuadraticCurve}
+        loss_function::Union{AnyLossCurve{LinearCurve}, AnyLossCurve{QuadraticCurve}}
         dc_control::VSCDCControlModes
         ac_control::VSCACControlModes
         dc_setpoint::Float64
@@ -47,7 +47,7 @@ Interconnecting Power Converter (IPC) for transforming power from an ACBus to a 
 - `reactive_power_limits::Union{Nothing, MinMax}`: (default: `nothing`) Minimum and maximum reactive power limits. Set to `Nothing` if not applicable
 - `dc_current::Float64`: (default: `0.0`) DC current on the converter, in per unit power-equivalent on the converter `base_power` (I is approximately P at 1.0 pu DC voltage)
 - `max_dc_current::Float64`: (default: `1e8`) Maximum stable DC current limit, in per unit power-equivalent on the converter `base_power` (I is approximately P at 1.0 pu DC voltage)
-- `loss_function::Union{LinearCurve, QuadraticCurve}`: (default: `LinearCurve(0.0)`) Linear or quadratic loss function with respect to the converter current
+- `loss_function::Union{AnyLossCurve{LinearCurve}, AnyLossCurve{QuadraticCurve}}`: (default: `LossCurve(LinearCurve(0.0), NaturalUnit())`) Linear or quadratic loss function with respect to the converter current
 - `dc_control::VSCDCControlModes`: (default: `VSCDCControlModes.DC_VOLTAGE`) DC-side control mode of the converter; see [`VSCDCControlModes`](@ref).
 - `ac_control::VSCACControlModes`: (default: `VSCACControlModes.AC_REACTIVE_POWER`) AC-side control mode of the converter; see [`VSCACControlModes`](@ref).
 - `dc_setpoint::Float64`: (default: `0.0`) DC-voltage target (when dc_voltage_control is true) or active-power order (when false), in per unit.
@@ -86,7 +86,7 @@ mutable struct InterconnectingConverter <: StaticInjection
     "Maximum stable DC current limit, in per unit power-equivalent on the converter `base_power` (I is approximately P at 1.0 pu DC voltage)"
     max_dc_current::Float64
     "Linear or quadratic loss function with respect to the converter current"
-    loss_function::Union{LinearCurve, QuadraticCurve}
+    loss_function::Union{AnyLossCurve{LinearCurve}, AnyLossCurve{QuadraticCurve}}
     "DC-side control mode of the converter; see [`VSCDCControlModes`](@ref)."
     dc_control::VSCDCControlModes
     "AC-side control mode of the converter; see [`VSCACControlModes`](@ref)."
@@ -115,11 +115,11 @@ mutable struct InterconnectingConverter <: StaticInjection
     internal::InfrastructureSystemsInternal
 end
 
-function InterconnectingConverter(name, available, bus, dc_bus, active_power, rating, active_power_limits, base_power, reactive_power_limits=nothing, dc_current=0.0, max_dc_current=1e8, loss_function=LinearCurve(0.0), dc_control=VSCDCControlModes.DC_VOLTAGE, ac_control=VSCACControlModes.AC_REACTIVE_POWER, dc_setpoint=0.0, ac_setpoint=1.0, dc_voltage_droop=0.0, remote_bus_control=nothing, rmpct=100.0, power_factor_weighting_fraction=1.0, voltage_limits=(min=0.0, max=999.9), services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), )
+function InterconnectingConverter(name, available, bus, dc_bus, active_power, rating, active_power_limits, base_power, reactive_power_limits=nothing, dc_current=0.0, max_dc_current=1e8, loss_function=LossCurve(LinearCurve(0.0), NaturalUnit()), dc_control=VSCDCControlModes.DC_VOLTAGE, ac_control=VSCACControlModes.AC_REACTIVE_POWER, dc_setpoint=0.0, ac_setpoint=1.0, dc_voltage_droop=0.0, remote_bus_control=nothing, rmpct=100.0, power_factor_weighting_fraction=1.0, voltage_limits=(min=0.0, max=999.9), services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), )
     InterconnectingConverter(name, available, bus, dc_bus, active_power, rating, active_power_limits, base_power, reactive_power_limits, dc_current, max_dc_current, loss_function, dc_control, ac_control, dc_setpoint, ac_setpoint, dc_voltage_droop, remote_bus_control, rmpct, power_factor_weighting_fraction, voltage_limits, services, dynamic_injector, ext, InfrastructureSystemsInternal(), )
 end
 
-function InterconnectingConverter(; name, available, bus, dc_bus, active_power, rating, active_power_limits, base_power, reactive_power_limits=nothing, dc_current=0.0, max_dc_current=1e8, loss_function=LinearCurve(0.0), dc_control=VSCDCControlModes.DC_VOLTAGE, ac_control=VSCACControlModes.AC_REACTIVE_POWER, dc_setpoint=0.0, ac_setpoint=1.0, dc_voltage_droop=0.0, remote_bus_control=nothing, rmpct=100.0, power_factor_weighting_fraction=1.0, voltage_limits=(min=0.0, max=999.9), services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), )
+function InterconnectingConverter(; name, available, bus, dc_bus, active_power, rating, active_power_limits, base_power, reactive_power_limits=nothing, dc_current=0.0, max_dc_current=1e8, loss_function=LossCurve(LinearCurve(0.0), NaturalUnit()), dc_control=VSCDCControlModes.DC_VOLTAGE, ac_control=VSCACControlModes.AC_REACTIVE_POWER, dc_setpoint=0.0, ac_setpoint=1.0, dc_voltage_droop=0.0, remote_bus_control=nothing, rmpct=100.0, power_factor_weighting_fraction=1.0, voltage_limits=(min=0.0, max=999.9), services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), )
     InterconnectingConverter(name, available, bus, dc_bus, active_power, rating, active_power_limits, base_power, reactive_power_limits, dc_current, max_dc_current, loss_function, dc_control, ac_control, dc_setpoint, ac_setpoint, dc_voltage_droop, remote_bus_control, rmpct, power_factor_weighting_fraction, voltage_limits, services, dynamic_injector, ext, internal, )
 end
 
@@ -137,7 +137,7 @@ function InterconnectingConverter(::Nothing)
         reactive_power_limits=nothing,
         dc_current=0.0,
         max_dc_current=0.0,
-        loss_function=LinearCurve(0.0),
+        loss_function=LossCurve(LinearCurve(0.0), NaturalUnit()),
         dc_control=VSCDCControlModes.DC_VOLTAGE,
         ac_control=VSCACControlModes.AC_REACTIVE_POWER,
         dc_setpoint=0.0,

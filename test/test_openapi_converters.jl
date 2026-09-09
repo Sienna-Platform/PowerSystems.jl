@@ -911,7 +911,7 @@ end
     @test get_active_power_flow(hvdc_natural, SU) == 0.5
     @test get_active_power_limits_from(hvdc_natural, SU) == (min = -1.0, max = 1.0)
     @test get_reactive_power_limits_to(hvdc_natural, SU) == (min = -0.5, max = 0.5)
-    @test get_loss(hvdc_natural) == LinearCurve(0.01, 0.0)
+    @test get_loss(hvdc_natural) == LossCurve(LinearCurve(0.01, 0.0), NaturalUnit())
     @test get_base_power(hvdc_natural) == 100.0
 
     # A blob omitting the now-required `base_power` errors loudly rather than falling back.
@@ -1262,7 +1262,8 @@ end
     @test get_rated_dc_voltage(natural) == 200.0
     @test isnothing(get_remote_bus_control_from(natural))
     @test get_remote_bus_control_to(natural) == 4
-    @test get_converter_loss_from(natural) == LinearCurve(1.2, 0.5)
+    @test get_converter_loss_from(natural) ==
+          LossCurve(LinearCurve(1.2, 0.5), NaturalUnit())
 
     vsc_po.id = 21
     vsc_po.name = "vsc2"
@@ -1335,7 +1336,8 @@ end
         ),
     )
     vsc = PSY.from_openapi(vsc_po, refs, NU)
-    @test get_converter_loss_to(vsc) == QuadraticCurve(0.01, 1.1, 0.4)
+    @test get_converter_loss_to(vsc) ==
+          LossCurve(QuadraticCurve(0.01, 1.1, 0.4), NaturalUnit())
 end
 
 @testset "OpenAPI converters: TwoTerminalVSCLine setpoint_voltage_units selects the basis" begin

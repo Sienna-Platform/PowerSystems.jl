@@ -43,7 +43,7 @@ PowerSystems = {path = ".."}
 # LOCAL PATH CO-DEV PIN (temporary): see ../Project.toml — IS4's local checkout already
 # migrated off PowerCoreOpenAPIModels/PowerTimeSeriesOpenAPIModels, uncommitted; the pushed
 # IS4 branch fails to resolve. Revert to the git rev once IS4 is pushed.
-InfrastructureSystems = {url = "https://github.com/Sienna-Platform/InfrastructureSystems.jl.git", rev = "IS4"}
+InfrastructureSystems = {url = "https://github.com/Sienna-Platform/InfrastructureSystems.jl.git", rev = "lk/loss-curve-units-v2"}
 # LOCAL PATH CO-DEV PINS (temporary): the InfrastructureCore/InfrastructureTimeSeries package
 # split exists only on local disk, not pushed to jd/schemas-0.1.0 yet. Revert to the git pins
 # once pushed/merged.
@@ -61,7 +61,7 @@ PowerOperationsOpenAPIModels = {url = "https://github.com/Sienna-Platform/PowerO
 # LOCAL PATH CO-DEV PIN (temporary): PSB's own local checkout already migrated off
 # PowerCoreOpenAPIModels/PowerTimeSeriesOpenAPIModels, uncommitted; the pushed
 # jd/power-units-rename branch fails to resolve. Revert to the git rev once it is pushed.
-PowerSystemCaseBuilder = {url = "https://github.com/Sienna-Platform/PowerSystemCaseBuilder.jl", rev = "psy6"}
+PowerSystemCaseBuilder = {url = "https://github.com/Sienna-Platform/PowerSystemCaseBuilder.jl", rev = "lk/loss-curve-type"}
 # LOCAL PATH CO-DEV PIN (temporary): PowerTableDataParser's own local checkout already
 # migrated off PowerCoreOpenAPIModels/PowerTimeSeriesOpenAPIModels, uncommitted; the pushed
 # jd/power-units-rename branch fails to resolve. Revert to the git rev once it is pushed.

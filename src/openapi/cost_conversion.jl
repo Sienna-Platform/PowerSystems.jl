@@ -536,3 +536,39 @@ end
 """Convert a reserve's `variable` field; `nothing` means no demand curve is defined."""
 convert_reserve_variable(po::Union{Nothing, PC.CostCurve}) =
     _offer_curve(po, "a reserve demand curve")
+
+# ── LossCurve ⇄ OpenAPI ────────────────────────────────────────────────────────
+# The OpenAPI schemas have no `LossCurve`: a document's loss field is a bare
+# `ValueCurve` (`$ref: InputOutputCurve` / `TwoTerminalLoss`) with nowhere to record a
+# power basis. PSY's loss fields are `LossCurve`s, which carry one, so the two
+# directions are asymmetric until the schemas gain the type.
+
+"""
+Wrap a document's bare loss curve as a `LossCurve` on the natural-units basis.
+
+The document carries no basis for a loss field, so one is supplied here rather than
+guessed per call site: `NaturalUnit` is what every current producer writes and what the
+schema's own `UnitSystem` default names. When the schemas gain a `LossCurve` with an
+explicit `power_units`, this reads it instead of synthesizing it.
+"""
+loss_curve_from_openapi(curve::ValueCurve) = LossCurve(curve, NaturalUnit())
+
+"""
+Unwrap a `LossCurve` to the bare curve the document holds, refusing any basis the
+document cannot represent.
+
+Export errors on a non-natural basis rather than silently dropping it — the same posture
+`admittance_units`/`voltage_units` already take on these HVDC types, where only the
+implemented basis passes and anything else is an error rather than a guess. Without the
+guard a `LossCurve` on a relative basis would round-trip back as `NaturalUnit`, changing
+its meaning with no diagnostic.
+"""
+function loss_curve_to_openapi(loss::AnyLossCurve)
+    units = get_power_units(loss)
+    units isa NaturalUnit || error(
+        "cannot export a LossCurve in $units: the OpenAPI schemas have no LossCurve, so " *
+        "a document records no power basis for a loss field and the unit system would be " *
+        "silently dropped. Convert the curve to NaturalUnit before exporting.",
+    )
+    return get_value_curve(loss)
+end

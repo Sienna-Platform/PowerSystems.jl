@@ -951,7 +951,8 @@ _hvdc_loss_curve(c::PC.InputOutputCurve) =
     _linear_curve_from_function_data(_unwrap_oneof(c.function_data))
 _hvdc_loss_curve(c) = error("unmapped TwoTerminalLoss variant: $(typeof(c))")
 
-_hvdc_loss(l::PC.TwoTerminalLoss) = _hvdc_loss_curve(_unwrap_oneof(l))
+_hvdc_loss(l::PC.TwoTerminalLoss) =
+    loss_curve_from_openapi(_hvdc_loss_curve(_unwrap_oneof(l)))
 
 function from_openapi(
     po::PO.TwoTerminalGenericHVDCLine,
@@ -1278,8 +1279,10 @@ end
 piecewise document curve is named here rather than surfacing as a `MethodError` from the
 `TwoTerminalVSCLine` constructor.
 """
-_vsc_converter_loss(curve::InputOutputCurve{LinearFunctionData}) = curve
-_vsc_converter_loss(curve::InputOutputCurve{QuadraticFunctionData}) = curve
+_vsc_converter_loss(curve::InputOutputCurve{LinearFunctionData}) =
+    loss_curve_from_openapi(curve)
+_vsc_converter_loss(curve::InputOutputCurve{QuadraticFunctionData}) =
+    loss_curve_from_openapi(curve)
 _vsc_converter_loss(curve) = error(
     "TwoTerminalVSCLine converter_loss must be a LINEAR or QUADRATIC InputOutputCurve, got " *
     "InputOutputCurve{$(typeof(get_function_data(curve)))}",

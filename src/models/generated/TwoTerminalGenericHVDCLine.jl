@@ -14,7 +14,7 @@ This file is auto-generated. Do not edit.
         active_power_limits_to::MinMax
         reactive_power_limits_from::MinMax
         reactive_power_limits_to::MinMax
-        loss::Union{LinearCurve, PiecewiseIncrementalCurve}
+        loss::Union{AnyLossCurve{LinearCurve}, AnyLossCurve{PiecewiseIncrementalCurve}}
         services::Vector{Service}
         base_power::Float64
         ext::Dict{String, Any}
@@ -34,7 +34,7 @@ This model is appropriate for operational simulations with a linearized DC power
 - `active_power_limits_to::MinMax`: Minimum and maximum active power flows to the TO node (MW)
 - `reactive_power_limits_from::MinMax`: Minimum and maximum reactive power limits to the FROM node (MVAR)
 - `reactive_power_limits_to::MinMax`: Minimum and maximum reactive power limits to the TO node (MVAR)
-- `loss::Union{LinearCurve, PiecewiseIncrementalCurve}`: (default: `LinearCurve(0.0)`) Loss model coefficients. It accepts a linear model with a constant loss (MW) and a proportional loss rate (MW of loss per MW of flow). It also accepts a Piecewise loss, with N segments to specify different proportional losses for different segments.
+- `loss::Union{AnyLossCurve{LinearCurve}, AnyLossCurve{PiecewiseIncrementalCurve}}`: (default: `LossCurve(LinearCurve(0.0), NaturalUnit())`) Loss model coefficients. It accepts a linear model with a constant loss (MW) and a proportional loss rate (MW of loss per MW of flow). It also accepts a Piecewise loss, with N segments to specify different proportional losses for different segments.
 - `services::Vector{Service}`: (default: `Device[]`) Services that this device contributes to
 - `base_power::Float64`: (default: `100.0`) System base power for per-unitization of this component's per-unit fields, recorded per component in lieu of a system-level table (MVA), validation range: `(0.0001, nothing)`
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
@@ -58,7 +58,7 @@ mutable struct TwoTerminalGenericHVDCLine <: TwoTerminalHVDC
     "Minimum and maximum reactive power limits to the TO node (MVAR)"
     reactive_power_limits_to::MinMax
     "Loss model coefficients. It accepts a linear model with a constant loss (MW) and a proportional loss rate (MW of loss per MW of flow). It also accepts a Piecewise loss, with N segments to specify different proportional losses for different segments."
-    loss::Union{LinearCurve, PiecewiseIncrementalCurve}
+    loss::Union{AnyLossCurve{LinearCurve}, AnyLossCurve{PiecewiseIncrementalCurve}}
     "Services that this device contributes to"
     services::Vector{Service}
     "System base power for per-unitization of this component's per-unit fields, recorded per component in lieu of a system-level table (MVA)"
@@ -69,11 +69,11 @@ mutable struct TwoTerminalGenericHVDCLine <: TwoTerminalHVDC
     internal::InfrastructureSystemsInternal
 end
 
-function TwoTerminalGenericHVDCLine(name, available, active_power_flow, arc, active_power_limits_from, active_power_limits_to, reactive_power_limits_from, reactive_power_limits_to, loss=LinearCurve(0.0), services=Device[], base_power=100.0, ext=Dict{String, Any}(), )
+function TwoTerminalGenericHVDCLine(name, available, active_power_flow, arc, active_power_limits_from, active_power_limits_to, reactive_power_limits_from, reactive_power_limits_to, loss=LossCurve(LinearCurve(0.0), NaturalUnit()), services=Device[], base_power=100.0, ext=Dict{String, Any}(), )
     TwoTerminalGenericHVDCLine(name, available, active_power_flow, arc, active_power_limits_from, active_power_limits_to, reactive_power_limits_from, reactive_power_limits_to, loss, services, base_power, ext, InfrastructureSystemsInternal(), )
 end
 
-function TwoTerminalGenericHVDCLine(; name, available, active_power_flow, arc, active_power_limits_from, active_power_limits_to, reactive_power_limits_from, reactive_power_limits_to, loss=LinearCurve(0.0), services=Device[], base_power=100.0, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), )
+function TwoTerminalGenericHVDCLine(; name, available, active_power_flow, arc, active_power_limits_from, active_power_limits_to, reactive_power_limits_from, reactive_power_limits_to, loss=LossCurve(LinearCurve(0.0), NaturalUnit()), services=Device[], base_power=100.0, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), )
     TwoTerminalGenericHVDCLine(name, available, active_power_flow, arc, active_power_limits_from, active_power_limits_to, reactive_power_limits_from, reactive_power_limits_to, loss, services, base_power, ext, internal, )
 end
 
@@ -88,7 +88,7 @@ function TwoTerminalGenericHVDCLine(::Nothing)
         active_power_limits_to=(min=0.0, max=0.0),
         reactive_power_limits_from=(min=0.0, max=0.0),
         reactive_power_limits_to=(min=0.0, max=0.0),
-        loss=LinearCurve(0.0),
+        loss=LossCurve(LinearCurve(0.0), NaturalUnit()),
         services=Device[],
         base_power=100.0,
         ext=Dict{String, Any}(),

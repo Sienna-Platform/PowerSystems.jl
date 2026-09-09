@@ -1,6 +1,12 @@
 # BEGIN 4.0.0  deprecations
 export TwoTerminalHVDCLine
 
+# These shims predate `loss` being a `LossCurve`, and their whole purpose is to accept the
+# old spellings, so a bare `ValueCurve` is still taken here and wrapped on the natural-units
+# basis -- the basis the old field's MW-denominated docstring always described.
+_deprecated_hvdc_loss(loss::AnyLossCurve) = loss
+_deprecated_hvdc_loss(curve::ValueCurve) = LossCurve(curve, NaturalUnit())
+
 """
 Deprecated method for the old TwoTerminalHVDCLine that returns the new TwoTerminalGenericHVDCLine.
 This constructor is used for some backward compatibility and will be removed in a future version.
@@ -19,7 +25,7 @@ function TwoTerminalHVDCLine(
     ext,
     internal,
 )
-    new_loss = LinearCurve(loss.l0, loss.l1)
+    new_loss = LossCurve(LinearCurve(loss.l0, loss.l1), NaturalUnit())
     @warn(
         "The TwoTerminalHVDCLine constructor is deprecated. Use TwoTerminalGenericHVDCLine instead. \
          This constructor will be removed in a future version.",)
@@ -59,7 +65,7 @@ function TwoTerminalHVDCLine(
     @warn(
         "The TwoTerminalHVDCLine constructor is deprecated. Use TwoTerminalGenericHVDCLine instead. \
          This constructor will be removed in a future version.",)
-    new_loss = LinearCurve(loss.l0, loss.l1)
+    new_loss = LossCurve(LinearCurve(loss.l0, loss.l1), NaturalUnit())
     TwoTerminalGenericHVDCLine(;
         name = name,
         available = available,
@@ -105,7 +111,7 @@ function TwoTerminalHVDCLine(
         active_power_limits_to = active_power_limits_to,
         reactive_power_limits_from = reactive_power_limits_from,
         reactive_power_limits_to = reactive_power_limits_to,
-        loss = loss,
+        loss = _deprecated_hvdc_loss(loss),
         services = services,
         ext = ext,
         internal = InfrastructureSystemsInternal(),
@@ -141,7 +147,7 @@ function TwoTerminalHVDCLine(
         active_power_limits_to = active_power_limits_to,
         reactive_power_limits_from = reactive_power_limits_from,
         reactive_power_limits_to = reactive_power_limits_to,
-        loss = loss,
+        loss = _deprecated_hvdc_loss(loss),
         services = services,
         ext = ext,
         internal = InfrastructureSystemsInternal(),
@@ -178,7 +184,7 @@ function TwoTerminalHVDCLine(;
         active_power_limits_to = active_power_limits_to,
         reactive_power_limits_from = reactive_power_limits_from,
         reactive_power_limits_to = reactive_power_limits_to,
-        loss = loss,
+        loss = _deprecated_hvdc_loss(loss),
         services = services,
         ext = ext,
         internal = internal,
