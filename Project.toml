@@ -34,14 +34,10 @@ Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 InfraStore = "6aee0376-896a-4a59-96ff-12f221c99746"
 
 [sources]
-# IS4 carries the association-id keys, and InfraStore 0.11 is registered with its own native
-# library - the co-dev pins are retired.
-# LOCAL PATH CO-DEV PIN (temporary): IS4's own local checkout already migrated off
-# PowerCoreOpenAPIModels/PowerTimeSeriesOpenAPIModels onto InfrastructureCore-/
-# InfrastructureTimeSeriesOpenAPIModels, uncommitted — the pushed IS4 branch still requires
-# the old (now-unregistered) PowerTimeSeriesOpenAPIModels and fails to resolve. Revert to the
-# git rev once IS4 is pushed.
-InfrastructureSystems = {url = "https://github.com/Sienna-Platform/InfrastructureSystems.jl.git", rev = "lk/loss-curve-units-v2"}
+# IS4 carries the association-id keys, the DeviceBaseUnit -> ComponentBaseUnit rename this
+# branch depends on (IS PR #634, lk/component-base-units), and InfraStore 0.11 is registered
+# with its own native library - the other co-dev pins are retired.
+InfrastructureSystems = {url = "https://github.com/Sienna-Platform/InfrastructureSystems.jl.git", rev = "IS4"}
 # LOCAL PATH CO-DEV PINS (temporary): the InfrastructureCore/InfrastructureTimeSeries package
 # split exists only on local disk, not pushed to jd/schemas-0.1.0 yet. Revert to the git pins
 # once pushed/merged.
