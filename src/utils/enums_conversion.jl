@@ -16,6 +16,8 @@ const ENUMS = (
     LoadConformity,
     HydroTurbineType,
     TransformerControlObjective,
+    OperationalStates,
+    CommitmentModes,
 )
 
 const ENUM_MAPPINGS = Dict(

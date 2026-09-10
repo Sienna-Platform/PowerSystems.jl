@@ -560,11 +560,11 @@ end
     add_component!(sys, bus)
 
     gen = ThermalStandard(;
-        name = "A", available = true, status = true, bus = bus,
+        name = "A", available = true, status = OperationalStates.ONLINE, bus = bus,
         active_power = 1.0, reactive_power = 0.0, rating = 2.0,
         active_power_limits = (min = 0.0, max = 2.0), reactive_power_limits = nothing,
         ramp_limits = nothing, operation_cost = ThermalGenerationCost(nothing),
-        base_power = 100.0, time_limits = nothing, must_run = false,
+        base_power = 100.0, time_limits = nothing,
         prime_mover_type = PrimeMovers.OT, fuel = ThermalFuels.OTHER,
     )
     add_component!(sys, gen)

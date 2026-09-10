@@ -610,7 +610,7 @@ end
     gen.time_limits = (up = 2.0, down = 1.0)
     gen.start_time_limits = (hot = 2.0, warm = 4.0, cold = 8.0)
     gen.start_types = 3
-    gen.must_run = true
+    gen.commitment_mode = CommitmentModes.MUST_RUN
     add_component!(sys, gen)
     svc = OnlineReserve{ReserveUp}(;
         name = "RESERVE", available = true, time_frame = 10.0, requirement = 0.1)
@@ -635,7 +635,7 @@ end
         @test get_time_limits(gen2) == (up = 2.0, down = 1.0)
         @test get_start_time_limits(gen2) == (hot = 2.0, warm = 4.0, cold = 8.0)
         @test get_start_types(gen2) == 3
-        @test get_must_run(gen2)
+        @test get_commitment_mode(gen2) == CommitmentModes.MUST_RUN
         mbc2 = get_operation_cost(gen2)
         @test mbc2 isa MarketBidCost
         @test get_incremental_offer_curves(mbc2) == get_incremental_offer_curves(mbc)

@@ -286,7 +286,7 @@ end
     )
     add_component!(sys, bus)
     h_sys = HybridSystem(;
-        name = "h1", available = true, status = true, bus = bus,
+        name = "h1", available = true, status = OperationalStates.ONLINE, bus = bus,
         active_power = 1.0, reactive_power = 1.0,
         thermal_unit = ThermalStandard(nothing),
         electric_load = PowerLoad(nothing),

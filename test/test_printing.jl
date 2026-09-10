@@ -142,7 +142,8 @@ end
 
     bus = first(get_components(ACBus, sys))
     detached = ThermalStandard(;
-        name = "detached", available = true, status = true, bus = bus,
+        name = "detached", available = true, status = OperationalStates.ONLINE,
+        bus = bus,
         active_power = 0.5, reactive_power = 0.1, rating = 1.0,
         active_power_limits = (min = 0.0, max = 1.0),
         reactive_power_limits = (min = -1.0, max = 1.0),
@@ -162,7 +163,8 @@ end
     sys, gen = _sys_with_thermal(; system_base = 100.0, device_base = 250.0)
     bus = first(get_components(ACBus, sys))
     detached = ThermalStandard(;
-        name = "detached", available = true, status = true, bus = bus,
+        name = "detached", available = true, status = OperationalStates.ONLINE,
+        bus = bus,
         active_power = 0.5, reactive_power = 0.1, rating = 1.0,
         active_power_limits = (min = 0.0, max = 1.0),
         reactive_power_limits = (min = -1.0, max = 1.0),
@@ -302,7 +304,8 @@ end
 
     bus = first(get_components(ACBus, sys))
     detached = ThermalStandard(;
-        name = "detached", available = true, status = true, bus = bus,
+        name = "detached", available = true, status = OperationalStates.ONLINE,
+        bus = bus,
         active_power = 0.5, reactive_power = 0.1, rating = 1.0,
         active_power_limits = (min = 0.0, max = 1.0),
         reactive_power_limits = (min = -1.0, max = 1.0),

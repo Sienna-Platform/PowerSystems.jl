@@ -254,7 +254,7 @@ for row in eachrow(thermal_gens)
     thermal = ThermalStandard(;
         name = row[name],
         available = true,
-        status = true,
+        status = OperationalStates.ONLINE,
         bus = get_bus(sys, row[bus_connection]),
         active_power = 0.0,
         reactive_power = 0.0,

@@ -103,6 +103,65 @@ modeled during system disturbances and stability analysis.
 """ LoadConformity
 
 IS.@scoped_enum(
+    OperationalStates,
+    OFFLINE = 0,
+    ONLINE = 1,
+    STARTUP = 2,
+    SHUTDOWN = 3,
+)
+@doc"
+The running on/off lifecycle of an in-service committable unit. Mutually exclusive.
+
+| Value      | Description                                    |
+|:---------- |:----------------------------------------------- |
+| `OFFLINE`  | Shut down and not synchronized                  |
+| `ONLINE`   | Synchronized and able to produce                |
+| `STARTUP`  | In its start-up sequence                        |
+| `SHUTDOWN` | In its shut-down sequence                       |
+
+Availability is not one of these values: a unit on outage is `available = false`, and an
+`OFFLINE` unit that is `available = true` is in service and eligible for re-commitment.
+" OperationalStates
+
+function OperationalStatesModule.OperationalStates(value::Bool)
+    return throw(
+        ArgumentError(
+            "status is an OperationalStates value (OperationalStates.ONLINE or .OFFLINE), not a Bool; got $value",
+        ),
+    )
+end
+Base.convert(::Type{OperationalStates}, value::Bool) = OperationalStates(value)
+
+IS.@scoped_enum(
+    CommitmentModes,
+    UNCOMMITTED = 0,
+    COMMITTED = 1,
+    SELF_SCHEDULED = 2,
+    RELIABILITY = 3,
+    MUST_RUN = 4,
+)
+@doc"
+Why a committable unit is (or would be) committed, orthogonal to `OperationalStates`.
+
+| Value            | Description                                                        |
+|:---------------- |:------------------------------------------------------------------- |
+| `UNCOMMITTED`    | Not committed; the unit is offline but available                   |
+| `COMMITTED`      | Committed by the scheduling process (a planning model's commitment decision or a cleared schedule) |
+| `SELF_SCHEDULED` | Scheduled by its owner rather than by the scheduling process        |
+| `RELIABILITY`    | Committed by the system operator for reliability rather than by the scheduling process |
+| `MUST_RUN`       | Required to run by contract or operating constraint                |
+" CommitmentModes
+
+function CommitmentModesModule.CommitmentModes(value::Bool)
+    return throw(
+        ArgumentError(
+            "commitment_mode is a CommitmentModes value (e.g. CommitmentModes.COMMITTED), not a Bool; got $value",
+        ),
+    )
+end
+Base.convert(::Type{CommitmentModes}, value::Bool) = CommitmentModes(value)
+
+IS.@scoped_enum(
     FACTSOperationModes,
     OOS = 0, # out-of-service (i.e., Series and Shunt links open)
     NML = 1, # Normal mode of operation, where Series and Shunt links are operating.
@@ -502,7 +561,8 @@ IS.@scoped_enum(
 @doc"
 HydroPumpTurbineStatus
 
-Operating status of a pumped‑storage hydro unit.
+Which mode a pumped‑storage hydro unit is operating in, stored in its `operating_mode` field.
+The on/off lifecycle is separate, in `status::OperationalStates`.
 
 Values
 - OFF = 0: Unit is idle — neither generating nor pumping.

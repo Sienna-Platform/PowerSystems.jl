@@ -12,7 +12,7 @@ function thermal_with_base_power(bus::PSY.Bus, name::String, base_power::Float64
     return ThermalStandard(;
         name = name,
         available = true,
-        status = true,
+        status = OperationalStates.ONLINE,
         bus = bus,
         active_power = 1.0,
         reactive_power = 0.0,

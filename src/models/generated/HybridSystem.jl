@@ -8,7 +8,7 @@ This file is auto-generated. Do not edit.
     mutable struct HybridSystem <: StaticInjectionSubsystem
         name::String
         available::Bool
-        status::Bool
+        status::OperationalStates
         bus::ACBus
         active_power::Float64
         reactive_power::Float64
@@ -37,7 +37,7 @@ The subcomponents (`thermal_unit`, `electric_load`, `storage`, `renewable_unit`)
 # Arguments
 - `name::String`: Name of the component. Components of the same type (e.g., `PowerLoad`) must have unique names, but components of different types (e.g., `PowerLoad` and `ACBus`) can have the same name
 - `available::Bool`: Indicator of whether the component is connected and online (`true`) or disconnected, offline, or down (`false`). Unavailable components are excluded during simulations
-- `status::Bool`: Initial commitment condition at the start of a simulation (`true` = on or `false` = off)
+- `status::OperationalStates`: Operating state of the unit at the start of a simulation. Options are listed [here](@ref opstate_list)
 - `bus::ACBus`: Bus that this component is connected to
 - `active_power::Float64`: (default: `0.0`) Initial active power set point of the unit in MW. For power flow, this is the steady state operating point of the system. For production cost modeling, this may or may not be used as the initial starting point for the solver, depending on the solver used
 - `reactive_power::Float64`: (default: `0.0`) Initial reactive power set point of the unit (MVAR)
@@ -63,8 +63,8 @@ mutable struct HybridSystem <: StaticInjectionSubsystem
     name::String
     "Indicator of whether the component is connected and online (`true`) or disconnected, offline, or down (`false`). Unavailable components are excluded during simulations"
     available::Bool
-    "Initial commitment condition at the start of a simulation (`true` = on or `false` = off)"
-    status::Bool
+    "Operating state of the unit at the start of a simulation. Options are listed [here](@ref opstate_list)"
+    status::OperationalStates
     "Bus that this component is connected to"
     bus::ACBus
     "Initial active power set point of the unit in MW. For power flow, this is the steady state operating point of the system. For production cost modeling, this may or may not be used as the initial starting point for the solver, depending on the solver used"
@@ -118,7 +118,7 @@ function HybridSystem(::Nothing)
     HybridSystem(;
         name="init",
         available=false,
-        status=false,
+        status=OperationalStates.OFFLINE,
         bus=ACBus(nothing),
         active_power=0.0,
         reactive_power=0.0,

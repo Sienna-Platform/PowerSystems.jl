@@ -37,7 +37,7 @@ function _sys_with_thermal(; system_base = 100.0, device_base = 250.0)
     )
     add_component!(sys, bus)
     gen = ThermalStandard(;
-        name = "g1", available = true, status = true, bus = bus,
+        name = "g1", available = true, status = OperationalStates.ONLINE, bus = bus,
         active_power = 0.5, reactive_power = 0.1, rating = 1.0,
         active_power_limits = (min = 0.0, max = 1.0),
         reactive_power_limits = (min = -1.0, max = 1.0),
@@ -313,14 +313,14 @@ function make_openapi_test_doc(;
         ),
     )
     thermal_po = PSY.PO.ThermalStandard(;
-        id = 6, name = "gen1", available = true, status = true, bus = 4,
+        id = 6, name = "gen1", available = true, status = "ONLINE", bus = 4,
         active_power = 50.0, reactive_power = 10.0, rating = 100.0,
         active_power_limits = PSY.IC.MinMax(; min = 10.0, max = 100.0),
         reactive_power_limits = PSY.IC.MinMax(; min = -50.0, max = 50.0),
         ramp_limits = PSY.IC.UpDown(; up = 20.0, down = 20.0),
         operation_cost = cost_po, base_power = 100.0, power_units = "NATURAL_UNITS",
         time_limits = PSY.IC.UpDown(; up = 2.0, down = 2.0),
-        must_run = false, prime_mover_type = "OT", fuel = "NATURAL_GAS",
+        prime_mover_type = "OT", fuel = "NATURAL_GAS",
         time_at_status = 100.0,
     )
     load_po = PSY.PO.PowerLoad(;

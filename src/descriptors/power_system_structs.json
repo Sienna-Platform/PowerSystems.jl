@@ -4772,11 +4772,11 @@
                     "validation_action": "warn"
                 },
                 {
-                    "null_value": "false",
-                    "default": "false",
+                    "null_value": "OperationalStates.OFFLINE",
+                    "default": "OperationalStates.OFFLINE",
                     "name": "status",
-                    "comment": "Initial commitment condition at the start of a simulation (`true` = on or `false` = off)",
-                    "data_type": "Bool"
+                    "comment": "Operating state of the unit at the start of a simulation. Options are listed [here](@ref opstate_list)",
+                    "data_type": "OperationalStates"
                 },
                 {
                     "null_value": "INFINITE_TIME",
@@ -4914,6 +4914,27 @@
                         "max": null
                     },
                     "validation_action": "warn"
+                },
+                {
+                    "null_value": "OperationalStates.OFFLINE",
+                    "default": "OperationalStates.OFFLINE",
+                    "name": "status",
+                    "comment": "Operating state of the unit at the start of a simulation. Options are listed [here](@ref opstate_list)",
+                    "data_type": "OperationalStates"
+                },
+                {
+                    "null_value": "INFINITE_TIME",
+                    "default": "INFINITE_TIME",
+                    "name": "time_at_status",
+                    "comment": "Time (e.g., `Minutes(360)`) the generator has been in its current `status`",
+                    "data_type": "Float64"
+                },
+                {
+                    "name": "commitment_mode",
+                    "comment": "Commitment mode of the unit. Options are listed [here](@ref commit_list)",
+                    "null_value": "CommitmentModes.UNCOMMITTED",
+                    "data_type": "CommitmentModes",
+                    "default": "CommitmentModes.COMMITTED"
                 },
                 {
                     "name": "operation_cost",
@@ -5187,18 +5208,24 @@
                     "validation_action": "warn"
                 },
                 {
-
                     "null_value": "HydroPumpTurbineStatus.OFF",
                     "default": "HydroPumpTurbineStatus.OFF",
-                    "name": "status",
-                    "comment": "Initial Operating status of a pumped‑storage hydro unit. See [HydroPumpTurbineStatus](@ref) for reference",
+                    "name": "operating_mode",
+                    "comment": "Mode the pumped‑storage unit is operating in: generating, pumping, or idle. See [HydroPumpTurbineStatus](@ref) for reference",
                     "data_type": "HydroPumpTurbineStatus"
+                },
+                {
+                    "null_value": "OperationalStates.OFFLINE",
+                    "default": "OperationalStates.OFFLINE",
+                    "name": "status",
+                    "comment": "Operating state of the unit at the start of a simulation. Options are listed [here](@ref opstate_list)",
+                    "data_type": "OperationalStates"
                 },
                 {
                     "null_value": "INFINITE_TIME",
                     "default": "INFINITE_TIME",
                     "name": "time_at_status",
-                    "comment": "Time (e.g., `Minutes(360)`) the generator has been on or off, as indicated by `status`",
+                    "comment": "Time (e.g., `Minutes(360)`) the generator has been in its current `status`",
                     "data_type": "Float64"
                 },
                 {
@@ -5253,11 +5280,11 @@
                     "default": "1.0"
                 },
                 {
-                    "name": "must_run",
-                    "comment": "Whether the unit must run (i.e., cannot be curtailed)",
-                    "null_value": "false",
-                    "data_type": "Bool",
-                    "default": "false"
+                    "name": "commitment_mode",
+                    "comment": "Commitment mode of the unit. Options are listed [here](@ref commit_list)",
+                    "null_value": "CommitmentModes.UNCOMMITTED",
+                    "data_type": "CommitmentModes",
+                    "default": "CommitmentModes.COMMITTED"
                 },
                 {
                     "name": "prime_mover_type",
@@ -5692,10 +5719,10 @@
                     "data_type": "Bool"
                 },
                 {
-                    "null_value": "false",
+                    "null_value": "OperationalStates.OFFLINE",
                     "name": "status",
-                    "comment": "Initial commitment condition at the start of a simulation (`true` = on or `false` = off)",
-                    "data_type": "Bool"
+                    "comment": "Operating state of the unit at the start of a simulation. Options are listed [here](@ref opstate_list)",
+                    "data_type": "OperationalStates"
                 },
                 {
                     "name": "bus",
@@ -5803,11 +5830,11 @@
                     "default": "nothing"
                 },
                 {
-                    "name": "must_run",
-                    "comment": "Set to `true` if the unit is must run",
-                    "null_value": "false",
-                    "data_type": "Bool",
-                    "default": "false"
+                    "name": "commitment_mode",
+                    "comment": "Commitment mode of the unit. Options are listed [here](@ref commit_list)",
+                    "null_value": "CommitmentModes.UNCOMMITTED",
+                    "data_type": "CommitmentModes",
+                    "default": "CommitmentModes.COMMITTED"
                 },
                 {
                     "name": "prime_mover_type",
@@ -5833,7 +5860,7 @@
                 {
                     "null_value": "INFINITE_TIME",
                     "name": "time_at_status",
-                    "comment": "Time (e.g., `Minutes(360)`) the generator has been on or off, as indicated by `status`",
+                    "comment": "Time (e.g., `Minutes(360)`) the generator has been in its current `status`",
                     "data_type": "Float64",
                     "default": "INFINITE_TIME"
                 },
@@ -5996,10 +6023,10 @@
                     "data_type": "Bool"
                 },
                 {
-                    "null_value": "false",
+                    "null_value": "OperationalStates.OFFLINE",
                     "name": "status",
-                    "comment": "Initial commitment condition at the start of a simulation (`true` = on or `false` = off)",
-                    "data_type": "Bool"
+                    "comment": "Operating state of the unit at the start of a simulation. Options are listed [here](@ref opstate_list)",
+                    "data_type": "OperationalStates"
                 },
                 {
                     "name": "bus",
@@ -6150,17 +6177,17 @@
                 },
                 {
                     "name": "time_at_status",
-                    "comment": "Time (e.g., `Minutes(360)`) the generator has been on or off, as indicated by `status`",
+                    "comment": "Time (e.g., `Minutes(360)`) the generator has been in its current `status`",
                     "null_value": "INFINITE_TIME",
                     "data_type": "Float64",
                     "default": "INFINITE_TIME"
                 },
                 {
-                    "name": "must_run",
-                    "comment": "Set to `true` if the unit is must run",
-                    "null_value": "false",
-                    "data_type": "Bool",
-                    "default": "false"
+                    "name": "commitment_mode",
+                    "comment": "Commitment mode of the unit. Options are listed [here](@ref commit_list)",
+                    "null_value": "CommitmentModes.UNCOMMITTED",
+                    "data_type": "CommitmentModes",
+                    "default": "CommitmentModes.COMMITTED"
                 },
                 {
                     "name": "dynamic_injector",
@@ -6460,10 +6487,10 @@
                     "data_type": "Bool"
                 },
                 {
-                    "null_value": "false",
+                    "null_value": "OperationalStates.OFFLINE",
                     "name": "status",
-                    "comment": "Initial commitment condition at the start of a simulation (`true` = on or `false` = off)",
-                    "data_type": "Bool"
+                    "comment": "Operating state of the unit at the start of a simulation. Options are listed [here](@ref opstate_list)",
+                    "data_type": "OperationalStates"
                 },
                 {
                     "name": "bus",

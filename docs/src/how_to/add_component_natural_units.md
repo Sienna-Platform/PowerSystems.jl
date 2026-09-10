@@ -30,7 +30,7 @@ For example:
 gas1 = ThermalStandard(;
     name = "gas1",
     available = true,
-    status = true,
+    status = OperationalStates.ONLINE,
     bus = get_component(ACBus, system, "Cobb"), # Attach to a previously-defined bus named Cobb
     active_power = 0.0,
     reactive_power = 0.0,
@@ -41,7 +41,6 @@ gas1 = ThermalStandard(;
     operation_cost = ThermalGenerationCost(nothing),
     base_power = 30.0, # MVA
     time_limits = (up = 8.0, down = 8.0), # Hours, unaffected by per-unitization
-    must_run = false,
     prime_mover_type = PrimeMovers.CC,
     fuel = ThermalFuels.NATURAL_GAS,
 );

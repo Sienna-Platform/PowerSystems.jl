@@ -80,7 +80,7 @@ gas_cost = ThermalGenerationCost(;
 thermal_gen1 = ThermalStandard(;
     name = "Gas Turbine 1",
     available = true,
-    status = true,
+    status = OperationalStates.ONLINE,
     bus = bus1,
     active_power = 150.0,      # MW
     reactive_power = 20.0,     # MVAR
@@ -91,7 +91,6 @@ thermal_gen1 = ThermalStandard(;
     operation_cost = gas_cost,
     base_power = 100.0,
     time_limits = (up = 4.0, down = 2.0),    # hours
-    must_run = false,
     prime_mover_type = PrimeMovers.CT,   # Combustion Turbine
     fuel = ThermalFuels.NATURAL_GAS,
 )
@@ -118,7 +117,6 @@ thermal_gen2 = ThermalStandard(;
     operation_cost = coal_cost,
     base_power = 100.0,
     time_limits = (up = 8.0, down = 8.0),    # Longer min up/down times
-    must_run = false,
     prime_mover_type = PrimeMovers.ST,   # Steam Turbine
     fuel = ThermalFuels.COAL,
 )

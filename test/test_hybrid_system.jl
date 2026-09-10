@@ -4,7 +4,7 @@
     h_sys = HybridSystem(;
         name = "Test H",
         available = true,
-        status = true,
+        status = OperationalStates.ONLINE,
         bus = get_component(ACBus, test_sys, "Bus 1"),
         active_power = 1.0,
         reactive_power = 1.0,
@@ -116,7 +116,7 @@ end
     h_sys = HybridSystem(;
         name = name,
         available = true,
-        status = true,
+        status = OperationalStates.ONLINE,
         bus = bus,
         active_power = 1.0,
         reactive_power = 1.0,
@@ -170,7 +170,7 @@ end
     h_sys = HybridSystem(;
         name = "HybridWithThermal",
         available = true,
-        status = true,
+        status = OperationalStates.ONLINE,
         bus = bus,
         active_power = 1.0,
         reactive_power = 0.0,
@@ -191,7 +191,7 @@ end
     h_sys = HybridSystem(;
         name = "HybridNoThermal",
         available = true,
-        status = true,
+        status = OperationalStates.ONLINE,
         bus = bus,
         active_power = 1.0,
         reactive_power = 0.0,

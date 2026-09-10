@@ -734,11 +734,6 @@
             "default_value": null
         },
         {
-            "name": "must_run",
-            "description": "Boolean that indicates if ThermalGen must be online always",
-            "default_value": false
-        },
-        {
             "unit": "MW",
             "name": "pump_load",
             "description": "PHES Pump Load",

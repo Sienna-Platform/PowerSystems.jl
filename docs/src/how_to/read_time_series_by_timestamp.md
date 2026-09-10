@@ -41,7 +41,7 @@ gens = [
     ThermalStandard(;
         name = "gen$i",
         available = true,
-        status = true,
+        status = OperationalStates.ONLINE,
         bus = bus,
         active_power = 1.0,
         reactive_power = 0.0,

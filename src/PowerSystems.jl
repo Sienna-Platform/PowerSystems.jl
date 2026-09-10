@@ -411,6 +411,8 @@ export DiscreteControlledBranchStatus
 export DiscreteControlledBranchType
 export PrimeMovers
 export ThermalFuels
+export OperationalStates
+export CommitmentModes
 export StorageTech
 export StateTypes
 export ReservoirDataType

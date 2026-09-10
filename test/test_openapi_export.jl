@@ -476,12 +476,12 @@ end
         fixed = 100.0, start_up = 200.0, shut_down = 50.0,
     )
     gen = ThermalStandard(;
-        name = "gen1", available = true, status = true, bus = bus,
+        name = "gen1", available = true, status = OperationalStates.ONLINE, bus = bus,
         active_power = 0.25, reactive_power = 0.05, rating = 0.5,
         active_power_limits = (min = 0.05, max = 0.5),
         reactive_power_limits = (min = -0.25, max = 0.25),
         ramp_limits = (up = 0.1, down = 0.1), operation_cost = cost, base_power = 200.0,
-        time_limits = (up = 2.0, down = 2.0), must_run = false,
+        time_limits = (up = 2.0, down = 2.0),
         prime_mover_type = PrimeMovers.OT, fuel = ThermalFuels.NATURAL_GAS,
         time_at_status = 100.0,
     )
@@ -509,6 +509,8 @@ end
     @test gen_natural.prime_mover_type == "OT"
     @test gen_natural.fuel == "NATURAL_GAS"
     @test gen_natural.operation_cost.fixed == 100.0
+    @test gen_natural.status == "ONLINE"
+    @test gen_natural.commitment_mode == "COMMITTED"
 
     gen_device = PSY.to_openapi(gen, refs, DU)
     @test gen_device.active_power == 0.25
@@ -588,7 +590,7 @@ end
         active_power_limits = (min = 0.0, max = 0.4),
         reactive_power_limits = (min = -0.15, max = 0.15),
         ramp_limits = (up = 0.1, down = 0.1), time_limits = (up = 1.0, down = 1.0),
-        base_power = 100.0, status = true, time_at_status = 50.0,
+        base_power = 100.0, status = OperationalStates.ONLINE, time_at_status = 50.0,
         operation_cost = hydro_cost,
     )
     ren_cost = RenewableGenerationCost(;
@@ -1475,7 +1477,7 @@ end
 end
 
 _export_thermal_gen(bus; name = "gen1") = ThermalStandard(;
-    name = name, available = true, status = true, bus = bus,
+    name = name, available = true, status = OperationalStates.ONLINE, bus = bus,
     active_power = 0.4, reactive_power = 0.01, rating = 0.5,
     prime_mover_type = PrimeMovers.ST, fuel = ThermalFuels.COAL,
     active_power_limits = (min = 0.0, max = 0.4),
@@ -1571,7 +1573,7 @@ end
 end
 
 _cc_thermal_gen(bus, name, prime_mover) = ThermalStandard(;
-    name = name, available = true, status = true, bus = bus,
+    name = name, available = true, status = OperationalStates.ONLINE, bus = bus,
     active_power = 0.0, reactive_power = 0.0, rating = 1.0,
     active_power_limits = (min = 0.0, max = 1.0),
     reactive_power_limits = (min = -1.0, max = 1.0), ramp_limits = nothing,

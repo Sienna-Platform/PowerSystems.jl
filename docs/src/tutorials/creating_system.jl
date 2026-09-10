@@ -169,7 +169,7 @@ solar = RenewableDispatch(;
 gas = ThermalStandard(;
     name = "gas1",
     available = true,
-    status = true,
+    status = OperationalStates.ONLINE,
     bus = bus1,
     active_power = 0.0, # Per-unitized by device base_power
     reactive_power = 0.0, # Per-unitized by device base_power
@@ -180,7 +180,6 @@ gas = ThermalStandard(;
     operation_cost = ThermalGenerationCost(nothing),
     base_power = 30.0, # MVA
     time_limits = (up = 8.0, down = 8.0), # Hours
-    must_run = false,
     prime_mover_type = PrimeMovers.CC,
     fuel = ThermalFuels.NATURAL_GAS,
 );

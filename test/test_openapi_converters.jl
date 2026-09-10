@@ -438,14 +438,14 @@ end
         ),
     )
     thermal_po = PSY.PO.ThermalStandard(;
-        id = 20, name = "gen1", available = true, status = true, bus = 3,
+        id = 20, name = "gen1", available = true, status = "ONLINE", bus = 3,
         active_power = 50.0, reactive_power = 10.0, rating = 100.0,
         active_power_limits = PSY.IC.MinMax(; min = 10.0, max = 100.0),
         reactive_power_limits = PSY.IC.MinMax(; min = -50.0, max = 50.0),
         ramp_limits = PSY.IC.UpDown(; up = 20.0, down = 20.0),
         operation_cost = cost_po, base_power = 200.0,
         time_limits = PSY.IC.UpDown(; up = 2.0, down = 2.0),
-        must_run = false, prime_mover_type = "OT", fuel = "NATURAL_GAS",
+        prime_mover_type = "OT", fuel = "NATURAL_GAS",
         time_at_status = 100.0,
     )
 
@@ -460,6 +460,8 @@ end
     @test get_fuel(gen_natural) == ThermalFuels.NATURAL_GAS
     @test get_fixed(get_operation_cost(gen_natural)) == 100.0
     @test get_bus(gen_natural) === refs[3]
+    @test get_status(gen_natural) == OperationalStates.ONLINE
+    @test get_commitment_mode(gen_natural) == CommitmentModes.COMMITTED
 
     gen_device = PSY.from_openapi(thermal_po, refs, DU)
     @test get_active_power(gen_device, DU) == 50.0
@@ -749,7 +751,7 @@ end
         reactive_power_limits = PSY.IC.MinMax(; min = -15.0, max = 15.0),
         ramp_limits = PSY.IC.UpDown(; up = 10.0, down = 10.0),
         time_limits = PSY.IC.UpDown(; up = 1.0, down = 1.0),
-        base_power = 100.0, status = true, time_at_status = 50.0,
+        base_power = 100.0, status = "ONLINE", time_at_status = 50.0,
         operation_cost = hydro_cost_po,
     )
     ror_natural = PSY.from_openapi(ror_po, refs, NU)
