@@ -787,16 +787,31 @@ Enumeration of energy units for emissions rate denominator.
 
 IS.@scoped_enum(
     CurveStyles,
-    CURVE = 0,
+    VARIABLE = 0,
     FIXED = 1,
-    VARIABLE = 2,
 )
 @doc """
-Enumeration of market-bid curve-clearing styles. Corresponds to ERCOT's DAM `PriceCurve`
-`curveStyle` field (`"CURVE"` | `"FIXED"` | `"VARIABLE"`).
+Enumeration of market-bid curve-clearing styles: the quantity structure of a bid.
 
 # Values
-- `CURVE = 0`: Ordinary divisible price-setting curve (default).
-- `FIXED = 1`: The bid clears as one indivisible all-or-nothing package over its period.
-- `VARIABLE = 2`: Divisible quantity, block-priced; cannot set the settlement-point price.
+- `VARIABLE = 0`: Continuous quantity with one or more price segments (default). The
+  cleared quantity is a continuous variable bounded by the curve.
+- `FIXED = 1`: All-or-nothing block with a single segment. The bid clears its whole
+  quantity at its one price or not at all, a discrete decision.
 """ CurveStyles
+
+IS.@scoped_enum(
+    CurveMultiStep,
+    SINGLE_STEP = 0,
+    MULTI_STEP = 1,
+)
+@doc """
+Enumeration of market-bid multi-step block indicators: the time structure of a bid, counted
+in model steps so it applies at any resolution. Independent of [`CurveStyles`](@ref): the
+curve style is the quantity structure of the bid, this is its time structure, and the two
+compose.
+
+# Values
+- `SINGLE_STEP = 0`: Each step of the bid clears independently (default).
+- `MULTI_STEP = 1`: The bid must be awarded as one block across every step it covers.
+""" CurveMultiStep

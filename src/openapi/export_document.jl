@@ -53,6 +53,7 @@ function to_openapi(outage::GeometricDistributionForcedOutage, refs::OpenAPIRefs
         monitored_components = _monitored_component_ids(
             refs, get_monitored_components(outage),
         ),
+        identifier = get_identifier(outage),
     )
 end
 
@@ -63,6 +64,7 @@ function to_openapi(outage::PlannedOutage, refs::OpenAPIRefs)
         monitored_components = _monitored_component_ids(
             refs, get_monitored_components(outage),
         ),
+        identifier = get_identifier(outage),
     )
 end
 
@@ -73,6 +75,7 @@ function to_openapi(outage::FixedForcedOutage, refs::OpenAPIRefs)
         monitored_components = _monitored_component_ids(
             refs, get_monitored_components(outage),
         ),
+        identifier = get_identifier(outage),
     )
 end
 

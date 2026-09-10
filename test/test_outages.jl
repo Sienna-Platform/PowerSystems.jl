@@ -283,6 +283,50 @@ end
     @test_throws ArgumentError add_supplemental_attribute!(sys2, gen_for_attach, bad_kind)
 end
 
+@testset "Test identifier on Outage subtypes" begin
+    # Default is nothing for all three concrete types.
+    @test isnothing(
+        get_identifier(
+            GeometricDistributionForcedOutage(;
+                mean_time_to_recovery = 1.0, outage_transition_probability = 0.5,
+            ),
+        ),
+    )
+    @test isnothing(get_identifier(PlannedOutage(; outage_schedule = "x")))
+    @test isnothing(get_identifier(FixedForcedOutage(; outage_status = 0.0)))
+
+    # A user-supplied identifier (a name, a block id) is stored verbatim.
+    fo = GeometricDistributionForcedOutage(;
+        mean_time_to_recovery = 1.0,
+        outage_transition_probability = 0.5,
+        identifier = "unit7_forced",
+    )
+    @test get_identifier(fo) == "unit7_forced"
+    @test get_identifier(PlannedOutage(; outage_schedule = "x", identifier = "block_12")) ==
+          "block_12"
+    @test get_identifier(FixedForcedOutage(; outage_status = 1.0, identifier = "ffo_1")) ==
+          "ffo_1"
+
+    # JSON round trip: a set identifier and the nothing default both survive.
+    sys = create_system_with_outages()
+    gens = collect(get_components(ThermalStandard, sys))
+    tagged = PlannedOutage(; outage_schedule = "3", identifier = "block_12")
+    add_supplemental_attribute!(sys, gens[1], tagged)
+    sys2 = roundtrip_system(sys)
+    outages2 = collect(get_supplemental_attributes(Outage, sys2))
+    @test length(outages2) == 5
+    identifiers = Set(get_identifier(x) for x in outages2)
+    @test identifiers == Set(Union{Nothing, String}["block_12", nothing])
+    tagged2 = only(
+        get_supplemental_attributes(
+            x -> get_identifier(x) == "block_12",
+            PlannedOutage,
+            sys2,
+        ),
+    )
+    @test get_outage_schedule(tagged2) == "3"
+end
+
 @testset "Test JSON round-trip of monitored_components" begin
     sys = create_system_with_outages()
     gens = collect(get_components(ThermalStandard, sys))

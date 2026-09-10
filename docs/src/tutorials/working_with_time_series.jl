@@ -179,7 +179,7 @@ for load in (load1, load2)
         load,
         SingleTimeSeries(;
             name = "max_active_power",
-            data = load_timearray * get_max_active_power(load, SU),
+            data = load_timearray .* get_max_active_power(load, SU),
         ),
     )
 end

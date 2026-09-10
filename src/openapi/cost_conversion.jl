@@ -153,19 +153,33 @@ convert_cost(fd::IC.TimeSeriesPiecewiseStepData) = convert_cost(fd, _current_imp
 _resolve_optional_key(::Any, ::Nothing) = nothing
 _resolve_optional_key(store, id::Integer) = IS.get_time_series_key(store, id)
 
-"""Wire representation of [`CurveStyles`](@ref): a plain integer (0/1/2), deliberately not
-the string-enum convention used elsewhere in the schemas — see `curve_style` on
+"""Wire representation of [`CurveStyles`](@ref): a plain integer (0/1), deliberately not
+the string-enum convention used elsewhere in the schemas - see `curve_style` on
 `MarketBidCost`/`MarketBidTimeSeriesCost`."""
 function _curve_style_from_wire(id::Integer)
-    if id ∉ (0, 1, 2)
+    if id ∉ (0, 1)
         throw(
             ArgumentError(
                 "convert_cost: curve_style $id is not a valid CurveStyles value; " *
-                "expected 0 (CURVE), 1 (FIXED), or 2 (VARIABLE)",
+                "expected 0 (VARIABLE) or 1 (FIXED)",
             ),
         )
     end
     return CurveStyles(Int(id))
+end
+
+"""Wire representation of [`CurveMultiStep`](@ref): a plain integer (0/1), the same
+convention as `curve_style`."""
+function _curve_multistep_from_wire(id::Integer)
+    if id ∉ (0, 1)
+        throw(
+            ArgumentError(
+                "convert_cost: curve_multistep $id is not a valid CurveMultiStep value; " *
+                "expected 0 (SINGLE_STEP) or 1 (MULTI_STEP)",
+            ),
+        )
+    end
+    return CurveMultiStep(Int(id))
 end
 
 convert_cost(vc::PC.TimeSeriesInputOutputCurve, store) =
@@ -380,6 +394,9 @@ function convert_cost(po::PC.MarketBidCost)
         curve_style = _curve_style_from_wire(
             _require(po.curve_style, "MarketBidCost.curve_style"),
         ),
+        curve_multistep = _curve_multistep_from_wire(
+            _require(po.curve_multistep, "MarketBidCost.curve_multistep"),
+        ),
     )
 end
 
@@ -458,6 +475,9 @@ function convert_cost(po::PC.MarketBidTimeSeriesCost, store)
         ),
         curve_style = _curve_style_from_wire(
             _require(po.curve_style, "MarketBidTimeSeriesCost.curve_style"),
+        ),
+        curve_multistep = _curve_multistep_from_wire(
+            _require(po.curve_multistep, "MarketBidTimeSeriesCost.curve_multistep"),
         ),
     )
 end

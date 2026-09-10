@@ -144,9 +144,12 @@ _key_association_id(::Nothing) = nothing
 _key_association_id(key::IS.TimeSeriesKey) =
     _record_emitted_association_id(IS.get_association_id(key))
 
-"""Wire representation of [`CurveStyles`](@ref): a plain integer (0/1/2) — see
+"""Wire representation of [`CurveStyles`](@ref): a plain integer (0/1) - see
 `cost_conversion.jl`'s `_curve_style_from_wire` for the import-direction counterpart."""
 _curve_style_to_wire(style::CurveStyles) = style.value
+"""Wire representation of [`CurveMultiStep`](@ref): a plain integer (0/1), mirroring
+`_curve_style_to_wire`."""
+_curve_multistep_to_wire(flag::CurveMultiStep) = flag.value
 
 function convert_cost_to_openapi(curve::TimeSeriesInputOutputCurve)
     return PC.TimeSeriesInputOutputCurve(;
@@ -288,6 +291,7 @@ function convert_cost_to_openapi(cost::MarketBidCost)
         incremental_slope = get_incremental_slope(cost),
         decremental_slope = get_decremental_slope(cost),
         curve_style = _curve_style_to_wire(get_curve_style(cost)),
+        curve_multistep = _curve_multistep_to_wire(get_curve_multistep(cost)),
     )
 end
 
@@ -361,6 +365,7 @@ function convert_cost_to_openapi(cost::MarketBidTimeSeriesCost)
         incremental_slope = get_incremental_slope(cost),
         decremental_slope = get_decremental_slope(cost),
         curve_style = _curve_style_to_wire(get_curve_style(cost)),
+        curve_multistep = _curve_multistep_to_wire(get_curve_multistep(cost)),
     )
 end
 

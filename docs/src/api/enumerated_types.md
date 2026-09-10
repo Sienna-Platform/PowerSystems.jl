@@ -215,6 +215,33 @@ tap changer, which can be used to determine the tap position during power flow c
 | `CONTROL_OF_DC_LINE`                    | Control of a DC line quantity                                             |
 | `ASYMMETRIC_ACTIVE_POWER_FLOW`          | Asymmetric active power flow control                                      |
 
+## [Market Bid Curve Styles](@id curvestyles_list)
+
+`CurveStyles` is the curve-clearing style of a [`MarketBidCost`](@ref) or
+[`MarketBidTimeSeriesCost`](@ref), the quantity structure of the bid. `FIXED` is mutually
+exclusive with linear interpolation (`incremental_slope`/`decremental_slope`) and requires a
+single-segment offer curve. `MarketBidCost` checks the segment count at construction.
+`MarketBidTimeSeriesCost` holds time series keys, so it does not check it at construction;
+the rule is enforced when the curves are resolved with a `start_time`. `CurveStyles` has the
+options:
+
+| Name       | Description                                             |
+|:---------- |:------------------------------------------------------- |
+| `VARIABLE` | Continuous quantity with one or more segments (default) |
+| `FIXED`    | All-or-nothing block with a single segment              |
+
+## [Market Bid Multi-Step Blocks](@id curvemultistep_list)
+
+`CurveMultiStep` is the multi-step block indicator of a [`MarketBidCost`](@ref) or
+[`MarketBidTimeSeriesCost`](@ref), the time structure of the bid counted in model steps so
+it applies at any resolution. It is independent of `CurveStyles`: the two switches compose.
+`CurveMultiStep` has the options:
+
+| Name          | Description                                                      |
+|:------------- |:---------------------------------------------------------------- |
+| `SINGLE_STEP` | Each step of the bid clears independently (default)              |
+| `MULTI_STEP`  | The bid must be awarded as one block across every step it covers |
+
 ## [Dynamic States](@id states_list)
 
 `StateTypes` are used to denote the type of dynamic equation a specific [state](@ref S) is subject

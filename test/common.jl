@@ -469,3 +469,37 @@ function _market_hub_fixture()
     add_component!(sys, hub)
     return (sys, b1, b2, hub)
 end
+
+# Time-series cost-resolution helpers shared by test_cost_functions.jl and
+# test_market_components.jl. They live here so either file runs on its own; a helper
+# defined in one test file and used by another only works when the files run in order.
+# Each timestamp gets a *distinct* PiecewiseStepData so that resolving at a known
+# `start_time` produces an unambiguous expected slice.
+const _TS_RESOLVE_INITIAL_TIME = Dates.DateTime("2020-01-01")
+const _TS_RESOLVE_RESOLUTION = Dates.Hour(1)
+# Match RTS_GMLC's 24h forecast horizon. First step is distinct so the resolution
+# at `_TS_RESOLVE_INITIAL_TIME` is unambiguously identifiable.
+const _TS_RESOLVE_PWL_DATA = vcat(
+    [PiecewiseStepData([1.0, 3.0, 5.0], [2.0, 4.0])],
+    fill(PiecewiseStepData([2.0, 4.0, 6.0], [3.0, 5.0]), 23),
+)
+
+function _attach_pwl_forecast(sys, component, name)
+    fcst = IS.Deterministic(;
+        data = SortedDict(_TS_RESOLVE_INITIAL_TIME => _TS_RESOLVE_PWL_DATA),
+        name = name,
+        resolution = _TS_RESOLVE_RESOLUTION,
+    )
+    return add_time_series!(sys, component, fcst)
+end
+
+function _attach_linear_forecast(sys, component, name)
+    fcst = IS.Deterministic(;
+        data = SortedDict(
+            _TS_RESOLVE_INITIAL_TIME => fill(IS.LinearFunctionData(1.0, 0.0), 24),
+        ),
+        name = name,
+        resolution = _TS_RESOLVE_RESOLUTION,
+    )
+    return add_time_series!(sys, component, fcst)
+end

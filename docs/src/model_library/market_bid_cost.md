@@ -2,7 +2,7 @@
 
 ```@autodocs
 Modules = [PowerSystems]
-Pages   = ["cost_functions/MarketBidCost.jl"]
+Pages   = ["cost_functions/MarketBidCost.jl", "cost_functions/MarketBidTimeSeriesCost.jl"]
 Order = [:type, :function]
 Public = true
 Private = false

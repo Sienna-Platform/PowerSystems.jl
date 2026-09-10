@@ -912,7 +912,10 @@ end
 
     ptp = PointToPointBid(; name = "utc1", available = true, from = b1, to = hub,
         max_active_power = 50.0,
-        spread_bid = MarketBidCost(; curve_style = CurveStyles.FIXED),
+        spread_bid = MarketBidCost(;
+            curve_style = CurveStyles.FIXED,
+            curve_multistep = CurveMultiStep.MULTI_STEP,
+        ),
         price_limits = (min = -50.0, max = 50.0), linked_crr = "crr1")
     add_component!(sys, ptp)
 
@@ -926,6 +929,7 @@ end
         @test get_max_active_power(ptp2) == 50.0
         @test get_price_limits(ptp2) == (min = -50.0, max = 50.0)
         @test get_curve_style(get_spread_bid(ptp2)) == CurveStyles.FIXED
+        @test get_curve_multistep(get_spread_bid(ptp2)) == CurveMultiStep.MULTI_STEP
         @test get_linked_crr(ptp2) == "crr1"
     end
 end
@@ -1499,6 +1503,7 @@ _export_thermal_gen(bus; name = "gen1") = ThermalStandard(;
 
         outage = GeometricDistributionForcedOutage(;
             mean_time_to_recovery = 1.0, outage_transition_probability = 0.5,
+            identifier = "gen1_forced",
         )
         add_supplemental_attribute!(sys, gen, outage)
 
@@ -1522,6 +1527,7 @@ _export_thermal_gen(bus; name = "gen1") = ThermalStandard(;
         outage2 = only(get_supplemental_attributes(GeometricDistributionForcedOutage, gen2))
         # The attribute's id is stable across the round trip, exactly like a component's.
         @test IS.get_id(outage2) == IS.get_id(outage)
+        @test get_identifier(outage2) == "gen1_forced"
         ts2 = get_time_series(SingleTimeSeries, outage2, "outage_series")
         @test TimeSeries.values(PSY.get_data(ts2)) == [0.1, 0.2, 0.3]
     end

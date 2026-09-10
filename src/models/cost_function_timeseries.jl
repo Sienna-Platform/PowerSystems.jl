@@ -103,8 +103,29 @@ _build_static(curve, device, start_time, len::Int) =
     IS.build_static_curves(curve, device, start_time, len)
 
 """
+Resolve one offer curve of a `MarketBidTimeSeriesCost` at `start_time` and, for a `FIXED`
+bid, enforce the single-segment rule its constructor cannot (the curve is a key there, not
+data). `field` names the offer curve in the error.
+"""
+function _resolve_market_bid_offer_curve(
+    device::StaticInjection,
+    cost::MarketBidTimeSeriesCost,
+    curve,
+    field::AbstractString,
+    start_time::Dates.DateTime,
+    len::Union{Nothing, Int},
+)
+    resolved = _resolve_ts_cost_curve(device, curve, start_time, len)
+    check_fixed_single_segment(
+        get_curve_style(cost), resolved, field; context = string(start_time),
+    )
+    return resolved
+end
+
+"""
 Retrieve the variable cost for a `StaticInjection` device with a
-`MarketBidTimeSeriesCost`. Resolves time series at `start_time`.
+`MarketBidTimeSeriesCost`. Resolves time series at `start_time`. Throws ArgumentError if
+the bid is `FIXED` and a resolved curve has more than one segment.
 """
 function get_variable_cost(
     device::StaticInjection,
@@ -114,8 +135,10 @@ function get_variable_cost(
 )
     isnothing(start_time) &&
         throw(ArgumentError("start_time is required for MarketBidTimeSeriesCost"))
-    return _resolve_ts_cost_curve(
-        device, get_incremental_offer_curves(cost), start_time, len)
+    return _resolve_market_bid_offer_curve(
+        device, cost, get_incremental_offer_curves(cost), "incremental_offer_curves",
+        start_time, len,
+    )
 end
 
 get_incremental_variable_cost(
@@ -133,8 +156,10 @@ function get_decremental_variable_cost(
 )
     isnothing(start_time) &&
         throw(ArgumentError("start_time is required for MarketBidTimeSeriesCost"))
-    return _resolve_ts_cost_curve(
-        device, get_decremental_offer_curves(cost), start_time, len)
+    return _resolve_market_bid_offer_curve(
+        device, cost, get_decremental_offer_curves(cost), "decremental_offer_curves",
+        start_time, len,
+    )
 end
 
 # ── STATIC ImportExportCost GETTERS ─────────────────────────────────────────

@@ -395,6 +395,7 @@ function from_openapi(po::PO.GeometricDistributionForcedOutage, refs::OpenAPIRef
         mean_time_to_recovery = po.mean_time_to_recovery,
         outage_transition_probability = po.outage_transition_probability,
         monitored_components = _monitored_component_uuids(refs, po.monitored_components),
+        identifier = po.identifier,
     )
 end
 
@@ -402,6 +403,7 @@ function from_openapi(po::PO.PlannedOutage, refs::OpenAPIRefs)
     return PlannedOutage(;
         outage_schedule = po.outage_schedule,
         monitored_components = _monitored_component_uuids(refs, po.monitored_components),
+        identifier = po.identifier,
     )
 end
 
@@ -409,6 +411,7 @@ function from_openapi(po::PO.FixedForcedOutage, refs::OpenAPIRefs)
     return FixedForcedOutage(;
         outage_status = po.outage_status,
         monitored_components = _monitored_component_uuids(refs, po.monitored_components),
+        identifier = po.identifier,
     )
 end
 
