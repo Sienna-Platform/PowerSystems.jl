@@ -161,7 +161,7 @@ end
     # The generated code must parse as valid Julia syntax.
     @test Meta.parse("begin\n" * gen * "\nend") isa Expr
 
-    device_start = findfirst("DeviceBaseUnit", gen)
+    device_start = findfirst("ComponentBaseUnit", gen)
     natural_start = findfirst("NaturalUnit", gen)
     @test !isnothing(device_start)
     @test !isnothing(natural_start)
@@ -201,12 +201,12 @@ end
     @test !occursin("ext =", natural_body)
     @test !occursin("internal =", natural_body)
 
-    # Scalar power conversion: device-base is pass-through; natural-units divides by
+    # Scalar power conversion: component-base is pass-through; natural-units divides by
     # the component's own base_power (S_base).
     @test occursin("active_power = po.active_power,", device_body)
     @test occursin("active_power = po.active_power / po.base_power,", natural_body)
 
-    # Nullable scalar power conversion: device-base is still bare pass-through (no guard
+    # Nullable scalar power conversion: component-base is still bare pass-through (no guard
     # needed — scalar field access on `nothing` is never attempted); natural-units guards
     # the division.
     @test occursin("rating_b = po.rating_b,", device_body)
@@ -269,7 +269,7 @@ end
     gen = read(joinpath(outdir, "OATestPuDevice.jl"), String)
     @test Meta.parse("begin\n" * gen * "\nend") isa Expr
 
-    device_start = findfirst("DeviceBaseUnit", gen)
+    device_start = findfirst("ComponentBaseUnit", gen)
     natural_start = findfirst("NaturalUnit", gen)
     device_body = gen[first(device_start):(first(natural_start) - 1)]
     natural_body = gen[first(natural_start):end]

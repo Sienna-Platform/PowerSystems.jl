@@ -5,7 +5,7 @@ Core abstraction: a UnitCategory defines a physical quantity (power, impedance, 
 with a natural unit and a way to compute the per-unit base value for any component.
 
 Downstream packages implement the interface functions:
-  - _get_device_base_power(c) → Float64 (MVA)
+  - _get_component_base_power(c) → Float64 (MVA)
   - _get_system_base_power(c) → Float64 (MVA)
   - get_base_voltage(c) → Float64 (kV)
 =#
@@ -15,11 +15,11 @@ Downstream packages implement the interface functions:
 # ============================================================
 
 """
-    _get_device_base_power(component) → Float64
+    _get_component_base_power(component) → Float64
 
 Return the device's base power in MVA as a raw Float64.
 """
-function _get_device_base_power end
+function _get_component_base_power end
 
 """
     _get_system_base_power(component) → Float64
@@ -96,15 +96,15 @@ end
 """
     base_value(component, category) → Float64
 
-1.0 DU of this category = `base_value(c, cat)` natural units.
+1.0 CU of this category = `base_value(c, cat)` natural units.
 """
-base_value(c, ::AbstractPowerCategory) = _get_device_base_power(c)
+base_value(c, ::AbstractPowerCategory) = _get_component_base_power(c)
 base_value(c, ::ImpedanceCategory) =
-    _checked_base_voltage(c)^2 / _get_device_base_power(c)
+    _checked_base_voltage(c)^2 / _get_component_base_power(c)
 base_value(c, ::AdmittanceCategory) =
-    _get_device_base_power(c) / _checked_base_voltage(c)^2
+    _get_component_base_power(c) / _checked_base_voltage(c)^2
 base_value(c, ::VoltageCategory) = _checked_base_voltage(c)
-base_value(c, ::CurrentCategory) = _get_device_base_power(c) / _checked_base_voltage(c)
+base_value(c, ::CurrentCategory) = _get_component_base_power(c) / _checked_base_voltage(c)
 
 """
     system_base_value(component, category) → Float64
@@ -120,12 +120,12 @@ system_base_value(c, ::VoltageCategory) = _checked_base_voltage(c)
 system_base_value(c, ::CurrentCategory) =
     _get_system_base_power(c) / _checked_base_voltage(c)
 
-# DU→SU ratio (voltage cancels, only power bases needed)
-_du_to_su_ratio(c, ::Union{AbstractPowerCategory, AdmittanceCategory, CurrentCategory}) =
-    _get_device_base_power(c) / _get_system_base_power(c)
-_du_to_su_ratio(c, ::ImpedanceCategory) =
-    _get_system_base_power(c) / _get_device_base_power(c)
-_du_to_su_ratio(::Any, ::VoltageCategory) = 1.0
+# CU→SU ratio (voltage cancels, only power bases needed)
+_cu_to_su_ratio(c, ::Union{AbstractPowerCategory, AdmittanceCategory, CurrentCategory}) =
+    _get_component_base_power(c) / _get_system_base_power(c)
+_cu_to_su_ratio(c, ::ImpedanceCategory) =
+    _get_system_base_power(c) / _get_component_base_power(c)
+_cu_to_su_ratio(::Any, ::VoltageCategory) = 1.0
 
 # ============================================================
 # convert_units: value from one unit system to another
@@ -138,9 +138,9 @@ Convert a value between unit systems.
 
 # Examples
 ```julia
-convert_units(gen, 0.6, ACTIVE_POWER, DU, u"MW")       # → 30.0 MW
-convert_units(gen, 30.0u"MW", ACTIVE_POWER, u"MW", DU) # → 0.6 DU
-convert_units(gen, 0.6, ACTIVE_POWER, DU, SU)       # → 0.3 SU
+convert_units(gen, 0.6, ACTIVE_POWER, CU, u"MW")       # → 30.0 MW
+convert_units(gen, 30.0u"MW", ACTIVE_POWER, u"MW", CU) # → 0.6 CU
+convert_units(gen, 0.6, ACTIVE_POWER, CU, SU)       # → 0.3 SU
 ```
 """
 function convert_units end
@@ -150,13 +150,13 @@ function convert_units end
 # makes those guards ambiguous.
 const _BareNumber = Union{Real, Complex}
 
-# --- From DU ---
+# --- From CU ---
 
 function convert_units(
     c,
     value::_BareNumber,
     cat::UnitCategory,
-    ::DeviceBaseUnit,
+    ::ComponentBaseUnit,
     units::Units,
 )
     natural = value * base_value(c, cat) * natural_unit(cat)
@@ -170,20 +170,20 @@ function convert_units(
     c,
     value::_BareNumber,
     cat::UnitCategory,
-    ::DeviceBaseUnit,
+    ::ComponentBaseUnit,
     ::SystemBaseUnit,
 )
-    return (value * _du_to_su_ratio(c, cat)) * SU
+    return (value * _cu_to_su_ratio(c, cat)) * SU
 end
 
 convert_units(
     ::Any,
     value::_BareNumber,
     ::UnitCategory,
-    ::DeviceBaseUnit,
-    ::DeviceBaseUnit,
+    ::ComponentBaseUnit,
+    ::ComponentBaseUnit,
 ) =
-    value * DU
+    value * CU
 
 # --- From SU ---
 
@@ -203,9 +203,9 @@ function convert_units(
     value::_BareNumber,
     cat::UnitCategory,
     ::SystemBaseUnit,
-    ::DeviceBaseUnit,
+    ::ComponentBaseUnit,
 )
-    return (value / _du_to_su_ratio(c, cat)) * DU
+    return (value / _cu_to_su_ratio(c, cat)) * CU
 end
 
 convert_units(
@@ -219,9 +219,9 @@ convert_units(
 
 # --- From natural units ---
 
-function convert_units(c, val::Quantity, cat::UnitCategory, ::Units, ::DeviceBaseUnit)
+function convert_units(c, val::Quantity, cat::UnitCategory, ::Units, ::ComponentBaseUnit)
     natural_val = Unitful.ustrip(natural_unit(cat), val)
-    return RelativeQuantity(natural_val / base_value(c, cat), DU)
+    return RelativeQuantity(natural_val / base_value(c, cat), CU)
 end
 
 function convert_units(c, val::Quantity, cat::UnitCategory, ::Units, ::SystemBaseUnit)

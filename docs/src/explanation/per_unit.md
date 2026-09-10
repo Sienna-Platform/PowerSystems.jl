@@ -6,12 +6,12 @@ It is often useful to express power systems data in relative terms using per-uni
  1. `NU` (natural units): The naturally defined units of each parameter (see
     [Natural units by quantity](@ref natural_units_by_quantity) below).
  2. `SU` (system base): Parameter values are divided by the system `base_power`.
- 3. `DU` (device base): Parameter values are divided by the device `base_power`.
+ 3. `CU` (component base): Parameter values are divided by the device `base_power`.
 
 `PowerSystems.jl` supports these unit systems because different power system tools and data
 sets use different units systems by convention, such as:
 
-  - Dynamics data is often defined in device base
+  - Dynamics data is often defined in component base
   - Network data (e.g., reactance, resistance) is often defined in system base
   - Production cost modeling data is often gathered from variety of data sources,
     which are typically defined in natural units
@@ -55,27 +55,27 @@ system-wide mutable unit setting that changes what accessors return.
 
 ```julia
 get_active_power(gen, SU)       # bare Float64, system-base per-unit
-get_active_power(gen, DU)       # bare Float64, device-base per-unit
+get_active_power(gen, CU)       # bare Float64, component-base per-unit
 get_active_power(gen, NU)       # bare Float64, natural units (MW)
 get_active_power(gen, u"MW")       # bare Float64 in an explicit Unitful unit
 get_active_power_unitful(gen, SU)  # unit-bearing value (RelativeQuantity / Unitful.Quantity)
 
 set_active_power!(gen, 0.9 * SU)    # values must carry their units
 set_active_power!(gen, 90.0 * u"MW")
-set_rating!(line, 1.2 * DU)
+set_rating!(line, 1.2 * CU)
 set_x!(transformer, 105.8 * u"Ω")   # impedance/admittance fields accept Ω / S
 ```
 
 Conversion between unit systems does not change the stored parameter values — storage is
-in device base (`DU`) for most fields. Conversions happen when accessing parameters
+in component base (`CU`) for most fields. Conversions happen when accessing parameters
 through the accessor functions, making it imperative to use the accessors instead of "dot"
 field access. The units of the stored values for each struct are defined in
 `src/descriptors/power_system_structs.json`.
 
 Bare `Float64` arguments to converted setters are rejected with an `ArgumentError`: the
-caller must say what units the number is in (`val * SU`, `val * DU`, `val * u"MW"`, …). The
+caller must say what units the number is in (`val * SU`, `val * CU`, `val * u"MW"`, …). The
 unit-tagged per-unit values are [`RelativeQuantity`](@ref)s, whose unit marker is carried
-in the type; mixing `DU`- and `SU`-tagged values in arithmetic or comparisons raises a
+in the type; mixing `CU`- and `SU`-tagged values in arithmetic or comparisons raises a
 clear error instead of producing a silently wrong number.
 
 ## Migration guide: stateful → explicit units
@@ -99,12 +99,12 @@ Notes:
     multipliers; the default for PowerSystems components is `SU`. One-argument multipliers
     (custom closures) are still invoked with the owner only.
   - `CostCurve`/`FuelCurve` take the marker instances (`NaturalUnit()`,
-    `SystemBaseUnit()`, `DeviceBaseUnit()`) for `power_units`.
+    `SystemBaseUnit()`, `ComponentBaseUnit()`) for `power_units`.
 
 ## Defining components
 
 When you define components that aren't attached to a `System`, field values are stored as
-given, in device base (`DU`), except for certain components that don't have their own
+given, in component base (`CU`), except for certain components that don't have their own
 `base_power` rating, such as [`Line`](@ref)s, where values are relative to the system base
 once attached. To define data in natural units, construct the component and then use the
 explicit-units setters (e.g. `set_active_power!(gen, 90.0 * u"MW")`); the accessor does the
@@ -134,12 +134,12 @@ and falls back to natural units for display. The error is intentional — a per-
 meaningless without a known base.
 
 Verbose displays spell the per-unit markers out — `active_power: 1.25 p.u. in system base`,
-`rating: 1.0 p.u. in device base` — since `SU`/`DU` are this package's shorthand rather than
+`rating: 1.0 p.u. in component base` — since `SU`/`CU` are this package's shorthand rather than
 standard terminology. A compound field whose elements share one base states it once, after
 the tuple: `active_power_limits: (min = 0.0 p.u., max = 2.5 p.u.) in system base`. Terse
 contexts (the one-line `show`, table cells) keep the short tags.
 Dynamic models are not wired into the units engine; their parameters are per-unitized on the
-device base, and both `show_component` on a `DynamicInjection` and the display of a single
+component base, and both `show_component` on a `DynamicInjection` and the display of a single
 parameter block (a machine, AVR, shaft, ...) say so in a footer.
 
 ## The system base is immutable
@@ -160,7 +160,7 @@ claiming a relative base as `from` contradicts them:
 
 ```julia
 # gen.base_power = 50 MVA, system base = 100 MVA
-convert_units(gen, 30.0u"MW", ACTIVE_POWER, SU, DU)
+convert_units(gen, 30.0u"MW", ACTIVE_POWER, SU, CU)
 # ArgumentError: value 30.0 MW carries physical units but `from = SU` claims a relative
 # base; pass the value's own units (or NU) as `from`
 ```
@@ -168,7 +168,7 @@ convert_units(gen, 30.0u"MW", ACTIVE_POWER, SU, DU)
 Pass `NU` (or the Unitful unit directly) as `from` instead:
 
 ```julia
-convert_units(gen, 30.0u"MW", ACTIVE_POWER, NU, DU)   # → 0.6 DU
+convert_units(gen, 30.0u"MW", ACTIVE_POWER, NU, CU)   # → 0.6 CU
 ```
 
 **`RelativeQuantity` tag disagrees with `from`.** A `RelativeQuantity` encodes its base in
@@ -176,16 +176,16 @@ its type; `from` must match:
 
 ```julia
 val = 0.3 * SU                               # RelativeQuantity{Float64, SystemBaseUnit}
-convert_units(gen, val, ACTIVE_POWER, DU, SU)
-# ArgumentError: value is tagged SU but `from = DU`; the tag and the `from` marker must agree
+convert_units(gen, val, ACTIVE_POWER, CU, SU)
+# ArgumentError: value is tagged SU but `from = CU`; the tag and the `from` marker must agree
 ```
 
 **Unsupported combination.** Any value/from/to triple not covered by the dispatch table hits
 a catch-all:
 
 ```julia
-convert_units(gen, "0.5", ACTIVE_POWER, SU, DU)
-# ArgumentError: unsupported unit conversion for String from SU to DU
+convert_units(gen, "0.5", ACTIVE_POWER, SU, CU)
+# ArgumentError: unsupported unit conversion for String from SU to CU
 ```
 
 !!! note

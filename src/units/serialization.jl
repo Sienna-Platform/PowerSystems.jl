@@ -2,7 +2,7 @@
 JSON serialization/deserialization for unit-bearing quantities.
 
 Format:
-  {"value": 0.6, "unit": "DU"}
+  {"value": 0.6, "unit": "CU"}
   {"value": 30.0, "unit": "MW"}
   {"value": 529.0, "unit": "Ω"}
 
@@ -20,7 +20,7 @@ import JSON
 # Canonical names come from unit_to_string; aliases provide lenient parsing.
 const STRING_TO_UNIT = Dict{String, Any}(
     # Relative units
-    "DU" => DU,
+    "CU" => CU,
     "SU" => SU,
     # Canonical Unitful (matches output of `string(unit)`)
     "MW" => u"MW",
@@ -42,7 +42,7 @@ const STRING_TO_UNIT = Dict{String, Any}(
 
 Convert a unit type to its string representation for serialization.
 """
-unit_to_string(::DeviceBaseUnit) = "DU"
+unit_to_string(::ComponentBaseUnit) = "CU"
 unit_to_string(::SystemBaseUnit) = "SU"
 unit_to_string(u::Unitful.Units) = string(u)
 
@@ -50,7 +50,7 @@ unit_to_string(u::Unitful.Units) = string(u)
     string_to_unit(s::String) → unit
 
 Parse a unit string back to its type for deserialization.
-Returns a `DeviceBaseUnit`, `SystemBaseUnit`, or `Unitful.Units`.
+Returns a `ComponentBaseUnit`, `SystemBaseUnit`, or `Unitful.Units`.
 """
 function string_to_unit(s::String)
     unit = get(STRING_TO_UNIT, s, nothing)

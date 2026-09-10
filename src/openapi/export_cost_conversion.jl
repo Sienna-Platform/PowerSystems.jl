@@ -10,21 +10,24 @@
 # generate them.
 
 _power_units_to_string(::NaturalUnit, ::ProductionVariableCostCurve) = "NATURAL_UNITS"
-_power_units_to_string(::DeviceBaseUnit, ::ProductionVariableCostCurve) = "COMPONENT_BASE"
+_power_units_to_string(
+    ::ComponentBaseUnit,
+    ::ProductionVariableCostCurve,
+) = "COMPONENT_BASE"
 
 """`CostCurve.power_units`/`FuelCurve.power_units` carry no system-base member — a curve whose
 per-unit data is on the system base is expected to record that base in the owning component's
 `base_power` and ride as `COMPONENT_BASE`. This converter is handed the curve alone (see the
 `convert_cost_to_openapi(get_operation_cost(gen))` call sites), so it can neither check that the
 component's `base_power` really is the system base nor rescale the curve's x-coordinates by
-`system_base / device_base` if it is not. Relabelling would silently corrupt magnitudes, so fail
+`system_base / component_base` if it is not. Relabelling would silently corrupt magnitudes, so fail
 loudly instead (psy6 rule)."""
 function _power_units_to_string(::SystemBaseUnit, cost::ProductionVariableCostCurve)
     error(
         "cannot export $(typeof(cost)) with power_units = SystemBaseUnit(): the OpenAPI " *
         "power_units enum accepts only COMPONENT_BASE and NATURAL_UNITS, and this converter " *
         "has no access to the owning component's base_power to rescale the curve. Rebuild " *
-        "the curve on the component's own base (DeviceBaseUnit) or in natural units first.",
+        "the curve on the component's own base (ComponentBaseUnit) or in natural units first.",
     )
 end
 

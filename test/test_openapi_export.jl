@@ -75,10 +75,10 @@ _export_vsc(
     refs[4] = bus2
     refs[5] = arc
 
-    expected_peak(::DeviceBaseUnit, pu) = pu
+    expected_peak(::ComponentBaseUnit, pu) = pu
     expected_peak(::NaturalUnit, pu) = pu * 100.0
 
-    for val in (DU, NU)
+    for val in (CU, NU)
         area_po = PSY.to_openapi(area, refs, val)
         @test area_po.id == 1
         @test area_po.name == "area1"
@@ -128,7 +128,7 @@ end
     refs[3] = arc
     refs[4] = line
 
-    device_po = PSY.to_openapi(line, refs, DU)
+    device_po = PSY.to_openapi(line, refs, CU)
     @test device_po.rating == 1.75
     @test device_po.active_power_flow == 0.1
     @test device_po.base_power == 100.0
@@ -187,11 +187,11 @@ end
     @test circuit_natural.control_objective == "UNDEFINED"
     @test circuit_natural.parameter_units == "COMPONENT_BASE"
 
-    circuit_device = PSY.to_openapi(circuit, refs, DU)
+    circuit_device = PSY.to_openapi(circuit, refs, CU)
     @test circuit_device.rating == 2.0
     @test circuit_device.active_power_flow == 0.1
 
-    for val in (DU, NU)
+    for val in (CU, NU)
         xfmr_po = PSY.to_openapi(xfmr, refs, val)
         @test xfmr_po.circuit == 4
         @test xfmr_po.magnetizing_shunt.real == 0.01
@@ -225,10 +225,10 @@ end
     refs[3] = line
     refs[4] = tx
 
-    expected_limits(::DeviceBaseUnit) = (min = -10.0, max = 10.0)
+    expected_limits(::ComponentBaseUnit) = (min = -10.0, max = 10.0)
     expected_limits(::NaturalUnit) = (min = -1000.0, max = 1000.0)
 
-    for val in (DU, NU)
+    for val in (CU, NU)
         tx_po = PSY.to_openapi(tx, refs, val)
         @test tx_po.id == 4
         limits = expected_limits(val)
@@ -240,8 +240,8 @@ end
 
         # Round-trip: import(export(x)) == x.
         round_tripped = PSY.from_openapi(tx_po, refs, val)
-        @test get_active_power_flow_limits(round_tripped, DU) ==
-              get_active_power_flow_limits(tx, DU)
+        @test get_active_power_flow_limits(round_tripped, CU) ==
+              get_active_power_flow_limits(tx, CU)
     end
 end
 
@@ -261,16 +261,16 @@ end
     set_arc!(get_tertiary_circuit(t3w), arc3)
     foreach(c -> set_available!(c, true), get_circuits(t3w))
     set_star_bus!(t3w, star)
-    set_r_12!(t3w, 0.01 * DU)
-    set_x_12!(t3w, 0.1 * DU)
-    set_r_23!(t3w, 0.015 * DU)
-    set_x_23!(t3w, 0.15 * DU)
-    set_r_31!(t3w, 0.02 * DU)
-    set_x_31!(t3w, 0.2 * DU)
+    set_r_12!(t3w, 0.01 * CU)
+    set_x_12!(t3w, 0.1 * CU)
+    set_r_23!(t3w, 0.015 * CU)
+    set_x_23!(t3w, 0.15 * CU)
+    set_r_31!(t3w, 0.02 * CU)
+    set_x_31!(t3w, 0.2 * CU)
     set_base_power_12!(t3w, 100.0)
     set_base_power_23!(t3w, 100.0)
     set_base_power_31!(t3w, 100.0)
-    set_magnetizing_shunt!(t3w, (0.03 + 0.0im) * DU)
+    set_magnetizing_shunt!(t3w, (0.03 + 0.0im) * CU)
     set_shunt_location!(t3w, ThreeWindingTransformerShuntLocation.STAR)
 
     sys = System(100.0)
@@ -293,7 +293,7 @@ end
     refs[10] = get_tertiary_circuit(t3w)
     refs[11] = t3w
 
-    for val in (DU, NU)
+    for val in (CU, NU)
         t3w_po = PSY.to_openapi(t3w, refs, val)
         @test t3w_po.primary_circuit == 8
         @test t3w_po.secondary_circuit == 9
@@ -325,7 +325,7 @@ end
     # The wire enum has no system-base member, so PSY's system-base pu Y rides as
     # COMPONENT_MVAR (MVAr at unity voltage) scaled by the document's system base —
     # the same value regardless of the document's unit_system.
-    for val in (DU, NU)
+    for val in (CU, NU)
         shunt_po = PSY.to_openapi(shunt, refs, val)
         @test shunt_po.id == 2
         @test shunt_po.bus == 1
@@ -369,7 +369,7 @@ end
     @test natural_po.reactive_power_limits_to.max == 50.0
     @test natural_po.loss.value.function_data.value.proportional_term == 0.01
 
-    device_po = PSY.to_openapi(hvdc, refs, DU)
+    device_po = PSY.to_openapi(hvdc, refs, CU)
     @test device_po.active_power_flow == 0.5
     @test device_po.active_power_limits_from.min == -1.0
 end
@@ -416,7 +416,7 @@ end
     @test natural_po.active_power_limits_to.max == 250.0
     @test natural_po.base_current == 200.0
 
-    device_po = PSY.to_openapi(tmodel, refs, DU)
+    device_po = PSY.to_openapi(tmodel, refs, CU)
     @test device_po.active_power_flow == 125.0
     @test device_po.active_power_limits_from.min == -250.0
     @test device_po.base_current == 200.0
@@ -444,7 +444,7 @@ end
     refs[2] = area2
     refs[3] = interchange
 
-    device_po = PSY.to_openapi(interchange, refs, DU)
+    device_po = PSY.to_openapi(interchange, refs, CU)
     @test device_po.active_power_flow == 0.25
     @test device_po.flow_limits.from_to == 1.0
     @test device_po.flow_limits.to_from == -1.0
@@ -461,10 +461,10 @@ end
     import_refs[1] = area1
     import_refs[2] = area2
     reimported =
-        PSY.from_openapi(device_po, import_refs, DU)
-    @test get_active_power_flow(reimported, PSY.DU) ==
+        PSY.from_openapi(device_po, import_refs, CU)
+    @test get_active_power_flow(reimported, PSY.CU) ==
           get_active_power_flow(interchange, SU)
-    @test get_flow_limits(reimported, PSY.DU) == get_flow_limits(interchange, SU)
+    @test get_flow_limits(reimported, PSY.CU) == get_flow_limits(interchange, SU)
 end
 
 @testset "OpenAPI export converters: ThermalStandard / PowerLoad" begin
@@ -512,7 +512,7 @@ end
     @test gen_natural.status == "ONLINE"
     @test gen_natural.commitment_mode == "COMMITTED"
 
-    gen_device = PSY.to_openapi(gen, refs, DU)
+    gen_device = PSY.to_openapi(gen, refs, CU)
     @test gen_device.active_power == 0.25
     @test gen_device.rating == 0.5
 
@@ -521,7 +521,7 @@ end
     @test load_natural.max_active_power == 50.0
     @test load_natural.conformity == "CONFORMING"
 
-    load_device = PSY.to_openapi(load, refs, DU)
+    load_device = PSY.to_openapi(load, refs, CU)
     @test load_device.active_power == 0.3
 end
 
@@ -551,7 +551,7 @@ end
     @test iload_natural.conformity == "UNDEFINED"
     @test iload_natural.operation_cost.fixed == 2400.0
 
-    iload_device = PSY.to_openapi(iload, refs, DU)
+    iload_device = PSY.to_openapi(iload, refs, CU)
     @test iload_device.active_power == 0.3
 
     sload_natural = PSY.to_openapi(sload, refs, NU)
@@ -560,7 +560,7 @@ end
     @test sload_natural.active_power_limits.max == 30.0
     @test sload_natural.load_balance_time_horizon == 24
 
-    sload_device = PSY.to_openapi(sload, refs, DU)
+    sload_device = PSY.to_openapi(sload, refs, CU)
     @test sload_device.active_power_limits.min == 0.03
 end
 
@@ -686,7 +686,7 @@ end
     @test storage_natural.storage_technology_type == "LIB"
     @test storage_natural.energy_units == "MWH"
 
-    storage_device = PSY.to_openapi(storage, refs, DU)
+    storage_device = PSY.to_openapi(storage, refs, CU)
     @test storage_device.storage_capacity == 2.0
     @test storage_device.rating == 0.5
 end
@@ -741,7 +741,7 @@ end
     refs[3] = reservoir
     refs[4] = reservoir_no_assoc
 
-    for val in (DU, NU)
+    for val in (CU, NU)
         po = PSY.to_openapi(reservoir, refs, val)
         @test po.initial_level == 500.0
         @test po.level_targets == 600.0
@@ -810,7 +810,7 @@ end
     @test up_natural.reserve_direction == "UP"
     @test isnothing(up_natural.variable)
 
-    up_device = PSY.to_openapi(up_reserve, refs, DU)
+    up_device = PSY.to_openapi(up_reserve, refs, CU)
     @test up_device.requirement == 100.0
 
     down_natural = PSY.to_openapi(down_reserve, refs, NU)
@@ -1337,7 +1337,7 @@ end
     @test natural_po.ac_control_from == "AC_REACTIVE_POWER"
     @test natural_po.converter_loss_to.function_data.value.quadratic_term == 0.01
 
-    device_po = PSY.to_openapi(vsc, refs, DU)
+    device_po = PSY.to_openapi(vsc, refs, CU)
     @test device_po.active_power_flow == 0.5
     @test device_po.active_power_limits_from.min == -2.0
     @test device_po.dc_setpoint_from == 0.4
@@ -1373,7 +1373,7 @@ end
     @test natural_po.ac_setpoint_from == 0.95
     @test natural_po.setpoint_voltage_units == "COMPONENT_BASE"
     @test natural_po.rated_ac_voltage_from == 230.0
-    component_po = PSY.to_openapi(vsc, refs, DU)
+    component_po = PSY.to_openapi(vsc, refs, CU)
     @test component_po.ac_setpoint_from == 0.95
     @test component_po.rated_ac_voltage_from == 230.0
 end

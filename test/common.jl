@@ -26,9 +26,9 @@ end
 
 struct NonexistentComponent <: StaticInjection end
 
-"""Build a minimal `System` + `ThermalStandard` with the requested device base
+"""Build a minimal `System` + `ThermalStandard` with the requested component base
 so unit-conversion tests don't depend on PSB-built fixtures."""
-function _sys_with_thermal(; system_base = 100.0, device_base = 250.0)
+function _sys_with_thermal(; system_base = 100.0, component_base = 250.0)
     sys = System(system_base)
     bus = ACBus(;
         number = 1, name = "b1", available = true,
@@ -43,7 +43,7 @@ function _sys_with_thermal(; system_base = 100.0, device_base = 250.0)
         reactive_power_limits = (min = -1.0, max = 1.0),
         ramp_limits = nothing,
         operation_cost = ThermalGenerationCost(nothing),
-        base_power = device_base,
+        base_power = component_base,
     )
     add_component!(sys, gen)
     return sys, gen
@@ -146,17 +146,17 @@ function test_accessors(component)
         end
 
         # Unit-aware getters are tagged via `display_units_arg`. For unattached
-        # test components, call with `DU` (device base) so the SU conversion
+        # test components, call with `CU` (component base) so the SU conversion
         # path — which needs system attachment — is skipped. Getters tagged `NU`
         # (e.g. `get_base_power`, which is only meaningful in natural units and
-        # rejects `DU`/`SU`) are called with their own `NU` tag instead.
+        # rejects `CU`/`SU`) are called with their own `NU` tag instead.
         units_arg = IS.display_units_arg(func, ps_type)
         val = if ismissing(units_arg)
             func(component)
         elseif units_arg == NU
             func(component, NU)
         else
-            func(component, DU)
+            func(component, CU)
         end
         # Getters now wrap values (e.g. `0.5 SU` instead of raw `0.5`), so
         # compare the unwrapped value's type to `field_type`.

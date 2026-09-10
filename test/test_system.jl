@@ -219,36 +219,36 @@ end
 end
 
 @testset "Test explicit units API" begin
-    sys, gen = _sys_with_thermal(; system_base = 100.0, device_base = 250.0)
-    device_base = PSY._get_base_power(gen)
+    sys, gen = _sys_with_thermal(; system_base = 100.0, component_base = 250.0)
+    component_base = PSY._get_base_power(gen)
     system_base = PSY._get_base_power(sys)
     raw_active = gen.active_power
 
     P_mw = get_active_power(gen, u"MW")
     @test P_mw isa Float64
-    @test P_mw ≈ raw_active * device_base
+    @test P_mw ≈ raw_active * component_base
     @test get_active_power_unitful(gen, u"MW") isa Unitful.Quantity
-    @test Unitful.ustrip(get_active_power_unitful(gen, u"MW")) ≈ raw_active * device_base
+    @test Unitful.ustrip(get_active_power_unitful(gen, u"MW")) ≈ raw_active * component_base
 
-    P_du = get_active_power(gen, DU)
+    P_du = get_active_power(gen, CU)
     @test P_du isa Float64
     @test P_du ≈ raw_active
-    @test get_active_power_unitful(gen, DU) isa RelativeQuantity
+    @test get_active_power_unitful(gen, CU) isa RelativeQuantity
 
     P_su = get_active_power(gen, SU)
     @test P_su isa Float64
-    @test P_su ≈ raw_active * device_base / system_base
+    @test P_su ≈ raw_active * component_base / system_base
     @test get_active_power_unitful(gen, SU) isa RelativeQuantity
 end
 
 @testset "Test explicit units setters" begin
-    sys, gen = _sys_with_thermal(; system_base = 100.0, device_base = 250.0)
-    device_base = PSY._get_base_power(gen)
+    sys, gen = _sys_with_thermal(; system_base = 100.0, component_base = 250.0)
+    component_base = PSY._get_base_power(gen)
 
     set_active_power!(gen, 50.0 * u"MW")
-    @test gen.active_power ≈ 50.0 / device_base
+    @test gen.active_power ≈ 50.0 / component_base
 
-    set_active_power!(gen, 0.6 * DU)
+    set_active_power!(gen, 0.6 * CU)
     @test gen.active_power ≈ 0.6
 end
 

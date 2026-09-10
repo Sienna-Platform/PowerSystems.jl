@@ -137,7 +137,7 @@ set_reserves!(value::AGC, val) = value.reserves = val
 set_ext!(value::AGC, val) = value.ext = val
 
 
-function from_openapi(po::PO.AGC, refs::OpenAPIRefs, ::DeviceBaseUnit)
+function from_openapi(po::PO.AGC, refs::OpenAPIRefs, ::ComponentBaseUnit)
     return AGC(;
         name = po.name,
         available = po.available,
@@ -166,10 +166,10 @@ function from_openapi(po::PO.AGC, refs::OpenAPIRefs, ::NaturalUnit)
 end
 
 function from_openapi(po::PO.AGC, refs::OpenAPIRefs)
-    return from_openapi(po, refs, DU)
+    return from_openapi(po, refs, CU)
 end
 
-function to_openapi(value::AGC, refs::OpenAPIRefs, ::DeviceBaseUnit)
+function to_openapi(value::AGC, refs::OpenAPIRefs, ::ComponentBaseUnit)
     return PO.AGC(;
         id = component_id(refs, value),
         name = get_name(value),

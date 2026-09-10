@@ -117,7 +117,7 @@ set_linked_crr!(value::PointToPointBid, val) = value.linked_crr = val
 set_ext!(value::PointToPointBid, val) = value.ext = val
 
 
-function from_openapi(po::PO.PointToPointBid, refs::OpenAPIRefs, ::DeviceBaseUnit)
+function from_openapi(po::PO.PointToPointBid, refs::OpenAPIRefs, ::ComponentBaseUnit)
     return PointToPointBid(;
         name = po.name,
         available = po.available,
@@ -144,7 +144,7 @@ function from_openapi(po::PO.PointToPointBid, refs::OpenAPIRefs, ::NaturalUnit)
 end
 
 
-function to_openapi(value::PointToPointBid, refs::OpenAPIRefs, ::DeviceBaseUnit)
+function to_openapi(value::PointToPointBid, refs::OpenAPIRefs, ::ComponentBaseUnit)
     return PO.PointToPointBid(;
         id = component_id(refs, value),
         name = get_name(value),

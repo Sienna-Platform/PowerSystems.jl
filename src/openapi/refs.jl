@@ -141,12 +141,12 @@ has_component_id(refs::OpenAPIRefs, component) = haskey(refs.id_by_component, co
 
 # ── per-component power_units selection ─────────────────────────────────────────
 # Each of the 32 power-bearing component types carries its own `power_units` field.
-# `_power_units_marker` translates that wire string to the DU/NU singleton selecting which
+# `_power_units_marker` translates that wire string to the CU/NU singleton selecting which
 # converter method runs; the generated per-type 2-arg `from_openapi(po, refs)` selector calls
 # it, as do the hand-written converters for the types the generator cannot emit.
 
 """
-The `DU`/`NU` marker `raw` (a component blob's `power_units` string) selects, for the type
+The `CU`/`NU` marker `raw` (a component blob's `power_units` string) selects, for the type
 named `component_type` and document id `id` — both carried only for the error message.
 
 `OpenAPI.from_json` does not enforce the schema's `required`, so a blob whose `power_units`
@@ -158,7 +158,7 @@ function _power_units_marker(component_type::AbstractString, id, raw)
         "from_openapi: $component_type id=$id has no power_units — every power-bearing " *
         "component blob must state \"COMPONENT_BASE\" or \"NATURAL_UNITS\"",
     )
-    raw == "COMPONENT_BASE" && return DU
+    raw == "COMPONENT_BASE" && return CU
     raw == "NATURAL_UNITS" && return NU
     error(
         "from_openapi: $component_type id=$id has unmapped power_units=\"$raw\" — expected " *
@@ -166,9 +166,9 @@ function _power_units_marker(component_type::AbstractString, id, raw)
     )
 end
 
-"""The wire `power_units` string a `DU`/`NU` marker stamps on export — the inverse of
+"""The wire `power_units` string a `CU`/`NU` marker stamps on export — the inverse of
 [`_power_units_marker`](@ref)."""
-_power_units_string(::DeviceBaseUnit) = "COMPONENT_BASE"
+_power_units_string(::ComponentBaseUnit) = "COMPONENT_BASE"
 _power_units_string(::NaturalUnit) = "NATURAL_UNITS"
 
 """

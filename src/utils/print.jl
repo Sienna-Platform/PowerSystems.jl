@@ -3,11 +3,11 @@
 # Getters for unit-bearing fields declare their display-units choice via the
 # `IS.display_units_arg` trait (set by the struct-generator template, default
 # `SU` for converted fields unless overridden per field in the descriptor,
-# e.g. `rating` fields default to `DU`). Pass `units` to force a specific
-# display unit system (e.g. `u"MW"`, `SU`, `DU`, `NU`) instead of resolving the
+# e.g. `rating` fields default to `CU`). Pass `units` to force a specific
+# display unit system (e.g. `u"MW"`, `SU`, `CU`, `NU`) instead of resolving the
 # trait; an explicit request that fails is an error, not a silent fallback.
 # `IS.unitful_variant` resolves the getter's `_unitful` companion (a
-# `RelativeQuantity` printing as "1.0 DU"/"0.3 SU", or a `Unitful.Quantity`
+# `RelativeQuantity` printing as "1.0 CU"/"0.3 SU", or a `Unitful.Quantity`
 # printing as "30.0 MW") instead of a bare number, so display can show the
 # unit system explicitly without any extra formatting code here.
 function _show_accessor_value(getter_func::Function, ist::Component; units = nothing)
@@ -32,14 +32,14 @@ function _show_accessor_value(getter_func::Function, ist::Component; units = not
         err isa ErrorException && occursin("not attached", err.msg) || rethrow()
         # NU can also fail (it may need the system base or a base voltage).
         # Automatic resolution must never error: fall back to the raw stored
-        # value, which the DU conversion returns without touching any base.
+        # value, which the CU conversion returns without touching any base.
         # Only swallow the engine's own ErrorExceptions — a MethodError here
         # is a bug.
         try
             return unitful_func(ist, NU)
         catch err2
             err2 isa ErrorException || rethrow()
-            return unitful_func(ist, DU)
+            return unitful_func(ist, CU)
         end
     end
 end
@@ -122,10 +122,10 @@ end
 
 """
 Print `ist` to `io` in the same verbose form as the REPL's `text/plain` display of a
-`Component`. Pass `units` (e.g. `u"MW"`, `SU`, `DU`, `NU`) to force every unit-converted
+`Component`. Pass `units` (e.g. `u"MW"`, `SU`, `CU`, `NU`) to force every unit-converted
 field to display in that unit system instead of resolving each field's own
 `display_units_arg` default (system base when attached, natural units otherwise, and
-device base for capacity/`rating`-style fields).
+component base for capacity/`rating`-style fields).
 
 # Examples
 ```julia
@@ -153,7 +153,7 @@ function show_component(io::IO, ist::Component; units = nothing)
         else
             val = getproperty(ist, name)
         end
-        # `display_string` spells `DU`/`SU` out as "p.u. in {device,system} base":
+        # `display_string` spells `CU`/`SU` out as "p.u. in {device,system} base":
         # the terse tags read as jargon in a component's verbose display, where
         # there is room to be explicit. Terse contexts (the compact one-line
         # `show`, table cells) keep the short tags.
@@ -167,7 +167,7 @@ function show_component(io::IO, ist::Component; units = nothing)
         string(has_supplemental_attributes(ist)),
     )
     print(io, "\n   ", "has_time_series", ": ", string(has_time_series(ist)))
-    note = _device_base_note(ist)
+    note = _component_base_note(ist)
     isnothing(note) || print(io, "\n   (", note, ")")
     return
 end
@@ -179,8 +179,8 @@ show_component(ist::Component; units = nothing) = show_component(stdout, ist; un
 # field by field. They are, by the modeling convention every dynamics parser and
 # simulator assumes, per-unitized on the device's own `base_power` — state that once
 # as a footer rather than leaving the numbers unlabeled.
-_device_base_note(::Component) = nothing
-function _device_base_note(d::DynamicInjection)
+_component_base_note(::Component) = nothing
+function _component_base_note(d::DynamicInjection)
     # Read the field, not `_get_base_power`: the dynamic injection types that have
     # no `base_power` field of their own fall back to the system base, which errors
     # for a detached component — and display must never error.
@@ -231,8 +231,8 @@ function Base.show(io::IO, ::MIME"text/plain", ist::Component)
     if !has_units_setting(ist)
         @warn(
             "Component is not attached to a System; each field displays in its own " *
-            "fallback units (natural units, or device base for fields like `rating` " *
-            "that default to device-base display)."
+            "fallback units (natural units, or component base for fields like `rating` " *
+            "that default to component-base display)."
         )
     end
     show_component(io, ist)
@@ -249,11 +249,11 @@ Show all components of the given type in a table.
   The Dict option is a mapping of column name to function. The function must accept
   a component.
   The Vector option is an array of field names for the `component_type`; unit-converted
-  fields are printed with an explicit unit suffix (e.g. `"30.0 MW"`, `"1.0 DU"`).
+  fields are printed with an explicit unit suffix (e.g. `"30.0 MW"`, `"1.0 CU"`).
 
 # Keyword Arguments
 - `units`: When `additional_columns` is a `Vector`, force unit-converted columns to
-  display in a given unit system (e.g. `u"MW"`, `SU`, `DU`, `NU`) instead of each field's
+  display in a given unit system (e.g. `u"MW"`, `SU`, `CU`, `NU`) instead of each field's
   own `display_units_arg` default. Pass a single unit to apply it to every column, or a
   column-to-unit mapping (`Dict` or `NamedTuple`) to set units per field; columns absent
   from the mapping keep their own default. Ignored for `Dict`-form `additional_columns`,
@@ -267,7 +267,7 @@ show_components(sys, ThermalStandard, Dict("has_time_series" => x -> has_time_se
 show_components(sys, ThermalStandard, [:active_power, :reactive_power])
 show_components(sys, ThermalStandard, [:rating]; units = u"MW")
 show_components(sys, ThermalStandard, [:active_power, :rating];
-    units = Dict(:active_power => u"MW", :rating => DU))
+    units = Dict(:active_power => u"MW", :rating => CU))
 ```
 """
 function show_components(

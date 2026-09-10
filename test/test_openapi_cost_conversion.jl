@@ -70,7 +70,7 @@ end
     # The wire enum is COMPONENT_BASE/NATURAL_UNITS only — there is no system-base member.
     for (str, marker) in (
         ("NATURAL_UNITS", NaturalUnit()),
-        ("COMPONENT_BASE", DeviceBaseUnit()),
+        ("COMPONENT_BASE", ComponentBaseUnit()),
     )
         curve = PSY.convert_cost(_po_cost_curve(; power_units = str))
         @test get_power_units(curve) == marker
@@ -86,7 +86,7 @@ end
     # The barrier hands `f` a CONCRETE marker, never a Union — that is the whole point of
     # its being higher-order, since the marker is a type parameter of the curve it builds.
     for (str, marker) in
-        (("NATURAL_UNITS", NaturalUnit()), ("COMPONENT_BASE", DeviceBaseUnit()))
+        (("NATURAL_UNITS", NaturalUnit()), ("COMPONENT_BASE", ComponentBaseUnit()))
         @test PSY._with_power_units(typeof, str) === typeof(marker)
     end
 

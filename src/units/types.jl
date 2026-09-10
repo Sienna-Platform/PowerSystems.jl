@@ -1,7 +1,7 @@
 ###############################
 # Power-domain unit types.
 #
-# Relative-unit markers (`DU`, `SU`, `NU`, `AbstractRelativeUnit`,
+# Relative-unit markers (`CU`, `SU`, `NU`, `AbstractRelativeUnit`,
 # `RelativeQuantity`) live in InfrastructureSystems and are re-exported from
 # this package. This file adds the power-domain Unitful units and the
 # `UnitArg` convenience union.
@@ -22,7 +22,7 @@
 
 """
 Accepted target-unit argument for unit-aware getters/setters: a Unitful unit
-(e.g. `u"MW"`, `u"kV"`) or a relative per-unit marker (`DU`, `SU`, `NU`).
+(e.g. `u"MW"`, `u"kV"`) or a relative per-unit marker (`CU`, `SU`, `NU`).
 """
 const UnitArg = Union{Unitful.Units, IS.AbstractUnitSystem}
 
