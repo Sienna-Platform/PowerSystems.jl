@@ -69,9 +69,9 @@ end
 get_name(value::TwoWindingTransformer) = value.name
 """Get [`TwoWindingTransformer`](@ref) `circuit`."""
 get_circuit(value::TwoWindingTransformer) = value.circuit
-"""Get [`TwoWindingTransformer`](@ref) `magnetizing_shunt` as a bare number in the requested `units` (e.g. `SU`, `DU`; domain-provided units such as `MW` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_magnetizing_shunt_unitful`](@ref)."""
+"""Get [`TwoWindingTransformer`](@ref) `magnetizing_shunt` as a bare number in the requested `units` (e.g. `SU`, `DU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_magnetizing_shunt_unitful`](@ref)."""
 get_magnetizing_shunt(value::TwoWindingTransformer, units) = InfrastructureSystems._strip_units(get_value(value, Val(:magnetizing_shunt), Val(:siemens), units))
-"""Get [`TwoWindingTransformer`](@ref) `magnetizing_shunt` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `MW`). For a bare number see [`get_magnetizing_shunt`](@ref)."""
+"""Get [`TwoWindingTransformer`](@ref) `magnetizing_shunt` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `u"MW"`). For a bare number see [`get_magnetizing_shunt`](@ref)."""
 get_magnetizing_shunt_unitful(value::TwoWindingTransformer, units) = get_value(value, Val(:magnetizing_shunt), Val(:siemens), units)
 get_magnetizing_shunt(value::TwoWindingTransformer) = _units_arg_required(get_magnetizing_shunt, value, :magnetizing_shunt, Val(:siemens))
 get_magnetizing_shunt_unitful(value::TwoWindingTransformer) = _units_arg_required(get_magnetizing_shunt_unitful, value, :magnetizing_shunt, Val(:siemens))

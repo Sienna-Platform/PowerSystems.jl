@@ -19475,6 +19475,7 @@
         {
             "struct_name": "TradingHub",
             "openapi_type": "TradingHub",
+            "exclude_openapi_import_selector": true,
             "supertype": "MarketComponent",
             "docstring": "A market trading hub: a named set of member buses at which hub-settled bids are priced. Member buses are unweighted.",
             "fields": [
@@ -19511,6 +19512,7 @@
         {
             "struct_name": "VirtualParticipant",
             "openapi_type": "VirtualParticipant",
+            "exclude_openapi_import_selector": true,
             "supertype": "MarketTransaction",
             "docstring": "A virtual (convergence) market participant. Supply offers map to the operating cost's incremental_offer_curves; demand bids to decremental_offer_curves. Settles either at a settlement point or at associated trading hubs (per-hub bids attach as hub-named time series). All MW values are natural units.",
             "fields": [
@@ -19590,6 +19592,7 @@
         {
             "struct_name": "PointToPointBid",
             "openapi_type": "PointToPointBid",
+            "exclude_openapi_import_selector": true,
             "supertype": "MarketTransaction",
             "docstring": "A priced point-to-point spread bid (e.g. an up-to-congestion or PTP obligation bid): a willingness-to-pay curve on the price spread between two locations. Clears as a withdrawal at `from` and an injection at `to`. Terminals are validated to be a Topology or a TradingHub. All MW values are natural units.",
             "fields": [

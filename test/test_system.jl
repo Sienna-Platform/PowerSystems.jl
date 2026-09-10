@@ -224,11 +224,11 @@ end
     system_base = PSY._get_base_power(sys)
     raw_active = gen.active_power
 
-    P_mw = get_active_power(gen, MW)
+    P_mw = get_active_power(gen, u"MW")
     @test P_mw isa Float64
     @test P_mw ≈ raw_active * device_base
-    @test get_active_power_unitful(gen, MW) isa Unitful.Quantity
-    @test Unitful.ustrip(get_active_power_unitful(gen, MW)) ≈ raw_active * device_base
+    @test get_active_power_unitful(gen, u"MW") isa Unitful.Quantity
+    @test Unitful.ustrip(get_active_power_unitful(gen, u"MW")) ≈ raw_active * device_base
 
     P_du = get_active_power(gen, DU)
     @test P_du isa Float64
@@ -245,7 +245,7 @@ end
     sys, gen = _sys_with_thermal(; system_base = 100.0, device_base = 250.0)
     device_base = PSY._get_base_power(gen)
 
-    set_active_power!(gen, 50.0 * MW)
+    set_active_power!(gen, 50.0 * u"MW")
     @test gen.active_power ≈ 50.0 / device_base
 
     set_active_power!(gen, 0.6 * DU)

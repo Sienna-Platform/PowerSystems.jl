@@ -86,7 +86,7 @@ In this example:
 
 As of PowerSystems 6, unit conversion is **explicit at every call site**: each unit-bearing
 accessor takes a `units` argument (`SU`, `DU`, `NU`, or an explicit `Unitful` unit such as
-`MW`), and the value is converted accordingly. There is no system-wide mutable setting that
+`u"MW"`), and the value is converted accordingly. There is no system-wide mutable setting that
 changes what accessors return. `base_power` is the exception — it is always in natural units
 (MVA) and rejects per-unit (`SU`/`DU`) targets.
 

@@ -115,17 +115,17 @@ get_bus(value::FACTSControlDevice) = value.bus
 get_control_mode(value::FACTSControlDevice) = value.control_mode
 """Get [`FACTSControlDevice`](@ref) `voltage_setpoint`."""
 get_voltage_setpoint(value::FACTSControlDevice) = value.voltage_setpoint
-"""Get [`FACTSControlDevice`](@ref) `max_shunt_current` as a bare number in the requested `units` (e.g. `SU`, `DU`; domain-provided units such as `MW` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_max_shunt_current_unitful`](@ref)."""
+"""Get [`FACTSControlDevice`](@ref) `max_shunt_current` as a bare number in the requested `units` (e.g. `SU`, `DU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_max_shunt_current_unitful`](@ref)."""
 get_max_shunt_current(value::FACTSControlDevice, units) = InfrastructureSystems._strip_units(get_value(value, Val(:max_shunt_current), Val(:mva), units))
-"""Get [`FACTSControlDevice`](@ref) `max_shunt_current` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `MW`). For a bare number see [`get_max_shunt_current`](@ref)."""
+"""Get [`FACTSControlDevice`](@ref) `max_shunt_current` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `u"MW"`). For a bare number see [`get_max_shunt_current`](@ref)."""
 get_max_shunt_current_unitful(value::FACTSControlDevice, units) = get_value(value, Val(:max_shunt_current), Val(:mva), units)
 get_max_shunt_current(value::FACTSControlDevice) = _units_arg_required(get_max_shunt_current, value, :max_shunt_current, Val(:mva))
 get_max_shunt_current_unitful(value::FACTSControlDevice) = _units_arg_required(get_max_shunt_current_unitful, value, :max_shunt_current, Val(:mva))
 InfrastructureSystems.display_units_arg(::typeof(get_max_shunt_current), ::Type{FACTSControlDevice}) = InfrastructureSystems.SU
 InfrastructureSystems.display_units_arg(::typeof(get_max_shunt_current_unitful), ::Type{FACTSControlDevice}) = InfrastructureSystems.SU
-"""Get [`FACTSControlDevice`](@ref) `max_reactive_power` as a bare number in the requested `units` (e.g. `SU`, `DU`; domain-provided units such as `MW` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_max_reactive_power_unitful`](@ref)."""
+"""Get [`FACTSControlDevice`](@ref) `max_reactive_power` as a bare number in the requested `units` (e.g. `SU`, `DU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_max_reactive_power_unitful`](@ref)."""
 get_max_reactive_power(value::FACTSControlDevice, units) = InfrastructureSystems._strip_units(get_value(value, Val(:max_reactive_power), Val(:mvar), units))
-"""Get [`FACTSControlDevice`](@ref) `max_reactive_power` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `MW`). For a bare number see [`get_max_reactive_power`](@ref)."""
+"""Get [`FACTSControlDevice`](@ref) `max_reactive_power` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `u"MW"`). For a bare number see [`get_max_reactive_power`](@ref)."""
 get_max_reactive_power_unitful(value::FACTSControlDevice, units) = get_value(value, Val(:max_reactive_power), Val(:mvar), units)
 get_max_reactive_power(value::FACTSControlDevice) = _units_arg_required(get_max_reactive_power, value, :max_reactive_power, Val(:mvar))
 get_max_reactive_power_unitful(value::FACTSControlDevice) = _units_arg_required(get_max_reactive_power_unitful, value, :max_reactive_power, Val(:mvar))

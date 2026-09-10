@@ -130,6 +130,7 @@ function from_openapi(po::PO.VirtualParticipant, refs::OpenAPIRefs, ::NaturalUni
     )
 end
 
+
 function to_openapi(value::VirtualParticipant, refs::OpenAPIRefs, ::DeviceBaseUnit)
     return PO.VirtualParticipant(;
         id = component_id(refs, value),

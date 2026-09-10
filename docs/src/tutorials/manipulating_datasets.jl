@@ -71,7 +71,7 @@ get_active_power(solitude, NU)
 # We can then update it with [`set_active_power!`](@ref set_active_power!(value::ThermalStandard, val)),
 # passing a unit-tagged value (a bare number is rejected):
 
-set_active_power!(solitude, 4.0 * MW)
+set_active_power!(solitude, 4.0 * u"MW")
 
 # We can see that our `active_power` field has been updated to 4.0 MW.
 
@@ -160,7 +160,7 @@ thermal_not_solitude = get_components(x -> get_name(x) != "Solitude", ThermalSta
 # Now let's update the `active_power` field of these four thermal generators using the [`set_active_power!`](@ref) function.
 
 for i in thermal_not_solitude
-    set_active_power!(i, 0.0 * MW)
+    set_active_power!(i, 0.0 * u"MW")
 end
 
 # Let's check the update using [`show_components`](@ref):

@@ -24,12 +24,18 @@ per-unit base:
 
 | Quantity       | Natural unit | Example fields                                    |
 |:-------------- |:------------ |:------------------------------------------------- |
-| Active power   | `MW`         | `active_power`, `active_power_limits`, `max_flow` |
-| Reactive power | `MVAr`       | `reactive_power`, `reactive_power_limits`         |
-| Apparent power | `MVA`        | `rating`, `rating_b`, `base_power`                |
-| Impedance      | `Ω`          | `r`, `x`                                          |
-| Admittance     | `S`          | `b`, `g`                                          |
-| Voltage        | `kV`         | `base_voltage`                                    |
+| Active power   | `u"MW"`      | `active_power`, `active_power_limits`, `max_flow` |
+| Reactive power | `u"MVAr"`    | `reactive_power`, `reactive_power_limits`         |
+| Apparent power | `u"MVA"`     | `rating`, `rating_b`, `base_power`                |
+| Impedance      | `u"Ω"`       | `r`, `x`                                          |
+| Admittance     | `u"S"`       | `b`, `g`                                          |
+| Voltage        | `u"kV"`      | `base_voltage`                                    |
+
+Natural units are written with Unitful's `u"..."` string macro, which `PowerSystems`
+re-exports — `using PowerSystems` is enough, no `using Unitful` needed. There are no
+`MW`/`kV` constants: one notation, and it is Unitful's own, so every Unitful spelling
+(`u"kW"`, `u"mΩ"`, `u"GW"`) works wherever a unit of the right dimension is expected.
+`u"MVA"` and `u"MVAr"` are defined by PowerSystems itself and resolve the same way.
 
 ```julia
 get_active_power(gen, NU)            # 125.0 (MW)
@@ -38,7 +44,8 @@ get_rating_unitful(gen, NU)          # 250.0 MVA
 ```
 
 Because the three power units share a dimension, any of them is accepted wherever a
-power-dimensioned unit is expected — `get_rating(gen, MW)` and `set_reactive_power!(gen, 25.0 * MW)` both work, and `uconvert` handles the relabeling.
+power-dimensioned unit is expected — `get_rating(gen, u"MW")` and
+`set_reactive_power!(gen, 25.0 * u"MW")` both work, and `uconvert` handles the relabeling.
 
 ## Explicit units in accessors
 
@@ -50,13 +57,13 @@ system-wide mutable unit setting that changes what accessors return.
 get_active_power(gen, SU)       # bare Float64, system-base per-unit
 get_active_power(gen, DU)       # bare Float64, device-base per-unit
 get_active_power(gen, NU)       # bare Float64, natural units (MW)
-get_active_power(gen, MW)       # bare Float64 in an explicit Unitful unit
+get_active_power(gen, u"MW")       # bare Float64 in an explicit Unitful unit
 get_active_power_unitful(gen, SU)  # unit-bearing value (RelativeQuantity / Unitful.Quantity)
 
 set_active_power!(gen, 0.9 * SU)    # values must carry their units
-set_active_power!(gen, 90.0 * MW)
+set_active_power!(gen, 90.0 * u"MW")
 set_rating!(line, 1.2 * DU)
-set_x!(transformer, 105.8 * OHMS)   # impedance/admittance fields accept Ω / S
+set_x!(transformer, 105.8 * u"Ω")   # impedance/admittance fields accept Ω / S
 ```
 
 Conversion between unit systems does not change the stored parameter values — storage is
@@ -66,7 +73,7 @@ field access. The units of the stored values for each struct are defined in
 `src/descriptors/power_system_structs.json`.
 
 Bare `Float64` arguments to converted setters are rejected with an `ArgumentError`: the
-caller must say what units the number is in (`val * SU`, `val * DU`, `val * MW`, …). The
+caller must say what units the number is in (`val * SU`, `val * DU`, `val * u"MW"`, …). The
 unit-tagged per-unit values are [`RelativeQuantity`](@ref)s, whose unit marker is carried
 in the type; mixing `DU`- and `SU`-tagged values in arithmetic or comparisons raises a
 clear error instead of producing a silently wrong number.
@@ -100,7 +107,7 @@ When you define components that aren't attached to a `System`, field values are 
 given, in device base (`DU`), except for certain components that don't have their own
 `base_power` rating, such as [`Line`](@ref)s, where values are relative to the system base
 once attached. To define data in natural units, construct the component and then use the
-explicit-units setters (e.g. `set_active_power!(gen, 90.0 * MW)`); the accessor does the
+explicit-units setters (e.g. `set_active_power!(gen, 90.0 * u"MW")`); the accessor does the
 conversion to per-unit storage.
 
 By default, downstream optimization packages work in `SU` because many optimization
@@ -153,7 +160,7 @@ claiming a relative base as `from` contradicts them:
 
 ```julia
 # gen.base_power = 50 MVA, system base = 100 MVA
-convert_units(gen, 30.0MW, ACTIVE_POWER, SU, DU)
+convert_units(gen, 30.0u"MW", ACTIVE_POWER, SU, DU)
 # ArgumentError: value 30.0 MW carries physical units but `from = SU` claims a relative
 # base; pass the value's own units (or NU) as `from`
 ```
@@ -161,7 +168,7 @@ convert_units(gen, 30.0MW, ACTIVE_POWER, SU, DU)
 Pass `NU` (or the Unitful unit directly) as `from` instead:
 
 ```julia
-convert_units(gen, 30.0MW, ACTIVE_POWER, NU, DU)   # → 0.6 DU
+convert_units(gen, 30.0u"MW", ACTIVE_POWER, NU, DU)   # → 0.6 DU
 ```
 
 **`RelativeQuantity` tag disagrees with `from`.** A `RelativeQuantity` encodes its base in

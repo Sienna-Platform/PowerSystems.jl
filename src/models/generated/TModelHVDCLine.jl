@@ -99,9 +99,9 @@ end
 get_name(value::TModelHVDCLine) = value.name
 """Get [`TModelHVDCLine`](@ref) `available`."""
 get_available(value::TModelHVDCLine) = value.available
-"""Get [`TModelHVDCLine`](@ref) `active_power_flow` as a bare number in the requested `units` (e.g. `SU`, `DU`; domain-provided units such as `MW` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_active_power_flow_unitful`](@ref)."""
+"""Get [`TModelHVDCLine`](@ref) `active_power_flow` as a bare number in the requested `units` (e.g. `SU`, `DU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_active_power_flow_unitful`](@ref)."""
 get_active_power_flow(value::TModelHVDCLine, units) = InfrastructureSystems._strip_units(get_value(value, Val(:active_power_flow), Val(:mw), units))
-"""Get [`TModelHVDCLine`](@ref) `active_power_flow` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `MW`). For a bare number see [`get_active_power_flow`](@ref)."""
+"""Get [`TModelHVDCLine`](@ref) `active_power_flow` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `u"MW"`). For a bare number see [`get_active_power_flow`](@ref)."""
 get_active_power_flow_unitful(value::TModelHVDCLine, units) = get_value(value, Val(:active_power_flow), Val(:mw), units)
 get_active_power_flow(value::TModelHVDCLine) = _units_arg_required(get_active_power_flow, value, :active_power_flow, Val(:mw))
 get_active_power_flow_unitful(value::TModelHVDCLine) = _units_arg_required(get_active_power_flow_unitful, value, :active_power_flow, Val(:mw))
@@ -115,17 +115,17 @@ get_r(value::TModelHVDCLine) = value.r
 get_l(value::TModelHVDCLine) = value.l
 """Get [`TModelHVDCLine`](@ref) `c`."""
 get_c(value::TModelHVDCLine) = value.c
-"""Get [`TModelHVDCLine`](@ref) `active_power_limits_from` as a bare number in the requested `units` (e.g. `SU`, `DU`; domain-provided units such as `MW` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_active_power_limits_from_unitful`](@ref)."""
+"""Get [`TModelHVDCLine`](@ref) `active_power_limits_from` as a bare number in the requested `units` (e.g. `SU`, `DU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_active_power_limits_from_unitful`](@ref)."""
 get_active_power_limits_from(value::TModelHVDCLine, units) = InfrastructureSystems._strip_units(get_value(value, Val(:active_power_limits_from), Val(:mw), units))
-"""Get [`TModelHVDCLine`](@ref) `active_power_limits_from` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `MW`). For a bare number see [`get_active_power_limits_from`](@ref)."""
+"""Get [`TModelHVDCLine`](@ref) `active_power_limits_from` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `u"MW"`). For a bare number see [`get_active_power_limits_from`](@ref)."""
 get_active_power_limits_from_unitful(value::TModelHVDCLine, units) = get_value(value, Val(:active_power_limits_from), Val(:mw), units)
 get_active_power_limits_from(value::TModelHVDCLine) = _units_arg_required(get_active_power_limits_from, value, :active_power_limits_from, Val(:mw))
 get_active_power_limits_from_unitful(value::TModelHVDCLine) = _units_arg_required(get_active_power_limits_from_unitful, value, :active_power_limits_from, Val(:mw))
 InfrastructureSystems.display_units_arg(::typeof(get_active_power_limits_from), ::Type{TModelHVDCLine}) = InfrastructureSystems.SU
 InfrastructureSystems.display_units_arg(::typeof(get_active_power_limits_from_unitful), ::Type{TModelHVDCLine}) = InfrastructureSystems.SU
-"""Get [`TModelHVDCLine`](@ref) `active_power_limits_to` as a bare number in the requested `units` (e.g. `SU`, `DU`; domain-provided units such as `MW` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_active_power_limits_to_unitful`](@ref)."""
+"""Get [`TModelHVDCLine`](@ref) `active_power_limits_to` as a bare number in the requested `units` (e.g. `SU`, `DU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_active_power_limits_to_unitful`](@ref)."""
 get_active_power_limits_to(value::TModelHVDCLine, units) = InfrastructureSystems._strip_units(get_value(value, Val(:active_power_limits_to), Val(:mw), units))
-"""Get [`TModelHVDCLine`](@ref) `active_power_limits_to` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `MW`). For a bare number see [`get_active_power_limits_to`](@ref)."""
+"""Get [`TModelHVDCLine`](@ref) `active_power_limits_to` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `u"MW"`). For a bare number see [`get_active_power_limits_to`](@ref)."""
 get_active_power_limits_to_unitful(value::TModelHVDCLine, units) = get_value(value, Val(:active_power_limits_to), Val(:mw), units)
 get_active_power_limits_to(value::TModelHVDCLine) = _units_arg_required(get_active_power_limits_to, value, :active_power_limits_to, Val(:mw))
 get_active_power_limits_to_unitful(value::TModelHVDCLine) = _units_arg_required(get_active_power_limits_to_unitful, value, :active_power_limits_to, Val(:mw))

@@ -49,17 +49,17 @@ end
     @test bp_nu isa Unitful.Quantity
     @test Unitful.ustrip(bp_nu) ≈ device_base
     # Not double-wrapped: no `device_base * MVA * MVA`.
-    @test Unitful.unit(bp_nu) == Unitful.unit(1.0 * MVA)
+    @test Unitful.unit(bp_nu) == Unitful.unit(1.0 * u"MVA")
     # 1-arg unitful form mirrors `(c, NU)`.
     @test get_base_power_unitful(gen) ≈ bp_nu
 
-    @test get_base_power(gen, MW) isa Float64
-    @test get_base_power(gen, MW) ≈ device_base
-    bp_mw = get_base_power_unitful(gen, MW)
+    @test get_base_power(gen, u"MW") isa Float64
+    @test get_base_power(gen, u"MW") ≈ device_base
+    bp_mw = get_base_power_unitful(gen, u"MW")
     @test bp_mw isa Unitful.Quantity
-    @test Unitful.ustrip(MW, bp_mw) ≈ device_base
+    @test Unitful.ustrip(u"MW", bp_mw) ≈ device_base
 
-    @test get_base_power(gen, MVA) ≈ device_base
+    @test get_base_power(gen, u"MVA") ≈ device_base
 
     # Per-unit bases are circular for base_power and are rejected.
     @test_throws ArgumentError get_base_power(gen, SU)
@@ -67,7 +67,7 @@ end
     @test_throws ArgumentError get_base_power(gen, DU)
     @test_throws ArgumentError get_base_power_unitful(gen, DU)
     # Non-power units fail dimensionally.
-    @test_throws Unitful.DimensionError get_base_power(gen, kV)
+    @test_throws Unitful.DimensionError get_base_power(gen, u"kV")
 
     # Components with no base_power field fall back to the system base.
     bus = first(get_components(ACBus, sys))
@@ -93,8 +93,8 @@ end
     # Plain Float64 across all unit args.
     @test get_active_power(gen, NU) isa Float64
     @test get_active_power(gen, NU) ≈ p_du * device_base
-    @test get_active_power(gen, MW) isa Float64
-    @test get_active_power(gen, MW) ≈ p_du * device_base
+    @test get_active_power(gen, u"MW") isa Float64
+    @test get_active_power(gen, u"MW") ≈ p_du * device_base
     @test get_active_power(gen, SU) isa Float64
     @test get_active_power(gen, SU) ≈ p_du * device_base / system_base
     @test get_active_power(gen, DU) isa Float64
@@ -103,10 +103,10 @@ end
     # `_unitful` companions retain wrappers.
     p_nu_u = get_active_power_unitful(gen, NU)
     @test p_nu_u isa Unitful.Quantity
-    @test Unitful.unit(p_nu_u) == Unitful.unit(1.0 * MW)
-    @test Unitful.ustrip(MW, p_nu_u) ≈ p_du * device_base
+    @test Unitful.unit(p_nu_u) == Unitful.unit(1.0 * u"MW")
+    @test Unitful.ustrip(u"MW", p_nu_u) ≈ p_du * device_base
 
-    @test get_active_power_unitful(gen, MW) isa Unitful.Quantity
+    @test get_active_power_unitful(gen, u"MW") isa Unitful.Quantity
     @test get_active_power_unitful(gen, SU) isa RelativeQuantity
     @test get_active_power_unitful(gen, DU) isa RelativeQuantity
 
@@ -139,7 +139,7 @@ end
     @test occursin("get_active_power", msg)
     @test occursin("active_power", msg)
     @test occursin("ThermalStandard", msg)
-    for u in ("`DU`", "`SU`", "`NU`", "`MW`")
+    for u in ("`DU`", "`SU`", "`NU`", "`u\"MW\"`")
         @test occursin(u, msg)
     end
     @test occursin("get_active_power_unitful(component, units)", msg)
@@ -159,7 +159,7 @@ end
     catch e
         sprint(showerror, e)
     end
-    @test occursin("`OHMS`", msg_x)
+    @test occursin("`u\"Ω\"`", msg_x)
 end
 
 @testset "Generated setters: untagged values explain what to pass" begin
@@ -178,7 +178,7 @@ end
     @test occursin("set_active_power!", msg)
     @test occursin("active_power", msg)
     @test occursin("ThermalStandard", msg)
-    for tag in ("`val * DU`", "`val * SU`", "`val * MW`")
+    for tag in ("`val * DU`", "`val * SU`", "`val * u\"MW\"`")
         @test occursin(tag, msg)
     end
     # `NU` is a getter target only; there is no `val * NU`.
@@ -208,7 +208,7 @@ end
     catch e
         sprint(showerror, e)
     end
-    @test occursin("`val * OHMS`", msg_x)
+    @test occursin("`val * u\"Ω\"`", msg_x)
 
     # The compound fallback exists only where a NamedTuple is a valid value: a
     # scalar field must not advertise one, or the error would tell the caller to
@@ -236,15 +236,15 @@ end
     @test get_active_power(gen, DU) ≈ 0.6
     set_active_power!(gen, 0.3 * SU)
     @test get_active_power(gen, SU) ≈ 0.3
-    set_active_power!(gen, 60.0 * MW)
-    @test get_active_power(gen, MW) ≈ 60.0
+    set_active_power!(gen, 60.0 * u"MW")
+    @test get_active_power(gen, u"MW") ≈ 60.0
     set_active_power_limits!(gen, (min = 0.0 * DU, max = 1.0 * DU))
     @test get_active_power_limits(gen, DU) == (min = 0.0, max = 1.0)
 end
 
 # The error messages name a natural unit per conversion category. That name is only
-# useful if it is a symbol the caller actually has and the accessors actually take,
-# so each case here reads the unit out of the message itself and round-trips it.
+# useful if it is a spelling the caller can actually type and the accessors actually
+# take, so each case here reads the unit out of the message itself and round-trips it.
 @testset "Suggested natural units are what the accessors accept" begin
     sys, gen = _sys_with_thermal(; system_base = 100.0, device_base = 250.0)
     bus1 = get_component(ACBus, sys, "b1")
@@ -281,11 +281,14 @@ end
         end
         suggested = match(r"the natural unit `([^`]+)`", get_msg)
         @test suggested !== nothing
-        name = Symbol(suggested.captures[1])
+        spelling = suggested.captures[1]
 
-        # The suggestion must be a name the caller has from `using PowerSystems`.
-        @test name in names(PowerSystems)
-        units = getfield(PowerSystems, name)
+        # The suggestion must be something the caller can type given `using
+        # PowerSystems`: a `u"..."` literal, resolved by the `@u_str` macro this
+        # package re-exports, with no separate `using Unitful` and no unit constants.
+        @test startswith(spelling, "u\"")
+        @test Symbol("@u_str") in names(PowerSystems)
+        units = Core.eval(@__MODULE__, Meta.parse(spelling))
 
         # The getter takes exactly what its message suggested...
         before = getter(comp, units)
@@ -297,19 +300,19 @@ end
         catch e
             sprint(showerror, e)
         end
-        @test occursin("`val * $name`", set_msg)
+        @test occursin("`val * $spelling`", set_msg)
         setter(comp, before isa NamedTuple ? map(x -> x * units, before) : before * units)
         @test getter(comp, units) == before
     end
 
     # The suggested names are the `u"..."` literals, not separate constants, and a
     # unit named as a string is not accepted by either form.
-    @test MW === Unitful.@u_str("MW")
-    @test MVAr === Unitful.@u_str("MVAr")
-    @test MVA === Unitful.@u_str("MVA")
-    @test OHMS === Unitful.@u_str("Ω")
-    @test SIEMENS === Unitful.@u_str("S")
-    @test get_active_power(gen, Unitful.@u_str("MW")) == get_active_power(gen, MW)
+    @test u"MW" === Unitful.@u_str("MW")
+    @test u"MVAr" === Unitful.@u_str("MVAr")
+    @test u"MVA" === Unitful.@u_str("MVA")
+    @test u"Ω" === Unitful.@u_str("Ω")
+    @test u"S" === Unitful.@u_str("S")
+    @test get_active_power(gen, Unitful.@u_str("MW")) == get_active_power(gen, u"MW")
     @test_throws MethodError get_active_power(gen, "MW")
 end
 
@@ -321,7 +324,7 @@ end
     sys, gen = _sys_with_thermal(; system_base = 100.0, device_base = 250.0)
 
     # (1)+(4) Conversions compile away: each literal unit arg infers to Float64.
-    for u in (SU, DU, NU, MW)
+    for u in (SU, DU, NU, u"MW")
         @test (@inferred get_active_power(gen, u)) isa Float64
     end
 
@@ -353,11 +356,11 @@ end
     @test get_base_power(gen) ≈ 75.0
 
     # Unitful.Quantity in MW (MVA and MW share dimensions; storage is MVA).
-    set_base_power!(gen, 80.0 * MW)
+    set_base_power!(gen, 80.0 * u"MW")
     @test PSY._get_base_power(gen) ≈ 80.0
 
     # Unitful.Quantity in MVA.
-    set_base_power!(gen, 90.0 * MVA)
+    set_base_power!(gen, 90.0 * u"MVA")
     @test PSY._get_base_power(gen) ≈ 90.0
 
     # Per-unit bases are circular for base_power and are rejected.
@@ -367,7 +370,7 @@ end
     @test_throws ArgumentError set_base_power!(gen, 0.5 * DU)
 
     # Dimensionally wrong inputs fail at conversion time.
-    @test_throws Unitful.DimensionError set_base_power!(gen, 1.0 * kV)
+    @test_throws Unitful.DimensionError set_base_power!(gen, 1.0 * u"kV")
 end
 
 @testset "Plain get/set for ThreeWindingTransformer base_power_{12,23,31}" begin
@@ -458,20 +461,20 @@ end
 
     set_rating!(primary, 2.0 * DU)
     # MW must scale by the PRIMARY WINDING base (15), not the system base (100).
-    @test get_rating(primary, MW) ≈ 2.0 * 15.0
-    @test get_rating(primary, MW) ≈ get_rating(primary, NU)
-    @test get_rating_unitful(primary, MW) isa Unitful.Quantity
+    @test get_rating(primary, u"MW") ≈ 2.0 * 15.0
+    @test get_rating(primary, u"MW") ≈ get_rating(primary, NU)
+    @test get_rating_unitful(primary, u"MW") isa Unitful.Quantity
 
     set_r_12!(xfmr, 0.01 * DU)
     # Ω target must agree with the NU path and use base_power_12 / primary voltage
     # (and must not crash looking for a single transformer-wide arc/base voltage).
-    @test get_r_12(xfmr, OHMS) ≈ 0.01 * (230.0^2 / 15.0)
-    @test get_r_12(xfmr, OHMS) ≈ get_r_12(xfmr, NU)
+    @test get_r_12(xfmr, u"Ω") ≈ 0.01 * (230.0^2 / 15.0)
+    @test get_r_12(xfmr, u"Ω") ≈ get_r_12(xfmr, NU)
 
     # r_31/x_31 are referenced to the TERTIARY circuit voltage (69 kV), base_power_31 = 25.
     set_r_31!(xfmr, 0.02 * DU)
-    @test get_r_31(xfmr, OHMS) ≈ 0.02 * (69.0^2 / 25.0)
-    @test get_r_31(xfmr, OHMS) ≈ get_r_31(xfmr, NU)
+    @test get_r_31(xfmr, u"Ω") ≈ 0.02 * (69.0^2 / 25.0)
+    @test get_r_31(xfmr, u"Ω") ≈ get_r_31(xfmr, NU)
 end
 
 @testset "ThreeWindingTransformer/TransformerCircuit setters round-trip against the correct base" begin
@@ -482,9 +485,9 @@ end
     tertiary = get_tertiary_circuit(xfmr)
 
     # Power: MW input divides by the WINDING base, not the system base.
-    set_rating!(primary, 30.0 * MW)
+    set_rating!(primary, 30.0 * u"MW")
     @test get_rating(primary, DU) ≈ 2.0    # 30 MW / 15 MVA circuit base
-    @test get_rating(primary, MW) ≈ 30.0
+    @test get_rating(primary, u"MW") ≈ 30.0
     # SU: 0.4 SU = 40 MW on the system base = 2.0 DU on the 20 MVA circuit.
     set_rating!(secondary, 0.4 * SU)
     @test get_rating(secondary, DU) ≈ 2.0
@@ -496,9 +499,9 @@ end
     # Impedance: Ω divides by the pair impedance base V²/S (pair 12: primary base
     # voltage, base_power_12 = 15).
     z_base_12 = 230.0^2 / 15.0
-    set_r_12!(xfmr, 0.01 * z_base_12 * OHMS)
+    set_r_12!(xfmr, 0.01 * z_base_12 * u"Ω")
     @test get_r_12(xfmr, DU) ≈ 0.01
-    @test get_r_12(xfmr, OHMS) ≈ 0.01 * z_base_12
+    @test get_r_12(xfmr, u"Ω") ≈ 0.01 * z_base_12
     # SU impedance on pair 23 (base_power_23 = 20): Z_du = Z_su * (pair_base / system_base).
     set_x_23!(xfmr, 0.6 * SU)
     @test get_x_23(xfmr, DU) ≈ 0.6 * (20.0 / system_base)
@@ -506,9 +509,9 @@ end
 
     # Ω impedance round-trip on pair 31 (tertiary voltage 69 kV, base_power_31 = 25).
     z_base_31 = 69.0^2 / 25.0
-    set_x_31!(xfmr, 0.05 * z_base_31 * OHMS)
+    set_x_31!(xfmr, 0.05 * z_base_31 * u"Ω")
     @test get_x_31(xfmr, DU) ≈ 0.05
-    @test get_x_31(xfmr, OHMS) ≈ 0.05 * z_base_31
+    @test get_x_31(xfmr, u"Ω") ≈ 0.05 * z_base_31
 
     # Bare floats remain rejected.
     @test_throws ArgumentError set_rating!(primary, 1.0)
@@ -523,14 +526,14 @@ end
     # drifts by (230/115)².
     set_base_voltage!(get_arc(t2w).from, 115.0)
 
-    set_x!(t2w, 105.8 * OHMS)
+    set_x!(t2w, 105.8 * u"Ω")
     @test get_x(t2w, DU) ≈ 105.8 / (230.0^2 / 100.0)
-    @test get_x(t2w, OHMS) ≈ 105.8
+    @test get_x(t2w, u"Ω") ≈ 105.8
 
     y_nat = 3.0 * (100.0 / 230.0^2)
-    set_magnetizing_shunt!(t2w, y_nat * SIEMENS)
+    set_magnetizing_shunt!(t2w, y_nat * u"S")
     @test get_magnetizing_shunt(t2w, DU) ≈ 3.0
-    @test get_magnetizing_shunt(t2w, SIEMENS) ≈ y_nat
+    @test get_magnetizing_shunt(t2w, u"S") ≈ y_nat
 end
 
 @testset "Test adding component with zero base power" begin

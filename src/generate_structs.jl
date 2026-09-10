@@ -85,9 +85,9 @@ end
 {{/has_null_values}}
 {{#accessors}}
 {{#needs_conversion}}
-{{#create_docstring}}\"\"\"Get [`{{struct_name}}`](@ref) `{{name}}` as a bare number in the requested `units` (e.g. `SU`, `DU`; domain-provided units such as `MW` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`{{accessor}}_unitful`](@ref).\"\"\"{{/create_docstring}}
+{{#create_docstring}}\"\"\"Get [`{{struct_name}}`](@ref) `{{name}}` as a bare number in the requested `units` (e.g. `SU`, `DU`; domain-provided units such as `u\"MW\"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`{{accessor}}_unitful`](@ref).\"\"\"{{/create_docstring}}
 {{accessor}}(value::{{struct_name}}, units) = InfrastructureSystems._strip_units(get_value(value, Val(:{{name}}), Val({{conversion_unit}}), units))
-{{#create_docstring}}\"\"\"Get [`{{struct_name}}`](@ref) `{{name}}` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `MW`). For a bare number see [`{{accessor}}`](@ref).\"\"\"{{/create_docstring}}
+{{#create_docstring}}\"\"\"Get [`{{struct_name}}`](@ref) `{{name}}` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `u\"MW\"`). For a bare number see [`{{accessor}}`](@ref).\"\"\"{{/create_docstring}}
 {{accessor}}_unitful(value::{{struct_name}}, units) = get_value(value, Val(:{{name}}), Val({{conversion_unit}}), units)
 {{accessor}}(value::{{struct_name}}) = _units_arg_required({{accessor}}, value, :{{name}}, Val({{conversion_unit}}))
 {{accessor}}_unitful(value::{{struct_name}}) = _units_arg_required({{accessor}}_unitful, value, :{{name}}, Val({{conversion_unit}}))
@@ -136,6 +136,13 @@ function from_openapi(po::{{{openapi_po_type}}}, refs::OpenAPIRefs, ::NaturalUni
     )
 end
 
+{{! `exclude_openapi_import_selector` (struct-level, like the field-level
+    `exclude_getter`/`exclude_setter`) means "the plain 2-argument selector is
+    hand-written elsewhere", not "there is none" -- see the market components in
+    import_handwritten.jl, whose wire basis is natural units rather than the
+    component base defaulted to below. Emitting both would be a duplicate
+    definition, which precompilation rejects. }}
+{{^exclude_openapi_import_selector}}
 {{#has_power_units}}
 function from_openapi(po::{{{openapi_po_type}}}, refs::OpenAPIRefs)
     return from_openapi(po, refs, _power_units_marker("{{struct_name}}", po.id, po.power_units))
@@ -146,6 +153,7 @@ function from_openapi(po::{{{openapi_po_type}}}, refs::OpenAPIRefs)
     return from_openapi(po, refs, DU)
 end
 {{/has_power_units}}
+{{/exclude_openapi_import_selector}}
 
 function to_openapi(value::{{struct_name}}, refs::OpenAPIRefs, ::DeviceBaseUnit)
     return PO.{{struct_name}}(;

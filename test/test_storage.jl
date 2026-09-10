@@ -124,13 +124,13 @@ end
     @test get_standing_loss(storage, NU) ≈ 0.02 * device_base
 
     # MW (Unitful domain target): bare number reads the same as NU.
-    @test get_standing_loss(storage, MW) isa Float64
-    @test get_standing_loss(storage, MW) ≈ 0.02 * device_base
+    @test get_standing_loss(storage, u"MW") isa Float64
+    @test get_standing_loss(storage, u"MW") ≈ 0.02 * device_base
 
     # `_unitful` companion returns a tagged quantity with the same magnitude.
     @test IS._strip_units(get_standing_loss_unitful(storage, SU)) ≈
           0.02 * device_base / system_base
-    @test get_standing_loss_unitful(storage, MW) isa Unitful.Quantity
+    @test get_standing_loss_unitful(storage, u"MW") isa Unitful.Quantity
 end
 
 @testset "EnergyReservoirStorage standing_loss tagged setter" begin

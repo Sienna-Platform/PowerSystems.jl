@@ -56,14 +56,15 @@ add_component!(system, gas1)
 
 ### Step 3: Add Data with "setter" Functions
 
-Use individual "setter" functions, passing **unit-tagged** natural-units values (`MW`,
-`MVAr`, etc.). The setters convert each value to device base behind the scenes:
+Use individual "setter" functions, passing **unit-tagged** natural-units values (`u"MW"`,
+`u"MVAr"`, etc. — Unitful's `u"..."` macro, re-exported by `PowerSystems`). The setters
+convert each value to device base behind the scenes:
 
 ```@repl add_in_nu
-set_rating!(gas1, 30.0 * MVA)
-set_active_power_limits!(gas1, (min = 6.0 * MW, max = 30.0 * MW))
-set_reactive_power_limits!(gas1, (min = 6.0 * MVAr, max = 30.0 * MVAr))
-set_ramp_limits!(gas1, (up = 6.0 * MW, down = 6.0 * MW)) # ramp limits per-unitize by base_power
+set_rating!(gas1, 30.0 * u"MVA")
+set_active_power_limits!(gas1, (min = 6.0 * u"MW", max = 30.0 * u"MW"))
+set_reactive_power_limits!(gas1, (min = 6.0 * u"MVAr", max = 30.0 * u"MVAr"))
+set_ramp_limits!(gas1, (up = 6.0 * u"MW", down = 6.0 * u"MW")) # ramp limits per-unitize by base_power
 ```
 
 A bare number (e.g. `set_rating!(gas1, 30.0)`) is rejected with an `ArgumentError`: setters

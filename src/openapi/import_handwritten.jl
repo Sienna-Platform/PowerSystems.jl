@@ -51,6 +51,12 @@ for T in (
     @eval from_openapi(po::PO.$T, refs::OpenAPIRefs) = from_openapi(po, refs, DU)
 end
 
+# The market components' wire values are natural units ("All MW values are natural
+# units" in their own docstrings), not the component base the generated selector would
+# default to for a struct with no `power_units` discriminator. Their descriptor entries
+# therefore set `exclude_openapi_import_selector`, which suppresses that generated
+# selector so these definitions are the only ones — without it the two collide, and
+# method overwriting is an error during precompilation.
 for T in (:TradingHub, :VirtualParticipant, :PointToPointBid)
     @eval from_openapi(po::PO.$T, refs::OpenAPIRefs) = from_openapi(po, refs, NU)
 end

@@ -4,7 +4,7 @@
 # `IS.display_units_arg` trait (set by the struct-generator template, default
 # `SU` for converted fields unless overridden per field in the descriptor,
 # e.g. `rating` fields default to `DU`). Pass `units` to force a specific
-# display unit system (e.g. `MW`, `SU`, `DU`, `NU`) instead of resolving the
+# display unit system (e.g. `u"MW"`, `SU`, `DU`, `NU`) instead of resolving the
 # trait; an explicit request that fails is an error, not a silent fallback.
 # `IS.unitful_variant` resolves the getter's `_unitful` companion (a
 # `RelativeQuantity` printing as "1.0 DU"/"0.3 SU", or a `Unitful.Quantity`
@@ -122,7 +122,7 @@ end
 
 """
 Print `ist` to `io` in the same verbose form as the REPL's `text/plain` display of a
-`Component`. Pass `units` (e.g. `MW`, `SU`, `DU`, `NU`) to force every unit-converted
+`Component`. Pass `units` (e.g. `u"MW"`, `SU`, `DU`, `NU`) to force every unit-converted
 field to display in that unit system instead of resolving each field's own
 `display_units_arg` default (system base when attached, natural units otherwise, and
 device base for capacity/`rating`-style fields).
@@ -130,7 +130,7 @@ device base for capacity/`rating`-style fields).
 # Examples
 ```julia
 show_component(gen)
-show_component(gen; units = MW)
+show_component(gen; units = u"MW")
 ```
 """
 function show_component(io::IO, ist::Component; units = nothing)
@@ -253,7 +253,7 @@ Show all components of the given type in a table.
 
 # Keyword Arguments
 - `units`: When `additional_columns` is a `Vector`, force unit-converted columns to
-  display in a given unit system (e.g. `MW`, `SU`, `DU`, `NU`) instead of each field's
+  display in a given unit system (e.g. `u"MW"`, `SU`, `DU`, `NU`) instead of each field's
   own `display_units_arg` default. Pass a single unit to apply it to every column, or a
   column-to-unit mapping (`Dict` or `NamedTuple`) to set units per field; columns absent
   from the mapping keep their own default. Ignored for `Dict`-form `additional_columns`,
@@ -265,9 +265,9 @@ Show all components of the given type in a table.
 show_components(sys, ThermalStandard)
 show_components(sys, ThermalStandard, Dict("has_time_series" => x -> has_time_series(x)))
 show_components(sys, ThermalStandard, [:active_power, :reactive_power])
-show_components(sys, ThermalStandard, [:rating]; units = MW)
+show_components(sys, ThermalStandard, [:rating]; units = u"MW")
 show_components(sys, ThermalStandard, [:active_power, :rating];
-    units = Dict(:active_power => MW, :rating => DU))
+    units = Dict(:active_power => u"MW", :rating => DU))
 ```
 """
 function show_components(

@@ -185,7 +185,7 @@ end
     @test_throws Exception set_active_power!(detached, 1.0 * SU)
     set_active_power!(detached, 0.4 * DU)
     @test get_active_power(detached, DU) ≈ 0.4
-    set_active_power!(detached, 100.0 * MW)
+    set_active_power!(detached, 100.0 * u"MW")
     @test get_active_power(detached, NU) ≈ 100.0
 end
 
@@ -274,12 +274,12 @@ end
     @test active_power_val == 1.25 * SU
 
     # An explicit `units` override takes precedence over the trait default.
-    forced_val = PowerSystems._show_accessor_value(get_active_power, gen; units = MW)
+    forced_val = PowerSystems._show_accessor_value(get_active_power, gen; units = u"MW")
     @test forced_val isa Unitful.Quantity
     @test Unitful.ustrip(forced_val) ≈ 125.0
 
     # Fields without a units trait (e.g. get_name) ignore `units` entirely.
-    @test PowerSystems._show_accessor_value(get_name, gen; units = MW) == "g1"
+    @test PowerSystems._show_accessor_value(get_name, gen; units = u"MW") == "g1"
 end
 
 @testset "show_component prints explicit unit suffixes" begin
@@ -297,7 +297,7 @@ end
     )
 
     io = IOBuffer()
-    show_component(io, gen; units = MW)
+    show_component(io, gen; units = u"MW")
     forced_out = String(take!(io))
     @test occursin("active_power: 125.0 MW", forced_out)
     @test occursin("rating: 250.0 MW", forced_out)
@@ -339,7 +339,7 @@ end
     @test reactive_idx < rating_idx < active_idx
 
     io2 = IOBuffer()
-    show_components(io2, sys, ThermalStandard, [:rating, :active_power]; units = MW)
+    show_components(io2, sys, ThermalStandard, [:rating, :active_power]; units = u"MW")
     text2 = String(take!(io2))
     @test occursin("250.0 MW", text2)
     @test occursin("125.0 MW", text2)
@@ -365,7 +365,7 @@ end
         sys,
         ThermalStandard,
         [:active_power, :rating];
-        units = Dict(:active_power => MW, :rating => DU),
+        units = Dict(:active_power => u"MW", :rating => DU),
     )
     text = String(take!(io))
     @test occursin("125.0 MW", text)
@@ -375,7 +375,7 @@ end
     # (SU for active_power) rather than inheriting a neighbour's unit.
     io2 = IOBuffer()
     show_components(io2, sys, ThermalStandard, [:active_power, :rating];
-        units = Dict(:rating => MW))
+        units = Dict(:rating => u"MW"))
     text2 = String(take!(io2))
     @test occursin("1.25 SU", text2)
     @test occursin("250.0 MW", text2)
@@ -383,7 +383,7 @@ end
     # NamedTuple mappings work the same way.
     io3 = IOBuffer()
     show_components(io3, sys, ThermalStandard, [:active_power, :rating];
-        units = (active_power = DU, rating = MW))
+        units = (active_power = DU, rating = u"MW"))
     text3 = String(take!(io3))
     @test occursin("0.5 DU", text3)
     @test occursin("250.0 MW", text3)

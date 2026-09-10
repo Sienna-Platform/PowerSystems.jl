@@ -676,8 +676,11 @@ export StructDefinition
 export generate_struct_file
 export generate_struct_files
 export UnitSystem # internal.jl
-# Unit types for explicit units in getters/setters
-export MW, MVAr, MVA, kV, OHMS, SIEMENS
+# Unit types for explicit units in getters/setters.
+# Natural units are Unitful's `u"..."` string macro (`u"MW"`, `u"kV"`, `u"Ω"`,
+# `u"S"`, and PSY's own `u"MVA"`/`u"MVAr"`); re-exporting `@u_str` means `using
+# PowerSystems` is enough to write them without also importing Unitful.
+export @u_str
 export DU, SU, NU, DeviceBaseUnit, SystemBaseUnit, NaturalUnit
 export AbstractRelativeUnit, RelativeQuantity
 export UnitCategory, AbstractPowerCategory,
