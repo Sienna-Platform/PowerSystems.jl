@@ -672,13 +672,17 @@ function from_openapi(
 end
 
 # ── SwitchedAdmittance ────────────────────────────────────────────────────────────
-# `Y`/`Y_increase` are the same fixed-natural COMPONENT_MVAR-on-system-base quantity as
+# `Y_increase` is the same fixed-natural COMPONENT_MVAR-on-system-base quantity as
 # `FixedAdmittance.Y` (device_base.jl's `_DEVICEBASE_INSTANCE_DISPATCHED` lists both
 # `:skip`, identical treatment) — divided by `refs.base_power` in both methods, so the
 # `NaturalUnit` method delegates to `DeviceBaseUnit` exactly like `FixedAdmittance`.
-# `admittance_limits` is a dimensionless multiplier bound on `Y`
-# (default `(min=1, max=1)`), not a raw admittance, and `initial_status`/`number_of_steps`
+# `admittance_limits` is a dimensionless multiplier bound on the total admittance
+# (default `(min=1, max=1)`), not a raw admittance, and `number_engaged`/`number_of_steps`
 # are per-block integer counts — none of the three need a unit conversion.
+# `solved_admittance` (PSS/E `BINIT`) is the solved-case susceptance in the same
+# COMPONENT_MVAR-on-system-base quantity as `Y_increase`, so it takes the same
+# `base_power` division; `nothing` (the field is optional in the schema) passes through
+# unscaled.
 const SWITCHED_ADMITTANCE_UNITS_IMPLEMENTED = Set(["COMPONENT_MVAR"])
 
 _check_switched_admittance_units(po) = _check_unit_basis(
@@ -691,6 +695,9 @@ _check_switched_admittance_units(po) = _check_unit_basis(
 _switched_admittance_y_increase(values, base_power) =
     [_complex_number(v) / base_power for v in values]
 
+_switched_admittance_solved(value, base_power) =
+    isnothing(value) ? nothing : value / base_power
+
 function from_openapi(po::PO.SwitchedAdmittance, refs::OpenAPIRefs, ::DeviceBaseUnit)
     _check_switched_admittance_units(po)
     base_power = get_base_power(refs)
@@ -698,10 +705,10 @@ function from_openapi(po::PO.SwitchedAdmittance, refs::OpenAPIRefs, ::DeviceBase
         name = po.name,
         available = po.available,
         bus = resolve_ref(refs, po.bus),
-        Y = _complex_number(po.Y) / base_power,
-        initial_status = po.initial_status,
+        number_engaged = po.number_engaged,
         number_of_steps = po.number_of_steps,
         Y_increase = _switched_admittance_y_increase(po.Y_increase, base_power),
+        solved_admittance = _switched_admittance_solved(po.solved_admittance, base_power),
         admittance_limits = _minmax(po.admittance_limits),
         control_mode = SwitchedAdmittanceControlMode(po.control_mode),
         regulated_bus_number = po.regulated_bus_number,

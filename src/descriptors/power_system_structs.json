@@ -2969,7 +2969,7 @@
         },
         {
             "struct_name": "SwitchedAdmittance",
-            "docstring": "A switched admittance, with discrete steps to adjust the admittance.\n\nMost often used in power flow studies, iterating over the steps to see impacts of admittance on the results. Total admittance is calculated as: `Y` + `number_of_steps` * `Y_increase`",
+            "docstring": "A switched admittance, with discrete steps to adjust the admittance.\n\nMost often used in power flow studies, iterating over the steps to see impacts of admittance on the results. Total admittance is `number_engaged` * `Y_increase`, unless `solved_admittance` is set, in which case that value is the effective admittance. There is no fixed base admittance: a PSS/E SWITCHED SHUNT record carries only BINIT and the per-block increments",
             "fields": [
                 {
                     "null_value": "init",
@@ -2991,14 +2991,8 @@
                     "data_type": "ACBus"
                 },
                 {
-                    "name": "Y",
-                    "comment": "Initial admittance at N = 0",
-                    "null_value": "0.0 + 0.0im",
-                    "data_type": "Complex{Float64}"
-                },
-                {
-                    "name": "initial_status",
-                    "comment": "Vector of initial switched shunt status, one for in-service and zero for out-of-service for block i (1 through 8)",
+                    "name": "number_engaged",
+                    "comment": "Vector with the number of steps currently engaged (switched in) for each adjustable shunt block. For example, `number_engaged[2]` is the number of steps in service at block 2, and cannot exceed `number_of_steps[2]`. Power flow writes the solved-for step count back to this field (PSS/E `Si`).",
                     "null_value": "Int[]",
                     "data_type": "Vector{Int}",
                     "default": "Int[]"
@@ -3016,6 +3010,13 @@
                     "null_value": "Complex{Float64}[]",
                     "data_type": "Vector{Complex{Float64}}",
                     "default": "Complex{Float64}[]"
+                },
+                {
+                    "name": "solved_admittance",
+                    "comment": "Solved-case switched shunt admittance (PSS/E `BINIT`), or `nothing` when unset. When non-`nothing`, this value is the shunt's effective admittance, used in place of `number_engaged` \u22c5 `Y_increase`; power flow writes the solved-for admittance back to this field. Set it only when the case is to be treated as solved as read in, or when the device is locked (`control_mode == SwitchedAdmittanceControlMode.FIXED`).",
+                    "null_value": "nothing",
+                    "data_type": "Union{Nothing, Float64}",
+                    "default": "nothing"
                 },
                 {   "name": "admittance_limits",
                     "comment": "Shunt admittance limits for switched shunt model",
