@@ -328,6 +328,24 @@ function openapi_classify_field(struct_name, field, struct_names)
 end
 
 """
+The generated OpenAPI wrapper type for an enum field, defaulting to the PSY enum's own name.
+
+The two names agree for 28 of the 35 enum fields with generated converters. They diverge
+where the schemas name the enum differently from PSY (`ACBusTypes` → `ACBusType`) or where
+the property's enum is declared inline rather than as a shared definition, so the generator
+names it `<Owner><Property>` (`MotorLoadTechnology` → `MotorLoadMotorTechnology`). A field
+whose names differ carries an explicit `openapi_enum` in the descriptor.
+
+Not derivable: neither divergence follows a rule, and this generator reads only the
+descriptor -- it has no access to SiennaSchemas or to the generated packages. A wrong or
+missing override is not silent, though: it surfaces as an `UndefVarError` the first time
+PowerSystems precompiles against the generated packages.
+"""
+function openapi_enum_po_type(field, bare)
+    return get(field, "openapi_enum", bare)
+end
+
+"""
 Validate a field's optional `openapi_unit` override. Only `"pu"` is recognized: it means
 the OpenAPI document already carries this field per-unit (its schema `x-unit` is `pu`, not
 a natural unit), so a `conversion_unit`-driven division/multiplication would double-convert
@@ -596,9 +614,11 @@ function compute_openapi_converter!(item, struct_names)
             continue
         end
         if kind == :enum
-            # `@scoped_enum` types construct straight from the document's string
-            # (`ACBusTypes("PV")`), so no per-enum lookup table is emitted.
-            expr = "$bare(po.$po_name)"
+            # `@scoped_enum` types construct straight from a string (`ACBusTypes("PV")`),
+            # and `.value` is where the document's string now lives: OpenAPI.jl 1.x makes
+            # every enum-constrained schema its own validating wrapper struct, where 0.2
+            # generated a bare `String` alias.
+            expr = "$bare(po.$po_name.value)"
             push!(kwargs_device, Dict("name" => name, "expr" => expr))
             push!(kwargs_natural, Dict("name" => name, "expr" => expr))
             continue
@@ -898,9 +918,12 @@ function compute_openapi_export_converter!(item, struct_names)
             continue
         end
         if kind == :enum
-            # `string` on a `@scoped_enum` yields the document's exact spelling, the
-            # inverse of the import direction's `EnumType(po.field)` constructor.
-            expr = "string($(openapi_export_getter_name(field))(value))"
+            # `string` on a `@scoped_enum` yields the document's exact spelling, which the
+            # PO wrapper then validates against the schema's allowed values — the inverse of
+            # the import direction's `EnumType(po.field.value)`. The wrapper is required
+            # under OpenAPI.jl 1.x; 0.2 accepted the bare string.
+            po_enum = openapi_enum_po_type(field, bare)
+            expr = "PO.$po_enum(string($(openapi_export_getter_name(field))(value)))"
             push!(kwargs_device, Dict("name" => name, "expr" => expr))
             push!(kwargs_natural, Dict("name" => name, "expr" => expr))
             continue
@@ -948,6 +971,8 @@ function compute_openapi_export_converter!(item, struct_names)
     end
 
     if get(item, "has_power_units", false)
+        # `_power_units_string` returns the `IC.UnitSystem` wrapper the document wants, so
+        # there is nothing to wrap here.
         push!(
             kwargs_device,
             Dict("name" => "power_units", "expr" => "_power_units_string(CU)"),

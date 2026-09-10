@@ -318,7 +318,7 @@ function from_openapi(po::PO.StandardLoad, refs::OpenAPIRefs, ::ComponentBaseUni
         max_impedance_reactive_power = po.max_impedance_reactive_power,
         max_current_active_power = po.max_current_active_power,
         max_current_reactive_power = po.max_current_reactive_power,
-        conformity = LoadConformity(po.conformity),
+        conformity = LoadConformity(po.conformity.value),
     )
 end
 
@@ -340,7 +340,7 @@ function from_openapi(po::PO.StandardLoad, refs::OpenAPIRefs, ::NaturalUnit)
         max_impedance_reactive_power = po.max_impedance_reactive_power / po.base_power,
         max_current_active_power = po.max_current_active_power / po.base_power,
         max_current_reactive_power = po.max_current_reactive_power / po.base_power,
-        conformity = LoadConformity(po.conformity),
+        conformity = LoadConformity(po.conformity.value),
     )
 end
 
@@ -367,7 +367,7 @@ function to_openapi(value::StandardLoad, refs::OpenAPIRefs, ::ComponentBaseUnit)
         max_impedance_reactive_power = get_max_impedance_reactive_power(value, CU),
         max_current_active_power = get_max_current_active_power(value, CU),
         max_current_reactive_power = get_max_current_reactive_power(value, CU),
-        conformity = string(get_conformity(value)),
+        conformity = PO.LoadConformity(string(get_conformity(value))),
         power_units = _power_units_string(CU),
     )
 end
@@ -391,7 +391,7 @@ function to_openapi(value::StandardLoad, refs::OpenAPIRefs, ::NaturalUnit)
         max_impedance_reactive_power = get_max_impedance_reactive_power(value, CU) * _get_base_power(value),
         max_current_active_power = get_max_current_active_power(value, CU) * _get_base_power(value),
         max_current_reactive_power = get_max_current_reactive_power(value, CU) * _get_base_power(value),
-        conformity = string(get_conformity(value)),
+        conformity = PO.LoadConformity(string(get_conformity(value))),
         power_units = _power_units_string(NU),
     )
 end

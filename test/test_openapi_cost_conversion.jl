@@ -219,7 +219,7 @@ end
         fixed = 5.0,
         shut_down = 0.0,
         start_up = PSY.PC.StorageCostStartUp(
-            PSY.PC.StorageCostStartUpOneOf(; charge = 1.0, discharge = 2.0),
+            PSY.PC.ChargeDischarge(; charge = 1.0, discharge = 2.0),
         ),
         energy_shortage_cost = 3.0,
         energy_surplus_cost = 4.0,

@@ -889,12 +889,16 @@ end
         active_power_limits_to = PSY.IC.MinMax(; min = -100.0, max = 100.0),
         reactive_power_limits_from = PSY.IC.MinMax(; min = -50.0, max = 50.0),
         reactive_power_limits_to = PSY.IC.MinMax(; min = -50.0, max = 50.0),
-        loss = PSY.PC.TwoTerminalLoss(
-            PSY.PC.InputOutputCurve(;
-                function_data = PSY.PC.InputOutputCurveFunctionData(
-                    PSY.IC.LinearFunctionData(;
-                        proportional_term = 0.01,
-                        constant_term = 0.0,
+        loss = PSY.PC.LossCurve(;
+            power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
+            value_curve = PSY.PC.LossValueCurve(
+                PSY.PC.InputOutputCurve(;
+                    curve_type = "INPUT_OUTPUT",
+                    function_data = PSY.PC.InputOutputCurveFunctionData(
+                        PSY.IC.LinearFunctionData(;
+                            proportional_term = 0.01,
+                            constant_term = 0.0,
+                        ),
                     ),
                 ),
             ),
@@ -916,27 +920,18 @@ end
     @test get_loss(hvdc_natural) == LossCurve(LinearCurve(0.01, 0.0), NaturalUnit())
     @test get_base_power(hvdc_natural) == 100.0
 
-    # A blob omitting the now-required `base_power` errors loudly rather than falling back.
-    hvdc_po_missing_base = PSY.PO.TwoTerminalGenericHVDCLine(;
+    # A blob omitting the required `base_power` cannot even be built: under OpenAPI.jl 1.x the
+    # generated struct enforces the schema's `required` list, so the omission is caught at
+    # construction instead of reaching `from_openapi`. `_require_base_power` still guards the
+    # converter for blobs that arrive from elsewhere.
+    @test_throws UndefKeywordError PSY.PO.TwoTerminalGenericHVDCLine(;
         id = 25, name = "hvdc_missing_base", available = true, active_power_flow = 50.0,
         arc = 10,
         active_power_limits_from = PSY.IC.MinMax(; min = -100.0, max = 100.0),
         active_power_limits_to = PSY.IC.MinMax(; min = -100.0, max = 100.0),
         reactive_power_limits_from = PSY.IC.MinMax(; min = -50.0, max = 50.0),
         reactive_power_limits_to = PSY.IC.MinMax(; min = -50.0, max = 50.0),
-        loss = PSY.PC.TwoTerminalLoss(
-            PSY.PC.InputOutputCurve(;
-                function_data = PSY.PC.InputOutputCurveFunctionData(
-                    PSY.IC.LinearFunctionData(;
-                        proportional_term = 0.01,
-                        constant_term = 0.0,
-                    ),
-                ),
-            ),
-        ),
     )
-    @test isnothing(hvdc_po_missing_base.base_power)
-    @test_throws ErrorException PSY.from_openapi(hvdc_po_missing_base, refs, NU)
 
     hvdc_po_device = PSY.PO.TwoTerminalGenericHVDCLine(;
         id = 21, name = "hvdc2", available = true, active_power_flow = 50.0, arc = 10,
@@ -944,12 +939,16 @@ end
         active_power_limits_to = PSY.IC.MinMax(; min = -100.0, max = 100.0),
         reactive_power_limits_from = PSY.IC.MinMax(; min = -50.0, max = 50.0),
         reactive_power_limits_to = PSY.IC.MinMax(; min = -50.0, max = 50.0),
-        loss = PSY.PC.TwoTerminalLoss(
-            PSY.PC.InputOutputCurve(;
-                function_data = PSY.PC.InputOutputCurveFunctionData(
-                    PSY.IC.LinearFunctionData(;
-                        proportional_term = 0.01,
-                        constant_term = 0.0,
+        loss = PSY.PC.LossCurve(;
+            power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
+            value_curve = PSY.PC.LossValueCurve(
+                PSY.PC.InputOutputCurve(;
+                    curve_type = "INPUT_OUTPUT",
+                    function_data = PSY.PC.InputOutputCurveFunctionData(
+                        PSY.IC.LinearFunctionData(;
+                            proportional_term = 0.01,
+                            constant_term = 0.0,
+                        ),
                     ),
                 ),
             ),
@@ -1371,11 +1370,11 @@ end
     @test get_dc_setpoint_to(vsc_device) == 1.02
     @test get_ac_setpoint_from(vsc_device) == 1.025
 
-    # A basis outside the schema's two never reaches PSY: the generated PO struct validates the
-    # enum on assignment, which is why `_check_vsc_setpoint_voltage_units` only ever sees a
-    # legal value.
-    bad_basis = _vsc_po_minimal()
-    @test_throws PSY.PO.OpenAPI.ValidationException bad_basis.setpoint_voltage_units = "SYSTEM_BASE"
+    # A basis outside the schema's two never reaches PSY, which is why
+    # `_check_vsc_setpoint_voltage_units` only ever sees a legal value. Under OpenAPI.jl 1.x
+    # the generated structs are immutable and each enum is its own wrapper type validating in
+    # its constructor, so the rejection happens at construction rather than on assignment.
+    @test_throws ArgumentError PSY.PO.VoltageUnitBasis("SYSTEM_BASE")
 end
 
 @testset "OpenAPI converters: TwoTerminalVSCLine unconvertible inputs error" begin

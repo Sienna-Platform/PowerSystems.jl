@@ -369,8 +369,8 @@ function from_openapi(po::PO.HydroPumpTurbine, refs::OpenAPIRefs, ::ComponentBas
         ramp_limits = _updown_from_po(po.ramp_limits),
         time_limits = _updown_from_po(po.time_limits),
         base_power = po.base_power,
-        operating_mode = HydroPumpTurbineStatus(po.operating_mode),
-        status = OperationalStates(po.status),
+        operating_mode = HydroPumpTurbineStatus(po.operating_mode.value),
+        status = OperationalStates(po.status.value),
         time_at_status = po.time_at_status,
         operation_cost = convert_cost(po.operation_cost)::OperationalCost,
         active_power_pump = po.active_power_pump,
@@ -379,8 +379,8 @@ function from_openapi(po::PO.HydroPumpTurbine, refs::OpenAPIRefs, ::ComponentBas
         minimum_time = _turbinepump_from_po(po.minimum_time),
         travel_time = po.travel_time,
         conversion_factor = po.conversion_factor,
-        commitment_mode = CommitmentModes(po.commitment_mode),
-        prime_mover_type = PrimeMovers(po.prime_mover_type),
+        commitment_mode = CommitmentModes(po.commitment_mode.value),
+        prime_mover_type = PrimeMovers(po.prime_mover_type.value),
     )
 end
 
@@ -400,8 +400,8 @@ function from_openapi(po::PO.HydroPumpTurbine, refs::OpenAPIRefs, ::NaturalUnit)
         ramp_limits = _updown_from_po(po.ramp_limits, (/), po.base_power),
         time_limits = _updown_from_po(po.time_limits),
         base_power = po.base_power,
-        operating_mode = HydroPumpTurbineStatus(po.operating_mode),
-        status = OperationalStates(po.status),
+        operating_mode = HydroPumpTurbineStatus(po.operating_mode.value),
+        status = OperationalStates(po.status.value),
         time_at_status = po.time_at_status,
         operation_cost = convert_cost(po.operation_cost)::OperationalCost,
         active_power_pump = po.active_power_pump / po.base_power,
@@ -410,8 +410,8 @@ function from_openapi(po::PO.HydroPumpTurbine, refs::OpenAPIRefs, ::NaturalUnit)
         minimum_time = _turbinepump_from_po(po.minimum_time),
         travel_time = po.travel_time,
         conversion_factor = po.conversion_factor,
-        commitment_mode = CommitmentModes(po.commitment_mode),
-        prime_mover_type = PrimeMovers(po.prime_mover_type),
+        commitment_mode = CommitmentModes(po.commitment_mode.value),
+        prime_mover_type = PrimeMovers(po.prime_mover_type.value),
     )
 end
 
@@ -436,8 +436,8 @@ function to_openapi(value::HydroPumpTurbine, refs::OpenAPIRefs, ::ComponentBaseU
         ramp_limits = _updown_po_optional(get_ramp_limits(value, CU)),
         time_limits = _updown_po_optional(get_time_limits(value)),
         base_power = _get_base_power(value),
-        operating_mode = string(get_operating_mode(value)),
-        status = string(get_status(value)),
+        operating_mode = PO.HydroPumpTurbineOperatingMode(string(get_operating_mode(value))),
+        status = PO.OperationalStates(string(get_status(value))),
         time_at_status = get_time_at_status(value),
         operation_cost = convert_cost_to_openapi(get_operation_cost(value)),
         active_power_pump = get_active_power_pump(value, CU),
@@ -446,8 +446,8 @@ function to_openapi(value::HydroPumpTurbine, refs::OpenAPIRefs, ::ComponentBaseU
         minimum_time = _turbinepump_po(get_minimum_time(value)),
         travel_time = get_travel_time(value),
         conversion_factor = get_conversion_factor(value),
-        commitment_mode = string(get_commitment_mode(value)),
-        prime_mover_type = string(get_prime_mover_type(value)),
+        commitment_mode = PO.CommitmentModes(string(get_commitment_mode(value))),
+        prime_mover_type = PO.PrimeMovers(string(get_prime_mover_type(value))),
         power_units = _power_units_string(CU),
     )
 end
@@ -469,8 +469,8 @@ function to_openapi(value::HydroPumpTurbine, refs::OpenAPIRefs, ::NaturalUnit)
         ramp_limits = _updown_po_scaled_optional(get_ramp_limits(value, CU), _get_base_power(value)),
         time_limits = _updown_po_optional(get_time_limits(value)),
         base_power = _get_base_power(value),
-        operating_mode = string(get_operating_mode(value)),
-        status = string(get_status(value)),
+        operating_mode = PO.HydroPumpTurbineOperatingMode(string(get_operating_mode(value))),
+        status = PO.OperationalStates(string(get_status(value))),
         time_at_status = get_time_at_status(value),
         operation_cost = convert_cost_to_openapi(get_operation_cost(value)),
         active_power_pump = get_active_power_pump(value, CU) * _get_base_power(value),
@@ -479,8 +479,8 @@ function to_openapi(value::HydroPumpTurbine, refs::OpenAPIRefs, ::NaturalUnit)
         minimum_time = _turbinepump_po(get_minimum_time(value)),
         travel_time = get_travel_time(value),
         conversion_factor = get_conversion_factor(value),
-        commitment_mode = string(get_commitment_mode(value)),
-        prime_mover_type = string(get_prime_mover_type(value)),
+        commitment_mode = PO.CommitmentModes(string(get_commitment_mode(value))),
+        prime_mover_type = PO.PrimeMovers(string(get_prime_mover_type(value))),
         power_units = _power_units_string(NU),
     )
 end

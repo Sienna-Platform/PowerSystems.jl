@@ -6,8 +6,8 @@
 
 """Unwrap any `OpenAPI.jl` oneOf wrapper, whose sole `value` field holds the resolved
 variant chosen by the document's discriminator."""
-convert_cost(w::OpenAPI.OneOfAPIModel) = convert_cost(w.value)
-convert_cost(w::OpenAPI.OneOfAPIModel, store) = convert_cost(w.value, store)
+convert_cost(w::IC.OneOfAPIModel) = convert_cost(w.value)
+convert_cost(w::IC.OneOfAPIModel, store) = convert_cost(w.value, store)
 
 # ── Ambient import store, for association-id-bearing costs reached below a GENERATED
 # per-device `from_openapi` call site ────────────────────────────────────────────────
@@ -63,8 +63,14 @@ Higher-order rather than marker-returning: the marker is a type parameter of
 `Union{NaturalUnit, ComponentBaseUnit}` and make the construction dynamic. Calling `f` inside each
 branch specializes the whole construction on one concrete marker.
 """
-_with_power_units(::Any, ::Nothing) =
+_with_power_units(::Any, ::Union{Nothing, IC.Absent}) =
     error("convert_cost: power_units is required and missing")
+
+# The document's `power_units` is a validating wrapper struct under OpenAPI.jl 1.x, not the
+# bare string 0.2 produced; unwrap by dispatch so the branch below keeps specializing on a
+# concrete marker.
+_with_power_units(f, units::IC.UnitSystem) = _with_power_units(f, units.value)
+
 function _with_power_units(f, s::AbstractString)
     s == "NATURAL_UNITS" && return f(NaturalUnit())
     s == "COMPONENT_BASE" && return f(ComponentBaseUnit())
@@ -313,7 +319,7 @@ _offer_curve(c::PC.CostCurve, context::AbstractString) =
 
 convert_cost(s::PC.StartUpStages) = (hot = s.hot, warm = s.warm, cold = s.cold)
 
-convert_cost(s::PC.StorageCostStartUpOneOf) = (charge = s.charge, discharge = s.discharge)
+convert_cost(s::PC.ChargeDischarge) = (charge = s.charge, discharge = s.discharge)
 
 # ── Operation-cost containers emitted by the parser ──────────────────────────
 
@@ -586,9 +592,9 @@ its meaning with no diagnostic.
 function loss_curve_to_openapi(loss::AnyLossCurve)
     units = get_power_units(loss)
     units isa NaturalUnit || error(
-        "cannot export a LossCurve in $units: the OpenAPI schemas have no LossCurve, so " *
-        "a document records no power basis for a loss field and the unit system would be " *
-        "silently dropped. Convert the curve to NaturalUnit before exporting.",
+        "cannot export a LossCurve in $units: only natural units are implemented, and a " *
+        "relative basis would be reinterpreted rather than rescaled on import. Convert the " *
+        "curve to NaturalUnit before exporting.",
     )
     return get_value_curve(loss)
 end

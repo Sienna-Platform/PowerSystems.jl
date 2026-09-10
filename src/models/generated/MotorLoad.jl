@@ -198,7 +198,7 @@ function from_openapi(po::PO.MotorLoad, refs::OpenAPIRefs, ::ComponentBaseUnit)
         rating = po.rating,
         max_active_power = po.max_active_power,
         reactive_power_limits = _minmax_from_po(po.reactive_power_limits),
-        motor_technology = MotorLoadTechnology(po.motor_technology),
+        motor_technology = MotorLoadTechnology(po.motor_technology.value),
     )
 end
 
@@ -213,7 +213,7 @@ function from_openapi(po::PO.MotorLoad, refs::OpenAPIRefs, ::NaturalUnit)
         rating = po.rating / po.base_power,
         max_active_power = po.max_active_power / po.base_power,
         reactive_power_limits = _minmax_from_po(po.reactive_power_limits, (/), po.base_power),
-        motor_technology = MotorLoadTechnology(po.motor_technology),
+        motor_technology = MotorLoadTechnology(po.motor_technology.value),
     )
 end
 
@@ -233,7 +233,7 @@ function to_openapi(value::MotorLoad, refs::OpenAPIRefs, ::ComponentBaseUnit)
         rating = get_rating(value, CU),
         max_active_power = get_max_active_power(value, CU),
         reactive_power_limits = _minmax_po_optional(get_reactive_power_limits(value, CU)),
-        motor_technology = string(get_motor_technology(value)),
+        motor_technology = PO.MotorLoadMotorTechnology(string(get_motor_technology(value))),
         power_units = _power_units_string(CU),
     )
 end
@@ -250,7 +250,7 @@ function to_openapi(value::MotorLoad, refs::OpenAPIRefs, ::NaturalUnit)
         rating = get_rating(value, CU) * _get_base_power(value),
         max_active_power = get_max_active_power(value, CU) * _get_base_power(value),
         reactive_power_limits = _minmax_po_scaled_optional(get_reactive_power_limits(value, CU), _get_base_power(value)),
-        motor_technology = string(get_motor_technology(value)),
+        motor_technology = PO.MotorLoadMotorTechnology(string(get_motor_technology(value))),
         power_units = _power_units_string(NU),
     )
 end

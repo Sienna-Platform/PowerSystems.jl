@@ -952,20 +952,31 @@ end
 # A `oneOf` field holds its member wrapped only after deserialization; a document built in
 # memory assigns the member directly. Unwrap by dispatch, the way `convert_cost` does
 # (`cost_conversion.jl`), so both shapes read the same.
-_unwrap_oneof(x::OpenAPI.OneOfAPIModel) = _unwrap_oneof(x.value)
+_unwrap_oneof(x::IC.OneOfAPIModel) = _unwrap_oneof(x.value)
 _unwrap_oneof(x) = x
 
 _linear_curve_from_function_data(fd::IC.LinearFunctionData) =
     LinearCurve(fd.proportional_term, fd.constant_term)
 _linear_curve_from_function_data(fd) =
-    error("unmapped TwoTerminalLoss FunctionData variant: $(typeof(fd))")
+    error("unmapped LossCurve FunctionData variant: $(typeof(fd))")
 
 _hvdc_loss_curve(c::PC.InputOutputCurve) =
     _linear_curve_from_function_data(_unwrap_oneof(c.function_data))
-_hvdc_loss_curve(c) = error("unmapped TwoTerminalLoss variant: $(typeof(c))")
+_hvdc_loss_curve(c) = error("unmapped LossCurve value_curve variant: $(typeof(c))")
 
-_hvdc_loss(l::PC.TwoTerminalLoss) =
-    loss_curve_from_openapi(_hvdc_loss_curve(_unwrap_oneof(l)))
+# `LossCurve` replaced `TwoTerminalLoss` and records its own basis, so read it rather than
+# assuming: a `COMPONENT_BASE` curve would otherwise be reconstructed as natural units and
+# silently change meaning. Export refuses to write that basis today
+# (`loss_curve_to_openapi`), so a document carrying one did not come from here.
+function _hvdc_loss(l::PC.LossCurve)
+    units = _power_units_marker("LossCurve", "", l.power_units.value)
+    units isa NaturalUnit || error(
+        "from_openapi: LossCurve power_units=\"$(l.power_units.value)\" is not supported — " *
+        "only NATURAL_UNITS loss curves are converted, so a relative basis would be " *
+        "reinterpreted rather than rescaled",
+    )
+    return loss_curve_from_openapi(_hvdc_loss_curve(_unwrap_oneof(l.value_curve)))
+end
 
 function from_openapi(
     po::PO.TwoTerminalGenericHVDCLine,

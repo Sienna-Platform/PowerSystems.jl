@@ -180,7 +180,7 @@ function from_openapi(po::PO.PowerLoad, refs::OpenAPIRefs, ::ComponentBaseUnit)
         base_power = po.base_power,
         max_active_power = po.max_active_power,
         max_reactive_power = po.max_reactive_power,
-        conformity = LoadConformity(po.conformity),
+        conformity = LoadConformity(po.conformity.value),
     )
 end
 
@@ -194,7 +194,7 @@ function from_openapi(po::PO.PowerLoad, refs::OpenAPIRefs, ::NaturalUnit)
         base_power = po.base_power,
         max_active_power = po.max_active_power / po.base_power,
         max_reactive_power = po.max_reactive_power / po.base_power,
-        conformity = LoadConformity(po.conformity),
+        conformity = LoadConformity(po.conformity.value),
     )
 end
 
@@ -213,7 +213,7 @@ function to_openapi(value::PowerLoad, refs::OpenAPIRefs, ::ComponentBaseUnit)
         base_power = _get_base_power(value),
         max_active_power = get_max_active_power(value, CU),
         max_reactive_power = get_max_reactive_power(value, CU),
-        conformity = string(get_conformity(value)),
+        conformity = PO.LoadConformity(string(get_conformity(value))),
         power_units = _power_units_string(CU),
     )
 end
@@ -229,7 +229,7 @@ function to_openapi(value::PowerLoad, refs::OpenAPIRefs, ::NaturalUnit)
         base_power = _get_base_power(value),
         max_active_power = get_max_active_power(value, CU) * _get_base_power(value),
         max_reactive_power = get_max_reactive_power(value, CU) * _get_base_power(value),
-        conformity = string(get_conformity(value)),
+        conformity = PO.LoadConformity(string(get_conformity(value))),
         power_units = _power_units_string(NU),
     )
 end

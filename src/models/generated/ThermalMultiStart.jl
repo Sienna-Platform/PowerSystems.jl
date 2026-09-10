@@ -297,13 +297,13 @@ function from_openapi(po::PO.ThermalMultiStart, refs::OpenAPIRefs, ::ComponentBa
     return ThermalMultiStart(;
         name = po.name,
         available = po.available,
-        status = OperationalStates(po.status),
+        status = OperationalStates(po.status.value),
         bus = resolve_ref(refs, po.bus, ACBus),
         active_power = po.active_power,
         reactive_power = po.reactive_power,
         rating = po.rating,
-        prime_mover_type = PrimeMovers(po.prime_mover_type),
-        fuel = ThermalFuels(po.fuel),
+        prime_mover_type = PrimeMovers(po.prime_mover_type.value),
+        fuel = ThermalFuels(po.fuel.value),
         active_power_limits = _minmax_from_po(po.active_power_limits),
         reactive_power_limits = _minmax_from_po(po.reactive_power_limits),
         ramp_limits = _updown_from_po(po.ramp_limits),
@@ -314,7 +314,7 @@ function from_openapi(po::PO.ThermalMultiStart, refs::OpenAPIRefs, ::ComponentBa
         operation_cost = convert_cost(po.operation_cost)::OperationalCost,
         base_power = po.base_power,
         time_at_status = po.time_at_status,
-        commitment_mode = CommitmentModes(po.commitment_mode),
+        commitment_mode = CommitmentModes(po.commitment_mode.value),
     )
 end
 
@@ -322,13 +322,13 @@ function from_openapi(po::PO.ThermalMultiStart, refs::OpenAPIRefs, ::NaturalUnit
     return ThermalMultiStart(;
         name = po.name,
         available = po.available,
-        status = OperationalStates(po.status),
+        status = OperationalStates(po.status.value),
         bus = resolve_ref(refs, po.bus, ACBus),
         active_power = po.active_power / po.base_power,
         reactive_power = po.reactive_power / po.base_power,
         rating = po.rating / po.base_power,
-        prime_mover_type = PrimeMovers(po.prime_mover_type),
-        fuel = ThermalFuels(po.fuel),
+        prime_mover_type = PrimeMovers(po.prime_mover_type.value),
+        fuel = ThermalFuels(po.fuel.value),
         active_power_limits = _minmax_from_po(po.active_power_limits, (/), po.base_power),
         reactive_power_limits = _minmax_from_po(po.reactive_power_limits, (/), po.base_power),
         ramp_limits = _updown_from_po(po.ramp_limits, (/), po.base_power),
@@ -339,7 +339,7 @@ function from_openapi(po::PO.ThermalMultiStart, refs::OpenAPIRefs, ::NaturalUnit
         operation_cost = convert_cost(po.operation_cost)::OperationalCost,
         base_power = po.base_power,
         time_at_status = po.time_at_status,
-        commitment_mode = CommitmentModes(po.commitment_mode),
+        commitment_mode = CommitmentModes(po.commitment_mode.value),
     )
 end
 
@@ -352,13 +352,13 @@ function to_openapi(value::ThermalMultiStart, refs::OpenAPIRefs, ::ComponentBase
         id = component_id(refs, value),
         name = get_name(value),
         available = get_available(value),
-        status = string(get_status(value)),
+        status = PO.OperationalStates(string(get_status(value))),
         bus = component_id(refs, get_bus(value)),
         active_power = get_active_power(value, CU),
         reactive_power = get_reactive_power(value, CU),
         rating = get_rating(value, CU),
-        prime_mover_type = string(get_prime_mover_type(value)),
-        fuel = string(get_fuel(value)),
+        prime_mover_type = PO.PrimeMovers(string(get_prime_mover_type(value))),
+        fuel = PO.ThermalFuels(string(get_fuel(value))),
         active_power_limits = _minmax_po(get_active_power_limits(value, CU)),
         reactive_power_limits = _minmax_po_optional(get_reactive_power_limits(value, CU)),
         ramp_limits = _updown_po_optional(get_ramp_limits(value, CU)),
@@ -369,7 +369,7 @@ function to_openapi(value::ThermalMultiStart, refs::OpenAPIRefs, ::ComponentBase
         operation_cost = convert_cost_to_openapi(get_operation_cost(value)),
         base_power = _get_base_power(value),
         time_at_status = get_time_at_status(value),
-        commitment_mode = string(get_commitment_mode(value)),
+        commitment_mode = PO.CommitmentModes(string(get_commitment_mode(value))),
         power_units = _power_units_string(CU),
     )
 end
@@ -379,13 +379,13 @@ function to_openapi(value::ThermalMultiStart, refs::OpenAPIRefs, ::NaturalUnit)
         id = component_id(refs, value),
         name = get_name(value),
         available = get_available(value),
-        status = string(get_status(value)),
+        status = PO.OperationalStates(string(get_status(value))),
         bus = component_id(refs, get_bus(value)),
         active_power = get_active_power(value, CU) * _get_base_power(value),
         reactive_power = get_reactive_power(value, CU) * _get_base_power(value),
         rating = get_rating(value, CU) * _get_base_power(value),
-        prime_mover_type = string(get_prime_mover_type(value)),
-        fuel = string(get_fuel(value)),
+        prime_mover_type = PO.PrimeMovers(string(get_prime_mover_type(value))),
+        fuel = PO.ThermalFuels(string(get_fuel(value))),
         active_power_limits = _minmax_po_scaled(get_active_power_limits(value, CU), _get_base_power(value)),
         reactive_power_limits = _minmax_po_scaled_optional(get_reactive_power_limits(value, CU), _get_base_power(value)),
         ramp_limits = _updown_po_scaled_optional(get_ramp_limits(value, CU), _get_base_power(value)),
@@ -396,7 +396,7 @@ function to_openapi(value::ThermalMultiStart, refs::OpenAPIRefs, ::NaturalUnit)
         operation_cost = convert_cost_to_openapi(get_operation_cost(value)),
         base_power = _get_base_power(value),
         time_at_status = get_time_at_status(value),
-        commitment_mode = string(get_commitment_mode(value)),
+        commitment_mode = PO.CommitmentModes(string(get_commitment_mode(value))),
         power_units = _power_units_string(NU),
     )
 end

@@ -19,7 +19,6 @@
                     "default": "0.0",
                     "needs_conversion": true,
                     "conversion_unit": ":mw"
-
                 },
                 {
                     "name": "peak_reactive_power",
@@ -304,7 +303,8 @@
                     "name": "bustype",
                     "comment": "Used to describe the connectivity and behavior of this bus. [Options are listed here.](@ref acbustypes_list)",
                     "null_value": "nothing",
-                    "data_type": "Union{Nothing, ACBusTypes}"
+                    "data_type": "Union{Nothing, ACBusTypes}",
+                    "openapi_enum": "ACBusType"
                 },
                 {
                     "name": "angle",
@@ -866,7 +866,7 @@
                     "comment": "An [`Arc`](@ref) defining this line `from` a bus `to` another bus",
                     "data_type": "Arc"
                 },
-               {
+                {
                     "null_value": "0.0",
                     "name": "r",
                     "data_type": "Float64",
@@ -992,21 +992,24 @@
                     "comment": "Type of discrete control",
                     "null_value": "DiscreteControlledBranchType.BREAKER",
                     "data_type": "DiscreteControlledBranchType",
-                    "default": "DiscreteControlledBranchType.OTHER"
+                    "default": "DiscreteControlledBranchType.OTHER",
+                    "openapi_enum": "DiscreteControlledACBranchDiscreteBranchType"
                 },
                 {
                     "name": "branch_status",
                     "comment": "Open or Close status",
                     "null_value": "DiscreteControlledBranchStatus.CLOSED",
                     "data_type": "DiscreteControlledBranchStatus",
-                    "default": "DiscreteControlledBranchStatus.CLOSED"
+                    "default": "DiscreteControlledBranchStatus.CLOSED",
+                    "openapi_enum": "DiscreteControlledACBranchBranchStatus"
                 },
                 {
                     "name": "normal_branch_status",
                     "comment": "Normal (as-designed) open or close status of the device",
                     "null_value": "DiscreteControlledBranchStatus.CLOSED",
                     "data_type": "DiscreteControlledBranchStatus",
-                    "default": "DiscreteControlledBranchStatus.CLOSED"
+                    "default": "DiscreteControlledBranchStatus.CLOSED",
+                    "openapi_enum": "DiscreteControlledACBranchNormalBranchStatus"
                 },
                 {
                     "name": "base_power",
@@ -1400,7 +1403,7 @@
                     "default": "nothing",
                     "data_type": "Union{Nothing, Float64}",
                     "valid_range": {
-                        "min": 1e-4,
+                        "min": 0.0001,
                         "max": null
                     },
                     "validation_action": "warn"
@@ -1414,7 +1417,7 @@
                     "default": "nothing",
                     "data_type": "Union{Nothing, Float64}",
                     "valid_range": {
-                        "min": 1e-4,
+                        "min": 0.0001,
                         "max": null
                     },
                     "validation_action": "warn"
@@ -1428,7 +1431,7 @@
                     "default": "nothing",
                     "data_type": "Union{Nothing, Float64}",
                     "valid_range": {
-                        "min": 1e-4,
+                        "min": 0.0001,
                         "max": null
                     },
                     "validation_action": "warn"
@@ -2410,7 +2413,7 @@
                     "null_value": "100.0",
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": 1e-4,
+                        "min": 0.0001,
                         "max": null
                     },
                     "validation_action": "warn"
@@ -2462,7 +2465,7 @@
         {
             "struct_name": "InterruptibleStandardLoad",
             "openapi_type": "InterruptibleStandardLoad",
-                "docstring": "A voltage-dependent [ZIP load](@ref Z), most commonly used for dynamics modeling.\n\nA `StandardLoad` breaks the ZIP into three pieces: Z (constant impedance), I (constant current), and P (constant power), according to `P = P_P * V^0 + P_I * V^1 + P_Z * V^2` for active power and `Q = Q_P * V^0 + Q_I * V^1 + Q_Z * V^2` for reactive power. (Voltage V is in per unit.)\n\nFor an alternative exponential formulation of the ZIP model, see [`ExponentialLoad`](@ref). For a simpler load model with no voltage dependency, see [`PowerLoad`](@ref)",
+            "docstring": "A voltage-dependent [ZIP load](@ref Z), most commonly used for dynamics modeling.\n\nA `StandardLoad` breaks the ZIP into three pieces: Z (constant impedance), I (constant current), and P (constant power), according to `P = P_P * V^0 + P_I * V^1 + P_Z * V^2` for active power and `Q = Q_P * V^0 + Q_I * V^1 + Q_Z * V^2` for reactive power. (Voltage V is in per unit.)\n\nFor an alternative exponential formulation of the ZIP model, see [`ExponentialLoad`](@ref). For a simpler load model with no voltage dependency, see [`PowerLoad`](@ref)",
             "fields": [
                 {
                     "null_value": "init",
@@ -2491,7 +2494,7 @@
                     "null_value": "100.0",
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": 1e-4,
+                        "min": 0.0001,
                         "max": null
                     },
                     "validation_action": "warn"
@@ -2720,7 +2723,7 @@
                     "null_value": "100.0",
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": 1e-4,
+                        "min": 0.0001,
                         "max": null
                     },
                     "validation_action": "warn"
@@ -3013,12 +3016,13 @@
                 },
                 {
                     "name": "solved_admittance",
-                    "comment": "Solved-case switched shunt admittance (PSS/E `BINIT`), or `nothing` when unset. When non-`nothing`, this value is the shunt's effective admittance, used in place of `number_engaged` \u22c5 `Y_increase`; power flow writes the solved-for admittance back to this field. Set it only when the case is to be treated as solved as read in, or when the device is locked (`control_mode == SwitchedAdmittanceControlMode.FIXED`).",
+                    "comment": "Solved-case switched shunt admittance (PSS/E `BINIT`), or `nothing` when unset. When non-`nothing`, this value is the shunt's effective admittance, used in place of `number_engaged` ⋅ `Y_increase`; power flow writes the solved-for admittance back to this field. Set it only when the case is to be treated as solved as read in, or when the device is locked (`control_mode == SwitchedAdmittanceControlMode.FIXED`).",
                     "null_value": "nothing",
                     "data_type": "Union{Nothing, Float64}",
                     "default": "nothing"
                 },
-                {   "name": "admittance_limits",
+                {
+                    "name": "admittance_limits",
                     "comment": "Shunt admittance limits for switched shunt model",
                     "null_value": "(min=0.0, max=0.0)",
                     "data_type": "MinMax",
@@ -3118,7 +3122,7 @@
                     "null_value": "100.0",
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": 1e-4,
+                        "min": 0.0001,
                         "max": null
                     },
                     "validation_action": "warn"
@@ -3225,7 +3229,7 @@
                     "null_value": "100.0",
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": 1e-4,
+                        "min": 0.0001,
                         "max": null
                     },
                     "validation_action": "warn"
@@ -3261,12 +3265,13 @@
                     "needs_conversion": true,
                     "conversion_unit": ":mvar"
                 },
-            {
+                {
                     "name": "motor_technology",
                     "comment": "AC Motor type. Options are listed [here](@ref motor_list)",
                     "null_value": "MotorLoadTechnology.UNDETERMINED",
                     "data_type": "MotorLoadTechnology",
-                    "default": "MotorLoadTechnology.UNDETERMINED"
+                    "default": "MotorLoadTechnology.UNDETERMINED",
+                    "openapi_enum": "MotorLoadMotorTechnology"
                 },
                 {
                     "name": "services",
@@ -3332,7 +3337,7 @@
                     "null_value": "100.0",
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": 1e-4,
+                        "min": 0.0001,
                         "max": null
                     },
                     "validation_action": "warn"
@@ -3555,7 +3560,7 @@
                     "null_value": "100.0",
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": 1e-4,
+                        "min": 0.0001,
                         "max": null
                     },
                     "validation_action": "warn"
@@ -3713,7 +3718,7 @@
                     "null_value": 100.0,
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": 1e-4,
+                        "min": 0.0001,
                         "max": null
                     }
                 },
@@ -3877,7 +3882,7 @@
                     "null_value": 100.0,
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": 1e-4,
+                        "min": 0.0001,
                         "max": null
                     }
                 },
@@ -4207,7 +4212,7 @@
                     "null_value": 100.0,
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": 1e-4,
+                        "min": 0.0001,
                         "max": null
                     }
                 },
@@ -4341,7 +4346,7 @@
                     "null_value": 100.0,
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": 1e-4,
+                        "min": 0.0001,
                         "max": null
                     },
                     "validation_action": "warn"
@@ -4604,7 +4609,7 @@
                     "null_value": 100.0,
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": 1e-4,
+                        "min": 0.0001,
                         "max": null
                     }
                 },
@@ -4767,7 +4772,7 @@
                     "null_value": "100.0",
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": 1e-4,
+                        "min": 0.0001,
                         "max": null
                     },
                     "validation_action": "warn"
@@ -4911,7 +4916,7 @@
                     "null_value": "100.0",
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": 1e-4,
+                        "min": 0.0001,
                         "max": null
                     },
                     "validation_action": "warn"
@@ -5007,7 +5012,8 @@
                     "comment": "Type of the turbine",
                     "null_value": "HydroTurbineType.UNKNOWN",
                     "data_type": "HydroTurbineType",
-                    "default": "HydroTurbineType.UNKNOWN"
+                    "default": "HydroTurbineType.UNKNOWN",
+                    "openapi_enum": "HydroTurbineTurbineType"
                 },
                 {
                     "name": "conversion_factor",
@@ -5203,7 +5209,7 @@
                     "null_value": "100.0",
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": 1e-4,
+                        "min": 0.0001,
                         "max": null
                     },
                     "validation_action": "warn"
@@ -5213,7 +5219,8 @@
                     "default": "HydroPumpTurbineStatus.OFF",
                     "name": "operating_mode",
                     "comment": "Mode the pumped‑storage unit is operating in: generating, pumping, or idle. See [HydroPumpTurbineStatus](@ref) for reference",
-                    "data_type": "HydroPumpTurbineStatus"
+                    "data_type": "HydroPumpTurbineStatus",
+                    "openapi_enum": "HydroPumpTurbineOperatingMode"
                 },
                 {
                     "null_value": "OperationalStates.OFFLINE",
@@ -5548,7 +5555,7 @@
                     "null_value": "100.0",
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": 1e-4,
+                        "min": 0.0001,
                         "max": null
                     },
                     "validation_action": "warn"
@@ -5664,7 +5671,7 @@
                     "null_value": "100.0",
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": 1e-4,
+                        "min": 0.0001,
                         "max": null
                     },
                     "validation_action": "warn"
@@ -5813,7 +5820,7 @@
                     "null_value": "100.0",
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": 1e-4,
+                        "min": 0.0001,
                         "max": null
                     },
                     "validation_action": "warn"
@@ -5954,7 +5961,7 @@
                     "null_value": "100.0",
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": 1e-4,
+                        "min": 0.0001,
                         "max": null
                     },
                     "validation_action": "warn"
@@ -6164,7 +6171,7 @@
                     "null_value": "100.0",
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": 1e-4,
+                        "min": 0.0001,
                         "max": null
                     },
                     "validation_action": "warn"
@@ -6365,7 +6372,7 @@
                     "null_value": "100.0",
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": 1e-4,
+                        "min": 0.0001,
                         "max": null
                     },
                     "validation_action": "warn"

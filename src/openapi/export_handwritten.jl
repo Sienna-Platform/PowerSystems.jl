@@ -791,8 +791,19 @@ end
 # type allows both (a `System` built directly, not round-tripped, may hold either), so export
 # supports both rather than narrowing to what import currently reads.
 
-_hvdc_loss_to_openapi(loss::AnyLossCurve) =
-    PC.TwoTerminalLoss(convert_cost_to_openapi(loss_curve_to_openapi(loss)))
+# The schemas collapsed the two loss-curve wrappers into one `LossCurve`, which -- unlike the
+# `TwoTerminalLoss` it replaced -- records the basis in its own required `power_units`. The
+# basis is still derived rather than hardcoded, even though `loss_curve_to_openapi`'s guard
+# means it is always natural units today: when that guard is lifted this stamps the real basis
+# with no further change here.
+function _hvdc_loss_to_openapi(loss::AnyLossCurve)
+    return PC.LossCurve(;
+        power_units = IC.UnitSystem(_power_units_string(get_power_units(loss))),
+        value_curve = PC.LossValueCurve(
+            convert_cost_to_openapi(loss_curve_to_openapi(loss)),
+        ),
+    )
+end
 
 function to_openapi(
     hvdc::TwoTerminalGenericHVDCLine,

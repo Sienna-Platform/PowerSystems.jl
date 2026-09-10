@@ -9,11 +9,12 @@
 # value positionally, matching how `PowerOperationsOpenAPIModels`/`PowerCoreOpenAPIModels`
 # generate them.
 
-_power_units_to_string(::NaturalUnit, ::ProductionVariableCostCurve) = "NATURAL_UNITS"
+_power_units_to_string(::NaturalUnit, ::ProductionVariableCostCurve) =
+    IC.UnitSystem("NATURAL_UNITS")
 _power_units_to_string(
     ::ComponentBaseUnit,
     ::ProductionVariableCostCurve,
-) = "COMPONENT_BASE"
+) = IC.UnitSystem("COMPONENT_BASE")
 
 """`CostCurve.power_units`/`FuelCurve.power_units` carry no system-base member — a curve whose
 per-unit data is on the system base is expected to record that base in the owning component's
@@ -221,7 +222,7 @@ end
 _storage_start_up_to_openapi(x::Real) = PC.StorageCostStartUp(Float64(x))
 function _storage_start_up_to_openapi(x::NamedTuple)
     return PC.StorageCostStartUp(
-        PC.StorageCostStartUpOneOf(; charge = x.charge, discharge = x.discharge),
+        PC.ChargeDischarge(; charge = x.charge, discharge = x.discharge),
     )
 end
 

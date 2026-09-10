@@ -149,15 +149,12 @@ has_component_id(refs::OpenAPIRefs, component) = haskey(refs.id_by_component, co
 The `CU`/`NU` marker `raw` (a component blob's `power_units` string) selects, for the type
 named `component_type` and document id `id` — both carried only for the error message.
 
-`OpenAPI.from_json` does not enforce the schema's `required`, so a blob whose `power_units`
-deserializes to `nothing` must still error here, naming the offending type and id, rather than
-silently defaulting to either basis.
+Kept as an explicit check rather than leaning on deserialization: `decode` does enforce the
+schema's `required` under OpenAPI.jl 1.x (0.2's `from_json` did not), but a blob whose
+`power_units` still arrives absent must error here naming the offending type and id, rather
+than silently defaulting to either basis.
 """
-function _power_units_marker(component_type::AbstractString, id, raw)
-    isnothing(raw) && error(
-        "from_openapi: $component_type id=$id has no power_units — every power-bearing " *
-        "component blob must state \"COMPONENT_BASE\" or \"NATURAL_UNITS\"",
-    )
+function _power_units_marker(component_type::AbstractString, id, raw::AbstractString)
     raw == "COMPONENT_BASE" && return CU
     raw == "NATURAL_UNITS" && return NU
     error(
@@ -166,16 +163,37 @@ function _power_units_marker(component_type::AbstractString, id, raw)
     )
 end
 
-"""The wire `power_units` string a `CU`/`NU` marker stamps on export — the inverse of
-[`_power_units_marker`](@ref)."""
-_power_units_string(::ComponentBaseUnit) = "COMPONENT_BASE"
-_power_units_string(::NaturalUnit) = "NATURAL_UNITS"
+# The document's `power_units` is a validating wrapper struct under OpenAPI.jl 1.x, not the
+# bare string 0.2 produced, so unwrap by dispatch rather than making every generated call
+# site reach for `.value`.
+_power_units_marker(component_type::AbstractString, id, units::IC.UnitSystem) =
+    _power_units_marker(component_type, id, units.value)
+
+# `Absent` (key missing) and `nothing` (explicit JSON null) both mean the blob never stated a
+# basis. Erroring by dispatch keeps the two out of the string path, where they would compare
+# unequal to both spellings and report a confusing "unmapped" value.
+_power_units_marker(component_type::AbstractString, id, ::Union{Nothing, IC.Absent}) =
+    error(
+        "from_openapi: $component_type id=$id has no power_units — every power-bearing " *
+        "component blob must state \"COMPONENT_BASE\" or \"NATURAL_UNITS\"",
+    )
 
 """
-`po.base_power`, required: every power-bearing component blob must state its own.
-`OpenAPI.from_json` does not enforce the schema's `required`, so a blob whose `base_power`
-deserializes to `nothing` must still error here, naming the offending type and id, rather than
-silently defaulting.
+The wire `power_units` value a `CU`/`NU` marker stamps on export — the inverse of
+[`_power_units_marker`](@ref).
+
+Returns the `IC.UnitSystem` wrapper rather than the bare string OpenAPI.jl 0.2 accepted:
+1.x validates the enum in that wrapper's constructor. Wrapping here rather than at each of
+the ~30 export call sites keeps one place deciding the wire representation.
+"""
+_power_units_string(::ComponentBaseUnit) = IC.UnitSystem("COMPONENT_BASE")
+_power_units_string(::NaturalUnit) = IC.UnitSystem("NATURAL_UNITS")
+
+"""
+`po.base_power`, required: every power-bearing component blob must state its own. Checked
+explicitly rather than left to deserialization: `decode` does enforce the schema's `required`
+under OpenAPI.jl 1.x (0.2's `from_json` did not), but a blob whose `base_power` still arrives
+absent must error here, naming the offending type and id, rather than silently defaulting.
 """
 function _require_base_power(component_type::AbstractString, id, base_power)
     isnothing(base_power) && error(

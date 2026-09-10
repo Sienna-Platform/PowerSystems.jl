@@ -503,7 +503,7 @@ before `to_openapi(attr, refs)` reads that id back. The store's rows already arr
 `(component_id, attribute_id)`, so document order tracks component order with no local sort.
 """
 function _export_supplemental_attributes(refs::OpenAPIRefs, sys::System)
-    attribute_rows = OpenAPI.APIModel[]
+    attribute_rows = IC.APIModel[]
     association_rows = IC.SupplementalAttributeAssociation[]
     plant_association_rows = PO.PlantAssociation[]
     combined_cycle_association_rows = PO.CombinedCycleAssociation[]
@@ -680,8 +680,8 @@ unrecognized symbol is refused rather than defaulted.
 The stamp is uniform across an export because PSY records no per-component creation basis.
 Reading is not uniform: `from_openapi` honors the `power_units` on each individual blob, so a
 document written elsewhere with a mixed basis loads correctly, and a blob that omits the field
-is an error — `OpenAPI.from_json` does not enforce the schema's `required`, so the check is
-made explicitly rather than defaulting to a basis and silently rescaling the value.
+is an error — the check is made explicitly, rather than defaulting to a basis and silently
+rescaling the value, so the failure names the offending component.
 
 Any `System` is exportable either way, however it was built.
 
