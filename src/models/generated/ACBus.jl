@@ -151,7 +151,7 @@ set_load_zone!(value::ACBus, val) = value.load_zone = val
 set_ext!(value::ACBus, val) = value.ext = val
 
 
-function from_openapi(po::PO.ACBus, refs::OpenAPIRefs, ::DeviceBaseUnit)
+function from_openapi(po::PO.ACBus, refs::OpenAPIRefs, ::ComponentBaseUnit)
     return ACBus(;
         number = po.number,
         name = po.name,
@@ -182,10 +182,10 @@ function from_openapi(po::PO.ACBus, refs::OpenAPIRefs, ::NaturalUnit)
 end
 
 function from_openapi(po::PO.ACBus, refs::OpenAPIRefs)
-    return from_openapi(po, refs, DU)
+    return from_openapi(po, refs, CU)
 end
 
-function to_openapi(value::ACBus, refs::OpenAPIRefs, ::DeviceBaseUnit)
+function to_openapi(value::ACBus, refs::OpenAPIRefs, ::ComponentBaseUnit)
     return PO.ACBus(;
         id = component_id(refs, value),
         number = get_number(value),

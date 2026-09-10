@@ -167,12 +167,12 @@ end
 
 # ── power_units resolution ───────────────────────────────────────────────────────
 
-"""Resolve the `power_units` kwarg to the `DU`/`NU` marker every exported component blob is
+"""Resolve the `power_units` kwarg to the `CU`/`NU` marker every exported component blob is
 stamped with — a uniform stamp per export, since PSY does not record a per-component creation
 basis."""
 function _resolve_export_power_units(power_units::Symbol)
     if power_units === :component_base
-        return DU
+        return CU
     elseif power_units === :natural_units
         return NU
     else
@@ -671,7 +671,7 @@ consumers key a row by id without its type.
     conversion runs and the numbers on disk are the numbers in memory.
   - `:natural_units` stamps `"NATURAL_UNITS"` and converts to physical units (MW, MVAr, MVA).
 
-Anything else errors: the mapping to the internal `DU`/`NU` markers is explicit, so an
+Anything else errors: the mapping to the internal `CU`/`NU` markers is explicit, so an
 unrecognized symbol is refused rather than defaulted.
 
 The stamp is uniform across an export because PSY records no per-component creation basis.

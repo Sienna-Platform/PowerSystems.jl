@@ -1,7 +1,7 @@
 # Export-direction helpers shared by the generated `to_openapi` methods (emitted by
 # `compute_openapi_export_converter!` in src/generate_structs.jl) and by export_handwritten.jl.
 
-# ── Compound-field helpers (device-base pu) ──
+# ── Compound-field helpers (component-base pu) ──
 
 _minmax_po(nt) = IC.MinMax(; min = nt.min, max = nt.max)
 _minmax_po_optional(::Nothing) = nothing

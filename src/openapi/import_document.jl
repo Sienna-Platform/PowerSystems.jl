@@ -360,7 +360,7 @@ end
 # through `SupplementalAttributeAssociation.attribute_type` and its type registry, so the
 # type is known here and Julia's dispatch replaces what used to be a parallel string table
 # in this file. None of these embed unit-converted fields, so unlike the per-component
-# converters they take no `::DeviceBaseUnit`/`::NaturalUnit` marker argument. Every method
+# converters they take no `::ComponentBaseUnit`/`::NaturalUnit` marker argument. Every method
 # takes `refs` so the attribute walk (`load_supplemental_attribute_associations!` in
 # sqlite_load.jl) can call one
 # signature uniformly; only the three `Outage` types read it, to resolve document-id

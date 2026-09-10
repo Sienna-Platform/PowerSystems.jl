@@ -309,8 +309,8 @@ function _circuit_check_xfrm(name, bus_from, bus_to)
     set_name!(xfrm, name)
     w = get_circuit(xfrm)
     set_arc!(w, Arc(; from = bus_from, to = bus_to))
-    set_rating!(w, 1.0 * DU)
-    set_x!(xfrm, 0.1 * DU)
+    set_rating!(w, 1.0 * CU)
+    set_x!(xfrm, 0.1 * CU)
     return xfrm
 end
 

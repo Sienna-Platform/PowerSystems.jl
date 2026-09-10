@@ -143,49 +143,49 @@ get_available(value::ThermalStandard) = value.available
 get_status(value::ThermalStandard) = value.status
 """Get [`ThermalStandard`](@ref) `bus`."""
 get_bus(value::ThermalStandard) = value.bus
-"""Get [`ThermalStandard`](@ref) `active_power` as a bare number in the requested `units` (e.g. `SU`, `DU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_active_power_unitful`](@ref)."""
+"""Get [`ThermalStandard`](@ref) `active_power` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_active_power_unitful`](@ref)."""
 get_active_power(value::ThermalStandard, units) = InfrastructureSystems._strip_units(get_value(value, Val(:active_power), Val(:mw), units))
-"""Get [`ThermalStandard`](@ref) `active_power` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `u"MW"`). For a bare number see [`get_active_power`](@ref)."""
+"""Get [`ThermalStandard`](@ref) `active_power` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_active_power`](@ref)."""
 get_active_power_unitful(value::ThermalStandard, units) = get_value(value, Val(:active_power), Val(:mw), units)
 get_active_power(value::ThermalStandard) = _units_arg_required(get_active_power, value, :active_power, Val(:mw))
 get_active_power_unitful(value::ThermalStandard) = _units_arg_required(get_active_power_unitful, value, :active_power, Val(:mw))
 InfrastructureSystems.display_units_arg(::typeof(get_active_power), ::Type{ThermalStandard}) = InfrastructureSystems.SU
 InfrastructureSystems.display_units_arg(::typeof(get_active_power_unitful), ::Type{ThermalStandard}) = InfrastructureSystems.SU
-"""Get [`ThermalStandard`](@ref) `reactive_power` as a bare number in the requested `units` (e.g. `SU`, `DU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_reactive_power_unitful`](@ref)."""
+"""Get [`ThermalStandard`](@ref) `reactive_power` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_reactive_power_unitful`](@ref)."""
 get_reactive_power(value::ThermalStandard, units) = InfrastructureSystems._strip_units(get_value(value, Val(:reactive_power), Val(:mvar), units))
-"""Get [`ThermalStandard`](@ref) `reactive_power` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `u"MW"`). For a bare number see [`get_reactive_power`](@ref)."""
+"""Get [`ThermalStandard`](@ref) `reactive_power` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_reactive_power`](@ref)."""
 get_reactive_power_unitful(value::ThermalStandard, units) = get_value(value, Val(:reactive_power), Val(:mvar), units)
 get_reactive_power(value::ThermalStandard) = _units_arg_required(get_reactive_power, value, :reactive_power, Val(:mvar))
 get_reactive_power_unitful(value::ThermalStandard) = _units_arg_required(get_reactive_power_unitful, value, :reactive_power, Val(:mvar))
 InfrastructureSystems.display_units_arg(::typeof(get_reactive_power), ::Type{ThermalStandard}) = InfrastructureSystems.SU
 InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_unitful), ::Type{ThermalStandard}) = InfrastructureSystems.SU
-"""Get [`ThermalStandard`](@ref) `rating` as a bare number in the requested `units` (e.g. `SU`, `DU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_rating_unitful`](@ref)."""
+"""Get [`ThermalStandard`](@ref) `rating` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_rating_unitful`](@ref)."""
 get_rating(value::ThermalStandard, units) = InfrastructureSystems._strip_units(get_value(value, Val(:rating), Val(:mva), units))
-"""Get [`ThermalStandard`](@ref) `rating` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `u"MW"`). For a bare number see [`get_rating`](@ref)."""
+"""Get [`ThermalStandard`](@ref) `rating` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_rating`](@ref)."""
 get_rating_unitful(value::ThermalStandard, units) = get_value(value, Val(:rating), Val(:mva), units)
 get_rating(value::ThermalStandard) = _units_arg_required(get_rating, value, :rating, Val(:mva))
 get_rating_unitful(value::ThermalStandard) = _units_arg_required(get_rating_unitful, value, :rating, Val(:mva))
-InfrastructureSystems.display_units_arg(::typeof(get_rating), ::Type{ThermalStandard}) = InfrastructureSystems.DU
-InfrastructureSystems.display_units_arg(::typeof(get_rating_unitful), ::Type{ThermalStandard}) = InfrastructureSystems.DU
-"""Get [`ThermalStandard`](@ref) `active_power_limits` as a bare number in the requested `units` (e.g. `SU`, `DU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_active_power_limits_unitful`](@ref)."""
+InfrastructureSystems.display_units_arg(::typeof(get_rating), ::Type{ThermalStandard}) = InfrastructureSystems.CU
+InfrastructureSystems.display_units_arg(::typeof(get_rating_unitful), ::Type{ThermalStandard}) = InfrastructureSystems.CU
+"""Get [`ThermalStandard`](@ref) `active_power_limits` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_active_power_limits_unitful`](@ref)."""
 get_active_power_limits(value::ThermalStandard, units) = InfrastructureSystems._strip_units(get_value(value, Val(:active_power_limits), Val(:mw), units))
-"""Get [`ThermalStandard`](@ref) `active_power_limits` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `u"MW"`). For a bare number see [`get_active_power_limits`](@ref)."""
+"""Get [`ThermalStandard`](@ref) `active_power_limits` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_active_power_limits`](@ref)."""
 get_active_power_limits_unitful(value::ThermalStandard, units) = get_value(value, Val(:active_power_limits), Val(:mw), units)
 get_active_power_limits(value::ThermalStandard) = _units_arg_required(get_active_power_limits, value, :active_power_limits, Val(:mw))
 get_active_power_limits_unitful(value::ThermalStandard) = _units_arg_required(get_active_power_limits_unitful, value, :active_power_limits, Val(:mw))
 InfrastructureSystems.display_units_arg(::typeof(get_active_power_limits), ::Type{ThermalStandard}) = InfrastructureSystems.SU
 InfrastructureSystems.display_units_arg(::typeof(get_active_power_limits_unitful), ::Type{ThermalStandard}) = InfrastructureSystems.SU
-"""Get [`ThermalStandard`](@ref) `reactive_power_limits` as a bare number in the requested `units` (e.g. `SU`, `DU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_reactive_power_limits_unitful`](@ref)."""
+"""Get [`ThermalStandard`](@ref) `reactive_power_limits` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_reactive_power_limits_unitful`](@ref)."""
 get_reactive_power_limits(value::ThermalStandard, units) = InfrastructureSystems._strip_units(get_value(value, Val(:reactive_power_limits), Val(:mvar), units))
-"""Get [`ThermalStandard`](@ref) `reactive_power_limits` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `u"MW"`). For a bare number see [`get_reactive_power_limits`](@ref)."""
+"""Get [`ThermalStandard`](@ref) `reactive_power_limits` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_reactive_power_limits`](@ref)."""
 get_reactive_power_limits_unitful(value::ThermalStandard, units) = get_value(value, Val(:reactive_power_limits), Val(:mvar), units)
 get_reactive_power_limits(value::ThermalStandard) = _units_arg_required(get_reactive_power_limits, value, :reactive_power_limits, Val(:mvar))
 get_reactive_power_limits_unitful(value::ThermalStandard) = _units_arg_required(get_reactive_power_limits_unitful, value, :reactive_power_limits, Val(:mvar))
 InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_limits), ::Type{ThermalStandard}) = InfrastructureSystems.SU
 InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_limits_unitful), ::Type{ThermalStandard}) = InfrastructureSystems.SU
-"""Get [`ThermalStandard`](@ref) `ramp_limits` as a bare number in the requested `units` (e.g. `SU`, `DU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_ramp_limits_unitful`](@ref)."""
+"""Get [`ThermalStandard`](@ref) `ramp_limits` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_ramp_limits_unitful`](@ref)."""
 get_ramp_limits(value::ThermalStandard, units) = InfrastructureSystems._strip_units(get_value(value, Val(:ramp_limits), Val(:mw), units))
-"""Get [`ThermalStandard`](@ref) `ramp_limits` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `u"MW"`). For a bare number see [`get_ramp_limits`](@ref)."""
+"""Get [`ThermalStandard`](@ref) `ramp_limits` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_ramp_limits`](@ref)."""
 get_ramp_limits_unitful(value::ThermalStandard, units) = get_value(value, Val(:ramp_limits), Val(:mw), units)
 get_ramp_limits(value::ThermalStandard) = _units_arg_required(get_ramp_limits, value, :ramp_limits, Val(:mw))
 get_ramp_limits_unitful(value::ThermalStandard) = _units_arg_required(get_ramp_limits_unitful, value, :ramp_limits, Val(:mw))
@@ -259,7 +259,7 @@ set_time_at_status!(value::ThermalStandard, val) = value.time_at_status = val
 set_ext!(value::ThermalStandard, val) = value.ext = val
 
 
-function from_openapi(po::PO.ThermalStandard, refs::OpenAPIRefs, ::DeviceBaseUnit)
+function from_openapi(po::PO.ThermalStandard, refs::OpenAPIRefs, ::ComponentBaseUnit)
     return ThermalStandard(;
         name = po.name,
         available = po.available,
@@ -307,19 +307,19 @@ function from_openapi(po::PO.ThermalStandard, refs::OpenAPIRefs)
     return from_openapi(po, refs, _power_units_marker("ThermalStandard", po.id, po.power_units))
 end
 
-function to_openapi(value::ThermalStandard, refs::OpenAPIRefs, ::DeviceBaseUnit)
+function to_openapi(value::ThermalStandard, refs::OpenAPIRefs, ::ComponentBaseUnit)
     return PO.ThermalStandard(;
         id = component_id(refs, value),
         name = get_name(value),
         available = get_available(value),
         status = string(get_status(value)),
         bus = component_id(refs, get_bus(value)),
-        active_power = get_active_power(value, DU),
-        reactive_power = get_reactive_power(value, DU),
-        rating = get_rating(value, DU),
-        active_power_limits = _minmax_po(get_active_power_limits(value, DU)),
-        reactive_power_limits = _minmax_po_optional(get_reactive_power_limits(value, DU)),
-        ramp_limits = _updown_po_optional(get_ramp_limits(value, DU)),
+        active_power = get_active_power(value, CU),
+        reactive_power = get_reactive_power(value, CU),
+        rating = get_rating(value, CU),
+        active_power_limits = _minmax_po(get_active_power_limits(value, CU)),
+        reactive_power_limits = _minmax_po_optional(get_reactive_power_limits(value, CU)),
+        ramp_limits = _updown_po_optional(get_ramp_limits(value, CU)),
         operation_cost = convert_cost_to_openapi(get_operation_cost(value)),
         base_power = _get_base_power(value),
         time_limits = _updown_po_optional(get_time_limits(value)),
@@ -327,7 +327,7 @@ function to_openapi(value::ThermalStandard, refs::OpenAPIRefs, ::DeviceBaseUnit)
         prime_mover_type = string(get_prime_mover_type(value)),
         fuel = string(get_fuel(value)),
         time_at_status = get_time_at_status(value),
-        power_units = _power_units_string(DU),
+        power_units = _power_units_string(CU),
     )
 end
 
@@ -338,12 +338,12 @@ function to_openapi(value::ThermalStandard, refs::OpenAPIRefs, ::NaturalUnit)
         available = get_available(value),
         status = string(get_status(value)),
         bus = component_id(refs, get_bus(value)),
-        active_power = get_active_power(value, DU) * _get_base_power(value),
-        reactive_power = get_reactive_power(value, DU) * _get_base_power(value),
-        rating = get_rating(value, DU) * _get_base_power(value),
-        active_power_limits = _minmax_po_scaled(get_active_power_limits(value, DU), _get_base_power(value)),
-        reactive_power_limits = _minmax_po_scaled_optional(get_reactive_power_limits(value, DU), _get_base_power(value)),
-        ramp_limits = _updown_po_scaled_optional(get_ramp_limits(value, DU), _get_base_power(value)),
+        active_power = get_active_power(value, CU) * _get_base_power(value),
+        reactive_power = get_reactive_power(value, CU) * _get_base_power(value),
+        rating = get_rating(value, CU) * _get_base_power(value),
+        active_power_limits = _minmax_po_scaled(get_active_power_limits(value, CU), _get_base_power(value)),
+        reactive_power_limits = _minmax_po_scaled_optional(get_reactive_power_limits(value, CU), _get_base_power(value)),
+        ramp_limits = _updown_po_scaled_optional(get_ramp_limits(value, CU), _get_base_power(value)),
         operation_cost = convert_cost_to_openapi(get_operation_cost(value)),
         base_power = _get_base_power(value),
         time_limits = _updown_po_optional(get_time_limits(value)),

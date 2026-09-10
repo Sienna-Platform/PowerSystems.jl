@@ -111,17 +111,17 @@ get_name(value::ExponentialLoad) = value.name
 get_available(value::ExponentialLoad) = value.available
 """Get [`ExponentialLoad`](@ref) `bus`."""
 get_bus(value::ExponentialLoad) = value.bus
-"""Get [`ExponentialLoad`](@ref) `active_power` as a bare number in the requested `units` (e.g. `SU`, `DU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_active_power_unitful`](@ref)."""
+"""Get [`ExponentialLoad`](@ref) `active_power` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_active_power_unitful`](@ref)."""
 get_active_power(value::ExponentialLoad, units) = InfrastructureSystems._strip_units(get_value(value, Val(:active_power), Val(:mw), units))
-"""Get [`ExponentialLoad`](@ref) `active_power` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `u"MW"`). For a bare number see [`get_active_power`](@ref)."""
+"""Get [`ExponentialLoad`](@ref) `active_power` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_active_power`](@ref)."""
 get_active_power_unitful(value::ExponentialLoad, units) = get_value(value, Val(:active_power), Val(:mw), units)
 get_active_power(value::ExponentialLoad) = _units_arg_required(get_active_power, value, :active_power, Val(:mw))
 get_active_power_unitful(value::ExponentialLoad) = _units_arg_required(get_active_power_unitful, value, :active_power, Val(:mw))
 InfrastructureSystems.display_units_arg(::typeof(get_active_power), ::Type{ExponentialLoad}) = InfrastructureSystems.SU
 InfrastructureSystems.display_units_arg(::typeof(get_active_power_unitful), ::Type{ExponentialLoad}) = InfrastructureSystems.SU
-"""Get [`ExponentialLoad`](@ref) `reactive_power` as a bare number in the requested `units` (e.g. `SU`, `DU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_reactive_power_unitful`](@ref)."""
+"""Get [`ExponentialLoad`](@ref) `reactive_power` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_reactive_power_unitful`](@ref)."""
 get_reactive_power(value::ExponentialLoad, units) = InfrastructureSystems._strip_units(get_value(value, Val(:reactive_power), Val(:mvar), units))
-"""Get [`ExponentialLoad`](@ref) `reactive_power` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `u"MW"`). For a bare number see [`get_reactive_power`](@ref)."""
+"""Get [`ExponentialLoad`](@ref) `reactive_power` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_reactive_power`](@ref)."""
 get_reactive_power_unitful(value::ExponentialLoad, units) = get_value(value, Val(:reactive_power), Val(:mvar), units)
 get_reactive_power(value::ExponentialLoad) = _units_arg_required(get_reactive_power, value, :reactive_power, Val(:mvar))
 get_reactive_power_unitful(value::ExponentialLoad) = _units_arg_required(get_reactive_power_unitful, value, :reactive_power, Val(:mvar))
@@ -133,17 +133,17 @@ get_α(value::ExponentialLoad) = value.α
 get_β(value::ExponentialLoad) = value.β
 
 _get_base_power(value::ExponentialLoad) = value.base_power
-"""Get [`ExponentialLoad`](@ref) `max_active_power` as a bare number in the requested `units` (e.g. `SU`, `DU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_max_active_power_unitful`](@ref)."""
+"""Get [`ExponentialLoad`](@ref) `max_active_power` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_max_active_power_unitful`](@ref)."""
 get_max_active_power(value::ExponentialLoad, units) = InfrastructureSystems._strip_units(get_value(value, Val(:max_active_power), Val(:mw), units))
-"""Get [`ExponentialLoad`](@ref) `max_active_power` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `u"MW"`). For a bare number see [`get_max_active_power`](@ref)."""
+"""Get [`ExponentialLoad`](@ref) `max_active_power` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_max_active_power`](@ref)."""
 get_max_active_power_unitful(value::ExponentialLoad, units) = get_value(value, Val(:max_active_power), Val(:mw), units)
 get_max_active_power(value::ExponentialLoad) = _units_arg_required(get_max_active_power, value, :max_active_power, Val(:mw))
 get_max_active_power_unitful(value::ExponentialLoad) = _units_arg_required(get_max_active_power_unitful, value, :max_active_power, Val(:mw))
 InfrastructureSystems.display_units_arg(::typeof(get_max_active_power), ::Type{ExponentialLoad}) = InfrastructureSystems.SU
 InfrastructureSystems.display_units_arg(::typeof(get_max_active_power_unitful), ::Type{ExponentialLoad}) = InfrastructureSystems.SU
-"""Get [`ExponentialLoad`](@ref) `max_reactive_power` as a bare number in the requested `units` (e.g. `SU`, `DU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_max_reactive_power_unitful`](@ref)."""
+"""Get [`ExponentialLoad`](@ref) `max_reactive_power` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_max_reactive_power_unitful`](@ref)."""
 get_max_reactive_power(value::ExponentialLoad, units) = InfrastructureSystems._strip_units(get_value(value, Val(:max_reactive_power), Val(:mvar), units))
-"""Get [`ExponentialLoad`](@ref) `max_reactive_power` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `u"MW"`). For a bare number see [`get_max_reactive_power`](@ref)."""
+"""Get [`ExponentialLoad`](@ref) `max_reactive_power` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_max_reactive_power`](@ref)."""
 get_max_reactive_power_unitful(value::ExponentialLoad, units) = get_value(value, Val(:max_reactive_power), Val(:mvar), units)
 get_max_reactive_power(value::ExponentialLoad) = _units_arg_required(get_max_reactive_power, value, :max_reactive_power, Val(:mvar))
 get_max_reactive_power_unitful(value::ExponentialLoad) = _units_arg_required(get_max_reactive_power_unitful, value, :max_reactive_power, Val(:mvar))
@@ -188,7 +188,7 @@ set_services!(value::ExponentialLoad, val) = value.services = val
 set_ext!(value::ExponentialLoad, val) = value.ext = val
 
 
-function from_openapi(po::PO.ExponentialLoad, refs::OpenAPIRefs, ::DeviceBaseUnit)
+function from_openapi(po::PO.ExponentialLoad, refs::OpenAPIRefs, ::ComponentBaseUnit)
     return ExponentialLoad(;
         name = po.name,
         available = po.available,
@@ -224,21 +224,21 @@ function from_openapi(po::PO.ExponentialLoad, refs::OpenAPIRefs)
     return from_openapi(po, refs, _power_units_marker("ExponentialLoad", po.id, po.power_units))
 end
 
-function to_openapi(value::ExponentialLoad, refs::OpenAPIRefs, ::DeviceBaseUnit)
+function to_openapi(value::ExponentialLoad, refs::OpenAPIRefs, ::ComponentBaseUnit)
     return PO.ExponentialLoad(;
         id = component_id(refs, value),
         name = get_name(value),
         available = get_available(value),
         bus = component_id(refs, get_bus(value)),
-        active_power = get_active_power(value, DU),
-        reactive_power = get_reactive_power(value, DU),
+        active_power = get_active_power(value, CU),
+        reactive_power = get_reactive_power(value, CU),
         alpha = get_α(value),
         beta = get_β(value),
         base_power = _get_base_power(value),
-        max_active_power = get_max_active_power(value, DU),
-        max_reactive_power = get_max_reactive_power(value, DU),
+        max_active_power = get_max_active_power(value, CU),
+        max_reactive_power = get_max_reactive_power(value, CU),
         conformity = string(get_conformity(value)),
-        power_units = _power_units_string(DU),
+        power_units = _power_units_string(CU),
     )
 end
 
@@ -248,13 +248,13 @@ function to_openapi(value::ExponentialLoad, refs::OpenAPIRefs, ::NaturalUnit)
         name = get_name(value),
         available = get_available(value),
         bus = component_id(refs, get_bus(value)),
-        active_power = get_active_power(value, DU) * _get_base_power(value),
-        reactive_power = get_reactive_power(value, DU) * _get_base_power(value),
+        active_power = get_active_power(value, CU) * _get_base_power(value),
+        reactive_power = get_reactive_power(value, CU) * _get_base_power(value),
         alpha = get_α(value),
         beta = get_β(value),
         base_power = _get_base_power(value),
-        max_active_power = get_max_active_power(value, DU) * _get_base_power(value),
-        max_reactive_power = get_max_reactive_power(value, DU) * _get_base_power(value),
+        max_active_power = get_max_active_power(value, CU) * _get_base_power(value),
+        max_reactive_power = get_max_reactive_power(value, CU) * _get_base_power(value),
         conformity = string(get_conformity(value)),
         power_units = _power_units_string(NU),
     )

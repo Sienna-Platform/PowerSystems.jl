@@ -681,7 +681,7 @@ export UnitSystem # internal.jl
 # `u"S"`, and PSY's own `u"MVA"`/`u"MVAr"`); re-exporting `@u_str` means `using
 # PowerSystems` is enough to write them without also importing Unitful.
 export @u_str
-export DU, SU, NU, DeviceBaseUnit, SystemBaseUnit, NaturalUnit
+export CU, SU, NU, ComponentBaseUnit, SystemBaseUnit, NaturalUnit
 export AbstractRelativeUnit, RelativeQuantity
 export UnitCategory, AbstractPowerCategory,
     ActivePowerCategory, ReactivePowerCategory, ApparentPowerCategory,
@@ -757,16 +757,16 @@ const PD = PowerOpenAPIModels
 using Unitful: @u_str, @unit, Quantity, Units, uconvert, ustrip
 
 # Relative-unit primitives live in IS; PSY re-exports them for downstream
-# packages so that `PSY.DU`, `PSY.RelativeQuantity`, etc. keep working.
+# packages so that `PSY.CU`, `PSY.RelativeQuantity`, etc. keep working.
 # `get_value`/`set_value` are IS's units-interface generics: PSY EXTENDS them
 # (adds the power-domain methods) rather than defining its own functions.
 import InfrastructureSystems:
     AbstractRelativeUnit,
-    DeviceBaseUnit,
+    ComponentBaseUnit,
     SystemBaseUnit,
     NaturalUnit,
     RelativeQuantity,
-    DU,
+    CU,
     SU,
     NU,
     get_value,

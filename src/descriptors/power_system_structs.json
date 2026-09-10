@@ -477,7 +477,7 @@
         },
         {
             "struct_name": "TransformerCircuit",
-            "docstring": "The data defining one modeled arc of a transformer.\n\nA [`TwoWindingTransformer`](@ref) has one circuit; a [`ThreeWindingTransformer`](@ref) has three, each connecting a terminal bus to the star bus. Circuit `available` is the single source of truth for availability; the owning transformer derives its availability from its circuits. `r`/`x` are the circuit impedance (for a two-winding transformer, the series impedance; for a three-winding transformer, the star-leg equivalent), in pu (device base) on `base_power` referenced to `base_voltage_primary`. `rating`/`rating_b`/`rating_c` and the flow fields are stored in device base per unit on `base_power` (MVA). Tap-changer / phase-shifter control is described by the flat control fields: `control_objective = UNDEFINED` means the circuit has no control block. `base_voltage_primary`/`base_voltage_secondary` are the two terminal-side base voltages in kV. For a [`TwoWindingTransformer`](@ref), the single circuit's `base_power` is the transformer's device base.",
+            "docstring": "The data defining one modeled arc of a transformer.\n\nA [`TwoWindingTransformer`](@ref) has one circuit; a [`ThreeWindingTransformer`](@ref) has three, each connecting a terminal bus to the star bus. Circuit `available` is the single source of truth for availability; the owning transformer derives its availability from its circuits. `r`/`x` are the circuit impedance (for a two-winding transformer, the series impedance; for a three-winding transformer, the star-leg equivalent), in pu (component base) on `base_power` referenced to `base_voltage_primary`. `rating`/`rating_b`/`rating_c` and the flow fields are stored in component base per unit on `base_power` (MVA). Tap-changer / phase-shifter control is described by the flat control fields: `control_objective = UNDEFINED` means the circuit has no control block. `base_voltage_primary`/`base_voltage_secondary` are the two terminal-side base voltages in kV. For a [`TwoWindingTransformer`](@ref), the single circuit's `base_power` is the transformer's component base.",
             "fields": [
                 {
                     "name": "available",
@@ -510,7 +510,7 @@
                     "name": "r",
                     "data_type": "Float64",
                     "default": "0.0",
-                    "comment": "Circuit resistance in pu (device base on `base_power`) referenced to `base_voltage_primary`. For a two-winding transformer this is the series impedance; for a three-winding transformer it is the star-leg equivalent",
+                    "comment": "Circuit resistance in pu (component base on `base_power`) referenced to `base_voltage_primary`. For a two-winding transformer this is the series impedance; for a three-winding transformer it is the star-leg equivalent",
                     "valid_range": {
                         "min": -2,
                         "max": 4
@@ -524,7 +524,7 @@
                     "name": "x",
                     "data_type": "Float64",
                     "default": "0.0",
-                    "comment": "Circuit reactance in pu (device base on `base_power`) referenced to `base_voltage_primary`. For a two-winding transformer this is the series impedance; for a three-winding transformer it is the star-leg equivalent",
+                    "comment": "Circuit reactance in pu (component base on `base_power`) referenced to `base_voltage_primary`. For a two-winding transformer this is the series impedance; for a three-winding transformer it is the star-leg equivalent",
                     "valid_range": {
                         "min": -2,
                         "max": 4
@@ -570,13 +570,13 @@
                 },
                 {
                     "name": "rating",
-                    "comment": "Thermal rating (MVA) stored in device base per unit on `base_power`",
+                    "comment": "Thermal rating (MVA) stored in component base per unit on `base_power`",
                     "null_value": "nothing",
                     "data_type": "Union{Nothing, Float64}",
                     "default": "nothing",
                     "needs_conversion": true,
                     "conversion_unit": ":mva",
-                    "display_units": "DU"
+                    "display_units": "CU"
                 },
                 {
                     "name": "rating_b",
@@ -586,7 +586,7 @@
                     "default": "nothing",
                     "needs_conversion": true,
                     "conversion_unit": ":mva",
-                    "display_units": "DU"
+                    "display_units": "CU"
                 },
                 {
                     "name": "rating_c",
@@ -596,7 +596,7 @@
                     "default": "nothing",
                     "needs_conversion": true,
                     "conversion_unit": ":mva",
-                    "display_units": "DU"
+                    "display_units": "CU"
                 },
                 {
                     "name": "active_power_flow",
@@ -737,11 +737,11 @@
                 {
                     "null_value": "0.0",
                     "name": "rating",
-                    "comment": "Thermal rating (MVA). Flow on the line must be between -`rating` and `rating`. When defining a line before it is attached to a `System`, `rating` must be in pu ([`SYSTEM_BASE`](@ref per_unit)) using the base power of the `System` it will be attached to. Displays in device base ([`DEVICE_BASE`](@ref per_unit)) by default, unlike most converted fields which default to system base",
+                    "comment": "Thermal rating (MVA). Flow on the line must be between -`rating` and `rating`. When defining a line before it is attached to a `System`, `rating` must be in pu ([`SYSTEM_BASE`](@ref per_unit)) using the base power of the `System` it will be attached to. Displays in component base ([`DEVICE_BASE`](@ref per_unit)) by default, unlike most converted fields which default to system base",
                     "data_type": "Float64",
                     "needs_conversion": true,
                     "conversion_unit": ":mva",
-                    "display_units": "DU"
+                    "display_units": "CU"
                 },
                 {
                     "name": "angle_limits",
@@ -981,11 +981,11 @@
                 {
                     "null_value": "0.0",
                     "name": "rating",
-                    "comment": "Thermal rating (MVA). Flow on the branch must be between -`rating` and `rating`. When defining a branch before it is attached to a `System`, `rating` must be in pu ([`SYSTEM_BASE`](@ref per_unit)) using the base power of the `System` it will be attached to. Displays in device base ([`DEVICE_BASE`](@ref per_unit)) by default, unlike most converted fields which default to system base",
+                    "comment": "Thermal rating (MVA). Flow on the branch must be between -`rating` and `rating`. When defining a branch before it is attached to a `System`, `rating` must be in pu ([`SYSTEM_BASE`](@ref per_unit)) using the base power of the `System` it will be attached to. Displays in component base ([`DEVICE_BASE`](@ref per_unit)) by default, unlike most converted fields which default to system base",
                     "data_type": "Float64",
                     "needs_conversion": true,
                     "conversion_unit": ":mva",
-                    "display_units": "DU"
+                    "display_units": "CU"
                 },
                 {
                     "name": "discrete_branch_type",
@@ -1129,10 +1129,10 @@
                     "null_value": "0.0",
                     "name": "rating",
                     "data_type": "Float64",
-                    "comment": "Thermal rating (MVA). Flow on the line must be between -`rating` and `rating`. When defining a line before it is attached to a `System`, `rating` must be in pu ([`SYSTEM_BASE`](@ref per_unit)) using the base power of the `System` it will be attached to. Displays in device base ([`DEVICE_BASE`](@ref per_unit)) by default, unlike most converted fields which default to system base",
+                    "comment": "Thermal rating (MVA). Flow on the line must be between -`rating` and `rating`. When defining a line before it is attached to a `System`, `rating` must be in pu ([`SYSTEM_BASE`](@ref per_unit)) using the base power of the `System` it will be attached to. Displays in component base ([`DEVICE_BASE`](@ref per_unit)) by default, unlike most converted fields which default to system base",
                     "needs_conversion": true,
                     "conversion_unit": ":mva",
-                    "display_units": "DU"
+                    "display_units": "CU"
                 },
                 {
                     "name": "angle_limits",
@@ -1212,7 +1212,7 @@
         },
         {
             "struct_name": "TwoWindingTransformer",
-            "docstring": "A two-winding transformer connecting two buses.\n\nAll series electrical data — the modeled arc, tap, phase shift, series impedance `r`/`x`, ratings, per-winding base power, base voltages, and control — lives on the single [`TransformerCircuit`](@ref) obtained with [`get_circuit`](@ref); availability is circuit-level (see [`get_available`](@ref)). The `magnetizing_shunt` admittance and its `shunt_location` are transformer-level. The model uses an equivalent circuit assuming the impedance is on the high-voltage side and allocates iron losses and magnetizing susceptance according to `shunt_location`. The transformer's device base is the circuit's `base_power`.",
+            "docstring": "A two-winding transformer connecting two buses.\n\nAll series electrical data — the modeled arc, tap, phase shift, series impedance `r`/`x`, ratings, per-winding base power, base voltages, and control — lives on the single [`TransformerCircuit`](@ref) obtained with [`get_circuit`](@ref); availability is circuit-level (see [`get_available`](@ref)). The `magnetizing_shunt` admittance and its `shunt_location` are transformer-level. The model uses an equivalent circuit assuming the impedance is on the high-voltage side and allocates iron losses and magnetizing susceptance according to `shunt_location`. The transformer's component base is the circuit's `base_power`.",
             "fields": [
                 {
                     "null_value": "init",
@@ -1233,7 +1233,7 @@
                     "null_value": "0.0",
                     "data_type": "Complex{Float64}",
                     "default": "0.0",
-                    "comment": "Magnetizing shunt admittance in pu (device base on the circuit's `base_power`) referenced to the circuit's `base_voltage_primary`",
+                    "comment": "Magnetizing shunt admittance in pu (component base on the circuit's `base_power`) referenced to the circuit's `base_voltage_primary`",
                     "validation_action": "warn",
                     "needs_conversion": true,
                     "conversion_unit": ":siemens"
@@ -1271,7 +1271,7 @@
         },
         {
             "struct_name": "ThreeWindingTransformer",
-            "docstring": "A three-winding transformer.\n\nThe model uses an equivalent star model with a star (hidden) bus. Each of the three [`TransformerCircuit`](@ref) objects ([`get_primary_circuit`](@ref), [`get_secondary_circuit`](@ref), [`get_tertiary_circuit`](@ref)) connects a terminal bus to the star bus and carries its own arc, tap, phase shift, star-leg impedance, ratings, per-winding base power/voltages, availability, and control. The `magnetizing_shunt` admittance and its `shunt_location` are transformer-level. The pairwise measured impedances `r_12`/`x_12`, `r_23`/`x_23`, `r_31`/`x_31` are one representation of the transformer impedance; the individual star-leg impedances stored on each circuit are derived from them at parse time. Each pairwise impedance is in pu (device base) on the corresponding `base_power_12`/`base_power_23`/`base_power_31`, referenced to the FIRST-INDEX circuit's base voltage: `r_12`/`x_12` to the primary circuit's base voltage, `r_23`/`x_23` to the secondary circuit's base voltage, and `r_31`/`x_31` to the tertiary circuit's base voltage. Mutating either representation after construction does not update the other. Power-flow and Ybus assembly read the per-circuit star-leg impedances, not the pairwise fields. Availability is circuit-level (see [`get_available`](@ref)). The model is described in Chapter 3.6 of J.D. Glover, M.S. Sarma and T. Overbye: Power Systems Analysis and Design.",
+            "docstring": "A three-winding transformer.\n\nThe model uses an equivalent star model with a star (hidden) bus. Each of the three [`TransformerCircuit`](@ref) objects ([`get_primary_circuit`](@ref), [`get_secondary_circuit`](@ref), [`get_tertiary_circuit`](@ref)) connects a terminal bus to the star bus and carries its own arc, tap, phase shift, star-leg impedance, ratings, per-winding base power/voltages, availability, and control. The `magnetizing_shunt` admittance and its `shunt_location` are transformer-level. The pairwise measured impedances `r_12`/`x_12`, `r_23`/`x_23`, `r_31`/`x_31` are one representation of the transformer impedance; the individual star-leg impedances stored on each circuit are derived from them at parse time. Each pairwise impedance is in pu (component base) on the corresponding `base_power_12`/`base_power_23`/`base_power_31`, referenced to the FIRST-INDEX circuit's base voltage: `r_12`/`x_12` to the primary circuit's base voltage, `r_23`/`x_23` to the secondary circuit's base voltage, and `r_31`/`x_31` to the tertiary circuit's base voltage. Mutating either representation after construction does not update the other. Power-flow and Ybus assembly read the per-circuit star-leg impedances, not the pairwise fields. Availability is circuit-level (see [`get_available`](@ref)). The model is described in Chapter 3.6 of J.D. Glover, M.S. Sarma and T. Overbye: Power Systems Analysis and Design.",
             "fields": [
                 {
                     "null_value": "init",
@@ -1312,7 +1312,7 @@
                     "default": "nothing",
                     "name": "r_12",
                     "data_type": "Union{Nothing, Float64}",
-                    "comment": "Measured resistance in pu (device base on `base_power_12`), referenced to the primary winding's base voltage, from primary to secondary windings. Not synced with the star-leg values after construction; see struct docstring. Optional; all pairwise measured-impedance fields must be set together or all be `nothing`.",
+                    "comment": "Measured resistance in pu (component base on `base_power_12`), referenced to the primary winding's base voltage, from primary to secondary windings. Not synced with the star-leg values after construction; see struct docstring. Optional; all pairwise measured-impedance fields must be set together or all be `nothing`.",
                     "valid_range": {
                         "min": 0,
                         "max": 4
@@ -1326,7 +1326,7 @@
                     "default": "nothing",
                     "name": "x_12",
                     "data_type": "Union{Nothing, Float64}",
-                    "comment": "Measured reactance in pu (device base on `base_power_12`), referenced to the primary winding's base voltage, from primary to secondary windings. Not synced with the star-leg values after construction; see struct docstring. Optional; all pairwise measured-impedance fields must be set together or all be `nothing`.",
+                    "comment": "Measured reactance in pu (component base on `base_power_12`), referenced to the primary winding's base voltage, from primary to secondary windings. Not synced with the star-leg values after construction; see struct docstring. Optional; all pairwise measured-impedance fields must be set together or all be `nothing`.",
                     "valid_range": {
                         "min": 0,
                         "max": 4
@@ -1340,7 +1340,7 @@
                     "default": "nothing",
                     "name": "r_23",
                     "data_type": "Union{Nothing, Float64}",
-                    "comment": "Measured resistance in pu (device base on `base_power_23`), referenced to the secondary winding's base voltage, from secondary to tertiary windings. Not synced with the star-leg values after construction; see struct docstring. Optional; all pairwise measured-impedance fields must be set together or all be `nothing`.",
+                    "comment": "Measured resistance in pu (component base on `base_power_23`), referenced to the secondary winding's base voltage, from secondary to tertiary windings. Not synced with the star-leg values after construction; see struct docstring. Optional; all pairwise measured-impedance fields must be set together or all be `nothing`.",
                     "valid_range": {
                         "min": 0,
                         "max": 4
@@ -1354,7 +1354,7 @@
                     "default": "nothing",
                     "name": "x_23",
                     "data_type": "Union{Nothing, Float64}",
-                    "comment": "Measured reactance in pu (device base on `base_power_23`), referenced to the secondary winding's base voltage, from secondary to tertiary windings. Not synced with the star-leg values after construction; see struct docstring. Optional; all pairwise measured-impedance fields must be set together or all be `nothing`.",
+                    "comment": "Measured reactance in pu (component base on `base_power_23`), referenced to the secondary winding's base voltage, from secondary to tertiary windings. Not synced with the star-leg values after construction; see struct docstring. Optional; all pairwise measured-impedance fields must be set together or all be `nothing`.",
                     "valid_range": {
                         "min": 0,
                         "max": 4
@@ -1368,7 +1368,7 @@
                     "default": "nothing",
                     "name": "r_31",
                     "data_type": "Union{Nothing, Float64}",
-                    "comment": "Measured resistance in pu (device base on `base_power_31`), referenced to the tertiary winding's base voltage, from tertiary to primary windings. Not synced with the star-leg values after construction; see struct docstring. Optional; all pairwise measured-impedance fields must be set together or all be `nothing`.",
+                    "comment": "Measured resistance in pu (component base on `base_power_31`), referenced to the tertiary winding's base voltage, from tertiary to primary windings. Not synced with the star-leg values after construction; see struct docstring. Optional; all pairwise measured-impedance fields must be set together or all be `nothing`.",
                     "valid_range": {
                         "min": 0,
                         "max": 4
@@ -1382,7 +1382,7 @@
                     "default": "nothing",
                     "name": "x_31",
                     "data_type": "Union{Nothing, Float64}",
-                    "comment": "Measured reactance in pu (device base on `base_power_31`), referenced to the tertiary winding's base voltage, from tertiary to primary windings. Not synced with the star-leg values after construction; see struct docstring. Optional; all pairwise measured-impedance fields must be set together or all be `nothing`.",
+                    "comment": "Measured reactance in pu (component base on `base_power_31`), referenced to the tertiary winding's base voltage, from tertiary to primary windings. Not synced with the star-leg values after construction; see struct docstring. Optional; all pairwise measured-impedance fields must be set together or all be `nothing`.",
                     "valid_range": {
                         "min": 0,
                         "max": 4
@@ -1438,7 +1438,7 @@
                     "null_value": "0.0",
                     "data_type": "Complex{Float64}",
                     "default": "0.0",
-                    "comment": "Magnetizing shunt admittance in pu (device base on the primary circuit's `base_power`) referenced to the primary circuit's base voltage",
+                    "comment": "Magnetizing shunt admittance in pu (component base on the primary circuit's `base_power`) referenced to the primary circuit's base voltage",
                     "validation_action": "warn",
                     "needs_conversion": true,
                     "conversion_unit": ":siemens"
@@ -1625,7 +1625,7 @@
                     "validation_action": "error",
                     "needs_conversion": true,
                     "conversion_unit": ":mva",
-                    "display_units": "DU"
+                    "display_units": "CU"
                 },
                 {
                     "name": "active_power_limits_from",
@@ -3242,7 +3242,7 @@
                     "validation_action": "error",
                     "needs_conversion": true,
                     "conversion_unit": ":mva",
-                    "display_units": "DU"
+                    "display_units": "CU"
                 },
                 {
                     "name": "max_active_power",
@@ -4323,7 +4323,7 @@
                     "validation_action": "error",
                     "needs_conversion": true,
                     "conversion_unit": ":mva",
-                    "display_units": "DU"
+                    "display_units": "CU"
                 },
                 {
                     "name": "active_power_limits",
@@ -4705,7 +4705,7 @@
                     "validation_action": "error",
                     "needs_conversion": true,
                     "conversion_unit": ":mva",
-                    "display_units": "DU"
+                    "display_units": "CU"
                 },
                 {
                     "name": "prime_mover_type",
@@ -4879,7 +4879,7 @@
                     "validation_action": "error",
                     "needs_conversion": true,
                     "conversion_unit": ":mva",
-                    "display_units": "DU"
+                    "display_units": "CU"
                 },
                 {
                     "name": "active_power_limits",
@@ -5116,7 +5116,7 @@
                     "validation_action": "error",
                     "needs_conversion": true,
                     "conversion_unit": ":mva",
-                    "display_units": "DU"
+                    "display_units": "CU"
                 },
                 {
                     "name": "active_power_limits",
@@ -5507,7 +5507,7 @@
                         "max": null
                     },
                     "validation_action": "error",
-                    "display_units": "DU"
+                    "display_units": "CU"
                 },
                 {
                     "name": "prime_mover_type",
@@ -5637,7 +5637,7 @@
                     "validation_action": "error",
                     "needs_conversion": true,
                     "conversion_unit": ":mva",
-                    "display_units": "DU"
+                    "display_units": "CU"
                 },
                 {
                     "name": "prime_mover_type",
@@ -5763,7 +5763,7 @@
                     "validation_action": "error",
                     "needs_conversion": true,
                     "conversion_unit": ":mva",
-                    "display_units": "DU"
+                    "display_units": "CU"
                 },
                 {
                     "name": "active_power_limits",
@@ -5936,7 +5936,7 @@
                     "validation_action": "error",
                     "needs_conversion": true,
                     "conversion_unit": ":mva",
-                    "display_units": "DU"
+                    "display_units": "CU"
                 },
                 {
                     "name": "reactive_power_limits",
@@ -6067,7 +6067,7 @@
                     "validation_action": "error",
                     "needs_conversion": true,
                     "conversion_unit": ":mva",
-                    "display_units": "DU"
+                    "display_units": "CU"
                 },
                 {
                     "name": "prime_mover_type",
@@ -6292,7 +6292,7 @@
                     "data_type": "Float64",
                     "needs_conversion": true,
                     "conversion_unit": ":mva",
-                    "display_units": "DU"
+                    "display_units": "CU"
                 },
                 {
                     "name": "active_power",
@@ -18316,7 +18316,7 @@
             "fields": [
                 {
                     "name": "I_max",
-                    "comment": "Maximum limit on current controller input current (device base)",
+                    "comment": "Maximum limit on current controller input current (component base)",
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
@@ -18349,7 +18349,7 @@
             "fields": [
                 {
                     "name": "I_max",
-                    "comment": "Maximum limit on current controller input current (device base)",
+                    "comment": "Maximum limit on current controller input current (component base)",
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {

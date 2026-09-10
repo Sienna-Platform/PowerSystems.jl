@@ -92,7 +92,7 @@ function check_rating_values(line::Union{Line, MonitoredLine})
     closestV_ix = findmin(abs.(voltage_levels .- vrated))
     closest_v_level = voltage_levels[closestV_ix[2]]
     closest_rate_range = MVA_LIMITS_LINES[closest_v_level]
-    device_base_power = _get_base_power(line)
+    component_base_power = _get_base_power(line)
 
     for field in (:rating, :rating_b, :rating_c)
         rating_value = getfield(line, field)
@@ -100,7 +100,7 @@ function check_rating_values(line::Union{Line, MonitoredLine})
             @assert field ∈ (:rating_b, :rating_c)
             continue
         end
-        rating_mva = rating_value * device_base_power
+        rating_mva = rating_value * component_base_power
         if rating_mva >= 2.0 * closest_rate_range.max
             @warn "$(field) $(round(rating_mva; digits=2)) MVA for $(get_name(line)) is 2x larger than the max expected rating $(closest_rate_range.max) MVA for Line at a $(closest_v_level) kV Voltage level." _group =
                 IS.LOG_GROUP_PARSING maxlog = PS_MAX_LOG
@@ -286,7 +286,7 @@ function check_rating_values(xfrm::TwoWindingTransformer)
     closestV_ix = findmin(abs.(voltage_levels .- vrated))
     closest_v_level = voltage_levels[closestV_ix[2]]
     closest_rate_range = MVA_LIMITS_TRANSFORMERS[closest_v_level]
-    device_base_power = _get_base_power(xfrm)
+    component_base_power = _get_base_power(xfrm)
     # The rate is in device pu; rating fields are stored on the circuit.
     circuit = get_circuit(xfrm)
     for field in [:rating, :rating_b, :rating_c]
@@ -301,12 +301,12 @@ function check_rating_values(xfrm::TwoWindingTransformer)
                 IS.LOG_GROUP_PARSING maxlog = PS_MAX_LOG
             return false
         end
-        if (rating_value * device_base_power >= 2.0 * closest_rate_range.max)
-            @warn "$(field) $(round(rating_value*device_base_power; digits=2)) MVA for $(get_name(xfrm)) is 2x larger than the max expected rating $(closest_rate_range.max) MVA for Transformer at a $(closest_v_level) kV Voltage level." _group =
+        if (rating_value * component_base_power >= 2.0 * closest_rate_range.max)
+            @warn "$(field) $(round(rating_value*component_base_power; digits=2)) MVA for $(get_name(xfrm)) is 2x larger than the max expected rating $(closest_rate_range.max) MVA for Transformer at a $(closest_v_level) kV Voltage level." _group =
                 IS.LOG_GROUP_PARSING maxlog = PS_MAX_LOG
-        elseif (rating_value * device_base_power >= closest_rate_range.max) ||
-               (rating_value * device_base_power <= closest_rate_range.min)
-            @info "$(field) $(round(rating_value*device_base_power; digits=2)) MVA for $(get_name(xfrm)) is outside the expected range $(closest_rate_range) MVA for Transformer at a $(closest_v_level) kV Voltage level." _group =
+        elseif (rating_value * component_base_power >= closest_rate_range.max) ||
+               (rating_value * component_base_power <= closest_rate_range.min)
+            @info "$(field) $(round(rating_value*component_base_power; digits=2)) MVA for $(get_name(xfrm)) is outside the expected range $(closest_rate_range) MVA for Transformer at a $(closest_v_level) kV Voltage level." _group =
                 IS.LOG_GROUP_PARSING maxlog = PS_MAX_LOG
         end
     end
@@ -316,7 +316,7 @@ end
 function check_transformer_reactance(
     xfrm::TwoWindingTransformer,
 )
-    x_pu = get_x(get_circuit(xfrm), DU)
+    x_pu = get_x(get_circuit(xfrm), CU)
     if x_pu < TYPICAL_XFRM_REACTANCE.min
         @warn "Transformer $(get_name(xfrm)) per-unit reactance $(x_pu) is lower than the typical range $(TYPICAL_XFRM_REACTANCE). \
             Check if the reactance source data is correct." _group = IS.LOG_GROUP_PARSING maxlog =

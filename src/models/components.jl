@@ -5,8 +5,8 @@
 end
 
 """
-Unitless device-base power (MVA). Fallback for components with no `base_power`
-field: the device base equals the system base. This is also the path
+Unitless component-base power (MVA). Fallback for components with no `base_power`
+field: the component base equals the system base. This is also the path
 `TModelHVDCLine` resolves through — it has no `base_power` field at all (it
 per-unitizes against `base_current` instead), so its power-dimensioned fields
 (`active_power_flow`, `active_power_limits_from/to`) anchor on the system base.
@@ -14,20 +14,20 @@ per-unitizes against `base_current` instead), so its power-dimensioned fields
 _get_base_power(c::Component) = _get_system_base_power(c)
 
 # Holy trait distinguishing components whose `base_power` field is a genuine,
-# independently-set device base (generators, loads, storage, ...) from the
+# independently-set component base (generators, loads, storage, ...) from the
 # arc/area-ish types below whose `base_power` field only exists because the
 # schema records the system base per-component "in lieu of a system-level table"
 # (see SiennaSchemas). `add_component!` uses this trait to keep that field in
 # sync with the system's base power; it must never be set independently.
 abstract type BasePowerKind end
-struct DeviceBasePower <: BasePowerKind end
+struct ComponentBasePower <: BasePowerKind end
 struct SystemBasePower <: BasePowerKind end
 
-# Default `DeviceBasePower()` also covers types with no `base_power` field at
+# Default `ComponentBasePower()` also covers types with no `base_power` field at
 # all (e.g. `TModelHVDCLine`, whose anchor is `base_current`): `_sync_base_power!`
-# is a no-op for `DeviceBasePower`, so `add_component!` never touches a
+# is a no-op for `ComponentBasePower`, so `add_component!` never touches a
 # nonexistent field.
-base_power_kind(::Component) = DeviceBasePower()
+base_power_kind(::Component) = ComponentBasePower()
 base_power_kind(::Area) = SystemBasePower()
 base_power_kind(::AreaInterchange) = SystemBasePower()
 base_power_kind(::DiscreteControlledACBranch) = SystemBasePower()
@@ -43,10 +43,10 @@ base_power_kind(::TwoTerminalVSCLine) = SystemBasePower()
 
 """
 Write the system's base power onto `component.base_power` for `SystemBasePower`
-types; a no-op for genuine device-base types. Called from `add_component!` so
+types; a no-op for genuine component-base types. Called from `add_component!` so
 the field never drifts from the system it is recorded against.
 """
-_sync_base_power!(::DeviceBasePower, component, system_base_power) = nothing
+_sync_base_power!(::ComponentBasePower, component, system_base_power) = nothing
 function _sync_base_power!(::SystemBasePower, component, system_base_power)
     component.base_power = system_base_power
     return
@@ -60,13 +60,13 @@ end
 # Conversion-engine component interface (see src/units/conversions.jl): the
 # engine resolves bases through these three functions, so every getter and
 # setter shares one base-power/base-voltage choice per component type.
-_get_device_base_power(c::Component) = _get_base_power(c)
+_get_component_base_power(c::Component) = _get_base_power(c)
 
 # TransformerCircuit is a self-contained explicit-units base provider (defined
 # in models/transformer_circuits.jl, included earlier): it carries its own
 # base_power/base_voltage_primary/base_value and does not need a component to
 # delegate to (Base.summary(w) is defined alongside the struct).
-_get_device_base_power(w::TransformerCircuit) = w.base_power
+_get_component_base_power(w::TransformerCircuit) = w.base_power
 function _get_system_base_power(w::TransformerCircuit)
     base_value = IS.get_base_value(w)
     isnothing(base_value) && error(
@@ -92,7 +92,7 @@ get_base_voltage(c::Branch) = get_base_voltage(get_arc(c).from)
 get_arc(c::TwoWindingTransformer) = get_arc(get_circuit(c))
 set_arc!(c::TwoWindingTransformer, arc::Arc) = set_arc!(get_circuit(c), arc)
 
-# 2W: device base voltage is the primary (circuit) side
+# 2W: component base voltage is the primary (circuit) side
 get_base_voltage(c::TwoWindingTransformer) = get_base_voltage(get_circuit(c))
 get_base_voltage(c::ThreeWindingTransformer) = error(
     "Three-winding transformers have per-circuit base voltages; use " *
@@ -102,7 +102,7 @@ get_base_voltage(c::ThreeWindingTransformer) = error(
 
 # `base_power` is always stored and reported in natural units (MVA). It is the
 # anchor that every other field's per-unitization is defined against, so
-# expressing it in a per-unit base (`SU`/`DU`) is circular. Unlike every other
+# expressing it in a per-unit base (`SU`/`CU`) is circular. Unlike every other
 # field accessor, `get_base_power`/`set_base_power!` therefore need *no* units
 # argument; an explicit one is accepted only when it denotes natural units —
 # `NU`, or a power-dimensioned `Unitful` unit such as `u"MW"`/`u"MVA"`.
@@ -112,7 +112,7 @@ Get a component's `base_power` as a bare `Float64` in natural units (MVA).
 
 `get_base_power(c)` returns the stored MVA value. An optional units argument is
 accepted but must denote natural units: `NU`, or a power-dimensioned `Unitful`
-unit (e.g. `u"MW"`, `u"MVA"`). Per-unit bases (`SU`, `DU`) and non-power units error —
+unit (e.g. `u"MW"`, `u"MVA"`). Per-unit bases (`SU`, `CU`) and non-power units error —
 `base_power` is only meaningful in absolute power. See
 [`get_base_power_unitful`](@ref) for the unit-bearing value.
 """
@@ -128,7 +128,7 @@ get_base_power_unitful(c::Component, ::NaturalUnit) = _get_base_power(c) * MVA
 # `Unitful.DimensionError` for non-power units, so wrong units error for free.
 get_base_power_unitful(c::Component, u::Unitful.Units) =
     Unitful.uconvert(u, _get_base_power(c) * MVA)
-# Relative per-unit markers (`SU`, `DU`) are not natural units.
+# Relative per-unit markers (`SU`, `CU`) are not natural units.
 get_base_power_unitful(::Component, u::AbstractRelativeUnit) =
     _base_power_units_error(u)
 
@@ -136,7 +136,7 @@ get_base_power_unitful(::Component, u::AbstractRelativeUnit) =
 Set a component's `base_power` (stored as a bare MVA `Float64`).
 
 Accepts a bare `Float64` (interpreted as MVA) or a power-dimensioned
-`Unitful.Quantity` (e.g. `80.0 * u"MW"`, `90.0 * u"MVA"`). Per-unit inputs (`SU`, `DU`)
+`Unitful.Quantity` (e.g. `80.0 * u"MW"`, `90.0 * u"MVA"`). Per-unit inputs (`SU`, `CU`)
 and non-power units error: `base_power` is only meaningful in absolute power.
 """
 set_base_power!(c::Component, val::Float64) = _set_base_power!(base_power_kind(c), c, val)
@@ -146,7 +146,7 @@ set_base_power!(c::Component, val::Unitful.Quantity) =
 set_base_power!(::Component, ::RelativeQuantity{<:Any, U}) where {U} =
     _base_power_units_error(U())
 
-_set_base_power!(::DeviceBasePower, c, val::Float64) = (c.base_power = val)
+_set_base_power!(::ComponentBasePower, c, val::Float64) = (c.base_power = val)
 function _set_base_power!(::SystemBasePower, c, ::Float64)
     error(
         "$(typeof(c)) has no independent base_power: it always equals the system's " *
@@ -163,7 +163,7 @@ function _base_power_units_error(u)
         ArgumentError(
             "base_power is always in natural units (MVA). Pass no units, `NU`, " *
             "or a power-dimensioned Unitful unit such as `u\"MW\"` or `u\"MVA\"`; got `$u`. " *
-            "Per-unit bases (`SU`, `DU`) are not valid for base_power.",
+            "Per-unit bases (`SU`, `CU`) are not valid for base_power.",
         ),
     )
 end
@@ -181,21 +181,21 @@ IS.default_units(::Component) = SU
 #######################################################
 # Units-aware get_value / set_value
 #
-# Fields are stored internally in device base (DU); `get_value` converts from
-# DU to a requested target (e.g., `u"MW"`, `SU`).
+# Fields are stored internally in component base (CU); `get_value` converts from
+# CU to a requested target (e.g., `u"MW"`, `SU`).
 #######################################################
 
 """
     get_value(c::Component, field::Val, conversion_unit::Val, units) -> value
 
-Get `c`'s field value, converting from device-base storage to `units`.
-Returns a `RelativeQuantity` (for DU/SU targets) or a `Unitful.Quantity` (for
+Get `c`'s field value, converting from component-base storage to `units`.
+Returns a `RelativeQuantity` (for CU/SU targets) or a `Unitful.Quantity` (for
 natural units like `u"MW"`). Public getters wrap this in `_strip_units` for the
 bare-number form, with `_unitful` companions returning the wrapped value.
 """
 function get_value(c::UnitsBearer, field::Val{T}, conversion_unit, units::UnitArg) where {T}
     value = Base.getproperty(c, T)
-    return _convert_from_device_base(
+    return _convert_from_component_base(
         _conversion_base(c, field),
         value,
         conversion_unit,
@@ -209,58 +209,58 @@ end
 # per-circuit `TransformerCircuit` objects, which are themselves `UnitsBearer`s.
 _conversion_base(c::UnitsBearer, ::Any) = c
 
-# ---- DU → requested units: one delegation to the conversion engine. The
+# ---- CU → requested units: one delegation to the conversion engine. The
 # field's conversion-unit token picks the physical category; the engine
 # resolves bases through the component interface above. ----
-_convert_from_device_base(base, value::Number, cu::Val, units::UnitArg) =
-    convert_units(base, value, _unit_category(cu), DU, units)
+_convert_from_component_base(base, value::Number, cu::Val, units::UnitArg) =
+    convert_units(base, value, _unit_category(cu), CU, units)
 
 # ---- Nothing passthrough ----
-_convert_from_device_base(base, ::Nothing, ::Val, ::Any) = nothing
+_convert_from_component_base(base, ::Nothing, ::Val, ::Any) = nothing
 
 # ---- Compound field types ----
-_convert_from_device_base(base, v::MinMax, cu, u) = (
-    min = _convert_from_device_base(base, v.min, cu, u),
-    max = _convert_from_device_base(base, v.max, cu, u),
+_convert_from_component_base(base, v::MinMax, cu, u) = (
+    min = _convert_from_component_base(base, v.min, cu, u),
+    max = _convert_from_component_base(base, v.max, cu, u),
 )
 
-_convert_from_device_base(base, v::UpDown, cu, u) = (
-    up = _convert_from_device_base(base, v.up, cu, u),
-    down = _convert_from_device_base(base, v.down, cu, u),
+_convert_from_component_base(base, v::UpDown, cu, u) = (
+    up = _convert_from_component_base(base, v.up, cu, u),
+    down = _convert_from_component_base(base, v.down, cu, u),
 )
 
-_convert_from_device_base(base, v::FromTo_ToFrom, cu, u) = (
-    from_to = _convert_from_device_base(base, v.from_to, cu, u),
-    to_from = _convert_from_device_base(base, v.to_from, cu, u),
+_convert_from_component_base(base, v::FromTo_ToFrom, cu, u) = (
+    from_to = _convert_from_component_base(base, v.from_to, cu, u),
+    to_from = _convert_from_component_base(base, v.to_from, cu, u),
 )
 
-_convert_from_device_base(base, v::FromTo, cu, u) = (
-    from = _convert_from_device_base(base, v.from, cu, u),
-    to = _convert_from_device_base(base, v.to, cu, u),
+_convert_from_component_base(base, v::FromTo, cu, u) = (
+    from = _convert_from_component_base(base, v.from, cu, u),
+    to = _convert_from_component_base(base, v.to, cu, u),
 )
 
-_convert_from_device_base(base, v::StartUpShutDown, cu, u) = (
-    startup = _convert_from_device_base(base, v.startup, cu, u),
-    shutdown = _convert_from_device_base(base, v.shutdown, cu, u),
+_convert_from_component_base(base, v::StartUpShutDown, cu, u) = (
+    startup = _convert_from_component_base(base, v.startup, cu, u),
+    shutdown = _convert_from_component_base(base, v.shutdown, cu, u),
 )
 
 #######################################################
-# set_value: accept Unitful.Quantity or RelativeQuantity; return DU scalar
+# set_value: accept Unitful.Quantity or RelativeQuantity; return CU scalar
 #######################################################
 
 # ---- From Unitful.Quantity (natural units): inverse engine conversion ----
 set_value(c::UnitsBearer, field, val::Quantity, cu::Val) = IS._strip_units(
-    convert_units(_conversion_base(c, field), val, _unit_category(cu), NU, DU),
+    convert_units(_conversion_base(c, field), val, _unit_category(cu), NU, CU),
 )
 
-# ---- From RelativeQuantity in DU (trivial) ----
-set_value(::UnitsBearer, field, val::RelativeQuantity{<:Any, DeviceBaseUnit}, ::Val) =
+# ---- From RelativeQuantity in CU (trivial) ----
+set_value(::UnitsBearer, field, val::RelativeQuantity{<:Any, ComponentBaseUnit}, ::Val) =
     ustrip(val)
 
 # ---- From RelativeQuantity in SU ----
 set_value(c::UnitsBearer, field, val::RelativeQuantity{<:Any, SystemBaseUnit}, cu::Val) =
     IS._strip_units(
-        convert_units(_conversion_base(c, field), ustrip(val), _unit_category(cu), SU, DU),
+        convert_units(_conversion_base(c, field), ustrip(val), _unit_category(cu), SU, CU),
     )
 
 # ---- Bare numbers are rejected: callers must attach units explicitly ----
@@ -278,31 +278,31 @@ set_value(c::UnitsBearer, field, ::_UntaggedNumber, cu::Val) = throw(
 
 # ---- Compound field types for setters ----
 # The field is threaded through so a bare element reports which field it belongs to.
-_to_device_base(c::UnitsBearer, field, val, cu) = set_value(c, field, val, cu)
+_to_component_base(c::UnitsBearer, field, val, cu) = set_value(c, field, val, cu)
 
 set_value(c::UnitsBearer, field, val::NamedTuple{(:min, :max)}, cu::Val) = (
-    min = _to_device_base(c, field, val.min, cu),
-    max = _to_device_base(c, field, val.max, cu),
+    min = _to_component_base(c, field, val.min, cu),
+    max = _to_component_base(c, field, val.max, cu),
 )
 
 set_value(c::UnitsBearer, field, val::NamedTuple{(:up, :down)}, cu::Val) = (
-    up = _to_device_base(c, field, val.up, cu),
-    down = _to_device_base(c, field, val.down, cu),
+    up = _to_component_base(c, field, val.up, cu),
+    down = _to_component_base(c, field, val.down, cu),
 )
 
 set_value(c::UnitsBearer, field, val::NamedTuple{(:from_to, :to_from)}, cu::Val) = (
-    from_to = _to_device_base(c, field, val.from_to, cu),
-    to_from = _to_device_base(c, field, val.to_from, cu),
+    from_to = _to_component_base(c, field, val.from_to, cu),
+    to_from = _to_component_base(c, field, val.to_from, cu),
 )
 
 set_value(c::UnitsBearer, field, val::NamedTuple{(:from, :to)}, cu::Val) = (
-    from = _to_device_base(c, field, val.from, cu),
-    to = _to_device_base(c, field, val.to, cu),
+    from = _to_component_base(c, field, val.from, cu),
+    to = _to_component_base(c, field, val.to, cu),
 )
 
 set_value(c::UnitsBearer, field, val::NamedTuple{(:startup, :shutdown)}, cu::Val) = (
-    startup = _to_device_base(c, field, val.startup, cu),
-    shutdown = _to_device_base(c, field, val.shutdown, cu),
+    startup = _to_component_base(c, field, val.startup, cu),
+    shutdown = _to_component_base(c, field, val.shutdown, cu),
 )
 
 # ---- Nothing passthrough ----
@@ -327,7 +327,7 @@ set_base_power_31!(t::ThreeWindingTransformer, v::Union{Float64, Nothing}) =
     t.base_power_31 = v
 
 # A TwoWindingTransformer's series electrical data lives entirely on its circuit.
-# Forward the base-power accessors to the circuit so the units engine's device-base
+# Forward the base-power accessors to the circuit so the units engine's component-base
 # resolution and downstream base-power reads/writes keep working. The value-typed
 # setter variants mirror the generic Component ones (natural units only) so no
 # ambiguity arises with `set_base_power!(::Component, ...)`.
@@ -392,11 +392,11 @@ _field_description(c, ::Any) = "this `$(nameof(typeof(c)))` field"
 # The units a getter accepts. Setters take the same units as tags on the value,
 # except `NU`, which exists only as a getter target (there is no `val * NU`).
 _units_menu(conversion_unit::Val) =
-    "`DU` (per unit on the device base), `SU` (per unit on the system base), `NU` " *
+    "`CU` (per unit on the component base), `SU` (per unit on the system base), `NU` " *
     "or the natural unit `$(_natural_unit_example(conversion_unit))`"
 
 _tag_menu(conversion_unit::Val) =
-    "pass `val * DU` (per unit on the device base), `val * SU` (per unit on the " *
+    "pass `val * CU` (per unit on the component base), `val * SU` (per unit on the " *
     "system base), or a natural unit such as `val * $(_natural_unit_example(conversion_unit))`"
 
 # The bare and unit-bearing getters point at each other, so the message always
@@ -440,7 +440,7 @@ compound field only, a `NamedTuple` whose elements are all untagged.
 function _units_tag_required(setter, value, field::Symbol, conversion_unit::Val, val)
     compound_hint = if val isa NamedTuple
         " A compound field takes one tagged value per element, e.g. " *
-        "`(" * join(("$k = $(getfield(val, k)) * DU" for k in keys(val)), ", ") * ")`."
+        "`(" * join(("$k = $(getfield(val, k)) * CU" for k in keys(val)), ", ") * ")`."
     else
         ""
     end
@@ -467,7 +467,7 @@ struct PairBase{T <: ThreeWindingTransformer}
     base_voltage::Union{Nothing, Float64}
 end
 
-function _get_device_base_power(p::PairBase)
+function _get_component_base_power(p::PairBase)
     isnothing(p.base_power) && error(
         "The pairwise impedance fields (r_12/x_12/r_23/x_23/r_31/x_31 and base_power_12/23/31) " *
         "of $(summary(p.transformer)) are not set; cannot convert pairwise values",

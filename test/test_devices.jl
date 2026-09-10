@@ -76,18 +76,18 @@ end
         ),
     )
     # Round-trip through a document: both `ShiftablePowerLoad` and `InterruptiblePowerLoad`
-    # are now in `DOCUMENT_PLAN`. COMPONENT_BASE is an exact pass-through, so the DU values
+    # are now in `DOCUMENT_PLAN`. COMPONENT_BASE is an exact pass-through, so the CU values
     # below survive unchanged.
     sys2 = roundtrip_system(sys)
     @test get_active_power(
-        get_component(ShiftablePowerLoad, sys2, "ShiftableLoadBus4"), DU) == 0.10
+        get_component(ShiftablePowerLoad, sys2, "ShiftableLoadBus4"), CU) == 0.10
     @test get_active_power(
-        get_component(InterruptiblePowerLoad, sys2, "IloadBus"), DU) == 0.10
+        get_component(InterruptiblePowerLoad, sys2, "IloadBus"), CU) == 0.10
     @test get_active_power_limits(
-        get_component(ShiftablePowerLoad, sys2, "ShiftableLoadBus4"), DU,
+        get_component(ShiftablePowerLoad, sys2, "ShiftableLoadBus4"), CU,
     ).min == 0.03
     @test get_active_power_limits(
-        get_component(ShiftablePowerLoad, sys2, "ShiftableLoadBus4"), DU,
+        get_component(ShiftablePowerLoad, sys2, "ShiftableLoadBus4"), CU,
     ).max == 0.10
 end
 
@@ -258,7 +258,7 @@ end
 @testset "Test FACTS/SwitchedShunt interop fields (psy5 sync)" begin
     # FACTSControlDevice: new shunt-control fields ported from main
     fd = FACTSControlDevice(nothing)
-    @test ustrip(get_max_reactive_power(fd, DU)) == 0.0  # demo constructor => 0.0
+    @test ustrip(get_max_reactive_power(fd, CU)) == 0.0  # demo constructor => 0.0
     @test get_shunt_control_type(fd) == FACTSShuntControlType.STATCOM
     @test get_regulated_bus_number(fd) == 0
     @test get_reactive_power_required(fd) == 0.0
@@ -267,23 +267,23 @@ end
         name = "F1", available = true, bus = ACBus(nothing),
         control_mode = FACTSOperationModes.NML,
     )
-    @test ustrip(get_max_reactive_power(fd_kw, DU)) == 9999.0  # kwarg default
-    @test ustrip(get_max_shunt_current(fd_kw, DU)) == 9999.0
+    @test ustrip(get_max_reactive_power(fd_kw, CU)) == 9999.0  # kwarg default
+    @test ustrip(get_max_shunt_current(fd_kw, CU)) == 9999.0
     @test get_voltage_setpoint(fd_kw) == 1.0
     @test get_shunt_control_type(fd_kw) == FACTSShuntControlType.STATCOM
 
     set_shunt_control_type!(fd_kw, FACTSShuntControlType.SVC)
     set_regulated_bus_number!(fd_kw, 42)
-    set_max_reactive_power!(fd_kw, 150.0 * DU)
+    set_max_reactive_power!(fd_kw, 150.0 * CU)
     @test get_shunt_control_type(fd_kw) == FACTSShuntControlType.SVC
     @test get_regulated_bus_number(fd_kw) == 42
-    @test ustrip(get_max_reactive_power(fd_kw, DU)) == 150.0
+    @test ustrip(get_max_reactive_power(fd_kw, CU)) == 150.0
 
     # Positional constructor now threads the reworked scalar fields
     fd_pos = FACTSControlDevice("F2", true, ACBus(nothing), FACTSOperationModes.NML, 1.05)
     @test get_voltage_setpoint(fd_pos) == 1.05
-    @test ustrip(get_max_shunt_current(fd_pos, DU)) == 9999.0
-    @test ustrip(get_max_reactive_power(fd_pos, DU)) == 9999.0
+    @test ustrip(get_max_shunt_current(fd_pos, CU)) == 9999.0
+    @test ustrip(get_max_reactive_power(fd_pos, CU)) == 9999.0
 
     # SwitchedAdmittance: new control_mode + regulated_bus_number
     sa = SwitchedAdmittance(nothing)

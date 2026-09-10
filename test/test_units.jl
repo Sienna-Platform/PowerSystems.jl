@@ -17,11 +17,11 @@ struct MockLine
     x::Float64
 end
 
-PSY._get_device_base_power(g::MockGen) = g.base_power
+PSY._get_component_base_power(g::MockGen) = g.base_power
 PSY._get_system_base_power(::MockGen) = 100.0
 PSY.get_base_voltage(::MockGen) = 230.0
 
-PSY._get_device_base_power(::MockLine) = 100.0
+PSY._get_component_base_power(::MockLine) = 100.0
 PSY._get_system_base_power(::MockLine) = 100.0
 PSY.get_base_voltage(::MockLine) = 230.0
 
@@ -53,18 +53,18 @@ end
     @test system_base_value(gen, VOLTAGE) == 230.0
 end
 
-@testset "convert_units: DU → other" begin
+@testset "convert_units: CU → other" begin
     gen = MockGen(0.6, 50.0)
 
-    result = convert_units(gen, 0.6, ACTIVE_POWER, DU, u"MW")
+    result = convert_units(gen, 0.6, ACTIVE_POWER, CU, u"MW")
     @test result isa Unitful.Quantity
     @test Unitful.ustrip(result) ≈ 30.0
 
-    result = convert_units(gen, 0.6, ACTIVE_POWER, DU, SU)
+    result = convert_units(gen, 0.6, ACTIVE_POWER, CU, SU)
     @test result isa RelativeQuantity{Float64, SystemBaseUnit}
     @test ustrip(result) ≈ 0.3
 
-    result = convert_units(gen, 0.6, ACTIVE_POWER, DU, DU)
+    result = convert_units(gen, 0.6, ACTIVE_POWER, CU, CU)
     @test ustrip(result) ≈ 0.6
 end
 
@@ -74,7 +74,7 @@ end
     result = convert_units(gen, 0.3, ACTIVE_POWER, SU, u"MW")
     @test Unitful.ustrip(result) ≈ 30.0
 
-    result = convert_units(gen, 0.3, ACTIVE_POWER, SU, DU)
+    result = convert_units(gen, 0.3, ACTIVE_POWER, SU, CU)
     @test ustrip(result) ≈ 0.6
 
     result = convert_units(gen, 0.3, ACTIVE_POWER, SU, SU)
@@ -84,7 +84,7 @@ end
 @testset "convert_units: natural → per-unit" begin
     gen = MockGen(0.6, 50.0)
 
-    result = convert_units(gen, 30.0u"MW", ACTIVE_POWER, u"MW", DU)
+    result = convert_units(gen, 30.0u"MW", ACTIVE_POWER, u"MW", CU)
     @test ustrip(result) ≈ 0.6
 
     result = convert_units(gen, 30.0u"MW", ACTIVE_POWER, u"MW", SU)
@@ -95,60 +95,60 @@ end
     line = MockLine(0.01, 0.1)
     z_base = 230.0^2 / 100.0
 
-    result = convert_units(line, 0.01, IMPEDANCE, DU, u"Ω")
+    result = convert_units(line, 0.01, IMPEDANCE, CU, u"Ω")
     @test Unitful.ustrip(result) ≈ 0.01 * z_base
 
-    # device base == system base, so the DU → SU ratio is 1.0
-    result = convert_units(line, 0.01, IMPEDANCE, DU, SU)
+    # component base == system base, so the CU → SU ratio is 1.0
+    result = convert_units(line, 0.01, IMPEDANCE, CU, SU)
     @test ustrip(result) ≈ 0.01
 end
 
 @testset "convert_units: nothing passthrough" begin
     gen = MockGen(0.6, 50.0)
-    @test convert_units(gen, nothing, ACTIVE_POWER, DU, u"MW") === nothing
+    @test convert_units(gen, nothing, ACTIVE_POWER, CU, u"MW") === nothing
 end
 
 @testset "convert_units: round-trip consistency" begin
     gen = MockGen(0.6, 50.0)
     original = 0.6
 
-    mw = convert_units(gen, original, ACTIVE_POWER, DU, u"MW")
-    back = convert_units(gen, mw, ACTIVE_POWER, u"MW", DU)
+    mw = convert_units(gen, original, ACTIVE_POWER, CU, u"MW")
+    back = convert_units(gen, mw, ACTIVE_POWER, u"MW", CU)
     @test ustrip(back) ≈ original
 
-    su = convert_units(gen, original, ACTIVE_POWER, DU, SU)
-    back = convert_units(gen, ustrip(su), ACTIVE_POWER, SU, DU)
+    su = convert_units(gen, original, ACTIVE_POWER, CU, SU)
+    back = convert_units(gen, ustrip(su), ACTIVE_POWER, SU, CU)
     @test ustrip(back) ≈ original
 end
 
 @testset "convert_units: complex support" begin
     line = MockLine(0.01, 0.1)
 
-    # ratio is 1.0 since device base == system base
+    # ratio is 1.0 since component base == system base
     for z in (0.01 + 0.1im, ComplexF32(0.01, 0.1), Complex(1, 2))
-        @test ustrip(convert_units(line, z, IMPEDANCE, DU, SU)) ≈ z
+        @test ustrip(convert_units(line, z, IMPEDANCE, CU, SU)) ≈ z
     end
 end
 
 @testset "convert_units: NU (natural units)" begin
     gen = MockGen(0.6, 50.0)
 
-    result = convert_units(gen, 0.6, ACTIVE_POWER, DU, NU)
+    result = convert_units(gen, 0.6, ACTIVE_POWER, CU, NU)
     @test result isa Unitful.Quantity
     @test Unitful.ustrip(result) ≈ 30.0
 
-    result = convert_units(gen, 0.01, IMPEDANCE, DU, NU)
+    result = convert_units(gen, 0.01, IMPEDANCE, CU, NU)
     @test Unitful.dimension(Unitful.unit(result)) == Unitful.dimension(u"Ω")
 
-    result = convert_units(gen, 30.0u"MW", ACTIVE_POWER, NU, DU)
+    result = convert_units(gen, 30.0u"MW", ACTIVE_POWER, NU, CU)
     @test ustrip(result) ≈ 0.6
 end
 
 @testset "Serialization: RelativeQuantity" begin
-    q = 0.6DU
+    q = 0.6CU
     d = PSY.serialize_quantity(q)
     @test d["value"] == 0.6
-    @test d["unit"] == "DU"
+    @test d["unit"] == "CU"
     @test PSY.deserialize_quantity(d) == q
 
     q = 0.3SU
@@ -189,8 +189,8 @@ end
     @test PSY.deserialize_quantity(json) ≈ q
 end
 
-@testset "_du_to_su_ratio agrees with base_value ratio for every category" begin
-    gen = MockGen(0.6, 50.0)  # 50 MVA device base, 100 MVA system base, 230 kV
+@testset "_cu_to_su_ratio agrees with base_value ratio for every category" begin
+    gen = MockGen(0.6, 50.0)  # 50 MVA component base, 100 MVA system base, 230 kV
     for cat in (
         ACTIVE_POWER,
         REACTIVE_POWER,
@@ -200,7 +200,7 @@ end
         VOLTAGE,
         CURRENT,
     )
-        @test PSY._du_to_su_ratio(gen, cat) ≈
+        @test PSY._cu_to_su_ratio(gen, cat) ≈
               base_value(gen, cat) / system_base_value(gen, cat)
     end
 end
@@ -219,14 +219,14 @@ end
 end
 
 @testset "natural-unit getters distinguish active/reactive/apparent power" begin
-    _, gen = _sys_with_thermal(; system_base = 100.0, device_base = 250.0)
+    _, gen = _sys_with_thermal(; system_base = 100.0, component_base = 250.0)
 
     # All three share one per-unit base and differ only in the natural unit they
     # carry, so the numbers match while the units do not.
     @test Unitful.unit(get_active_power_unitful(gen, NU)) == u"MW"
     @test Unitful.unit(get_reactive_power_unitful(gen, NU)) == u"MVAr"
     @test Unitful.unit(get_rating_unitful(gen, NU)) == u"MVA"
-    @test get_rating(gen, NU) ≈ get_rating(gen, DU) * 250.0
+    @test get_rating(gen, NU) ≈ get_rating(gen, CU) * 250.0
 
     limits = get_reactive_power_limits_unitful(gen, NU)
     @test Unitful.unit(limits.min) == u"MVAr"
@@ -235,19 +235,19 @@ end
     # Setters accept any power-dimensioned unit; the category only picks how a
     # value reads back, not how it is stored.
     set_reactive_power!(gen, 25.0 * u"MVAr")
-    @test get_reactive_power(gen, DU) ≈ 0.1
+    @test get_reactive_power(gen, CU) ≈ 0.1
     @test get_reactive_power(gen, NU) ≈ 25.0
 end
 
 @testset "base_value lifecycle" begin
-    # sys_a: 100 MVA base; gen stored at device base (250 MVA default from _sys_with_thermal)
+    # sys_a: 100 MVA base; gen stored at component base (250 MVA default from _sys_with_thermal)
     sys_a, gen = _sys_with_thermal()
     p_a = get_active_power(gen, SU)
 
     remove_component!(sys_a, gen)
     @test_throws ErrorException get_active_power(gen, SU)
 
-    # Transfer to sys_b (50 MVA base). Same stored DU value ⇒ SU value doubles.
+    # Transfer to sys_b (50 MVA base). Same stored CU value ⇒ SU value doubles.
     sys_b = System(50.0)
     bus_b = ACBus(;
         number = 1, name = "b1", available = true,
@@ -307,9 +307,9 @@ end
 @testset "convert_units rejects marker/value mismatches" begin
     sys, gen = _sys_with_thermal()
 
-    @test_throws ArgumentError convert_units(gen, 30.0 * u"MW", ACTIVE_POWER, SU, DU)
-    @test_throws ArgumentError convert_units(gen, 30.0 * u"MW", ACTIVE_POWER, DU, SU)
-    @test_throws ArgumentError convert_units(gen, 0.5 * DU, ACTIVE_POWER, SU, NU)
+    @test_throws ArgumentError convert_units(gen, 30.0 * u"MW", ACTIVE_POWER, SU, CU)
+    @test_throws ArgumentError convert_units(gen, 30.0 * u"MW", ACTIVE_POWER, CU, SU)
+    @test_throws ArgumentError convert_units(gen, 0.5 * CU, ACTIVE_POWER, SU, NU)
     @test_throws ArgumentError convert_units(gen, 0.5, ACTIVE_POWER, u"MW", SU)
 end
 
@@ -362,8 +362,8 @@ function _local_make_test_3w_xfmr(; system_base = 100.0)
     set_base_voltage_primary!(get_primary_circuit(xfmr), 230.0)
     set_base_voltage_primary!(get_secondary_circuit(xfmr), 138.0)
     set_base_voltage_primary!(get_tertiary_circuit(xfmr), 69.0)
-    set_r_12!(xfmr, 0.01 * DU)
-    set_r_23!(xfmr, 0.02 * DU)
+    set_r_12!(xfmr, 0.01 * CU)
+    set_r_23!(xfmr, 0.02 * CU)
     return xfmr
 end
 
@@ -374,7 +374,7 @@ end
 
     # power category (Val{:mva})
     @inferred get_active_power(gen, SU)
-    @inferred get_active_power(gen, DU)
+    @inferred get_active_power(gen, CU)
     @inferred get_active_power(gen, NU)
     @inferred get_active_power_unitful(gen, SU)
     @test typeof(get_active_power_unitful(gen, SU)) ==
@@ -382,7 +382,7 @@ end
 
     # impedance / admittance categories (Val{:ohm} / Val{:siemens})
     @inferred get_r(line, SU)
-    @inferred get_x(line, DU)
+    @inferred get_x(line, CU)
     @inferred get_b(line, SU)
 
     # compound NamedTuple fields
@@ -395,9 +395,9 @@ end
     # three-winding pairwise bases (PairBase engine); r_12/r_23 are now
     # Union{Nothing, Float64} descriptor fields (optional pairwise block)
     @inferred Union{Nothing, Float64} get_r_12(xfmr3w, SU)
-    @inferred Union{Nothing, Float64} get_r_23(xfmr3w, DU)
+    @inferred Union{Nothing, Float64} get_r_23(xfmr3w, CU)
 
-    # setter chain: returns the stored DU Float64
+    # setter chain: returns the stored CU Float64
     @inferred set_active_power!(gen, 0.4 * SU)
 end
 

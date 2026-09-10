@@ -19,7 +19,7 @@ Base power is a fundamental parameter for the per-unit system and represents the
 
   - **Purpose**: Defines the maximum apparent power (MVA) that the generator's electrical components can safely handle
 
-  - **Units**: Stored in per-unit using **device base** (i.e., divided by the device's `base_power`)
+  - **Units**: Stored in per-unit using **component base** (i.e., divided by the device's `base_power`)
 
   - **Physical meaning**: The maximum MVA output considering electrical constraints such as:
 
@@ -27,7 +27,7 @@ Base power is a fundamental parameter for the per-unit system and represents the
       + Rotor field winding limits
       + Cooling system capacity
 
-  - **Access**: Retrieved using `get_rating(device, units)` (the `units` argument is required, e.g. `get_rating(device, DU)`)
+  - **Access**: Retrieved using `get_rating(device, units)` (the `units` argument is required, e.g. `get_rating(device, CU)`)
 
 The rating is typically determined by the electrical design and thermal limits of the synchronous machine itself. It represents the maximum capability of the electrical generator, independent of the prime mover.
 
@@ -37,7 +37,7 @@ The rating is typically determined by the electrical design and thermal limits o
 
   - **Purpose**: Defines the maximum real power (MW) that the prime mover can deliver
 
-  - **Units**: Stored in per-unit using **device base** (i.e., divided by the device's `base_power`)
+  - **Units**: Stored in per-unit using **component base** (i.e., divided by the device's `base_power`)
 
   - **Physical meaning**: The maximum MW output considering prime mover constraints such as:
 
@@ -46,7 +46,7 @@ The rating is typically determined by the electrical design and thermal limits o
       + Boiler capacity (for steam generators)
       + Fuel flow limitations
 
-  - **Access**: Retrieved using `get_max_active_power(device, units)` (the `units` argument is required, e.g. `get_max_active_power(device, DU)`)
+  - **Access**: Retrieved using `get_max_active_power(device, units)` (the `units` argument is required, e.g. `get_max_active_power(device, CU)`)
 
 The maximum active power is determined by the mechanical system that drives the generator. This is often less than the rating when considering only real power production.
 
@@ -54,11 +54,11 @@ The maximum active power is determined by the mechanical system that drives the 
 
 ### Storage Convention Summary
 
-| Concept          | Storage Units       | Accessor Function                     |
-|:---------------- |:------------------- |:------------------------------------- |
-| Base Power       | Natural units (MVA) | `get_base_power(device)`              |
-| Rating           | Device base (p.u.)  | `get_rating(device, units)`           |
-| Max Active Power | Device base (p.u.)  | `get_max_active_power(device, units)` |
+| Concept          | Storage Units         | Accessor Function                     |
+|:---------------- |:--------------------- |:------------------------------------- |
+| Base Power       | Natural units (MVA)   | `get_base_power(device)`              |
+| Rating           | Component base (p.u.) | `get_rating(device, units)`           |
+| Max Active Power | Component base (p.u.) | `get_max_active_power(device, units)` |
 
 ### Physical Interpretation
 
@@ -85,39 +85,39 @@ In this example:
 ### Unit System Conversions
 
 As of PowerSystems 6, unit conversion is **explicit at every call site**: each unit-bearing
-accessor takes a `units` argument (`SU`, `DU`, `NU`, or an explicit `Unitful` unit such as
+accessor takes a `units` argument (`SU`, `CU`, `NU`, or an explicit `Unitful` unit such as
 `u"MW"`), and the value is converted accordingly. There is no system-wide mutable setting that
 changes what accessors return. `base_power` is the exception — it is always in natural units
-(MVA) and rejects per-unit (`SU`/`DU`) targets.
+(MVA) and rejects per-unit (`SU`/`CU`) targets.
 
 ```julia
-# Assuming base_power = 100 MVA, rating = 1.0 p.u. (device base), max_active_power = 0.95 p.u. (device base)
+# Assuming base_power = 100 MVA, rating = 1.0 p.u. (component base), max_active_power = 0.95 p.u. (component base)
 sys = System(100.0)  # System base power = 100 MVA
 gen = get_component(ThermalStandard, sys, "gen1")
 
 # Base power is always natural units (MVA); it accepts only `NU` / power-Unitful targets
 get_base_power(gen)                    # Returns: 100.0   (MVA, always natural units)
 get_base_power(gen, NU)                # Returns: 100.0   (MVA)
-# get_base_power(gen, DU)              # ERROR: per-unit bases are not valid for base_power
+# get_base_power(gen, CU)              # ERROR: per-unit bases are not valid for base_power
 
-# Device base (`DU`)
-get_rating(gen, DU)                    # Returns: 1.0     (p.u. on device base)
-get_max_active_power(gen, DU)          # Returns: 0.95    (p.u. on device base)
+# Component base (`CU`)
+get_rating(gen, CU)                    # Returns: 1.0     (p.u. on component base)
+get_max_active_power(gen, CU)          # Returns: 0.95    (p.u. on component base)
 
 # Natural units (`NU`)
 get_rating(gen, NU)                    # Returns: 100.0   (MVA)
 get_max_active_power(gen, NU)          # Returns: 95.0    (MW)
 
-# System base (`SU`) — here the system base equals the device base
+# System base (`SU`) — here the system base equals the component base
 get_rating(gen, SU)                    # Returns: 1.0     (p.u. on system base)
 get_max_active_power(gen, SU)          # Returns: 0.95    (p.u. on system base)
 ```
 
 !!! note
 
-    `base_power` is **always** in natural units (MVA) and rejects `SU`/`DU` targets — it is the
+    `base_power` is **always** in natural units (MVA) and rejects `SU`/`CU` targets — it is the
     anchor that every other field's per-unitization is defined against. Rating and maximum active
-    power are stored in device base and converted to whatever `units` you request at the call site.
+    power are stored in component base and converted to whatever `units` you request at the call site.
 
 ## See Also
 

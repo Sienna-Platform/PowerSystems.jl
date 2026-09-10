@@ -108,7 +108,7 @@ set_operation_cost!(value::VirtualParticipant, val) = value.operation_cost = val
 set_ext!(value::VirtualParticipant, val) = value.ext = val
 
 
-function from_openapi(po::PO.VirtualParticipant, refs::OpenAPIRefs, ::DeviceBaseUnit)
+function from_openapi(po::PO.VirtualParticipant, refs::OpenAPIRefs, ::ComponentBaseUnit)
     return VirtualParticipant(;
         name = po.name,
         available = po.available,
@@ -131,7 +131,7 @@ function from_openapi(po::PO.VirtualParticipant, refs::OpenAPIRefs, ::NaturalUni
 end
 
 
-function to_openapi(value::VirtualParticipant, refs::OpenAPIRefs, ::DeviceBaseUnit)
+function to_openapi(value::VirtualParticipant, refs::OpenAPIRefs, ::ComponentBaseUnit)
     return PO.VirtualParticipant(;
         id = component_id(refs, value),
         name = get_name(value),

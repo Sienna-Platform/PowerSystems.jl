@@ -60,14 +60,14 @@ Call `f` with the unit marker the document string `s` names.
 
 Higher-order rather than marker-returning: the marker is a type parameter of
 `CostCurve`/`FuelCurve`, so returning it from a runtime string would hand the caller a
-`Union{NaturalUnit, DeviceBaseUnit}` and make the construction dynamic. Calling `f` inside each
+`Union{NaturalUnit, ComponentBaseUnit}` and make the construction dynamic. Calling `f` inside each
 branch specializes the whole construction on one concrete marker.
 """
 _with_power_units(::Any, ::Nothing) =
     error("convert_cost: power_units is required and missing")
 function _with_power_units(f, s::AbstractString)
     s == "NATURAL_UNITS" && return f(NaturalUnit())
-    s == "COMPONENT_BASE" && return f(DeviceBaseUnit())
+    s == "COMPONENT_BASE" && return f(ComponentBaseUnit())
     error(
         "convert_cost: unmapped power_units \"$s\" — expected one of " *
         "NATURAL_UNITS, COMPONENT_BASE",
