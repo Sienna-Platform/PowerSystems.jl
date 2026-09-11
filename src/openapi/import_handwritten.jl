@@ -662,8 +662,10 @@ end
 # also restricted to "COMPONENT_BASE", under which PSY stores them exactly as pu, so they pass
 # through unconverted; `base_power_12`/`_23`/`_31` are base values themselves, not
 # unit-converted quantities, and also pass through directly. All are nullable together
-# (`check_pairwise_impedance_block`), but COMPONENT_BASE performs no arithmetic on them so no
-# nothing-guard is needed. `primary_circuit`/`secondary_circuit`/`tertiary_circuit`/`star_bus`
+# (`check_pairwise_impedance_block`) and `Absent`-by-omission on the wire — COMPONENT_BASE
+# performs no arithmetic on them, but PSY's `Union{Nothing, Float64}` default is `nothing`, not
+# `Absent`, so each still goes through `_or_default(po.field, nothing)`.
+# `primary_circuit`/`secondary_circuit`/`tertiary_circuit`/`star_bus`
 # resolve through `refs`, matching `TwoWindingTransformer.circuit`.
 
 const THREEWINDING_PARAM_UNITS_IMPLEMENTED = Set(["COMPONENT_BASE"])
@@ -695,15 +697,15 @@ function from_openapi(
         secondary_circuit = refs[po.secondary_circuit],
         tertiary_circuit = refs[po.tertiary_circuit],
         star_bus = refs[po.star_bus],
-        r_12 = po.r_12,
-        x_12 = po.x_12,
-        r_23 = po.r_23,
-        x_23 = po.x_23,
-        r_31 = po.r_31,
-        x_31 = po.x_31,
-        base_power_12 = po.base_power_12,
-        base_power_23 = po.base_power_23,
-        base_power_31 = po.base_power_31,
+        r_12 = _or_default(po.r_12, nothing),
+        x_12 = _or_default(po.x_12, nothing),
+        r_23 = _or_default(po.r_23, nothing),
+        x_23 = _or_default(po.x_23, nothing),
+        r_31 = _or_default(po.r_31, nothing),
+        x_31 = _or_default(po.x_31, nothing),
+        base_power_12 = _or_default(po.base_power_12, nothing),
+        base_power_23 = _or_default(po.base_power_23, nothing),
+        base_power_31 = _or_default(po.base_power_31, nothing),
         magnetizing_shunt = _complex_number(po.magnetizing_shunt, Complex(0.0, 0.0)),
         shunt_location = _or_default_enum(
             po.shunt_location,
@@ -780,11 +782,13 @@ _check_switched_admittance_units(po) = _check_unit_basis(
     " for $(po.name)",
 )
 
+_switched_admittance_y_increase(::Union{Nothing, IC.Absent}, base_power) =
+    Complex{Float64}[]
 _switched_admittance_y_increase(values, base_power) =
     [_complex_number(v) / base_power for v in values]
 
-_switched_admittance_solved(value, base_power) =
-    isnothing(value) ? nothing : value / base_power
+_switched_admittance_solved(::Union{Nothing, IC.Absent}, base_power) = nothing
+_switched_admittance_solved(value, base_power) = value / base_power
 
 function from_openapi(po::PO.SwitchedAdmittance, refs::OpenAPIRefs, ::ComponentBaseUnit)
     _check_switched_admittance_units(po)
@@ -1200,7 +1204,7 @@ function from_openapi(po::PO.TwoTerminalLCCLine, refs::OpenAPIRefs, ::ComponentB
         power_mode = _or_default(po.power_mode, true),
         switch_mode_voltage = _or_default(po.switch_mode_voltage, 0.0),
         compounding_resistance = _lcc_ohm_to_pu(
-            po.compounding_resistance, po.scheduled_dc_voltage, base_power,
+            _or_default(po.compounding_resistance, 0.0), po.scheduled_dc_voltage, base_power,
         ),
         min_compounding_voltage = _or_default(po.min_compounding_voltage, 0.0),
         rectifier_transformer_ratio = _or_default(po.rectifier_transformer_ratio, 1.0),
@@ -1209,7 +1213,9 @@ function from_openapi(po::PO.TwoTerminalLCCLine, refs::OpenAPIRefs, ::ComponentB
         rectifier_tap_step = _or_default(po.rectifier_tap_step, 0.00625),
         rectifier_delay_angle = _or_default(po.rectifier_delay_angle, 0.0),
         rectifier_capacitor_reactance = _lcc_ohm_to_pu(
-            po.rectifier_capacitor_reactance, po.rectifier_base_voltage, base_power,
+            _or_default(po.rectifier_capacitor_reactance, 0.0),
+            po.rectifier_base_voltage,
+            base_power,
         ),
         inverter_transformer_ratio = _or_default(po.inverter_transformer_ratio, 1.0),
         inverter_tap_setting = _or_default(po.inverter_tap_setting, 1.0),
@@ -1217,7 +1223,9 @@ function from_openapi(po::PO.TwoTerminalLCCLine, refs::OpenAPIRefs, ::ComponentB
         inverter_tap_step = _or_default(po.inverter_tap_step, 0.00625),
         inverter_extinction_angle = _or_default(po.inverter_extinction_angle, 0.0),
         inverter_capacitor_reactance = _lcc_ohm_to_pu(
-            po.inverter_capacitor_reactance, po.inverter_base_voltage, base_power,
+            _or_default(po.inverter_capacitor_reactance, 0.0),
+            po.inverter_base_voltage,
+            base_power,
         ),
         active_power_limits_from =
         _minmax(po.active_power_limits_from, (min = 0.0, max = 0.0)),
@@ -1242,7 +1250,7 @@ function from_openapi(po::PO.TwoTerminalLCCLine, refs::OpenAPIRefs, ::NaturalUni
         active_power_flow = po.active_power_flow / base_power,
         r = _lcc_ohm_to_pu(po.r, po.scheduled_dc_voltage, base_power),
         transfer_setpoint = _lcc_transfer_setpoint(
-            po.transfer_setpoint, Val(po.power_mode), base_power,
+            po.transfer_setpoint, Val(_or_default(po.power_mode, true)), base_power,
         ),
         scheduled_dc_voltage = po.scheduled_dc_voltage,
         rectifier_bridges = po.rectifier_bridges,
@@ -1266,7 +1274,7 @@ function from_openapi(po::PO.TwoTerminalLCCLine, refs::OpenAPIRefs, ::NaturalUni
         power_mode = _or_default(po.power_mode, true),
         switch_mode_voltage = _or_default(po.switch_mode_voltage, 0.0),
         compounding_resistance = _lcc_ohm_to_pu(
-            po.compounding_resistance, po.scheduled_dc_voltage, base_power,
+            _or_default(po.compounding_resistance, 0.0), po.scheduled_dc_voltage, base_power,
         ),
         min_compounding_voltage = _or_default(po.min_compounding_voltage, 0.0),
         rectifier_transformer_ratio = _or_default(po.rectifier_transformer_ratio, 1.0),
@@ -1275,7 +1283,9 @@ function from_openapi(po::PO.TwoTerminalLCCLine, refs::OpenAPIRefs, ::NaturalUni
         rectifier_tap_step = _or_default(po.rectifier_tap_step, 0.00625),
         rectifier_delay_angle = _or_default(po.rectifier_delay_angle, 0.0),
         rectifier_capacitor_reactance = _lcc_ohm_to_pu(
-            po.rectifier_capacitor_reactance, po.rectifier_base_voltage, base_power,
+            _or_default(po.rectifier_capacitor_reactance, 0.0),
+            po.rectifier_base_voltage,
+            base_power,
         ),
         inverter_transformer_ratio = _or_default(po.inverter_transformer_ratio, 1.0),
         inverter_tap_setting = _or_default(po.inverter_tap_setting, 1.0),
@@ -1283,7 +1293,9 @@ function from_openapi(po::PO.TwoTerminalLCCLine, refs::OpenAPIRefs, ::NaturalUni
         inverter_tap_step = _or_default(po.inverter_tap_step, 0.00625),
         inverter_extinction_angle = _or_default(po.inverter_extinction_angle, 0.0),
         inverter_capacitor_reactance = _lcc_ohm_to_pu(
-            po.inverter_capacitor_reactance, po.inverter_base_voltage, base_power,
+            _or_default(po.inverter_capacitor_reactance, 0.0),
+            po.inverter_base_voltage,
+            base_power,
         ),
         active_power_limits_from = _minmax_cu(
             po.active_power_limits_from,
@@ -1423,9 +1435,11 @@ _vsc_converter_loss(curve) = error(
 )
 
 """
-Unwrap a `converter_loss_*` `LossCurve` the same way `_hvdc_loss` does (only `NATURAL_UNITS`
-is supported), then hand the bare curve to `_vsc_converter_loss`.
+Unwrap a `converter_loss_*`/`loss_function` `LossCurve` the same way `_hvdc_loss` does (only
+`NATURAL_UNITS` is supported), then hand the bare curve to `_vsc_converter_loss`; absent on
+the wire falls back to the shared PSY descriptor default (a zero linear loss curve).
 """
+_vsc_loss(::Union{Nothing, IC.Absent}) = LossCurve(LinearCurve(0.0), NaturalUnit())
 function _vsc_loss(l::PC.LossCurve)
     units = _power_units_marker("LossCurve", "", l.power_units.value)
     units isa NaturalUnit || error(
@@ -1641,12 +1655,12 @@ function from_openapi(po::PO.Source, refs::OpenAPIRefs, ::ComponentBaseUnit)
         reactive_power = _or_default(po.reactive_power, 0.0),
         active_power_limits = _minmax(po.active_power_limits, (min = 0.0, max = 0.0)),
         reactive_power_limits = _opt_minmax(po.reactive_power_limits),
-        R_th = po.R_th,
-        X_th = po.X_th,
+        R_th = _or_default(po.r_th, 0.0),
+        X_th = _or_default(po.x_th, 0.0),
         internal_voltage = _or_default(po.internal_voltage, 1.0),
         internal_angle = _or_default(po.internal_angle, 0.0),
         base_power = _require_base_power("Source", po.id, po.base_power),
-        base_voltage = po.base_voltage,
+        base_voltage = _or_default(po.base_voltage, nothing),
         operation_cost = _convert_source_operation_cost(
             po.operation_cost, get_store(refs), get_base_power(refs),
         )::OperationalCost,
@@ -1665,12 +1679,12 @@ function from_openapi(po::PO.Source, refs::OpenAPIRefs, ::NaturalUnit)
         active_power_limits =
         _minmax_cu(po.active_power_limits, (min = 0.0, max = 0.0), dbp),
         reactive_power_limits = _minmax_cu(po.reactive_power_limits, dbp),
-        R_th = po.R_th,
-        X_th = po.X_th,
+        R_th = _or_default(po.r_th, 0.0),
+        X_th = _or_default(po.x_th, 0.0),
         internal_voltage = _or_default(po.internal_voltage, 1.0),
         internal_angle = _or_default(po.internal_angle, 0.0),
         base_power = dbp,
-        base_voltage = po.base_voltage,
+        base_voltage = _or_default(po.base_voltage, nothing),
         operation_cost = _convert_source_operation_cost(
             po.operation_cost, get_store(refs), get_base_power(refs),
         )::OperationalCost,
@@ -1752,13 +1766,13 @@ function from_openapi(
         reactive_power_limits = _opt_minmax(po.reactive_power_limits),
         dc_current = _or_default(po.dc_current, 0.0),
         max_dc_current = _or_default(po.max_dc_current, 1e8),
-        loss_function = _vsc_converter_loss(convert_cost(po.loss_function)),
+        loss_function = _vsc_loss(po.loss_function),
         dc_control = _or_default_enum(po.dc_control, VSCDCControlModes.DC_VOLTAGE),
         ac_control = _or_default_enum(po.ac_control, VSCACControlModes.AC_REACTIVE_POWER),
         dc_setpoint = _or_default(po.dc_setpoint, 0.0),
         ac_setpoint = _or_default(po.ac_setpoint, 1.0),
         dc_voltage_droop = _or_default(po.dc_voltage_droop, 0.0),
-        remote_bus_control = po.remote_bus_control,
+        remote_bus_control = _or_default(po.remote_bus_control, nothing),
         rmpct = _or_default(po.rmpct, 100.0),
         power_factor_weighting_fraction = _or_default(
             po.power_factor_weighting_fraction,
@@ -1783,13 +1797,13 @@ function from_openapi(po::PO.InterconnectingConverter, refs::OpenAPIRefs, ::Natu
         reactive_power_limits = _minmax_cu(po.reactive_power_limits, dbp),
         dc_current = _or_default(po.dc_current, 0.0) / dbp,
         max_dc_current = _or_default(po.max_dc_current, 1e8) / dbp,
-        loss_function = _vsc_converter_loss(convert_cost(po.loss_function)),
+        loss_function = _vsc_loss(po.loss_function),
         dc_control = _or_default_enum(po.dc_control, VSCDCControlModes.DC_VOLTAGE),
         ac_control = _or_default_enum(po.ac_control, VSCACControlModes.AC_REACTIVE_POWER),
         dc_setpoint = _or_default(po.dc_setpoint, 0.0),
         ac_setpoint = _or_default(po.ac_setpoint, 1.0),
         dc_voltage_droop = _or_default(po.dc_voltage_droop, 0.0),
-        remote_bus_control = po.remote_bus_control,
+        remote_bus_control = _or_default(po.remote_bus_control, nothing),
         rmpct = _or_default(po.rmpct, 100.0),
         power_factor_weighting_fraction = _or_default(
             po.power_factor_weighting_fraction,

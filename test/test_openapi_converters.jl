@@ -534,6 +534,32 @@ end
         t3w_no_shunt = PSY.from_openapi(t3w_po_no_shunt, refs, val)
         @test get_magnetizing_shunt(t3w_no_shunt, CU) == Complex(0.0, 0.0)
     end
+
+    # `r_12`/`x_12`/`r_23`/`x_23`/`r_31`/`x_31`/`base_power_12`/`_23`/`_31` are all
+    # `Absent`-by-omission (the pairwise measured-impedance block is optional and must be set
+    # together or not at all) but PSY declares `nothing` as each one's default — a document
+    # omitting the whole block must still build rather than assigning `Absent` straight into a
+    # `Union{Nothing, Float64}` field.
+    t3w_po_no_pairwise = PSY.PO.ThreeWindingTransformer(;
+        id = 33, name = "t3w4", primary_circuit = 20, secondary_circuit = 21,
+        tertiary_circuit = 22, star_bus = 5,
+        parameter_units = PSY.PO.ImpedanceUnitBasis("COMPONENT_BASE"),
+        admittance_units = PSY.PO.AdmittanceUnitBasis("COMPONENT_BASE"),
+        magnetizing_shunt = PSY.IC.ComplexNumber(; real = 0.0, imag = 0.0),
+        shunt_location = PSY.PO.ThreeWindingTransformerShuntLocation("STAR"),
+    )
+    for val in (CU, NU)
+        t3w_no_pairwise = PSY.from_openapi(t3w_po_no_pairwise, refs, val)
+        @test isnothing(get_r_12(t3w_no_pairwise, CU))
+        @test isnothing(get_x_12(t3w_no_pairwise, CU))
+        @test isnothing(get_r_23(t3w_no_pairwise, CU))
+        @test isnothing(get_x_23(t3w_no_pairwise, CU))
+        @test isnothing(get_r_31(t3w_no_pairwise, CU))
+        @test isnothing(get_x_31(t3w_no_pairwise, CU))
+        @test isnothing(get_base_power_12(t3w_no_pairwise))
+        @test isnothing(get_base_power_23(t3w_no_pairwise))
+        @test isnothing(get_base_power_31(t3w_no_pairwise))
+    end
 end
 
 @testset "OpenAPI converters: ThermalStandard" begin
@@ -1228,6 +1254,19 @@ end
         sh = PSY.from_openapi(sh_po, refs, val)
         @test get_admittance_limits(sh) == (min = 1.0, max = 1.0)
     end
+
+    # `y_increase` and `solved_admittance` are both `Absent`-by-omission; PSY defaults them to
+    # an empty vector and `nothing` respectively — a document omitting either must still build
+    # rather than erroring on `iterate(::Absent)`/`Absent / base_power`.
+    sh_po_no_optional = PSY.PO.SwitchedAdmittance(;
+        id = 21, name = "sw2", available = true, bus = 4,
+        admittance_units = PSY.PO.ShuntAdmittanceUnitBasis("COMPONENT_MVAR"),
+    )
+    for val in (CU, NU)
+        sh_no_optional = PSY.from_openapi(sh_po_no_optional, refs, val)
+        @test get_Y_increase(sh_no_optional) == ComplexF64[]
+        @test isnothing(get_solved_admittance(sh_no_optional))
+    end
 end
 
 @testset "OpenAPI converters: TwoTerminalLCCLine" begin
@@ -1264,6 +1303,105 @@ end
         @test get_active_power_limits_to(lcc, CU) == (min = 0.0, max = 0.0)
         @test get_reactive_power_limits_from(lcc, CU) == (min = 0.0, max = 0.0)
         @test get_reactive_power_limits_to(lcc, CU) == (min = 0.0, max = 0.0)
+    end
+
+    # `compounding_resistance`/`rectifier_capacitor_reactance`/`inverter_capacitor_reactance`
+    # are `Absent`-by-omission but PSY defaults each to `0.0` ohm — a document omitting them
+    # must still build rather than erroring inside `_lcc_ohm_to_pu`. `power_mode` is likewise
+    # `Absent`-by-omission with a PSY default of `true`; the `NaturalUnit` method reads it
+    # through `Val(...)` when picking `transfer_setpoint`'s unit, so an omitted `power_mode`
+    # must still resolve to the `ActivePower` (MW) branch rather than erroring on `Val(Absent)`.
+    lcc_po_no_optional = PSY.PO.TwoTerminalLCCLine(;
+        id = 21, name = "lcc2", available = true, arc = 10,
+        active_power_flow = 50.0, r = 0.01, transfer_setpoint = 50.0,
+        scheduled_dc_voltage = 200.0,
+        rectifier_bridges = 2, rectifier_rc = 0.001, rectifier_xc = 0.01,
+        rectifier_base_voltage = 138.0,
+        rectifier_delay_angle_limits = PSY.IC.MinMax(; min = 0.0, max = 1.0),
+        inverter_bridges = 2, inverter_rc = 0.001, inverter_xc = 0.01,
+        inverter_base_voltage = 138.0,
+        inverter_extinction_angle_limits = PSY.IC.MinMax(; min = 0.0, max = 1.0),
+        parameter_units = PSY.PO.ImpedanceUnitBasis("NATURAL_UNITS"),
+        dc_voltage_units = PSY.PO.VoltageUnitBasis("NATURAL_UNITS"),
+        loss = _loss_curve_po(0.01, 0.0),
+        base_power = 100.0,
+        power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
+    )
+    lcc_device_no_optional = PSY.from_openapi(lcc_po_no_optional, refs, CU)
+    @test get_compounding_resistance(lcc_device_no_optional) == 0.0
+    @test get_rectifier_capacitor_reactance(lcc_device_no_optional) == 0.0
+    @test get_inverter_capacitor_reactance(lcc_device_no_optional) == 0.0
+    @test get_power_mode(lcc_device_no_optional)
+    @test get_transfer_setpoint(lcc_device_no_optional) == 50.0
+
+    lcc_natural_no_optional = PSY.from_openapi(lcc_po_no_optional, refs, NU)
+    @test get_compounding_resistance(lcc_natural_no_optional) == 0.0
+    @test get_rectifier_capacitor_reactance(lcc_natural_no_optional) == 0.0
+    @test get_inverter_capacitor_reactance(lcc_natural_no_optional) == 0.0
+    @test get_power_mode(lcc_natural_no_optional)
+    @test get_transfer_setpoint(lcc_natural_no_optional) == 0.5
+end
+
+@testset "OpenAPI converters: Source" begin
+    refs = _refs_with_area_bus(; base_power = 100.0)
+
+    # `R_th`/`X_th` are `Absent`-by-omission on the wire; the PSY-side code previously read
+    # `po.R_th`/`po.X_th` — a case mismatch with the generated `r_th`/`x_th` field names — so
+    # every `Source` import threw `FieldError` regardless of whether either was omitted.
+    # `base_voltage` is the same "raw `Absent` passthrough" bug as `R_th`/`X_th`, on the field
+    # right below them in this same function.
+    source_po = PSY.PO.Source(;
+        id = 20, name = "src1", available = true, bus = 4,
+        parameter_units = PSY.PO.ImpedanceUnitBasis("COMPONENT_BASE"),
+        active_power_limits = PSY.IC.MinMax(; min = -10.0, max = 10.0),
+        base_power = 100.0,
+        operation_cost = PSY.PO.SourceOperationCost(
+            PSY.PC.ImportExportCost(;
+                energy_export_weekly_limit = 1e9,
+                energy_import_weekly_limit = 1e9,
+                import_offer_curves = nothing,
+                export_offer_curves = nothing,
+            ),
+        ),
+        power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
+    )
+    for val in (CU, NU)
+        src = PSY.from_openapi(source_po, refs, val)
+        @test get_R_th(src) == 0.0
+        @test get_X_th(src) == 0.0
+        @test isnothing(get_base_voltage(src))
+    end
+end
+
+@testset "OpenAPI converters: InterconnectingConverter" begin
+    refs = _refs_with_area_bus(; base_power = 100.0)
+    dcbus_po = PSY.PO.DCBus(;
+        id = 30, number = 30, name = "dcbus30", available = true,
+        magnitude = 1.0, voltage_limits = PSY.IC.MinMax(; min = 0.9, max = 1.1),
+        base_voltage = 500.0,
+    )
+    refs[30] = PSY.from_openapi(dcbus_po, refs)
+
+    # `loss_function` is `Absent`-by-omission; the PSY-side code called
+    # `_vsc_converter_loss(convert_cost(po.loss_function))` directly on the wire's `LossCurve`
+    # instead of `_vsc_loss` (which unwraps `.value_curve` and checks `power_units` first, the
+    # way `TwoTerminalVSCLine.converter_loss_from/to` already do), so every
+    # `InterconnectingConverter` import threw `convert_cost: unmapped variant LossCurve`
+    # regardless of whether `loss_function` was omitted. `remote_bus_control` is the same "raw
+    # `Absent` passthrough" bug as `Source.base_voltage`, a few fields below `loss_function`.
+    ic_po = PSY.PO.InterconnectingConverter(;
+        id = 20, name = "ic1", available = true, bus = 4, dc_bus = 30,
+        active_power = 10.0, rating = 100.0,
+        active_power_limits = PSY.IC.MinMax(; min = -100.0, max = 100.0),
+        base_power = 100.0,
+        voltage_setpoint_units = PSY.PO.VoltageUnitBasis("COMPONENT_BASE"),
+        power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
+    )
+    for val in (CU, NU)
+        ic = PSY.from_openapi(ic_po, refs, val)
+        @test get_loss_function(ic) == LossCurve(LinearCurve(0.0), NaturalUnit())
+        @test isnothing(get_remote_bus_control(ic))
+        @test get_voltage_limits(ic) == (min = 0.0, max = 999.9)
     end
 end
 
