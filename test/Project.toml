@@ -37,31 +37,19 @@ Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 InfraStore = "6aee0376-896a-4a59-96ff-12f221c99746"
 
 [sources]
+# Branch pins until the OpenAPI packages are registered and the psy6-line branches merge.
 PowerSystems = {path = ".."}
-# IS4 carries the association-id time series keys and the DeviceBaseUnit ->
-# ComponentBaseUnit rename this branch depends on (see ../Project.toml); InfraStore 0.11 is
-# registered, so it needs no source pin of its own.
-InfrastructureSystems = {path = "../../InfrastructureSystems.jl"}
-# LOCAL PATH CO-DEV PINS (temporary): the InfrastructureCore/InfrastructureTimeSeries package
-# split exists only on local disk, not pushed to jd/schemas-0.1.0 yet. Revert to the git pins
-# once pushed/merged.
-InfrastructureCoreOpenAPIModels = {path = "../../PowerOpenAPIModels/InfrastructureCoreOpenAPIModels.jl"}
-InfrastructureTimeSeriesOpenAPIModels = {path = "../../PowerOpenAPIModels/InfrastructureTimeSeriesOpenAPIModels.jl"}
-PowerCoreOpenAPIModels = {path = "../../PowerOpenAPIModels/PowerCoreOpenAPIModels.jl"}
-PowerDynamicsOpenAPIModels = {path = "../../PowerOpenAPIModels/PowerDynamicsOpenAPIModels.jl"}
-# LOCAL PATH CO-DEV PIN (temporary): PFFP's local checkout carries the OpenAPI.jl 1.x work,
-# uncommitted upstream. Revert to the git pin once it is pushed/merged.
-PowerFlowFileParser = {path = "../../PowerFlowFileParser.jl"}
-PowerInvestmentsOpenAPIModels = {path = "../../PowerOpenAPIModels/PowerInvestmentsOpenAPIModels.jl"}
-PowerOpenAPIModels = {path = "../../PowerOpenAPIModels/PowerOpenAPIModels.jl"}
-PowerOperationsOpenAPIModels = {path = "../../PowerOpenAPIModels/PowerOperationsOpenAPIModels.jl"}
-# LOCAL PATH CO-DEV PIN (temporary): PSB's local checkout carries the 5.0-dev9 test-data
-# pin and CU-unit/sibling-checkout fixes, uncommitted upstream. Revert to the git rev once
-# it is pushed/merged.
-PowerSystemCaseBuilder = {path = "../../PowerSystemCaseBuilder.jl"}
-# LOCAL PATH CO-DEV PIN (temporary): PowerTableDataParser's local checkout carries the
-# OpenAPI.jl 1.x work, uncommitted upstream. Revert to the git pin once it is pushed/merged.
-PowerTableDataParser = {path = "../../PowerTableDataParser.jl"}
+InfrastructureSystems = {url = "https://github.com/Sienna-Platform/InfrastructureSystems.jl.git", rev = "jd/openapi-1x-suite"}
+InfrastructureCoreOpenAPIModels = {url = "https://github.com/Sienna-Platform/PowerOpenAPIModels.git", rev = "jd/openapi_deps_update", subdir = "InfrastructureCoreOpenAPIModels.jl"}
+InfrastructureTimeSeriesOpenAPIModels = {url = "https://github.com/Sienna-Platform/PowerOpenAPIModels.git", rev = "jd/openapi_deps_update", subdir = "InfrastructureTimeSeriesOpenAPIModels.jl"}
+PowerCoreOpenAPIModels = {url = "https://github.com/Sienna-Platform/PowerOpenAPIModels.git", rev = "jd/openapi_deps_update", subdir = "PowerCoreOpenAPIModels.jl"}
+PowerDynamicsOpenAPIModels = {url = "https://github.com/Sienna-Platform/PowerOpenAPIModels.git", rev = "jd/openapi_deps_update", subdir = "PowerDynamicsOpenAPIModels.jl"}
+PowerFlowFileParser = {url = "https://github.com/Sienna-Platform/PowerFlowFileParser.jl.git", rev = "jd/openapi-1x"}
+PowerInvestmentsOpenAPIModels = {url = "https://github.com/Sienna-Platform/PowerOpenAPIModels.git", rev = "jd/openapi_deps_update", subdir = "PowerInvestmentsOpenAPIModels.jl"}
+PowerOpenAPIModels = {url = "https://github.com/Sienna-Platform/PowerOpenAPIModels.git", rev = "jd/openapi_deps_update", subdir = "PowerOpenAPIModels.jl"}
+PowerOperationsOpenAPIModels = {url = "https://github.com/Sienna-Platform/PowerOpenAPIModels.git", rev = "jd/openapi_deps_update", subdir = "PowerOperationsOpenAPIModels.jl"}
+PowerSystemCaseBuilder = {url = "https://github.com/Sienna-Platform/PowerSystemCaseBuilder.jl.git", rev = "jd/openapi-1x"}
+PowerTableDataParser = {url = "https://github.com/NLR-Sienna/PowerTableDataParser.jl.git", rev = "jd/openapi-1x"}
 
 [compat]
 InfrastructureSystems = "3"

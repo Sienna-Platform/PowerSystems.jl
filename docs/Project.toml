@@ -27,21 +27,19 @@ TimeSeries = "9e3dc215-6440-5c97-bce1-76c03772f85e"
 TypeTree = "04da0e3b-1cad-4b2c-a963-fc1602baf1af"
 
 [sources]
-InfrastructureCoreOpenAPIModels = {path = "../../PowerOpenAPIModels/InfrastructureCoreOpenAPIModels.jl"}
-InfrastructureSystems = {path = "../../InfrastructureSystems.jl"}
-InfrastructureTimeSeriesOpenAPIModels = {path = "../../PowerOpenAPIModels/InfrastructureTimeSeriesOpenAPIModels.jl"}
-PowerCoreOpenAPIModels = {path = "../../PowerOpenAPIModels/PowerCoreOpenAPIModels.jl"}
-PowerDynamicsOpenAPIModels = {path = "../../PowerOpenAPIModels/PowerDynamicsOpenAPIModels.jl"}
-PowerFlowFileParser = {path = "../../PowerFlowFileParser.jl"}
-PowerInvestmentsOpenAPIModels = {path = "../../PowerOpenAPIModels/PowerInvestmentsOpenAPIModels.jl"}
-PowerOpenAPIModels = {path = "../../PowerOpenAPIModels/PowerOpenAPIModels.jl"}
-PowerOperationsOpenAPIModels = {path = "../../PowerOpenAPIModels/PowerOperationsOpenAPIModels.jl"}
-# LOCAL PATH CO-DEV PIN (temporary): PSB's local checkout carries the 5.0-dev9 test-data
-# pin and CU-unit/sibling-checkout fixes, uncommitted upstream. Revert to the git rev once
-# it is pushed/merged.
-PowerSystemCaseBuilder = {path = "../../PowerSystemCaseBuilder.jl"}
-PowerSystems = {path = "/Users/jdlara/cache/psy6/PowerSystems.jl"}
-PowerTableDataParser = {path = "../../PowerTableDataParser.jl"}
+# Branch pins until the OpenAPI packages are registered and the psy6-line branches merge.
+InfrastructureCoreOpenAPIModels = {url = "https://github.com/Sienna-Platform/PowerOpenAPIModels.git", rev = "jd/openapi_deps_update", subdir = "InfrastructureCoreOpenAPIModels.jl"}
+InfrastructureSystems = {url = "https://github.com/Sienna-Platform/InfrastructureSystems.jl.git", rev = "jd/openapi-1x-suite"}
+InfrastructureTimeSeriesOpenAPIModels = {url = "https://github.com/Sienna-Platform/PowerOpenAPIModels.git", rev = "jd/openapi_deps_update", subdir = "InfrastructureTimeSeriesOpenAPIModels.jl"}
+PowerCoreOpenAPIModels = {url = "https://github.com/Sienna-Platform/PowerOpenAPIModels.git", rev = "jd/openapi_deps_update", subdir = "PowerCoreOpenAPIModels.jl"}
+PowerDynamicsOpenAPIModels = {url = "https://github.com/Sienna-Platform/PowerOpenAPIModels.git", rev = "jd/openapi_deps_update", subdir = "PowerDynamicsOpenAPIModels.jl"}
+PowerFlowFileParser = {url = "https://github.com/Sienna-Platform/PowerFlowFileParser.jl.git", rev = "jd/openapi-1x"}
+PowerInvestmentsOpenAPIModels = {url = "https://github.com/Sienna-Platform/PowerOpenAPIModels.git", rev = "jd/openapi_deps_update", subdir = "PowerInvestmentsOpenAPIModels.jl"}
+PowerOpenAPIModels = {url = "https://github.com/Sienna-Platform/PowerOpenAPIModels.git", rev = "jd/openapi_deps_update", subdir = "PowerOpenAPIModels.jl"}
+PowerOperationsOpenAPIModels = {url = "https://github.com/Sienna-Platform/PowerOpenAPIModels.git", rev = "jd/openapi_deps_update", subdir = "PowerOperationsOpenAPIModels.jl"}
+PowerSystemCaseBuilder = {url = "https://github.com/Sienna-Platform/PowerSystemCaseBuilder.jl.git", rev = "jd/openapi-1x"}
+PowerSystems = {url = "https://github.com/Sienna-Platform/PowerSystems.jl.git", rev = "jd/openapi-1x"}
+PowerTableDataParser = {url = "https://github.com/NLR-Sienna/PowerTableDataParser.jl.git", rev = "jd/openapi-1x"}
 
 [compat]
 CSV = "~0.10"
