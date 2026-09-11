@@ -39,23 +39,52 @@ function get_base_voltage end
 # Unit categories
 # ============================================================
 
-abstract type UnitCategory end
+"""
+    UnitCategory{NU, P, V}
+
+A physical quantity the conversion engine knows how to per-unitize, described by two
+things and nothing else:
+
+  - `NU`: the natural (physical) unit, as a `Unitful.Units` *type*. Compound units are
+    ordinary Unitful units, so a rate (`u"MW"/u"minute"`) or a cost rate
+    (`USD/u"hr"`) needs no special case here.
+  - `P`, `V`: the exponents of the component's base power and base voltage in this
+    quantity's per-unit base. Only those two bases are ever per-unitized; time,
+    currency and fuel ride along inside `NU` and are untouched by a change of base.
+
+Every base rule in this file is then one formula, `S^P * V^V`, instead of a hand-written
+case per category:
+
+| category   | `NU`  |  P |  V | `base_value` |
+|:-----------|:------|---:|---:|:-------------|
+| power      | `MW`  |  1 |  0 | `S`          |
+| voltage    | `kV`  |  0 |  1 | `V`          |
+| impedance  | `Ω`   | -1 |  2 | `V^2/S`      |
+| admittance | `S`   |  1 | -2 | `S/V^2`      |
+| current    | `kA`  |  1 | -1 | `S/V`        |
+
+Both parameters are part of the type, so `natural_unit`, `base_value` and
+`_cu_to_su_ratio` resolve at compile time and fold to a multiply or a divide.
+"""
+struct UnitCategory{NU <: Unitful.Units, P, V} end
+
+# The three power categories share a dimension and a base and differ only in the unit
+# they print as. `MVAr`/`MVA` are PSY's own `@unit` definitions, reachable as bare
+# constants here but not through `u"..."` until `Unitful.register` runs in `__init__`.
+const ActivePowerCategory = UnitCategory{typeof(u"MW"), 1, 0}
+const ReactivePowerCategory = UnitCategory{typeof(MVAr), 1, 0}
+const ApparentPowerCategory = UnitCategory{typeof(MVA), 1, 0}
+const ImpedanceCategory = UnitCategory{typeof(u"Ω"), -1, 2}
+const AdmittanceCategory = UnitCategory{typeof(u"S"), 1, -2}
+const VoltageCategory = UnitCategory{typeof(u"kV"), 0, 1}
+const CurrentCategory = UnitCategory{typeof(u"kA"), 1, -1}
 
 """
-Supertype of the three power categories. Active, reactive, and apparent power share
-one dimension and one per-unit base (the device/system base power), so every base and
-ratio rule below is written once against this supertype; the categories differ only in
-which natural unit they print as (`u"MW"` / `u"MVAr"` / `u"MVA"`).
+The power categories, which share one per-unit base. Formerly an abstract supertype;
+now a `Union`, so `isa` checks and dispatch on it keep working.
 """
-abstract type AbstractPowerCategory <: UnitCategory end
-
-struct ActivePowerCategory <: AbstractPowerCategory end
-struct ReactivePowerCategory <: AbstractPowerCategory end
-struct ApparentPowerCategory <: AbstractPowerCategory end
-struct ImpedanceCategory <: UnitCategory end
-struct AdmittanceCategory <: UnitCategory end
-struct VoltageCategory <: UnitCategory end
-struct CurrentCategory <: UnitCategory end
+const AbstractPowerCategory =
+    Union{ActivePowerCategory, ReactivePowerCategory, ApparentPowerCategory}
 
 const ACTIVE_POWER = ActivePowerCategory()
 const REACTIVE_POWER = ReactivePowerCategory()
@@ -64,6 +93,42 @@ const IMPEDANCE = ImpedanceCategory()
 const ADMITTANCE = AdmittanceCategory()
 const VOLTAGE = VoltageCategory()
 const CURRENT = CurrentCategory()
+
+# Categories compose, so a derived quantity's base and natural unit follow from its
+# parts rather than being declared: `VOLTAGE^Val(2) / POWER` *is* `IMPEDANCE`. The
+# exponents add and Unitful composes the natural unit, both at the type level.
+Base.:*(
+    ::UnitCategory{N1, P1, V1},
+    ::UnitCategory{N2, P2, V2},
+) where {N1, P1, V1, N2, P2, V2} =
+    UnitCategory{typeof(N1() * N2()), P1 + P2, V1 + V2}()
+Base.:/(
+    ::UnitCategory{N1, P1, V1},
+    ::UnitCategory{N2, P2, V2},
+) where {N1, P1, V1, N2, P2, V2} =
+    UnitCategory{typeof(N1() / N2()), P1 - P2, V1 - V2}()
+# The exponent is a `Val` so it is part of the type and the result stays a singleton.
+Base.:^(::UnitCategory{N, P, V}, ::Val{n}) where {N, P, V, n} =
+    UnitCategory{typeof(N()^n), P * n, V * n}()
+
+# A generated alias prints as its bare `UnitCategory{...}` parameters otherwise, which
+# is unreadable in an error message or at the REPL.
+const _CATEGORY_NAMES = (
+    (ACTIVE_POWER, "ACTIVE_POWER"),
+    (REACTIVE_POWER, "REACTIVE_POWER"),
+    (APPARENT_POWER, "APPARENT_POWER"),
+    (IMPEDANCE, "IMPEDANCE"),
+    (ADMITTANCE, "ADMITTANCE"),
+    (VOLTAGE, "VOLTAGE"),
+    (CURRENT, "CURRENT"),
+)
+
+function Base.show(io::IO, cat::UnitCategory{NU, P, V}) where {NU, P, V}
+    for (known, name) in _CATEGORY_NAMES
+        cat === known && return print(io, name)
+    end
+    return print(io, "UnitCategory($(NU()), S^$P V^$V)")
+end
 
 # ============================================================
 # natural_unit, base_value, system_base_value
@@ -74,16 +139,20 @@ const CURRENT = CurrentCategory()
 
 The natural (physical) unit for this category.
 """
-# `MVAr`/`MVA` are PSY's own `@unit` definitions, reachable downstream as
-# `u"MVAr"`/`u"MVA"` but not from `u"..."` inside PSY itself — registration with
-# Unitful happens in `__init__`, after this file has been precompiled.
-natural_unit(::ActivePowerCategory) = u"MW"
-natural_unit(::ReactivePowerCategory) = MVAr
-natural_unit(::ApparentPowerCategory) = MVA
-natural_unit(::ImpedanceCategory) = u"Ω"
-natural_unit(::AdmittanceCategory) = u"S"
-natural_unit(::VoltageCategory) = u"kV"
-natural_unit(::CurrentCategory) = u"kA"
+natural_unit(::UnitCategory{NU}) where {NU} = NU()
+
+# Raise a base to a category exponent. The base is reached through `getter` rather than
+# passed by value so that an exponent of zero never calls it: `_checked_base_voltage`
+# errors when the base voltage is unset, and a quantity with `V == 0` must not care.
+# One method per exponent that actually occurs, so `^` (a libm `pow` call) never
+# appears in the generated code -- the same reason `_convert_curve_axes` in
+# InfrastructureSystems is written one method per `Val`.
+@inline _base_factor(::Val{0}, getter, c) = 1.0
+@inline _base_factor(::Val{1}, getter, c) = getter(c)
+@inline _base_factor(::Val{-1}, getter, c) = inv(getter(c))
+@inline _base_factor(::Val{2}, getter, c) = (v = getter(c); v * v)
+@inline _base_factor(::Val{-2}, getter, c) = (v = getter(c); inv(v * v))
+@inline _base_factor(::Val{N}, getter, c) where {N} = getter(c)^N
 
 # Voltage-dependent base values must fail loudly when the base voltage is
 # unset; a silent fallback would mislabel the returned number.
@@ -98,34 +167,25 @@ end
 
 1.0 CU of this category = `base_value(c, cat)` natural units.
 """
-base_value(c, ::AbstractPowerCategory) = _get_component_base_power(c)
-base_value(c, ::ImpedanceCategory) =
-    _checked_base_voltage(c)^2 / _get_component_base_power(c)
-base_value(c, ::AdmittanceCategory) =
-    _get_component_base_power(c) / _checked_base_voltage(c)^2
-base_value(c, ::VoltageCategory) = _checked_base_voltage(c)
-base_value(c, ::CurrentCategory) = _get_component_base_power(c) / _checked_base_voltage(c)
+base_value(c, ::UnitCategory{NU, P, V}) where {NU, P, V} =
+    _base_factor(Val(P), _get_component_base_power, c) *
+    _base_factor(Val(V), _checked_base_voltage, c)
 
 """
     system_base_value(component, category) → Float64
 
 1.0 SU of this category = `system_base_value(c, cat)` natural units.
 """
-system_base_value(c, ::AbstractPowerCategory) = _get_system_base_power(c)
-system_base_value(c, ::ImpedanceCategory) =
-    _checked_base_voltage(c)^2 / _get_system_base_power(c)
-system_base_value(c, ::AdmittanceCategory) =
-    _get_system_base_power(c) / _checked_base_voltage(c)^2
-system_base_value(c, ::VoltageCategory) = _checked_base_voltage(c)
-system_base_value(c, ::CurrentCategory) =
-    _get_system_base_power(c) / _checked_base_voltage(c)
+system_base_value(c, ::UnitCategory{NU, P, V}) where {NU, P, V} =
+    _base_factor(Val(P), _get_system_base_power, c) *
+    _base_factor(Val(V), _checked_base_voltage, c)
 
-# CU→SU ratio (voltage cancels, only power bases needed)
-_cu_to_su_ratio(c, ::Union{AbstractPowerCategory, AdmittanceCategory, CurrentCategory}) =
-    _get_component_base_power(c) / _get_system_base_power(c)
-_cu_to_su_ratio(c, ::ImpedanceCategory) =
-    _get_system_base_power(c) / _get_component_base_power(c)
-_cu_to_su_ratio(::Any, ::VoltageCategory) = 1.0
+# CU→SU ratio. Only the power base differs between the two systems -- the base voltage
+# is the same in both and cancels -- so the ratio is the power ratio raised to the
+# category's power exponent, and a category with `P == 0` (voltage) needs no base at all.
+_cu_su_power_ratio(c) = _get_component_base_power(c) / _get_system_base_power(c)
+_cu_to_su_ratio(c, ::UnitCategory{NU, P, V}) where {NU, P, V} =
+    _base_factor(Val(P), _cu_su_power_ratio, c)
 
 # ============================================================
 # convert_units: value from one unit system to another

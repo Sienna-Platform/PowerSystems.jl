@@ -35,6 +35,55 @@ PSY.get_base_voltage(::MockLine) = 230.0
     @test natural_unit(CURRENT) == u"kA"
 end
 
+@testset "Unit categories compose from their base exponents" begin
+    gen = MockGen(0.6, 50.0)
+
+    # A category is a natural unit plus the exponents of the power and voltage bases,
+    # so the derived quantities are *computed* rather than declared: every hardcoded
+    # category below must equal the composition it is physically defined as.
+    for (derived, hardcoded) in (
+        (VOLTAGE^Val(2) / ACTIVE_POWER, IMPEDANCE),
+        (ACTIVE_POWER / VOLTAGE^Val(2), ADMITTANCE),
+        (ACTIVE_POWER / VOLTAGE, CURRENT),
+    )
+        @test base_value(gen, derived) ≈ base_value(gen, hardcoded)
+        @test system_base_value(gen, derived) ≈ system_base_value(gen, hardcoded)
+        @test PSY._cu_to_su_ratio(gen, derived) ≈ PSY._cu_to_su_ratio(gen, hardcoded)
+        # The derived natural unit is spelled differently (kV² MW⁻¹ vs Ω) but must be
+        # the same physical unit, which is what makes `uconvert` on it correct.
+        @test Unitful.uconvert(
+            natural_unit(hardcoded),
+            1.0 * natural_unit(derived),
+        ) ≈ 1.0 * natural_unit(hardcoded)
+    end
+
+    # Multiplication is the inverse of division: current × voltage is power.
+    @test base_value(gen, CURRENT * VOLTAGE) ≈ base_value(gen, ACTIVE_POWER)
+end
+
+@testset "Unit categories: zero exponents never touch an unused base" begin
+    # `_checked_base_voltage` errors when the base voltage is unset, so a category with
+    # a voltage exponent of zero must not reach it. A getter that never needs the base
+    # voltage has to work on a component that has none.
+    struct NoVoltage end
+    PSY._get_component_base_power(::NoVoltage) = 50.0
+    PSY._get_system_base_power(::NoVoltage) = 100.0
+    PSY.get_base_voltage(::NoVoltage) = nothing
+
+    nv = NoVoltage()
+    @test base_value(nv, ACTIVE_POWER) == 50.0
+    @test system_base_value(nv, ACTIVE_POWER) == 100.0
+    @test PSY._cu_to_su_ratio(nv, VOLTAGE) == 1.0   # P == 0: no base power read either
+    @test_throws ErrorException base_value(nv, IMPEDANCE)
+end
+
+@testset "Unit categories print by name" begin
+    @test sprint(show, ACTIVE_POWER) == "ACTIVE_POWER"
+    @test sprint(show, IMPEDANCE) == "IMPEDANCE"
+    # A composed category has no name; it reports its unit and exponents instead.
+    @test occursin("UnitCategory", sprint(show, VOLTAGE^Val(2) / ACTIVE_POWER))
+end
+
 @testset "base_value and system_base_value" begin
     gen = MockGen(0.6, 50.0)  # 50 MVA device, 100 MVA system
 
