@@ -1064,6 +1064,14 @@ end
     @test get_storage_capacity(storage_device, CU) == 400.0
     @test get_rating(storage_device, CU) == 100.0
 
+    # An omitted basis selector takes the schema default.
+    storage_po_no_units =
+        _po_with(storage_po; id = 22, name = "storage3", energy_units = PSY.IC.ABSENT)
+    for val in (CU, NU)
+        storage_no_units = PSY.from_openapi(storage_po_no_units, refs, val)
+        @test get_storage_technology_type(storage_no_units) == StorageTech.LIB
+    end
+
     bad_storage_po = PSY.PO.EnergyReservoirStorage(;
         id = 21, name = "storage2", available = true, bus = 4,
         prime_mover_type = PSY.PC.PrimeMovers("BA"),
@@ -1236,6 +1244,11 @@ end
     add_component!(sys_250, tmodel_250)
     @test get_active_power_flow(tmodel_250, u"MW") == 125.0
     @test get_active_power_limits_to(tmodel_250, u"MW") == (min = -250.0, max = 250.0)
+
+    # The schema default `NATURAL_UNITS` is unimplemented here, so omission errors.
+    tmodel_po_no_units =
+        _po_with(tmodel_po; id = 34, name = "tmodel2", parameter_units = PSY.IC.ABSENT)
+    @test_throws ErrorException PSY.from_openapi(tmodel_po_no_units, refs_100)
 end
 
 @testset "OpenAPI converters: SwitchedAdmittance" begin
@@ -1266,6 +1279,13 @@ end
         sh_no_optional = PSY.from_openapi(sh_po_no_optional, refs, val)
         @test get_Y_increase(sh_no_optional) == ComplexF64[]
         @test isnothing(get_solved_admittance(sh_no_optional))
+    end
+
+    sh_po_no_units =
+        _po_with(sh_po; id = 22, name = "sw3", admittance_units = PSY.IC.ABSENT)
+    for val in (CU, NU)
+        sh_no_units = PSY.from_openapi(sh_po_no_units, refs, val)
+        @test get_admittance_limits(sh_no_units) == (min = 1.0, max = 1.0)
     end
 end
 
@@ -1340,6 +1360,17 @@ end
     @test get_inverter_capacitor_reactance(lcc_natural_no_optional) == 0.0
     @test get_power_mode(lcc_natural_no_optional)
     @test get_transfer_setpoint(lcc_natural_no_optional) == 0.5
+
+    lcc_po_no_units = _po_with(
+        lcc_po_no_optional;
+        id = 22, name = "lcc3",
+        parameter_units = PSY.IC.ABSENT,
+        dc_voltage_units = PSY.IC.ABSENT,
+    )
+    for val in (CU, NU)
+        lcc_no_units = PSY.from_openapi(lcc_po_no_units, refs, val)
+        @test get_r(lcc_no_units) > 0.0
+    end
 end
 
 @testset "OpenAPI converters: Source" begin
@@ -1370,6 +1401,13 @@ end
         @test get_R_th(src) == 0.0
         @test get_X_th(src) == 0.0
         @test isnothing(get_base_voltage(src))
+    end
+
+    source_po_no_units =
+        _po_with(source_po; id = 21, name = "src2", parameter_units = PSY.IC.ABSENT)
+    for val in (CU, NU)
+        src_no_units = PSY.from_openapi(source_po_no_units, refs, val)
+        @test get_R_th(src_no_units) == 0.0
     end
 end
 
@@ -1402,6 +1440,13 @@ end
         @test get_loss_function(ic) == LossCurve(LinearCurve(0.0), NaturalUnit())
         @test isnothing(get_remote_bus_control(ic))
         @test get_voltage_limits(ic) == (min = 0.0, max = 999.9)
+    end
+
+    ic_po_no_units =
+        _po_with(ic_po; id = 21, name = "ic2", voltage_setpoint_units = PSY.IC.ABSENT)
+    for val in (CU, NU)
+        ic_no_units = PSY.from_openapi(ic_po_no_units, refs, val)
+        @test get_loss_function(ic_no_units) == LossCurve(LinearCurve(0.0), NaturalUnit())
     end
 end
 
@@ -1687,6 +1732,28 @@ end
         @test get_reactive_power_limits_to(vsc_no_limits, CU) == (min = 0.0, max = 0.0)
         @test get_voltage_limits_from(vsc_no_limits) == (min = 0.0, max = 999.9)
         @test get_voltage_limits_to(vsc_no_limits) == (min = 0.0, max = 999.9)
+    end
+
+    vsc_po_no_voltage_units =
+        _po_with(vsc_po; id = 23, name = "vsc4", voltage_units = PSY.IC.ABSENT)
+    for val in (CU, NU)
+        vsc_no_voltage_units = PSY.from_openapi(vsc_po_no_voltage_units, refs, val)
+        @test get_voltage_limits_from(vsc_no_voltage_units) == (min = 0.9, max = 1.1)
+    end
+
+    # `dc_setpoint_to` scales by `setpoint_voltage_units`.
+    vsc_po_no_setpoint_units =
+        _po_with(vsc_po; id = 24, name = "vsc5", setpoint_voltage_units = PSY.IC.ABSENT)
+    for val in (CU, NU)
+        vsc_no_setpoint_units = PSY.from_openapi(vsc_po_no_setpoint_units, refs, val)
+        @test get_dc_setpoint_to(vsc_no_setpoint_units) == 1.02
+    end
+
+    vsc_po_no_admittance_units =
+        _po_with(vsc_po; id = 25, name = "vsc6", admittance_units = PSY.IC.ABSENT)
+    for val in (CU, NU)
+        vsc_no_admittance_units = PSY.from_openapi(vsc_po_no_admittance_units, refs, val)
+        @test get_g(vsc_no_admittance_units) == 200.0
     end
 end
 

@@ -400,6 +400,7 @@ _check_generic_arc_param_units(po) = _check_unit_basis(
     GENERIC_ARC_PARAM_UNITS_IMPLEMENTED,
     "GenericArcImpedance.parameter_units",
     " for $(po.name)",
+    "COMPONENT_BASE",
 )
 
 function from_openapi(po::PO.GenericArcImpedance, refs::OpenAPIRefs, ::ComponentBaseUnit)
@@ -527,11 +528,22 @@ _unit_basis_string(value::PC.AdmittanceUnitBasis) = value.value
 _unit_basis_string(value::PC.EnergyUnitBasis) = value.value
 _unit_basis_string(value) = value
 
+"""An omitted basis selector takes `default`, the schema's declared default for that property."""
+_unit_basis_string(::Union{Nothing, IC.Absent}, default::AbstractString) = default
+_unit_basis_string(value, ::AbstractString) = _unit_basis_string(value)
+
 """One guard for every per-field unit-basis discriminator with no implemented arithmetic:
 error loudly naming the field, value, and the implemented set, rather than silently guessing
-(psy6 rule). `owner` is `" for <name>"` where the PO type has a name."""
-function _check_unit_basis(value, implemented, field::AbstractString, owner::AbstractString)
-    str = _unit_basis_string(value)
+(psy6 rule). `owner` is `" for <name>"` where the PO type has a name. An omitted value takes
+`default` before the check, so an unimplemented default errors like an explicit one."""
+function _check_unit_basis(
+    value,
+    implemented,
+    field::AbstractString,
+    owner::AbstractString,
+    default::AbstractString,
+)
+    str = _unit_basis_string(value, default)
     if str in implemented
         return nothing
     end
@@ -546,6 +558,7 @@ _check_circuit_param_units(po) = _check_unit_basis(
     CIRCUIT_PARAM_UNITS_IMPLEMENTED,
     "TransformerCircuit.parameter_units",
     "",
+    "COMPONENT_BASE",
 )
 
 function from_openapi(
@@ -627,6 +640,7 @@ _check_shunt_admittance_units(po) = _check_unit_basis(
     SHUNT_ADMITTANCE_UNITS_IMPLEMENTED,
     "TwoWindingTransformer.admittance_units",
     " for $(po.name)",
+    "COMPONENT_BASE",
 )
 
 function from_openapi(
@@ -674,6 +688,7 @@ _check_three_winding_param_units(po) = _check_unit_basis(
     THREEWINDING_PARAM_UNITS_IMPLEMENTED,
     "ThreeWindingTransformer.parameter_units",
     " for $(po.name)",
+    "COMPONENT_BASE",
 )
 
 const THREEWINDING_SHUNT_ADMITTANCE_UNITS_IMPLEMENTED = Set(["COMPONENT_BASE"])
@@ -682,6 +697,7 @@ _check_three_winding_shunt_admittance_units(po) = _check_unit_basis(
     THREEWINDING_SHUNT_ADMITTANCE_UNITS_IMPLEMENTED,
     "ThreeWindingTransformer.admittance_units",
     " for $(po.name)",
+    "COMPONENT_BASE",
 )
 
 function from_openapi(
@@ -738,6 +754,7 @@ _check_fixed_admittance_units(po) = _check_unit_basis(
     FIXED_ADMITTANCE_UNITS_IMPLEMENTED,
     "FixedAdmittance.admittance_units",
     " for $(po.name)",
+    "COMPONENT_MVAR",
 )
 
 _fixed_admittance_pu(po, refs::OpenAPIRefs) =
@@ -780,6 +797,7 @@ _check_switched_admittance_units(po) = _check_unit_basis(
     SWITCHED_ADMITTANCE_UNITS_IMPLEMENTED,
     "SwitchedAdmittance.admittance_units",
     " for $(po.name)",
+    "COMPONENT_MVAR",
 )
 
 _switched_admittance_y_increase(::Union{Nothing, IC.Absent}, base_power) =
@@ -835,6 +853,7 @@ _check_facts_voltage_setpoint_units(po) = _check_unit_basis(
     FACTS_VOLTAGE_SETPOINT_UNITS_IMPLEMENTED,
     "FACTSControlDevice.voltage_setpoint_units",
     " for $(po.name)",
+    "COMPONENT_BASE",
 )
 
 function from_openapi(po::PO.FACTSControlDevice, refs::OpenAPIRefs, ::ComponentBaseUnit)
@@ -966,6 +985,7 @@ _check_energy_units(po) = _check_unit_basis(
     ENERGY_UNITS_IMPLEMENTED,
     "EnergyReservoirStorage.energy_units",
     " for $(po.name)",
+    "MWH",
 )
 
 function from_openapi(
@@ -1151,6 +1171,7 @@ _check_lcc_parameter_units(po) = _check_unit_basis(
     TWO_TERMINAL_LCC_PARAMETER_UNITS_IMPLEMENTED,
     "TwoTerminalLCCLine.parameter_units",
     " for $(po.name)",
+    "NATURAL_UNITS",
 )
 
 _check_lcc_dc_voltage_units(po) = _check_unit_basis(
@@ -1158,6 +1179,7 @@ _check_lcc_dc_voltage_units(po) = _check_unit_basis(
     TWO_TERMINAL_LCC_DC_VOLTAGE_UNITS_IMPLEMENTED,
     "TwoTerminalLCCLine.dc_voltage_units",
     " for $(po.name)",
+    "NATURAL_UNITS",
 )
 
 """Ohms → pu via `Zbase = base_voltage^2 / base_power` (`base_voltage` in kV, `base_power` in
@@ -1374,6 +1396,7 @@ _check_vsc_admittance_units(po) = _check_unit_basis(
     TWO_TERMINAL_VSC_ADMITTANCE_UNITS_IMPLEMENTED,
     "TwoTerminalVSCLine.admittance_units",
     " for $(po.name)",
+    "NATURAL_UNITS",
 )
 
 _check_vsc_voltage_units(po) = _check_unit_basis(
@@ -1381,6 +1404,7 @@ _check_vsc_voltage_units(po) = _check_unit_basis(
     TWO_TERMINAL_VSC_VOLTAGE_UNITS_IMPLEMENTED,
     "TwoTerminalVSCLine.voltage_units",
     " for $(po.name)",
+    "NATURAL_UNITS",
 )
 
 # Both bases are implemented: PSY stores these setpoints per-unit, and each kV one has a base to
@@ -1394,6 +1418,7 @@ _check_vsc_setpoint_voltage_units(po) = _check_unit_basis(
     TWO_TERMINAL_VSC_SETPOINT_VOLTAGE_UNITS_IMPLEMENTED,
     "TwoTerminalVSCLine.setpoint_voltage_units",
     " for $(po.name)",
+    "NATURAL_UNITS",
 )
 
 """
@@ -1497,7 +1522,8 @@ end
 The basis `setpoint_voltage_units` declares for the voltage-regulating setpoints. PSY stores
 them per-unit, so `COMPONENT_BASE` passes through and only `NATURAL_UNITS` divides by a base.
 """
-_vsc_setpoint_basis(po) = Val(Symbol(_unit_basis_string(po.setpoint_voltage_units)))
+_vsc_setpoint_basis(po) =
+    Val(Symbol(_unit_basis_string(po.setpoint_voltage_units, "NATURAL_UNITS")))
 
 _vsc_dc_voltage_setpoint(_po, setpoint, ::Val{:COMPONENT_BASE}) = setpoint
 _vsc_dc_voltage_setpoint(po, setpoint, ::Val{:NATURAL_UNITS}) =
@@ -1643,6 +1669,7 @@ _check_source_param_units(po) = _check_unit_basis(
     SOURCE_PARAM_UNITS_IMPLEMENTED,
     "Source.parameter_units",
     " for $(po.name)",
+    "COMPONENT_BASE",
 )
 
 function from_openapi(po::PO.Source, refs::OpenAPIRefs, ::ComponentBaseUnit)
@@ -1707,6 +1734,7 @@ _check_tmodel_param_units(po) = _check_unit_basis(
     TMODEL_PARAM_UNITS_IMPLEMENTED,
     "TModelHVDCLine.parameter_units",
     " for $(po.name)",
+    "NATURAL_UNITS",
 )
 
 function from_openapi(po::PO.TModelHVDCLine, refs::OpenAPIRefs, ::ComponentBaseUnit)
@@ -1746,6 +1774,7 @@ _check_ic_voltage_setpoint_units(po) = _check_unit_basis(
     IC_VOLTAGE_SETPOINT_UNITS_IMPLEMENTED,
     "InterconnectingConverter.voltage_setpoint_units",
     " for $(po.name)",
+    "COMPONENT_BASE",
 )
 
 function from_openapi(
