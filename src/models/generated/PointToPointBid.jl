@@ -126,7 +126,7 @@ function from_openapi(po::PO.PointToPointBid, refs::OpenAPIRefs, ::ComponentBase
         max_active_power = po.max_active_power,
         price_limits = _minmax_from_po(po.price_limits),
         spread_bid = convert_cost(po.spread_bid.value)::Union{MarketBidCost, MarketBidTimeSeriesCost},
-        linked_crr = (if po.linked_crr isa Union{Nothing, IC.Absent}; nothing; else; po.linked_crr; end),
+        linked_crr = _or_default(po.linked_crr, nothing),
     )
 end
 
@@ -139,7 +139,7 @@ function from_openapi(po::PO.PointToPointBid, refs::OpenAPIRefs, ::NaturalUnit)
         max_active_power = po.max_active_power,
         price_limits = _minmax_from_po(po.price_limits),
         spread_bid = convert_cost(po.spread_bid.value)::Union{MarketBidCost, MarketBidTimeSeriesCost},
-        linked_crr = (if po.linked_crr isa Union{Nothing, IC.Absent}; nothing; else; po.linked_crr; end),
+        linked_crr = _or_default(po.linked_crr, nothing),
     )
 end
 

@@ -80,6 +80,12 @@ component at all."""
 _or_default(::Union{Nothing, IC.Absent}, default) = default
 _or_default(v, ::Any) = v
 
+"""Same as `_or_default` for a field the natural-units method rescales: `op(v, base)` runs
+only on a value that is present, so an absent field takes `default` without the arithmetic
+ever touching the sentinel. Mirrors the `(op, base)` arity the compound extractors take."""
+_or_default(::Union{Nothing, IC.Absent}, default, ::Any, ::Any) = default
+_or_default(v, ::Any, op, base) = op(v, base)
+
 """Same as `_or_default`, for a wire enum field: unwraps `.value` when the field is present,
 returns `default` (already the bare PSY-side value) when it is absent."""
 _or_default_enum(::Union{Nothing, IC.Absent}, default) = default

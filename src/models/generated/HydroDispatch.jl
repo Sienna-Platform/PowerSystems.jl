@@ -255,8 +255,8 @@ function from_openapi(po::PO.HydroDispatch, refs::OpenAPIRefs, ::ComponentBaseUn
         ramp_limits = _updown_from_po(po.ramp_limits),
         time_limits = _updown_from_po(po.time_limits),
         base_power = po.base_power,
-        status = (if po.status isa Union{Nothing, IC.Absent}; OperationalStates.OFFLINE; else; OperationalStates(po.status.value); end),
-        time_at_status = (if po.time_at_status isa Union{Nothing, IC.Absent}; INFINITE_TIME; else; po.time_at_status; end),
+        status = _or_default_enum(po.status, OperationalStates.OFFLINE),
+        time_at_status = _or_default(po.time_at_status, INFINITE_TIME),
         operation_cost = convert_cost(po.operation_cost.value)::OperationalCost,
     )
 end
@@ -275,8 +275,8 @@ function from_openapi(po::PO.HydroDispatch, refs::OpenAPIRefs, ::NaturalUnit)
         ramp_limits = _updown_from_po(po.ramp_limits, (/), po.base_power),
         time_limits = _updown_from_po(po.time_limits),
         base_power = po.base_power,
-        status = (if po.status isa Union{Nothing, IC.Absent}; OperationalStates.OFFLINE; else; OperationalStates(po.status.value); end),
-        time_at_status = (if po.time_at_status isa Union{Nothing, IC.Absent}; INFINITE_TIME; else; po.time_at_status; end),
+        status = _or_default_enum(po.status, OperationalStates.OFFLINE),
+        time_at_status = _or_default(po.time_at_status, INFINITE_TIME),
         operation_cost = convert_cost(po.operation_cost.value)::OperationalCost,
     )
 end

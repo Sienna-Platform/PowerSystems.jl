@@ -274,10 +274,10 @@ function from_openapi(po::PO.ThermalStandard, refs::OpenAPIRefs, ::ComponentBase
         operation_cost = convert_cost(po.operation_cost.value)::OperationalCost,
         base_power = po.base_power,
         time_limits = _updown_from_po(po.time_limits),
-        commitment_mode = (if po.commitment_mode isa Union{Nothing, IC.Absent}; CommitmentModes.COMMITTED; else; CommitmentModes(po.commitment_mode.value); end),
-        prime_mover_type = (if po.prime_mover_type isa Union{Nothing, IC.Absent}; PrimeMovers.OT; else; PrimeMovers(po.prime_mover_type.value); end),
-        fuel = (if po.fuel isa Union{Nothing, IC.Absent}; ThermalFuels.OTHER; else; ThermalFuels(po.fuel.value); end),
-        time_at_status = (if po.time_at_status isa Union{Nothing, IC.Absent}; INFINITE_TIME; else; po.time_at_status; end),
+        commitment_mode = _or_default_enum(po.commitment_mode, CommitmentModes.COMMITTED),
+        prime_mover_type = _or_default_enum(po.prime_mover_type, PrimeMovers.OT),
+        fuel = _or_default_enum(po.fuel, ThermalFuels.OTHER),
+        time_at_status = _or_default(po.time_at_status, INFINITE_TIME),
     )
 end
 
@@ -296,10 +296,10 @@ function from_openapi(po::PO.ThermalStandard, refs::OpenAPIRefs, ::NaturalUnit)
         operation_cost = convert_cost(po.operation_cost.value)::OperationalCost,
         base_power = po.base_power,
         time_limits = _updown_from_po(po.time_limits),
-        commitment_mode = (if po.commitment_mode isa Union{Nothing, IC.Absent}; CommitmentModes.COMMITTED; else; CommitmentModes(po.commitment_mode.value); end),
-        prime_mover_type = (if po.prime_mover_type isa Union{Nothing, IC.Absent}; PrimeMovers.OT; else; PrimeMovers(po.prime_mover_type.value); end),
-        fuel = (if po.fuel isa Union{Nothing, IC.Absent}; ThermalFuels.OTHER; else; ThermalFuels(po.fuel.value); end),
-        time_at_status = (if po.time_at_status isa Union{Nothing, IC.Absent}; INFINITE_TIME; else; po.time_at_status; end),
+        commitment_mode = _or_default_enum(po.commitment_mode, CommitmentModes.COMMITTED),
+        prime_mover_type = _or_default_enum(po.prime_mover_type, PrimeMovers.OT),
+        fuel = _or_default_enum(po.fuel, ThermalFuels.OTHER),
+        time_at_status = _or_default(po.time_at_status, INFINITE_TIME),
     )
 end
 

@@ -313,8 +313,8 @@ function from_openapi(po::PO.ThermalMultiStart, refs::OpenAPIRefs, ::ComponentBa
         start_types = po.start_types,
         operation_cost = convert_cost(po.operation_cost.value)::OperationalCost,
         base_power = po.base_power,
-        time_at_status = (if po.time_at_status isa Union{Nothing, IC.Absent}; INFINITE_TIME; else; po.time_at_status; end),
-        commitment_mode = (if po.commitment_mode isa Union{Nothing, IC.Absent}; CommitmentModes.COMMITTED; else; CommitmentModes(po.commitment_mode.value); end),
+        time_at_status = _or_default(po.time_at_status, INFINITE_TIME),
+        commitment_mode = _or_default_enum(po.commitment_mode, CommitmentModes.COMMITTED),
     )
 end
 
@@ -338,8 +338,8 @@ function from_openapi(po::PO.ThermalMultiStart, refs::OpenAPIRefs, ::NaturalUnit
         start_types = po.start_types,
         operation_cost = convert_cost(po.operation_cost.value)::OperationalCost,
         base_power = po.base_power,
-        time_at_status = (if po.time_at_status isa Union{Nothing, IC.Absent}; INFINITE_TIME; else; po.time_at_status; end),
-        commitment_mode = (if po.commitment_mode isa Union{Nothing, IC.Absent}; CommitmentModes.COMMITTED; else; CommitmentModes(po.commitment_mode.value); end),
+        time_at_status = _or_default(po.time_at_status, INFINITE_TIME),
+        commitment_mode = _or_default_enum(po.commitment_mode, CommitmentModes.COMMITTED),
     )
 end
 

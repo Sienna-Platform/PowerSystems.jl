@@ -122,9 +122,9 @@ function from_openapi(po::PO.DCBus, refs::OpenAPIRefs, ::ComponentBaseUnit)
         number = po.number,
         name = po.name,
         available = po.available,
-        magnitude = (if po.magnitude isa Union{Nothing, IC.Absent}; nothing; else; po.magnitude; end),
+        magnitude = _or_default(po.magnitude, nothing),
         voltage_limits = _minmax_from_po(po.voltage_limits),
-        base_voltage = (if po.base_voltage isa Union{Nothing, IC.Absent}; nothing; else; po.base_voltage; end),
+        base_voltage = _or_default(po.base_voltage, nothing),
         area = resolve_ref(refs, po.area, Area),
         load_zone = resolve_ref(refs, po.load_zone, LoadZone),
     )
@@ -135,9 +135,9 @@ function from_openapi(po::PO.DCBus, refs::OpenAPIRefs, ::NaturalUnit)
         number = po.number,
         name = po.name,
         available = po.available,
-        magnitude = (if po.magnitude isa Union{Nothing, IC.Absent}; nothing; else; po.magnitude; end),
+        magnitude = _or_default(po.magnitude, nothing),
         voltage_limits = _minmax_from_po(po.voltage_limits),
-        base_voltage = (if po.base_voltage isa Union{Nothing, IC.Absent}; nothing; else; po.base_voltage; end),
+        base_voltage = _or_default(po.base_voltage, nothing),
         area = resolve_ref(refs, po.area, Area),
         load_zone = resolve_ref(refs, po.load_zone, LoadZone),
     )

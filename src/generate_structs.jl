@@ -516,11 +516,19 @@ future divergence is declared rather than guessed.
 """
 openapi_po_field_name(field) = get(field, "openapi_name", field["name"])
 
-"""Wrap `body` so an Absent/omitted wire value falls back to `default_expr` instead of
-evaluating `body` — `Absent` is a distinct sentinel from `Nothing`, so a bare `isnothing`
-guard misses it."""
-function openapi_default_wrap(field_name, default_expr, body)
-    return "(if po.$field_name isa Union{Nothing, IC.Absent}; $default_expr; else; $body; end)"
+"""Emit the `_or_default` call that falls back to `default_expr` when the wire value is
+absent. The guard is dispatch on `Union{Nothing, IC.Absent}` inside the helper, not a type
+check at the call site: `Absent` is a distinct sentinel from `Nothing`, and dispatch keeps
+each emitted expression a plain call the compiler can specialize."""
+function openapi_default_wrap(field_name, default_expr)
+    return "_or_default(po.$field_name, $default_expr)"
+end
+
+"""`openapi_default_wrap` for a field the natural-units method rescales: the helper applies
+`op(value, base)` only when the value is present, so the arithmetic never sees the sentinel
+and the default is returned unscaled."""
+function openapi_default_wrap_scaled(field_name, default_expr, op, base)
+    return "_or_default(po.$field_name, $default_expr, ($op), $base)"
 end
 
 """Component-base is always pass-through; only the natural-units expression varies with
@@ -537,7 +545,7 @@ function openapi_scalar_exprs(field_name, conversion, nullable, bases, default_e
     end
     device = "po.$field_name"
     if !isnothing(fallback)
-        device = openapi_default_wrap(field_name, fallback, device)
+        device = openapi_default_wrap(field_name, fallback)
     end
     if conversion == :none
         return (device, device)
@@ -545,7 +553,7 @@ function openapi_scalar_exprs(field_name, conversion, nullable, bases, default_e
     op, base = openapi_conversion_op_base(conversion, bases)
     scaled = "po.$field_name $op $base"
     if !isnothing(fallback)
-        scaled = openapi_default_wrap(field_name, fallback, scaled)
+        scaled = openapi_default_wrap_scaled(field_name, fallback, op, base)
     end
     return (device, scaled)
 end
@@ -648,7 +656,7 @@ function compute_openapi_converter!(item, struct_names)
             # than dereferencing Absent's `.value`.
             present = "$bare(po.$po_name.value)"
             expr = if haskey(field, "default")
-                openapi_default_wrap(po_name, field["default"], present)
+                "_or_default_enum(po.$po_name, $(field["default"]))"
             else
                 present
             end

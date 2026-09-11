@@ -208,15 +208,14 @@ end
     @test occursin("active_power = po.active_power,", device_body)
     @test occursin("active_power = po.active_power / po.base_power,", natural_body)
 
-    # Nullable scalar power conversion with a descriptor default: both methods guard
-    # Absent (an omitted wire value, distinct from `Nothing`) and fall back to that default,
-    # since a bare `nothing`-only guard would not catch it.
+    # Nullable scalar power conversion with a descriptor default: both methods fall back to
+    # that default through `_or_default`, which dispatches on `Union{Nothing, IC.Absent}` —
+    # an omitted wire value is distinct from `Nothing`, so a `nothing`-only guard misses it.
+    # The natural-units method passes `(/)` and the base so the division runs only on a
+    # value that is present.
+    @test occursin("rating_b = _or_default(po.rating_b, nothing),", device_body)
     @test occursin(
-        "rating_b = (if po.rating_b isa Union{Nothing, IC.Absent}; nothing; else; po.rating_b; end),",
-        device_body,
-    )
-    @test occursin(
-        "rating_b = (if po.rating_b isa Union{Nothing, IC.Absent}; nothing; else; po.rating_b / po.base_power; end),",
+        "rating_b = _or_default(po.rating_b, nothing, (/), po.base_power),",
         natural_body,
     )
 
