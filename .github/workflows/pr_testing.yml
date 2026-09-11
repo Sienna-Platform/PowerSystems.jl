@@ -15,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        julia-version: ['1']
+        julia-version: ['1.12']
         julia-arch: [x64]
         os: [ubuntu-latest, windows-latest, macOS-latest]
 
@@ -35,9 +35,9 @@ jobs:
       # reports per commit, and the Windows ones carry backslash paths Codecov cannot
       # match against the repo tree.
       - uses: julia-actions/julia-processcoverage@v1
-        if: matrix.os == 'ubuntu-latest' && matrix.julia-version == '1'
+        if: matrix.os == 'ubuntu-latest' && matrix.julia-version == '1.12'
       - uses: codecov/codecov-action@v7
-        if: matrix.os == 'ubuntu-latest' && matrix.julia-version == '1'
+        if: matrix.os == 'ubuntu-latest' && matrix.julia-version == '1.12'
         with:
           files: ./lcov.info
           disable_search: true
