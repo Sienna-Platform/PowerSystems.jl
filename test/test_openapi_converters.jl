@@ -322,6 +322,23 @@ end
         angle_limits = PSY.IC.MinMax(; min = -1.57, max = 1.57),
         g = PSY.IC.FromTo(; from = 0.0, to = 0.0),
     )
+
+    # `b`/`g` are `Absent`-by-omission on the wire (unlike `Line`'s other required fields
+    # above); PSY has no `Union{Nothing, ...}` slot for either, so a document that omits them
+    # must still build a zero-shunt `Line` rather than erroring on `Absent.from`.
+    line_po_no_shunts = PSY.PO.Line(;
+        id = 23, name = "line4", available = true,
+        active_power_flow = 10.0, reactive_power_flow = 2.0, arc = 10,
+        r = 0.01, x = 0.1, base_power = 100.0,
+        rating = 175.0, rating_b = nothing, rating_c = nothing,
+        angle_limits = PSY.IC.MinMax(; min = -1.57, max = 1.57),
+        power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
+    )
+    for val in (CU, NU)
+        line_no_shunts = PSY.from_openapi(line_po_no_shunts, refs, val)
+        @test get_b(line_no_shunts, CU) == (from = 0.0, to = 0.0)
+        @test get_g(line_no_shunts, CU) == (from = 0.0, to = 0.0)
+    end
 end
 
 @testset "OpenAPI converters: TransformerCircuit / TwoWindingTransformer" begin
@@ -398,6 +415,38 @@ end
     )
     @test_throws ErrorException PSY.from_openapi(bad_xfmr_po, refs, CU
     )
+
+    # `control_limits`/`controlled_quantity_limits` (`TransformerCircuit`) and
+    # `magnetizing_shunt` (`TwoWindingTransformer`) are `Absent`-by-omission on the wire but
+    # PSY declares real defaults for all three — a document omitting them must still build,
+    # not error on `Absent.min`/`Absent.real`.
+    circuit_po_no_limits = PSY.PO.TransformerCircuit(;
+        id = 24, available = true, arc = 10, tap = 1.0, alpha = 0.05,
+        parameter_units = PSY.PO.ImpedanceUnitBasis("COMPONENT_BASE"), r = 0.01,
+        x = 0.1,
+        control_objective = PSY.PO.TransformerControlObjective("UNDEFINED"),
+        regulated_bus_number = 0,
+        number_of_tap_positions = 33,
+        rating = 100.0, rating_b = nothing, rating_c = nothing,
+        active_power_flow = 5.0, reactive_power_flow = 1.0,
+        base_power = 50.0, base_voltage_primary = 138.0, base_voltage_secondary = 69.0,
+        power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
+    )
+    for val in (CU, NU)
+        circuit_no_limits = PSY.from_openapi(circuit_po_no_limits, refs, val)
+        @test get_control_limits(circuit_no_limits) == (min = 0.9, max = 1.1)
+        @test get_controlled_quantity_limits(circuit_no_limits) == (min = 0.9, max = 1.1)
+    end
+
+    xfmr_po_no_shunt = PSY.PO.TwoWindingTransformer(;
+        id = 32, name = "xfmr3", circuit = 20,
+        admittance_units = PSY.PO.AdmittanceUnitBasis("COMPONENT_BASE"),
+        shunt_location = PSY.PO.TwoWindingTransformerShuntLocation("PRIMARY"),
+    )
+    for val in (CU, NU)
+        xfmr_no_shunt = PSY.from_openapi(xfmr_po_no_shunt, refs, val)
+        @test get_magnetizing_shunt(xfmr_no_shunt, CU) == Complex(0.0, 0.0)
+    end
 end
 
 @testset "OpenAPI converters: ThreeWindingTransformer" begin
@@ -469,6 +518,22 @@ end
     )
     @test_throws ErrorException PSY.from_openapi(bad_t3w_po, refs, CU
     )
+
+    # `magnetizing_shunt` is `Absent`-by-omission but PSY defaults it to `0.0`; a document
+    # omitting it must still build rather than erroring on `Absent.real`.
+    t3w_po_no_shunt = PSY.PO.ThreeWindingTransformer(;
+        id = 32, name = "t3w3", primary_circuit = 20, secondary_circuit = 21,
+        tertiary_circuit = 22, star_bus = 5,
+        parameter_units = PSY.PO.ImpedanceUnitBasis("COMPONENT_BASE"),
+        r_12 = 0.01, x_12 = 0.1, r_23 = 0.015, x_23 = 0.15, r_31 = 0.02, x_31 = 0.2,
+        base_power_12 = 100.0, base_power_23 = 100.0, base_power_31 = 100.0,
+        admittance_units = PSY.PO.AdmittanceUnitBasis("COMPONENT_BASE"),
+        shunt_location = PSY.PO.ThreeWindingTransformerShuntLocation("STAR"),
+    )
+    for val in (CU, NU)
+        t3w_no_shunt = PSY.from_openapi(t3w_po_no_shunt, refs, val)
+        @test get_magnetizing_shunt(t3w_no_shunt, CU) == Complex(0.0, 0.0)
+    end
 end
 
 @testset "OpenAPI converters: ThermalStandard" begin
@@ -1147,6 +1212,61 @@ end
     @test get_active_power_limits_to(tmodel_250, u"MW") == (min = -250.0, max = 250.0)
 end
 
+@testset "OpenAPI converters: SwitchedAdmittance" begin
+    refs = _refs_with_area_bus(; base_power = 100.0)
+
+    # `admittance_limits` is `Absent`-by-omission but PSY defaults it to `(min=1.0, max=1.0)`
+    # (a dimensionless multiplier bound, not a raw admittance) — a document omitting it must
+    # still build rather than erroring on `Absent.min`.
+    sh_po = PSY.PO.SwitchedAdmittance(;
+        id = 20, name = "sw1", available = true, bus = 4,
+        admittance_units = PSY.PO.ShuntAdmittanceUnitBasis("COMPONENT_MVAR"),
+        y_increase = [PSY.IC.ComplexNumber(; real = 0.0, imag = -10.0)],
+        solved_admittance = nothing,
+    )
+    for val in (CU, NU)
+        sh = PSY.from_openapi(sh_po, refs, val)
+        @test get_admittance_limits(sh) == (min = 1.0, max = 1.0)
+    end
+end
+
+@testset "OpenAPI converters: TwoTerminalLCCLine" begin
+    refs = _refs_with_area_bus(; base_power = 100.0)
+    arc_po = PSY.PO.Arc(; id = 10, from_id = 3, to_id = 4)
+    refs[10] = PSY.from_openapi(arc_po, refs, NU)
+
+    # `rectifier_tap_limits`/`inverter_tap_limits`/`active_power_limits_from`/
+    # `active_power_limits_to`/`reactive_power_limits_from`/`reactive_power_limits_to` are all
+    # `Absent`-by-omission but PSY declares a real default for each — a document omitting them
+    # must still build rather than erroring on `Absent.min`.
+    lcc_po = PSY.PO.TwoTerminalLCCLine(;
+        id = 20, name = "lcc1", available = true, arc = 10,
+        active_power_flow = 50.0, r = 0.01, transfer_setpoint = 50.0, power_mode = true,
+        scheduled_dc_voltage = 200.0,
+        rectifier_bridges = 2, rectifier_rc = 0.001, rectifier_xc = 0.01,
+        rectifier_base_voltage = 138.0, rectifier_capacitor_reactance = 0.0,
+        rectifier_delay_angle_limits = PSY.IC.MinMax(; min = 0.0, max = 1.0),
+        inverter_bridges = 2, inverter_rc = 0.001, inverter_xc = 0.01,
+        inverter_base_voltage = 138.0, inverter_capacitor_reactance = 0.0,
+        inverter_extinction_angle_limits = PSY.IC.MinMax(; min = 0.0, max = 1.0),
+        compounding_resistance = 0.0,
+        parameter_units = PSY.PO.ImpedanceUnitBasis("NATURAL_UNITS"),
+        dc_voltage_units = PSY.PO.VoltageUnitBasis("NATURAL_UNITS"),
+        loss = _loss_curve_po(0.01, 0.0),
+        base_power = 100.0,
+        power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
+    )
+    for val in (CU, NU)
+        lcc = PSY.from_openapi(lcc_po, refs, val)
+        @test get_rectifier_tap_limits(lcc) == (min = 0.51, max = 1.5)
+        @test get_inverter_tap_limits(lcc) == (min = 0.51, max = 1.5)
+        @test get_active_power_limits_from(lcc, CU) == (min = 0.0, max = 0.0)
+        @test get_active_power_limits_to(lcc, CU) == (min = 0.0, max = 0.0)
+        @test get_reactive_power_limits_from(lcc, CU) == (min = 0.0, max = 0.0)
+        @test get_reactive_power_limits_to(lcc, CU) == (min = 0.0, max = 0.0)
+    end
+end
+
 @testset "OpenAPI converters: AreaInterchange (generated)" begin
     # First type to carry `openapi_type` while sharing the "no device `base_power`"
     # shape that previously forced Area/LoadZone/TransmissionInterface/Line/
@@ -1411,6 +1531,25 @@ end
     @test get_dc_setpoint_from(device) == 40.0
     @test get_dc_setpoint_to(device) == 1.02
     @test get_g(device) == 200.0
+
+    # `reactive_power_limits_from`/`_to` and `voltage_limits_from`/`_to` are
+    # `Absent`-by-omission on the wire but PSY declares real defaults for all four; a document
+    # omitting them must still build rather than erroring on `Absent.min`.
+    vsc_po_no_limits = _po_with(
+        vsc_po;
+        id = 22, name = "vsc3",
+        reactive_power_limits_from = PSY.IC.ABSENT,
+        reactive_power_limits_to = PSY.IC.ABSENT,
+        voltage_limits_from = PSY.IC.ABSENT,
+        voltage_limits_to = PSY.IC.ABSENT,
+    )
+    for val in (CU, NU)
+        vsc_no_limits = PSY.from_openapi(vsc_po_no_limits, refs, val)
+        @test get_reactive_power_limits_from(vsc_no_limits, CU) == (min = 0.0, max = 0.0)
+        @test get_reactive_power_limits_to(vsc_no_limits, CU) == (min = 0.0, max = 0.0)
+        @test get_voltage_limits_from(vsc_no_limits) == (min = 0.0, max = 999.9)
+        @test get_voltage_limits_to(vsc_no_limits) == (min = 0.0, max = 999.9)
+    end
 end
 
 @testset "OpenAPI converters: TwoTerminalVSCLine AC_VOLTAGE setpoint under COMPONENT_BASE" begin
