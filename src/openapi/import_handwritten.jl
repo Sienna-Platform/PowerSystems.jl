@@ -79,10 +79,8 @@ returns `default` (already the bare PSY-side value) when it is absent."""
 _or_default_enum(::Union{Nothing, IC.Absent}, default) = default
 _or_default_enum(v, default) = typeof(default)(v.value)
 
-# Optional PO fields map nothing/Absent -> nothing (the PSY kwargs accept it); handled as
-# `::Union{Nothing, IC.Absent}` method pairs, the same idiom cost_conversion.jl already uses.
-# `Absent` (the key was never on the wire) and an explicit JSON `null` both mean the PSY-side
-# optional value is `nothing`.
+# Optional PO fields map nothing/Absent -> nothing (the PSY kwargs accept it), as
+# `::Union{Nothing, IC.Absent}` method pairs, the same idiom cost_conversion.jl uses.
 
 """`(min, max)` passed through unconverted, or `nothing` when absent."""
 _opt_minmax(::Union{Nothing, IC.Absent}) = nothing
@@ -497,9 +495,9 @@ end
 # type.
 const CIRCUIT_PARAM_UNITS_IMPLEMENTED = Set(["COMPONENT_BASE"])
 
-"""Every per-field unit-basis discriminator is its own OpenAPI.jl 1.x wrapper struct
-(`ImpedanceUnitBasis`, `VoltageUnitBasis`, `ShuntAdmittanceUnitBasis`, `AdmittanceUnitBasis`,
-`EnergyUnitBasis`) — one method per type, dispatched, rather than a bare string."""
+"""Each unit-basis discriminator is its own wrapper struct (`ImpedanceUnitBasis`,
+`VoltageUnitBasis`, `ShuntAdmittanceUnitBasis`, `AdmittanceUnitBasis`, `EnergyUnitBasis`) —
+one method per type, dispatched, rather than a bare string."""
 _unit_basis_string(value::PC.ImpedanceUnitBasis) = value.value
 _unit_basis_string(value::PO.VoltageUnitBasis) = value.value
 _unit_basis_string(value::PC.ShuntAdmittanceUnitBasis) = value.value

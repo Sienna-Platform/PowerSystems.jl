@@ -419,11 +419,9 @@ function _market_bid_cost_fixture()
 end
 
 @testset "convert_cost(MarketBidCost): explicit null curve_style errors loudly, not MethodError" begin
-    # Under OpenAPI.jl 1.x, `_decode` validates the raw JSON against the schema eagerly, so
-    # a malformed `curve_style` is now rejected at document decode — before PSY's own
-    # `_curve_style_from_wire` ever runs — with a generic `oneOf` mismatch on the owning
-    # device's `operation_cost` rather than the old field-specific message. Still loud, still
-    # not a `MethodError`, just caught one layer earlier.
+    # `_decode` validates the raw JSON against the schema eagerly: a malformed `curve_style`
+    # is rejected at document decode, before PSY's own `_curve_style_from_wire` ever runs,
+    # with a generic `oneOf` mismatch on the owning device's `operation_cost`.
     sys, gen = _market_bid_cost_fixture()
     mktempdir() do dir
         to_file(sys, dir; force = true)
@@ -463,8 +461,6 @@ end
         to_file(sys, dir; force = true)
         document_path = joinpath(dir, "system.json")
         txt = read(document_path, String)
-        # 2 was VARIABLE under the former three-way split; the collapse to VARIABLE/FIXED
-        # made it invalid rather than silently remapping it.
         write(document_path, replace(txt, "\"curve_style\":0" => "\"curve_style\":2"))
         @test_throws "schema validation failed while decoding ThermalStandard" from_file(
             System, dir,
@@ -566,8 +562,8 @@ end
         # `PD.read_document` parses the oneOf wrapper (`PO.ThermalStandardOperationCost`),
         # not the bare cost `to_openapi`'s in-memory path hands back — set the field on the
         # unwrapped `.value`, exactly what `_load_market_bid_service_offers!` reads. Every PO
-        # struct is immutable under OpenAPI.jl 1.x, so rebuild the cost, its wrapper, and the
-        # owning row rather than mutating in place, and replace the row by index.
+        # struct is immutable, so rebuild the cost, its wrapper, and the owning row rather
+        # than mutating in place, and replace the row by index.
         new_cost = PSY._po_with(
             gen_row.operation_cost.value; ancillary_service_offers = Int64[svc_id],
         )

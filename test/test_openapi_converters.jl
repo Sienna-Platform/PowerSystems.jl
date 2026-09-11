@@ -2,9 +2,8 @@
 # Each testset builds a PO struct with known kwargs and asserts the resulting PSY component,
 # including the exact unit-conversion numbers.
 
-"""Return a copy of `po` (an immutable `Base.@kwdef` OpenAPI struct under OpenAPI.jl 1.x)
-with the given fields overridden — the replacement for the in-place mutation the old
-mutable PO structs allowed."""
+"""Return a copy of `po` (an immutable `Base.@kwdef` struct) with the given fields
+overridden."""
 function _po_with(po; overrides...)
     fields = fieldnames(typeof(po))
     current = NamedTuple{fields}(getfield.(Ref(po), fields))
@@ -40,8 +39,7 @@ _loss_curve_po(proportional_term, constant_term) = PSY.PC.LossCurve(;
 """
 A `TwoTerminalVSCLine` PO struct on the DC_POWER/AC_REACTIVE_POWER branches, which are the
 only ones every field of has a faithful conversion. Freshly built per call, with any field
-overridable by keyword: the PO struct is immutable under OpenAPI.jl 1.x, so the error-path
-testsets that used to mutate one field of their own copy pass the override instead.
+overridable by keyword, since the PO struct is immutable.
 """
 function _vsc_po_minimal(; overrides...)
     defaults = (
@@ -197,8 +195,8 @@ end
     area_explicit = PSY.from_openapi(area_po_explicit, refs, NU)
     @test get_base_power(area_explicit) == 250.0
 
-    # `base_power`/`power_units` are non-defaulted fields on the wire type itself under
-    # OpenAPI.jl 1.x — omitting either now fails at construction, not at `from_openapi`.
+    # `base_power`/`power_units` are non-defaulted fields on the wire type itself —
+    # omitting either fails at construction, not at `from_openapi`.
     @test_throws UndefKeywordError PSY.PO.Area(;
         id = 6, name = "area_missing_base", peak_active_power = 250.0,
         peak_reactive_power = 50.0, load_response = 12.5,
@@ -244,8 +242,8 @@ end
     @test get_active_power_flow_limits(tx_nu, SU) == (min = -10.0, max = 10.0)
     @test get_base_power(tx_nu) == 100.0
 
-    # `base_power`/`power_units` are non-defaulted fields on the wire type itself under
-    # OpenAPI.jl 1.x — omitting either now fails at construction, not at `from_openapi`.
+    # `base_power`/`power_units` are non-defaulted fields on the wire type itself —
+    # omitting either fails at construction, not at `from_openapi`.
     @test_throws UndefKeywordError PSY.PO.TransmissionInterface(;
         id = 3, name = "iface_missing_base", available = true,
         active_power_flow_limits = PSY.IC.MinMax(; min = -1000.0, max = 1000.0),
@@ -313,8 +311,8 @@ end
     @test get_b(line_device, SU) == (from = 0.001, to = 0.002)
     @test get_base_power(line_device) == 100.0
 
-    # `base_power`/`power_units` are non-defaulted fields on the wire type itself under
-    # OpenAPI.jl 1.x — omitting either now fails at construction, not at `from_openapi`.
+    # `base_power`/`power_units` are non-defaulted fields on the wire type itself —
+    # omitting either fails at construction, not at `from_openapi`.
     @test_throws UndefKeywordError PSY.PO.Line(;
         id = 22, name = "line3", available = true,
         active_power_flow = 10.0, reactive_power_flow = 2.0, arc = 10,
@@ -1209,7 +1207,7 @@ end
 
     # `grounding_resistance` has a PSY-side default (0.1) but no wire-side default: the PO
     # struct declares it a plain `Float64` with no `Absent`/`Nothing` variant, so omitting it
-    # now fails at construction rather than falling back inside `from_openapi`.
+    # fails at construction rather than falling back inside `from_openapi`.
     @test_throws UndefKeywordError PSY.PO.Substation(; id = 31, name = "SUB2", number = 8)
 end
 

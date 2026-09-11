@@ -427,8 +427,8 @@ end
     dir = mktempdir()
     to_file(sys, dir; force = true)
     doc = PSY.PD.read_document(joinpath(dir, "system.json"))
-    # Every PO struct is immutable under OpenAPI.jl 1.x, so rebuild the row rather than
-    # mutating it in place, and replace it by index.
+    # PO structs are immutable, so rebuild the row rather than mutating it in place, and
+    # replace it by index.
     doc.supplemental_attribute_associations[1] =
         PSY._po_with(
             doc.supplemental_attribute_associations[1];
@@ -448,8 +448,8 @@ end
     dir = mktempdir()
     to_file(sys, dir; force = true)
     doc = PSY.PD.read_document(joinpath(dir, "system.json"))
-    # Every PO struct is immutable under OpenAPI.jl 1.x, so rebuild the row and its oneOf
-    # wrapper rather than mutating in place, and replace it by index.
+    # PO structs are immutable, so rebuild the row and its oneOf wrapper rather than
+    # mutating in place, and replace it by index.
     wrapper = doc.time_series_associations[1]
     new_row = PSY._po_with(wrapper.value; name = "not_the_real_series_name")
     doc.time_series_associations[1] = typeof(wrapper)(new_row)

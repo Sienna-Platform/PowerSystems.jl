@@ -170,10 +170,8 @@ end
     cost_stages = PSY.convert_cost(po_stages)
     @test get_start_up(cost_stages) == (hot = 1.0, warm = 2.0, cold = 3.0)
 
-    # The schema now declares `variable_operation_cost` required with no `Nothing`/`Absent`
-    # variant, so a document cannot express its absence — the old runtime guard in
-    # `convert_cost` is unreachable through any validly-constructed wire object; the
-    # guarantee moved to the wire type's own constructor.
+    # `variable_operation_cost` has no `Nothing`/`Absent` variant on the wire, so a document
+    # cannot express its absence — a missing value fails at construction.
     @test_throws UndefKeywordError PSY.PC.ThermalGenerationCost(;
         fixed = 0.0,
         shut_down = 0.0,

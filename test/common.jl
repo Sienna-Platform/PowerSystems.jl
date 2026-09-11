@@ -240,11 +240,9 @@ function roundtrip_system(sys::System; power_units = :component_base, kwargs...)
 end
 
 """Round-trip a PO/PC struct through JSON, the same shape `JSON.parsefile` would hand to
-`PowerCoreOpenAPIModels.document_from_json` — avoids hand-writing nested `oneOf` cost-curve
-JSON."""
-# Round-trip a PO struct through OpenAPI.jl's own `_encode` (not generic `JSON.json`, which
-# serializes a struct's raw fields — `{"value": "SLACK"}` for an enum wrapper — rather than
-# the wire shape `_encode` produces, `"SLACK"`).
+`PowerCoreOpenAPIModels.document_from_json`. Uses `_encode`, not generic `JSON.json`, which
+would serialize an enum wrapper's raw fields (`{"value": "SLACK"}`) instead of the wire
+shape (`"SLACK"`)."""
 openapi_raw(po) = JSON.parse(JSON.json(PSY.PC._encode(po)); dicttype = Dict{String, Any})
 
 """

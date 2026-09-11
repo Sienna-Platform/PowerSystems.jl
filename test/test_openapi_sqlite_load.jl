@@ -159,18 +159,15 @@ end
         f.sys, f.refs, doc,
     )
 
-    # An unresolved attribute_id (naming a component, or nothing at all) is no longer
-    # reachable at the loader: `attribute_id` only ever means a supplemental attribute now
-    # that service membership has its own table, so `document_from_json`'s own validation
-    # (checked against the same `supplemental_attributes` list the loader indexes) rejects
-    # it before a document with one can even be constructed.
+    # `attribute_id` always names a supplemental attribute (service membership has its own
+    # table), so `document_from_json`'s own validation — checked against the same
+    # `supplemental_attributes` list the loader indexes — rejects an unresolved id before a
+    # document can be constructed.
 
     # attribute_type mismatch: declares "EmissionsData" but the row builds a GeographicInfo.
-    # Under OpenAPI.jl 1.x, `document_from_json` decodes each attribute against its declared
-    # `attribute_type` eagerly (schema-validated), so a GeographicInfo row mislabeled
-    # "EmissionsData" (missing every EmissionsData-required field) is now rejected at
-    # document construction rather than surfacing later as a `MethodError` from IS's enum
-    # constructor inside the loader.
+    # `document_from_json` decodes each attribute against its declared `attribute_type`
+    # eagerly, so the mislabeled row (missing every EmissionsData-required field) is
+    # rejected at document construction.
     f = _sqlite_load_fixture()
     @test_throws "schema validation failed while decoding EmissionsData" _sqlite_load_doc(;
         supplemental_attributes = [openapi_raw(geo_po)],
@@ -182,14 +179,9 @@ end
         ],
     )
 
-    # Missing attribute_type: `document_from_json` itself requires the field on every
-    # association row (it resolves each raw `supplemental_attributes` dict's own type from
-    # it). Under OpenAPI.jl 1.x, `SupplementalAttributeAssociation.attribute_type` is a plain
-    # required `String` with no `Nothing`/`Absent` variant, so an in-memory row with a
-    # missing `attribute_type` is no longer constructible at all (not even by rebuilding an
-    # already-valid row with the field cleared) — the old test reached this case by mutating
-    # an already-valid document's row in place, bypassing `document_from_json`'s validation
-    # entirely; there is no equivalent bypass left since every PO struct is immutable now.
+    # `attribute_type` is a plain required `String`, so overriding it to `nothing` via
+    # `_po_with` fails with a `MethodError` rather than producing a row with the field
+    # missing.
     f = _sqlite_load_fixture()
     doc = _sqlite_load_doc(;
         supplemental_attributes = [openapi_raw(geo_po)],

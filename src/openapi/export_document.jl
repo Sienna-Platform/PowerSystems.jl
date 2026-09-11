@@ -765,8 +765,8 @@ function _export_market_bid_service_offers!(doc::PD.SystemDocument, refs::OpenAP
     return nothing
 end
 
-"""Return a copy of `po` (an immutable `Base.@kwdef` OpenAPI struct under OpenAPI.jl 1.x)
-with the given fields overridden."""
+"""Return a copy of `po` (an immutable `Base.@kwdef` struct) with the given fields
+overridden."""
 function _po_with(po; overrides...)
     fields = fieldnames(typeof(po))
     current = NamedTuple{fields}(getfield.(Ref(po), fields))

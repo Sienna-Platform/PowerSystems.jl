@@ -3,11 +3,8 @@
 
 # ── Compound-field helpers (component-base pu) ──
 #
-# Every optional field below is schema-optional-by-omission, not nullable (a bare `$ref`/type
-# with no `null` member, absent from `required`) — encoding `nothing` into one fails schema
-# validation on write. The `_optional`/`_scaled_optional` helpers therefore emit `IC.ABSENT`
-# for a missing PSY-side value, matching `_component_id_optional` (below) and
-# `_optional_cost_curve_to_openapi` (export_cost_conversion.jl).
+# These fields are schema-optional-by-omission, not nullable — encoding `nothing` fails
+# schema validation, so a missing PSY-side value emits `IC.ABSENT` instead.
 
 _minmax_po(nt) = IC.MinMax(; min = nt.min, max = nt.max)
 _minmax_po_optional(::Nothing) = IC.ABSENT
@@ -47,10 +44,8 @@ _complex_number_po(c) = IC.ComplexNumber(; real = real(c), imag = imag(c))
 _scale_optional_po(::Nothing, base) = IC.ABSENT
 _scale_optional_po(v, base) = v * base
 
-"""`component_id`, but tolerant of a `nothing` field (e.g. `ACBus.area`/`load_zone`, which are
-`Union{Nothing, T}` on the PSY side). The schema declares these `integer`-only and not
-`required` — optional means the key is omitted, not `null` — so a missing reference emits
-`IC.ABSENT` rather than `nothing`, which would fail schema validation on encode."""
+"""`component_id`, but tolerant of a `nothing` field (e.g. `ACBus.area`/`load_zone`) —
+emits `IC.ABSENT` rather than `nothing`."""
 _component_id_optional(::OpenAPIRefs, ::Nothing) = IC.ABSENT
 _component_id_optional(refs::OpenAPIRefs, component) = component_id(refs, component)
 
