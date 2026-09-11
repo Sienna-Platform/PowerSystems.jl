@@ -161,7 +161,8 @@ end
 """The `power_units` stamp on the sole exported `ThermalStandard` blob, the regression guard
 for [`to_openapi`](@ref)'s uniform per-export stamp (no document-level `unit_system` exists to
 assert against instead)."""
-_gen_power_units(doc) = only(PSY.PD.get_components(doc, "ThermalStandard")).power_units
+_gen_power_units(doc) =
+    only(PSY.PD.get_components(doc, "ThermalStandard")).power_units.value
 
 @testset "export needs no ledger: a hand-built System serializes" begin
     # The unit-system assertions use the time-series-free fixture so that `to_openapi` needs

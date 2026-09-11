@@ -147,7 +147,7 @@ function from_openapi(po::PO.AGC, refs::OpenAPIRefs, ::ComponentBaseUnit)
         K_d = po.K_d,
         delta_t = po.delta_t,
         area = resolve_ref(refs, po.area, Area),
-        initial_ace = po.initial_ace,
+        initial_ace = (if po.initial_ace isa Union{Nothing, IC.Absent}; 0.0; else; po.initial_ace; end),
     )
 end
 
@@ -161,7 +161,7 @@ function from_openapi(po::PO.AGC, refs::OpenAPIRefs, ::NaturalUnit)
         K_d = po.K_d,
         delta_t = po.delta_t,
         area = resolve_ref(refs, po.area, Area),
-        initial_ace = po.initial_ace,
+        initial_ace = (if po.initial_ace isa Union{Nothing, IC.Absent}; 0.0; else; po.initial_ace; end),
     )
 end
 

@@ -49,21 +49,19 @@ InfrastructureCoreOpenAPIModels = {path = "../../PowerOpenAPIModels/Infrastructu
 InfrastructureTimeSeriesOpenAPIModels = {path = "../../PowerOpenAPIModels/InfrastructureTimeSeriesOpenAPIModels.jl"}
 PowerCoreOpenAPIModels = {path = "../../PowerOpenAPIModels/PowerCoreOpenAPIModels.jl"}
 PowerDynamicsOpenAPIModels = {path = "../../PowerOpenAPIModels/PowerDynamicsOpenAPIModels.jl"}
-# LOCAL PATH CO-DEV PIN (temporary): PFFP's own local checkout already migrated off
-# PowerCoreOpenAPIModels/PowerTimeSeriesOpenAPIModels, uncommitted; the pushed
-# jd/power-units-rename branch fails to resolve. Revert to the git rev once it is pushed.
-PowerFlowFileParser = {url = "https://github.com/Sienna-Platform/PowerFlowFileParser.jl", rev = "psy6"}
+# LOCAL PATH CO-DEV PIN (temporary): PFFP's local checkout carries the OpenAPI.jl 1.x work,
+# uncommitted upstream. Revert to the git pin once it is pushed/merged.
+PowerFlowFileParser = {path = "../../PowerFlowFileParser.jl"}
 PowerInvestmentsOpenAPIModels = {path = "../../PowerOpenAPIModels/PowerInvestmentsOpenAPIModels.jl"}
 PowerOpenAPIModels = {path = "../../PowerOpenAPIModels/PowerOpenAPIModels.jl"}
 PowerOperationsOpenAPIModels = {path = "../../PowerOpenAPIModels/PowerOperationsOpenAPIModels.jl"}
-# LOCAL PATH CO-DEV PIN (temporary): PSB's own local checkout already migrated off
-# PowerCoreOpenAPIModels/PowerTimeSeriesOpenAPIModels, uncommitted; the pushed
-# jd/power-units-rename branch fails to resolve. Revert to the git rev once it is pushed.
-PowerSystemCaseBuilder = {url = "https://github.com/Sienna-Platform/PowerSystemCaseBuilder.jl", rev = "lk/loss-curve-type"}
-# LOCAL PATH CO-DEV PIN (temporary): PowerTableDataParser's own local checkout already
-# migrated off PowerCoreOpenAPIModels/PowerTimeSeriesOpenAPIModels, uncommitted; the pushed
-# jd/power-units-rename branch fails to resolve. Revert to the git rev once it is pushed.
-PowerTableDataParser = {url = "https://github.com/NLR-Sienna/PowerTableDataParser.jl", rev = "psy6"}
+# LOCAL PATH CO-DEV PIN (temporary): PSB's local checkout carries the 5.0-dev9 test-data
+# pin and CU-unit/sibling-checkout fixes, uncommitted upstream. Revert to the git rev once
+# it is pushed/merged.
+PowerSystemCaseBuilder = {path = "../../PowerSystemCaseBuilder.jl"}
+# LOCAL PATH CO-DEV PIN (temporary): PowerTableDataParser's local checkout carries the
+# OpenAPI.jl 1.x work, uncommitted upstream. Revert to the git pin once it is pushed/merged.
+PowerTableDataParser = {path = "../../PowerTableDataParser.jl"}
 
 [compat]
 InfrastructureSystems = "3"

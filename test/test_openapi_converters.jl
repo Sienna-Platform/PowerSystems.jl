@@ -2,8 +2,19 @@
 # Each testset builds a PO struct with known kwargs and asserts the resulting PSY component,
 # including the exact unit-conversion numbers.
 
+"""Return a copy of `po` (an immutable `Base.@kwdef` OpenAPI struct under OpenAPI.jl 1.x)
+with the given fields overridden — the replacement for the in-place mutation the old
+mutable PO structs allowed."""
+function _po_with(po; overrides...)
+    fields = fieldnames(typeof(po))
+    current = NamedTuple{fields}(getfield.(Ref(po), fields))
+    merged = merge(current, NamedTuple(overrides))
+    return typeof(po)(; merged...)
+end
+
 _bus_po(id; area = 1, load_zone = 2, bustype = "REF") = PSY.PO.ACBus(;
-    id = id, number = id, name = "bus$id", available = true, bustype = bustype,
+    id = id, number = id, name = "bus$id", available = true,
+    bustype = PSY.PC.ACBusType(bustype),
     angle = 0.0, magnitude = 1.0,
     voltage_limits = PSY.IC.MinMax(; min = 0.9, max = 1.1),
     base_voltage = 138.0, area = area, load_zone = load_zone,
@@ -19,48 +30,66 @@ _io_curve(proportional_term, constant_term) = PSY.PC.InputOutputCurve(;
     ),
 )
 
+"""A `LossCurve` on the natural-units basis wrapping a LINEAR `InputOutputCurve` — the
+wire shape `converter_loss_from`/`converter_loss_to`/`loss` fields carry."""
+_loss_curve_po(proportional_term, constant_term) = PSY.PC.LossCurve(;
+    power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
+    value_curve = PSY.PC.LossValueCurve(_io_curve(proportional_term, constant_term)),
+)
+
 """
 A `TwoTerminalVSCLine` PO struct on the DC_POWER/AC_REACTIVE_POWER branches, which are the
-only ones every field of has a faithful conversion. Freshly built per call: the PO structs are
-mutable, so the error-path testsets mutate one field of their own copy.
+only ones every field of has a faithful conversion. Freshly built per call, with any field
+overridable by keyword: the PO struct is immutable under OpenAPI.jl 1.x, so the error-path
+testsets that used to mutate one field of their own copy pass the override instead.
 """
-_vsc_po_minimal() = PSY.PO.TwoTerminalVSCLine(;
-    id = 20, name = "vsc1", available = true, arc = 10,
-    active_power_flow = 50.0, rating = 200.0,
-    active_power_limits_from = PSY.IC.MinMax(; min = -200.0, max = 200.0),
-    active_power_limits_to = PSY.IC.MinMax(; min = -200.0, max = 200.0),
-    admittance_units = "NATURAL_UNITS", g = 0.5,
-    dc_current = 300.0, reactive_power_from = 10.0,
-    dc_control_from = "DC_POWER", ac_control_from = "AC_REACTIVE_POWER",
-    dc_setpoint_from = 40.0, ac_setpoint_from = 0.95,
-    converter_loss_from = _io_curve(1.2, 0.5),
-    max_dc_current_from = 1000.0, rating_from = 200.0,
-    reactive_power_limits_from = PSY.IC.MinMax(; min = -100.0, max = 100.0),
-    power_factor_weighting_fraction_from = 0.5,
-    voltage_units = "NATURAL_UNITS",
-    voltage_limits_from = PSY.IC.MinMax(; min = 0.9, max = 1.1),
-    dc_voltage_droop_from = 0.0, reactive_power_to = 20.0,
-    dc_control_to = "DC_POWER", ac_control_to = "AC_REACTIVE_POWER",
-    dc_setpoint_to = 40.0, ac_setpoint_to = 0.98,
-    converter_loss_to = _io_curve(1.1, 0.4),
-    max_dc_current_to = 1000.0, rating_to = 200.0,
-    reactive_power_limits_to = PSY.IC.MinMax(; min = -100.0, max = 100.0),
-    power_factor_weighting_fraction_to = 0.5,
-    voltage_limits_to = PSY.IC.MinMax(; min = 0.9, max = 1.1),
-    dc_voltage_droop_to = 0.0, rated_dc_voltage = 200.0,
-    remote_bus_control_from = nothing, remote_bus_control_to = 4,
-    rmpct_from = 100.0, rmpct_to = 100.0, base_power = 100.0,
-)
+function _vsc_po_minimal(; overrides...)
+    defaults = (
+        id = 20, name = "vsc1", available = true, arc = 10,
+        active_power_flow = 50.0, rating = 200.0,
+        active_power_limits_from = PSY.IC.MinMax(; min = -200.0, max = 200.0),
+        active_power_limits_to = PSY.IC.MinMax(; min = -200.0, max = 200.0),
+        admittance_units = PSY.PO.AdmittanceUnitBasis("NATURAL_UNITS"), g = 0.5,
+        dc_current = 300.0, reactive_power_from = 10.0,
+        dc_control_from = PSY.PO.VSCDCControlModes("DC_POWER"),
+        ac_control_from = PSY.PO.VSCACControlModes("AC_REACTIVE_POWER"),
+        dc_setpoint_from = 40.0, ac_setpoint_from = 0.95,
+        converter_loss_from = _loss_curve_po(1.2, 0.5),
+        max_dc_current_from = 1000.0, rating_from = 200.0,
+        reactive_power_limits_from = PSY.IC.MinMax(; min = -100.0, max = 100.0),
+        power_factor_weighting_fraction_from = 0.5,
+        voltage_units = PSY.PO.VoltageUnitBasis("NATURAL_UNITS"),
+        setpoint_voltage_units = PSY.PO.VoltageUnitBasis("NATURAL_UNITS"),
+        voltage_limits_from = PSY.IC.MinMax(; min = 0.9, max = 1.1),
+        dc_voltage_droop_from = 0.0, reactive_power_to = 20.0,
+        dc_control_to = PSY.PO.VSCDCControlModes("DC_POWER"),
+        ac_control_to = PSY.PO.VSCACControlModes("AC_REACTIVE_POWER"),
+        dc_setpoint_to = 40.0, ac_setpoint_to = 0.98,
+        converter_loss_to = _loss_curve_po(1.1, 0.4),
+        max_dc_current_to = 1000.0, rating_to = 200.0,
+        reactive_power_limits_to = PSY.IC.MinMax(; min = -100.0, max = 100.0),
+        power_factor_weighting_fraction_to = 0.5,
+        voltage_limits_to = PSY.IC.MinMax(; min = 0.9, max = 1.1),
+        dc_voltage_droop_to = 0.0, rated_dc_voltage = 200.0,
+        remote_bus_control_from = nothing, remote_bus_control_to = 4,
+        rmpct_from = 100.0, rmpct_to = 100.0, base_power = 100.0,
+        power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
+    )
+    merged = merge(defaults, NamedTuple(overrides))
+    return PSY.PO.TwoTerminalVSCLine(; merged...)
+end
 
 function _refs_with_area_bus(; base_power = 100.0)
     refs = PSY.OpenAPIRefs(base_power)
     area_po = PSY.PO.Area(;
         id = 1, name = "area1", peak_active_power = 100.0, peak_reactive_power = 20.0,
         load_response = 0.0, base_power = base_power,
+        power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
     )
     lz_po = PSY.PO.LoadZone(;
         id = 2, name = "lz1", peak_active_power = 100.0, peak_reactive_power = 20.0,
         base_power = base_power,
+        power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
     )
     refs[1] = PSY.from_openapi(area_po, refs, NU)
     refs[2] = PSY.from_openapi(lz_po, refs, NU)
@@ -119,10 +148,12 @@ end
     area_po_du = PSY.PO.Area(;
         id = 1, name = "area_du", peak_active_power = 2.5,
         peak_reactive_power = 0.5, load_response = 12.5, base_power = 100.0,
+        power_units = PSY.IC.UnitSystem("COMPONENT_BASE"),
     )
     lz_po_du = PSY.PO.LoadZone(;
         id = 2, name = "lz_du", peak_active_power = 2.5, peak_reactive_power = 0.5,
         base_power = 100.0,
+        power_units = PSY.IC.UnitSystem("COMPONENT_BASE"),
     )
     sys_du = System(100.0)
     area_du = PSY.from_openapi(area_po_du, refs, CU)
@@ -140,10 +171,12 @@ end
     area_po_nu = PSY.PO.Area(;
         id = 3, name = "area_nu", peak_active_power = 250.0,
         peak_reactive_power = 50.0, load_response = 12.5, base_power = 100.0,
+        power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
     )
     lz_po_nu = PSY.PO.LoadZone(;
         id = 4, name = "lz_nu", peak_active_power = 250.0, peak_reactive_power = 50.0,
         base_power = 100.0,
+        power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
     )
     sys_nu = System(100.0)
     area_nu = PSY.from_openapi(area_po_nu, refs, NU)
@@ -159,17 +192,17 @@ end
     area_po_explicit = PSY.PO.Area(;
         id = 5, name = "area_explicit", peak_active_power = 250.0,
         peak_reactive_power = 50.0, load_response = 12.5, base_power = 250.0,
+        power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
     )
     area_explicit = PSY.from_openapi(area_po_explicit, refs, NU)
     @test get_base_power(area_explicit) == 250.0
 
-    # A blob omitting the now-required `base_power` errors loudly rather than falling back.
-    area_po_missing_base = PSY.PO.Area(;
+    # `base_power`/`power_units` are non-defaulted fields on the wire type itself under
+    # OpenAPI.jl 1.x — omitting either now fails at construction, not at `from_openapi`.
+    @test_throws UndefKeywordError PSY.PO.Area(;
         id = 6, name = "area_missing_base", peak_active_power = 250.0,
         peak_reactive_power = 50.0, load_response = 12.5,
     )
-    @test isnothing(area_po_missing_base.base_power)
-    @test_throws ErrorException PSY.from_openapi(area_po_missing_base, refs, NU)
 end
 
 @testset "OpenAPI converters: TransmissionInterface (power_units-discriminated conversion)" begin
@@ -183,8 +216,11 @@ end
         id = 1, name = "iface_du", available = true,
         active_power_flow_limits = PSY.IC.MinMax(; min = -10.0, max = 10.0),
         violation_penalty = 5000.0,
-        direction_mapping = Dict{String, Int64}("line1" => 1, "line2" => -1),
+        direction_mapping = PSY.PO.TransmissionInterfaceDirectionMapping(;
+            additional_properties = Dict{String, Int64}("line1" => 1, "line2" => -1),
+        ),
         base_power = 100.0,
+        power_units = PSY.IC.UnitSystem("COMPONENT_BASE"),
     )
     tx_du = PSY.from_openapi(tx_po_du, refs, CU)
     add_component!(System(100.0), tx_du)
@@ -197,22 +233,27 @@ end
         id = 2, name = "iface_nu", available = true,
         active_power_flow_limits = PSY.IC.MinMax(; min = -1000.0, max = 1000.0),
         violation_penalty = 5000.0,
-        direction_mapping = Dict{String, Int64}("line1" => 1, "line2" => -1),
+        direction_mapping = PSY.PO.TransmissionInterfaceDirectionMapping(;
+            additional_properties = Dict{String, Int64}("line1" => 1, "line2" => -1),
+        ),
         base_power = 100.0,
+        power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
     )
     tx_nu = PSY.from_openapi(tx_po_nu, refs, NU)
     add_component!(System(100.0), tx_nu)
     @test get_active_power_flow_limits(tx_nu, SU) == (min = -10.0, max = 10.0)
     @test get_base_power(tx_nu) == 100.0
 
-    # A blob omitting the now-required `base_power` errors loudly rather than falling back.
-    tx_po_missing_base = PSY.PO.TransmissionInterface(;
+    # `base_power`/`power_units` are non-defaulted fields on the wire type itself under
+    # OpenAPI.jl 1.x — omitting either now fails at construction, not at `from_openapi`.
+    @test_throws UndefKeywordError PSY.PO.TransmissionInterface(;
         id = 3, name = "iface_missing_base", available = true,
         active_power_flow_limits = PSY.IC.MinMax(; min = -1000.0, max = 1000.0),
         violation_penalty = 5000.0,
-        direction_mapping = Dict{String, Int64}(),
+        direction_mapping = PSY.PO.TransmissionInterfaceDirectionMapping(;
+            additional_properties = Dict{String, Int64}(),
+        ),
     )
-    @test_throws ErrorException PSY.from_openapi(tx_po_missing_base, refs, NU)
 end
 
 @testset "OpenAPI converters: Line" begin
@@ -229,6 +270,7 @@ end
         rating = 175.0, rating_b = 175.0, rating_c = nothing,
         angle_limits = PSY.IC.MinMax(; min = -1.57, max = 1.57),
         g = PSY.IC.FromTo(; from = 0.0, to = 0.0),
+        power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
     )
 
     sys = System(100.0)
@@ -259,6 +301,7 @@ end
         rating = 175.0, rating_b = 175.0, rating_c = nothing,
         angle_limits = PSY.IC.MinMax(; min = -1.57, max = 1.57),
         g = PSY.IC.FromTo(; from = 0.0, to = 0.0),
+        power_units = PSY.IC.UnitSystem("COMPONENT_BASE"),
     )
     line_device = PSY.from_openapi(line_po_device, refs, CU)
     add_component!(sys, line_device)
@@ -270,8 +313,9 @@ end
     @test get_b(line_device, SU) == (from = 0.001, to = 0.002)
     @test get_base_power(line_device) == 100.0
 
-    # A blob omitting the now-required `base_power` errors loudly rather than falling back.
-    line_po_omitted = PSY.PO.Line(;
+    # `base_power`/`power_units` are non-defaulted fields on the wire type itself under
+    # OpenAPI.jl 1.x — omitting either now fails at construction, not at `from_openapi`.
+    @test_throws UndefKeywordError PSY.PO.Line(;
         id = 22, name = "line3", available = true,
         active_power_flow = 10.0, reactive_power_flow = 2.0, arc = 10,
         r = 0.01, x = 0.1,
@@ -280,8 +324,6 @@ end
         angle_limits = PSY.IC.MinMax(; min = -1.57, max = 1.57),
         g = PSY.IC.FromTo(; from = 0.0, to = 0.0),
     )
-    @test isnothing(line_po_omitted.base_power)
-    @test_throws ErrorException PSY.from_openapi(line_po_omitted, refs, NU)
 end
 
 @testset "OpenAPI converters: TransformerCircuit / TwoWindingTransformer" begin
@@ -291,14 +333,17 @@ end
 
     circuit_po = PSY.PO.TransformerCircuit(;
         id = 20, available = true, arc = 10, tap = 1.0, alpha = 0.05,
-        parameter_units = "COMPONENT_BASE", r = 0.01, x = 0.1,
-        control_objective = "UNDEFINED", regulated_bus_number = 0,
+        parameter_units = PSY.PO.ImpedanceUnitBasis("COMPONENT_BASE"), r = 0.01,
+        x = 0.1,
+        control_objective = PSY.PO.TransformerControlObjective("UNDEFINED"),
+        regulated_bus_number = 0,
         control_limits = PSY.IC.MinMax(; min = 0.9, max = 1.1),
         controlled_quantity_limits = PSY.IC.MinMax(; min = 0.9, max = 1.1),
         number_of_tap_positions = 33,
         rating = 100.0, rating_b = nothing, rating_c = nothing,
         active_power_flow = 5.0, reactive_power_flow = 1.0,
         base_power = 50.0, base_voltage_primary = 138.0, base_voltage_secondary = 69.0,
+        power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
     )
     circuit_natural =
         PSY.from_openapi(circuit_po, refs, NU)
@@ -319,23 +364,26 @@ end
 
     bad_circuit_po = PSY.PO.TransformerCircuit(;
         id = 21, available = true, arc = 10, tap = 1.0, alpha = 0.0,
-        parameter_units = "NATURAL_UNITS", r = 0.01, x = 0.1,
-        control_objective = "UNDEFINED", regulated_bus_number = 0,
+        parameter_units = PSY.PO.ImpedanceUnitBasis("NATURAL_UNITS"), r = 0.01, x = 0.1,
+        control_objective = PSY.PO.TransformerControlObjective("UNDEFINED"),
+        regulated_bus_number = 0,
         control_limits = PSY.IC.MinMax(; min = 0.9, max = 1.1),
         controlled_quantity_limits = PSY.IC.MinMax(; min = 0.9, max = 1.1),
         number_of_tap_positions = 33,
         rating = nothing, rating_b = nothing, rating_c = nothing,
         active_power_flow = 0.0, reactive_power_flow = 0.0,
         base_power = 50.0, base_voltage_primary = 138.0, base_voltage_secondary = 69.0,
+        power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
     )
     @test_throws ErrorException PSY.from_openapi(bad_circuit_po, refs, NU
     )
 
     refs[20] = circuit_natural
     xfmr_po = PSY.PO.TwoWindingTransformer(;
-        id = 30, name = "xfmr1", circuit = 20, admittance_units = "COMPONENT_BASE",
+        id = 30, name = "xfmr1", circuit = 20,
+        admittance_units = PSY.PO.AdmittanceUnitBasis("COMPONENT_BASE"),
         magnetizing_shunt = PSY.IC.ComplexNumber(; real = 0.01, imag = 0.02),
-        shunt_location = "PRIMARY",
+        shunt_location = PSY.PO.TwoWindingTransformerShuntLocation("PRIMARY"),
     )
     for val in (CU, NU)
         xfmr = PSY.from_openapi(xfmr_po, refs, val)
@@ -345,9 +393,10 @@ end
     end
 
     bad_xfmr_po = PSY.PO.TwoWindingTransformer(;
-        id = 31, name = "xfmr2", circuit = 20, admittance_units = "COMPONENT_MVAR",
+        id = 31, name = "xfmr2", circuit = 20,
+        admittance_units = PSY.PO.AdmittanceUnitBasis("COMPONENT_MVAR"),
         magnetizing_shunt = PSY.IC.ComplexNumber(; real = 0.0, imag = 0.0),
-        shunt_location = "PRIMARY",
+        shunt_location = PSY.PO.TwoWindingTransformerShuntLocation("PRIMARY"),
     )
     @test_throws ErrorException PSY.from_openapi(bad_xfmr_po, refs, CU
     )
@@ -367,14 +416,18 @@ end
 
     _circuit_po(id, arc) = PSY.PO.TransformerCircuit(;
         id = id, available = true, arc = arc, tap = 1.0, alpha = 0.0,
-        parameter_units = "COMPONENT_BASE", r = 0.001, x = 0.01,
-        control_objective = "UNDEFINED", regulated_bus_number = 0,
+        parameter_units = PSY.PO.ImpedanceUnitBasis("COMPONENT_BASE"), r = 0.001,
+        x = 0.01,
+        control_objective = PSY.PO.TransformerControlObjective("UNDEFINED"),
+        regulated_bus_number = 0,
         control_limits = PSY.IC.MinMax(; min = 0.9, max = 1.1),
         controlled_quantity_limits = PSY.IC.MinMax(; min = 0.9, max = 1.1),
         number_of_tap_positions = 33,
         rating = 100.0, rating_b = nothing, rating_c = nothing,
         active_power_flow = 0.0, reactive_power_flow = 0.0,
-        base_power = 100.0, base_voltage_primary = 138.0, base_voltage_secondary = 138.0,
+        base_power = 100.0, base_voltage_primary = 138.0,
+        base_voltage_secondary = 138.0,
+        power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
     )
     refs[20] = PSY.from_openapi(_circuit_po(20, 10), refs, NU
     )
@@ -385,12 +438,13 @@ end
 
     t3w_po = PSY.PO.ThreeWindingTransformer(;
         id = 30, name = "t3w1", primary_circuit = 20, secondary_circuit = 21,
-        tertiary_circuit = 22, star_bus = 5, parameter_units = "COMPONENT_BASE",
+        tertiary_circuit = 22, star_bus = 5,
+        parameter_units = PSY.PO.ImpedanceUnitBasis("COMPONENT_BASE"),
         r_12 = 0.01, x_12 = 0.1, r_23 = 0.015, x_23 = 0.15, r_31 = 0.02, x_31 = 0.2,
         base_power_12 = 100.0, base_power_23 = 100.0, base_power_31 = 100.0,
-        admittance_units = "COMPONENT_BASE",
+        admittance_units = PSY.PO.AdmittanceUnitBasis("COMPONENT_BASE"),
         magnetizing_shunt = PSY.IC.ComplexNumber(; real = 0.03, imag = 0.0),
-        shunt_location = "STAR",
+        shunt_location = PSY.PO.ThreeWindingTransformerShuntLocation("STAR"),
     )
     for val in (CU, NU)
         t3w = PSY.from_openapi(t3w_po, refs, val)
@@ -409,10 +463,11 @@ end
 
     bad_t3w_po = PSY.PO.ThreeWindingTransformer(;
         id = 31, name = "t3w2", primary_circuit = 20, secondary_circuit = 21,
-        tertiary_circuit = 22, star_bus = 5, parameter_units = "NATURAL_UNITS",
-        admittance_units = "COMPONENT_BASE",
+        tertiary_circuit = 22, star_bus = 5,
+        parameter_units = PSY.PO.ImpedanceUnitBasis("NATURAL_UNITS"),
+        admittance_units = PSY.PO.AdmittanceUnitBasis("COMPONENT_BASE"),
         magnetizing_shunt = PSY.IC.ComplexNumber(; real = 0.0, imag = 0.0),
-        shunt_location = "STAR",
+        shunt_location = PSY.PO.ThreeWindingTransformerShuntLocation("STAR"),
     )
     @test_throws ErrorException PSY.from_openapi(bad_t3w_po, refs, CU
     )
@@ -421,10 +476,12 @@ end
 @testset "OpenAPI converters: ThermalStandard" begin
     refs = _refs_with_area_bus()
     cost_po = PSY.PC.ThermalGenerationCost(;
-        fixed = 100.0, shut_down = 50.0, start_up = 200.0,
+        cost_type = "THERMAL",
+        fixed = 100.0, shut_down = 50.0,
+        start_up = PSY.PC.ThermalGenerationCostStartUp(200.0),
         variable_operation_cost = PSY.PC.ProductionVariableCostCurve(
             PSY.PC.CostCurve(;
-                power_units = "NATURAL_UNITS",
+                power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
                 value_curve = PSY.PC.ValueCurve(
                     PSY.PC.InputOutputCurve(;
                         function_data = PSY.PC.InputOutputCurveFunctionData(
@@ -434,19 +491,30 @@ end
                         ),
                     ),
                 ),
+                vom_cost = PSY.PC.InputOutputCurve(;
+                    function_data = PSY.PC.InputOutputCurveFunctionData(
+                        PSY.IC.LinearFunctionData(;
+                            proportional_term = 0.0, constant_term = 0.0,
+                        ),
+                    ),
+                ),
             ),
         ),
     )
     thermal_po = PSY.PO.ThermalStandard(;
-        id = 20, name = "gen1", available = true, status = "ONLINE", bus = 3,
+        id = 20, name = "gen1", available = true,
+        status = PSY.PO.OperationalStates("ONLINE"), bus = 3,
         active_power = 50.0, reactive_power = 10.0, rating = 100.0,
         active_power_limits = PSY.IC.MinMax(; min = 10.0, max = 100.0),
         reactive_power_limits = PSY.IC.MinMax(; min = -50.0, max = 50.0),
         ramp_limits = PSY.IC.UpDown(; up = 20.0, down = 20.0),
-        operation_cost = cost_po, base_power = 200.0,
+        operation_cost = PSY.PO.ThermalStandardOperationCost(cost_po),
+        base_power = 200.0,
         time_limits = PSY.IC.UpDown(; up = 2.0, down = 2.0),
-        prime_mover_type = "OT", fuel = "NATURAL_GAS",
+        prime_mover_type = PSY.PC.PrimeMovers("OT"),
+        fuel = PSY.PC.ThermalFuels("NATURAL_GAS"),
         time_at_status = 100.0,
+        power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
     )
 
     gen_natural = PSY.from_openapi(thermal_po, refs, NU)
@@ -474,7 +542,9 @@ end
     load_po = PSY.PO.PowerLoad(;
         id = 20, name = "load1", available = true, bus = 4,
         active_power = 30.0, reactive_power = 5.0, base_power = 100.0,
-        max_active_power = 50.0, max_reactive_power = 10.0, conformity = "CONFORMING",
+        max_active_power = 50.0, max_reactive_power = 10.0,
+        conformity = PSY.PO.LoadConformity("CONFORMING"),
+        power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
     )
     load_natural = PSY.from_openapi(load_po, refs, NU)
     @test get_active_power(load_natural, CU) == 0.3
@@ -492,9 +562,10 @@ end
 @testset "OpenAPI converters: InterruptiblePowerLoad / ShiftablePowerLoad" begin
     refs = _refs_with_area_bus()
     cost_po = PSY.PC.LoadCost(;
+        cost_type = "LOAD",
         fixed = 2400.0,
         variable_operation_cost = PSY.PC.CostCurve(;
-            power_units = "NATURAL_UNITS",
+            power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
             value_curve = PSY.PC.ValueCurve(
                 PSY.PC.InputOutputCurve(;
                     function_data = PSY.PC.InputOutputCurveFunctionData(
@@ -504,13 +575,23 @@ end
                     ),
                 ),
             ),
+            vom_cost = PSY.PC.InputOutputCurve(;
+                function_data = PSY.PC.InputOutputCurveFunctionData(
+                    PSY.IC.LinearFunctionData(;
+                        proportional_term = 0.0,
+                        constant_term = 0.0,
+                    ),
+                ),
+            ),
         ),
     )
     iload_po = PSY.PO.InterruptiblePowerLoad(;
         id = 20, name = "iload1", available = true, bus = 4,
         active_power = 30.0, reactive_power = 5.0, max_active_power = 30.0,
-        max_reactive_power = 5.0, base_power = 100.0, operation_cost = cost_po,
-        conformity = "CONFORMING",
+        max_reactive_power = 5.0, base_power = 100.0,
+        operation_cost = PSY.PO.InterruptiblePowerLoadOperationCost(cost_po),
+        conformity = PSY.PO.LoadConformity("CONFORMING"),
+        power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
     )
     iload_natural =
         PSY.from_openapi(iload_po, refs, NU)
@@ -529,7 +610,9 @@ end
         active_power = 30.0,
         active_power_limits = PSY.IC.MinMax(; min = 3.0, max = 30.0),
         reactive_power = 5.0, max_active_power = 30.0, max_reactive_power = 5.0,
-        base_power = 100.0, load_balance_time_horizon = 24, operation_cost = cost_po,
+        base_power = 100.0, load_balance_time_horizon = 24,
+        operation_cost = PSY.PO.ShiftablePowerLoadOperationCost(cost_po),
+        power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
     )
     sload_natural =
         PSY.from_openapi(sload_po, refs, NU)
@@ -549,8 +632,9 @@ end
     # COMPONENT_MVAR divides by the document's system base: G = 0.0, B = -100.0 MVAr.
     mvar_po = PSY.PO.FixedAdmittance(;
         id = 20, name = "shunt1", available = true, bus = 4,
-        admittance_units = "COMPONENT_MVAR",
-        Y = PSY.IC.ComplexNumber(; real = 0.0, imag = -100.0),
+        admittance_units = PSY.PO.ShuntAdmittanceUnitBasis("COMPONENT_MVAR"),
+        y = PSY.IC.ComplexNumber(; real = 0.0, imag = -100.0),
+        base_power = 100.0,
     )
     for val in (CU, NU)
         shunt = PSY.from_openapi(mvar_po, refs, val)
@@ -564,8 +648,8 @@ end
     refs[20] = registered
     for val in (CU, NU)
         exported = PSY.to_openapi(registered, refs, val)
-        @test exported.admittance_units == "COMPONENT_MVAR"
-        @test exported.Y.imag == -100.0
+        @test exported.admittance_units.value == "COMPONENT_MVAR"
+        @test exported.y.imag == -100.0
         round_tripped = PSY.from_openapi(exported, refs, val)
         @test get_Y(round_tripped) == get_Y(registered)
         @test get_name(round_tripped) == get_name(registered)
@@ -575,8 +659,9 @@ end
     # NATURAL_UNITS (physical siemens) is not implemented.
     bad_po = PSY.PO.FixedAdmittance(;
         id = 22, name = "shunt3", available = true, bus = 4,
-        admittance_units = "NATURAL_UNITS",
-        Y = PSY.IC.ComplexNumber(; real = 0.0, imag = 0.0),
+        admittance_units = PSY.PO.ShuntAdmittanceUnitBasis("NATURAL_UNITS"),
+        y = PSY.IC.ComplexNumber(; real = 0.0, imag = 0.0),
+        base_power = 100.0,
     )
     @test_throws ErrorException PSY.from_openapi(bad_po, refs, CU
     )
@@ -585,10 +670,11 @@ end
 @testset "OpenAPI converters: HydroTurbine / HydroReservoir / HydroDispatch" begin
     refs = _refs_with_area_bus()
     hydro_cost_po = PSY.PC.HydroGenerationCost(;
+        cost_type = "HYDRO_GEN",
         fixed = 1.0,
         variable_operation_cost = PSY.PC.ProductionVariableCostCurve(
             PSY.PC.CostCurve(;
-                power_units = "NATURAL_UNITS",
+                power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
                 value_curve = PSY.PC.ValueCurve(
                     PSY.PC.InputOutputCurve(;
                         function_data = PSY.PC.InputOutputCurveFunctionData(
@@ -598,6 +684,7 @@ end
                         ),
                     ),
                 ),
+                vom_cost = _io_curve(0.0, 0.0),
             ),
         ),
     )
@@ -606,13 +693,16 @@ end
         active_power = 20.0, reactive_power = 5.0, rating = 50.0,
         active_power_limits = PSY.IC.MinMax(; min = 0.0, max = 50.0),
         reactive_power_limits = PSY.IC.MinMax(; min = -20.0, max = 20.0),
-        base_power = 100.0, operation_cost = hydro_cost_po,
+        base_power = 100.0,
+        operation_cost = PSY.PO.HydroTurbineOperationCost(hydro_cost_po),
         powerhouse_elevation = 100.0,
         ramp_limits = PSY.IC.UpDown(; up = 10.0, down = 10.0),
         time_limits = PSY.IC.UpDown(; up = 1.0, down = 1.0),
         outflow_limits = PSY.IC.MinMax(; min = 0.0, max = 500.0),
-        efficiency = 0.9, turbine_type = "FRANCIS", conversion_factor = 1.0,
-        prime_mover_type = "HY", travel_time = 5.0,
+        efficiency = 0.9, turbine_type = PSY.PO.HydroTurbineTurbineType("FRANCIS"),
+        conversion_factor = 1.0,
+        prime_mover_type = PSY.PC.PrimeMovers("HY"), travel_time = 5.0,
+        power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
     )
     turbine = PSY.from_openapi(turbine_po, refs, NU)
     @test get_active_power(turbine, CU) == 0.2
@@ -633,10 +723,14 @@ end
         ),
         upstream_turbines = [20], downstream_turbines = Int[],
         upstream_reservoirs = Int[],
-        operation_cost = PSY.PC.HydroReservoirCost(;
-            level_shortage_cost = 1.0, level_surplus_cost = 2.0, spillage_cost = 3.0,
+        operation_cost = PSY.PO.HydroReservoirOperationCost(
+            PSY.PC.HydroReservoirCost(;
+                cost_type = "HYDRO_RES",
+                level_shortage_cost = 1.0, level_surplus_cost = 2.0, spillage_cost = 3.0,
+            ),
         ),
-        evaporative_loss = 0.0, level_data_type = "USABLE_VOLUME",
+        evaporative_loss = 0.0,
+        level_data_type = PSY.PO.HydroReservoirLevelDataType("USABLE_VOLUME"),
     )
     reservoirs = HydroReservoir[]
     for val in (CU, NU)
@@ -669,10 +763,14 @@ end
         ),
         upstream_turbines = nothing, downstream_turbines = [20],
         upstream_reservoirs = nothing,
-        operation_cost = PSY.PC.HydroReservoirCost(;
-            level_shortage_cost = 1.0, level_surplus_cost = 2.0, spillage_cost = 3.0,
+        operation_cost = PSY.PO.HydroReservoirOperationCost(
+            PSY.PC.HydroReservoirCost(;
+                cost_type = "HYDRO_RES",
+                level_shortage_cost = 1.0, level_surplus_cost = 2.0, spillage_cost = 3.0,
+            ),
         ),
-        evaporative_loss = 0.0, level_data_type = "USABLE_VOLUME",
+        evaporative_loss = 0.0,
+        level_data_type = PSY.PO.HydroReservoirLevelDataType("USABLE_VOLUME"),
     )
     reservoir_heads = HydroReservoir[]
     for val in (CU, NU)
@@ -711,10 +809,14 @@ end
         ),
         upstream_turbines = [20], downstream_turbines = Int[],
         upstream_reservoirs = Int[],
-        operation_cost = PSY.PC.HydroReservoirCost(;
-            level_shortage_cost = 0.0, level_surplus_cost = 0.0, spillage_cost = 0.0,
+        operation_cost = PSY.PO.HydroReservoirOperationCost(
+            PSY.PC.HydroReservoirCost(;
+                cost_type = "HYDRO_RES",
+                level_shortage_cost = 0.0, level_surplus_cost = 0.0, spillage_cost = 0.0,
+            ),
         ),
-        evaporative_loss = 0.0, level_data_type = "ENERGY",
+        evaporative_loss = 0.0,
+        level_data_type = PSY.PO.HydroReservoirLevelDataType("ENERGY"),
     )
     for val in (CU, NU)
         reservoir_tail = PSY.from_openapi(reservoir_tail_po, refs, val)
@@ -736,23 +838,29 @@ end
         ),
         upstream_turbines = [20], downstream_turbines = Int[],
         upstream_reservoirs = Int[],
-        operation_cost = PSY.PC.HydroReservoirCost(;
-            level_shortage_cost = 0.0, level_surplus_cost = 0.0, spillage_cost = 0.0,
+        operation_cost = PSY.PO.HydroReservoirOperationCost(
+            PSY.PC.HydroReservoirCost(;
+                cost_type = "HYDRO_RES",
+                level_shortage_cost = 0.0, level_surplus_cost = 0.0, spillage_cost = 0.0,
+            ),
         ),
-        evaporative_loss = 0.0, level_data_type = "ENERGY",
+        evaporative_loss = 0.0,
+        level_data_type = PSY.PO.HydroReservoirLevelDataType("ENERGY"),
     )
     @test_throws ErrorException PSY.from_openapi(bad_reservoir_po, refs, CU)
 
     ror_po = PSY.PO.HydroDispatch(;
         id = 22, name = "ror1", available = true, bus = 3,
         active_power = 15.0, reactive_power = 3.0, rating = 40.0,
-        prime_mover_type = "HY",
+        prime_mover_type = PSY.PC.PrimeMovers("HY"),
         active_power_limits = PSY.IC.MinMax(; min = 0.0, max = 40.0),
         reactive_power_limits = PSY.IC.MinMax(; min = -15.0, max = 15.0),
         ramp_limits = PSY.IC.UpDown(; up = 10.0, down = 10.0),
         time_limits = PSY.IC.UpDown(; up = 1.0, down = 1.0),
-        base_power = 100.0, status = "ONLINE", time_at_status = 50.0,
-        operation_cost = hydro_cost_po,
+        base_power = 100.0, status = PSY.PO.OperationalStates("ONLINE"),
+        time_at_status = 50.0,
+        operation_cost = PSY.PO.HydroDispatchOperationCost(hydro_cost_po),
+        power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
     )
     ror_natural = PSY.from_openapi(ror_po, refs, NU)
     @test get_active_power(ror_natural, CU) == 0.15
@@ -764,28 +872,31 @@ end
 @testset "OpenAPI converters: RenewableDispatch / RenewableNonDispatch / SynchronousCondenser" begin
     refs = _refs_with_area_bus()
     ren_cost_po = PSY.PC.RenewableGenerationCost(;
+        cost_type = "RENEWABLE",
         fixed = 0.0,
-        variable_operation_cost = PSY.PC.ProductionVariableCostCurve(
-            PSY.PC.CostCurve(;
-                power_units = "NATURAL_UNITS",
-                value_curve = PSY.PC.ValueCurve(
-                    PSY.PC.InputOutputCurve(;
-                        function_data = PSY.PC.InputOutputCurveFunctionData(
-                            PSY.IC.LinearFunctionData(;
-                                proportional_term = 0.0, constant_term = 0.0,
-                            ),
+        variable_operation_cost = PSY.PC.CostCurve(;
+            power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
+            value_curve = PSY.PC.ValueCurve(
+                PSY.PC.InputOutputCurve(;
+                    function_data = PSY.PC.InputOutputCurveFunctionData(
+                        PSY.IC.LinearFunctionData(;
+                            proportional_term = 0.0, constant_term = 0.0,
                         ),
                     ),
                 ),
             ),
+            vom_cost = _io_curve(0.0, 0.0),
         ),
     )
     wind_po = PSY.PO.RenewableDispatch(;
         id = 20, name = "wind1", available = true, bus = 4,
         active_power = 25.0, reactive_power = 5.0, rating = 50.0,
-        prime_mover_type = "WT",
+        prime_mover_type = PSY.PC.PrimeMovers("WT"),
         reactive_power_limits = PSY.IC.MinMax(; min = -20.0, max = 20.0),
-        power_factor = 0.95, operation_cost = ren_cost_po, base_power = 100.0,
+        power_factor = 0.95,
+        operation_cost = PSY.PO.RenewableDispatchOperationCost(ren_cost_po),
+        base_power = 100.0,
+        power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
     )
     wind = PSY.from_openapi(wind_po, refs, NU)
     @test get_active_power(wind, CU) == 0.25
@@ -796,7 +907,9 @@ end
     solar_po = PSY.PO.RenewableNonDispatch(;
         id = 21, name = "solar1", available = true, bus = 4,
         active_power = 15.0, reactive_power = 2.0, rating = 30.0,
-        prime_mover_type = "PVe", power_factor = 0.98, base_power = 100.0,
+        prime_mover_type = PSY.PC.PrimeMovers("PVe"), power_factor = 0.98,
+        base_power = 100.0,
+        power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
     )
     solar = PSY.from_openapi(solar_po, refs, NU)
     @test get_active_power(solar, CU) == 0.15
@@ -807,6 +920,7 @@ end
         reactive_power = 5.0, rating = 20.0,
         reactive_power_limits = PSY.IC.MinMax(; min = -20.0, max = 20.0),
         base_power = 100.0, active_power_losses = 1.0,
+        power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
     )
     condenser =
         PSY.from_openapi(condenser_po, refs, NU)
@@ -818,14 +932,16 @@ end
 @testset "OpenAPI converters: EnergyReservoirStorage" begin
     refs = _refs_with_area_bus()
     storage_cost_po = PSY.PC.StorageCost(;
+        cost_type = "STORAGE",
         charge_variable_cost = nothing, discharge_variable_cost = nothing,
-        fixed = 0.0, shut_down = 0.0, start_up = 0.0,
+        fixed = 0.0, shut_down = 0.0, start_up = PSY.PC.StorageCostStartUp(0.0),
         energy_shortage_cost = 0.0, energy_surplus_cost = 0.0,
     )
     storage_po = PSY.PO.EnergyReservoirStorage(;
         id = 20, name = "storage1", available = true, bus = 4,
-        prime_mover_type = "BA", storage_technology_type = "LIB",
-        storage_capacity = 400.0, energy_units = "MWH",
+        prime_mover_type = PSY.PC.PrimeMovers("BA"),
+        storage_technology_type = PSY.PC.StorageTech("LIB"),
+        storage_capacity = 400.0, energy_units = PSY.PO.EnergyUnitBasis("MWH"),
         storage_level_limits = PSY.IC.MinMax(; min = 0.0, max = 1.0),
         initial_storage_capacity_level = 0.5,
         rating = 100.0, active_power = 20.0,
@@ -834,10 +950,12 @@ end
         efficiency = PSY.IC.InOut(; in = 0.9, out = 0.9),
         reactive_power = 5.0,
         reactive_power_limits = PSY.IC.MinMax(; min = -50.0, max = 50.0),
-        base_power = 200.0, operation_cost = storage_cost_po,
+        base_power = 200.0,
+        operation_cost = PSY.PO.EnergyReservoirStorageOperationCost(storage_cost_po),
         conversion_factor = 1.0, storage_target = 0.5, cycle_limits = 10000,
         ramp_limits = PSY.IC.UpDown(; up = 100.0, down = 100.0),
         self_discharge = 0.0, standing_loss = 2.0,
+        power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
     )
     storage_natural =
         PSY.from_openapi(storage_po, refs, NU)
@@ -859,8 +977,9 @@ end
 
     bad_storage_po = PSY.PO.EnergyReservoirStorage(;
         id = 21, name = "storage2", available = true, bus = 4,
-        prime_mover_type = "BA", storage_technology_type = "LIB",
-        storage_capacity = 400.0, energy_units = "MWMIN",
+        prime_mover_type = PSY.PC.PrimeMovers("BA"),
+        storage_technology_type = PSY.PC.StorageTech("LIB"),
+        storage_capacity = 400.0, energy_units = PSY.PO.EnergyUnitBasis("MWMIN"),
         storage_level_limits = PSY.IC.MinMax(; min = 0.0, max = 1.0),
         initial_storage_capacity_level = 0.5,
         rating = 100.0, active_power = 20.0,
@@ -869,10 +988,12 @@ end
         efficiency = PSY.IC.InOut(; in = 0.9, out = 0.9),
         reactive_power = 5.0,
         reactive_power_limits = PSY.IC.MinMax(; min = -50.0, max = 50.0),
-        base_power = 200.0, operation_cost = storage_cost_po,
+        base_power = 200.0,
+        operation_cost = PSY.PO.EnergyReservoirStorageOperationCost(storage_cost_po),
         conversion_factor = 1.0, storage_target = 0.5, cycle_limits = 10000,
         ramp_limits = PSY.IC.UpDown(; up = 100.0, down = 100.0),
         self_discharge = 0.0, standing_loss = 2.0,
+        power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
     )
     @test_throws ErrorException PSY.from_openapi(bad_storage_po, refs, NU
     )
@@ -904,6 +1025,7 @@ end
             ),
         ),
         base_power = 100.0,
+        power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
     )
     sys = System(100.0)
     add_component!(sys, refs[1])
@@ -954,6 +1076,7 @@ end
             ),
         ),
         base_power = 100.0,
+        power_units = PSY.IC.UnitSystem("COMPONENT_BASE"),
     )
     hvdc_device = PSY.from_openapi(hvdc_po_device,
         refs,
@@ -995,7 +1118,8 @@ end
     tmodel_po = PSY.PO.TModelHVDCLine(;
         id = 33, name = "tmodel1", available = true, active_power_flow = 125.0,
         arc = 32,
-        parameter_units = "COMPONENT_BASE", base_current = 200.0,
+        parameter_units = PSY.PO.ImpedanceUnitBasis("COMPONENT_BASE"),
+        base_current = 200.0,
         r = 0.01, l = 0.02, c = 0.03,
         active_power_limits_from = PSY.IC.MinMax(; min = -250.0, max = 250.0),
         active_power_limits_to = PSY.IC.MinMax(; min = -250.0, max = 250.0),
@@ -1038,6 +1162,7 @@ end
     area2_po = PSY.PO.Area(;
         id = 20, name = "area2", peak_active_power = 50.0, peak_reactive_power = 10.0,
         load_response = 0.0, base_power = 100.0,
+        power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
     )
     refs[20] = PSY.from_openapi(area2_po, refs, NU)
 
@@ -1046,6 +1171,7 @@ end
         from_area = 1, to_area = 20,
         flow_limits = PSY.IC.FromToToFrom(; from_to = 100.0, to_from = -100.0),
         base_power = 100.0,
+        power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
     )
     device = PSY.from_openapi(interchange_po, refs, CU)
     @test get_active_power_flow(device, PSY.CU) == 25.0
@@ -1065,6 +1191,7 @@ end
             from_area = 999, to_area = 20,
             flow_limits = PSY.IC.FromToToFrom(; from_to = 0.0, to_from = 0.0),
             base_power = 100.0,
+            power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
         ),
         refs,
         CU,
@@ -1080,9 +1207,10 @@ end
     @test get_number(attr) == 7
     @test get_grounding_resistance(attr) == 0.25
 
-    default_po = PSY.PO.Substation(; id = 31, name = "SUB2", number = 8)
-    default_attr = PSY.from_openapi(default_po, refs)
-    @test get_grounding_resistance(default_attr) == 0.1
+    # `grounding_resistance` has a PSY-side default (0.1) but no wire-side default: the PO
+    # struct declares it a plain `Float64` with no `Absent`/`Nothing` variant, so omitting it
+    # now fails at construction rather than falling back inside `from_openapi`.
+    @test_throws UndefKeywordError PSY.PO.Substation(; id = 31, name = "SUB2", number = 8)
 end
 
 @testset "OpenAPI converters: reserves" begin
@@ -1093,7 +1221,7 @@ end
         id = 1, name = "spin_up", available = true, time_frame = 10.0,
         requirement = 100.0, variable = nothing, sustained_time = 60.0,
         max_output_fraction = 1.0, max_participation_factor = 1.0,
-        deployed_fraction = 1.0, reserve_direction = "UP",
+        deployed_fraction = 1.0, reserve_direction = PSY.PO.ReserveDirection("UP"),
     )
     online_natural = PSY.from_openapi(online_po, refs, NU)
     add_component!(sys, online_natural)
@@ -1105,7 +1233,7 @@ end
         id = 1, name = "spin_up_device", available = true, time_frame = 10.0,
         requirement = 100.0, variable = nothing, sustained_time = 60.0,
         max_output_fraction = 1.0, max_participation_factor = 1.0,
-        deployed_fraction = 1.0, reserve_direction = "UP",
+        deployed_fraction = 1.0, reserve_direction = PSY.PO.ReserveDirection("UP"),
     )
     online_device =
         PSY.from_openapi(online_po_device, refs, CU)
@@ -1116,7 +1244,7 @@ end
         id = 2, name = "spin_down", available = true, time_frame = 10.0,
         requirement = 50.0, variable = nothing, sustained_time = 60.0,
         max_output_fraction = 1.0, max_participation_factor = 1.0,
-        deployed_fraction = 1.0, reserve_direction = "DOWN",
+        deployed_fraction = 1.0, reserve_direction = PSY.PO.ReserveDirection("DOWN"),
     )
     @test PSY.from_openapi(down_po, refs, NU) isa
           OnlineReserve{ReserveDown}
@@ -1125,7 +1253,8 @@ end
         id = 3, name = "spin_sym", available = true, time_frame = 10.0,
         requirement = 50.0, variable = nothing, sustained_time = 60.0,
         max_output_fraction = 1.0, max_participation_factor = 1.0,
-        deployed_fraction = 1.0, reserve_direction = "SYMMETRIC",
+        deployed_fraction = 1.0,
+        reserve_direction = PSY.PO.ReserveDirection("SYMMETRIC"),
     )
     @test PSY.from_openapi(sym_po, refs, NU) isa
           OnlineReserve{ReserveSymmetric}
@@ -1143,7 +1272,7 @@ end
     @test_throws ErrorException PSY._resolve_reserve_direction("BOGUS", "test")
 
     ordc_po = PSY.PC.CostCurve(;
-        power_units = "NATURAL_UNITS",
+        power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
         value_curve = PSY.PC.ValueCurve(
             PSY.PC.IncrementalCurve(;
                 function_data = PSY.PC.IncrementalCurveFunctionData(
@@ -1152,12 +1281,17 @@ end
                 initial_input = 0.0,
             ),
         ),
+        vom_cost = PSY.PC.InputOutputCurve(;
+            function_data = PSY.PC.InputOutputCurveFunctionData(
+                PSY.IC.LinearFunctionData(; proportional_term = 0.0, constant_term = 0.0),
+            ),
+        ),
     )
     ordc_reserve_po = PSY.PO.OnlineReserve(;
         id = 5, name = "spin_ordc", available = true, time_frame = 10.0,
         requirement = 100.0, variable = ordc_po, sustained_time = 60.0,
         max_output_fraction = 1.0, max_participation_factor = 1.0,
-        deployed_fraction = 1.0, reserve_direction = "UP",
+        deployed_fraction = 1.0, reserve_direction = PSY.PO.ReserveDirection("UP"),
     )
     ordc_reserve =
         PSY.from_openapi(ordc_reserve_po, refs, NU)
@@ -1187,7 +1321,7 @@ end
 
     group_po = PSY.PO.GroupReserve(;
         id = 7, name = "group_up", available = true, requirement = 150.0,
-        reserve_direction = "UP",
+        reserve_direction = PSY.PO.ReserveDirection("UP"),
     )
     group_natural = PSY.from_openapi(group_po, refs, NU)
     add_component!(sys, group_natural)
@@ -1196,7 +1330,7 @@ end
 
     group_po_device = PSY.PO.GroupReserve(;
         id = 7, name = "group_up_device", available = true, requirement = 150.0,
-        reserve_direction = "UP",
+        reserve_direction = PSY.PO.ReserveDirection("UP"),
     )
     group_device = PSY.from_openapi(group_po_device, refs, CU)
     add_component!(sys, group_device)
@@ -1215,20 +1349,24 @@ end
         active_power_flow = 50.0, rating = 200.0,
         active_power_limits_from = PSY.IC.MinMax(; min = -200.0, max = 200.0),
         active_power_limits_to = PSY.IC.MinMax(; min = -200.0, max = 200.0),
-        admittance_units = "NATURAL_UNITS", g = 0.5,
+        admittance_units = PSY.PO.AdmittanceUnitBasis("NATURAL_UNITS"), g = 0.5,
         dc_current = 300.0, reactive_power_from = 10.0,
-        dc_control_from = "DC_POWER", ac_control_from = "AC_REACTIVE_POWER",
+        dc_control_from = PSY.PO.VSCDCControlModes("DC_POWER"),
+        ac_control_from = PSY.PO.VSCACControlModes("AC_REACTIVE_POWER"),
         dc_setpoint_from = 40.0, ac_setpoint_from = 0.95,
-        converter_loss_from = _io_curve(1.2, 0.5),
+        converter_loss_from = _loss_curve_po(1.2, 0.5),
         max_dc_current_from = 1000.0, rating_from = 200.0,
         reactive_power_limits_from = PSY.IC.MinMax(; min = -100.0, max = 100.0),
         power_factor_weighting_fraction_from = 0.5,
-        voltage_units = "NATURAL_UNITS",
+        voltage_units = PSY.PO.VoltageUnitBasis("NATURAL_UNITS"),
+        # NATURAL_UNITS: `dc_setpoint_to` below is kV, divided by `rated_dc_voltage`.
+        setpoint_voltage_units = PSY.PO.VoltageUnitBasis("NATURAL_UNITS"),
         voltage_limits_from = PSY.IC.MinMax(; min = 0.9, max = 1.1),
         dc_voltage_droop_from = 0.0, reactive_power_to = 20.0,
-        dc_control_to = "DC_VOLTAGE", ac_control_to = "AC_REACTIVE_POWER",
+        dc_control_to = PSY.PO.VSCDCControlModes("DC_VOLTAGE"),
+        ac_control_to = PSY.PO.VSCACControlModes("AC_REACTIVE_POWER"),
         dc_setpoint_to = 204.0, ac_setpoint_to = 0.98,
-        converter_loss_to = _io_curve(1.1, 0.4),
+        converter_loss_to = _loss_curve_po(1.1, 0.4),
         max_dc_current_to = 1000.0, rating_to = 200.0,
         reactive_power_limits_to = PSY.IC.MinMax(; min = -100.0, max = 100.0),
         power_factor_weighting_fraction_to = 0.5,
@@ -1236,6 +1374,7 @@ end
         dc_voltage_droop_to = 0.0, rated_dc_voltage = 200.0,
         remote_bus_control_from = nothing, remote_bus_control_to = 4,
         rmpct_from = 100.0, rmpct_to = 100.0, base_power = 100.0,
+        power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
     )
 
     sys = System(100.0)
@@ -1266,9 +1405,8 @@ end
     @test get_converter_loss_from(natural) ==
           LossCurve(LinearCurve(1.2, 0.5), NaturalUnit())
 
-    vsc_po.id = 21
-    vsc_po.name = "vsc2"
-    device = PSY.from_openapi(vsc_po, refs, CU)
+    vsc_po2 = _po_with(vsc_po; id = 21, name = "vsc2")
+    device = PSY.from_openapi(vsc_po2, refs, CU)
     add_component!(sys, device)
     @test get_active_power_flow(device, SU) == 50.0
     @test get_active_power_limits_from(device, SU) == (min = -200.0, max = 200.0)
@@ -1286,18 +1424,18 @@ end
     # of the converter's own AC base voltage — PSY's own convention — so it passes through
     # unscaled with no `rated_ac_voltage_from` needed. This is what
     # PowerFlowFileParser's PSS/E reader writes for every VSC line (`make_vscline!`).
-    vsc_po = _vsc_po_minimal()
-    vsc_po.ac_control_from = "AC_VOLTAGE"
-    vsc_po.ac_setpoint_from = 1.03
-    vsc_po.setpoint_voltage_units = "COMPONENT_BASE"
+    vsc_po = _vsc_po_minimal(;
+        ac_control_from = PSY.PO.VSCACControlModes("AC_VOLTAGE"),
+        ac_setpoint_from = 1.03,
+        setpoint_voltage_units = PSY.PO.VoltageUnitBasis("COMPONENT_BASE"),
+    )
 
     natural = PSY.from_openapi(vsc_po, refs, NU)
     @test get_ac_setpoint_from(natural) == 1.03
     @test get_rated_ac_voltage_from(natural) == 0.0
 
-    vsc_po.id = 22
-    vsc_po.name = "vsc3"
-    device = PSY.from_openapi(vsc_po, refs, CU)
+    vsc_po2 = _po_with(vsc_po; id = 22, name = "vsc3")
+    device = PSY.from_openapi(vsc_po2, refs, CU)
     @test get_ac_setpoint_from(device) == 1.03
 end
 
@@ -1311,11 +1449,12 @@ end
     # `rated_dc_voltage`, now a real wire-row field PowerFlowFileParser's `make_vscline!`
     # writes from the terminal's own RAW bus base voltage — exactly like `dc_setpoint_*`'s
     # DC-voltage branches convert through `rated_dc_voltage`.
-    vsc_po = _vsc_po_minimal()
-    vsc_po.ac_control_from = "AC_VOLTAGE"
-    vsc_po.ac_setpoint_from = 234.6
-    vsc_po.rated_ac_voltage_from = 230.0
-    vsc_po.setpoint_voltage_units = "NATURAL_UNITS"
+    vsc_po = _vsc_po_minimal(;
+        ac_control_from = PSY.PO.VSCACControlModes("AC_VOLTAGE"),
+        ac_setpoint_from = 234.6,
+        rated_ac_voltage_from = 230.0,
+        setpoint_voltage_units = PSY.PO.VoltageUnitBasis("NATURAL_UNITS"),
+    )
 
     for val in (NU, CU)
         vsc = PSY.from_openapi(vsc_po, refs, val)
@@ -1328,11 +1467,18 @@ end
     refs = _refs_with_area_bus(; base_power = 100.0)
     refs[10] =
         PSY.from_openapi(PSY.PO.Arc(; id = 10, from_id = 3, to_id = 4), refs, NU)
-    vsc_po = _vsc_po_minimal()
-    vsc_po.converter_loss_to = PSY.PC.InputOutputCurve(;
-        function_data = PSY.PC.InputOutputCurveFunctionData(
-            PSY.IC.QuadraticFunctionData(;
-                quadratic_term = 0.01, proportional_term = 1.1, constant_term = 0.4,
+    vsc_po = _vsc_po_minimal(;
+        converter_loss_to = PSY.PC.LossCurve(;
+            power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
+            value_curve = PSY.PC.LossValueCurve(
+                PSY.PC.InputOutputCurve(;
+                    function_data = PSY.PC.InputOutputCurveFunctionData(
+                        PSY.IC.QuadraticFunctionData(;
+                            quadratic_term = 0.01, proportional_term = 1.1,
+                            constant_term = 0.4,
+                        ),
+                    ),
+                ),
             ),
         ),
     )
@@ -1348,24 +1494,26 @@ end
 
     # NATURAL_UNITS: kV in the document, divided by the base each side is expressed against —
     # `rated_dc_voltage` (200.0) on the DC side, `rated_ac_voltage_from` (138.0) on the AC side.
-    natural = _vsc_po_minimal()
-    natural.setpoint_voltage_units = "NATURAL_UNITS"
-    natural.dc_control_to = "DC_VOLTAGE"
-    natural.dc_setpoint_to = 204.0
-    natural.ac_control_from = "AC_VOLTAGE"
-    natural.ac_setpoint_from = 141.45
-    natural.rated_ac_voltage_from = 138.0
+    natural = _vsc_po_minimal(;
+        setpoint_voltage_units = PSY.PO.VoltageUnitBasis("NATURAL_UNITS"),
+        dc_control_to = PSY.PO.VSCDCControlModes("DC_VOLTAGE"),
+        dc_setpoint_to = 204.0,
+        ac_control_from = PSY.PO.VSCACControlModes("AC_VOLTAGE"),
+        ac_setpoint_from = 141.45,
+        rated_ac_voltage_from = 138.0,
+    )
     vsc_natural = PSY.from_openapi(natural, refs, NU)
     @test get_dc_setpoint_to(vsc_natural) == 204.0 / 200.0
     @test get_ac_setpoint_from(vsc_natural) == 141.45 / 138.0
 
     # COMPONENT_BASE: already the per-unit PSY stores, so both pass through untouched.
-    device = _vsc_po_minimal()
-    device.setpoint_voltage_units = "COMPONENT_BASE"
-    device.dc_control_to = "DC_VOLTAGE"
-    device.dc_setpoint_to = 1.02
-    device.ac_control_from = "AC_VOLTAGE"
-    device.ac_setpoint_from = 1.025
+    device = _vsc_po_minimal(;
+        setpoint_voltage_units = PSY.PO.VoltageUnitBasis("COMPONENT_BASE"),
+        dc_control_to = PSY.PO.VSCDCControlModes("DC_VOLTAGE"),
+        dc_setpoint_to = 1.02,
+        ac_control_from = PSY.PO.VSCACControlModes("AC_VOLTAGE"),
+        ac_setpoint_from = 1.025,
+    )
     vsc_device = PSY.from_openapi(device, refs, NU)
     @test get_dc_setpoint_to(vsc_device) == 1.02
     @test get_ac_setpoint_from(vsc_device) == 1.025
@@ -1387,30 +1535,31 @@ end
     # (unspecified), so there is still no base to convert this particular value against. See
     # the "setpoint_voltage_units selects the basis" testset above for the case where a base
     # IS given.
-    ac_voltage = _vsc_po_minimal()
-    ac_voltage.ac_control_from = "AC_VOLTAGE"
+    ac_voltage = _vsc_po_minimal(;
+        ac_control_from = PSY.PO.VSCACControlModes("AC_VOLTAGE"),
+    )
     @test_throws ErrorException PSY.from_openapi(ac_voltage, refs, NU)
 
     # Only NATURAL_UNITS is implemented for either unit-basis selector.
-    bad_admittance = _vsc_po_minimal()
-    bad_admittance.admittance_units = "COMPONENT_BASE"
+    bad_admittance = _vsc_po_minimal(;
+        admittance_units = PSY.PO.AdmittanceUnitBasis("COMPONENT_BASE"),
+    )
     @test_throws ErrorException PSY.from_openapi(bad_admittance,
         refs,
         NU,
     )
 
-    bad_voltage = _vsc_po_minimal()
-    bad_voltage.voltage_units = "COMPONENT_BASE"
+    bad_voltage = _vsc_po_minimal(;
+        voltage_units = PSY.PO.VoltageUnitBasis("COMPONENT_BASE"),
+    )
     @test_throws ErrorException PSY.from_openapi(bad_voltage, refs, NU)
 
     # A non-zero g with no DC voltage base is unconvertible; a zero one is not.
-    no_base = _vsc_po_minimal()
-    no_base.rated_dc_voltage = 0.0
-    no_base.g = 0.5
+    no_base = _vsc_po_minimal(; rated_dc_voltage = 0.0, g = 0.5)
     @test_throws ErrorException PSY.from_openapi(no_base, refs, NU)
 
-    no_base.g = 0.0
-    @test iszero(get_g(PSY.from_openapi(no_base, refs, NU)))
+    no_base_zero_g = _po_with(no_base; g = 0.0)
+    @test iszero(get_g(PSY.from_openapi(no_base_zero_g, refs, NU)))
 end
 
 @testset "OpenAPI converters: InterruptibleStandardLoad (generated)" begin
@@ -1419,20 +1568,25 @@ end
     refs = _refs_with_area_bus(; base_power = 100.0)
     load_po = PSY.PO.InterruptibleStandardLoad(;
         id = 30, name = "load1", available = true, bus = 3, base_power = 100.0,
-        operation_cost = PSY.PC.LoadCost(;
-            fixed = 2400.0,
-            variable_operation_cost = PSY.PC.CostCurve(;
-                power_units = "NATURAL_UNITS",
-                value_curve = PSY.PC.ValueCurve(_io_curve(150.0, 0.0)),
+        operation_cost = PSY.PO.InterruptibleStandardLoadOperationCost(
+            PSY.PC.LoadCost(;
+                cost_type = "LOAD",
+                fixed = 2400.0,
+                variable_operation_cost = PSY.PC.CostCurve(;
+                    power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
+                    value_curve = PSY.PC.ValueCurve(_io_curve(150.0, 0.0)),
+                    vom_cost = _io_curve(0.0, 0.0),
+                ),
             ),
         ),
-        conformity = "CONFORMING",
+        conformity = PSY.PO.LoadConformity("CONFORMING"),
         constant_active_power = 50.0, constant_reactive_power = 10.0,
         impedance_active_power = 20.0, impedance_reactive_power = 5.0,
         current_active_power = 30.0, current_reactive_power = 7.0,
         max_constant_active_power = 60.0, max_constant_reactive_power = 12.0,
         max_impedance_active_power = 25.0, max_impedance_reactive_power = 6.0,
         max_current_active_power = 35.0, max_current_reactive_power = 8.0,
+        power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
     )
 
     natural = PSY.from_openapi(load_po, refs, NU)

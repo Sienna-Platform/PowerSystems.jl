@@ -172,10 +172,11 @@ end
     # lookup table is emitted anywhere in the generated file.
     @test !occursin("_FROM_STRING", gen)
     @test !occursin("_TO_STRING", gen)
-    @test occursin("status = OATestStatus(po.status),", device_body)
-    @test occursin("status = OATestStatus(po.status),", natural_body)
-    # ... and the export direction is the inverse: `string` on the enum value.
-    @test occursin("status = string(get_status(value)),", gen)
+    @test occursin("status = OATestStatus(po.status.value),", device_body)
+    @test occursin("status = OATestStatus(po.status.value),", natural_body)
+    # ... and the export direction is the inverse: wraps `string` on the enum value in the
+    # PO enum's own validating wrapper type.
+    @test occursin("status = PO.OATestStatus(string(get_status(value))),", gen)
 
     # Reference: `resolve_ref(refs, po.<name>, <PSY type>)`, identical in both methods. Not
     # `refs[po.<name>]` — a schema-optional reference the document omits arrives as
@@ -185,13 +186,14 @@ end
     @test occursin("bus = resolve_ref(refs, po.bus, OATestBus),", natural_body)
 
     # Cost hook: identical in both methods, asserting the declared field type — the call
-    # itself infers as `Any`.
+    # itself infers as `Any`. `operation_cost::OperationalCost` (abstract) is a `oneOf`
+    # wrapper on the wire, unwrapped via `.value` before the cast.
     @test occursin(
-        "operation_cost = convert_cost(po.operation_cost)::OperationalCost,",
+        "operation_cost = convert_cost(po.operation_cost.value)::OperationalCost,",
         device_body,
     )
     @test occursin(
-        "operation_cost = convert_cost(po.operation_cost)::OperationalCost,",
+        "operation_cost = convert_cost(po.operation_cost.value)::OperationalCost,",
         natural_body,
     )
 
@@ -206,12 +208,15 @@ end
     @test occursin("active_power = po.active_power,", device_body)
     @test occursin("active_power = po.active_power / po.base_power,", natural_body)
 
-    # Nullable scalar power conversion: component-base is still bare pass-through (no guard
-    # needed — scalar field access on `nothing` is never attempted); natural-units guards
-    # the division.
-    @test occursin("rating_b = po.rating_b,", device_body)
+    # Nullable scalar power conversion with a descriptor default: both methods guard
+    # Absent (an omitted wire value, distinct from `Nothing`) and fall back to that default,
+    # since a bare `nothing`-only guard would not catch it.
     @test occursin(
-        "rating_b = (if isnothing(po.rating_b); nothing; else; po.rating_b / po.base_power; end),",
+        "rating_b = (if po.rating_b isa Union{Nothing, IC.Absent}; nothing; else; po.rating_b; end),",
+        device_body,
+    )
+    @test occursin(
+        "rating_b = (if po.rating_b isa Union{Nothing, IC.Absent}; nothing; else; po.rating_b / po.base_power; end),",
         natural_body,
     )
 

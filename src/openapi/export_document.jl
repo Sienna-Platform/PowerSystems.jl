@@ -16,10 +16,11 @@
 # sqlite_load.jl. None of these embed unit-converted fields, so unlike the per-component
 # exporters they take no unit-system argument.
 
-"""Resolve monitored-component ids to document ids; empty reverses to `nothing`."""
+"""Resolve monitored-component ids to document ids; empty reverses to `IC.ABSENT` (the
+schema declares the field optional-by-omission, not nullable)."""
 function _monitored_component_ids(refs::OpenAPIRefs, ids)
     if isempty(ids)
-        return nothing
+        return IC.ABSENT
     end
     document_ids = Int[]
     for id in ids
@@ -34,12 +35,12 @@ function to_openapi(attr::EmissionsData, refs::OpenAPIRefs)
     return PO.EmissionsData(;
         id = component_id(refs, attr),
         name = get_name(attr),
-        pollutant = string(get_pollutant(attr)),
+        pollutant = PC.PollutantType(string(get_pollutant(attr))),
         emission_rate = PC.ValueCurve(convert_cost_to_openapi(get_emission_rate(attr))),
-        basis = string(get_basis(attr)),
+        basis = PC.EmissionBasis(string(get_basis(attr))),
         start_up_adder = get_start_up_adder(attr),
-        mass_unit = string(get_mass_unit(attr)),
-        energy_unit = string(get_energy_unit(attr)),
+        mass_unit = PC.MassUnit(string(get_mass_unit(attr))),
+        energy_unit = PC.EnergyUnit(string(get_energy_unit(attr))),
         gwp = get_gwp(attr),
         available = get_available(attr),
     )
@@ -90,7 +91,7 @@ function to_openapi(block::CombinedCycleBlock, refs::OpenAPIRefs)
     return PO.CombinedCycleBlock(;
         id = component_id(refs, block),
         name = get_name(block),
-        configuration = string(get_configuration(block)),
+        configuration = PO.CombinedCycleConfiguration(string(get_configuration(block))),
         heat_recovery_to_steam_factor = get_heat_recovery_to_steam_factor(block),
     )
 end
@@ -99,7 +100,7 @@ function to_openapi(frac::CombinedCycleFractional, refs::OpenAPIRefs)
     return PO.CombinedCycleFractional(;
         id = component_id(refs, frac),
         name = get_name(frac),
-        configuration = string(get_configuration(frac)),
+        configuration = PO.CombinedCycleConfiguration(string(get_configuration(frac))),
     )
 end
 
@@ -455,7 +456,7 @@ function _push_cc_associations!(
             PO.CombinedCycleAssociation(;
                 plant_id = attr_id,
                 entity_id = entity_id,
-                role = role,
+                role = PO.CombinedCycleAssociationRole(role),
                 hrsg_index = hrsg_index,
             ),
         )
@@ -556,11 +557,12 @@ means the sidecar and the attribute manager disagree about what exists: every at
 document can describe was registered into `refs` by `_export_supplemental_attributes` before
 this runs."""
 function _absent_owner_is_tolerated(row)
-    row.owner_category == "Component" && return true
-    row.owner_category == "SupplementalAttribute" && return false
+    category = row.owner_category.value
+    category == "Component" && return true
+    category == "SupplementalAttribute" && return false
     error(
         "to_openapi: time series \"$(row.name)\" (owner id $(row.owner_id)) has " *
-        "unrecognized owner_category $(row.owner_category)",
+        "unrecognized owner_category $category",
     )
 end
 
@@ -751,21 +753,50 @@ services. Runs after `_export_components!` so every service already has an id;
 converter has no id registry.
 """
 function _export_market_bid_service_offers!(doc::PD.SystemDocument, refs::OpenAPIRefs)
-    for po_components in values(doc.components), po in po_components
-        hasproperty(po, :operation_cost) || continue
-        _fill_service_offers!(po.operation_cost, po, refs)
+    for po_components in values(doc.components)
+        for i in eachindex(po_components)
+            po = po_components[i]
+            hasproperty(po, :operation_cost) || continue
+            replacement = _with_service_offers(po.operation_cost, po, refs)
+            isnothing(replacement) && continue
+            po_components[i] = _po_with(po; operation_cost = replacement)
+        end
     end
     return nothing
 end
 
-_fill_service_offers!(::Any, ::Any, ::OpenAPIRefs) = nothing
-function _fill_service_offers!(po_cost::PC.MarketBidCost, po, refs::OpenAPIRefs)
+"""Return a copy of `po` (an immutable `Base.@kwdef` OpenAPI struct under OpenAPI.jl 1.x)
+with the given fields overridden."""
+function _po_with(po; overrides...)
+    fields = fieldnames(typeof(po))
+    current = NamedTuple{fields}(getfield.(Ref(po), fields))
+    merged = merge(current, NamedTuple(overrides))
+    return typeof(po)(; merged...)
+end
+
+_with_service_offers(::Any, ::Any, ::OpenAPIRefs) = nothing
+function _with_service_offers(wrapper::IC.OneOfAPIModel, po, refs::OpenAPIRefs)
+    inner = _with_service_offers(wrapper.value, po, refs)
+    isnothing(inner) && return nothing
+    return typeof(wrapper)(inner)
+end
+function _with_service_offers(po_cost::PC.MarketBidCost, po, refs::OpenAPIRefs)
     component = refs[Int(po.id)]
     offers = get_ancillary_service_offers(get_operation_cost(component))
     isempty(offers) && return nothing
-    po_cost.ancillary_service_offers =
-        Int64[component_id(refs, service) for service in offers]
-    return nothing
+    return _po_with(
+        po_cost;
+        ancillary_service_offers = Int64[component_id(refs, service) for service in offers],
+    )
+end
+function _with_service_offers(po_cost::PC.MarketBidTimeSeriesCost, po, refs::OpenAPIRefs)
+    component = refs[Int(po.id)]
+    offers = get_ancillary_service_offers(get_operation_cost(component))
+    isempty(offers) && return nothing
+    return _po_with(
+        po_cost;
+        ancillary_service_offers = Int64[component_id(refs, service) for service in offers],
+    )
 end
 
 """Reserve `doc`'s own id counter above every id already assigned, so it cannot reissue one

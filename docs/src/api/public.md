@@ -25,7 +25,10 @@ Pages   = ["PowerSystems.jl",
            "cost_function_timeseries.jl",
            "definitions.jl",
            "transformer_circuits.jl",
-           "TransformerCircuit.jl"
+           "TransformerCircuit.jl",
+           "market_components.jl",
+           "trading_hub.jl",
+           "virtual_participant.jl"
            ]
 Public = true
 Private = false
@@ -161,6 +164,25 @@ Filter  = t -> (t isa DataType || t isa UnionAll || t isa Function) && nameof(t)
 Modules = [PowerSystems]
 Pages   = ["supplemental_accessors.jl",
            "supplemental_setters.jl"]
+Public = true
+Private = false
+```
+
+## Units
+
+```@autodocs
+Modules = [PowerSystems]
+Pages   = ["units/conversions.jl"]
+Public = true
+Private = false
+```
+
+## Serialization
+
+```@autodocs
+Modules = [PowerSystems]
+Pages   = ["openapi/file_io.jl", "openapi/refs.jl", "openapi/export_document.jl",
+           "openapi/import_document.jl"]
 Public = true
 Private = false
 ```

@@ -189,8 +189,8 @@ function from_openapi(po::PO.InterruptiblePowerLoad, refs::OpenAPIRefs, ::Compon
         max_active_power = po.max_active_power,
         max_reactive_power = po.max_reactive_power,
         base_power = po.base_power,
-        operation_cost = convert_cost(po.operation_cost)::OperationalCost,
-        conformity = LoadConformity(po.conformity.value),
+        operation_cost = convert_cost(po.operation_cost.value)::OperationalCost,
+        conformity = (if po.conformity isa Union{Nothing, IC.Absent}; LoadConformity.UNDEFINED; else; LoadConformity(po.conformity.value); end),
     )
 end
 
@@ -204,8 +204,8 @@ function from_openapi(po::PO.InterruptiblePowerLoad, refs::OpenAPIRefs, ::Natura
         max_active_power = po.max_active_power / po.base_power,
         max_reactive_power = po.max_reactive_power / po.base_power,
         base_power = po.base_power,
-        operation_cost = convert_cost(po.operation_cost)::OperationalCost,
-        conformity = LoadConformity(po.conformity.value),
+        operation_cost = convert_cost(po.operation_cost.value)::OperationalCost,
+        conformity = (if po.conformity isa Union{Nothing, IC.Absent}; LoadConformity.UNDEFINED; else; LoadConformity(po.conformity.value); end),
     )
 end
 
@@ -224,7 +224,7 @@ function to_openapi(value::InterruptiblePowerLoad, refs::OpenAPIRefs, ::Componen
         max_active_power = get_max_active_power(value, CU),
         max_reactive_power = get_max_reactive_power(value, CU),
         base_power = _get_base_power(value),
-        operation_cost = convert_cost_to_openapi(get_operation_cost(value)),
+        operation_cost = PO.InterruptiblePowerLoadOperationCost(convert_cost_to_openapi(get_operation_cost(value))),
         conformity = PO.LoadConformity(string(get_conformity(value))),
         power_units = _power_units_string(CU),
     )
@@ -241,7 +241,7 @@ function to_openapi(value::InterruptiblePowerLoad, refs::OpenAPIRefs, ::NaturalU
         max_active_power = get_max_active_power(value, CU) * _get_base_power(value),
         max_reactive_power = get_max_reactive_power(value, CU) * _get_base_power(value),
         base_power = _get_base_power(value),
-        operation_cost = convert_cost_to_openapi(get_operation_cost(value)),
+        operation_cost = PO.InterruptiblePowerLoadOperationCost(convert_cost_to_openapi(get_operation_cost(value))),
         conformity = PO.LoadConformity(string(get_conformity(value))),
         power_units = _power_units_string(NU),
     )

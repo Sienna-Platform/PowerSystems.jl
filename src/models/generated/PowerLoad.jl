@@ -180,7 +180,7 @@ function from_openapi(po::PO.PowerLoad, refs::OpenAPIRefs, ::ComponentBaseUnit)
         base_power = po.base_power,
         max_active_power = po.max_active_power,
         max_reactive_power = po.max_reactive_power,
-        conformity = LoadConformity(po.conformity.value),
+        conformity = (if po.conformity isa Union{Nothing, IC.Absent}; LoadConformity.UNDEFINED; else; LoadConformity(po.conformity.value); end),
     )
 end
 
@@ -194,7 +194,7 @@ function from_openapi(po::PO.PowerLoad, refs::OpenAPIRefs, ::NaturalUnit)
         base_power = po.base_power,
         max_active_power = po.max_active_power / po.base_power,
         max_reactive_power = po.max_reactive_power / po.base_power,
-        conformity = LoadConformity(po.conformity.value),
+        conformity = (if po.conformity isa Union{Nothing, IC.Absent}; LoadConformity.UNDEFINED; else; LoadConformity(po.conformity.value); end),
     )
 end
 

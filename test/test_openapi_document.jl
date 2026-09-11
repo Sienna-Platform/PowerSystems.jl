@@ -150,7 +150,16 @@ end
         # Association references an unresolved entity_id.
         doc = make_openapi_test_doc()
         doc["supplemental_attributes"] =
-            [openapi_raw(PSY.IC.GeographicInfo(; id = 1, geo_json = Dict{String, Any}()))]
+            [
+                openapi_raw(
+                    PSY.IC.GeographicInfo(;
+                        id = 1,
+                        geo_json = PSY.IC.GeographicInfoGeoJson(;
+                            additional_properties = Dict{String, Any}(),
+                        ),
+                    ),
+                ),
+            ]
         doc["supplemental_attribute_associations"] = [
             Dict{String, Any}(
                 "attribute_id" => 1, "component_id" => 999, "component_type" => "ACBus",
@@ -165,10 +174,15 @@ end
     doc = make_openapi_test_doc()
     geo_po = PSY.IC.GeographicInfo(;
         id = 100,
-        geo_json = Dict{String, Any}("type" => "Point", "coordinates" => [1.0, 2.0]),
+        geo_json = PSY.IC.GeographicInfoGeoJson(;
+            additional_properties = Dict{String, Any}(
+                "type" => "Point",
+                "coordinates" => [1.0, 2.0],
+            ),
+        ),
     )
     emissions_po = PSY.PO.EmissionsData(;
-        id = 101, name = "gen1_CO2", pollutant = "CO2",
+        id = 101, name = "gen1_CO2", pollutant = PSY.PC.PollutantType("CO2"),
         emission_rate = PSY.PC.ValueCurve(
             PSY.PC.IncrementalCurve(;
                 function_data = PSY.PC.IncrementalCurveFunctionData(
@@ -180,8 +194,9 @@ end
                 initial_input = 0.0,
             ),
         ),
-        basis = "FUEL_INPUT", start_up_adder = 0.0, mass_unit = "LB",
-        energy_unit = "MMBTU", gwp = 1.0, available = true,
+        basis = PSY.PC.EmissionBasis("FUEL_INPUT"), start_up_adder = 0.0,
+        mass_unit = PSY.PC.MassUnit("LB"),
+        energy_unit = PSY.PC.EnergyUnit("MMBTU"), gwp = 1.0, available = true,
     )
     doc["supplemental_attributes"] = [openapi_raw(geo_po), openapi_raw(emissions_po)]
     doc["supplemental_attribute_associations"] = [
@@ -222,7 +237,7 @@ end
     refs[1] = bus
 
     emissions_po = PSY.PO.EmissionsData(;
-        id = 2, name = "gen1_CO2", pollutant = "CO2",
+        id = 2, name = "gen1_CO2", pollutant = PSY.PC.PollutantType("CO2"),
         emission_rate = PSY.PC.ValueCurve(
             PSY.PC.IncrementalCurve(;
                 function_data = PSY.PC.IncrementalCurveFunctionData(
@@ -234,8 +249,9 @@ end
                 initial_input = 0.0,
             ),
         ),
-        basis = "FUEL_INPUT", start_up_adder = 0.0, mass_unit = "LB",
-        energy_unit = "MMBTU", gwp = 1.0, available = true,
+        basis = PSY.PC.EmissionBasis("FUEL_INPUT"), start_up_adder = 0.0,
+        mass_unit = PSY.PC.MassUnit("LB"),
+        energy_unit = PSY.PC.EnergyUnit("MMBTU"), gwp = 1.0, available = true,
     )
     emissions = PSY.from_openapi(emissions_po, refs)
     @test get_pollutant(emissions) == PollutantType.CO2
@@ -244,7 +260,7 @@ end
     @test get_energy_unit(emissions) == EnergyUnit.MMBTU
 
     outage_po = PSY.PO.GeometricDistributionForcedOutage(;
-        id = 3, mean_time_to_recovery = 480, outage_transition_probability = 0.001,
+        id = 3, mean_time_to_recovery = 480.0, outage_transition_probability = 0.001,
         monitored_components = [1],
     )
     outage = PSY.from_openapi(outage_po, refs)
@@ -282,7 +298,8 @@ end
     @test get_name(renewable_plant) == "rp1"
 
     cc_block_po = PSY.PO.CombinedCycleBlock(;
-        id = 9, name = "cc1", configuration = "SingleShaftCombustionSteam",
+        id = 9, name = "cc1",
+        configuration = PSY.PO.CombinedCycleConfiguration("SingleShaftCombustionSteam"),
         heat_recovery_to_steam_factor = 0.5,
     )
     cc_block = PSY.from_openapi(cc_block_po, refs)
@@ -291,13 +308,22 @@ end
     @test get_heat_recovery_to_steam_factor(cc_block) == 0.5
 
     cc_frac_po =
-        PSY.PO.CombinedCycleFractional(; id = 10, name = "cc2", configuration = "Other")
+        PSY.PO.CombinedCycleFractional(;
+            id = 10,
+            name = "cc2",
+            configuration = PSY.PO.CombinedCycleConfiguration("Other"),
+        )
     cc_frac = PSY.from_openapi(cc_frac_po, refs)
     @test get_configuration(cc_frac) == CombinedCycleConfiguration.Other
 
     geo_po = PSY.IC.GeographicInfo(;
         id = 11,
-        geo_json = Dict{String, Any}("type" => "Point", "coordinates" => [1.0, 2.0]),
+        geo_json = PSY.IC.GeographicInfoGeoJson(;
+            additional_properties = Dict{String, Any}(
+                "type" => "Point",
+                "coordinates" => [1.0, 2.0],
+            ),
+        ),
     )
     geo = PSY.from_openapi(geo_po, refs)
     @test get_geo_json(geo)["type"] == "Point"
@@ -393,6 +419,11 @@ function _market_bid_cost_fixture()
 end
 
 @testset "convert_cost(MarketBidCost): explicit null curve_style errors loudly, not MethodError" begin
+    # Under OpenAPI.jl 1.x, `_decode` validates the raw JSON against the schema eagerly, so
+    # a malformed `curve_style` is now rejected at document decode — before PSY's own
+    # `_curve_style_from_wire` ever runs — with a generic `oneOf` mismatch on the owning
+    # device's `operation_cost` rather than the old field-specific message. Still loud, still
+    # not a `MethodError`, just caught one layer earlier.
     sys, gen = _market_bid_cost_fixture()
     mktempdir() do dir
         to_file(sys, dir; force = true)
@@ -400,13 +431,14 @@ end
         txt = read(document_path, String)
         @test occursin("\"curve_style\":0", txt)
         write(document_path, replace(txt, "\"curve_style\":0" => "\"curve_style\":null"))
-        @test_throws "MarketBidCost.curve_style is required and missing" from_file(
+        @test_throws "schema validation failed while decoding ThermalStandard" from_file(
             System, dir,
         )
     end
 end
 
 @testset "convert_cost(MarketBidCost): explicit null incremental_slope errors loudly" begin
+    # Same decode-time schema rejection as the curve_style testset above.
     sys, gen = _market_bid_cost_fixture()
     mktempdir() do dir
         to_file(sys, dir; force = true)
@@ -417,13 +449,15 @@ end
             document_path,
             replace(txt, "\"incremental_slope\":false" => "\"incremental_slope\":null"),
         )
-        @test_throws "MarketBidCost.incremental_slope is required and missing" from_file(
+        @test_throws "schema validation failed while decoding ThermalStandard" from_file(
             System, dir,
         )
     end
 end
 
 @testset "_curve_style_from_wire rejects an out-of-range integer" begin
+    # Same decode-time schema rejection: the schema's own `curve_style` enum whitelist
+    # (0/1) rejects 2 before `_curve_style_from_wire` would ever see it.
     sys, gen = _market_bid_cost_fixture()
     mktempdir() do dir
         to_file(sys, dir; force = true)
@@ -432,11 +466,14 @@ end
         # 2 was VARIABLE under the former three-way split; the collapse to VARIABLE/FIXED
         # made it invalid rather than silently remapping it.
         write(document_path, replace(txt, "\"curve_style\":0" => "\"curve_style\":2"))
-        @test_throws "curve_style 2 is not a valid CurveStyles value" from_file(System, dir)
+        @test_throws "schema validation failed while decoding ThermalStandard" from_file(
+            System, dir,
+        )
     end
 end
 
 @testset "_curve_multistep_from_wire rejects an out-of-range integer" begin
+    # Same decode-time schema rejection as the curve_style testset above.
     sys, gen = _market_bid_cost_fixture()
     mktempdir() do dir
         to_file(sys, dir; force = true)
@@ -447,7 +484,7 @@ end
             document_path,
             replace(txt, "\"curve_multistep\":0" => "\"curve_multistep\":2"),
         )
-        @test_throws "curve_multistep 2 is not a valid CurveMultiStep value" from_file(
+        @test_throws "schema validation failed while decoding ThermalStandard" from_file(
             System, dir,
         )
     end
@@ -521,14 +558,21 @@ end
         to_file(sys, dir; force = true)
         document_path = joinpath(dir, "system.json")
         doc = PSY.PD.read_document(document_path)
-        gen_row = only(
-            row for
-            row in PSY.PD.get_components(doc, "ThermalStandard") if Int(row.id) == gen_id
+        thermal_rows = PSY.PD.get_components(doc, "ThermalStandard")
+        gen_index = only(
+            i for i in eachindex(thermal_rows) if Int(thermal_rows[i].id) == gen_id
         )
+        gen_row = thermal_rows[gen_index]
         # `PD.read_document` parses the oneOf wrapper (`PO.ThermalStandardOperationCost`),
         # not the bare cost `to_openapi`'s in-memory path hands back — set the field on the
-        # unwrapped `.value`, exactly what `_load_market_bid_service_offers!` reads.
-        gen_row.operation_cost.value.ancillary_service_offers = Int64[svc_id]
+        # unwrapped `.value`, exactly what `_load_market_bid_service_offers!` reads. Every PO
+        # struct is immutable under OpenAPI.jl 1.x, so rebuild the cost, its wrapper, and the
+        # owning row rather than mutating in place, and replace the row by index.
+        new_cost = PSY._po_with(
+            gen_row.operation_cost.value; ancillary_service_offers = Int64[svc_id],
+        )
+        new_wrapper = typeof(gen_row.operation_cost)(new_cost)
+        thermal_rows[gen_index] = PSY._po_with(gen_row; operation_cost = new_wrapper)
         PSY.PD.write_document(doc, document_path; force = true)
 
         sys2 = from_file(System, dir)
@@ -602,7 +646,7 @@ end
 
     # The wire representation is a plain integer (0/1), not a string enum.
     wire = PSY.convert_cost_to_openapi(get_operation_cost(gen))
-    @test wire.curve_style == 1
+    @test wire.curve_style.value == 1
 
     mktempdir() do dir
         to_file(sys, dir; force = true)
@@ -624,8 +668,8 @@ end
 
     # Same wire convention as curve_style: a plain integer (0/1).
     wire = PSY.convert_cost_to_openapi(get_operation_cost(gen))
-    @test wire.curve_style == 0
-    @test wire.curve_multistep == 1
+    @test wire.curve_style.value == 0
+    @test wire.curve_multistep.value == 1
 
     mktempdir() do dir
         to_file(sys, dir; force = true)

@@ -95,7 +95,7 @@ _export_vsc(
         bus_po = PSY.to_openapi(bus1, refs, val)
         @test bus_po.id == 3
         @test bus_po.number == 1
-        @test bus_po.bustype == "REF"
+        @test bus_po.bustype.value == "REF"
         @test bus_po.area == 1
         @test bus_po.load_zone == 2
 
@@ -132,14 +132,14 @@ end
     @test device_po.rating == 1.75
     @test device_po.active_power_flow == 0.1
     @test device_po.base_power == 100.0
-    @test isnothing(device_po.rating_c)
+    @test device_po.rating_c isa PSY.IC.Absent
 
     natural_po = PSY.to_openapi(line, refs, NU)
     @test natural_po.rating == 175.0
     @test natural_po.active_power_flow == 10.0
     @test natural_po.reactive_power_flow == 2.0
     @test natural_po.rating_b == 175.0
-    @test isnothing(natural_po.rating_c)
+    @test natural_po.rating_c isa PSY.IC.Absent
     @test natural_po.r == 0.01
     @test natural_po.b.from == 0.001
     @test natural_po.base_power == PSY.get_base_power(refs)
@@ -182,10 +182,10 @@ end
     @test circuit_natural.alpha == 0.05
     @test circuit_natural.r == 0.01
     @test circuit_natural.rating == 100.0
-    @test isnothing(circuit_natural.rating_b)
+    @test circuit_natural.rating_b isa PSY.IC.Absent
     @test circuit_natural.active_power_flow == 5.0
-    @test circuit_natural.control_objective == "UNDEFINED"
-    @test circuit_natural.parameter_units == "COMPONENT_BASE"
+    @test circuit_natural.control_objective.value == "UNDEFINED"
+    @test circuit_natural.parameter_units.value == "COMPONENT_BASE"
 
     circuit_device = PSY.to_openapi(circuit, refs, CU)
     @test circuit_device.rating == 2.0
@@ -196,7 +196,7 @@ end
         @test xfmr_po.circuit == 4
         @test xfmr_po.magnetizing_shunt.real == 0.01
         @test xfmr_po.magnetizing_shunt.imag == 0.02
-        @test xfmr_po.shunt_location == "PRIMARY"
+        @test xfmr_po.shunt_location.value == "PRIMARY"
     end
 end
 
@@ -235,7 +235,7 @@ end
         @test tx_po.active_power_flow_limits.min == limits.min
         @test tx_po.active_power_flow_limits.max == limits.max
         @test tx_po.violation_penalty == 5000.0
-        @test tx_po.direction_mapping == Dict("line1" => 1)
+        @test tx_po.direction_mapping.additional_properties == Dict("line1" => 1)
         @test tx_po.power_units == PSY._power_units_string(val)
 
         # Round-trip: import(export(x)) == x.
@@ -299,13 +299,13 @@ end
         @test t3w_po.secondary_circuit == 9
         @test t3w_po.tertiary_circuit == 10
         @test t3w_po.star_bus == 4
-        @test t3w_po.parameter_units == "COMPONENT_BASE"
+        @test t3w_po.parameter_units.value == "COMPONENT_BASE"
         @test t3w_po.r_12 == 0.01
         @test t3w_po.r_31 == 0.02
         @test t3w_po.base_power_23 == 100.0
-        @test t3w_po.admittance_units == "COMPONENT_BASE"
+        @test t3w_po.admittance_units.value == "COMPONENT_BASE"
         @test t3w_po.magnetizing_shunt.real == 0.03
-        @test t3w_po.shunt_location == "STAR"
+        @test t3w_po.shunt_location.value == "STAR"
     end
 end
 
@@ -329,9 +329,9 @@ end
         shunt_po = PSY.to_openapi(shunt, refs, val)
         @test shunt_po.id == 2
         @test shunt_po.bus == 1
-        @test shunt_po.admittance_units == "COMPONENT_MVAR"
-        @test shunt_po.Y.real == 0.0
-        @test shunt_po.Y.imag == -100.0
+        @test shunt_po.admittance_units.value == "COMPONENT_MVAR"
+        @test shunt_po.y.real == 0.0
+        @test shunt_po.y.imag == -100.0
 
         # Round-trip: import(export(x)) == x.
         round_tripped = PSY.from_openapi(shunt_po, refs, val)
@@ -367,7 +367,7 @@ end
     @test natural_po.active_power_flow == 50.0
     @test natural_po.active_power_limits_from.min == -100.0
     @test natural_po.reactive_power_limits_to.max == 50.0
-    @test natural_po.loss.value.function_data.value.proportional_term == 0.01
+    @test natural_po.loss.value_curve.value.function_data.value.proportional_term == 0.01
 
     device_po = PSY.to_openapi(hvdc, refs, CU)
     @test device_po.active_power_flow == 0.5
@@ -506,11 +506,11 @@ end
     @test gen_natural.rating == 100.0
     @test gen_natural.active_power_limits.min == 10.0
     @test gen_natural.active_power_limits.max == 100.0
-    @test gen_natural.prime_mover_type == "OT"
-    @test gen_natural.fuel == "NATURAL_GAS"
-    @test gen_natural.operation_cost.fixed == 100.0
-    @test gen_natural.status == "ONLINE"
-    @test gen_natural.commitment_mode == "COMMITTED"
+    @test gen_natural.prime_mover_type.value == "OT"
+    @test gen_natural.fuel.value == "NATURAL_GAS"
+    @test gen_natural.operation_cost.value.fixed == 100.0
+    @test gen_natural.status.value == "ONLINE"
+    @test gen_natural.commitment_mode.value == "COMMITTED"
 
     gen_device = PSY.to_openapi(gen, refs, CU)
     @test gen_device.active_power == 0.25
@@ -519,7 +519,7 @@ end
     load_natural = PSY.to_openapi(load, refs, NU)
     @test load_natural.active_power == 30.0
     @test load_natural.max_active_power == 50.0
-    @test load_natural.conformity == "CONFORMING"
+    @test load_natural.conformity.value == "CONFORMING"
 
     load_device = PSY.to_openapi(load, refs, CU)
     @test load_device.active_power == 0.3
@@ -548,8 +548,8 @@ end
     iload_natural = PSY.to_openapi(iload, refs, NU)
     @test iload_natural.active_power == 30.0
     @test iload_natural.max_active_power == 30.0
-    @test iload_natural.conformity == "UNDEFINED"
-    @test iload_natural.operation_cost.fixed == 2400.0
+    @test iload_natural.conformity.value == "UNDEFINED"
+    @test iload_natural.operation_cost.value.fixed == 2400.0
 
     iload_device = PSY.to_openapi(iload, refs, CU)
     @test iload_device.active_power == 0.3
@@ -653,8 +653,8 @@ end
     turbine_natural = PSY.to_openapi(turbine, refs, NU)
     @test turbine_natural.active_power == 20.0
     @test turbine_natural.rating == 50.0
-    @test turbine_natural.turbine_type == "FRANCIS"
-    @test turbine_natural.operation_cost.fixed == 1.0
+    @test turbine_natural.turbine_type.value == "FRANCIS"
+    @test turbine_natural.operation_cost.value.fixed == 1.0
 
     ror_natural = PSY.to_openapi(ror, refs, NU)
     @test ror_natural.active_power == 15.0
@@ -663,7 +663,7 @@ end
     wind_natural = PSY.to_openapi(wind, refs, NU)
     @test wind_natural.active_power == 25.0
     @test wind_natural.rating == 50.0
-    @test wind_natural.prime_mover_type == "WT"
+    @test wind_natural.prime_mover_type.value == "WT"
     @test wind_natural.power_factor == 0.95
 
     solar_natural = PSY.to_openapi(solar, refs, NU)
@@ -683,8 +683,8 @@ end
     @test storage_natural.reactive_power_limits.min == -50.0
     @test storage_natural.ramp_limits.up == 100.0
     @test storage_natural.standing_loss == 2.0
-    @test storage_natural.storage_technology_type == "LIB"
-    @test storage_natural.energy_units == "MWH"
+    @test storage_natural.storage_technology_type.value == "LIB"
+    @test storage_natural.energy_units.value == "MWH"
 
     storage_device = PSY.to_openapi(storage, refs, CU)
     @test storage_device.storage_capacity == 2.0
@@ -747,14 +747,14 @@ end
         @test po.level_targets == 600.0
         @test po.inflow == 10.0
         @test po.upstream_turbines == [2]
-        @test po.level_data_type == "USABLE_VOLUME"
-        @test po.operation_cost.level_shortage_cost == 1.0
+        @test po.level_data_type.value == "USABLE_VOLUME"
+        @test po.operation_cost.value.level_shortage_cost == 1.0
 
         po_empty = PSY.to_openapi(reservoir_no_assoc, refs, val)
-        @test isnothing(po_empty.upstream_turbines)
-        @test isnothing(po_empty.upstream_reservoirs)
-        @test isnothing(po_empty.level_targets)
-        @test isnothing(po_empty.spillage_limits)
+        @test po_empty.upstream_turbines isa PSY.IC.Absent
+        @test po_empty.upstream_reservoirs isa PSY.IC.Absent
+        @test po_empty.level_targets isa PSY.IC.Absent
+        @test po_empty.spillage_limits isa PSY.IC.Absent
     end
 end
 
@@ -807,24 +807,24 @@ end
 
     up_natural = PSY.to_openapi(up_reserve, refs, NU)
     @test up_natural.requirement == 100.0
-    @test up_natural.reserve_direction == "UP"
-    @test isnothing(up_natural.variable)
+    @test up_natural.reserve_direction.value == "UP"
+    @test up_natural.variable isa PSY.IC.Absent
 
     up_device = PSY.to_openapi(up_reserve, refs, CU)
     @test up_device.requirement == 100.0
 
     down_natural = PSY.to_openapi(down_reserve, refs, NU)
-    @test down_natural.reserve_direction == "DOWN"
+    @test down_natural.reserve_direction.value == "DOWN"
 
     offline_natural = PSY.to_openapi(offline_reserve, refs, NU)
     @test offline_natural.requirement == 50.0
 
     group_natural = PSY.to_openapi(group, refs, NU)
     @test group_natural.requirement == 150.0
-    @test group_natural.reserve_direction == "UP"
+    @test group_natural.reserve_direction.value == "UP"
 
     ordc_natural = PSY.to_openapi(ordc_reserve, refs, NU)
-    @test !isnothing(ordc_natural.variable)
+    @test !(ordc_natural.variable isa PSY.IC.Absent)
 end
 
 @testset "OpenAPI export: GroupReserve contributing services round-trip" begin
@@ -949,17 +949,17 @@ end
     refs[1] = emissions
     po = PSY.to_openapi(emissions, refs)
     @test po.id == 1
-    @test po.pollutant == "CO2"
-    @test po.basis == "FUEL_INPUT"
-    @test po.mass_unit == "LB"
-    @test po.energy_unit == "MMBTU"
+    @test po.pollutant.value == "CO2"
+    @test po.basis.value == "FUEL_INPUT"
+    @test po.mass_unit.value == "LB"
+    @test po.energy_unit.value == "MMBTU"
 
     geo = GeographicInfo(;
         geo_json = Dict{String, Any}("type" => "Point", "coordinates" => [1.0, 2.0]),
     )
     refs[2] = geo
     geo_po = PSY.to_openapi(geo, refs)
-    @test geo_po.geo_json["type"] == "Point"
+    @test geo_po.geo_json.additional_properties["type"] == "Point"
 
     cc_block = CombinedCycleBlock(;
         name = "cc1",
@@ -968,7 +968,7 @@ end
     )
     refs[3] = cc_block
     cc_po = PSY.to_openapi(cc_block, refs)
-    @test cc_po.configuration == "SingleShaftCombustionSteam"
+    @test cc_po.configuration.value == "SingleShaftCombustionSteam"
     @test cc_po.heat_recovery_to_steam_factor == 0.5
 
     plant = ThermalPowerPlant(; name = "plant1")
@@ -1005,7 +1005,7 @@ end
         sys = PSY.from_openapi(System, to_test_document(device_doc))
         out = PSY.to_openapi(sys; power_units = :component_base)
         gen_out = only(PSY.PD.get_components(out, "ThermalStandard"))
-        @test gen_out.power_units == "COMPONENT_BASE"
+        @test gen_out.power_units.value == "COMPONENT_BASE"
         @test gen_out.active_power == 50.0
         @test gen_out.rating == 100.0
         gen_in = only(device_doc["components"]["ThermalStandard"])
@@ -1017,7 +1017,7 @@ end
         sys = PSY.from_openapi(System, to_test_document(doc))
         out = PSY.to_openapi(sys; power_units = :natural_units)
         gen_out = only(PSY.PD.get_components(out, "ThermalStandard"))
-        @test gen_out.power_units == "NATURAL_UNITS"
+        @test gen_out.power_units.value == "NATURAL_UNITS"
         gen_in = only(doc["components"]["ThermalStandard"])
         @test gen_out.active_power ≈ gen_in["active_power"] rtol = 1e-15
         @test gen_out.rating ≈ gen_in["rating"] rtol = 1e-15
@@ -1030,7 +1030,7 @@ end
         sys = PSY.from_openapi(System, to_test_document(doc))
         out = PSY.to_openapi(sys; power_units = :natural_units)
         bus1_out = first(b for b in PSY.PD.get_components(out, "ACBus") if b.number == 1)
-        @test bus1_out.bustype == "SLACK"
+        @test bus1_out.bustype.value == "SLACK"
     end
 
     @testset "to_openapi with an unmapped power_units errors" begin
@@ -1073,12 +1073,12 @@ end
 
     out_device = PSY.to_openapi(sys; power_units = :component_base)
     load_out = only(PSY.PD.get_components(out_device, "PowerLoad"))
-    @test load_out.power_units == "COMPONENT_BASE"
+    @test load_out.power_units.value == "COMPONENT_BASE"
     @test load_out.active_power == 0.3
 
     out_natural = PSY.to_openapi(sys; power_units = :natural_units)
     load_out_nat = only(PSY.PD.get_components(out_natural, "PowerLoad"))
-    @test load_out_nat.power_units == "NATURAL_UNITS"
+    @test load_out_nat.power_units.value == "NATURAL_UNITS"
     @test load_out_nat.active_power == 30.0
 end
 
@@ -1087,20 +1087,23 @@ end
         area_po = PSY.PO.Area(;
             id = 1, name = "area1", peak_active_power = 100.0,
             peak_reactive_power = 20.0,
-            load_response = 0.0, base_power = 100.0, power_units = "NATURAL_UNITS",
+            load_response = 0.0, base_power = 100.0,
+            power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
         )
         lz_po = PSY.PO.LoadZone(;
             id = 2, name = "lz1", peak_active_power = 100.0, peak_reactive_power = 20.0,
-            base_power = 100.0, power_units = "NATURAL_UNITS",
+            base_power = 100.0, power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
         )
         bus1_po = PSY.PO.ACBus(;
-            id = 3, number = 1, name = "bus1", available = true, bustype = "REF",
+            id = 3, number = 1, name = "bus1", available = true,
+            bustype = PSY.PC.ACBusType("REF"),
             angle = 0.0, magnitude = 1.0,
             voltage_limits = PSY.IC.MinMax(; min = 0.9, max = 1.1),
             base_voltage = 138.0, area = 1, load_zone = 2,
         )
         bus2_po = PSY.PO.ACBus(;
-            id = 4, number = 2, name = "bus2", available = true, bustype = "PQ",
+            id = 4, number = 2, name = "bus2", available = true,
+            bustype = PSY.PC.ACBusType("PQ"),
             angle = 0.0, magnitude = 1.0,
             voltage_limits = PSY.IC.MinMax(; min = 0.9, max = 1.1),
             base_voltage = 138.0, area = 1, load_zone = 2,
@@ -1109,7 +1112,7 @@ end
         line_po = PSY.PO.Line(;
             id = 6, name = "line1", available = true, active_power_flow = 10.0,
             reactive_power_flow = 2.0, arc = 5, r = 0.01, x = 0.1, base_power = 100.0,
-            power_units = "NATURAL_UNITS",
+            power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
             b = PSY.IC.FromTo(; from = 0.0, to = 0.0), rating = 175.0,
             angle_limits = PSY.IC.MinMax(; min = -1.57, max = 1.57),
             g = PSY.IC.FromTo(; from = 0.0, to = 0.0),
@@ -1117,18 +1120,18 @@ end
         load_po = PSY.PO.PowerLoad(;
             id = 7, name = "load1", available = true, bus = 4,
             active_power = 30.0, reactive_power = 5.0, base_power = 100.0,
-            power_units = "NATURAL_UNITS",
+            power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
             max_active_power = 50.0, max_reactive_power = 10.0,
-            conformity = "CONFORMING",
+            conformity = PSY.PO.LoadConformity("CONFORMING"),
         )
         reserve_po = PSY.PO.OnlineReserve(;
             id = 8, name = "spin_up", available = true, time_frame = 10.0,
-            requirement = 100.0, variable = nothing, sustained_time = 60.0,
+            requirement = 100.0, variable = PSY.IC.ABSENT, sustained_time = 60.0,
             max_output_fraction = 1.0, max_participation_factor = 1.0,
-            deployed_fraction = 1.0, reserve_direction = "UP",
+            deployed_fraction = 1.0, reserve_direction = PSY.PO.ReserveDirection("UP"),
         )
         emissions_po = PSY.PO.EmissionsData(;
-            id = 9, name = "load1_CO2", pollutant = "CO2",
+            id = 9, name = "load1_CO2", pollutant = PSY.PC.PollutantType("CO2"),
             emission_rate = PSY.PC.ValueCurve(
                 PSY.PC.IncrementalCurve(;
                     function_data = PSY.PC.IncrementalCurveFunctionData(
@@ -1139,8 +1142,9 @@ end
                     initial_input = 0.0,
                 ),
             ),
-            basis = "FUEL_INPUT", start_up_adder = 0.0, mass_unit = "LB",
-            energy_unit = "MMBTU", gwp = 1.0, available = true,
+            basis = PSY.PC.EmissionBasis("FUEL_INPUT"), start_up_adder = 0.0,
+            mass_unit = PSY.PC.MassUnit("LB"),
+            energy_unit = PSY.PC.EnergyUnit("MMBTU"), gwp = 1.0, available = true,
         )
         doc = Dict{String, Any}(
             "components" => Dict{String, Any}(
@@ -1188,7 +1192,7 @@ end
             time_series_storage_path = ts_out_path,
         )
 
-        @test only(PSY.PD.get_components(out, "Line")).power_units == "NATURAL_UNITS"
+        @test only(PSY.PD.get_components(out, "Line")).power_units.value == "NATURAL_UNITS"
         @test length(PSY.PD.get_components(out, "ACBus")) == 2
         @test length(only(PSY.PD.get_components(out, "Line")) |> x -> [x]) == 1
         @test length(PSY.PD.get_components(out, "OnlineReserve")) == 1
@@ -1210,7 +1214,7 @@ end
         @test ts_row isa PSY.PTS.SingleTimeSeries
         @test ts_row.name == "max_active_power"
         @test ts_row.time_series_type == "SingleTimeSeries"
-        @test ts_row.owner_category == "Component"
+        @test ts_row.owner_category.value == "Component"
         @test ts_row.owner_type == "PowerLoad"
         @test ts_row.owner_id == IS.get_id(load)
         @test ts_row.resolution == "PT1H"
@@ -1332,21 +1336,23 @@ end
     # written per-unit as stored, tagged by `setpoint_voltage_units`.
     @test natural_po.dc_setpoint_from == 40.0
     @test natural_po.dc_setpoint_to == 1.02
-    @test natural_po.setpoint_voltage_units == "COMPONENT_BASE"
+    @test natural_po.setpoint_voltage_units.value == "COMPONENT_BASE"
     # pu → siemens against Ybase = 100 / 200^2.
     @test natural_po.g == 0.5
-    @test natural_po.admittance_units == "NATURAL_UNITS"
-    @test natural_po.voltage_units == "NATURAL_UNITS"
-    @test natural_po.dc_control_to == "DC_VOLTAGE"
-    @test natural_po.ac_control_from == "AC_REACTIVE_POWER"
-    @test natural_po.converter_loss_to.function_data.value.quadratic_term == 0.01
+    @test natural_po.admittance_units.value == "NATURAL_UNITS"
+    @test natural_po.voltage_units.value == "NATURAL_UNITS"
+    @test natural_po.dc_control_to.value == "DC_VOLTAGE"
+    @test natural_po.ac_control_from.value == "AC_REACTIVE_POWER"
+    @test natural_po.converter_loss_to.power_units.value == "NATURAL_UNITS"
+    @test natural_po.converter_loss_to.value_curve.value.function_data.value.quadratic_term ==
+          0.01
 
     device_po = PSY.to_openapi(vsc, refs, CU)
     @test device_po.active_power_flow == 0.5
     @test device_po.active_power_limits_from.min == -2.0
     @test device_po.dc_setpoint_from == 0.4
     @test device_po.dc_setpoint_to == 1.02
-    @test device_po.setpoint_voltage_units == "COMPONENT_BASE"
+    @test device_po.setpoint_voltage_units.value == "COMPONENT_BASE"
     @test device_po.g == 0.5
 end
 
@@ -1375,7 +1381,7 @@ end
     # are voltages, not power fields.
     natural_po = PSY.to_openapi(vsc, refs, NU)
     @test natural_po.ac_setpoint_from == 0.95
-    @test natural_po.setpoint_voltage_units == "COMPONENT_BASE"
+    @test natural_po.setpoint_voltage_units.value == "COMPONENT_BASE"
     @test natural_po.rated_ac_voltage_from == 230.0
     component_po = PSY.to_openapi(vsc, refs, CU)
     @test component_po.ac_setpoint_from == 0.95
@@ -1518,7 +1524,7 @@ _export_thermal_gen(bus; name = "gen1") = ThermalStandard(;
         )
         @test isfile(ts_out_path)
         ts_row = only(doc.time_series_associations).value
-        @test ts_row.owner_category == "SupplementalAttribute"
+        @test ts_row.owner_category.value == "SupplementalAttribute"
         @test ts_row.owner_id == IS.get_id(outage)
         @test ts_row.name == "outage_series"
 
@@ -1623,11 +1629,11 @@ end
         row -> row.entity_id == ca_id, doc.combined_cycle_associations,
     )
     @test length(ct_rows) == 2
-    @test all(row -> row.plant_id == block_id && row.role == "CT", ct_rows)
+    @test all(row -> row.plant_id == block_id && row.role.value == "CT", ct_rows)
     @test sort([row.hrsg_index for row in ct_rows]) == [1, 2]
     @test length(ca_rows) == 1
     @test only(ca_rows).plant_id == block_id
-    @test only(ca_rows).role == "CA"
+    @test only(ca_rows).role.value == "CA"
     @test only(ca_rows).hrsg_index == 2
 
     sys2 = PSY.from_openapi(System, doc)

@@ -72,7 +72,12 @@ end
 
     geo_po = PSY.IC.GeographicInfo(;
         id = 100,
-        geo_json = Dict{String, Any}("type" => "Point", "coordinates" => [1.0, 2.0]),
+        geo_json = PSY.IC.GeographicInfoGeoJson(;
+            additional_properties = Dict{String, Any}(
+                "type" => "Point",
+                "coordinates" => [1.0, 2.0],
+            ),
+        ),
     )
     doc = _sqlite_load_doc(;
         supplemental_attributes = [openapi_raw(geo_po)],
@@ -129,7 +134,12 @@ end
 @testset "load_supplemental_attribute_associations!: loud errors" begin
     geo_po = PSY.IC.GeographicInfo(;
         id = 100,
-        geo_json = Dict{String, Any}("type" => "Point", "coordinates" => [1.0, 2.0]),
+        geo_json = PSY.IC.GeographicInfoGeoJson(;
+            additional_properties = Dict{String, Any}(
+                "type" => "Point",
+                "coordinates" => [1.0, 2.0],
+            ),
+        ),
     )
 
     # Unresolved entity_id: id=7 (load1) is a real component id in the document, but this
@@ -155,10 +165,14 @@ end
     # (checked against the same `supplemental_attributes` list the loader indexes) rejects
     # it before a document with one can even be constructed.
 
-    # attribute_type mismatch: declares "EmissionsData" but the row builds a GeographicInfo,
-    # falls to IS's enum constructor
+    # attribute_type mismatch: declares "EmissionsData" but the row builds a GeographicInfo.
+    # Under OpenAPI.jl 1.x, `document_from_json` decodes each attribute against its declared
+    # `attribute_type` eagerly (schema-validated), so a GeographicInfo row mislabeled
+    # "EmissionsData" (missing every EmissionsData-required field) is now rejected at
+    # document construction rather than surfacing later as a `MethodError` from IS's enum
+    # constructor inside the loader.
     f = _sqlite_load_fixture()
-    doc = _sqlite_load_doc(;
+    @test_throws "schema validation failed while decoding EmissionsData" _sqlite_load_doc(;
         supplemental_attributes = [openapi_raw(geo_po)],
         associations = [
             Dict{String, Any}(
@@ -167,14 +181,15 @@ end
             ),
         ],
     )
-    @test_throws MethodError PSY.load_supplemental_attribute_associations!(
-        f.sys, f.refs, doc,
-    )
 
     # Missing attribute_type: `document_from_json` itself requires the field on every
     # association row (it resolves each raw `supplemental_attributes` dict's own type from
-    # it), so this can only be reached by mutating an already-valid document's row in
-    # place, bypassing that layer entirely.
+    # it). Under OpenAPI.jl 1.x, `SupplementalAttributeAssociation.attribute_type` is a plain
+    # required `String` with no `Nothing`/`Absent` variant, so an in-memory row with a
+    # missing `attribute_type` is no longer constructible at all (not even by rebuilding an
+    # already-valid row with the field cleared) — the old test reached this case by mutating
+    # an already-valid document's row in place, bypassing `document_from_json`'s validation
+    # entirely; there is no equivalent bypass left since every PO struct is immutable now.
     f = _sqlite_load_fixture()
     doc = _sqlite_load_doc(;
         supplemental_attributes = [openapi_raw(geo_po)],
@@ -185,8 +200,7 @@ end
             ),
         ],
     )
-    doc.supplemental_attribute_associations[1].attribute_type = nothing
-    @test_throws ErrorException PSY.load_supplemental_attribute_associations!(
-        f.sys, f.refs, doc,
+    @test_throws MethodError PSY._po_with(
+        doc.supplemental_attribute_associations[1]; attribute_type = nothing,
     )
 end

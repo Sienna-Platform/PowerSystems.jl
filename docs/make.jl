@@ -100,6 +100,8 @@ pages["Model Library"] = make_model_library(
         Service,
         Branch,
         DynamicInjection,
+        MarketComponent,
+        MarketTransaction,
     ],
     exceptions = [PSY.DynamicComponent,
                   PSY.ActivePowerControl,

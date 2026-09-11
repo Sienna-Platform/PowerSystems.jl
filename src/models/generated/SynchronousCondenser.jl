@@ -169,7 +169,7 @@ function from_openapi(po::PO.SynchronousCondenser, refs::OpenAPIRefs, ::Componen
         rating = po.rating,
         reactive_power_limits = _minmax_from_po(po.reactive_power_limits),
         base_power = po.base_power,
-        active_power_losses = po.active_power_losses,
+        active_power_losses = (if po.active_power_losses isa Union{Nothing, IC.Absent}; 0.0; else; po.active_power_losses; end),
     )
 end
 
@@ -182,7 +182,7 @@ function from_openapi(po::PO.SynchronousCondenser, refs::OpenAPIRefs, ::NaturalU
         rating = po.rating / po.base_power,
         reactive_power_limits = _minmax_from_po(po.reactive_power_limits, (/), po.base_power),
         base_power = po.base_power,
-        active_power_losses = po.active_power_losses / po.base_power,
+        active_power_losses = (if po.active_power_losses isa Union{Nothing, IC.Absent}; 0.0; else; po.active_power_losses / po.base_power; end),
     )
 end
 

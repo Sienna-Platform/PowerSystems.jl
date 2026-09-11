@@ -208,7 +208,7 @@ function from_openapi(po::PO.ShiftablePowerLoad, refs::OpenAPIRefs, ::ComponentB
         max_reactive_power = po.max_reactive_power,
         base_power = po.base_power,
         load_balance_time_horizon = po.load_balance_time_horizon,
-        operation_cost = convert_cost(po.operation_cost)::OperationalCost,
+        operation_cost = convert_cost(po.operation_cost.value)::OperationalCost,
     )
 end
 
@@ -224,7 +224,7 @@ function from_openapi(po::PO.ShiftablePowerLoad, refs::OpenAPIRefs, ::NaturalUni
         max_reactive_power = po.max_reactive_power / po.base_power,
         base_power = po.base_power,
         load_balance_time_horizon = po.load_balance_time_horizon,
-        operation_cost = convert_cost(po.operation_cost)::OperationalCost,
+        operation_cost = convert_cost(po.operation_cost.value)::OperationalCost,
     )
 end
 
@@ -245,7 +245,7 @@ function to_openapi(value::ShiftablePowerLoad, refs::OpenAPIRefs, ::ComponentBas
         max_reactive_power = get_max_reactive_power(value, CU),
         base_power = _get_base_power(value),
         load_balance_time_horizon = get_load_balance_time_horizon(value),
-        operation_cost = convert_cost_to_openapi(get_operation_cost(value)),
+        operation_cost = PO.ShiftablePowerLoadOperationCost(convert_cost_to_openapi(get_operation_cost(value))),
         power_units = _power_units_string(CU),
     )
 end
@@ -263,7 +263,7 @@ function to_openapi(value::ShiftablePowerLoad, refs::OpenAPIRefs, ::NaturalUnit)
         max_reactive_power = get_max_reactive_power(value, CU) * _get_base_power(value),
         base_power = _get_base_power(value),
         load_balance_time_horizon = get_load_balance_time_horizon(value),
-        operation_cost = convert_cost_to_openapi(get_operation_cost(value)),
+        operation_cost = PO.ShiftablePowerLoadOperationCost(convert_cost_to_openapi(get_operation_cost(value))),
         power_units = _power_units_string(NU),
     )
 end

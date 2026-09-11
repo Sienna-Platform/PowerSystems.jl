@@ -202,7 +202,7 @@ function from_openapi(po::PO.RenewableDispatch, refs::OpenAPIRefs, ::ComponentBa
         prime_mover_type = PrimeMovers(po.prime_mover_type.value),
         reactive_power_limits = _minmax_from_po(po.reactive_power_limits),
         power_factor = po.power_factor,
-        operation_cost = convert_cost(po.operation_cost)::OperationalCost,
+        operation_cost = convert_cost(po.operation_cost.value)::OperationalCost,
         base_power = po.base_power,
     )
 end
@@ -218,7 +218,7 @@ function from_openapi(po::PO.RenewableDispatch, refs::OpenAPIRefs, ::NaturalUnit
         prime_mover_type = PrimeMovers(po.prime_mover_type.value),
         reactive_power_limits = _minmax_from_po(po.reactive_power_limits, (/), po.base_power),
         power_factor = po.power_factor,
-        operation_cost = convert_cost(po.operation_cost)::OperationalCost,
+        operation_cost = convert_cost(po.operation_cost.value)::OperationalCost,
         base_power = po.base_power,
     )
 end
@@ -239,7 +239,7 @@ function to_openapi(value::RenewableDispatch, refs::OpenAPIRefs, ::ComponentBase
         prime_mover_type = PO.PrimeMovers(string(get_prime_mover_type(value))),
         reactive_power_limits = _minmax_po_optional(get_reactive_power_limits(value, CU)),
         power_factor = get_power_factor(value),
-        operation_cost = convert_cost_to_openapi(get_operation_cost(value)),
+        operation_cost = PO.RenewableDispatchOperationCost(convert_cost_to_openapi(get_operation_cost(value))),
         base_power = _get_base_power(value),
         power_units = _power_units_string(CU),
     )
@@ -257,7 +257,7 @@ function to_openapi(value::RenewableDispatch, refs::OpenAPIRefs, ::NaturalUnit)
         prime_mover_type = PO.PrimeMovers(string(get_prime_mover_type(value))),
         reactive_power_limits = _minmax_po_scaled_optional(get_reactive_power_limits(value, CU), _get_base_power(value)),
         power_factor = get_power_factor(value),
-        operation_cost = convert_cost_to_openapi(get_operation_cost(value)),
+        operation_cost = PO.RenewableDispatchOperationCost(convert_cost_to_openapi(get_operation_cost(value))),
         base_power = _get_base_power(value),
         power_units = _power_units_string(NU),
     )
