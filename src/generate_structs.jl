@@ -631,7 +631,11 @@ function compute_openapi_converter!(item, struct_names)
             # bounded and a cost that converts to the wrong family fails here.
             # A field typed as one concrete cost struct carries no `oneOf` wrapper on the PO
             # side; `.value` only applies when `openapi_cost_needs_wrapper` says it wraps.
-            po_cost = openapi_cost_needs_wrapper(bare) ? "po.$po_name.value" : "po.$po_name"
+            po_cost = if openapi_cost_needs_wrapper(bare)
+                "po.$po_name.value"
+            else
+                "po.$po_name"
+            end
             expr = "convert_cost($po_cost)::$bare"
             push!(kwargs_device, Dict("name" => name, "expr" => expr))
             push!(kwargs_natural, Dict("name" => name, "expr" => expr))

@@ -780,16 +780,11 @@ function _with_service_offers(wrapper::IC.OneOfAPIModel, po, refs::OpenAPIRefs)
     isnothing(inner) && return nothing
     return typeof(wrapper)(inner)
 end
-function _with_service_offers(po_cost::PC.MarketBidCost, po, refs::OpenAPIRefs)
-    component = refs[Int(po.id)]
-    offers = get_ancillary_service_offers(get_operation_cost(component))
-    isempty(offers) && return nothing
-    return _po_with(
-        po_cost;
-        ancillary_service_offers = Int64[component_id(refs, service) for service in offers],
-    )
-end
-function _with_service_offers(po_cost::PC.MarketBidTimeSeriesCost, po, refs::OpenAPIRefs)
+function _with_service_offers(
+    po_cost::Union{PC.MarketBidCost, PC.MarketBidTimeSeriesCost},
+    po,
+    refs::OpenAPIRefs,
+)
     component = refs[Int(po.id)]
     offers = get_ancillary_service_offers(get_operation_cost(component))
     isempty(offers) && return nothing

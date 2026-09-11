@@ -873,15 +873,15 @@ function from_openapi(po::PO.FACTSControlDevice, refs::OpenAPIRefs, ::ComponentB
         else
             FACTSOperationModes(po.control_mode.value)
         end,
-        voltage_setpoint = _or_default(po.voltage_setpoint, 1.0),
-        max_shunt_current = _or_default(po.max_shunt_current, 9999.0),
+        voltage_setpoint = po.voltage_setpoint,
+        max_shunt_current = po.max_shunt_current,
         max_reactive_power = _or_default(po.max_reactive_power, 9999.0),
         shunt_control_type = _or_default_enum(
             po.shunt_control_type,
             FACTSShuntControlType.STATCOM,
         ),
         regulated_bus_number = _or_default(po.regulated_bus_number, 0),
-        reactive_power_required = _or_default(po.reactive_power_required, 0.0),
+        reactive_power_required = po.reactive_power_required,
         base_power = _require_base_power("FACTSControlDevice", po.id, po.base_power),
     )
 end
@@ -898,15 +898,15 @@ function from_openapi(po::PO.FACTSControlDevice, refs::OpenAPIRefs, ::NaturalUni
         else
             FACTSOperationModes(po.control_mode.value)
         end,
-        voltage_setpoint = _or_default(po.voltage_setpoint, 1.0),
-        max_shunt_current = _or_default(po.max_shunt_current, 9999.0) / bp,
+        voltage_setpoint = po.voltage_setpoint,
+        max_shunt_current = po.max_shunt_current / bp,
         max_reactive_power = _or_default(po.max_reactive_power, 9999.0) / bp,
         shunt_control_type = _or_default_enum(
             po.shunt_control_type,
             FACTSShuntControlType.STATCOM,
         ),
         regulated_bus_number = _or_default(po.regulated_bus_number, 0),
-        reactive_power_required = _or_default(po.reactive_power_required, 0.0),
+        reactive_power_required = po.reactive_power_required,
         base_power = bp,
     )
 end
@@ -1085,17 +1085,25 @@ _hvdc_loss_curve(c::PC.InputOutputCurve) =
     _linear_curve_from_function_data(_unwrap_oneof(c.function_data))
 _hvdc_loss_curve(c) = error("unmapped LossCurve value_curve variant: $(typeof(c))")
 
+"""Require a `NaturalUnit` power basis for a `LossCurve`'s `power_units`, as `_hvdc_loss` and
+`_vsc_loss` both do — dispatch, not `isa`, selects the guard. `raw` is the wire string, kept
+only for the error message."""
+_require_natural_units(::NaturalUnit, ::AbstractString) = nothing
+function _require_natural_units(units, raw::AbstractString)
+    error(
+        "from_openapi: LossCurve power_units=\"$raw\" is not supported — " *
+        "only NATURAL_UNITS loss curves are converted, so a relative basis would be " *
+        "reinterpreted rather than rescaled",
+    )
+end
+
 # `LossCurve` replaced `TwoTerminalLoss` and records its own basis, so read it rather than
 # assuming: a `COMPONENT_BASE` curve would otherwise be reconstructed as natural units and
 # silently change meaning. Export refuses to write that basis today
 # (`loss_curve_to_openapi`), so a document carrying one did not come from here.
 function _hvdc_loss(l::PC.LossCurve)
     units = _power_units_marker("LossCurve", "", l.power_units.value)
-    units isa NaturalUnit || error(
-        "from_openapi: LossCurve power_units=\"$(l.power_units.value)\" is not supported — " *
-        "only NATURAL_UNITS loss curves are converted, so a relative basis would be " *
-        "reinterpreted rather than rescaled",
-    )
+    _require_natural_units(units, l.power_units.value)
     return loss_curve_from_openapi(_hvdc_loss_curve(_unwrap_oneof(l.value_curve)))
 end
 
@@ -1473,11 +1481,7 @@ the wire falls back to the shared PSY descriptor default (a zero linear loss cur
 _vsc_loss(::Union{Nothing, IC.Absent}) = LossCurve(LinearCurve(0.0), NaturalUnit())
 function _vsc_loss(l::PC.LossCurve)
     units = _power_units_marker("LossCurve", "", l.power_units.value)
-    units isa NaturalUnit || error(
-        "from_openapi: LossCurve power_units=\"$(l.power_units.value)\" is not supported — " *
-        "only NATURAL_UNITS loss curves are converted, so a relative basis would be " *
-        "reinterpreted rather than rescaled",
-    )
+    _require_natural_units(units, l.power_units.value)
     return _vsc_converter_loss(convert_cost(_unwrap_oneof(l.value_curve)))
 end
 
@@ -1884,8 +1888,8 @@ function from_openapi(po::PO.HybridSystem, refs::OpenAPIRefs, ::ComponentBaseUni
         available = po.available,
         status = OperationalStates(po.status.value),
         bus = resolve_ref(refs, po.bus, ACBus),
-        active_power = _or_default(po.active_power, 0.0),
-        reactive_power = _or_default(po.reactive_power, 0.0),
+        active_power = po.active_power,
+        reactive_power = po.reactive_power,
         base_power = po.base_power,
         operation_cost = convert_cost(po.operation_cost)::MarketBidCost,
         thermal_unit = resolve_ref(refs, po.thermal_unit, ThermalGen),
@@ -1909,8 +1913,8 @@ function from_openapi(po::PO.HybridSystem, refs::OpenAPIRefs, ::NaturalUnit)
         available = po.available,
         status = OperationalStates(po.status.value),
         bus = resolve_ref(refs, po.bus, ACBus),
-        active_power = _or_default(po.active_power, 0.0) / dbp,
-        reactive_power = _or_default(po.reactive_power, 0.0) / dbp,
+        active_power = po.active_power / dbp,
+        reactive_power = po.reactive_power / dbp,
         base_power = dbp,
         operation_cost = convert_cost(po.operation_cost)::MarketBidCost,
         thermal_unit = resolve_ref(refs, po.thermal_unit, ThermalGen),
