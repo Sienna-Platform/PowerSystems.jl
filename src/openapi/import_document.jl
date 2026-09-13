@@ -455,7 +455,7 @@ from_openapi(po::PO.ImpedanceCorrectionData, ::OpenAPIRefs) =
         impedance_correction_curve = convert_cost(po.impedance_correction_curve),
         transformer_winding = WindingCategory(po.transformer_winding.value),
         transformer_control_mode = ImpedanceCorrectionTransformerControlMode(
-            po.transformer_control_mode,
+            po.transformer_control_mode.value,
         ),
     )
 
