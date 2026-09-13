@@ -344,9 +344,7 @@ function to_openapi(conv::InterconnectingConverter, refs::OpenAPIRefs, ::Compone
         reactive_power_limits = _minmax_po_optional(get_reactive_power_limits(conv, CU)),
         dc_current = get_dc_current(conv, CU),
         max_dc_current = get_max_dc_current(conv, CU),
-        loss_function = convert_cost_to_openapi(
-            loss_curve_to_openapi(get_loss_function(conv)),
-        ),
+        loss_function = _hvdc_loss_to_openapi(get_loss_function(conv)),
         dc_control = PO.VSCDCControlModes(string(get_dc_control(conv))),
         ac_control = PO.VSCACControlModes(string(get_ac_control(conv))),
         voltage_setpoint_units = PO.VoltageUnitBasis("COMPONENT_BASE"),
@@ -378,9 +376,7 @@ function to_openapi(conv::InterconnectingConverter, refs::OpenAPIRefs, ::Natural
         ),
         dc_current = get_dc_current(conv, CU) * dbp,
         max_dc_current = get_max_dc_current(conv, CU) * dbp,
-        loss_function = convert_cost_to_openapi(
-            loss_curve_to_openapi(get_loss_function(conv)),
-        ),
+        loss_function = _hvdc_loss_to_openapi(get_loss_function(conv)),
         dc_control = PO.VSCDCControlModes(string(get_dc_control(conv))),
         ac_control = PO.VSCACControlModes(string(get_ac_control(conv))),
         voltage_setpoint_units = PO.VoltageUnitBasis("COMPONENT_BASE"),
