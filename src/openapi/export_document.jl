@@ -118,8 +118,12 @@ function to_openapi(attr::ImpedanceCorrectionData, refs::OpenAPIRefs)
         impedance_correction_curve = convert_cost_to_openapi(
             get_impedance_correction_curve(attr),
         ),
-        transformer_winding = string(get_transformer_winding(attr)),
-        transformer_control_mode = string(get_transformer_control_mode(attr)),
+        transformer_winding = PO.ImpedanceCorrectionDataTransformerWinding(
+            string(get_transformer_winding(attr)),
+        ),
+        transformer_control_mode = PO.ImpedanceCorrectionDataTransformerControlMode(
+            string(get_transformer_control_mode(attr)),
+        ),
     )
 end
 

@@ -822,3 +822,30 @@ end
         end
     end
 end
+
+@testset "ImpedanceCorrectionData round trips through the document" begin
+    # Both enum fields are wrapper structs on the OpenAPI side, and neither direction
+    # converts implicitly: import must unwrap `.value`, export must construct the wrapper.
+    attr = ImpedanceCorrectionData(;
+        table_number = 3,
+        impedance_correction_curve = PiecewiseLinearData([
+            (x = 0.9, y = 1.0),
+            (x = 1.1, y = 1.2),
+        ]),
+        transformer_winding = WindingCategory.PRIMARY_WINDING,
+        transformer_control_mode = ImpedanceCorrectionTransformerControlMode.TAP_RATIO,
+    )
+    refs = PSY.OpenAPIRefs()
+    refs[7] = attr
+    po = PSY.to_openapi(attr, refs)
+    @test po.transformer_winding.value == "PRIMARY_WINDING"
+    @test po.transformer_control_mode.value == "TAP_RATIO"
+
+    back = PSY.from_openapi(po, refs)
+    @test get_table_number(back) == 3
+    @test get_transformer_winding(back) == WindingCategory.PRIMARY_WINDING
+    @test get_transformer_control_mode(back) ==
+          ImpedanceCorrectionTransformerControlMode.TAP_RATIO
+    @test get_impedance_correction_curve(back) ==
+          get_impedance_correction_curve(attr)
+end
