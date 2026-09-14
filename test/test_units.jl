@@ -77,6 +77,71 @@ end
     @test_throws ErrorException base_value(nv, IMPEDANCE)
 end
 
+@testset "Rate categories: a relative target must name a time" begin
+    gen = MockGen(0.6, 50.0)   # 50 MVA component, 100 MVA system
+    cat = PSY.ACTIVE_POWER_CHANGE_RATE
+    v = 0.1                     # stored: 0.1 CU per minute
+
+    @test natural_unit(cat) == u"MW" / u"minute"
+    @test PSY.storage_time(cat) == u"minute"
+    # The power axis per-unitizes exactly as a plain power does; time has no base.
+    @test base_value(gen, cat) == base_value(gen, ACTIVE_POWER)
+    @test system_base_value(gen, cat) == system_base_value(gen, ACTIVE_POWER)
+
+    # Natural units: Unitful does the power and time conversion together.
+    @test PSY.convert_units(gen, v, cat, CU, u"MW/minute") ≈ 5.0u"MW/minute"
+    @test PSY.convert_units(gen, v, cat, CU, u"MW/hr") ≈ 300.0u"MW/hr"
+    @test PSY.convert_units(gen, v, cat, CU, NU) ≈ 5.0u"MW/minute"
+
+    # Relative bases per unit time: both axes move independently.
+    @test PSY.convert_units(gen, v, cat, CU, CU / u"minute") == 0.1 * CU / u"minute"
+    @test PSY.convert_units(gen, v, cat, CU, CU / u"hr") == 6.0 * CU / u"hr"
+    @test PSY.convert_units(gen, v, cat, CU, SU / u"minute") == 0.05 * SU / u"minute"
+    @test PSY.convert_units(gen, v, cat, CU, SU / u"hr") == 3.0 * SU / u"hr"
+
+    # Every spelling of the same rate stores the same number.
+    # `from` is what `set_value` dispatches: a tagged rate enters with its own relative
+    # marker, a plain Unitful quantity with NU.
+    for (tagged, from) in (
+        (5.0u"MW/minute", NU),
+        (300.0u"MW/hr", NU),
+        (0.1 * CU / u"minute", CU),
+        (6.0 * CU / u"hr", CU),
+        (0.05 * SU / u"minute", SU),
+    )
+        @test IS._strip_units(PSY.convert_units(gen, tagged, cat, from, CU)) ≈ v
+    end
+
+    # A bare relative marker names no time, so it is not a complete target.
+    @test_throws ArgumentError PSY.convert_units(gen, v, cat, CU, CU)
+    @test_throws ArgumentError PSY.convert_units(gen, v, cat, CU, SU)
+    # …and a rate marker is meaningless on a quantity that is not a rate.
+    @test_throws ArgumentError PSY.convert_units(gen, v, ACTIVE_POWER, CU, CU / u"hr")
+    # A plain power unit has the wrong dimension.
+    @test_throws Unitful.DimensionError PSY.convert_units(gen, v, cat, CU, u"MW")
+    # The tag and the `from` marker must still agree.
+    @test_throws ArgumentError PSY.convert_units(gen, 0.1 * CU / u"hr", cat, SU, CU)
+end
+
+@testset "Rate quantities: spelling and nesting" begin
+    # Both spellings produce the identical value, and it is an ordinary Unitful
+    # quantity whose payload carries the per-unit marker.
+    @test 0.1 * (CU / u"hr") === 0.1 * CU / u"hr"
+    @test 0.1 * CU / u"hr" isa PSY.RelativeRate
+    @test IS._strip_units(0.1 * CU / u"hr") === 0.1
+    @test sprint(show, CU / u"minute") == "CU/minute"
+
+    # The reverse nesting is reachable through IS's `*(::Number, ::AbstractRelativeUnit)`
+    # and must be rejected rather than silently producing a different type.
+    @test_throws ArgumentError (0.1 / u"hr") * CU
+    @test_throws ArgumentError CU * (0.1 / u"hr")
+
+    # Round-trips through the wire format.
+    for q in (0.1 * CU / u"hr", 0.05 * SU / u"minute", 10.0 * u"MW" / u"minute")
+        @test PSY.deserialize_quantity(PSY.serialize_quantity(q)) == q
+    end
+end
+
 @testset "Unit categories print by name" begin
     @test sprint(show, ACTIVE_POWER) == "ACTIVE_POWER"
     @test sprint(show, IMPEDANCE) == "IMPEDANCE"

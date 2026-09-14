@@ -79,6 +79,12 @@ const AdmittanceCategory = UnitCategory{typeof(u"S"), 1, -2}
 const VoltageCategory = UnitCategory{typeof(u"kV"), 0, 1}
 const CurrentCategory = UnitCategory{typeof(u"kA"), 1, -1}
 
+# A rate per-unitizes only its power axis -- there is no time base -- so its exponents
+# are the power category's and only the natural unit gains the time dimension. The
+# schema vocabulary calls this quantity `ActivePowerChangeRate` (Core/units.json), with
+# default unit MW/min.
+const ActivePowerChangeRateCategory = UnitCategory{typeof(u"MW" / u"minute"), 1, 0}
+
 """
 The power categories, which share one per-unit base. Formerly an abstract supertype;
 now a `Union`, so `isa` checks and dispatch on it keep working.
@@ -93,6 +99,25 @@ const IMPEDANCE = ImpedanceCategory()
 const ADMITTANCE = AdmittanceCategory()
 const VOLTAGE = VoltageCategory()
 const CURRENT = CurrentCategory()
+const ACTIVE_POWER_CHANGE_RATE = ActivePowerChangeRateCategory()
+
+"""
+The categories denominated per unit time. A bare relative marker is rejected for these
+(it does not say per what time); they take `CU/u"minute"`, `SU/u"hr"`, or a natural
+compound unit like `u"MW/hr"`. Extend this `Union` when adding a rate category.
+"""
+const RateCategory = Union{ActivePowerChangeRateCategory}
+
+"""
+    storage_time(category) → Unitful.Units
+
+The time unit a rate category's stored per-unit value is denominated in: a stored
+`ramp_limits` of 0.1 means 0.1 pu **per minute**.
+
+Declared per rate category rather than recovered from `natural_unit`, which would mean
+picking the time factor out of a compound `FreeUnits`' internals.
+"""
+storage_time(::ActivePowerChangeRateCategory) = u"minute"
 
 # Categories compose, so a derived quantity's base and natural unit follow from its
 # parts rather than being declared: `VOLTAGE^Val(2) / POWER` *is* `IMPEDANCE`. The
@@ -121,6 +146,7 @@ const _CATEGORY_NAMES = (
     (ADMITTANCE, "ADMITTANCE"),
     (VOLTAGE, "VOLTAGE"),
     (CURRENT, "CURRENT"),
+    (ACTIVE_POWER_CHANGE_RATE, "ACTIVE_POWER_CHANGE_RATE"),
 )
 
 function Base.show(io::IO, cat::UnitCategory{NU, P, V}) where {NU, P, V}
@@ -308,6 +334,124 @@ end
 
 # --- nothing passthrough ---
 convert_units(::Any, ::Nothing, ::UnitCategory, ::Any, ::Any) = nothing
+
+# --- rate categories: relative base per unit time ---
+
+# A value expressed per `FROM` becomes `value * _time_factor(FROM, TO)` per `TO`
+# (1/minute → 1/hr multiplies by hr/minute = 60). Both units are singleton types, so
+# this folds to a literal.
+_time_factor(::FROM, ::TO) where {FROM <: Unitful.Units, TO <: Unitful.Units} =
+    Unitful.ustrip(Unitful.uconvert(Unitful.NoUnits, 1.0 * (TO() / FROM())))
+
+# Re-base a bare relative value between CU and SU. Written out rather than delegated to
+# `convert_units`, because for a rate category that would land on the bare-marker
+# rejection below: the rejection is about an incomplete *target*, not about the power
+# arithmetic, which is the same as for any other category.
+_relative_rebase(::Any, v, ::UnitCategory, ::ComponentBaseUnit, ::ComponentBaseUnit) = v
+_relative_rebase(::Any, v, ::UnitCategory, ::SystemBaseUnit, ::SystemBaseUnit) = v
+_relative_rebase(c, v, cat::UnitCategory, ::ComponentBaseUnit, ::SystemBaseUnit) =
+    v * _cu_to_su_ratio(c, cat)
+_relative_rebase(c, v, cat::UnitCategory, ::SystemBaseUnit, ::ComponentBaseUnit) =
+    v / _cu_to_su_ratio(c, cat)
+
+# Storage (CU/SU at the category's storage time) → a relative rate marker: re-base the
+# power axis, rescale the time axis, then re-attach both markers.
+function convert_units(
+    c,
+    value::_BareNumber,
+    cat::RateCategory,
+    from::AbstractRelativeUnit,
+    to::RateUnit,
+)
+    base = relative_unit(to)
+    v = _relative_rebase(c, value, cat, from, base)
+    return RelativeQuantity(v * _time_factor(storage_time(cat), time_unit(to)), base) /
+           time_unit(to)
+end
+
+# A tagged rate value → anywhere: drop to the category's storage time, then re-enter the
+# engine as an ordinary relative value. Mirrors the `RelativeQuantity` unwrap guard below.
+# A `RelativeRate`'s Unitful parameter is the *inverse* time unit (`minute^-1`), since
+# the quantity is a per-time one; the time unit itself is its reciprocal.
+_rate_time(::RelativeRate{T, U, D, TU}) where {T, U, D, TU} = inv(TU())
+
+# `from` is matched as `AbstractRelativeUnit` and the tag checked in the body rather
+# than tied to `U` in the signature: tying it leaves these ambiguous against the
+# "Unitful value carries a relative `from`" guard below, which they must beat.
+function convert_units(
+    c,
+    val::RelativeRate{T, U, D, TU},
+    cat::RateCategory,
+    from::AbstractRelativeUnit,
+    to::AbstractRelativeUnit,
+) where {T, U, D, TU}
+    _check_rate_tag(val, U(), from)
+    v = IS._strip_units(val) * _time_factor(_rate_time(val), storage_time(cat))
+    return RelativeQuantity(_relative_rebase(c, v, cat, from, to), to)
+end
+
+# …and to a rate marker, where the time axis moves again rather than collapsing.
+function convert_units(
+    c,
+    val::RelativeRate{T, U, D, TU},
+    cat::RateCategory,
+    from::AbstractRelativeUnit,
+    to::RateUnit,
+) where {T, U, D, TU}
+    _check_rate_tag(val, U(), from)
+    v = IS._strip_units(val) * _time_factor(_rate_time(val), storage_time(cat))
+    return convert_units(c, v, cat, from, to)
+end
+
+# Mirrors the `RelativeQuantity` tag/marker guard below: the value's own tag is
+# authoritative, so a contradicting `from` is a caller error, not something to coerce.
+@inline function _check_rate_tag(val, tag, from)
+    tag === from || throw(
+        ArgumentError(
+            "value $val is tagged $tag but `from = $from`; the tag and the `from` " *
+            "marker must agree",
+        ),
+    )
+    return nothing
+end
+
+# A bare relative marker does not name a time, so it is not a complete target for a rate.
+# One method per `(from, to)` marker pair, matching the specificity of the generic
+# methods above -- narrowing only the category would be an ambiguity, not an override.
+for FROM in (:ComponentBaseUnit, :SystemBaseUnit),
+    TO in (:ComponentBaseUnit, :SystemBaseUnit)
+
+    @eval function convert_units(
+        ::Any,
+        ::_BareNumber,
+        cat::RateCategory,
+        ::$FROM,
+        to::$TO,
+    )
+        throw(
+            ArgumentError(
+                "$(cat) is a rate; `$(to)` alone does not say per what time. Pass a " *
+                "relative base per unit time (e.g. `$(to)/u\"minute\"`, `$(to)/u\"hr\"`) " *
+                "or a natural unit such as `u\"MW/minute\"`.",
+            ),
+        )
+    end
+end
+
+# A rate marker is meaningless for a quantity that is not a rate.
+convert_units(
+    ::Any,
+    ::_BareNumber,
+    cat::UnitCategory,
+    ::AbstractRelativeUnit,
+    to::RateUnit,
+) =
+    throw(
+        ArgumentError(
+            "$(cat) is not a rate, so `$(relative_unit(to))/$(time_unit(to))` is not a " *
+            "valid target; pass `$(relative_unit(to))` on its own.",
+        ),
+    )
 
 # --- marker/value-type guards ---
 

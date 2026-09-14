@@ -20,11 +20,67 @@
 @unit MVAr "MVAr" MVAr 1u"MW" false
 @unit MVA "MVA" MVA 1u"MW" false
 
+###############################
+# Relative units per unit time
+#
+# A rate field (e.g. `ramp_limits`, MW/min) per-unitizes only its power axis --
+# there is no time base -- so a relative marker alone does not say what the value
+# is a rate *of* per unit time. `SU/u"minute"` says it; bare `SU` is rejected.
+###############################
+
+"""
+Target-unit argument for a rate field: a relative per-unit base per unit time,
+written `CU/u"minute"` or `SU/u"hr"`.
+
+Deliberately **not** `<: AbstractRelativeUnit`: `IS`'s
+`Base.:*(::Number, ::AbstractRelativeUnit)` would otherwise consume it and produce a
+plain `RelativeQuantity`, silently dropping the time.
+"""
+struct RateUnit{U <: IS.AbstractRelativeUnit, TU <: Unitful.Units} end
+
+Base.:/(::U, ::TU) where {U <: IS.AbstractRelativeUnit, TU <: Unitful.Units} =
+    RateUnit{U, TU}()
+
+# Print as it is written, not as its raw type parameters.
+Base.show(io::IO, r::RateUnit) = print(io, relative_unit(r), "/", time_unit(r))
+
+"The relative base of a rate unit (`CU`/`SU`)."
+relative_unit(::RateUnit{U}) where {U} = U()
+"The time unit a rate unit is denominated in."
+time_unit(::RateUnit{<:Any, TU}) where {TU} = TU()
+
+"""
+A value tagged with a relative base per unit time, e.g. `0.1 * CU / u"hr"`.
+
+`RelativeQuantity <: Number`, so Unitful's own `Quantity` wraps it and does the time
+arithmetic: this is an ordinary `Unitful.Quantity` whose numeric payload carries the
+per-unit marker, not a bespoke type.
+"""
+const RelativeRate{T, U, D, TU} = Unitful.Quantity{IS.RelativeQuantity{T, U}, D, TU}
+
+# `0.1 * (CU/u"hr")` and `0.1 * CU / u"hr"` must produce the identical value.
+Base.:*(v::Real, r::RateUnit) = (v * relative_unit(r)) / time_unit(r)
+Base.:*(r::RateUnit, v::Real) = v * r
+
+# The reverse nesting is reachable -- `IS`'s `*(::Number, ::AbstractRelativeUnit)` takes
+# a `Number`, and a `Unitful.Quantity` is one -- and yields
+# `RelativeQuantity{Quantity}`, which prints as `0.1 hr^-1 CU` and dispatches nowhere
+# useful. Reject it and name the spelling that works.
+_rate_nesting_error(q, u) = throw(
+    ArgumentError(
+        "cannot tag the unit-bearing value $q with the per-unit marker $u; a rate is " *
+        "written base-first, e.g. `0.1 * $u / u\"minute\"`",
+    ),
+)
+Base.:*(q::Unitful.Quantity, u::IS.AbstractRelativeUnit) = _rate_nesting_error(q, u)
+Base.:*(u::IS.AbstractRelativeUnit, q::Unitful.Quantity) = _rate_nesting_error(q, u)
+
 """
 Accepted target-unit argument for unit-aware getters/setters: a Unitful unit
-(e.g. `u"MW"`, `u"kV"`) or a relative per-unit marker (`CU`, `SU`, `NU`).
+(e.g. `u"MW"`, `u"kV"`, `u"MW/minute"`), a relative per-unit marker (`CU`, `SU`, `NU`),
+or a relative marker per unit time (`CU/u"minute"`).
 """
-const UnitArg = Union{Unitful.Units, IS.AbstractUnitSystem}
+const UnitArg = Union{Unitful.Units, IS.AbstractUnitSystem, RateUnit}
 
 """
 A number carrying no units: what a unit-aware setter must reject. Both quantity
@@ -37,3 +93,7 @@ const _UntaggedNumber = Union{Real, Complex{<:Real}}
 # One public strip generic for both quantity kinds: Unitful's `ustrip` works on
 # `RelativeQuantity` too (IS deliberately does not define its own `ustrip`).
 Unitful.ustrip(q::IS.RelativeQuantity) = IS._strip_units(q)
+
+# A `RelativeRate` strips in two steps: Unitful's `ustrip` drops the time unit and
+# hands back the `RelativeQuantity` payload, which still needs its own marker removed.
+IS._strip_units(q::RelativeRate) = IS._strip_units(Unitful.ustrip(q))

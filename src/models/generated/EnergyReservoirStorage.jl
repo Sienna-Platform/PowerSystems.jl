@@ -60,7 +60,7 @@ This is suitable for modeling storage charging and discharging with average effi
 - `conversion_factor::Float64`: (default: `1.0`) Conversion factor of `storage_capacity` to MWh, if different than 1.0. For example, X MWh/liter hydrogen
 - `storage_target::Float64`: (default: `0.0`) Storage target at the end of simulation as ratio of storage capacity
 - `cycle_limits::Int`: (default: `1e4`) Storage Maximum number of cycles per year
-- `ramp_limits::Union{Nothing, UpDown}`: (default: `nothing`) ramp up and ramp down limits in MW/min, validation range: `(0, nothing)`
+- `ramp_limits::Union{Nothing, UpDown}`: (default: `nothing`) Ramp up and ramp down limits (MW/min), validation range: `(0, nothing)`
 - `self_discharge::Float64`: (default: `0.0`) Self-discharge (leakage loss) as a fraction of the stored energy lost per minute (pu/min of `storage_capacity`), modeled as `E[t] = (1 - self_discharge * dt) * E[t-1]`. For the constant-power standing loss see `standing_loss`, validation range: `(0, nothing)`
 - `standing_loss::Float64`: (default: `0.0`) Constant standing-loss power drawn by the storage system, in per unit of the device `base_power`. Reduces the effective charging power (`p_in - standing_loss`) and increases the power drawn from the storage when discharging (`p_out + standing_loss`). For the fractional energy leakage see `self_discharge`, validation range: `(0, nothing)`
 - `services::Vector{Service}`: (default: `Device[]`) Services that this device contributes to
@@ -109,7 +109,7 @@ mutable struct EnergyReservoirStorage <: Storage
     storage_target::Float64
     "Storage Maximum number of cycles per year"
     cycle_limits::Int
-    "ramp up and ramp down limits in MW/min"
+    "Ramp up and ramp down limits (MW/min)"
     ramp_limits::Union{Nothing, UpDown}
     "Self-discharge (leakage loss) as a fraction of the stored energy lost per minute (pu/min of `storage_capacity`), modeled as `E[t] = (1 - self_discharge * dt) * E[t-1]`. For the constant-power standing loss see `standing_loss`"
     self_discharge::Float64
@@ -248,13 +248,13 @@ get_storage_target(value::EnergyReservoirStorage) = value.storage_target
 """Get [`EnergyReservoirStorage`](@ref) `cycle_limits`."""
 get_cycle_limits(value::EnergyReservoirStorage) = value.cycle_limits
 """Get [`EnergyReservoirStorage`](@ref) `ramp_limits` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_ramp_limits_unitful`](@ref)."""
-get_ramp_limits(value::EnergyReservoirStorage, units) = InfrastructureSystems._strip_units(get_value(value, Val(:ramp_limits), Val(:mw), units))
+get_ramp_limits(value::EnergyReservoirStorage, units) = InfrastructureSystems._strip_units(get_value(value, Val(:ramp_limits), Val(:mw_per_minute), units))
 """Get [`EnergyReservoirStorage`](@ref) `ramp_limits` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_ramp_limits`](@ref)."""
-get_ramp_limits_unitful(value::EnergyReservoirStorage, units) = get_value(value, Val(:ramp_limits), Val(:mw), units)
-get_ramp_limits(value::EnergyReservoirStorage) = _units_arg_required(get_ramp_limits, value, :ramp_limits, Val(:mw))
-get_ramp_limits_unitful(value::EnergyReservoirStorage) = _units_arg_required(get_ramp_limits_unitful, value, :ramp_limits, Val(:mw))
-InfrastructureSystems.display_units_arg(::typeof(get_ramp_limits), ::Type{EnergyReservoirStorage}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_ramp_limits_unitful), ::Type{EnergyReservoirStorage}) = InfrastructureSystems.SU
+get_ramp_limits_unitful(value::EnergyReservoirStorage, units) = get_value(value, Val(:ramp_limits), Val(:mw_per_minute), units)
+get_ramp_limits(value::EnergyReservoirStorage) = _units_arg_required(get_ramp_limits, value, :ramp_limits, Val(:mw_per_minute))
+get_ramp_limits_unitful(value::EnergyReservoirStorage) = _units_arg_required(get_ramp_limits_unitful, value, :ramp_limits, Val(:mw_per_minute))
+InfrastructureSystems.display_units_arg(::typeof(get_ramp_limits), ::Type{EnergyReservoirStorage}) = SU / u"minute"
+InfrastructureSystems.display_units_arg(::typeof(get_ramp_limits_unitful), ::Type{EnergyReservoirStorage}) = SU / u"minute"
 """Get [`EnergyReservoirStorage`](@ref) `self_discharge`."""
 get_self_discharge(value::EnergyReservoirStorage) = value.self_discharge
 """Get [`EnergyReservoirStorage`](@ref) `standing_loss` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_standing_loss_unitful`](@ref)."""
@@ -321,9 +321,9 @@ set_storage_target!(value::EnergyReservoirStorage, val) = value.storage_target =
 """Set [`EnergyReservoirStorage`](@ref) `cycle_limits`."""
 set_cycle_limits!(value::EnergyReservoirStorage, val) = value.cycle_limits = val
 """Set [`EnergyReservoirStorage`](@ref) `ramp_limits`."""
-set_ramp_limits!(value::EnergyReservoirStorage, val) = value.ramp_limits = set_value(value, Val(:ramp_limits), val, Val(:mw))
-set_ramp_limits!(value::EnergyReservoirStorage, val::_UntaggedNumber) = _units_tag_required(set_ramp_limits!, value, :ramp_limits, Val(:mw), val)
-set_ramp_limits!(value::EnergyReservoirStorage, val::NamedTuple{(:up, :down), <:Tuple{Vararg{_UntaggedNumber}}}) = _units_tag_required(set_ramp_limits!, value, :ramp_limits, Val(:mw), val)
+set_ramp_limits!(value::EnergyReservoirStorage, val) = value.ramp_limits = set_value(value, Val(:ramp_limits), val, Val(:mw_per_minute))
+set_ramp_limits!(value::EnergyReservoirStorage, val::_UntaggedNumber) = _units_tag_required(set_ramp_limits!, value, :ramp_limits, Val(:mw_per_minute), val)
+set_ramp_limits!(value::EnergyReservoirStorage, val::NamedTuple{(:up, :down), <:Tuple{Vararg{_UntaggedNumber}}}) = _units_tag_required(set_ramp_limits!, value, :ramp_limits, Val(:mw_per_minute), val)
 """Set [`EnergyReservoirStorage`](@ref) `self_discharge`."""
 set_self_discharge!(value::EnergyReservoirStorage, val) = value.self_discharge = val
 """Set [`EnergyReservoirStorage`](@ref) `standing_loss`."""

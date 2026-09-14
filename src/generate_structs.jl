@@ -91,8 +91,8 @@ end
 {{accessor}}_unitful(value::{{struct_name}}, units) = get_value(value, Val(:{{name}}), Val({{conversion_unit}}), units)
 {{accessor}}(value::{{struct_name}}) = _units_arg_required({{accessor}}, value, :{{name}}, Val({{conversion_unit}}))
 {{accessor}}_unitful(value::{{struct_name}}) = _units_arg_required({{accessor}}_unitful, value, :{{name}}, Val({{conversion_unit}}))
-InfrastructureSystems.display_units_arg(::typeof({{accessor}}), ::{{units_type_sig}}){{#units_bound}} where {T <: {{units_bound}}}{{/units_bound}} = InfrastructureSystems.{{display_units}}
-InfrastructureSystems.display_units_arg(::typeof({{accessor}}_unitful), ::{{units_type_sig}}){{#units_bound}} where {T <: {{units_bound}}}{{/units_bound}} = InfrastructureSystems.{{display_units}}
+InfrastructureSystems.display_units_arg(::typeof({{accessor}}), ::{{units_type_sig}}){{#units_bound}} where {T <: {{units_bound}}}{{/units_bound}} = {{{display_units}}}
+InfrastructureSystems.display_units_arg(::typeof({{accessor}}_unitful), ::{{units_type_sig}}){{#units_bound}} where {T <: {{units_bound}}}{{/units_bound}} = {{{display_units}}}
 {{/needs_conversion}}
 {{^needs_conversion}}
 {{#create_docstring}}\"\"\"Get [`{{struct_name}}`](@ref) `{{name}}`.\"\"\"{{/create_docstring}}
@@ -231,10 +231,20 @@ const OPENAPI_COMPOUND_MEMBERS = Dict(
 )
 # The three power tokens share one per-unit base (S_base) and so one conversion
 # rule; they differ only in the natural unit the units engine prints them as.
-const OPENAPI_CONVERSION_KINDS = Dict(
+"""
+Which **per-unit base** anchors a field's natural-units conversion on the wire -- not
+which physical dimension it has. `:power` means "scale by S_base", `:impedance` by
+Z_base, `:admittance` by Y_base.
+
+A rate is `:power` for exactly this reason: `pu/min -> MW/min` is a multiplication by
+`base_power`, the same arithmetic as `pu -> MW`, because there is no time *base* to
+scale by -- the time denominator rides along untouched.
+"""
+const OPENAPI_CONVERSION_BASES = Dict(
     ":mw" => :power,
     ":mvar" => :power,
     ":mva" => :power,
+    ":mw_per_minute" => :power,
     ":ohm" => :impedance,
     ":siemens" => :admittance,
 )
@@ -430,7 +440,7 @@ function openapi_natural_conversion(struct_name, field)
         return :none
     end
     conversion_unit = get(field, "conversion_unit", nothing)
-    kind = get(OPENAPI_CONVERSION_KINDS, conversion_unit, nothing)
+    kind = get(OPENAPI_CONVERSION_BASES, conversion_unit, nothing)
     if isnothing(kind)
         throw(
             DataFormatError(
@@ -453,7 +463,8 @@ list, so it can never drift from the fields that are actually emitted.
 function openapi_has_power_units(item)
     for field in item["fields"]
         get(field, "needs_conversion", false) || continue
-        get(field, "conversion_unit", nothing) in (":mw", ":mvar", ":mva") && return true
+        get(field, "conversion_unit", nothing) in
+        (":mw", ":mvar", ":mva", ":mw_per_minute") && return true
     end
     return false
 end
@@ -728,6 +739,33 @@ function openapi_export_base_source(item)
             "$kind (only \"device\" or \"system\" are supported)",
         ),
     )
+end
+
+"""
+The `display_units_arg` trait's right-hand side for one field, as an emitted expression.
+
+A bare marker (`SU`/`CU`/`NU`) is qualified into `InfrastructureSystems`, where it is
+defined. A rate field's default has to name a time as well (`SU / u"minute"`), which is
+a PSY-side expression, so anything containing a `/` is emitted verbatim.
+"""
+function display_units_expr(field)
+    value = get(field, "display_units", "SU")
+    occursin("/", value) && return value
+    return "InfrastructureSystems.$value"
+end
+
+"""
+The unit argument the export-direction getter is called with for one field.
+
+Per *field*, not per struct: every convertible field on a struct reads the same base
+(`base_source.unit_arg`), but a rate field's getter rejects a bare marker -- it must be
+told the time its stored value is denominated in.
+"""
+function openapi_export_field_unit_arg(field, base_source)
+    if get(field, "conversion_unit", nothing) == ":mw_per_minute"
+        return "$(base_source.unit_arg) / u\"minute\""
+    end
+    return base_source.unit_arg
 end
 
 """The PSY-side accessor name for one field: the public `get_X`, unless the descriptor
@@ -1007,7 +1045,7 @@ function compute_openapi_export_converter!(item, struct_names)
             if isnothing(base_source)
                 base_source = openapi_export_base_source(item)
             end
-            unit_arg = base_source.unit_arg
+            unit_arg = openapi_export_field_unit_arg(field, base_source)
             bases = openapi_export_base_exprs(
                 struct_name,
                 name,
@@ -1147,7 +1185,7 @@ function generate_structs(directory, data::Vector; print_results = true)
                         "conversion_unit" => conversion_unit,
                         # Units argument used when displaying the field (tables, REPL);
                         # override per field in the descriptor with "display_units".
-                        "display_units" => get(param, "display_units", "SU"),
+                        "display_units" => display_units_expr(param),
                         # The units trait dispatches on the component's concrete
                         # type, so parametric structs need the `Type{Name{T}} where`
                         # form (`Type{Name}` is the UnionAll and never matches a
