@@ -211,7 +211,12 @@ end
 _thermal_start_up_to_openapi(x::Real) = PC.ThermalGenerationCostStartUp(Float64(x))
 function _thermal_start_up_to_openapi(x::NamedTuple)
     return PC.ThermalGenerationCostStartUp(
-        PC.StartUpStages(; hot = x.hot, warm = x.warm, cold = x.cold),
+        PC.StartUpStages(;
+            startup_stages_type = "STAGES",
+            hot = x.hot,
+            warm = x.warm,
+            cold = x.cold,
+        ),
     )
 end
 
@@ -278,6 +283,7 @@ function convert_cost_to_openapi(cost::MarketBidCost)
         cost_type = "MARKET_BID",
         minimum_energy_offer = convert_cost_to_openapi(get_minimum_energy_offer(cost)),
         start_up = PC.StartUpStages(;
+            startup_stages_type = "STAGES",
             hot = start_up.hot,
             warm = start_up.warm,
             cold = start_up.cold,

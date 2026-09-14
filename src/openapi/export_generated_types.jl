@@ -26,8 +26,12 @@ _startup_shutdown_po_scaled_optional(nt, base) =
     PC.StartUpShutDown(; startup = nt.startup * base, shutdown = nt.shutdown * base)
 
 _startup_stages_po_optional(::Nothing) = IC.ABSENT
-_startup_stages_po_optional(nt) =
-    PC.StartUpStages(; hot = nt.hot, warm = nt.warm, cold = nt.cold)
+_startup_stages_po_optional(nt) = PC.StartUpStages(;
+    startup_stages_type = "STAGES",
+    hot = nt.hot,
+    warm = nt.warm,
+    cold = nt.cold,
+)
 
 _turbinepump_po(nt) = PC.TurbinePump(; turbine = nt.turbine, pump = nt.pump)
 
