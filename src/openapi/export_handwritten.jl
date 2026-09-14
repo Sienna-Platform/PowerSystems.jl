@@ -256,7 +256,7 @@ function to_openapi(src::Source, refs::OpenAPIRefs, ::ComponentBaseUnit)
         x_th = get_X_th(src),
         internal_voltage = get_internal_voltage(src),
         internal_angle = get_internal_angle(src),
-        base_voltage = get_base_voltage(src),
+        base_voltage = _optional_to_wire(get_base_voltage(src)),
         base_power = _get_base_power(src),
         operation_cost = PO.SourceOperationCost(
             convert_cost_to_openapi(get_operation_cost(src)),
@@ -283,7 +283,7 @@ function to_openapi(src::Source, refs::OpenAPIRefs, ::NaturalUnit)
         x_th = get_X_th(src),
         internal_voltage = get_internal_voltage(src),
         internal_angle = get_internal_angle(src),
-        base_voltage = get_base_voltage(src),
+        base_voltage = _optional_to_wire(get_base_voltage(src)),
         base_power = dbp,
         operation_cost = PO.SourceOperationCost(
             convert_cost_to_openapi(get_operation_cost(src)),
@@ -662,15 +662,15 @@ function to_openapi(xfmr::ThreeWindingTransformer, refs::OpenAPIRefs, ::Componen
         tertiary_circuit = component_id(refs, get_tertiary_circuit(xfmr)),
         star_bus = component_id(refs, get_star_bus(xfmr)),
         parameter_units = PO.ImpedanceUnitBasis("COMPONENT_BASE"),
-        r_12 = get_r_12(xfmr, CU),
-        x_12 = get_x_12(xfmr, CU),
-        r_23 = get_r_23(xfmr, CU),
-        x_23 = get_x_23(xfmr, CU),
-        r_31 = get_r_31(xfmr, CU),
-        x_31 = get_x_31(xfmr, CU),
-        base_power_12 = get_base_power_12(xfmr),
-        base_power_23 = get_base_power_23(xfmr),
-        base_power_31 = get_base_power_31(xfmr),
+        r_12 = _optional_to_wire(get_r_12(xfmr, CU)),
+        x_12 = _optional_to_wire(get_x_12(xfmr, CU)),
+        r_23 = _optional_to_wire(get_r_23(xfmr, CU)),
+        x_23 = _optional_to_wire(get_x_23(xfmr, CU)),
+        r_31 = _optional_to_wire(get_r_31(xfmr, CU)),
+        x_31 = _optional_to_wire(get_x_31(xfmr, CU)),
+        base_power_12 = _optional_to_wire(get_base_power_12(xfmr)),
+        base_power_23 = _optional_to_wire(get_base_power_23(xfmr)),
+        base_power_31 = _optional_to_wire(get_base_power_31(xfmr)),
         admittance_units = PO.AdmittanceUnitBasis("COMPONENT_BASE"),
         magnetizing_shunt = _complex_number_po(shunt),
         shunt_location = PO.ThreeWindingTransformerShuntLocation(
@@ -819,11 +819,8 @@ end
 # type allows both (a `System` built directly, not round-tripped, may hold either), so export
 # supports both rather than narrowing to what import currently reads.
 
-# The schemas collapsed the two loss-curve wrappers into one `LossCurve`, which -- unlike the
-# `TwoTerminalLoss` it replaced -- records the basis in its own required `power_units`. The
-# basis is still derived rather than hardcoded, even though `loss_curve_to_openapi`'s guard
-# means it is always natural units today: when that guard is lifted this stamps the real basis
-# with no further change here.
+# The schemas' `LossCurve` records the basis in its own required `power_units`, so the curve
+# travels on whatever basis PSY holds it and import reads the same field back (`_hvdc_loss`).
 function _hvdc_loss_to_openapi(loss::AnyLossCurve)
     return PC.LossCurve(;
         power_units = _power_units_string(get_power_units(loss)),

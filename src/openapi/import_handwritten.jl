@@ -1085,26 +1085,11 @@ _hvdc_loss_curve(c::PC.InputOutputCurve) =
     _linear_curve_from_function_data(_unwrap_oneof(c.function_data))
 _hvdc_loss_curve(c) = error("unmapped LossCurve value_curve variant: $(typeof(c))")
 
-"""Require a `NaturalUnit` power basis for a `LossCurve`'s `power_units`, as `_hvdc_loss` and
-`_vsc_loss` both do — dispatch, not `isa`, selects the guard. `raw` is the wire string, kept
-only for the error message."""
-_require_natural_units(::NaturalUnit, ::AbstractString) = nothing
-function _require_natural_units(units, raw::AbstractString)
-    error(
-        "from_openapi: LossCurve power_units=\"$raw\" is not supported — " *
-        "only NATURAL_UNITS loss curves are converted, so a relative basis would be " *
-        "reinterpreted rather than rescaled",
-    )
-end
-
-# `LossCurve` replaced `TwoTerminalLoss` and records its own basis, so read it rather than
-# assuming: a `COMPONENT_BASE` curve would otherwise be reconstructed as natural units and
-# silently change meaning. Export refuses to write that basis today
-# (`loss_curve_to_openapi`), so a document carrying one did not come from here.
+# `LossCurve` records its own basis: keep it, since rebuilding a COMPONENT_BASE curve as
+# natural units would silently change its meaning.
 function _hvdc_loss(l::PC.LossCurve)
     units = _power_units_marker("LossCurve", "", l.power_units.value)
-    _require_natural_units(units, l.power_units.value)
-    return loss_curve_from_openapi(_hvdc_loss_curve(_unwrap_oneof(l.value_curve)))
+    return loss_curve_from_openapi(_hvdc_loss_curve(_unwrap_oneof(l.value_curve)), units)
 end
 
 function from_openapi(
@@ -1464,25 +1449,24 @@ end
 piecewise document curve is named here rather than surfacing as a `MethodError` from the
 `TwoTerminalVSCLine` constructor.
 """
-_vsc_converter_loss(curve::InputOutputCurve{LinearFunctionData}) =
-    loss_curve_from_openapi(curve)
-_vsc_converter_loss(curve::InputOutputCurve{QuadraticFunctionData}) =
-    loss_curve_from_openapi(curve)
-_vsc_converter_loss(curve) = error(
+_vsc_converter_loss(curve::InputOutputCurve{LinearFunctionData}, units) =
+    loss_curve_from_openapi(curve, units)
+_vsc_converter_loss(curve::InputOutputCurve{QuadraticFunctionData}, units) =
+    loss_curve_from_openapi(curve, units)
+_vsc_converter_loss(curve, ::Any) = error(
     "TwoTerminalVSCLine converter_loss must be a LINEAR or QUADRATIC InputOutputCurve, got " *
     "InputOutputCurve{$(typeof(get_function_data(curve)))}",
 )
 
 """
-Unwrap a `converter_loss_*`/`loss_function` `LossCurve` the same way `_hvdc_loss` does (only
-`NATURAL_UNITS` is supported), then hand the bare curve to `_vsc_converter_loss`; absent on
-the wire falls back to the shared PSY descriptor default (a zero linear loss curve).
+Unwrap a `converter_loss_*`/`loss_function` `LossCurve` the same way `_hvdc_loss` does,
+keeping the basis the blob states, then hand the bare curve to `_vsc_converter_loss`; absent
+on the wire falls back to the shared PSY descriptor default (a zero linear loss curve).
 """
 _vsc_loss(::Union{Nothing, IC.Absent}) = LossCurve(LinearCurve(0.0), NaturalUnit())
 function _vsc_loss(l::PC.LossCurve)
     units = _power_units_marker("LossCurve", "", l.power_units.value)
-    _require_natural_units(units, l.power_units.value)
-    return _vsc_converter_loss(convert_cost(_unwrap_oneof(l.value_curve)))
+    return _vsc_converter_loss(convert_cost(_unwrap_oneof(l.value_curve)), units)
 end
 
 """
