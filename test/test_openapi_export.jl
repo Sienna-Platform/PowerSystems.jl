@@ -307,6 +307,51 @@ end
         @test t3w_po.magnetizing_shunt.real == 0.03
         @test t3w_po.shunt_location.value == "STAR"
     end
+
+    # A pairwise block left unstated (PSY validates it as all or none) is omitted from the
+    # blob, which the schema allows; written as `nothing` it would encode as null.
+    t3w_bare = ThreeWindingTransformer(nothing)
+    set_name!(t3w_bare, "t3w_bare")
+    set_arc!(get_primary_circuit(t3w_bare), arc1)
+    set_arc!(get_secondary_circuit(t3w_bare), arc2)
+    set_arc!(get_tertiary_circuit(t3w_bare), arc3)
+    foreach(c -> set_available!(c, true), get_circuits(t3w_bare))
+    set_star_bus!(t3w_bare, star)
+    set_magnetizing_shunt!(t3w_bare, (0.03 + 0.0im) * CU)
+    set_shunt_location!(t3w_bare, ThreeWindingTransformerShuntLocation.STAR)
+    add_component!(sys, t3w_bare)
+    refs[12] = get_primary_circuit(t3w_bare)
+    refs[13] = get_secondary_circuit(t3w_bare)
+    refs[14] = get_tertiary_circuit(t3w_bare)
+    refs[15] = t3w_bare
+    bare_po = PSY.to_openapi(t3w_bare, refs, CU)
+    @test bare_po.r_12 === PSY.IC.ABSENT
+    @test bare_po.x_31 === PSY.IC.ABSENT
+    @test bare_po.base_power_12 === PSY.IC.ABSENT
+    @test PSY.PO._encode(bare_po) !== nothing
+end
+
+@testset "OpenAPI export converters: Source" begin
+    bus1 = _export_bus(; number = 1)
+    src = Source(;
+        name = "src1", available = true, bus = bus1, active_power = 0.1, R_th = 0.01,
+        X_th = 0.1, base_power = 100.0,
+    )
+    sys = System(100.0)
+    add_component!(sys, bus1)
+    add_component!(sys, src)
+    refs = PSY.OpenAPIRefs(100.0)
+    refs[1] = bus1
+    refs[2] = src
+
+    # An unstated base voltage is omitted from the blob rather than written as null.
+    natural_po = PSY.to_openapi(src, refs, NU)
+    @test natural_po.active_power == 10.0
+    @test natural_po.base_voltage === PSY.IC.ABSENT
+    @test PSY.PO._encode(natural_po) !== nothing
+
+    set_base_voltage!(src, 230.0)
+    @test PSY.to_openapi(src, refs, NU).base_voltage == 230.0
 end
 
 @testset "OpenAPI export converters: FixedAdmittance" begin
