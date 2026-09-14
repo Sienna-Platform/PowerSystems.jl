@@ -43,7 +43,7 @@
         ],
     )
     redirect_stdout(devnull) do
-        generate_struct_file(
+        IS.generate_struct_file(
             new_struct;
             filename = descriptor_file,
             output_directory = output_directory,

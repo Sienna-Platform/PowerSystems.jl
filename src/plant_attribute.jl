@@ -424,6 +424,72 @@ get_pcc_map(value::RenewablePowerPlant) = value.pcc_map
 """Unit id -> PCC number, derived from `pcc_map`."""
 get_reverse_pcc_map(value::RenewablePowerPlant) = _reverse_group_map(value.pcc_map)
 
+# Every plant type below groups its members the same way and differs only in which map
+# holds the grouping, what its numbers are called, and which components can be members.
+# Those three are stated once per type here; the query/attach/detach bodies are written
+# once against them, in the same shape `_push_group_index!` already dispatches.
+_group_map(plant::ThermalPowerPlant) = plant.shaft_map
+_group_map(plant::HydroPowerPlant) = plant.penstock_map
+_group_map(plant::RenewablePowerPlant) = plant.pcc_map
+_group_map(plant::CombinedCycleFractional) = plant.operation_exclusion_map
+
+_group_label(::ThermalPowerPlant) = "Shaft number"
+_group_label(::HydroPowerPlant) = "Penstock number"
+_group_label(::RenewablePowerPlant) = "PCC number"
+_group_label(::CombinedCycleFractional) = "Exclusion group"
+
+_group_members(sys::System, plant::ThermalPowerPlant) =
+    get_associated_components(sys, plant; component_type = ThermalGen)
+_group_members(sys::System, plant::HydroPowerPlant) =
+    get_associated_components(sys, plant; component_type = HydroGen)
+# A RenewablePowerPlant groups generators and storage alike, so it takes no type filter.
+_group_members(sys::System, plant::RenewablePowerPlant) =
+    get_associated_components(sys, plant)
+_group_members(sys::System, plant::CombinedCycleFractional) =
+    get_associated_components(sys, plant; component_type = ThermalGen)
+
+function _get_components_in_group(sys::System, plant::PowerPlant, group_number::Int)
+    group_map = _group_map(plant)
+    if !haskey(group_map, group_number)
+        throw(
+            IS.ArgumentError(
+                "$(_group_label(plant)) $group_number does not exist in plant $(get_name(plant))",
+            ),
+        )
+    end
+    ids = group_map[group_number]
+    return filter(c -> IS.get_id(c) in ids, _group_members(sys, plant))
+end
+
+function _attach_to_group!(sys::System, component, plant::PowerPlant, group_number::Int)
+    id = IS.get_id(component)
+    if _in_group_map(_group_map(plant), id)
+        throw(
+            IS.ArgumentError(
+                "$(get_name(component)) is already part of plant $(get_name(plant))",
+            ),
+        )
+    end
+    IS.add_supplemental_attribute!(sys.data, component, plant)
+    _push_group_index!(component, plant, group_number)
+    return
+end
+
+function _detach_from_group!(sys::System, component, plant::PowerPlant)
+    id = IS.get_id(component)
+    groups = _group_indices(_group_map(plant), id)
+    if isempty(groups)
+        throw(
+            IS.ArgumentError(
+                "$(get_name(component)) is not part of plant $(get_name(plant))",
+            ),
+        )
+    end
+    _drop_from_group_map!(_group_map(plant), id, groups)
+    IS.remove_supplemental_attribute!(sys.data, component, plant)
+    return
+end
+
 """
     get_components_in_shaft(sys::System, plant::ThermalPowerPlant, shaft_number::Int)
 
@@ -440,25 +506,8 @@ Get all thermal generators connected to a specific shaft in a [`ThermalPowerPlan
 # Throws
 - `ArgumentError`: If the shaft number does not exist in the plant
 """
-function get_components_in_shaft(
-    sys::System,
-    plant::ThermalPowerPlant,
-    shaft_number::Int,
-)
-    shaft_map = get_shaft_map(plant)
-    if !haskey(shaft_map, shaft_number)
-        throw(
-            IS.ArgumentError(
-                "Shaft number $shaft_number does not exist in plant $(get_name(plant))",
-            ),
-        )
-    end
-
-    ids = shaft_map[shaft_number]
-    all_components = get_associated_components(sys, plant; component_type = ThermalGen)
-    # Filter to only include components on this shaft
-    return filter(c -> IS.get_id(c) in ids, all_components)
-end
+get_components_in_shaft(sys::System, plant::ThermalPowerPlant, shaft_number::Int) =
+    _get_components_in_group(sys, plant, shaft_number)
 
 """
     get_components_in_penstock(sys::System, plant::HydroPowerPlant, penstock_number::Int)
@@ -476,25 +525,8 @@ Get all hydro generators connected to a specific penstock in a [`HydroPowerPlant
 # Throws
 - `ArgumentError`: If the penstock number does not exist in the plant
 """
-function get_components_in_penstock(
-    sys::System,
-    plant::HydroPowerPlant,
-    penstock_number::Int,
-)
-    penstock_map = get_penstock_map(plant)
-    if !haskey(penstock_map, penstock_number)
-        throw(
-            IS.ArgumentError(
-                "Penstock number $penstock_number does not exist in plant $(get_name(plant))",
-            ),
-        )
-    end
-
-    ids = penstock_map[penstock_number]
-    all_components = get_associated_components(sys, plant; component_type = HydroGen)
-    # Filter to only include components on this penstock
-    return filter(c -> IS.get_id(c) in ids, all_components)
-end
+get_components_in_penstock(sys::System, plant::HydroPowerPlant, penstock_number::Int) =
+    _get_components_in_group(sys, plant, penstock_number)
 
 """
     get_components_in_pcc(sys::System, plant::RenewablePowerPlant, pcc_number::Int)
@@ -512,25 +544,8 @@ Get all renewable generators and storage devices connected to a specific PCC in 
 # Throws
 - `ArgumentError`: If the PCC number does not exist in the plant
 """
-function get_components_in_pcc(
-    sys::System,
-    plant::RenewablePowerPlant,
-    pcc_number::Int,
-)
-    pcc_map = get_pcc_map(plant)
-    if !haskey(pcc_map, pcc_number)
-        throw(
-            IS.ArgumentError(
-                "PCC number $pcc_number does not exist in plant $(get_name(plant))",
-            ),
-        )
-    end
-
-    ids = pcc_map[pcc_number]
-    all_components = get_associated_components(sys, plant)
-    # Filter to only include components on this PCC
-    return filter(c -> IS.get_id(c) in ids, all_components)
-end
+get_components_in_pcc(sys::System, plant::RenewablePowerPlant, pcc_number::Int) =
+    _get_components_in_group(sys, plant, pcc_number)
 
 """No group index: the plain attribute path (`EmissionsData`, `GeographicInfo`, the
 `Outage` types, ...) needs no map update."""
@@ -594,24 +609,12 @@ generator's id in the plant's shaft map.
 - `attribute::ThermalPowerPlant`: The thermal power plant
 - `shaft_number::Int`: The shaft number to associate with the generator
 """
-function add_supplemental_attribute!(
+add_supplemental_attribute!(
     sys::System,
     component::ThermalGen,
     attribute::ThermalPowerPlant;
     shaft_number::Int,
-)
-    id = IS.get_id(component)
-    if _in_group_map(attribute.shaft_map, id)
-        throw(
-            IS.ArgumentError(
-                "Generator $(get_name(component)) is already part of plant $(get_name(attribute))",
-            ),
-        )
-    end
-    IS.add_supplemental_attribute!(sys.data, component, attribute)
-    _push_group_index!(component, attribute, shaft_number)
-    return
-end
+) = _attach_to_group!(sys, component, attribute, shaft_number)
 
 """
     add_supplemental_attribute!(sys::System, component::Union{HydroPumpTurbine, HydroTurbine}, attribute::HydroPowerPlant; penstock_number::Int)
@@ -626,24 +629,12 @@ generator's id in the plant's penstock map.
 - `attribute::HydroPowerPlant`: The hydro power plant
 - `penstock_number::Int`: The penstock number to associate with the generator
 """
-function add_supplemental_attribute!(
+add_supplemental_attribute!(
     sys::System,
     component::Union{HydroPumpTurbine, HydroTurbine},
     attribute::HydroPowerPlant,
     penstock_number::Int,
-)
-    id = IS.get_id(component)
-    if _in_group_map(attribute.penstock_map, id)
-        throw(
-            IS.ArgumentError(
-                "Generator $(get_name(component)) is already part of plant $(get_name(attribute))",
-            ),
-        )
-    end
-    IS.add_supplemental_attribute!(sys.data, component, attribute)
-    _push_group_index!(component, attribute, penstock_number)
-    return
-end
+) = _attach_to_group!(sys, component, attribute, penstock_number)
 
 """
     add_supplemental_attribute!(sys::System, component::HydroDispatch, attribute::HydroPowerPlant, args...; kwargs...)
@@ -677,24 +668,12 @@ generator's id in the plant's PCC map.
 - `attribute::RenewablePowerPlant`: The renewable power plant
 - `pcc_number::Int`: (default: 1) The PCC (point of common coupling) number to associate with the generator
 """
-function add_supplemental_attribute!(
+add_supplemental_attribute!(
     sys::System,
     component::Union{RenewableGen, EnergyReservoirStorage},
     attribute::RenewablePowerPlant,
     pcc_number::Int,
-)
-    id = IS.get_id(component)
-    if _in_group_map(attribute.pcc_map, id)
-        throw(
-            IS.ArgumentError(
-                "Component $(get_name(component)) is already part of plant $(get_name(attribute))",
-            ),
-        )
-    end
-    IS.add_supplemental_attribute!(sys.data, component, attribute)
-    _push_group_index!(component, attribute, pcc_number)
-    return
-end
+) = _attach_to_group!(sys, component, attribute, pcc_number)
 
 """
     remove_supplemental_attribute!(sys::System, component::ThermalGen, attribute::ThermalPowerPlant)
@@ -708,24 +687,11 @@ generator's id from the plant's shaft map.
 - `component::ThermalGen`: The thermal generator to remove from the plant
 - `attribute::ThermalPowerPlant`: The thermal power plant
 """
-function remove_supplemental_attribute!(
+remove_supplemental_attribute!(
     sys::System,
     component::ThermalGen,
     attribute::ThermalPowerPlant,
-)
-    id = IS.get_id(component)
-    shafts = _group_indices(attribute.shaft_map, id)
-    if isempty(shafts)
-        throw(
-            IS.ArgumentError(
-                "Generator $(get_name(component)) is not part of plant $(get_name(attribute))",
-            ),
-        )
-    end
-    _drop_from_group_map!(attribute.shaft_map, id, shafts)
-    IS.remove_supplemental_attribute!(sys.data, component, attribute)
-    return
-end
+) = _detach_from_group!(sys, component, attribute)
 
 """
     remove_supplemental_attribute!(sys::System, component::Union{HydroPumpTurbine, HydroTurbine}, attribute::HydroPowerPlant)
@@ -739,24 +705,11 @@ generator's id from the plant's penstock map.
 - `component::Union{HydroPumpTurbine, HydroTurbine}`: The hydro generator to remove from the plant
 - `attribute::HydroPowerPlant`: The hydro power plant
 """
-function remove_supplemental_attribute!(
+remove_supplemental_attribute!(
     sys::System,
     component::Union{HydroPumpTurbine, HydroTurbine},
     attribute::HydroPowerPlant,
-)
-    id = IS.get_id(component)
-    penstocks = _group_indices(attribute.penstock_map, id)
-    if isempty(penstocks)
-        throw(
-            IS.ArgumentError(
-                "Generator $(get_name(component)) is not part of plant $(get_name(attribute))",
-            ),
-        )
-    end
-    _drop_from_group_map!(attribute.penstock_map, id, penstocks)
-    IS.remove_supplemental_attribute!(sys.data, component, attribute)
-    return
-end
+) = _detach_from_group!(sys, component, attribute)
 
 """
     remove_supplemental_attribute!(sys::System, component::Union{RenewableGen, EnergyReservoirStorage}, attribute::RenewablePowerPlant)
@@ -770,24 +723,11 @@ generator's id from the plant's PCC map.
 - `component::Union{RenewableGen, EnergyReservoirStorage}`: The renewable generator or storage to remove from the plant
 - `attribute::RenewablePowerPlant`: The renewable power plant
 """
-function remove_supplemental_attribute!(
+remove_supplemental_attribute!(
     sys::System,
     component::Union{RenewableGen, EnergyReservoirStorage},
     attribute::RenewablePowerPlant,
-)
-    id = IS.get_id(component)
-    pccs = _group_indices(attribute.pcc_map, id)
-    if isempty(pccs)
-        throw(
-            IS.ArgumentError(
-                "Generator $(get_name(component)) is not part of plant $(get_name(attribute))",
-            ),
-        )
-    end
-    _drop_from_group_map!(attribute.pcc_map, id, pccs)
-    IS.remove_supplemental_attribute!(sys.data, component, attribute)
-    return
-end
+) = _detach_from_group!(sys, component, attribute)
 
 """
     add_supplemental_attribute!(sys::System, component::ThermalGen, attribute::CombinedCycleBlock; hrsg_number::Int)
@@ -915,24 +855,11 @@ generator's id from the plant's exclusion maps.
 - `component::ThermalGen`: The thermal generator to remove from the plant
 - `attribute::CombinedCycleFractional`: The combined cycle fractional plant
 """
-function remove_supplemental_attribute!(
+remove_supplemental_attribute!(
     sys::System,
     component::ThermalGen,
     attribute::CombinedCycleFractional,
-)
-    id = IS.get_id(component)
-    groups = _group_indices(attribute.operation_exclusion_map, id)
-    if isempty(groups)
-        throw(
-            IS.ArgumentError(
-                "Generator $(get_name(component)) is not part of plant $(get_name(attribute))",
-            ),
-        )
-    end
-    _drop_from_group_map!(attribute.operation_exclusion_map, id, groups)
-    IS.remove_supplemental_attribute!(sys.data, component, attribute)
-    return
-end
+) = _detach_from_group!(sys, component, attribute)
 
 """
     get_components_in_exclusion_group(sys::System, plant::CombinedCycleFractional, exclusion_group::Int)
@@ -950,22 +877,8 @@ Get all thermal generators in a specific exclusion group of a [`CombinedCycleFra
 # Throws
 - `ArgumentError`: If the exclusion group does not exist in the plant
 """
-function get_components_in_exclusion_group(
+get_components_in_exclusion_group(
     sys::System,
     plant::CombinedCycleFractional,
     exclusion_group::Int,
-)
-    exclusion_map = get_operation_exclusion_map(plant)
-    if !haskey(exclusion_map, exclusion_group)
-        throw(
-            IS.ArgumentError(
-                "Exclusion group $exclusion_group does not exist in plant $(get_name(plant))",
-            ),
-        )
-    end
-
-    ids = exclusion_map[exclusion_group]
-    all_components = get_associated_components(sys, plant; component_type = ThermalGen)
-    # Filter to only include components in this exclusion group
-    return filter(c -> IS.get_id(c) in ids, all_components)
-end
+) = _get_components_in_group(sys, plant, exclusion_group)

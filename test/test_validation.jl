@@ -262,9 +262,9 @@ end
         @test_throws IS.InvalidValue add_component!(sys, bus)
     )
 
-    # Allowed with skip_validation.
+    # skip_validation skips this call only; the system's runchecks setting is untouched.
     add_component!(sys, bus; skip_validation = true)
-    @test !get_runchecks(sys)
+    @test get_runchecks(sys)
 end
 
 @testset "Test add_component with runchecks disabled" begin
