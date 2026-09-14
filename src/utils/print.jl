@@ -14,7 +14,7 @@
 # without touching any base. A rate field rejects a bare marker, so it falls back to
 # component base *per its own time unit* rather than to `CU`.
 _cu_fallback(::Any) = CU
-_cu_fallback(r::RateUnit) = CU / time_unit(r)
+_cu_fallback(r::RateUnit) = CU / time_basis(r)
 
 # `getter_func` is deliberately not a type parameter: both callers resolve it through
 # `getproperty(PowerSystems, ::Symbol)`, so there is no concrete type to specialize on.

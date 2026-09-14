@@ -55,7 +55,7 @@ Convert a unit type to its string representation for serialization.
 unit_to_string(::ComponentBaseUnit) = "CU"
 unit_to_string(::SystemBaseUnit) = "SU"
 unit_to_string(u::Unitful.Units) = string(u)
-unit_to_string(r::RateUnit) = string(relative_unit(r), "/", time_unit(r))
+unit_to_string(r::RateUnit) = string(relative_unit(r), "/", time_basis(r))
 
 """
     string_to_unit(s::String) → unit

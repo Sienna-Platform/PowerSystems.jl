@@ -83,7 +83,7 @@ end
     v = 0.1                     # stored: 0.1 CU per minute
 
     @test natural_unit(cat) == u"MW" / u"minute"
-    @test PSY.storage_time(cat) == u"minute"
+    @test PSY.time_basis(cat) == u"minute"
     # The power axis per-unitizes exactly as a plain power does; time has no base.
     @test base_value(gen, cat) == base_value(gen, ACTIVE_POWER)
     @test system_base_value(gen, cat) == system_base_value(gen, ACTIVE_POWER)

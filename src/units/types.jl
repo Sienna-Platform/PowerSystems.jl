@@ -42,12 +42,22 @@ Base.:/(::U, ::TU) where {U <: IS.AbstractRelativeUnit, TU <: Unitful.Units} =
     RateUnit{U, TU}()
 
 # Print as it is written, not as its raw type parameters.
-Base.show(io::IO, r::RateUnit) = print(io, relative_unit(r), "/", time_unit(r))
+Base.show(io::IO, r::RateUnit) = print(io, relative_unit(r), "/", time_basis(r))
 
 "The relative base of a rate unit (`CU`/`SU`)."
 relative_unit(::RateUnit{U}) where {U} = U()
-"The time unit a rate unit is denominated in."
-time_unit(::RateUnit{<:Any, TU}) where {TU} = TU()
+
+"""
+    time_basis(x) → Unitful.Units
+
+The time unit a per-time quantity is denominated in -- always a time (`u"minute"`,
+`u"hr"`), never its reciprocal. Asked of the three things that can answer: a rate
+unit marker, a tagged rate value, and a rate category (whose answer is the basis its
+stored number is in). `_time_factor` converts between any two of them.
+"""
+function time_basis end
+
+time_basis(::RateUnit{<:Any, TU}) where {TU} = TU()
 
 """
 A value tagged with a relative base per unit time, e.g. `0.1 * CU / u"hr"`.
@@ -58,8 +68,12 @@ per-unit marker, not a bespoke type.
 """
 const RelativeRate{T, U, D, TU} = Unitful.Quantity{IS.RelativeQuantity{T, U}, D, TU}
 
+# A per-time quantity's Unitful parameter is the *inverse* time unit (`minute^-1`), so
+# the basis is its reciprocal.
+time_basis(::RelativeRate{T, U, D, TU}) where {T, U, D, TU} = inv(TU())
+
 # `0.1 * (CU/u"hr")` and `0.1 * CU / u"hr"` must produce the identical value.
-Base.:*(v::Real, r::RateUnit) = (v * relative_unit(r)) / time_unit(r)
+Base.:*(v::Real, r::RateUnit) = (v * relative_unit(r)) / time_basis(r)
 Base.:*(r::RateUnit, v::Real) = v * r
 
 # The reverse nesting is reachable -- `IS`'s `*(::Number, ::AbstractRelativeUnit)` takes
