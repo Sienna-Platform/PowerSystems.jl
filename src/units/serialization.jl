@@ -32,8 +32,10 @@ const STRING_TO_UNIT = Dict{String, Any}(
     "Ω" => u"Ω",
     "S" => u"S",
     "kA" => u"kA",
-    # Compound (rate) units. `string(u"MW"/u"minute")` is the canonical spelling and
-    # uses a Unicode superscript; the slashed forms are lenient aliases.
+    # Compound (rate) units. The canonical spelling is the ASCII exponent form emitted
+    # by `unit_to_string`; the Unicode and slashed forms are lenient aliases. The
+    # Unicode one is not hypothetical: it is what Unitful prints by default on macOS.
+    "MW minute^-1" => u"MW" / u"minute",
     "MW minute⁻¹" => u"MW" / u"minute",
     "MW/minute" => u"MW" / u"minute",
     "MW/min" => u"MW" / u"minute",
@@ -54,7 +56,13 @@ Convert a unit type to its string representation for serialization.
 """
 unit_to_string(::ComponentBaseUnit) = "CU"
 unit_to_string(::SystemBaseUnit) = "SU"
-unit_to_string(u::Unitful.Units) = string(u)
+# `string(u)` is *not* stable across platforms: Unitful renders exponents with Unicode
+# superscripts or ASCII carets depending on `ENV["UNITFUL_FANCY_EXPONENTS"]`, which
+# defaults to true on macOS and false everywhere else. A serialized system has to read
+# back on the machine that did not write it, so pin the spelling instead of inheriting
+# the platform's. Units without an exponent are unaffected either way.
+unit_to_string(u::Unitful.Units) =
+    sprint(show, u; context = :fancy_exponent => false)
 unit_to_string(r::RateUnit) = string(relative_unit(r), "/", time_basis(r))
 
 """

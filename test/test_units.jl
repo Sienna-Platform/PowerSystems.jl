@@ -293,6 +293,39 @@ end
     @test PSY.deserialize_quantity(d) ≈ q
 end
 
+@testset "Serialization: compound units do not follow the platform" begin
+    # Unitful renders exponents with Unicode superscripts or ASCII carets depending on
+    # `ENV["UNITFUL_FANCY_EXPONENTS"]`, whose default is true on macOS and false
+    # elsewhere. A system serialized on one platform has to read back on another, so
+    # `unit_to_string` must not inherit that -- and both spellings must parse.
+    rate = u"MW" / u"minute"
+    restore = get(ENV, "UNITFUL_FANCY_EXPONENTS", nothing)
+    try
+        for fancy in ("true", "false")
+            ENV["UNITFUL_FANCY_EXPONENTS"] = fancy
+            @test PSY.unit_to_string(rate) == "MW minute^-1"
+            @test PSY.serialize_quantity(6.0 * rate)["unit"] == "MW minute^-1"
+        end
+    finally
+        if isnothing(restore)
+            delete!(ENV, "UNITFUL_FANCY_EXPONENTS")
+        else
+            (ENV["UNITFUL_FANCY_EXPONENTS"] = restore)
+        end
+    end
+
+    # Both spellings deserialize, so a file written by an older macOS build still reads.
+    for spelling in ("MW minute^-1", "MW minute\u207b\u00b9", "MW/minute", "MW/min")
+        @test PSY.string_to_unit(spelling) == rate
+    end
+
+    # A rate marker's own spelling has no exponent, so it is stable either way.
+    @test PSY.unit_to_string(CU / u"minute") == "CU/minute"
+    d = PSY.serialize_quantity(6.0 * CU / u"hr")
+    @test d == Dict("value" => 6.0, "unit" => "CU/hr")
+    @test PSY.deserialize_quantity(d) == 6.0 * CU / u"hr"
+end
+
 @testset "Serialization: JSON string round-trip" begin
     q = 0.3SU
     json = JSON.json(PSY.serialize_quantity(q))
