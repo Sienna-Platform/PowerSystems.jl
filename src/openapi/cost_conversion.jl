@@ -590,37 +590,17 @@ convert_reserve_variable(po::Union{Nothing, IC.Absent, PC.CostCurve}) =
     _offer_curve(_optional_from_wire(po), "a reserve demand curve")
 
 # ── LossCurve ⇄ OpenAPI ────────────────────────────────────────────────────────
-# The OpenAPI schemas have no `LossCurve`: a document's loss field is a bare
-# `ValueCurve` (`$ref: InputOutputCurve` / `TwoTerminalLoss`) with nowhere to record a
-# power basis. PSY's loss fields are `LossCurve`s, which carry one, so the two
-# directions are asymmetric until the schemas gain the type.
+# The schemas' `LossCurve` records the basis its curve is expressed in (`power_units`,
+# governing both axes), the same enum every power-bearing blob stamps. Import keeps that
+# basis and export writes PSY's `get_power_units`; neither side assumes natural units.
+
+"""Wrap a document's loss curve as a `LossCurve` on the basis its blob states."""
+loss_curve_from_openapi(curve::ValueCurve, units::IS.AbstractUnitSystem) =
+    LossCurve(curve, units)
 
 """
-Wrap a document's bare loss curve as a `LossCurve` on the natural-units basis.
-
-The document carries no basis for a loss field, so one is supplied here rather than
-guessed per call site: `NaturalUnit` is what every current producer writes and what the
-schema's own `UnitSystem` default names. When the schemas gain a `LossCurve` with an
-explicit `power_units`, this reads it instead of synthesizing it.
+Unwrap a `LossCurve` to the bare curve the document's `value_curve` holds. The caller
+stamps `power_units` from `get_power_units(loss)` (`_hvdc_loss_to_openapi`), so the basis
+travels with the curve instead of being refused here.
 """
-loss_curve_from_openapi(curve::ValueCurve) = LossCurve(curve, NaturalUnit())
-
-"""
-Unwrap a `LossCurve` to the bare curve the document holds, refusing any basis the
-document cannot represent.
-
-Export errors on a non-natural basis rather than silently dropping it — the same posture
-`admittance_units`/`voltage_units` already take on these HVDC types, where only the
-implemented basis passes and anything else is an error rather than a guess. Without the
-guard a `LossCurve` on a relative basis would round-trip back as `NaturalUnit`, changing
-its meaning with no diagnostic.
-"""
-function loss_curve_to_openapi(loss::AnyLossCurve)
-    units = get_power_units(loss)
-    units isa NaturalUnit || error(
-        "cannot export a LossCurve in $units: only natural units are implemented, and a " *
-        "relative basis would be reinterpreted rather than rescaled on import. Convert the " *
-        "curve to NaturalUnit before exporting.",
-    )
-    return get_value_curve(loss)
-end
+loss_curve_to_openapi(loss::AnyLossCurve) = get_value_curve(loss)

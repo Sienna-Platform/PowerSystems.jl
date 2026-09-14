@@ -819,11 +819,8 @@ end
 # type allows both (a `System` built directly, not round-tripped, may hold either), so export
 # supports both rather than narrowing to what import currently reads.
 
-# The schemas collapsed the two loss-curve wrappers into one `LossCurve`, which -- unlike the
-# `TwoTerminalLoss` it replaced -- records the basis in its own required `power_units`. The
-# basis is still derived rather than hardcoded, even though `loss_curve_to_openapi`'s guard
-# means it is always natural units today: when that guard is lifted this stamps the real basis
-# with no further change here.
+# The schemas' `LossCurve` records the basis in its own required `power_units`, so the curve
+# travels on whatever basis PSY holds it and import reads the same field back (`_hvdc_loss`).
 function _hvdc_loss_to_openapi(loss::AnyLossCurve)
     return PC.LossCurve(;
         power_units = _power_units_string(get_power_units(loss)),

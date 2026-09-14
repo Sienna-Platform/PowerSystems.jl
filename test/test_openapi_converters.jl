@@ -29,12 +29,13 @@ _io_curve(proportional_term, constant_term) = PSY.PC.InputOutputCurve(;
     ),
 )
 
-"""A `LossCurve` on the natural-units basis wrapping a LINEAR `InputOutputCurve` — the
-wire shape `converter_loss_from`/`converter_loss_to`/`loss` fields carry."""
-_loss_curve_po(proportional_term, constant_term) = PSY.PC.LossCurve(;
-    power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
-    value_curve = PSY.PC.LossValueCurve(_io_curve(proportional_term, constant_term)),
-)
+"""A `LossCurve` on the given basis wrapping a LINEAR `InputOutputCurve` — the wire shape
+`converter_loss_from`/`converter_loss_to`/`loss` fields carry."""
+_loss_curve_po(proportional_term, constant_term; power_units = "NATURAL_UNITS") =
+    PSY.PC.LossCurve(;
+        power_units = PSY.IC.UnitSystem(power_units),
+        value_curve = PSY.PC.LossValueCurve(_io_curve(proportional_term, constant_term)),
+    )
 
 """
 A `TwoTerminalVSCLine` PO struct on the DC_POWER/AC_REACTIVE_POWER branches, which are the
@@ -1139,6 +1140,21 @@ end
     @test get_loss(hvdc_natural) == LossCurve(LinearCurve(0.01, 0.0), NaturalUnit())
     @test get_base_power(hvdc_natural) == 100.0
 
+    # The loss keeps the basis its blob states instead of being rebuilt as natural units.
+    hvdc_po_cu_loss = PSY.PO.TwoTerminalGenericHVDCLine(;
+        id = 22, name = "hvdc_cu_loss", available = true, active_power_flow = 50.0,
+        arc = 10,
+        active_power_limits_from = PSY.IC.MinMax(; min = -100.0, max = 100.0),
+        active_power_limits_to = PSY.IC.MinMax(; min = -100.0, max = 100.0),
+        reactive_power_limits_from = PSY.IC.MinMax(; min = -50.0, max = 50.0),
+        reactive_power_limits_to = PSY.IC.MinMax(; min = -50.0, max = 50.0),
+        loss = _loss_curve_po(0.01, 0.0; power_units = "COMPONENT_BASE"),
+        base_power = 100.0,
+        power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
+    )
+    @test get_loss(PSY.from_openapi(hvdc_po_cu_loss, refs, NU)) ==
+          LossCurve(LinearCurve(0.01, 0.0), ComponentBaseUnit())
+
     # A blob omitting the required `base_power` cannot even be built: under OpenAPI.jl 1.x the
     # generated struct enforces the schema's `required` list, so the omission is caught at
     # construction instead of reaching `from_openapi`. `_require_base_power` still guards the
@@ -1441,6 +1457,33 @@ end
         @test isnothing(get_remote_bus_control(ic))
         @test get_voltage_limits(ic) == (min = 0.0, max = 999.9)
     end
+
+    # A quadratic `loss_function` authored on the component base keeps that basis.
+    ic_po_cu_loss = PSY.PO.InterconnectingConverter(;
+        id = 21, name = "ic_cu_loss", available = true, bus = 4, dc_bus = 30,
+        active_power = 10.0, rating = 100.0,
+        active_power_limits = PSY.IC.MinMax(; min = -100.0, max = 100.0),
+        base_power = 100.0,
+        voltage_setpoint_units = PSY.PO.VoltageUnitBasis("COMPONENT_BASE"),
+        power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
+        loss_function = PSY.PC.LossCurve(;
+            power_units = PSY.IC.UnitSystem("COMPONENT_BASE"),
+            value_curve = PSY.PC.LossValueCurve(
+                PSY.PC.InputOutputCurve(;
+                    curve_type = "INPUT_OUTPUT",
+                    function_data = PSY.PC.InputOutputCurveFunctionData(
+                        PSY.IC.QuadraticFunctionData(;
+                            quadratic_term = 0.01,
+                            proportional_term = 0.01,
+                            constant_term = 0.0,
+                        ),
+                    ),
+                ),
+            ),
+        ),
+    )
+    @test get_loss_function(PSY.from_openapi(ic_po_cu_loss, refs, NU)) ==
+          LossCurve(QuadraticCurve(0.01, 0.01, 0.0), ComponentBaseUnit())
 
     ic_po_no_units =
         _po_with(ic_po; id = 21, name = "ic2", voltage_setpoint_units = PSY.IC.ABSENT)

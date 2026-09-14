@@ -372,6 +372,21 @@ end
     device_po = PSY.to_openapi(hvdc, refs, CU)
     @test device_po.active_power_flow == 0.5
     @test device_po.active_power_limits_from.min == -1.0
+
+    # A loss authored on the component base is written on that basis, not refused.
+    hvdc_cu = TwoTerminalGenericHVDCLine(;
+        name = "hvdc_cu", available = true, active_power_flow = 0.5, arc = arc,
+        active_power_limits_from = (min = -1.0, max = 1.0),
+        active_power_limits_to = (min = -1.0, max = 1.0),
+        reactive_power_limits_from = (min = -0.5, max = 0.5),
+        reactive_power_limits_to = (min = -0.5, max = 0.5),
+        loss = LossCurve(LinearCurve(0.01, 0.0), ComponentBaseUnit()),
+    )
+    add_component!(sys, hvdc_cu)
+    refs[5] = hvdc_cu
+    cu_po = PSY.to_openapi(hvdc_cu, refs, NU)
+    @test cu_po.loss.power_units.value == "COMPONENT_BASE"
+    @test cu_po.loss.value_curve.value.function_data.value.proportional_term == 0.01
 end
 
 @testset "OpenAPI export converters: TModelHVDCLine" begin
