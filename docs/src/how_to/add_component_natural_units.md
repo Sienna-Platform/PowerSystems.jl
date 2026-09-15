@@ -64,13 +64,19 @@ convert each value to device base behind the scenes:
 set_rating!(gas1, 30.0 * u"MVA")
 set_active_power_limits!(gas1, (min = 6.0 * u"MW", max = 30.0 * u"MW"))
 set_reactive_power_limits!(gas1, (min = 6.0 * u"MVAr", max = 30.0 * u"MVAr"))
-set_ramp_limits!(gas1, (up = 6.0 * u"MW", down = 6.0 * u"MW")) # ramp limits per-unitize by base_power
+set_ramp_limits!(gas1, (up = 6.0 * u"MW/minute", down = 6.0 * u"MW/minute")) # a rate: power per unit time
 ```
 
 A bare number (e.g. `set_rating!(gas1, 30.0)`) is rejected with an `ArgumentError`: setters
 require the value to carry its units. Reading the values back in component base
 (`get_rating(gas1, CU)`) shows them divided by the `base_power` of 30 MVA — the per-unit
 conversion the setters performed.
+
+`ramp_limits` is a **rate**, so its unit carries a time as well as a power: `u"MW/minute"`,
+`u"MW/hr"`, and `u"kW/s"` all work, and Unitful converts both axes at once. Only the power
+axis is per-unitized — there is no time base — so a relative target has to name the time
+too: `get_ramp_limits(gas1, CU/u"minute")` or `get_ramp_limits(gas1, SU/u"hr")`. A bare
+`CU`/`SU` is rejected, because it does not say per what time.
 
 !!! tip
 

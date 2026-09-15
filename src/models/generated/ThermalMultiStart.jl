@@ -48,7 +48,7 @@ A thermal generator, such as a fossil fuel or nuclear generator, that can start-
 - `fuel::ThermalFuels`: Prime mover fuel according to EIA 923. Options are listed [here](@ref tf_list)
 - `active_power_limits::MinMax`: Minimum and maximum stable active power levels (MW)
 - `reactive_power_limits::Union{Nothing, MinMax}`: Minimum and maximum reactive power limits. Set to `Nothing` if not applicable
-- `ramp_limits::Union{Nothing, UpDown}`:, validation range: `(0, nothing)`
+- `ramp_limits::Union{Nothing, UpDown}`: Ramp up and ramp down limits (MW/min), validation range: `(0, nothing)`
 - `power_trajectory::Union{Nothing, StartUpShutDown}`: Power trajectory the unit will take during the start-up and shut-down ramp process, validation range: `(0, nothing)`
 - `time_limits::Union{Nothing, UpDown}`: Minimum up and Minimum down time limits in minutes, validation range: `(0, nothing)`
 - `start_time_limits::Union{Nothing, StartUpStages}`: Time limits for start-up based on turbine temperature in minutes
@@ -85,6 +85,7 @@ mutable struct ThermalMultiStart <: ThermalGen
     active_power_limits::MinMax
     "Minimum and maximum reactive power limits. Set to `Nothing` if not applicable"
     reactive_power_limits::Union{Nothing, MinMax}
+    "Ramp up and ramp down limits (MW/min)"
     ramp_limits::Union{Nothing, UpDown}
     "Power trajectory the unit will take during the start-up and shut-down ramp process"
     power_trajectory::Union{Nothing, StartUpShutDown}
@@ -202,13 +203,13 @@ get_reactive_power_limits_unitful(value::ThermalMultiStart) = _units_arg_require
 InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_limits), ::Type{ThermalMultiStart}) = InfrastructureSystems.SU
 InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_limits_unitful), ::Type{ThermalMultiStart}) = InfrastructureSystems.SU
 """Get [`ThermalMultiStart`](@ref) `ramp_limits` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_ramp_limits_unitful`](@ref)."""
-get_ramp_limits(value::ThermalMultiStart, units) = InfrastructureSystems._strip_units(get_value(value, Val(:ramp_limits), Val(:mw), units))
+get_ramp_limits(value::ThermalMultiStart, units) = InfrastructureSystems._strip_units(get_value(value, Val(:ramp_limits), Val(:mw_per_minute), units))
 """Get [`ThermalMultiStart`](@ref) `ramp_limits` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_ramp_limits`](@ref)."""
-get_ramp_limits_unitful(value::ThermalMultiStart, units) = get_value(value, Val(:ramp_limits), Val(:mw), units)
-get_ramp_limits(value::ThermalMultiStart) = _units_arg_required(get_ramp_limits, value, :ramp_limits, Val(:mw))
-get_ramp_limits_unitful(value::ThermalMultiStart) = _units_arg_required(get_ramp_limits_unitful, value, :ramp_limits, Val(:mw))
-InfrastructureSystems.display_units_arg(::typeof(get_ramp_limits), ::Type{ThermalMultiStart}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_ramp_limits_unitful), ::Type{ThermalMultiStart}) = InfrastructureSystems.SU
+get_ramp_limits_unitful(value::ThermalMultiStart, units) = get_value(value, Val(:ramp_limits), Val(:mw_per_minute), units)
+get_ramp_limits(value::ThermalMultiStart) = _units_arg_required(get_ramp_limits, value, :ramp_limits, Val(:mw_per_minute))
+get_ramp_limits_unitful(value::ThermalMultiStart) = _units_arg_required(get_ramp_limits_unitful, value, :ramp_limits, Val(:mw_per_minute))
+InfrastructureSystems.display_units_arg(::typeof(get_ramp_limits), ::Type{ThermalMultiStart}) = SU / u"minute"
+InfrastructureSystems.display_units_arg(::typeof(get_ramp_limits_unitful), ::Type{ThermalMultiStart}) = SU / u"minute"
 """Get [`ThermalMultiStart`](@ref) `power_trajectory` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_power_trajectory_unitful`](@ref)."""
 get_power_trajectory(value::ThermalMultiStart, units) = InfrastructureSystems._strip_units(get_value(value, Val(:power_trajectory), Val(:mw), units))
 """Get [`ThermalMultiStart`](@ref) `power_trajectory` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_power_trajectory`](@ref)."""
@@ -268,9 +269,9 @@ set_reactive_power_limits!(value::ThermalMultiStart, val) = value.reactive_power
 set_reactive_power_limits!(value::ThermalMultiStart, val::_UntaggedNumber) = _units_tag_required(set_reactive_power_limits!, value, :reactive_power_limits, Val(:mvar), val)
 set_reactive_power_limits!(value::ThermalMultiStart, val::NamedTuple{(:min, :max), <:Tuple{Vararg{_UntaggedNumber}}}) = _units_tag_required(set_reactive_power_limits!, value, :reactive_power_limits, Val(:mvar), val)
 """Set [`ThermalMultiStart`](@ref) `ramp_limits`."""
-set_ramp_limits!(value::ThermalMultiStart, val) = value.ramp_limits = set_value(value, Val(:ramp_limits), val, Val(:mw))
-set_ramp_limits!(value::ThermalMultiStart, val::_UntaggedNumber) = _units_tag_required(set_ramp_limits!, value, :ramp_limits, Val(:mw), val)
-set_ramp_limits!(value::ThermalMultiStart, val::NamedTuple{(:up, :down), <:Tuple{Vararg{_UntaggedNumber}}}) = _units_tag_required(set_ramp_limits!, value, :ramp_limits, Val(:mw), val)
+set_ramp_limits!(value::ThermalMultiStart, val) = value.ramp_limits = set_value(value, Val(:ramp_limits), val, Val(:mw_per_minute))
+set_ramp_limits!(value::ThermalMultiStart, val::_UntaggedNumber) = _units_tag_required(set_ramp_limits!, value, :ramp_limits, Val(:mw_per_minute), val)
+set_ramp_limits!(value::ThermalMultiStart, val::NamedTuple{(:up, :down), <:Tuple{Vararg{_UntaggedNumber}}}) = _units_tag_required(set_ramp_limits!, value, :ramp_limits, Val(:mw_per_minute), val)
 """Set [`ThermalMultiStart`](@ref) `power_trajectory`."""
 set_power_trajectory!(value::ThermalMultiStart, val) = value.power_trajectory = set_value(value, Val(:power_trajectory), val, Val(:mw))
 set_power_trajectory!(value::ThermalMultiStart, val::_UntaggedNumber) = _units_tag_required(set_power_trajectory!, value, :power_trajectory, Val(:mw), val)
@@ -361,7 +362,7 @@ function to_openapi(value::ThermalMultiStart, refs::OpenAPIRefs, ::ComponentBase
         fuel = PO.ThermalFuels(string(get_fuel(value))),
         active_power_limits = _minmax_po(get_active_power_limits(value, CU)),
         reactive_power_limits = _minmax_po_optional(get_reactive_power_limits(value, CU)),
-        ramp_limits = _updown_po_optional(get_ramp_limits(value, CU)),
+        ramp_limits = _updown_po_optional(get_ramp_limits(value, CU / u"minute")),
         power_trajectory = _startup_shutdown_po_optional(get_power_trajectory(value, CU)),
         time_limits = _updown_po_optional(get_time_limits(value)),
         start_time_limits = _startup_stages_po_optional(get_start_time_limits(value)),
@@ -388,7 +389,7 @@ function to_openapi(value::ThermalMultiStart, refs::OpenAPIRefs, ::NaturalUnit)
         fuel = PO.ThermalFuels(string(get_fuel(value))),
         active_power_limits = _minmax_po_scaled(get_active_power_limits(value, CU), _get_base_power(value)),
         reactive_power_limits = _minmax_po_scaled_optional(get_reactive_power_limits(value, CU), _get_base_power(value)),
-        ramp_limits = _updown_po_scaled_optional(get_ramp_limits(value, CU), _get_base_power(value)),
+        ramp_limits = _updown_po_scaled_optional(get_ramp_limits(value, CU / u"minute"), _get_base_power(value)),
         power_trajectory = _startup_shutdown_po_scaled_optional(get_power_trajectory(value, CU), _get_base_power(value)),
         time_limits = _updown_po_optional(get_time_limits(value)),
         start_time_limits = _startup_stages_po_optional(get_start_time_limits(value)),

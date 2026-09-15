@@ -51,7 +51,7 @@ A hydropower generator that must have a [`HydroReservoir`](@ref) attached, suita
 - `commitment_mode::CommitmentModes`: (default: `CommitmentModes.COMMITTED`) Commitment mode of the unit. Options are listed [here](@ref commit_list)
 - `operation_cost::OperationalCost`: (default: `HydroGenerationCost(nothing)`) [`OperationalCost`](@ref) of generation
 - `powerhouse_elevation::Float64`: (default: `0.0`) Height level in meters above the sea level of the powerhouse on which the turbine is installed., validation range: `(0, nothing)`
-- `ramp_limits::Union{Nothing, UpDown}`: (default: `nothing`) ramp up and ramp down limits in MW/min, validation range: `(0, nothing)`
+- `ramp_limits::Union{Nothing, UpDown}`: (default: `nothing`) Ramp up and ramp down limits (MW/min), validation range: `(0, nothing)`
 - `time_limits::Union{Nothing, UpDown}`: (default: `nothing`) Minimum up and Minimum down time limits in minutes, validation range: `(0, nothing)`
 - `outflow_limits::Union{Nothing, MinMax}`: (default: `nothing`) Turbine outflow limits in m3/s. Set to `Nothing` if not applicable
 - `efficiency::Float64`: (default: `1.0`) Turbine efficiency [0, 1.0], validation range: `(0, 1)`
@@ -93,7 +93,7 @@ mutable struct HydroTurbine <: HydroUnit
     operation_cost::OperationalCost
     "Height level in meters above the sea level of the powerhouse on which the turbine is installed."
     powerhouse_elevation::Float64
-    "ramp up and ramp down limits in MW/min"
+    "Ramp up and ramp down limits (MW/min)"
     ramp_limits::Union{Nothing, UpDown}
     "Minimum up and Minimum down time limits in minutes"
     time_limits::Union{Nothing, UpDown}
@@ -217,13 +217,13 @@ get_operation_cost(value::HydroTurbine) = value.operation_cost
 """Get [`HydroTurbine`](@ref) `powerhouse_elevation`."""
 get_powerhouse_elevation(value::HydroTurbine) = value.powerhouse_elevation
 """Get [`HydroTurbine`](@ref) `ramp_limits` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_ramp_limits_unitful`](@ref)."""
-get_ramp_limits(value::HydroTurbine, units) = InfrastructureSystems._strip_units(get_value(value, Val(:ramp_limits), Val(:mw), units))
+get_ramp_limits(value::HydroTurbine, units) = InfrastructureSystems._strip_units(get_value(value, Val(:ramp_limits), Val(:mw_per_minute), units))
 """Get [`HydroTurbine`](@ref) `ramp_limits` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_ramp_limits`](@ref)."""
-get_ramp_limits_unitful(value::HydroTurbine, units) = get_value(value, Val(:ramp_limits), Val(:mw), units)
-get_ramp_limits(value::HydroTurbine) = _units_arg_required(get_ramp_limits, value, :ramp_limits, Val(:mw))
-get_ramp_limits_unitful(value::HydroTurbine) = _units_arg_required(get_ramp_limits_unitful, value, :ramp_limits, Val(:mw))
-InfrastructureSystems.display_units_arg(::typeof(get_ramp_limits), ::Type{HydroTurbine}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_ramp_limits_unitful), ::Type{HydroTurbine}) = InfrastructureSystems.SU
+get_ramp_limits_unitful(value::HydroTurbine, units) = get_value(value, Val(:ramp_limits), Val(:mw_per_minute), units)
+get_ramp_limits(value::HydroTurbine) = _units_arg_required(get_ramp_limits, value, :ramp_limits, Val(:mw_per_minute))
+get_ramp_limits_unitful(value::HydroTurbine) = _units_arg_required(get_ramp_limits_unitful, value, :ramp_limits, Val(:mw_per_minute))
+InfrastructureSystems.display_units_arg(::typeof(get_ramp_limits), ::Type{HydroTurbine}) = SU / u"minute"
+InfrastructureSystems.display_units_arg(::typeof(get_ramp_limits_unitful), ::Type{HydroTurbine}) = SU / u"minute"
 """Get [`HydroTurbine`](@ref) `time_limits`."""
 get_time_limits(value::HydroTurbine) = value.time_limits
 """Get [`HydroTurbine`](@ref) `outflow_limits`."""
@@ -279,9 +279,9 @@ set_operation_cost!(value::HydroTurbine, val) = value.operation_cost = val
 """Set [`HydroTurbine`](@ref) `powerhouse_elevation`."""
 set_powerhouse_elevation!(value::HydroTurbine, val) = value.powerhouse_elevation = val
 """Set [`HydroTurbine`](@ref) `ramp_limits`."""
-set_ramp_limits!(value::HydroTurbine, val) = value.ramp_limits = set_value(value, Val(:ramp_limits), val, Val(:mw))
-set_ramp_limits!(value::HydroTurbine, val::_UntaggedNumber) = _units_tag_required(set_ramp_limits!, value, :ramp_limits, Val(:mw), val)
-set_ramp_limits!(value::HydroTurbine, val::NamedTuple{(:up, :down), <:Tuple{Vararg{_UntaggedNumber}}}) = _units_tag_required(set_ramp_limits!, value, :ramp_limits, Val(:mw), val)
+set_ramp_limits!(value::HydroTurbine, val) = value.ramp_limits = set_value(value, Val(:ramp_limits), val, Val(:mw_per_minute))
+set_ramp_limits!(value::HydroTurbine, val::_UntaggedNumber) = _units_tag_required(set_ramp_limits!, value, :ramp_limits, Val(:mw_per_minute), val)
+set_ramp_limits!(value::HydroTurbine, val::NamedTuple{(:up, :down), <:Tuple{Vararg{_UntaggedNumber}}}) = _units_tag_required(set_ramp_limits!, value, :ramp_limits, Val(:mw_per_minute), val)
 """Set [`HydroTurbine`](@ref) `time_limits`."""
 set_time_limits!(value::HydroTurbine, val) = value.time_limits = val
 """Set [`HydroTurbine`](@ref) `outflow_limits`."""
@@ -377,7 +377,7 @@ function to_openapi(value::HydroTurbine, refs::OpenAPIRefs, ::ComponentBaseUnit)
         commitment_mode = PO.CommitmentModes(string(get_commitment_mode(value))),
         operation_cost = PO.HydroTurbineOperationCost(convert_cost_to_openapi(get_operation_cost(value))),
         powerhouse_elevation = get_powerhouse_elevation(value),
-        ramp_limits = _updown_po_optional(get_ramp_limits(value, CU)),
+        ramp_limits = _updown_po_optional(get_ramp_limits(value, CU / u"minute")),
         time_limits = _updown_po_optional(get_time_limits(value)),
         outflow_limits = _minmax_po_optional(get_outflow_limits(value)),
         efficiency = get_efficiency(value),
@@ -406,7 +406,7 @@ function to_openapi(value::HydroTurbine, refs::OpenAPIRefs, ::NaturalUnit)
         commitment_mode = PO.CommitmentModes(string(get_commitment_mode(value))),
         operation_cost = PO.HydroTurbineOperationCost(convert_cost_to_openapi(get_operation_cost(value))),
         powerhouse_elevation = get_powerhouse_elevation(value),
-        ramp_limits = _updown_po_scaled_optional(get_ramp_limits(value, CU), _get_base_power(value)),
+        ramp_limits = _updown_po_scaled_optional(get_ramp_limits(value, CU / u"minute"), _get_base_power(value)),
         time_limits = _updown_po_optional(get_time_limits(value)),
         outflow_limits = _minmax_po_optional(get_outflow_limits(value)),
         efficiency = get_efficiency(value),

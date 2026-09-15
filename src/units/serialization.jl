@@ -32,6 +32,18 @@ const STRING_TO_UNIT = Dict{String, Any}(
     "Ω" => u"Ω",
     "S" => u"S",
     "kA" => u"kA",
+    # Compound (rate) units. The canonical spelling is the ASCII exponent form emitted
+    # by `unit_to_string`; the Unicode and slashed forms are lenient aliases. The
+    # Unicode one is not hypothetical: it is what Unitful prints by default on macOS.
+    "MW minute^-1" => u"MW" / u"minute",
+    "MW minute⁻¹" => u"MW" / u"minute",
+    "MW/minute" => u"MW" / u"minute",
+    "MW/min" => u"MW" / u"minute",
+    # Relative bases per unit time.
+    "CU/minute" => CU / u"minute",
+    "SU/minute" => SU / u"minute",
+    "CU/hr" => CU / u"hr",
+    "SU/hr" => SU / u"hr",
     # Aliases
     "ohm" => u"Ω",
     "siemens" => u"S",
@@ -44,7 +56,14 @@ Convert a unit type to its string representation for serialization.
 """
 unit_to_string(::ComponentBaseUnit) = "CU"
 unit_to_string(::SystemBaseUnit) = "SU"
-unit_to_string(u::Unitful.Units) = string(u)
+# `string(u)` is *not* stable across platforms: Unitful renders exponents with Unicode
+# superscripts or ASCII carets depending on `ENV["UNITFUL_FANCY_EXPONENTS"]`, which
+# defaults to true on macOS and false everywhere else. A serialized system has to read
+# back on the machine that did not write it, so pin the spelling instead of inheriting
+# the platform's. Units without an exponent are unaffected either way.
+unit_to_string(u::Unitful.Units) =
+    sprint(show, u; context = :fancy_exponent => false)
+unit_to_string(r::RateUnit) = string(relative_unit(r), "/", time_basis(r))
 
 """
     string_to_unit(s::String) → unit
@@ -75,6 +94,20 @@ function serialize_quantity(q::RelativeQuantity{T, U}) where {T <: Complex, U}
     return Dict(
         "value" => Dict("re" => real(q.value), "im" => imag(q.value)),
         "unit" => unit_to_string(U()),
+    )
+end
+
+"""
+    serialize_quantity(q::RelativeRate) → Dict
+
+Serialize a relative-rate quantity (`0.1 * CU/u"hr"`). Its payload is a
+`RelativeQuantity`, so the plain `Unitful.Quantity` methods below (which expect a real or
+complex payload) do not apply.
+"""
+function serialize_quantity(q::RelativeRate{T, U}) where {T <: Real, U}
+    return Dict(
+        "value" => IS._strip_units(q),
+        "unit" => unit_to_string(U() / inv(Unitful.unit(q))),
     )
 end
 
@@ -127,3 +160,4 @@ _parse_value(v) = Float64(v)
 # Attach unit to value via dispatch
 _attach_unit(value, unit::AbstractRelativeUnit) = RelativeQuantity(value, unit)
 _attach_unit(value, unit::Unitful.Units) = value * unit
+_attach_unit(value, unit::RateUnit) = value * unit

@@ -43,7 +43,7 @@ This is a standard representation with options to include a minimum up time, min
 - `rating::Float64`: Maximum AC side output power rating of the unit. Stored in per unit of the device and not to be confused with base_power, validation range: `(0, nothing)`
 - `active_power_limits::MinMax`: Minimum and maximum stable active power levels (MW), validation range: `(0, nothing)`
 - `reactive_power_limits::Union{Nothing, MinMax}`: Minimum and maximum reactive power limits. Set to `Nothing` if not applicable
-- `ramp_limits::Union{Nothing, UpDown}`: ramp up and ramp down limits in MW/min, validation range: `(0, nothing)`
+- `ramp_limits::Union{Nothing, UpDown}`: Ramp up and ramp down limits (MW/min), validation range: `(0, nothing)`
 - `operation_cost::OperationalCost`: [`OperationalCost`](@ref) of generation
 - `base_power::Float64`: Base power of the unit (MVA) for [per unitization](@ref per_unit), validation range: `(0.0001, nothing)`
 - `time_limits::Union{Nothing, UpDown}`: (default: `nothing`) Minimum up and Minimum down time limits in minutes, validation range: `(0, nothing)`
@@ -75,7 +75,7 @@ mutable struct ThermalStandard <: ThermalGen
     active_power_limits::MinMax
     "Minimum and maximum reactive power limits. Set to `Nothing` if not applicable"
     reactive_power_limits::Union{Nothing, MinMax}
-    "ramp up and ramp down limits in MW/min"
+    "Ramp up and ramp down limits (MW/min)"
     ramp_limits::Union{Nothing, UpDown}
     "[`OperationalCost`](@ref) of generation"
     operation_cost::OperationalCost
@@ -184,13 +184,13 @@ get_reactive_power_limits_unitful(value::ThermalStandard) = _units_arg_required(
 InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_limits), ::Type{ThermalStandard}) = InfrastructureSystems.SU
 InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_limits_unitful), ::Type{ThermalStandard}) = InfrastructureSystems.SU
 """Get [`ThermalStandard`](@ref) `ramp_limits` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_ramp_limits_unitful`](@ref)."""
-get_ramp_limits(value::ThermalStandard, units) = InfrastructureSystems._strip_units(get_value(value, Val(:ramp_limits), Val(:mw), units))
+get_ramp_limits(value::ThermalStandard, units) = InfrastructureSystems._strip_units(get_value(value, Val(:ramp_limits), Val(:mw_per_minute), units))
 """Get [`ThermalStandard`](@ref) `ramp_limits` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_ramp_limits`](@ref)."""
-get_ramp_limits_unitful(value::ThermalStandard, units) = get_value(value, Val(:ramp_limits), Val(:mw), units)
-get_ramp_limits(value::ThermalStandard) = _units_arg_required(get_ramp_limits, value, :ramp_limits, Val(:mw))
-get_ramp_limits_unitful(value::ThermalStandard) = _units_arg_required(get_ramp_limits_unitful, value, :ramp_limits, Val(:mw))
-InfrastructureSystems.display_units_arg(::typeof(get_ramp_limits), ::Type{ThermalStandard}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_ramp_limits_unitful), ::Type{ThermalStandard}) = InfrastructureSystems.SU
+get_ramp_limits_unitful(value::ThermalStandard, units) = get_value(value, Val(:ramp_limits), Val(:mw_per_minute), units)
+get_ramp_limits(value::ThermalStandard) = _units_arg_required(get_ramp_limits, value, :ramp_limits, Val(:mw_per_minute))
+get_ramp_limits_unitful(value::ThermalStandard) = _units_arg_required(get_ramp_limits_unitful, value, :ramp_limits, Val(:mw_per_minute))
+InfrastructureSystems.display_units_arg(::typeof(get_ramp_limits), ::Type{ThermalStandard}) = SU / u"minute"
+InfrastructureSystems.display_units_arg(::typeof(get_ramp_limits_unitful), ::Type{ThermalStandard}) = SU / u"minute"
 """Get [`ThermalStandard`](@ref) `operation_cost`."""
 get_operation_cost(value::ThermalStandard) = value.operation_cost
 
@@ -238,9 +238,9 @@ set_reactive_power_limits!(value::ThermalStandard, val) = value.reactive_power_l
 set_reactive_power_limits!(value::ThermalStandard, val::_UntaggedNumber) = _units_tag_required(set_reactive_power_limits!, value, :reactive_power_limits, Val(:mvar), val)
 set_reactive_power_limits!(value::ThermalStandard, val::NamedTuple{(:min, :max), <:Tuple{Vararg{_UntaggedNumber}}}) = _units_tag_required(set_reactive_power_limits!, value, :reactive_power_limits, Val(:mvar), val)
 """Set [`ThermalStandard`](@ref) `ramp_limits`."""
-set_ramp_limits!(value::ThermalStandard, val) = value.ramp_limits = set_value(value, Val(:ramp_limits), val, Val(:mw))
-set_ramp_limits!(value::ThermalStandard, val::_UntaggedNumber) = _units_tag_required(set_ramp_limits!, value, :ramp_limits, Val(:mw), val)
-set_ramp_limits!(value::ThermalStandard, val::NamedTuple{(:up, :down), <:Tuple{Vararg{_UntaggedNumber}}}) = _units_tag_required(set_ramp_limits!, value, :ramp_limits, Val(:mw), val)
+set_ramp_limits!(value::ThermalStandard, val) = value.ramp_limits = set_value(value, Val(:ramp_limits), val, Val(:mw_per_minute))
+set_ramp_limits!(value::ThermalStandard, val::_UntaggedNumber) = _units_tag_required(set_ramp_limits!, value, :ramp_limits, Val(:mw_per_minute), val)
+set_ramp_limits!(value::ThermalStandard, val::NamedTuple{(:up, :down), <:Tuple{Vararg{_UntaggedNumber}}}) = _units_tag_required(set_ramp_limits!, value, :ramp_limits, Val(:mw_per_minute), val)
 """Set [`ThermalStandard`](@ref) `operation_cost`."""
 set_operation_cost!(value::ThermalStandard, val) = value.operation_cost = val
 """Set [`ThermalStandard`](@ref) `time_limits`."""
@@ -319,7 +319,7 @@ function to_openapi(value::ThermalStandard, refs::OpenAPIRefs, ::ComponentBaseUn
         rating = get_rating(value, CU),
         active_power_limits = _minmax_po(get_active_power_limits(value, CU)),
         reactive_power_limits = _minmax_po_optional(get_reactive_power_limits(value, CU)),
-        ramp_limits = _updown_po_optional(get_ramp_limits(value, CU)),
+        ramp_limits = _updown_po_optional(get_ramp_limits(value, CU / u"minute")),
         operation_cost = PO.ThermalStandardOperationCost(convert_cost_to_openapi(get_operation_cost(value))),
         base_power = _get_base_power(value),
         time_limits = _updown_po_optional(get_time_limits(value)),
@@ -343,7 +343,7 @@ function to_openapi(value::ThermalStandard, refs::OpenAPIRefs, ::NaturalUnit)
         rating = get_rating(value, CU) * _get_base_power(value),
         active_power_limits = _minmax_po_scaled(get_active_power_limits(value, CU), _get_base_power(value)),
         reactive_power_limits = _minmax_po_scaled_optional(get_reactive_power_limits(value, CU), _get_base_power(value)),
-        ramp_limits = _updown_po_scaled_optional(get_ramp_limits(value, CU), _get_base_power(value)),
+        ramp_limits = _updown_po_scaled_optional(get_ramp_limits(value, CU / u"minute"), _get_base_power(value)),
         operation_cost = PO.ThermalStandardOperationCost(convert_cost_to_openapi(get_operation_cost(value))),
         base_power = _get_base_power(value),
         time_limits = _updown_po_optional(get_time_limits(value)),

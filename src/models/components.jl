@@ -178,6 +178,12 @@ IS._strip_units(q::Unitful.Quantity) = Unitful.ustrip(q)
 # IS's hook for a domain package to declare its default unit system.
 IS.default_units(::Component) = SU
 
+"""
+The `conversion_unit` tokens whose fields are rates. Used to narrow the setter and the
+error-message helpers below, which must offer `CU/u"minute"` rather than bare `CU`.
+"""
+const _RATE_TOKENS = Union{Val{:mw_per_minute}}
+
 #######################################################
 # Units-aware get_value / set_value
 #
@@ -200,6 +206,29 @@ function get_value(c::UnitsBearer, field::Val{T}, conversion_unit, units::UnitAr
         value,
         conversion_unit,
         units,
+    )
+end
+
+# ---- An untimed relative target on a rate field ----
+# The engine rejects this too, but only the category is in scope down there, so its
+# message can name the quantity and not the field. Intercepting here, where `c` and
+# `field` still are, lets the getter read like its setter twin.
+function get_value(
+    c::UnitsBearer,
+    field::Val{T},
+    conversion_unit::_RATE_TOKENS,
+    units::IS.AbstractRelativeUnit,
+) where {T}
+    # An unset field has no units to get wrong, and the conversion it would skip is
+    # the one this method exists to reject. Keep the `nothing` passthrough that the
+    # main path gives every other field, ahead of the rejection.
+    isnothing(Base.getproperty(c, T)) && return nothing
+    throw(
+        ArgumentError(
+            "Getting $(_field_description(c, field)) requires a time on the units " *
+            "argument: it is a rate, so a bare per-unit base does not say per what " *
+            "time. Pass $(_units_menu(conversion_unit)).",
+        ),
     )
 end
 
@@ -262,6 +291,37 @@ set_value(c::UnitsBearer, field, val::RelativeQuantity{<:Any, SystemBaseUnit}, c
     IS._strip_units(
         convert_units(_conversion_base(c, field), ustrip(val), _unit_category(cu), SU, CU),
     )
+
+# ---- From a tagged rate (`0.1 * CU/u"hr"`) ----
+# More specific than the `Quantity` method above, which would otherwise try to `ustrip`
+# the category's natural unit off a value whose payload is a `RelativeQuantity`.
+set_value(c::UnitsBearer, field, val::RelativeRate{T, U}, cu::Val) where {T, U} =
+    IS._strip_units(
+        convert_units(_conversion_base(c, field), val, _unit_category(cu), U(), CU),
+    )
+
+# ---- An untimed relative tag on a rate field ----
+# The CU fast path below returns `ustrip(val)` without consulting the category, so
+# without these a `0.1 * CU` on a ramp field would be stored as if it were per minute.
+set_value(
+    c::UnitsBearer,
+    field,
+    ::RelativeQuantity{<:Any, ComponentBaseUnit},
+    cu::_RATE_TOKENS,
+) = _rate_tag_required(c, field, cu)
+set_value(
+    c::UnitsBearer,
+    field,
+    ::RelativeQuantity{<:Any, SystemBaseUnit},
+    cu::_RATE_TOKENS,
+) = _rate_tag_required(c, field, cu)
+
+_rate_tag_required(c, field, cu) = throw(
+    ArgumentError(
+        "Setting $(_field_description(c, field)) requires a time on the units tag: it " *
+        "is a rate, so a bare per-unit base does not say per what time. $(_tag_menu(cu)).",
+    ),
+)
 
 # ---- Bare numbers are rejected: callers must attach units explicitly ----
 # Generated setters intercept this one level up (`_units_tag_required`) so the
@@ -366,6 +426,10 @@ _unit_category(::Val{:mvar}) = REACTIVE_POWER
 _unit_category(::Val{:mva}) = APPARENT_POWER
 _unit_category(::Val{:ohm}) = IMPEDANCE
 _unit_category(::Val{:siemens}) = ADMITTANCE
+# A rate. The schema vocabulary calls this quantity `ActivePowerChangeRate`
+# (SiennaSchemas Core/units.json), default unit MW/min; the token names the time unit
+# the stored per-unit value is denominated in.
+_unit_category(::Val{:mw_per_minute}) = ACTIVE_POWER_CHANGE_RATE
 
 #######################################################
 # Explicit-units error messages
@@ -383,6 +447,7 @@ _natural_unit_example(::Val{:mvar}) = "u\"MVAr\""
 _natural_unit_example(::Val{:mva}) = "u\"MVA\""
 _natural_unit_example(::Val{:ohm}) = "u\"Ω\""
 _natural_unit_example(::Val{:siemens}) = "u\"S\""
+_natural_unit_example(::Val{:mw_per_minute}) = "u\"MW/minute\""
 
 # Which field the message is about. `field` is a `Val` on the generated paths and
 # `nothing` where a hand-written caller did not supply one.
@@ -394,6 +459,17 @@ _field_description(c, ::Any) = "this `$(nameof(typeof(c)))` field"
 _units_menu(conversion_unit::Val) =
     "`CU` (per unit on the component base), `SU` (per unit on the system base), `NU` " *
     "or the natural unit `$(_natural_unit_example(conversion_unit))`"
+
+# A rate has no complete relative target without a time, so its menus must not offer
+# bare `CU`/`SU`.
+_units_menu(conversion_unit::_RATE_TOKENS) =
+    "a relative base per unit time (`CU/u\"minute\"`, `SU/u\"hr\"`), or the natural " *
+    "unit `$(_natural_unit_example(conversion_unit))`"
+
+_tag_menu(conversion_unit::_RATE_TOKENS) =
+    "pass `val * CU/u\"minute\"` (per unit on the component base, per minute), " *
+    "`val * SU/u\"hr\"`, or a natural unit such as " *
+    "`val * $(_natural_unit_example(conversion_unit))`"
 
 _tag_menu(conversion_unit::Val) =
     "pass `val * CU` (per unit on the component base), `val * SU` (per unit on the " *
@@ -437,10 +513,22 @@ number. The getter counterpart is [`_units_arg_required`](@ref); both are reache
 from generated fallback methods, here one matching an untagged number — or, on a
 compound field only, a `NamedTuple` whose elements are all untagged.
 """
+# The tag to show in a compound field's example. A rate has no valid untimed tag, so the
+# example must carry a time or it would demonstrate the very thing that gets rejected.
+_example_tag(::Val) = "CU"
+_example_tag(::_RATE_TOKENS) = "CU/u\"minute\""
+
 function _units_tag_required(setter, value, field::Symbol, conversion_unit::Val, val)
     compound_hint = if val isa NamedTuple
         " A compound field takes one tagged value per element, e.g. " *
-        "`(" * join(("$k = $(getfield(val, k)) * CU" for k in keys(val)), ", ") * ")`."
+        "`(" *
+        join(
+            (
+                "$k = $(getfield(val, k)) * $(_example_tag(conversion_unit))" for
+                k in keys(val)
+            ),
+            ", ",
+        ) * ")`."
     else
         ""
     end

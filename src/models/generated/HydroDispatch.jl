@@ -41,7 +41,7 @@ For hydro generators with an upper reservoir, see [`HydroReservoir`](@ref)
 - `prime_mover_type::PrimeMovers`: Prime mover technology according to EIA 923. Options are listed [here](@ref pm_list)
 - `active_power_limits::MinMax`: Minimum and maximum stable active power levels (MW), validation range: `(0, nothing)`
 - `reactive_power_limits::Union{Nothing, MinMax}`: Minimum and maximum reactive power limits. Set to `Nothing` if not applicable
-- `ramp_limits::Union{Nothing, UpDown}`: ramp up and ramp down limits in MW/min, validation range: `(0, nothing)`
+- `ramp_limits::Union{Nothing, UpDown}`: Ramp up and ramp down limits (MW/min), validation range: `(0, nothing)`
 - `time_limits::Union{Nothing, UpDown}`: Minimum up and Minimum down time limits in minutes, validation range: `(0, nothing)`
 - `base_power::Float64`: Base power of the unit (MVA) for [per unitization](@ref per_unit), validation range: `(0.0001, nothing)`
 - `status::OperationalStates`: (default: `OperationalStates.OFFLINE`) Operating state of the unit at the start of a simulation. Options are listed [here](@ref opstate_list)
@@ -71,7 +71,7 @@ mutable struct HydroDispatch <: HydroGen
     active_power_limits::MinMax
     "Minimum and maximum reactive power limits. Set to `Nothing` if not applicable"
     reactive_power_limits::Union{Nothing, MinMax}
-    "ramp up and ramp down limits in MW/min"
+    "Ramp up and ramp down limits (MW/min)"
     ramp_limits::Union{Nothing, UpDown}
     "Minimum up and Minimum down time limits in minutes"
     time_limits::Union{Nothing, UpDown}
@@ -174,13 +174,13 @@ get_reactive_power_limits_unitful(value::HydroDispatch) = _units_arg_required(ge
 InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_limits), ::Type{HydroDispatch}) = InfrastructureSystems.SU
 InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_limits_unitful), ::Type{HydroDispatch}) = InfrastructureSystems.SU
 """Get [`HydroDispatch`](@ref) `ramp_limits` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_ramp_limits_unitful`](@ref)."""
-get_ramp_limits(value::HydroDispatch, units) = InfrastructureSystems._strip_units(get_value(value, Val(:ramp_limits), Val(:mw), units))
+get_ramp_limits(value::HydroDispatch, units) = InfrastructureSystems._strip_units(get_value(value, Val(:ramp_limits), Val(:mw_per_minute), units))
 """Get [`HydroDispatch`](@ref) `ramp_limits` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_ramp_limits`](@ref)."""
-get_ramp_limits_unitful(value::HydroDispatch, units) = get_value(value, Val(:ramp_limits), Val(:mw), units)
-get_ramp_limits(value::HydroDispatch) = _units_arg_required(get_ramp_limits, value, :ramp_limits, Val(:mw))
-get_ramp_limits_unitful(value::HydroDispatch) = _units_arg_required(get_ramp_limits_unitful, value, :ramp_limits, Val(:mw))
-InfrastructureSystems.display_units_arg(::typeof(get_ramp_limits), ::Type{HydroDispatch}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_ramp_limits_unitful), ::Type{HydroDispatch}) = InfrastructureSystems.SU
+get_ramp_limits_unitful(value::HydroDispatch, units) = get_value(value, Val(:ramp_limits), Val(:mw_per_minute), units)
+get_ramp_limits(value::HydroDispatch) = _units_arg_required(get_ramp_limits, value, :ramp_limits, Val(:mw_per_minute))
+get_ramp_limits_unitful(value::HydroDispatch) = _units_arg_required(get_ramp_limits_unitful, value, :ramp_limits, Val(:mw_per_minute))
+InfrastructureSystems.display_units_arg(::typeof(get_ramp_limits), ::Type{HydroDispatch}) = SU / u"minute"
+InfrastructureSystems.display_units_arg(::typeof(get_ramp_limits_unitful), ::Type{HydroDispatch}) = SU / u"minute"
 """Get [`HydroDispatch`](@ref) `time_limits`."""
 get_time_limits(value::HydroDispatch) = value.time_limits
 
@@ -224,9 +224,9 @@ set_reactive_power_limits!(value::HydroDispatch, val) = value.reactive_power_lim
 set_reactive_power_limits!(value::HydroDispatch, val::_UntaggedNumber) = _units_tag_required(set_reactive_power_limits!, value, :reactive_power_limits, Val(:mvar), val)
 set_reactive_power_limits!(value::HydroDispatch, val::NamedTuple{(:min, :max), <:Tuple{Vararg{_UntaggedNumber}}}) = _units_tag_required(set_reactive_power_limits!, value, :reactive_power_limits, Val(:mvar), val)
 """Set [`HydroDispatch`](@ref) `ramp_limits`."""
-set_ramp_limits!(value::HydroDispatch, val) = value.ramp_limits = set_value(value, Val(:ramp_limits), val, Val(:mw))
-set_ramp_limits!(value::HydroDispatch, val::_UntaggedNumber) = _units_tag_required(set_ramp_limits!, value, :ramp_limits, Val(:mw), val)
-set_ramp_limits!(value::HydroDispatch, val::NamedTuple{(:up, :down), <:Tuple{Vararg{_UntaggedNumber}}}) = _units_tag_required(set_ramp_limits!, value, :ramp_limits, Val(:mw), val)
+set_ramp_limits!(value::HydroDispatch, val) = value.ramp_limits = set_value(value, Val(:ramp_limits), val, Val(:mw_per_minute))
+set_ramp_limits!(value::HydroDispatch, val::_UntaggedNumber) = _units_tag_required(set_ramp_limits!, value, :ramp_limits, Val(:mw_per_minute), val)
+set_ramp_limits!(value::HydroDispatch, val::NamedTuple{(:up, :down), <:Tuple{Vararg{_UntaggedNumber}}}) = _units_tag_required(set_ramp_limits!, value, :ramp_limits, Val(:mw_per_minute), val)
 """Set [`HydroDispatch`](@ref) `time_limits`."""
 set_time_limits!(value::HydroDispatch, val) = value.time_limits = val
 """Set [`HydroDispatch`](@ref) `status`."""
@@ -297,7 +297,7 @@ function to_openapi(value::HydroDispatch, refs::OpenAPIRefs, ::ComponentBaseUnit
         prime_mover_type = PO.PrimeMovers(string(get_prime_mover_type(value))),
         active_power_limits = _minmax_po(get_active_power_limits(value, CU)),
         reactive_power_limits = _minmax_po_optional(get_reactive_power_limits(value, CU)),
-        ramp_limits = _updown_po_optional(get_ramp_limits(value, CU)),
+        ramp_limits = _updown_po_optional(get_ramp_limits(value, CU / u"minute")),
         time_limits = _updown_po_optional(get_time_limits(value)),
         base_power = _get_base_power(value),
         status = PO.OperationalStates(string(get_status(value))),
@@ -319,7 +319,7 @@ function to_openapi(value::HydroDispatch, refs::OpenAPIRefs, ::NaturalUnit)
         prime_mover_type = PO.PrimeMovers(string(get_prime_mover_type(value))),
         active_power_limits = _minmax_po_scaled(get_active_power_limits(value, CU), _get_base_power(value)),
         reactive_power_limits = _minmax_po_scaled_optional(get_reactive_power_limits(value, CU), _get_base_power(value)),
-        ramp_limits = _updown_po_scaled_optional(get_ramp_limits(value, CU), _get_base_power(value)),
+        ramp_limits = _updown_po_scaled_optional(get_ramp_limits(value, CU / u"minute"), _get_base_power(value)),
         time_limits = _updown_po_optional(get_time_limits(value)),
         base_power = _get_base_power(value),
         status = PO.OperationalStates(string(get_status(value))),

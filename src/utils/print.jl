@@ -10,6 +10,14 @@
 # `RelativeQuantity` printing as "1.0 CU"/"0.3 SU", or a `Unitful.Quantity`
 # printing as "30.0 MW") instead of a bare number, so display can show the
 # unit system explicitly without any extra formatting code here.
+# The last-resort display target: component base, which the CU conversion returns
+# without touching any base. A rate field rejects a bare marker, so it falls back to
+# component base *per its own time unit* rather than to `CU`.
+_cu_fallback(::Any) = CU
+_cu_fallback(r::RateUnit) = CU / time_basis(r)
+
+# `getter_func` is deliberately not a type parameter: both callers resolve it through
+# `getproperty(PowerSystems, ::Symbol)`, so there is no concrete type to specialize on.
 function _show_accessor_value(getter_func::Function, ist::Component; units = nothing)
     trait_arg = IS.display_units_arg(getter_func, typeof(ist))
     # Fields without a units trait (e.g. `get_name`) aren't unit-convertible at
@@ -39,7 +47,7 @@ function _show_accessor_value(getter_func::Function, ist::Component; units = not
             return unitful_func(ist, NU)
         catch err2
             err2 isa ErrorException || rethrow()
-            return unitful_func(ist, CU)
+            return unitful_func(ist, _cu_fallback(trait_arg))
         end
     end
 end

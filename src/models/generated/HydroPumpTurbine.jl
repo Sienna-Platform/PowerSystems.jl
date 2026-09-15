@@ -52,7 +52,7 @@ A hydropower pumped turbine that needs to have two [`HydroReservoir`](@ref)s att
 - `active_power_limits_pump::MinMax`: Minimum and maximum stable active power levels (MW) for the pump, validation range: `(0, nothing)`
 - `outflow_limits::Union{Nothing, MinMax}`: Turbine/Pump outflow limits in m3/s. Set to `Nothing` if not applicable
 - `powerhouse_elevation::Float64`: Height level in meters above the sea level of the powerhouse on which the turbine is installed., validation range: `(0, nothing)`
-- `ramp_limits::Union{Nothing, UpDown}`: ramp up and ramp down limits in MW/min, validation range: `(0, nothing)`
+- `ramp_limits::Union{Nothing, UpDown}`: Ramp up and ramp down limits (MW/min), validation range: `(0, nothing)`
 - `time_limits::Union{Nothing, UpDown}`: Minimum up and Minimum down time limits in minutes, validation range: `(0, nothing)`
 - `base_power::Float64`: Base power of the unit (MVA) for [per unitization](@ref per_unit), validation range: `(0.0001, nothing)`
 - `operating_mode::HydroPumpTurbineStatus`: (default: `HydroPumpTurbineStatus.OFF`) Mode the pumped‑storage unit is operating in: generating, pumping, or idle. See [HydroPumpTurbineStatus](@ref) for reference
@@ -95,7 +95,7 @@ mutable struct HydroPumpTurbine <: HydroUnit
     outflow_limits::Union{Nothing, MinMax}
     "Height level in meters above the sea level of the powerhouse on which the turbine is installed."
     powerhouse_elevation::Float64
-    "ramp up and ramp down limits in MW/min"
+    "Ramp up and ramp down limits (MW/min)"
     ramp_limits::Union{Nothing, UpDown}
     "Minimum up and Minimum down time limits in minutes"
     time_limits::Union{Nothing, UpDown}
@@ -237,13 +237,13 @@ get_outflow_limits(value::HydroPumpTurbine) = value.outflow_limits
 """Get [`HydroPumpTurbine`](@ref) `powerhouse_elevation`."""
 get_powerhouse_elevation(value::HydroPumpTurbine) = value.powerhouse_elevation
 """Get [`HydroPumpTurbine`](@ref) `ramp_limits` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_ramp_limits_unitful`](@ref)."""
-get_ramp_limits(value::HydroPumpTurbine, units) = InfrastructureSystems._strip_units(get_value(value, Val(:ramp_limits), Val(:mw), units))
+get_ramp_limits(value::HydroPumpTurbine, units) = InfrastructureSystems._strip_units(get_value(value, Val(:ramp_limits), Val(:mw_per_minute), units))
 """Get [`HydroPumpTurbine`](@ref) `ramp_limits` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_ramp_limits`](@ref)."""
-get_ramp_limits_unitful(value::HydroPumpTurbine, units) = get_value(value, Val(:ramp_limits), Val(:mw), units)
-get_ramp_limits(value::HydroPumpTurbine) = _units_arg_required(get_ramp_limits, value, :ramp_limits, Val(:mw))
-get_ramp_limits_unitful(value::HydroPumpTurbine) = _units_arg_required(get_ramp_limits_unitful, value, :ramp_limits, Val(:mw))
-InfrastructureSystems.display_units_arg(::typeof(get_ramp_limits), ::Type{HydroPumpTurbine}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_ramp_limits_unitful), ::Type{HydroPumpTurbine}) = InfrastructureSystems.SU
+get_ramp_limits_unitful(value::HydroPumpTurbine, units) = get_value(value, Val(:ramp_limits), Val(:mw_per_minute), units)
+get_ramp_limits(value::HydroPumpTurbine) = _units_arg_required(get_ramp_limits, value, :ramp_limits, Val(:mw_per_minute))
+get_ramp_limits_unitful(value::HydroPumpTurbine) = _units_arg_required(get_ramp_limits_unitful, value, :ramp_limits, Val(:mw_per_minute))
+InfrastructureSystems.display_units_arg(::typeof(get_ramp_limits), ::Type{HydroPumpTurbine}) = SU / u"minute"
+InfrastructureSystems.display_units_arg(::typeof(get_ramp_limits_unitful), ::Type{HydroPumpTurbine}) = SU / u"minute"
 """Get [`HydroPumpTurbine`](@ref) `time_limits`."""
 get_time_limits(value::HydroPumpTurbine) = value.time_limits
 
@@ -317,9 +317,9 @@ set_outflow_limits!(value::HydroPumpTurbine, val) = value.outflow_limits = val
 """Set [`HydroPumpTurbine`](@ref) `powerhouse_elevation`."""
 set_powerhouse_elevation!(value::HydroPumpTurbine, val) = value.powerhouse_elevation = val
 """Set [`HydroPumpTurbine`](@ref) `ramp_limits`."""
-set_ramp_limits!(value::HydroPumpTurbine, val) = value.ramp_limits = set_value(value, Val(:ramp_limits), val, Val(:mw))
-set_ramp_limits!(value::HydroPumpTurbine, val::_UntaggedNumber) = _units_tag_required(set_ramp_limits!, value, :ramp_limits, Val(:mw), val)
-set_ramp_limits!(value::HydroPumpTurbine, val::NamedTuple{(:up, :down), <:Tuple{Vararg{_UntaggedNumber}}}) = _units_tag_required(set_ramp_limits!, value, :ramp_limits, Val(:mw), val)
+set_ramp_limits!(value::HydroPumpTurbine, val) = value.ramp_limits = set_value(value, Val(:ramp_limits), val, Val(:mw_per_minute))
+set_ramp_limits!(value::HydroPumpTurbine, val::_UntaggedNumber) = _units_tag_required(set_ramp_limits!, value, :ramp_limits, Val(:mw_per_minute), val)
+set_ramp_limits!(value::HydroPumpTurbine, val::NamedTuple{(:up, :down), <:Tuple{Vararg{_UntaggedNumber}}}) = _units_tag_required(set_ramp_limits!, value, :ramp_limits, Val(:mw_per_minute), val)
 """Set [`HydroPumpTurbine`](@ref) `time_limits`."""
 set_time_limits!(value::HydroPumpTurbine, val) = value.time_limits = val
 """Set [`HydroPumpTurbine`](@ref) `operating_mode`."""
@@ -433,7 +433,7 @@ function to_openapi(value::HydroPumpTurbine, refs::OpenAPIRefs, ::ComponentBaseU
         active_power_limits_pump = _minmax_po(get_active_power_limits_pump(value, CU)),
         outflow_limits = _minmax_po_optional(get_outflow_limits(value)),
         powerhouse_elevation = get_powerhouse_elevation(value),
-        ramp_limits = _updown_po_optional(get_ramp_limits(value, CU)),
+        ramp_limits = _updown_po_optional(get_ramp_limits(value, CU / u"minute")),
         time_limits = _updown_po_optional(get_time_limits(value)),
         base_power = _get_base_power(value),
         operating_mode = PO.HydroPumpTurbineOperatingMode(string(get_operating_mode(value))),
@@ -466,7 +466,7 @@ function to_openapi(value::HydroPumpTurbine, refs::OpenAPIRefs, ::NaturalUnit)
         active_power_limits_pump = _minmax_po_scaled(get_active_power_limits_pump(value, CU), _get_base_power(value)),
         outflow_limits = _minmax_po_optional(get_outflow_limits(value)),
         powerhouse_elevation = get_powerhouse_elevation(value),
-        ramp_limits = _updown_po_scaled_optional(get_ramp_limits(value, CU), _get_base_power(value)),
+        ramp_limits = _updown_po_scaled_optional(get_ramp_limits(value, CU / u"minute"), _get_base_power(value)),
         time_limits = _updown_po_optional(get_time_limits(value)),
         base_power = _get_base_power(value),
         operating_mode = PO.HydroPumpTurbineOperatingMode(string(get_operating_mode(value))),

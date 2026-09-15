@@ -613,7 +613,7 @@ end
     @test get_rating(gen_natural, CU) == 0.5
     @test get_active_power_limits(gen_natural, CU) == (min = 0.05, max = 0.5)
     @test get_reactive_power_limits(gen_natural, CU) == (min = -0.25, max = 0.25)
-    @test get_ramp_limits(gen_natural, CU) == (up = 0.1, down = 0.1)
+    @test get_ramp_limits(gen_natural, CU / u"minute") == (up = 0.1, down = 0.1)
     @test get_prime_mover_type(gen_natural) == PrimeMovers.OT
     @test get_fuel(gen_natural) == ThermalFuels.NATURAL_GAS
     @test get_fixed(get_operation_cost(gen_natural)) == 100.0
@@ -1055,7 +1055,7 @@ end
     @test get_input_active_power_limits(storage_natural, CU) == (min = 0.0, max = 0.5)
     @test get_output_active_power_limits(storage_natural, CU) == (min = 0.0, max = 0.5)
     @test get_reactive_power_limits(storage_natural, CU) == (min = -0.25, max = 0.25)
-    @test get_ramp_limits(storage_natural, CU) == (up = 0.5, down = 0.5)
+    @test get_ramp_limits(storage_natural, CU / u"minute") == (up = 0.5, down = 0.5)
     @test get_standing_loss(storage_natural, CU) == 0.01
     @test get_storage_technology_type(storage_natural) == StorageTech.LIB
     @test get_storage_level_limits(storage_natural) == (min = 0.0, max = 1.0)

@@ -45,6 +45,10 @@ end
     @test iszero(get_standing_loss(s, CU))
     sys, storage = _sys_with_storage()
     @test isnothing(get_ramp_limits(storage, NU))
+    @test isnothing(get_ramp_limits(storage, SU / u"minute"))
+    # An unset rate field has no units to get wrong: a bare `CU`/`SU`, rejected on a
+    # field that is set, still passes through as `nothing` here.
+    @test isnothing(get_ramp_limits(storage, CU))
     @test isnothing(get_ramp_limits(storage, SU))
     @test get_self_discharge(storage) == 0.0
     @test iszero(get_standing_loss(storage, SU))
@@ -67,20 +71,39 @@ end
             ramp_limits = (up = 0.5, down = 0.4),
         )
 
-    # Construction stores the raw value at the component base (CU).
-    ramp_du = get_ramp_limits(storage, CU)
+    # `ramp_limits` is a rate, so a relative target must name a time; a bare `CU`/`SU`
+    # does not say per what time and is rejected.
+    @test_throws ArgumentError get_ramp_limits(storage, CU)
+    @test_throws ArgumentError get_ramp_limits(storage, SU)
+    # …and the message names the field, as the setter's twin does, rather than the
+    # engine-internal category constant.
+    msg = try
+        get_ramp_limits(storage, SU)
+    catch e
+        sprint(showerror, e)
+    end
+    @test occursin("`EnergyReservoirStorage`'s `ramp_limits`", msg)
+    @test occursin("CU/u\"minute\"", msg)
+
+    # Construction stores the raw value at the component base, per minute.
+    ramp_du = get_ramp_limits(storage, CU / u"minute")
     @test ramp_du.up ≈ 0.5
     @test ramp_du.down ≈ 0.4
 
-    # System base: CU * component_base / system_base.
-    ramp_su = get_ramp_limits(storage, SU)
+    # System base: CU * component_base / system_base, time unchanged.
+    ramp_su = get_ramp_limits(storage, SU / u"minute")
     @test ramp_su.up ≈ 0.5 * component_base / system_base
     @test ramp_su.down ≈ 0.4 * component_base / system_base
 
-    # Natural units: CU * component_base.
+    # Natural units: CU * component_base per minute.
     ramp_nu = get_ramp_limits(storage, NU)
     @test ramp_nu.up ≈ 0.5 * component_base
     @test ramp_nu.down ≈ 0.4 * component_base
+    @test get_ramp_limits(storage, u"MW/minute") == ramp_nu
+
+    # The time axis converts independently of the power axis.
+    @test get_ramp_limits(storage, CU / u"hr").up ≈ 0.5 * 60
+    @test get_ramp_limits(storage, u"MW/hr").up ≈ 0.5 * component_base * 60
 
     # Nothing passthrough for the bare and `_unitful` companion, mirroring the
     # ThermalStandard contract in test_base_power.jl.

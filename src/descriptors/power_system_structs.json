@@ -4742,7 +4742,7 @@
                 },
                 {
                     "name": "ramp_limits",
-                    "comment": "ramp up and ramp down limits in MW/min",
+                    "comment": "Ramp up and ramp down limits (MW/min)",
                     "null_value": "nothing",
                     "data_type": "Union{Nothing, UpDown}",
                     "valid_range": {
@@ -4751,7 +4751,8 @@
                     },
                     "validation_action": "error",
                     "needs_conversion": true,
-                    "conversion_unit": ":mw"
+                    "conversion_unit": ":mw_per_minute",
+                    "display_units": "SU / u\"minute\""
                 },
                 {
                     "name": "time_limits",
@@ -4963,7 +4964,7 @@
                 },
                 {
                     "name": "ramp_limits",
-                    "comment": "ramp up and ramp down limits in MW/min",
+                    "comment": "Ramp up and ramp down limits (MW/min)",
                     "null_value": "nothing",
                     "data_type": "Union{Nothing, UpDown}",
                     "valid_range": {
@@ -4973,7 +4974,8 @@
                     "validation_action": "error",
                     "needs_conversion": true,
                     "default": "nothing",
-                    "conversion_unit": ":mw"
+                    "conversion_unit": ":mw_per_minute",
+                    "display_units": "SU / u\"minute\""
                 },
                 {
                     "name": "time_limits",
@@ -5179,7 +5181,7 @@
                 },
                 {
                     "name": "ramp_limits",
-                    "comment": "ramp up and ramp down limits in MW/min",
+                    "comment": "Ramp up and ramp down limits (MW/min)",
                     "null_value": "nothing",
                     "data_type": "Union{Nothing, UpDown}",
                     "valid_range": {
@@ -5188,7 +5190,8 @@
                     },
                     "validation_action": "error",
                     "needs_conversion": true,
-                    "conversion_unit": ":mw"
+                    "conversion_unit": ":mw_per_minute",
+                    "display_units": "SU / u\"minute\""
                 },
                 {
                     "name": "time_limits",
@@ -5795,7 +5798,7 @@
                 },
                 {
                     "name": "ramp_limits",
-                    "comment": "ramp up and ramp down limits in MW/min",
+                    "comment": "Ramp up and ramp down limits (MW/min)",
                     "null_value": "nothing",
                     "data_type": "Union{Nothing, UpDown}",
                     "valid_range": {
@@ -5804,7 +5807,8 @@
                     },
                     "validation_action": "error",
                     "needs_conversion": true,
-                    "conversion_unit": ":mw"
+                    "conversion_unit": ":mw_per_minute",
+                    "display_units": "SU / u\"minute\""
                 },
                 {
                     "name": "operation_cost",
@@ -6106,6 +6110,7 @@
                 },
                 {
                     "name": "ramp_limits",
+                    "comment": "Ramp up and ramp down limits (MW/min)",
                     "null_value": "nothing",
                     "data_type": "Union{Nothing, UpDown}",
                     "valid_range": {
@@ -6114,7 +6119,8 @@
                     },
                     "validation_action": "error",
                     "needs_conversion": true,
-                    "conversion_unit": ":mw"
+                    "conversion_unit": ":mw_per_minute",
+                    "display_units": "SU / u\"minute\""
                 },
                 {
                     "name": "power_trajectory",
@@ -6407,7 +6413,7 @@
                 },
                 {
                     "name": "ramp_limits",
-                    "comment": "ramp up and ramp down limits in MW/min",
+                    "comment": "Ramp up and ramp down limits (MW/min)",
                     "null_value": "nothing",
                     "data_type": "Union{Nothing, UpDown}",
                     "valid_range": {
@@ -6416,7 +6422,8 @@
                     },
                     "validation_action": "error",
                     "needs_conversion": true,
-                    "conversion_unit": ":mw",
+                    "conversion_unit": ":mw_per_minute",
+                    "display_units": "SU / u\"minute\"",
                     "default": "nothing"
                 },
                 {

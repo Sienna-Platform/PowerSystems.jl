@@ -35,6 +35,120 @@ PSY.get_base_voltage(::MockLine) = 230.0
     @test natural_unit(CURRENT) == u"kA"
 end
 
+@testset "Unit categories compose from their base exponents" begin
+    gen = MockGen(0.6, 50.0)
+
+    # A category is a natural unit plus the exponents of the power and voltage bases,
+    # so the derived quantities are *computed* rather than declared: every hardcoded
+    # category below must equal the composition it is physically defined as.
+    for (derived, hardcoded) in (
+        (VOLTAGE^Val(2) / ACTIVE_POWER, IMPEDANCE),
+        (ACTIVE_POWER / VOLTAGE^Val(2), ADMITTANCE),
+        (ACTIVE_POWER / VOLTAGE, CURRENT),
+    )
+        @test base_value(gen, derived) ≈ base_value(gen, hardcoded)
+        @test system_base_value(gen, derived) ≈ system_base_value(gen, hardcoded)
+        @test PSY._cu_to_su_ratio(gen, derived) ≈ PSY._cu_to_su_ratio(gen, hardcoded)
+        # The derived natural unit is spelled differently (kV² MW⁻¹ vs Ω) but must be
+        # the same physical unit, which is what makes `uconvert` on it correct.
+        @test Unitful.uconvert(
+            natural_unit(hardcoded),
+            1.0 * natural_unit(derived),
+        ) ≈ 1.0 * natural_unit(hardcoded)
+    end
+
+    # Multiplication is the inverse of division: current × voltage is power.
+    @test base_value(gen, CURRENT * VOLTAGE) ≈ base_value(gen, ACTIVE_POWER)
+end
+
+@testset "Unit categories: zero exponents never touch an unused base" begin
+    # `_checked_base_voltage` errors when the base voltage is unset, so a category with
+    # a voltage exponent of zero must not reach it. A getter that never needs the base
+    # voltage has to work on a component that has none.
+    struct NoVoltage end
+    PSY._get_component_base_power(::NoVoltage) = 50.0
+    PSY._get_system_base_power(::NoVoltage) = 100.0
+    PSY.get_base_voltage(::NoVoltage) = nothing
+
+    nv = NoVoltage()
+    @test base_value(nv, ACTIVE_POWER) == 50.0
+    @test system_base_value(nv, ACTIVE_POWER) == 100.0
+    @test PSY._cu_to_su_ratio(nv, VOLTAGE) == 1.0   # P == 0: no base power read either
+    @test_throws ErrorException base_value(nv, IMPEDANCE)
+end
+
+@testset "Rate categories: a relative target must name a time" begin
+    gen = MockGen(0.6, 50.0)   # 50 MVA component, 100 MVA system
+    cat = PSY.ACTIVE_POWER_CHANGE_RATE
+    v = 0.1                     # stored: 0.1 CU per minute
+
+    @test natural_unit(cat) == u"MW" / u"minute"
+    @test PSY.time_basis(cat) == u"minute"
+    # The power axis per-unitizes exactly as a plain power does; time has no base.
+    @test base_value(gen, cat) == base_value(gen, ACTIVE_POWER)
+    @test system_base_value(gen, cat) == system_base_value(gen, ACTIVE_POWER)
+
+    # Natural units: Unitful does the power and time conversion together.
+    @test PSY.convert_units(gen, v, cat, CU, u"MW/minute") ≈ 5.0u"MW/minute"
+    @test PSY.convert_units(gen, v, cat, CU, u"MW/hr") ≈ 300.0u"MW/hr"
+    @test PSY.convert_units(gen, v, cat, CU, NU) ≈ 5.0u"MW/minute"
+
+    # Relative bases per unit time: both axes move independently.
+    @test PSY.convert_units(gen, v, cat, CU, CU / u"minute") == 0.1 * CU / u"minute"
+    @test PSY.convert_units(gen, v, cat, CU, CU / u"hr") == 6.0 * CU / u"hr"
+    @test PSY.convert_units(gen, v, cat, CU, SU / u"minute") == 0.05 * SU / u"minute"
+    @test PSY.convert_units(gen, v, cat, CU, SU / u"hr") == 3.0 * SU / u"hr"
+
+    # Every spelling of the same rate stores the same number.
+    # `from` is what `set_value` dispatches: a tagged rate enters with its own relative
+    # marker, a plain Unitful quantity with NU.
+    for (tagged, from) in (
+        (5.0u"MW/minute", NU),
+        (300.0u"MW/hr", NU),
+        (0.1 * CU / u"minute", CU),
+        (6.0 * CU / u"hr", CU),
+        (0.05 * SU / u"minute", SU),
+    )
+        @test IS._strip_units(PSY.convert_units(gen, tagged, cat, from, CU)) ≈ v
+    end
+
+    # A bare relative marker names no time, so it is not a complete target.
+    @test_throws ArgumentError PSY.convert_units(gen, v, cat, CU, CU)
+    @test_throws ArgumentError PSY.convert_units(gen, v, cat, CU, SU)
+    # …and a rate marker is meaningless on a quantity that is not a rate.
+    @test_throws ArgumentError PSY.convert_units(gen, v, ACTIVE_POWER, CU, CU / u"hr")
+    # A plain power unit has the wrong dimension.
+    @test_throws Unitful.DimensionError PSY.convert_units(gen, v, cat, CU, u"MW")
+    # The tag and the `from` marker must still agree.
+    @test_throws ArgumentError PSY.convert_units(gen, 0.1 * CU / u"hr", cat, SU, CU)
+end
+
+@testset "Rate quantities: spelling and nesting" begin
+    # Both spellings produce the identical value, and it is an ordinary Unitful
+    # quantity whose payload carries the per-unit marker.
+    @test 0.1 * (CU / u"hr") === 0.1 * CU / u"hr"
+    @test 0.1 * CU / u"hr" isa PSY.RelativeRate
+    @test IS._strip_units(0.1 * CU / u"hr") === 0.1
+    @test sprint(show, CU / u"minute") == "CU/minute"
+
+    # The reverse nesting is reachable through IS's `*(::Number, ::AbstractRelativeUnit)`
+    # and must be rejected rather than silently producing a different type.
+    @test_throws ArgumentError (0.1 / u"hr") * CU
+    @test_throws ArgumentError CU * (0.1 / u"hr")
+
+    # Round-trips through the wire format.
+    for q in (0.1 * CU / u"hr", 0.05 * SU / u"minute", 10.0 * u"MW" / u"minute")
+        @test PSY.deserialize_quantity(PSY.serialize_quantity(q)) == q
+    end
+end
+
+@testset "Unit categories print by name" begin
+    @test sprint(show, ACTIVE_POWER) == "ACTIVE_POWER"
+    @test sprint(show, IMPEDANCE) == "IMPEDANCE"
+    # A composed category has no name; it reports its unit and exponents instead.
+    @test occursin("UnitCategory", sprint(show, VOLTAGE^Val(2) / ACTIVE_POWER))
+end
+
 @testset "base_value and system_base_value" begin
     gen = MockGen(0.6, 50.0)  # 50 MVA device, 100 MVA system
 
@@ -177,6 +291,39 @@ end
     @test d["value"] == 529.0
     @test d["unit"] == "Ω"
     @test PSY.deserialize_quantity(d) ≈ q
+end
+
+@testset "Serialization: compound units do not follow the platform" begin
+    # Unitful renders exponents with Unicode superscripts or ASCII carets depending on
+    # `ENV["UNITFUL_FANCY_EXPONENTS"]`, whose default is true on macOS and false
+    # elsewhere. A system serialized on one platform has to read back on another, so
+    # `unit_to_string` must not inherit that -- and both spellings must parse.
+    rate = u"MW" / u"minute"
+    restore = get(ENV, "UNITFUL_FANCY_EXPONENTS", nothing)
+    try
+        for fancy in ("true", "false")
+            ENV["UNITFUL_FANCY_EXPONENTS"] = fancy
+            @test PSY.unit_to_string(rate) == "MW minute^-1"
+            @test PSY.serialize_quantity(6.0 * rate)["unit"] == "MW minute^-1"
+        end
+    finally
+        if isnothing(restore)
+            delete!(ENV, "UNITFUL_FANCY_EXPONENTS")
+        else
+            (ENV["UNITFUL_FANCY_EXPONENTS"] = restore)
+        end
+    end
+
+    # Both spellings deserialize, so a file written by an older macOS build still reads.
+    for spelling in ("MW minute^-1", "MW minute\u207b\u00b9", "MW/minute", "MW/min")
+        @test PSY.string_to_unit(spelling) == rate
+    end
+
+    # A rate marker's own spelling has no exponent, so it is stable either way.
+    @test PSY.unit_to_string(CU / u"minute") == "CU/minute"
+    d = PSY.serialize_quantity(6.0 * CU / u"hr")
+    @test d == Dict("value" => 6.0, "unit" => "CU/hr")
+    @test PSY.deserialize_quantity(d) == 6.0 * CU / u"hr"
 end
 
 @testset "Serialization: JSON string round-trip" begin
