@@ -2,29 +2,36 @@
 # `compute_openapi_export_converter!` in src/generate_structs.jl) and by export_handwritten.jl.
 
 # ── Compound-field helpers (component-base pu) ──
+#
+# These fields are schema-optional-by-omission, not nullable — encoding `nothing` fails
+# schema validation, so a missing PSY-side value emits `IC.ABSENT` instead.
 
 _minmax_po(nt) = IC.MinMax(; min = nt.min, max = nt.max)
-_minmax_po_optional(::Nothing) = nothing
+_minmax_po_optional(::Nothing) = IC.ABSENT
 _minmax_po_optional(nt) = _minmax_po(nt)
 _minmax_po_scaled(nt, base) = IC.MinMax(; min = nt.min * base, max = nt.max * base)
-_minmax_po_scaled_optional(::Nothing, base) = nothing
+_minmax_po_scaled_optional(::Nothing, base) = IC.ABSENT
 _minmax_po_scaled_optional(nt, base) = _minmax_po_scaled(nt, base)
 
-_updown_po_optional(::Nothing) = nothing
+_updown_po_optional(::Nothing) = IC.ABSENT
 _updown_po_optional(nt) = IC.UpDown(; up = nt.up, down = nt.down)
-_updown_po_scaled_optional(::Nothing, base) = nothing
+_updown_po_scaled_optional(::Nothing, base) = IC.ABSENT
 _updown_po_scaled_optional(nt, base) = IC.UpDown(; up = nt.up * base, down = nt.down * base)
 
-_startup_shutdown_po_optional(::Nothing) = nothing
+_startup_shutdown_po_optional(::Nothing) = IC.ABSENT
 _startup_shutdown_po_optional(nt) =
     PC.StartUpShutDown(; startup = nt.startup, shutdown = nt.shutdown)
-_startup_shutdown_po_scaled_optional(::Nothing, base) = nothing
+_startup_shutdown_po_scaled_optional(::Nothing, base) = IC.ABSENT
 _startup_shutdown_po_scaled_optional(nt, base) =
     PC.StartUpShutDown(; startup = nt.startup * base, shutdown = nt.shutdown * base)
 
-_startup_stages_po_optional(::Nothing) = nothing
-_startup_stages_po_optional(nt) =
-    PC.StartUpStages(; hot = nt.hot, warm = nt.warm, cold = nt.cold)
+_startup_stages_po_optional(::Nothing) = IC.ABSENT
+_startup_stages_po_optional(nt) = PC.StartUpStages(;
+    startup_stages_type = "STAGES",
+    hot = nt.hot,
+    warm = nt.warm,
+    cold = nt.cold,
+)
 
 _turbinepump_po(nt) = PC.TurbinePump(; turbine = nt.turbine, pump = nt.pump)
 
@@ -33,17 +40,17 @@ _fromto_tofrom_po(nt) = IC.FromToToFrom(; from_to = nt.from_to, to_from = nt.to_
 _fromto_tofrom_po_scaled(nt, base) =
     IC.FromToToFrom(; from_to = nt.from_to * base, to_from = nt.to_from * base)
 _inout_po(nt) = IC.InOut(; in = nt.in, out = nt.out)
-_inout_po_optional(::Nothing) = nothing
+_inout_po_optional(::Nothing) = IC.ABSENT
 _inout_po_optional(nt) = _inout_po(nt)
 # Inverse of the import side's `_complex_number` (import_handwritten.jl).
 _complex_number_po(c) = IC.ComplexNumber(; real = real(c), imag = imag(c))
 
-_scale_optional_po(::Nothing, base) = nothing
+_scale_optional_po(::Nothing, base) = IC.ABSENT
 _scale_optional_po(v, base) = v * base
 
-"""`component_id`, but tolerant of a `nothing` field (e.g. `ACBus.area`/`load_zone`, which are
-`Union{Nothing, T}` on the PSY side) — reverses to `nothing` rather than erroring."""
-_component_id_optional(::OpenAPIRefs, ::Nothing) = nothing
+"""`component_id`, but tolerant of a `nothing` field (e.g. `ACBus.area`/`load_zone`) —
+emits `IC.ABSENT` rather than `nothing`."""
+_component_id_optional(::OpenAPIRefs, ::Nothing) = IC.ABSENT
 _component_id_optional(refs::OpenAPIRefs, component) = component_id(refs, component)
 
 # Scoped enums convert directly (`EnumType(s)` in, `string(e)` out — see `@scoped_enum` in

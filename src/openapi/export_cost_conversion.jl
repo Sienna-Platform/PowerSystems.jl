@@ -64,12 +64,17 @@ end
 # where the field's spec type is the wrapper (`CostCurve.value_curve`) and use it bare where
 # the spec type is the concrete curve directly (`vom_cost`, `TwoTerminalLoss`).
 
+"""`initial_input`/`input_at_zero` are optional-by-omission on the wire (not nullable) —
+`nothing` fails schema validation on encode, so a missing PSY-side value emits `IC.ABSENT`."""
+_optional_to_wire(::Nothing) = IC.ABSENT
+_optional_to_wire(v) = v
+
 function convert_cost_to_openapi(curve::InputOutputCurve)
     return PC.InputOutputCurve(;
         function_data = PC.InputOutputCurveFunctionData(
             convert_cost_to_openapi(get_function_data(curve)),
         ),
-        input_at_zero = get_input_at_zero(curve),
+        input_at_zero = _optional_to_wire(get_input_at_zero(curve)),
     )
 end
 
@@ -78,30 +83,19 @@ function convert_cost_to_openapi(curve::IncrementalCurve)
         function_data = PC.IncrementalCurveFunctionData(
             convert_cost_to_openapi(get_function_data(curve)),
         ),
-        initial_input = get_initial_input(curve),
-        input_at_zero = get_input_at_zero(curve),
+        initial_input = _optional_to_wire(get_initial_input(curve)),
+        input_at_zero = _optional_to_wire(get_input_at_zero(curve)),
     )
 end
 
 function convert_cost_to_openapi(curve::AverageRateCurve)
     return PC.AverageRateCurve(;
-        function_data = PC.IncrementalCurveFunctionData(
+        function_data = PC.AverageRateCurveFunctionData(
             convert_cost_to_openapi(get_function_data(curve)),
         ),
-        initial_input = get_initial_input(curve),
-        input_at_zero = get_input_at_zero(curve),
+        initial_input = _optional_to_wire(get_initial_input(curve)),
+        input_at_zero = _optional_to_wire(get_input_at_zero(curve)),
     )
-end
-
-# ── vom_cost: always a LINEAR InputOutputCurve, or `nothing` for the zero sentinel ─────
-
-"""`LinearCurve(0.0)` is the sentinel `_vom_cost` maps `nothing` to on import;
-reverse it back to `nothing` rather than emitting a spurious zero-cost curve."""
-function _vom_cost_to_openapi(curve::InputOutputCurve)
-    if curve == LinearCurve(0.0)
-        return nothing
-    end
-    return convert_cost_to_openapi(curve)
 end
 
 # ── Time-series FunctionData/ValueCurve — export reads association ids straight off the
@@ -185,7 +179,7 @@ function convert_cost_to_openapi(cost::CostCurve)
     return PC.CostCurve(;
         power_units = _power_units_to_string(get_power_units(cost), cost),
         value_curve = PC.ValueCurve(convert_cost_to_openapi(get_value_curve(cost))),
-        vom_cost = _vom_cost_to_openapi(get_vom_cost(cost)),
+        vom_cost = convert_cost_to_openapi(get_vom_cost(cost)),
     )
 end
 
@@ -197,15 +191,17 @@ function convert_cost_to_openapi(cost::FuelCurve)
         fuel_cost_time_series = _fuel_cost_time_series_id(
             IS.get_fuel_cost_time_series(cost),
         ),
-        vom_cost = _vom_cost_to_openapi(get_vom_cost(cost)),
+        vom_cost = convert_cost_to_openapi(get_vom_cost(cost)),
     )
 end
 
-"""`zero(CostCurve)` is the sentinel `_optional_cost_curve` maps `nothing` to on import;
-reverse it back to `nothing` (curtailment_cost, storage charge/discharge_variable_cost)."""
+"""`zero(CostCurve)` is the sentinel `_optional_cost_curve` maps `Absent`/`nothing` to on
+import (curtailment_cost, storage charge/discharge_variable_cost); reverse it back to
+`IC.ABSENT` rather than `nothing` — these fields are declared optional-by-omission, not
+nullable, so `nothing` fails schema validation on encode."""
 function _optional_cost_curve_to_openapi(cost::CostCurve)
     if cost == zero(CostCurve)
-        return nothing
+        return IC.ABSENT
     end
     return convert_cost_to_openapi(cost)
 end
@@ -215,7 +211,12 @@ end
 _thermal_start_up_to_openapi(x::Real) = PC.ThermalGenerationCostStartUp(Float64(x))
 function _thermal_start_up_to_openapi(x::NamedTuple)
     return PC.ThermalGenerationCostStartUp(
-        PC.StartUpStages(; hot = x.hot, warm = x.warm, cold = x.cold),
+        PC.StartUpStages(;
+            startup_stages_type = "STAGES",
+            hot = x.hot,
+            warm = x.warm,
+            cold = x.cold,
+        ),
     )
 end
 
@@ -230,6 +231,7 @@ end
 
 function convert_cost_to_openapi(cost::ThermalGenerationCost)
     return PC.ThermalGenerationCost(;
+        cost_type = "THERMAL",
         fixed = get_fixed(cost),
         shut_down = get_shut_down(cost),
         start_up = _thermal_start_up_to_openapi(get_start_up(cost)),
@@ -241,6 +243,7 @@ end
 
 function convert_cost_to_openapi(cost::RenewableGenerationCost)
     return PC.RenewableGenerationCost(;
+        cost_type = "RENEWABLE",
         variable_operation_cost = convert_cost_to_openapi(
             get_variable_operation_cost(cost),
         ),
@@ -251,6 +254,7 @@ end
 
 function convert_cost_to_openapi(cost::HydroGenerationCost)
     return PC.HydroGenerationCost(;
+        cost_type = "HYDRO_GEN",
         fixed = get_fixed(cost),
         variable_operation_cost = PC.ProductionVariableCostCurve(
             convert_cost_to_openapi(get_variable_operation_cost(cost)),
@@ -260,6 +264,7 @@ end
 
 function convert_cost_to_openapi(cost::LoadCost)
     return PC.LoadCost(;
+        cost_type = "LOAD",
         variable_operation_cost = convert_cost_to_openapi(
             get_variable_operation_cost(cost),
         ),
@@ -275,8 +280,10 @@ stores component ids, and this converter has no id registry, so it exports the l
 function convert_cost_to_openapi(cost::MarketBidCost)
     start_up = get_start_up(cost)
     return PC.MarketBidCost(;
+        cost_type = "MARKET_BID",
         minimum_energy_offer = convert_cost_to_openapi(get_minimum_energy_offer(cost)),
         start_up = PC.StartUpStages(;
+            startup_stages_type = "STAGES",
             hot = start_up.hot,
             warm = start_up.warm,
             cold = start_up.cold,
@@ -291,13 +298,16 @@ function convert_cost_to_openapi(cost::MarketBidCost)
         ancillary_service_offers = Int64[],
         incremental_slope = get_incremental_slope(cost),
         decremental_slope = get_decremental_slope(cost),
-        curve_style = _curve_style_to_wire(get_curve_style(cost)),
-        curve_multistep = _curve_multistep_to_wire(get_curve_multistep(cost)),
+        curve_style = PC.CurveStyles(_curve_style_to_wire(get_curve_style(cost))),
+        curve_multistep = PC.CurveMultiStep(
+            _curve_multistep_to_wire(get_curve_multistep(cost)),
+        ),
     )
 end
 
 function convert_cost_to_openapi(cost::HydroReservoirCost)
     return PC.HydroReservoirCost(;
+        cost_type = "HYDRO_RES",
         level_shortage_cost = get_level_shortage_cost(cost),
         level_surplus_cost = get_level_surplus_cost(cost),
         spillage_cost = get_spillage_cost(cost),
@@ -306,6 +316,7 @@ end
 
 function convert_cost_to_openapi(cost::StorageCost)
     return PC.StorageCost(;
+        cost_type = "STORAGE",
         charge_variable_cost = _optional_cost_curve_to_openapi(
             get_charge_variable_cost(cost),
         ),
@@ -325,6 +336,7 @@ end
 here rather than exported."""
 function convert_cost_to_openapi(cost::ImportExportCost)
     return PC.ImportExportCost(;
+        cost_type = "IMPORTEXPORT",
         import_offer_curves = convert_cost_to_openapi(get_import_offer_curves(cost)),
         export_offer_curves = convert_cost_to_openapi(get_export_offer_curves(cost)),
         energy_import_weekly_limit = get_energy_import_weekly_limit(cost),
@@ -365,8 +377,10 @@ function convert_cost_to_openapi(cost::MarketBidTimeSeriesCost)
         ancillary_service_offers = Int64[],
         incremental_slope = get_incremental_slope(cost),
         decremental_slope = get_decremental_slope(cost),
-        curve_style = _curve_style_to_wire(get_curve_style(cost)),
-        curve_multistep = _curve_multistep_to_wire(get_curve_multistep(cost)),
+        curve_style = PC.CurveStyles(_curve_style_to_wire(get_curve_style(cost))),
+        curve_multistep = PC.CurveMultiStep(
+            _curve_multistep_to_wire(get_curve_multistep(cost)),
+        ),
     )
 end
 
@@ -406,7 +420,7 @@ curve reduces to `PC.CostCurve`. Reuses `has_demand_curve` rather than reimpleme
 zero-detection logic (`_is_zero_offer_curve`, models/reserves.jl)."""
 function convert_reserve_variable_to_openapi(reserve::AbstractReserve)
     if !has_demand_curve(reserve)
-        return nothing
+        return IC.ABSENT
     end
     return convert_cost_to_openapi(get_variable(reserve))
 end

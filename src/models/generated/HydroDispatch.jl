@@ -255,9 +255,9 @@ function from_openapi(po::PO.HydroDispatch, refs::OpenAPIRefs, ::ComponentBaseUn
         ramp_limits = _updown_from_po(po.ramp_limits),
         time_limits = _updown_from_po(po.time_limits),
         base_power = po.base_power,
-        status = OperationalStates(po.status.value),
-        time_at_status = po.time_at_status,
-        operation_cost = convert_cost(po.operation_cost)::OperationalCost,
+        status = _or_default_enum(po.status, OperationalStates.OFFLINE),
+        time_at_status = _or_default(po.time_at_status, INFINITE_TIME),
+        operation_cost = convert_cost(po.operation_cost.value)::OperationalCost,
     )
 end
 
@@ -275,9 +275,9 @@ function from_openapi(po::PO.HydroDispatch, refs::OpenAPIRefs, ::NaturalUnit)
         ramp_limits = _updown_from_po(po.ramp_limits, (/), po.base_power),
         time_limits = _updown_from_po(po.time_limits),
         base_power = po.base_power,
-        status = OperationalStates(po.status.value),
-        time_at_status = po.time_at_status,
-        operation_cost = convert_cost(po.operation_cost)::OperationalCost,
+        status = _or_default_enum(po.status, OperationalStates.OFFLINE),
+        time_at_status = _or_default(po.time_at_status, INFINITE_TIME),
+        operation_cost = convert_cost(po.operation_cost.value)::OperationalCost,
     )
 end
 
@@ -302,7 +302,7 @@ function to_openapi(value::HydroDispatch, refs::OpenAPIRefs, ::ComponentBaseUnit
         base_power = _get_base_power(value),
         status = PO.OperationalStates(string(get_status(value))),
         time_at_status = get_time_at_status(value),
-        operation_cost = convert_cost_to_openapi(get_operation_cost(value)),
+        operation_cost = PO.HydroDispatchOperationCost(convert_cost_to_openapi(get_operation_cost(value))),
         power_units = _power_units_string(CU),
     )
 end
@@ -324,7 +324,7 @@ function to_openapi(value::HydroDispatch, refs::OpenAPIRefs, ::NaturalUnit)
         base_power = _get_base_power(value),
         status = PO.OperationalStates(string(get_status(value))),
         time_at_status = get_time_at_status(value),
-        operation_cost = convert_cost_to_openapi(get_operation_cost(value)),
+        operation_cost = PO.HydroDispatchOperationCost(convert_cost_to_openapi(get_operation_cost(value))),
         power_units = _power_units_string(NU),
     )
 end

@@ -7,13 +7,15 @@
 # The export direction (`to_openapi(sys; ...)`) mirrors this file in src/openapi/export_document.jl.
 
 # ── Dependency-ordered component pass ───────────────────────────────────────────
-# Topology first, then arcs and branches, then injectors, then reserves. `TransformerCircuit` is the one
-# `addable = false` entry — a `DeviceParameter` embedded in `TwoWindingTransformer.circuit`
-# or one of `ThreeWindingTransformer.{primary,secondary,tertiary}_circuit`, never a
-# standalone System component, but still registered in `OpenAPIRefs` so the transformer
-# that references it can resolve it. `TransmissionInterface` (a `Service`, membership
-# carried by a `service_associations` row like the reserves) is placed after them for that
-# reason, though it has no forward references of its own.
+"""
+Topology first, then arcs and branches, then injectors, then reserves. `TransformerCircuit` is
+the one `addable = false` entry — a `DeviceParameter` embedded in `TwoWindingTransformer.circuit`
+or one of `ThreeWindingTransformer.{primary,secondary,tertiary}_circuit`, never a
+standalone System component, but still registered in `OpenAPIRefs` so the transformer
+that references it can resolve it. `TransmissionInterface` (a `Service`, membership
+carried by a `service_associations` row like the reserves) is placed after them for that
+reason, though it has no forward references of its own.
+"""
 const DOCUMENT_PLAN = [
     (po_type = PO.Area, psy_type = Area, key = "Area", addable = true),
     (po_type = PO.LoadZone, psy_type = LoadZone, key = "LoadZone", addable = true),
@@ -366,26 +368,26 @@ end
 # signature uniformly; only the three `Outage` types read it, to resolve document-id
 # `monitored_components` into the UUIDs PSY stores.
 
-"""Resolve document ids to UUIDs for an `Outage`'s `monitored_components`; `nothing`
-means none declared and maps to an empty vector, matching the PSY constructors' own
-default — not an error to guard against."""
+"""Resolve document ids to UUIDs for an `Outage`'s `monitored_components`; an
+absent/omitted field means none declared and maps to an empty vector, matching the PSY
+constructors' own default — not an error to guard against."""
+function _monitored_component_uuids(refs::OpenAPIRefs, ids::Union{Nothing, IC.Absent})
+    return Int[]
+end
 function _monitored_component_uuids(refs::OpenAPIRefs, ids)
-    if isnothing(ids)
-        return Int[]
-    end
     return Int[IS.get_id(refs[Int(id)]) for id in ids]
 end
 
 function from_openapi(po::PO.EmissionsData, ::OpenAPIRefs)
     return EmissionsData(;
         name = po.name,
-        pollutant = PollutantType(po.pollutant),
+        pollutant = PollutantType(po.pollutant.value),
         emission_rate = convert_cost(po.emission_rate),
-        basis = EmissionBasis(po.basis),
-        start_up_adder = po.start_up_adder,
-        mass_unit = MassUnit(po.mass_unit),
-        energy_unit = EnergyUnit(po.energy_unit),
-        gwp = po.gwp,
+        basis = EmissionBasis(po.basis.value),
+        start_up_adder = _or_default(po.start_up_adder, 0.0),
+        mass_unit = MassUnit(po.mass_unit.value),
+        energy_unit = EnergyUnit(po.energy_unit.value),
+        gwp = _or_default(po.gwp, 1.0),
         available = po.available,
     )
 end
@@ -395,7 +397,7 @@ function from_openapi(po::PO.GeometricDistributionForcedOutage, refs::OpenAPIRef
         mean_time_to_recovery = po.mean_time_to_recovery,
         outage_transition_probability = po.outage_transition_probability,
         monitored_components = _monitored_component_uuids(refs, po.monitored_components),
-        identifier = po.identifier,
+        identifier = _or_default(po.identifier, nothing),
     )
 end
 
@@ -403,7 +405,7 @@ function from_openapi(po::PO.PlannedOutage, refs::OpenAPIRefs)
     return PlannedOutage(;
         outage_schedule = po.outage_schedule,
         monitored_components = _monitored_component_uuids(refs, po.monitored_components),
-        identifier = po.identifier,
+        identifier = _or_default(po.identifier, nothing),
     )
 end
 
@@ -411,7 +413,7 @@ function from_openapi(po::PO.FixedForcedOutage, refs::OpenAPIRefs)
     return FixedForcedOutage(;
         outage_status = po.outage_status,
         monitored_components = _monitored_component_uuids(refs, po.monitored_components),
-        identifier = po.identifier,
+        identifier = _or_default(po.identifier, nothing),
     )
 end
 
@@ -425,7 +427,7 @@ from_openapi(po::PO.RenewablePowerPlant, ::OpenAPIRefs) =
 function from_openapi(po::PO.CombinedCycleBlock, ::OpenAPIRefs)
     return CombinedCycleBlock(;
         name = po.name,
-        configuration = CombinedCycleConfiguration(po.configuration),
+        configuration = CombinedCycleConfiguration(po.configuration.value),
         heat_recovery_to_steam_factor = po.heat_recovery_to_steam_factor,
     )
 end
@@ -433,7 +435,7 @@ end
 function from_openapi(po::PO.CombinedCycleFractional, ::OpenAPIRefs)
     return CombinedCycleFractional(;
         name = po.name,
-        configuration = CombinedCycleConfiguration(po.configuration),
+        configuration = CombinedCycleConfiguration(po.configuration.value),
     )
 end
 
@@ -451,9 +453,9 @@ from_openapi(po::PO.ImpedanceCorrectionData, ::OpenAPIRefs) =
     ImpedanceCorrectionData(;
         table_number = po.table_number,
         impedance_correction_curve = convert_cost(po.impedance_correction_curve),
-        transformer_winding = WindingCategory(po.transformer_winding),
+        transformer_winding = WindingCategory(po.transformer_winding.value),
         transformer_control_mode = ImpedanceCorrectionTransformerControlMode(
-            po.transformer_control_mode,
+            po.transformer_control_mode.value,
         ),
     )
 
@@ -779,9 +781,11 @@ _ts_row_identity(row) = (
     features = _ts_feature_values(row.features),
 )
 
-_ts_feature_values(::Nothing) = nothing
+_ts_feature_values(::Union{Nothing, IC.Absent}) = nothing
 _ts_feature_values(features::AbstractDict) =
     Dict{String, Any}(String(k) => _ts_feature_value(v) for (k, v) in features)
+_ts_feature_values(features::PTS.TimeSeriesFeatures) =
+    _ts_feature_values(features.additional_properties)
 _ts_feature_value(v::InfrastructureTimeSeriesOpenAPIModels.TimeSeriesFeatureValue) = v.value
 _ts_feature_value(v) = v
 

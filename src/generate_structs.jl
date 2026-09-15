@@ -345,6 +345,17 @@ function openapi_enum_po_type(field, bare)
     return get(field, "openapi_enum", bare)
 end
 
+"""Whether a `:cost`-kind field's declared PSY type carries its own OpenAPI `oneOf` wrapper —
+true for the abstract `"OperationalCost"` or a `Union` of concrete cost types, false when the
+field is already one concrete cost struct."""
+openapi_cost_needs_wrapper(bare) = bare == "OperationalCost" || startswith(bare, "Union{")
+
+"""The OpenAPI `oneOf` wrapper type name for a `:cost`-kind field that needs one:
+`<StructName><PascalCase(field_name)>`, e.g. `operation_cost` -> `OperationCost`."""
+function openapi_cost_po_type(struct_name, field_name)
+    return struct_name * join(uppercasefirst.(split(field_name, "_")))
+end
+
 """
 Validate a field's optional `openapi_unit` override. Only `"pu"` is recognized: it means
 the OpenAPI document already carries this field per-unit (its schema `x-unit` is `pu`, not
@@ -505,25 +516,46 @@ future divergence is declared rather than guessed.
 """
 openapi_po_field_name(field) = get(field, "openapi_name", field["name"])
 
-"""Wrap `body` in the nothing-guard emitted for a nullable PO field."""
-function openapi_nullable_wrap(field_name, body)
-    return "(if isnothing(po.$field_name); nothing; else; $body; end)"
+"""Emit the `_or_default` call that falls back to `default_expr` when the wire value is
+absent. The guard is dispatch on `Union{Nothing, IC.Absent}` inside the helper, not a type
+check at the call site: `Absent` is a distinct sentinel from `Nothing`, and dispatch keeps
+each emitted expression a plain call the compiler can specialize."""
+function openapi_default_wrap(field_name, default_expr)
+    return "_or_default(po.$field_name, $default_expr)"
+end
+
+"""`openapi_default_wrap` for a field the natural-units method rescales: the helper applies
+`op(value, base)` only when the value is present, so the arithmetic never sees the sentinel
+and the default is returned unscaled."""
+function openapi_default_wrap_scaled(field_name, default_expr, op, base)
+    return "_or_default(po.$field_name, $default_expr, ($op), $base)"
 end
 
 """Component-base is always pass-through; only the natural-units expression varies with
-`conversion`. A nullable field with a real conversion needs a nothing-guard; a nullable
-field with no conversion does not since scalar field access on `nothing` is never attempted."""
-function openapi_scalar_exprs(field_name, conversion, nullable, bases)
+`conversion`. Every optional-by-omission field needs an Absent guard — a descriptor
+`default` supplies the fallback value; a nullable field with no default falls back to
+`nothing` instead."""
+function openapi_scalar_exprs(field_name, conversion, nullable, bases, default_expr)
+    fallback = if !isnothing(default_expr)
+        default_expr
+    elseif nullable
+        "nothing"
+    else
+        nothing
+    end
     device = "po.$field_name"
+    if !isnothing(fallback)
+        device = openapi_default_wrap(field_name, fallback)
+    end
     if conversion == :none
         return (device, device)
     end
     op, base = openapi_conversion_op_base(conversion, bases)
     scaled = "po.$field_name $op $base"
-    if !nullable
-        return (device, scaled)
+    if !isnothing(fallback)
+        scaled = openapi_default_wrap_scaled(field_name, fallback, op, base)
     end
-    return (device, openapi_nullable_wrap(field_name, scaled))
+    return (device, scaled)
 end
 
 """
@@ -597,7 +629,14 @@ function compute_openapi_converter!(item, struct_names)
             # whose `.value` is `Any`, so the call infers as `Any`. The descriptor states
             # the field's PSY type — assert it, so the constructor is handed something
             # bounded and a cost that converts to the wrong family fails here.
-            expr = "convert_cost(po.$po_name)::$bare"
+            # A field typed as one concrete cost struct carries no `oneOf` wrapper on the PO
+            # side; `.value` only applies when `openapi_cost_needs_wrapper` says it wraps.
+            po_cost = if openapi_cost_needs_wrapper(bare)
+                "po.$po_name.value"
+            else
+                "po.$po_name"
+            end
+            expr = "convert_cost($po_cost)::$bare"
             push!(kwargs_device, Dict("name" => name, "expr" => expr))
             push!(kwargs_natural, Dict("name" => name, "expr" => expr))
             continue
@@ -614,11 +653,17 @@ function compute_openapi_converter!(item, struct_names)
             continue
         end
         if kind == :enum
-            # `@scoped_enum` types construct straight from a string (`ACBusTypes("PV")`),
-            # and `.value` is where the document's string now lives: OpenAPI.jl 1.x makes
-            # every enum-constrained schema its own validating wrapper struct, where 0.2
-            # generated a bare `String` alias.
-            expr = "$bare(po.$po_name.value)"
+            # `@scoped_enum` types construct straight from a string (`ACBusTypes("PV")`);
+            # each enum-constrained schema field is its own wrapper struct, so `.value`
+            # unwraps it. A field with a descriptor `default` is optional-by-omission on
+            # the wire despite being PSY-required, so it falls back to that default rather
+            # than dereferencing Absent's `.value`.
+            present = "$bare(po.$po_name.value)"
+            expr = if haskey(field, "default")
+                "_or_default_enum(po.$po_name, $(field["default"]))"
+            else
+                present
+            end
             push!(kwargs_device, Dict("name" => name, "expr" => expr))
             push!(kwargs_natural, Dict("name" => name, "expr" => expr))
             continue
@@ -630,7 +675,9 @@ function compute_openapi_converter!(item, struct_names)
         end
         bases = openapi_base_exprs(struct_name, name, conversion, field_names)
         if kind == :scalar
-            device, natural = openapi_scalar_exprs(po_name, conversion, nullable, bases)
+            device, natural = openapi_scalar_exprs(
+                po_name, conversion, nullable, bases, get(field, "default", nothing),
+            )
         else
             members = OPENAPI_COMPOUND_MEMBERS[bare]
             device, natural =
@@ -750,9 +797,11 @@ end
 """Component-base/natural-units export expressions for one non-`base_power` scalar field.
 Device is `get_X(value)` with no conversion, or `get_X(value, unit_arg)` under a real
 conversion; natural additionally combines with the S_base/Z_base anchor and is otherwise
-identical to device (mirrors `openapi_scalar_exprs`, inverted). A nullable field scales
-through `_scale_optional_po`, which only multiplies — so a nullable field under
-`:admittance` (a divide) raises rather than guessing; no annotated struct today has one."""
+identical to device (mirrors `openapi_scalar_exprs`, inverted). A nullable field with no
+conversion wraps through `_optional_to_wire` (nothing → `IC.ABSENT`); one with a real
+conversion scales through `_scale_optional_po`, which only multiplies — so a nullable field
+under `:admittance` (a divide) raises rather than guessing; no annotated struct today has
+one."""
 function openapi_export_scalar_exprs(
     struct_name,
     field_name,
@@ -763,7 +812,11 @@ function openapi_export_scalar_exprs(
     unit_arg,
 )
     if conversion == :none
-        expr = "$getter(value)"
+        device = "$getter(value)"
+        if !nullable
+            return (device, device)
+        end
+        expr = "_optional_to_wire($device)"
         return (expr, expr)
     end
     device = "$getter(value, $unit_arg)"
@@ -901,7 +954,15 @@ function compute_openapi_export_converter!(item, struct_names)
         end
         if kind == :cost
             getter = "$(openapi_export_getter_name(field))(value)"
-            expr = "convert_cost_to_openapi($getter)"
+            inner = "convert_cost_to_openapi($getter)"
+            # A field typed as one concrete cost struct is already the PO field's declared
+            # type; `openapi_cost_needs_wrapper` says when wrapping applies instead.
+            expr = if openapi_cost_needs_wrapper(bare)
+                po_type = openapi_cost_po_type(struct_name, field["name"])
+                "PO.$po_type($inner)"
+            else
+                inner
+            end
             push!(kwargs_device, Dict("name" => name, "expr" => expr))
             push!(kwargs_natural, Dict("name" => name, "expr" => expr))
             continue
@@ -920,8 +981,7 @@ function compute_openapi_export_converter!(item, struct_names)
         if kind == :enum
             # `string` on a `@scoped_enum` yields the document's exact spelling, which the
             # PO wrapper then validates against the schema's allowed values — the inverse of
-            # the import direction's `EnumType(po.field.value)`. The wrapper is required
-            # under OpenAPI.jl 1.x; 0.2 accepted the bare string.
+            # the import direction's `EnumType(po.field.value)`.
             po_enum = openapi_enum_po_type(field, bare)
             expr = "PO.$po_enum(string($(openapi_export_getter_name(field))(value)))"
             push!(kwargs_device, Dict("name" => name, "expr" => expr))

@@ -138,7 +138,7 @@ function from_openapi(po::PO.AreaInterchange, refs::OpenAPIRefs, ::ComponentBase
         from_area = resolve_ref(refs, po.from_area, Area),
         to_area = resolve_ref(refs, po.to_area, Area),
         flow_limits = _fromto_tofrom_from_po(po.flow_limits),
-        base_power = po.base_power,
+        base_power = _or_default(po.base_power, 100.0),
     )
 end
 
@@ -150,7 +150,7 @@ function from_openapi(po::PO.AreaInterchange, refs::OpenAPIRefs, ::NaturalUnit)
         from_area = resolve_ref(refs, po.from_area, Area),
         to_area = resolve_ref(refs, po.to_area, Area),
         flow_limits = _fromto_tofrom_from_po(po.flow_limits, (/), po.base_power),
-        base_power = po.base_power,
+        base_power = _or_default(po.base_power, 100.0),
     )
 end
 

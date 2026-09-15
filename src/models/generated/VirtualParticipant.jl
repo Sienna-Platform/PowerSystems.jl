@@ -115,7 +115,7 @@ function from_openapi(po::PO.VirtualParticipant, refs::OpenAPIRefs, ::ComponentB
         max_supply = po.max_supply,
         max_demand = po.max_demand,
         settlement_point = resolve_ref(refs, po.settlement_point_id, Topology),
-        operation_cost = convert_cost(po.operation_cost)::Union{MarketBidCost, MarketBidTimeSeriesCost},
+        operation_cost = convert_cost(po.operation_cost.value)::Union{MarketBidCost, MarketBidTimeSeriesCost},
     )
 end
 
@@ -126,7 +126,7 @@ function from_openapi(po::PO.VirtualParticipant, refs::OpenAPIRefs, ::NaturalUni
         max_supply = po.max_supply,
         max_demand = po.max_demand,
         settlement_point = resolve_ref(refs, po.settlement_point_id, Topology),
-        operation_cost = convert_cost(po.operation_cost)::Union{MarketBidCost, MarketBidTimeSeriesCost},
+        operation_cost = convert_cost(po.operation_cost.value)::Union{MarketBidCost, MarketBidTimeSeriesCost},
     )
 end
 
@@ -139,7 +139,7 @@ function to_openapi(value::VirtualParticipant, refs::OpenAPIRefs, ::ComponentBas
         max_supply = get_max_supply(value),
         max_demand = get_max_demand(value),
         settlement_point_id = _component_id_optional(refs, get_settlement_point(value)),
-        operation_cost = convert_cost_to_openapi(get_operation_cost(value)),
+        operation_cost = PO.VirtualParticipantOperationCost(convert_cost_to_openapi(get_operation_cost(value))),
     )
 end
 
@@ -151,6 +151,6 @@ function to_openapi(value::VirtualParticipant, refs::OpenAPIRefs, ::NaturalUnit)
         max_supply = get_max_supply(value),
         max_demand = get_max_demand(value),
         settlement_point_id = _component_id_optional(refs, get_settlement_point(value)),
-        operation_cost = convert_cost_to_openapi(get_operation_cost(value)),
+        operation_cost = PO.VirtualParticipantOperationCost(convert_cost_to_openapi(get_operation_cost(value))),
     )
 end

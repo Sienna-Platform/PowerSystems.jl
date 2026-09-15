@@ -107,10 +107,11 @@ end
 
 """
 Resolve an optional component reference: a schema-optional reference the document omits is an
-absent relationship, so `nothing` in means `nothing` out. A stated reference goes through
-[`Base.getindex`](@ref) and still errors on an unregistered id.
+absent relationship, so `nothing`/`Absent` (the key was never on the wire) in means `nothing`
+out. A stated reference goes through [`Base.getindex`](@ref) and still errors on an
+unregistered id.
 """
-resolve_ref(::OpenAPIRefs, ::Nothing) = nothing
+resolve_ref(::OpenAPIRefs, ::Union{Nothing, IC.Absent}) = nothing
 resolve_ref(refs::OpenAPIRefs, id::Integer) = refs[id]
 
 """
@@ -121,7 +122,7 @@ and every generated converter that used it handed the constructor an under-typed
 assert costs one type check and makes a document that points a `bus` field at, say, an `Arc`
 fail there, naming both types, instead of deeper inside the component constructor.
 """
-resolve_ref(::OpenAPIRefs, ::Nothing, ::Type) = nothing
+resolve_ref(::OpenAPIRefs, ::Union{Nothing, IC.Absent}, ::Type) = nothing
 resolve_ref(refs::OpenAPIRefs, id::Integer, ::Type{T}) where {T} = refs[id]::T
 
 """Whether `id` has a component registered."""

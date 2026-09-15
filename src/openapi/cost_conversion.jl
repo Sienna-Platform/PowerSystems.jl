@@ -98,12 +98,25 @@ convert_cost(fd) = error("convert_cost: unmapped variant $(typeof(fd))")
 
 # ── ValueCurve ──────────────────────────────────────────────────────────────────
 
+"""`Absent` (the field was never on the wire) and an explicit JSON `null` both mean the
+PSY-side optional value is `nothing` — same convention as `refs.jl`'s `_power_units_marker`."""
+_optional_from_wire(::Union{Nothing, IC.Absent}) = nothing
+_optional_from_wire(value) = value
+
 convert_cost(vc::PC.InputOutputCurve) =
-    InputOutputCurve(convert_cost(vc.function_data), vc.input_at_zero)
+    InputOutputCurve(convert_cost(vc.function_data), _optional_from_wire(vc.input_at_zero))
 convert_cost(vc::PC.IncrementalCurve) =
-    IncrementalCurve(convert_cost(vc.function_data), vc.initial_input, vc.input_at_zero)
+    IncrementalCurve(
+        convert_cost(vc.function_data),
+        _optional_from_wire(vc.initial_input),
+        _optional_from_wire(vc.input_at_zero),
+    )
 convert_cost(vc::PC.AverageRateCurve) =
-    AverageRateCurve(convert_cost(vc.function_data), vc.initial_input, vc.input_at_zero)
+    AverageRateCurve(
+        convert_cost(vc.function_data),
+        _optional_from_wire(vc.initial_input),
+        _optional_from_wire(vc.input_at_zero),
+    )
 
 # ── vom_cost / startup_fuel_offtake: always a LINEAR InputOutputCurve ──────────
 
@@ -155,8 +168,9 @@ convert_cost(fd::IC.TimeSeriesPiecewiseStepData, store) =
     )
 convert_cost(fd::IC.TimeSeriesPiecewiseStepData) = convert_cost(fd, _current_import_store())
 
-"""`nothing` stays `nothing`; a wire association id resolves against `store`."""
-_resolve_optional_key(::Any, ::Nothing) = nothing
+"""`nothing`/`Absent` (the field was never on the wire) both stay `nothing`; a wire
+association id resolves against `store`."""
+_resolve_optional_key(::Any, ::Union{Nothing, IC.Absent}) = nothing
 _resolve_optional_key(store, id::Integer) = IS.get_time_series_key(store, id)
 
 """Wire representation of [`CurveStyles`](@ref): a plain integer (0/1), deliberately not
@@ -189,7 +203,10 @@ function _curve_multistep_from_wire(id::Integer)
 end
 
 convert_cost(vc::PC.TimeSeriesInputOutputCurve, store) =
-    TimeSeriesInputOutputCurve(convert_cost(vc.function_data, store), vc.input_at_zero)
+    TimeSeriesInputOutputCurve(
+        convert_cost(vc.function_data, store),
+        _optional_from_wire(vc.input_at_zero),
+    )
 convert_cost(vc::PC.TimeSeriesInputOutputCurve) = convert_cost(vc, _current_import_store())
 
 convert_cost(vc::PC.TimeSeriesIncrementalCurve, store) =
@@ -245,8 +262,11 @@ _fuel_cost_fields(::Any, ::Real, ::Integer) = error(
 function convert_cost(f::PC.FuelCurve, store)
     value_curve = convert_cost(_require(f.value_curve, "FuelCurve.value_curve"), store)
     vom_cost = _vom_cost(f.vom_cost)
-    fuel_cost, fuel_cost_time_series =
-        _fuel_cost_fields(store, f.fuel_cost, f.fuel_cost_time_series)
+    fuel_cost, fuel_cost_time_series = _fuel_cost_fields(
+        store,
+        _optional_from_wire(f.fuel_cost),
+        _optional_from_wire(f.fuel_cost_time_series),
+    )
     return _with_power_units(f.power_units) do units
         FuelCurve(;
             value_curve = value_curve,
@@ -282,8 +302,10 @@ non-time-series value curve still converts with no active import bound at all.""
 function convert_cost(f::PC.FuelCurve)
     value_curve = convert_cost(_require(f.value_curve, "FuelCurve.value_curve"))
     vom_cost = _vom_cost(f.vom_cost)
-    fuel_cost, fuel_cost_time_series =
-        _fuel_cost_fields_ambient(f.fuel_cost, f.fuel_cost_time_series)
+    fuel_cost, fuel_cost_time_series = _fuel_cost_fields_ambient(
+        _optional_from_wire(f.fuel_cost),
+        _optional_from_wire(f.fuel_cost_time_series),
+    )
     return _with_power_units(f.power_units) do units
         FuelCurve(;
             value_curve = value_curve,
@@ -345,8 +367,8 @@ function convert_cost(po::PC.RenewableGenerationCost)
                 "RenewableGenerationCost.variable_operation_cost",
             ),
         ),
-        curtailment_cost = _optional_cost_curve(po.curtailment_cost),
-        fixed = po.fixed,
+        curtailment_cost = _optional_cost_curve(_optional_from_wire(po.curtailment_cost)),
+        fixed = _or_default(po.fixed, 0.0),
     )
 end
 
@@ -358,7 +380,7 @@ function convert_cost(po::PC.HydroGenerationCost)
                 "HydroGenerationCost.variable_operation_cost",
             ),
         ),
-        fixed = po.fixed,
+        fixed = _or_default(po.fixed, 0.0),
     )
 end
 
@@ -367,7 +389,7 @@ function convert_cost(po::PC.LoadCost)
         variable_operation_cost = convert_cost(
             _require(po.variable_operation_cost, "LoadCost.variable_operation_cost"),
         ),
-        fixed = po.fixed,
+        fixed = _or_default(po.fixed, 0.0),
     )
 end
 
@@ -398,10 +420,10 @@ function convert_cost(po::PC.MarketBidCost)
             "MarketBidCost.decremental_slope",
         ),
         curve_style = _curve_style_from_wire(
-            _require(po.curve_style, "MarketBidCost.curve_style"),
+            _require(po.curve_style, "MarketBidCost.curve_style").value,
         ),
         curve_multistep = _curve_multistep_from_wire(
-            _require(po.curve_multistep, "MarketBidCost.curve_multistep"),
+            _require(po.curve_multistep, "MarketBidCost.curve_multistep").value,
         ),
     )
 end
@@ -480,10 +502,10 @@ function convert_cost(po::PC.MarketBidTimeSeriesCost, store)
             po.decremental_slope, "MarketBidTimeSeriesCost.decremental_slope",
         ),
         curve_style = _curve_style_from_wire(
-            _require(po.curve_style, "MarketBidTimeSeriesCost.curve_style"),
+            _require(po.curve_style, "MarketBidTimeSeriesCost.curve_style").value,
         ),
         curve_multistep = _curve_multistep_from_wire(
-            _require(po.curve_multistep, "MarketBidTimeSeriesCost.curve_multistep"),
+            _require(po.curve_multistep, "MarketBidTimeSeriesCost.curve_multistep").value,
         ),
     )
 end
@@ -538,63 +560,47 @@ _convert_source_operation_cost(po::PC.ImportExportTimeSeriesCost, store, base_po
 
 function convert_cost(po::PC.HydroReservoirCost)
     return HydroReservoirCost(;
-        level_shortage_cost = po.level_shortage_cost,
-        level_surplus_cost = po.level_surplus_cost,
-        spillage_cost = po.spillage_cost,
+        level_shortage_cost = _or_default(po.level_shortage_cost, 0.0),
+        level_surplus_cost = _or_default(po.level_surplus_cost, 0.0),
+        spillage_cost = _or_default(po.spillage_cost, 0.0),
     )
 end
 
 function convert_cost(po::PC.StorageCost)
     return StorageCost(;
-        charge_variable_cost = _optional_cost_curve(po.charge_variable_cost),
-        discharge_variable_cost = _optional_cost_curve(po.discharge_variable_cost),
+        charge_variable_cost = _optional_cost_curve(
+            _optional_from_wire(po.charge_variable_cost),
+        ),
+        discharge_variable_cost = _optional_cost_curve(
+            _optional_from_wire(po.discharge_variable_cost),
+        ),
         fixed = po.fixed,
         start_up = convert_cost(_require(po.start_up, "StorageCost.start_up")),
         shut_down = po.shut_down,
-        energy_shortage_cost = po.energy_shortage_cost,
-        energy_surplus_cost = po.energy_surplus_cost,
+        energy_shortage_cost = _or_default(po.energy_shortage_cost, 0.0),
+        energy_surplus_cost = _or_default(po.energy_surplus_cost, 0.0),
     )
 end
 
 # ── Operating Reserve Demand Curve ─────────────────────────────────────────────
 # A reserve's `variable` is never a FuelCurve; PSY stores `CostCurve{PiecewiseIncrementalCurve}`.
 
-"""Convert a reserve's `variable` field; `nothing` means no demand curve is defined."""
-convert_reserve_variable(po::Union{Nothing, PC.CostCurve}) =
-    _offer_curve(po, "a reserve demand curve")
+"""Convert a reserve's `variable` field; `nothing`/`Absent` means no demand curve is defined."""
+convert_reserve_variable(po::Union{Nothing, IC.Absent, PC.CostCurve}) =
+    _offer_curve(_optional_from_wire(po), "a reserve demand curve")
 
 # ── LossCurve ⇄ OpenAPI ────────────────────────────────────────────────────────
-# The OpenAPI schemas have no `LossCurve`: a document's loss field is a bare
-# `ValueCurve` (`$ref: InputOutputCurve` / `TwoTerminalLoss`) with nowhere to record a
-# power basis. PSY's loss fields are `LossCurve`s, which carry one, so the two
-# directions are asymmetric until the schemas gain the type.
+# The schemas' `LossCurve` records the basis its curve is expressed in (`power_units`,
+# governing both axes), the same enum every power-bearing blob stamps. Import keeps that
+# basis and export writes PSY's `get_power_units`; neither side assumes natural units.
+
+"""Wrap a document's loss curve as a `LossCurve` on the basis its blob states."""
+loss_curve_from_openapi(curve::ValueCurve, units::IS.AbstractUnitSystem) =
+    LossCurve(curve, units)
 
 """
-Wrap a document's bare loss curve as a `LossCurve` on the natural-units basis.
-
-The document carries no basis for a loss field, so one is supplied here rather than
-guessed per call site: `NaturalUnit` is what every current producer writes and what the
-schema's own `UnitSystem` default names. When the schemas gain a `LossCurve` with an
-explicit `power_units`, this reads it instead of synthesizing it.
+Unwrap a `LossCurve` to the bare curve the document's `value_curve` holds. The caller
+stamps `power_units` from `get_power_units(loss)` (`_hvdc_loss_to_openapi`), so the basis
+travels with the curve instead of being refused here.
 """
-loss_curve_from_openapi(curve::ValueCurve) = LossCurve(curve, NaturalUnit())
-
-"""
-Unwrap a `LossCurve` to the bare curve the document holds, refusing any basis the
-document cannot represent.
-
-Export errors on a non-natural basis rather than silently dropping it — the same posture
-`admittance_units`/`voltage_units` already take on these HVDC types, where only the
-implemented basis passes and anything else is an error rather than a guess. Without the
-guard a `LossCurve` on a relative basis would round-trip back as `NaturalUnit`, changing
-its meaning with no diagnostic.
-"""
-function loss_curve_to_openapi(loss::AnyLossCurve)
-    units = get_power_units(loss)
-    units isa NaturalUnit || error(
-        "cannot export a LossCurve in $units: only natural units are implemented, and a " *
-        "relative basis would be reinterpreted rather than rescaled on import. Convert the " *
-        "curve to NaturalUnit before exporting.",
-    )
-    return get_value_curve(loss)
-end
+loss_curve_to_openapi(loss::AnyLossCurve) = get_value_curve(loss)

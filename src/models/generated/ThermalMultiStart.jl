@@ -311,10 +311,10 @@ function from_openapi(po::PO.ThermalMultiStart, refs::OpenAPIRefs, ::ComponentBa
         time_limits = _updown_from_po(po.time_limits),
         start_time_limits = _startup_stages_from_po(po.start_time_limits),
         start_types = po.start_types,
-        operation_cost = convert_cost(po.operation_cost)::OperationalCost,
+        operation_cost = convert_cost(po.operation_cost.value)::OperationalCost,
         base_power = po.base_power,
-        time_at_status = po.time_at_status,
-        commitment_mode = CommitmentModes(po.commitment_mode.value),
+        time_at_status = _or_default(po.time_at_status, INFINITE_TIME),
+        commitment_mode = _or_default_enum(po.commitment_mode, CommitmentModes.COMMITTED),
     )
 end
 
@@ -336,10 +336,10 @@ function from_openapi(po::PO.ThermalMultiStart, refs::OpenAPIRefs, ::NaturalUnit
         time_limits = _updown_from_po(po.time_limits),
         start_time_limits = _startup_stages_from_po(po.start_time_limits),
         start_types = po.start_types,
-        operation_cost = convert_cost(po.operation_cost)::OperationalCost,
+        operation_cost = convert_cost(po.operation_cost.value)::OperationalCost,
         base_power = po.base_power,
-        time_at_status = po.time_at_status,
-        commitment_mode = CommitmentModes(po.commitment_mode.value),
+        time_at_status = _or_default(po.time_at_status, INFINITE_TIME),
+        commitment_mode = _or_default_enum(po.commitment_mode, CommitmentModes.COMMITTED),
     )
 end
 
@@ -366,7 +366,7 @@ function to_openapi(value::ThermalMultiStart, refs::OpenAPIRefs, ::ComponentBase
         time_limits = _updown_po_optional(get_time_limits(value)),
         start_time_limits = _startup_stages_po_optional(get_start_time_limits(value)),
         start_types = get_start_types(value),
-        operation_cost = convert_cost_to_openapi(get_operation_cost(value)),
+        operation_cost = PO.ThermalMultiStartOperationCost(convert_cost_to_openapi(get_operation_cost(value))),
         base_power = _get_base_power(value),
         time_at_status = get_time_at_status(value),
         commitment_mode = PO.CommitmentModes(string(get_commitment_mode(value))),
@@ -393,7 +393,7 @@ function to_openapi(value::ThermalMultiStart, refs::OpenAPIRefs, ::NaturalUnit)
         time_limits = _updown_po_optional(get_time_limits(value)),
         start_time_limits = _startup_stages_po_optional(get_start_time_limits(value)),
         start_types = get_start_types(value),
-        operation_cost = convert_cost_to_openapi(get_operation_cost(value)),
+        operation_cost = PO.ThermalMultiStartOperationCost(convert_cost_to_openapi(get_operation_cost(value))),
         base_power = _get_base_power(value),
         time_at_status = get_time_at_status(value),
         commitment_mode = PO.CommitmentModes(string(get_commitment_mode(value))),

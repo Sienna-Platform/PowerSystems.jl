@@ -1,5 +1,3 @@
-isdefined(Base, :__precompile__) && __precompile__()
-
 """
 Module for constructing self-contained power system objects.
 """
@@ -608,7 +606,6 @@ export CompressionTypes
 #export make_time_series
 export get_bus_numbers
 export set_bus_number!
-export set_number!  # Remove this in v5.0.
 export get_name
 export set_name!
 export get_component_ids
@@ -668,7 +665,7 @@ export check_component
 export check_components
 export check_ac_transmission_rate_values
 
-# From IS logging.jl, generate_struct_files.jl
+# From IS logging.jl
 export configure_logging
 export open_file_logger
 export make_logging_config_file
@@ -676,8 +673,6 @@ export MultiLogger
 export LogEventTracker
 export StructField
 export StructDefinition
-export generate_struct_file
-export generate_struct_files
 export UnitSystem # internal.jl
 # Unit types for explicit units in getters/setters.
 # Natural units are Unitful's `u"..."` string macro (`u"MW"`, `u"kV"`, `u"Ω"`,
@@ -735,12 +730,10 @@ export to_file
 # Imports
 
 import Base: @kwdef
-import LinearAlgebra
 import Unicode: normalize
 import Logging
 import Dates
 import TimeSeries
-import DataStructures: OrderedDict, SortedDict
 import JSON
 import Base.to_index
 import PrettyTables
@@ -751,7 +744,6 @@ import PowerOperationsOpenAPIModels
 import InfrastructureTimeSeriesOpenAPIModels
 import PowerOpenAPIModels
 import OpenAPI
-import TimeZones
 const IC = InfrastructureCoreOpenAPIModels
 const PC = PowerCoreOpenAPIModels
 const PO = PowerOperationsOpenAPIModels
@@ -887,7 +879,6 @@ import InfrastructureSystems:
     LOG_GROUP_PARSING,
     open_file_logger,
     make_logging_config_file,
-    validate_struct,
     MultiLogger,
     LogEventTracker,
     StructField,
@@ -1005,7 +996,6 @@ supports_supplemental_attributes(::Device) = true
 # Include utilities
 include("utils/logging.jl")
 include("utils/IO/base_checks.jl")
-include("utils/generate_struct_files.jl")
 
 # Units machinery (formerly PowerSystemsUnits.jl)
 include("units/types.jl")
@@ -1122,7 +1112,6 @@ include("openapi/file_io.jl")
 include("substation.jl")
 include("subsystems.jl")
 include("component_selector.jl")
-include("data_format_conversions.jl")
 include("get_components_interface.jl")
 include("component_selector_interface.jl")
 
@@ -1142,9 +1131,6 @@ include("utils/print_pt.jl")
 
 include("utils/enums_conversion.jl")
 include("models/serialization.jl")
-
-#Deprecated
-include("deprecated.jl")
 
 function __init__()
     Unitful.register(PowerSystems)

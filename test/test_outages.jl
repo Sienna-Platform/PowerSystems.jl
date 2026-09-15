@@ -398,7 +398,12 @@ end
     to_file(sys, dir; force = true)
     doc = PSY.PD.read_document(joinpath(dir, "system.json"))
 
-    geo_json = Dict{String, Any}("type" => "Point", "coordinates" => [0.0, 0.0])
+    geo_json = PSY.IC.GeographicInfoGeoJson(;
+        additional_properties = Dict{String, Any}(
+            "type" => "Point",
+            "coordinates" => [0.0, 0.0],
+        ),
+    )
     geo = PSY.IC.GeographicInfo(; id = PSY.PD.next_id!(doc), geo_json = geo_json)
     # A load carries none of the outage/GeographicInfo attributes the fixture attaches only
     # to the two generators and their buses, so it is unambiguously bare beforehand.
@@ -412,7 +417,7 @@ end
     component2 = IS.get_component(sys2, load_id)
     geos2 = get_supplemental_attributes(GeographicInfo, component2)
     @test length(geos2) == 1
-    @test IS.get_geo_json(only(geos2)) == geo_json
+    @test IS.get_geo_json(only(geos2)) == geo_json.additional_properties
 end
 
 @testset "Test loud error: attribute_type mismatch caught on the full import path" begin
@@ -422,8 +427,13 @@ end
     dir = mktempdir()
     to_file(sys, dir; force = true)
     doc = PSY.PD.read_document(joinpath(dir, "system.json"))
-    assoc = first(doc.supplemental_attribute_associations)
-    assoc.attribute_type = "EmissionsData"
+    # PO structs are immutable, so rebuild the row rather than mutating it in place, and
+    # replace it by index.
+    doc.supplemental_attribute_associations[1] =
+        PSY._po_with(
+            doc.supplemental_attribute_associations[1];
+            attribute_type = "EmissionsData",
+        )
 
     @test_throws Exception PSY.from_openapi(
         System, doc; time_series_storage_path = joinpath(dir, "time_series.h5"),
@@ -438,8 +448,11 @@ end
     dir = mktempdir()
     to_file(sys, dir; force = true)
     doc = PSY.PD.read_document(joinpath(dir, "system.json"))
-    row = first(doc.time_series_associations).value
-    row.name = "not_the_real_series_name"
+    # PO structs are immutable, so rebuild the row and its oneOf wrapper rather than
+    # mutating in place, and replace it by index.
+    wrapper = doc.time_series_associations[1]
+    new_row = PSY._po_with(wrapper.value; name = "not_the_real_series_name")
+    doc.time_series_associations[1] = typeof(wrapper)(new_row)
 
     @test_throws IS.DataFormatError PSY.from_openapi(
         System, doc; time_series_storage_path = joinpath(dir, "time_series.h5"),

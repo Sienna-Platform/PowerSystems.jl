@@ -2,7 +2,6 @@ using Test
 using Logging
 using DataStructures
 using Dates
-using LinearAlgebra
 import TimeSeries
 import InteractiveUtils
 import JSON

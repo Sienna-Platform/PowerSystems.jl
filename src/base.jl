@@ -1,6 +1,4 @@
 
-const SKIP_PM_VALIDATION = false
-
 const SYSTEM_KWARGS = Set((
     :config_path,
     :frequency,
@@ -432,17 +430,19 @@ function _serialize_system_metadata_to_file(sys::System, filename, user_data)
     name = get_name(sys)
     description = get_description(sys)
     resolutions = [x.value for x in get_time_series_resolutions(sys)]
-    metadata = OrderedDict(
-        "name" => isnothing(name) ? "" : name,
-        "description" => isnothing(description) ? "" : description,
-        "uuid" => string(get_system_uuid(sys)),
-        "frequency" => sys.frequency,
-        "time_series_resolutions_milliseconds" => resolutions,
-        "component_counts" => IS.get_component_counts_by_type(sys.data),
-        "time_series_counts" => IS.get_time_series_counts_by_type(sys.data),
+    # A NamedTuple, not a Dict: JSON writes its fields in declaration order, which is the
+    # only thing the ordered dict this replaced was here for.
+    metadata = (;
+        name = isnothing(name) ? "" : name,
+        description = isnothing(description) ? "" : description,
+        uuid = string(get_system_uuid(sys)),
+        frequency = sys.frequency,
+        time_series_resolutions_milliseconds = resolutions,
+        component_counts = IS.get_component_counts_by_type(sys.data),
+        time_series_counts = IS.get_time_series_counts_by_type(sys.data),
     )
     if !isnothing(user_data)
-        metadata["user_data"] = user_data
+        metadata = (; metadata..., user_data = user_data)
     end
 
     open(filename, "w") do io
@@ -2161,11 +2161,6 @@ within the instance.
 """
 validate_component_with_system(component::Component, sys::System) = true
 
-Base.@deprecate validate_struct(sys::System, component::Component) validate_component_with_system(
-    component,
-    sys,
-) false
-
 # Keeps the code working with IS.
 IS.validate_struct(component::Component) = validate_component(component)
 
@@ -3351,13 +3346,6 @@ function _copy_internal_for_conversion(component::Component)
 end
 
 function _validate_or_skip!(sys, component, skip_validation)
-    if skip_validation && get_runchecks(sys)
-        @warn(
-            "skip_validation is deprecated; construct System with runchecks = true or call set_runchecks!. Disabling System.runchecks"
-        )
-        set_runchecks!(sys, false)
-    end
-
     # Always skip if system checks are disabled.
     if !skip_validation && !get_runchecks(sys)
         skip_validation = true
