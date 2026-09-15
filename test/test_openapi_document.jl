@@ -338,7 +338,7 @@ end
         emission_rate = emissions_po.emission_rate, basis = "FUEL_INPUT",
         mass_unit = "LB", energy_unit = "MMBTU",
     )
-    @test_throws Exception PollutantType("BOGUS")
+    @test_throws Exception PollutantType.T("BOGUS")
 end
 
 @testset "MarketBidCost round trip: fields and ancillary service offer ids" begin

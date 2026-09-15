@@ -26,7 +26,7 @@ This file is auto-generated. Do not edit.
         ext::Dict{String, Any}
         states::Vector{Symbol}
         n_states::Int
-        states_types::Vector{StateTypes}
+        states_types::Vector{StateTypes.T}
         internal::InfrastructureSystemsInternal
     end
 
@@ -59,7 +59,7 @@ Parameters of IEEE Std 421.5 Type ST4B Excitacion System. ESST4B in PSSE and PSL
 	Vr2: Regulator Output,
 	Vm: Output integrator
 - `n_states::Int`: (**Do not modify.**) ST4B has 4 states
-- `states_types::Vector{StateTypes}`: (**Do not modify.**) ST4B has 4 states
+- `states_types::Vector{StateTypes.T}`: (**Do not modify.**) ST4B has 4 states
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
 """
 mutable struct ESST4B <: AVR
@@ -109,7 +109,7 @@ mutable struct ESST4B <: AVR
     "(**Do not modify.**) ST4B has 4 states"
     n_states::Int
     "(**Do not modify.**) ST4B has 4 states"
-    states_types::Vector{StateTypes}
+    states_types::Vector{StateTypes.T}
     "(**Do not modify.**) PowerSystems.jl internal reference"
     internal::InfrastructureSystemsInternal
 end

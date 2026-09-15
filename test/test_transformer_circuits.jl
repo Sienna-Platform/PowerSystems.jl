@@ -246,11 +246,11 @@ end
         TwoWindingTransformerShuntLocation.SECONDARY,
         TwoWindingTransformerShuntLocation.SPLIT,
     )
-        @test TwoWindingTransformerShuntLocation(string(loc)) == loc
+        @test TwoWindingTransformerShuntLocation.T(string(loc)) == loc
     end
-    @test ThreeWindingTransformerShuntLocation("STAR") ==
+    @test ThreeWindingTransformerShuntLocation.T("STAR") ==
           ThreeWindingTransformerShuntLocation.STAR
-    @test ThreeWindingTransformerShuntLocation("PRIMARY") ==
+    @test ThreeWindingTransformerShuntLocation.T("PRIMARY") ==
           ThreeWindingTransformerShuntLocation.PRIMARY
 end
 

@@ -27,9 +27,9 @@ mutable struct MarketBidCost{U <: IS.AbstractUnitSystem} <: OfferCurveCost
     "Linear-interpolation flag for the corresponding offer curve; false (default) is the step interpretation. Mutually exclusive with block groups on the same curve."
     decremental_slope::Bool
     "Curve-clearing style for the bid ([`CurveStyles`](@ref)); VARIABLE (default) is a continuous curve with one or more segments, FIXED an all-or-nothing block with a single segment. FIXED is mutually exclusive with linear interpolation (`incremental_slope`/`decremental_slope`), and the constructor rejects a FIXED bid whose offer curves have more than one segment."
-    curve_style::CurveStyles
+    curve_style::CurveStyles.T
     "Multi-step block indicator for the bid ([`CurveMultiStep`](@ref)); SINGLE_STEP (default) clears each step independently, MULTI_STEP must be awarded as one block across every step the bid covers. Independent of `curve_style`."
-    curve_multistep::CurveMultiStep
+    curve_multistep::CurveMultiStep.T
 end
 
 const ZERO_OFFER_CURVE = CostCurve(PiecewiseIncrementalCurve(0.0, [0.0, 0.0], [0.0]))

@@ -18,7 +18,7 @@ either offer curve: an all-or-nothing block has no curve to interpolate. Shared 
 [`MarketBidCost`](@ref) and [`MarketBidTimeSeriesCost`](@ref) constructors.
 """
 function check_curve_style_exclusivity(
-    curve_style::CurveStyles,
+    curve_style::CurveStyles.T,
     incremental_slope::Bool,
     decremental_slope::Bool,
 )
@@ -44,7 +44,7 @@ offer curve has no meaning for it. `field` names the offer curve in the message 
 rather than construction (see [`MarketBidTimeSeriesCost`](@ref)).
 """
 function check_fixed_single_segment(
-    curve_style::CurveStyles,
+    curve_style::CurveStyles.T,
     curves,
     field::AbstractString;
     context::AbstractString = "",
@@ -65,7 +65,7 @@ function check_fixed_single_segment(
 end
 
 check_fixed_single_segment(
-    curve_style::CurveStyles,
+    curve_style::CurveStyles.T,
     curve::CostCurve{PiecewiseIncrementalCurve},
     field::AbstractString;
     context::AbstractString = "",

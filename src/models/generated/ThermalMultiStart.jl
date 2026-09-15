@@ -8,13 +8,13 @@ This file is auto-generated. Do not edit.
     mutable struct ThermalMultiStart <: ThermalGen
         name::String
         available::Bool
-        status::OperationalStates
+        status::OperationalStates.T
         bus::ACBus
         active_power::Float64
         reactive_power::Float64
         rating::Float64
-        prime_mover_type::PrimeMovers
-        fuel::ThermalFuels
+        prime_mover_type::PrimeMovers.T
+        fuel::ThermalFuels.T
         active_power_limits::MinMax
         reactive_power_limits::Union{Nothing, MinMax}
         ramp_limits::Union{Nothing, UpDown}
@@ -26,7 +26,7 @@ This file is auto-generated. Do not edit.
         base_power::Float64
         services::Vector{Service}
         time_at_status::Float64
-        commitment_mode::CommitmentModes
+        commitment_mode::CommitmentModes.T
         dynamic_injector::Union{Nothing, DynamicInjection}
         ext::Dict{String, Any}
         internal::InfrastructureSystemsInternal
@@ -39,13 +39,13 @@ A thermal generator, such as a fossil fuel or nuclear generator, that can start-
 # Arguments
 - `name::String`: Name of the component. Components of the same type (e.g., `PowerLoad`) must have unique names, but components of different types (e.g., `PowerLoad` and `ACBus`) can have the same name
 - `available::Bool`: Indicator of whether the component is connected and online (`true`) or disconnected, offline, or down (`false`). Unavailable components are excluded during simulations
-- `status::OperationalStates`: Operating state of the unit at the start of a simulation. Options are listed [here](@ref opstate_list)
+- `status::OperationalStates.T`: Operating state of the unit at the start of a simulation. Options are listed [here](@ref opstate_list)
 - `bus::ACBus`: Bus that this component is connected to
 - `active_power::Float64`: Initial active power set point of the unit in MW. For power flow, this is the steady state operating point of the system. For production cost modeling, this may or may not be used as the initial starting point for the solver, depending on the solver used, validation range: `active_power_limits`
 - `reactive_power::Float64`: Initial reactive power set point of the unit (MVAR), validation range: `reactive_power_limits`
 - `rating::Float64`: Maximum AC side output power rating of the unit. Stored in per unit of the device and not to be confused with base_power, validation range: `(0, nothing)`
-- `prime_mover_type::PrimeMovers`: Prime mover technology according to EIA 923. Options are listed [here](@ref pm_list)
-- `fuel::ThermalFuels`: Prime mover fuel according to EIA 923. Options are listed [here](@ref tf_list)
+- `prime_mover_type::PrimeMovers.T`: Prime mover technology according to EIA 923. Options are listed [here](@ref pm_list)
+- `fuel::ThermalFuels.T`: Prime mover fuel according to EIA 923. Options are listed [here](@ref tf_list)
 - `active_power_limits::MinMax`: Minimum and maximum stable active power levels (MW)
 - `reactive_power_limits::Union{Nothing, MinMax}`: Minimum and maximum reactive power limits. Set to `Nothing` if not applicable
 - `ramp_limits::Union{Nothing, UpDown}`: Ramp up and ramp down limits (MW/min), validation range: `(0, nothing)`
@@ -57,7 +57,7 @@ A thermal generator, such as a fossil fuel or nuclear generator, that can start-
 - `base_power::Float64`: Base power of the unit (MVA) for [per unitization](@ref per_unit), validation range: `(0.0001, nothing)`
 - `services::Vector{Service}`: (default: `Device[]`) Services that this device contributes to
 - `time_at_status::Float64`: (default: `INFINITE_TIME`) Time (e.g., `Minutes(360)`) the generator has been in its current `status`
-- `commitment_mode::CommitmentModes`: (default: `CommitmentModes.COMMITTED`) Commitment mode of the unit. Options are listed [here](@ref commit_list)
+- `commitment_mode::CommitmentModes.T`: (default: `CommitmentModes.COMMITTED`) Commitment mode of the unit. Options are listed [here](@ref commit_list)
 - `dynamic_injector::Union{Nothing, DynamicInjection}`: (default: `nothing`) corresponding dynamic injection device
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
@@ -68,7 +68,7 @@ mutable struct ThermalMultiStart <: ThermalGen
     "Indicator of whether the component is connected and online (`true`) or disconnected, offline, or down (`false`). Unavailable components are excluded during simulations"
     available::Bool
     "Operating state of the unit at the start of a simulation. Options are listed [here](@ref opstate_list)"
-    status::OperationalStates
+    status::OperationalStates.T
     "Bus that this component is connected to"
     bus::ACBus
     "Initial active power set point of the unit in MW. For power flow, this is the steady state operating point of the system. For production cost modeling, this may or may not be used as the initial starting point for the solver, depending on the solver used"
@@ -78,9 +78,9 @@ mutable struct ThermalMultiStart <: ThermalGen
     "Maximum AC side output power rating of the unit. Stored in per unit of the device and not to be confused with base_power"
     rating::Float64
     "Prime mover technology according to EIA 923. Options are listed [here](@ref pm_list)"
-    prime_mover_type::PrimeMovers
+    prime_mover_type::PrimeMovers.T
     "Prime mover fuel according to EIA 923. Options are listed [here](@ref tf_list)"
-    fuel::ThermalFuels
+    fuel::ThermalFuels.T
     "Minimum and maximum stable active power levels (MW)"
     active_power_limits::MinMax
     "Minimum and maximum reactive power limits. Set to `Nothing` if not applicable"
@@ -104,7 +104,7 @@ mutable struct ThermalMultiStart <: ThermalGen
     "Time (e.g., `Minutes(360)`) the generator has been in its current `status`"
     time_at_status::Float64
     "Commitment mode of the unit. Options are listed [here](@ref commit_list)"
-    commitment_mode::CommitmentModes
+    commitment_mode::CommitmentModes.T
     "corresponding dynamic injection device"
     dynamic_injector::Union{Nothing, DynamicInjection}
     "An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation."
@@ -298,13 +298,13 @@ function from_openapi(po::PO.ThermalMultiStart, refs::OpenAPIRefs, ::ComponentBa
     return ThermalMultiStart(;
         name = po.name,
         available = po.available,
-        status = OperationalStates(po.status.value),
+        status = OperationalStates.T(po.status.value),
         bus = resolve_ref(refs, po.bus, ACBus),
         active_power = po.active_power,
         reactive_power = po.reactive_power,
         rating = po.rating,
-        prime_mover_type = PrimeMovers(po.prime_mover_type.value),
-        fuel = ThermalFuels(po.fuel.value),
+        prime_mover_type = PrimeMovers.T(po.prime_mover_type.value),
+        fuel = ThermalFuels.T(po.fuel.value),
         active_power_limits = _minmax_from_po(po.active_power_limits),
         reactive_power_limits = _minmax_from_po(po.reactive_power_limits),
         ramp_limits = _updown_from_po(po.ramp_limits),
@@ -323,13 +323,13 @@ function from_openapi(po::PO.ThermalMultiStart, refs::OpenAPIRefs, ::NaturalUnit
     return ThermalMultiStart(;
         name = po.name,
         available = po.available,
-        status = OperationalStates(po.status.value),
+        status = OperationalStates.T(po.status.value),
         bus = resolve_ref(refs, po.bus, ACBus),
         active_power = po.active_power / po.base_power,
         reactive_power = po.reactive_power / po.base_power,
         rating = po.rating / po.base_power,
-        prime_mover_type = PrimeMovers(po.prime_mover_type.value),
-        fuel = ThermalFuels(po.fuel.value),
+        prime_mover_type = PrimeMovers.T(po.prime_mover_type.value),
+        fuel = ThermalFuels.T(po.fuel.value),
         active_power_limits = _minmax_from_po(po.active_power_limits, (/), po.base_power),
         reactive_power_limits = _minmax_from_po(po.reactive_power_limits, (/), po.base_power),
         ramp_limits = _updown_from_po(po.ramp_limits, (/), po.base_power),

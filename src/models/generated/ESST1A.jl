@@ -27,7 +27,7 @@ This file is auto-generated. Do not edit.
         ext::Dict{String, Any}
         states::Vector{Symbol}
         n_states::Int
-        states_types::Vector{StateTypes}
+        states_types::Vector{StateTypes.T}
         internal::InfrastructureSystemsInternal
     end
 
@@ -61,7 +61,7 @@ Parameters of IEEE Std 421.5 Type ST1A Excitacion System. ESST1A in PSSE and PSL
 	Va: Regulator output state,
 	Vr3: Feedback output state
 - `n_states::Int`: (**Do not modify.**) ST1A has 5 states
-- `states_types::Vector{StateTypes}`: (**Do not modify.**) ST1A has 5 states
+- `states_types::Vector{StateTypes.T}`: (**Do not modify.**) ST1A has 5 states
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
 """
 mutable struct ESST1A <: AVR
@@ -113,7 +113,7 @@ mutable struct ESST1A <: AVR
     "(**Do not modify.**) ST1A has 5 states"
     n_states::Int
     "(**Do not modify.**) ST1A has 5 states"
-    states_types::Vector{StateTypes}
+    states_types::Vector{StateTypes.T}
     "(**Do not modify.**) PowerSystems.jl internal reference"
     internal::InfrastructureSystemsInternal
 end

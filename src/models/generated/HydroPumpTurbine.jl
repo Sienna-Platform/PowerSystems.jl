@@ -20,8 +20,8 @@ This file is auto-generated. Do not edit.
         ramp_limits::Union{Nothing, UpDown}
         time_limits::Union{Nothing, UpDown}
         base_power::Float64
-        operating_mode::HydroPumpTurbineStatus
-        status::OperationalStates
+        operating_mode::HydroPumpTurbineStatus.T
+        status::OperationalStates.T
         time_at_status::Float64
         operation_cost::OperationalCost
         active_power_pump::Float64
@@ -30,8 +30,8 @@ This file is auto-generated. Do not edit.
         minimum_time::TurbinePump
         travel_time::Union{Nothing, Float64}
         conversion_factor::Float64
-        commitment_mode::CommitmentModes
-        prime_mover_type::PrimeMovers
+        commitment_mode::CommitmentModes.T
+        prime_mover_type::PrimeMovers.T
         services::Vector{Service}
         dynamic_injector::Union{Nothing, DynamicInjection}
         ext::Dict{String, Any}
@@ -55,8 +55,8 @@ A hydropower pumped turbine that needs to have two [`HydroReservoir`](@ref)s att
 - `ramp_limits::Union{Nothing, UpDown}`: Ramp up and ramp down limits (MW/min), validation range: `(0, nothing)`
 - `time_limits::Union{Nothing, UpDown}`: Minimum up and Minimum down time limits in minutes, validation range: `(0, nothing)`
 - `base_power::Float64`: Base power of the unit (MVA) for [per unitization](@ref per_unit), validation range: `(0.0001, nothing)`
-- `operating_mode::HydroPumpTurbineStatus`: (default: `HydroPumpTurbineStatus.OFF`) Mode the pumped‑storage unit is operating in: generating, pumping, or idle. See [HydroPumpTurbineStatus](@ref) for reference
-- `status::OperationalStates`: (default: `OperationalStates.OFFLINE`) Operating state of the unit at the start of a simulation. Options are listed [here](@ref opstate_list)
+- `operating_mode::HydroPumpTurbineStatus.T`: (default: `HydroPumpTurbineStatus.OFF`) Mode the pumped‑storage unit is operating in: generating, pumping, or idle. See [HydroPumpTurbineStatus](@ref) for reference
+- `status::OperationalStates.T`: (default: `OperationalStates.OFFLINE`) Operating state of the unit at the start of a simulation. Options are listed [here](@ref opstate_list)
 - `time_at_status::Float64`: (default: `INFINITE_TIME`) Time (e.g., `Minutes(360)`) the generator has been in its current `status`
 - `operation_cost::OperationalCost`: (default: `HydroGenerationCost(nothing)`) [`OperationalCost`](@ref) of generation
 - `active_power_pump::Float64`: (default: `0.0`) Initial active power set point of the pump unit in MW. For power flow, this is the steady state operating point of the system. For production cost modeling, this may or may not be used as the initial starting point for the solver, depending on the solver used
@@ -65,8 +65,8 @@ A hydropower pumped turbine that needs to have two [`HydroReservoir`](@ref)s att
 - `minimum_time::TurbinePump`: (default: `(turbine = 0.0, pump = 0.0)`) Minimum operating time in minutes for the specific mode.
 - `travel_time::Union{Nothing, Float64}`: (default: `nothing`) Downstream (from reservoir into turbine) travel time in minutes.
 - `conversion_factor::Float64`: (default: `1.0`) Conversion factor from flow/volume to energy: m^3 -> p.u-hr
-- `commitment_mode::CommitmentModes`: (default: `CommitmentModes.COMMITTED`) Commitment mode of the unit. Options are listed [here](@ref commit_list)
-- `prime_mover_type::PrimeMovers`: (default: `PrimeMovers.PS`) Prime mover technology according to EIA 923. Options are listed [here](@ref pm_list)
+- `commitment_mode::CommitmentModes.T`: (default: `CommitmentModes.COMMITTED`) Commitment mode of the unit. Options are listed [here](@ref commit_list)
+- `prime_mover_type::PrimeMovers.T`: (default: `PrimeMovers.PS`) Prime mover technology according to EIA 923. Options are listed [here](@ref pm_list)
 - `services::Vector{Service}`: (default: `Device[]`) Services that this device contributes to
 - `dynamic_injector::Union{Nothing, DynamicInjection}`: (default: `nothing`) corresponding dynamic injection device
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
@@ -102,9 +102,9 @@ mutable struct HydroPumpTurbine <: HydroUnit
     "Base power of the unit (MVA) for [per unitization](@ref per_unit)"
     base_power::Float64
     "Mode the pumped‑storage unit is operating in: generating, pumping, or idle. See [HydroPumpTurbineStatus](@ref) for reference"
-    operating_mode::HydroPumpTurbineStatus
+    operating_mode::HydroPumpTurbineStatus.T
     "Operating state of the unit at the start of a simulation. Options are listed [here](@ref opstate_list)"
-    status::OperationalStates
+    status::OperationalStates.T
     "Time (e.g., `Minutes(360)`) the generator has been in its current `status`"
     time_at_status::Float64
     "[`OperationalCost`](@ref) of generation"
@@ -122,9 +122,9 @@ mutable struct HydroPumpTurbine <: HydroUnit
     "Conversion factor from flow/volume to energy: m^3 -> p.u-hr"
     conversion_factor::Float64
     "Commitment mode of the unit. Options are listed [here](@ref commit_list)"
-    commitment_mode::CommitmentModes
+    commitment_mode::CommitmentModes.T
     "Prime mover technology according to EIA 923. Options are listed [here](@ref pm_list)"
-    prime_mover_type::PrimeMovers
+    prime_mover_type::PrimeMovers.T
     "Services that this device contributes to"
     services::Vector{Service}
     "corresponding dynamic injection device"

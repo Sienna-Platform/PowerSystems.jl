@@ -15,18 +15,18 @@ This file is auto-generated. Do not edit.
         active_power_limits::MinMax
         reactive_power_limits::Union{Nothing, MinMax}
         base_power::Float64
-        status::OperationalStates
+        status::OperationalStates.T
         time_at_status::Float64
-        commitment_mode::CommitmentModes
+        commitment_mode::CommitmentModes.T
         operation_cost::OperationalCost
         powerhouse_elevation::Float64
         ramp_limits::Union{Nothing, UpDown}
         time_limits::Union{Nothing, UpDown}
         outflow_limits::Union{Nothing, MinMax}
         efficiency::Float64
-        turbine_type::HydroTurbineType
+        turbine_type::HydroTurbineType.T
         conversion_factor::Float64
-        prime_mover_type::PrimeMovers
+        prime_mover_type::PrimeMovers.T
         travel_time::Union{Nothing, Float64}
         services::Vector{Service}
         dynamic_injector::Union{Nothing, DynamicInjection}
@@ -46,18 +46,18 @@ A hydropower generator that must have a [`HydroReservoir`](@ref) attached, suita
 - `active_power_limits::MinMax`: Minimum and maximum stable active power levels (MW), validation range: `(0, nothing)`
 - `reactive_power_limits::Union{Nothing, MinMax}`: Minimum and maximum reactive power limits. Set to `Nothing` if not applicable
 - `base_power::Float64`: Base power of the unit (MVA) for [per unitization](@ref per_unit), validation range: `(0.0001, nothing)`
-- `status::OperationalStates`: (default: `OperationalStates.OFFLINE`) Operating state of the unit at the start of a simulation. Options are listed [here](@ref opstate_list)
+- `status::OperationalStates.T`: (default: `OperationalStates.OFFLINE`) Operating state of the unit at the start of a simulation. Options are listed [here](@ref opstate_list)
 - `time_at_status::Float64`: (default: `INFINITE_TIME`) Time (e.g., `Minutes(360)`) the generator has been in its current `status`
-- `commitment_mode::CommitmentModes`: (default: `CommitmentModes.COMMITTED`) Commitment mode of the unit. Options are listed [here](@ref commit_list)
+- `commitment_mode::CommitmentModes.T`: (default: `CommitmentModes.COMMITTED`) Commitment mode of the unit. Options are listed [here](@ref commit_list)
 - `operation_cost::OperationalCost`: (default: `HydroGenerationCost(nothing)`) [`OperationalCost`](@ref) of generation
 - `powerhouse_elevation::Float64`: (default: `0.0`) Height level in meters above the sea level of the powerhouse on which the turbine is installed., validation range: `(0, nothing)`
 - `ramp_limits::Union{Nothing, UpDown}`: (default: `nothing`) Ramp up and ramp down limits (MW/min), validation range: `(0, nothing)`
 - `time_limits::Union{Nothing, UpDown}`: (default: `nothing`) Minimum up and Minimum down time limits in minutes, validation range: `(0, nothing)`
 - `outflow_limits::Union{Nothing, MinMax}`: (default: `nothing`) Turbine outflow limits in m3/s. Set to `Nothing` if not applicable
 - `efficiency::Float64`: (default: `1.0`) Turbine efficiency [0, 1.0], validation range: `(0, 1)`
-- `turbine_type::HydroTurbineType`: (default: `HydroTurbineType.UNKNOWN`) Type of the turbine
+- `turbine_type::HydroTurbineType.T`: (default: `HydroTurbineType.UNKNOWN`) Type of the turbine
 - `conversion_factor::Float64`: (default: `1.0`) Conversion factor from flow/volume to energy: m^3 -> p.u-hr
-- `prime_mover_type::PrimeMovers`: (default: `PrimeMovers.HY`) Prime mover technology according to EIA 923. Options are listed [here](@ref pm_list)
+- `prime_mover_type::PrimeMovers.T`: (default: `PrimeMovers.HY`) Prime mover technology according to EIA 923. Options are listed [here](@ref pm_list)
 - `travel_time::Union{Nothing, Float64}`: (default: `nothing`) Downstream (from reservoir into turbine) travel time in minutes.
 - `services::Vector{Service}`: (default: `Device[]`) Services that this device contributes to
 - `dynamic_injector::Union{Nothing, DynamicInjection}`: (default: `nothing`) corresponding dynamic injection device
@@ -84,11 +84,11 @@ mutable struct HydroTurbine <: HydroUnit
     "Base power of the unit (MVA) for [per unitization](@ref per_unit)"
     base_power::Float64
     "Operating state of the unit at the start of a simulation. Options are listed [here](@ref opstate_list)"
-    status::OperationalStates
+    status::OperationalStates.T
     "Time (e.g., `Minutes(360)`) the generator has been in its current `status`"
     time_at_status::Float64
     "Commitment mode of the unit. Options are listed [here](@ref commit_list)"
-    commitment_mode::CommitmentModes
+    commitment_mode::CommitmentModes.T
     "[`OperationalCost`](@ref) of generation"
     operation_cost::OperationalCost
     "Height level in meters above the sea level of the powerhouse on which the turbine is installed."
@@ -102,11 +102,11 @@ mutable struct HydroTurbine <: HydroUnit
     "Turbine efficiency [0, 1.0]"
     efficiency::Float64
     "Type of the turbine"
-    turbine_type::HydroTurbineType
+    turbine_type::HydroTurbineType.T
     "Conversion factor from flow/volume to energy: m^3 -> p.u-hr"
     conversion_factor::Float64
     "Prime mover technology according to EIA 923. Options are listed [here](@ref pm_list)"
-    prime_mover_type::PrimeMovers
+    prime_mover_type::PrimeMovers.T
     "Downstream (from reservoir into turbine) travel time in minutes."
     travel_time::Union{Nothing, Float64}
     "Services that this device contributes to"

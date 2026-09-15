@@ -9,8 +9,8 @@ This file is auto-generated. Do not edit.
         name::String
         available::Bool
         bus::ACBus
-        prime_mover_type::PrimeMovers
-        storage_technology_type::StorageTech
+        prime_mover_type::PrimeMovers.T
+        storage_technology_type::StorageTech.T
         storage_capacity::Float64
         storage_level_limits::MinMax
         initial_storage_capacity_level::Float64
@@ -43,8 +43,8 @@ This is suitable for modeling storage charging and discharging with average effi
 - `name::String`: Name of the component. Components of the same type (e.g., `PowerLoad`) must have unique names, but components of different types (e.g., `PowerLoad` and `ACBus`) can have the same name
 - `available::Bool`: Indicator of whether the component is connected and online (`true`) or disconnected, offline, or down (`false`). Unavailable components are excluded during simulations
 - `bus::ACBus`: Bus that this component is connected to
-- `prime_mover_type::PrimeMovers`: Prime mover technology according to EIA 923. Options are listed [here](@ref pm_list)
-- `storage_technology_type::StorageTech`: Storage Technology Complementary to EIA 923. Options are listed [here](@ref storagetech_list)
+- `prime_mover_type::PrimeMovers.T`: Prime mover technology according to EIA 923. Options are listed [here](@ref pm_list)
+- `storage_technology_type::StorageTech.T`: Storage Technology Complementary to EIA 923. Options are listed [here](@ref storagetech_list)
 - `storage_capacity::Float64`: Maximum storage capacity (can be in units of, e.g., MWh for batteries or liters for hydrogen). When in MWh, this value divided by base_power (MVA) gives an approximate duration in hours, assuming unity power factor. For understanding this relationship, see [per unitization](@ref per_unit), validation range: `(0, nothing)`
 - `storage_level_limits::MinMax`: Minimum and maximum allowable storage levels [0, 1], which can be used to model derates or other restrictions, such as state-of-charge restrictions on battery cycling, validation range: `(0, 1)`
 - `initial_storage_capacity_level::Float64`: Initial storage capacity level as a ratio [0, 1.0] of `storage_capacity`, validation range: `(0, 1)`
@@ -76,9 +76,9 @@ mutable struct EnergyReservoirStorage <: Storage
     "Bus that this component is connected to"
     bus::ACBus
     "Prime mover technology according to EIA 923. Options are listed [here](@ref pm_list)"
-    prime_mover_type::PrimeMovers
+    prime_mover_type::PrimeMovers.T
     "Storage Technology Complementary to EIA 923. Options are listed [here](@ref storagetech_list)"
-    storage_technology_type::StorageTech
+    storage_technology_type::StorageTech.T
     "Maximum storage capacity (can be in units of, e.g., MWh for batteries or liters for hydrogen). When in MWh, this value divided by base_power (MVA) gives an approximate duration in hours, assuming unity power factor. For understanding this relationship, see [per unitization](@ref per_unit)"
     storage_capacity::Float64
     "Minimum and maximum allowable storage levels [0, 1], which can be used to model derates or other restrictions, such as state-of-charge restrictions on battery cycling"

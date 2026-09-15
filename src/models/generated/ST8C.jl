@@ -36,7 +36,7 @@ This file is auto-generated. Do not edit.
         ext::Dict{String, Any}
         states::Vector{Symbol}
         n_states::Int
-        states_types::Vector{StateTypes}
+        states_types::Vector{StateTypes.T}
         internal::InfrastructureSystemsInternal
     end
 
@@ -79,7 +79,7 @@ Parameters of IEEE Std 421.5 Type ST8C Excitacion System. ST8C in PSSE and PSLF
 	x_a3: Controller rectifier bridge state,
 	x_a4: Regulator Feedback state
 - `n_states::Int`: (**Do not modify.**) ST8C has 5 states
-- `states_types::Vector{StateTypes}`: (**Do not modify.**) ST8C has 5 states
+- `states_types::Vector{StateTypes.T}`: (**Do not modify.**) ST8C has 5 states
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
 """
 mutable struct ST8C <: AVR
@@ -149,7 +149,7 @@ mutable struct ST8C <: AVR
     "(**Do not modify.**) ST8C has 5 states"
     n_states::Int
     "(**Do not modify.**) ST8C has 5 states"
-    states_types::Vector{StateTypes}
+    states_types::Vector{StateTypes.T}
     "(**Do not modify.**) PowerSystems.jl internal reference"
     internal::InfrastructureSystemsInternal
 end

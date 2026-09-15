@@ -21,7 +21,7 @@ This file is auto-generated. Do not edit.
         ext::Dict{String, Any}
         states::Vector{Symbol}
         n_states::Int
-        states_types::Vector{StateTypes}
+        states_types::Vector{StateTypes.T}
         internal::InfrastructureSystemsInternal
     end
 
@@ -47,7 +47,7 @@ Hydro Turbine-Governor
 	x_g3: gate opening, 
 	x_g4: turbine flow
 - `n_states::Int`: (**Do not modify.**) HYGOV has 4 states
-- `states_types::Vector{StateTypes}`: (**Do not modify.**) HYGOV has 4 [differential](@ref states_list) [states](@ref S)
+- `states_types::Vector{StateTypes.T}`: (**Do not modify.**) HYGOV has 4 [differential](@ref states_list) [states](@ref S)
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
 """
 mutable struct HydroTurbineGov <: TurbineGov
@@ -86,7 +86,7 @@ mutable struct HydroTurbineGov <: TurbineGov
     "(**Do not modify.**) HYGOV has 4 states"
     n_states::Int
     "(**Do not modify.**) HYGOV has 4 [differential](@ref states_list) [states](@ref S)"
-    states_types::Vector{StateTypes}
+    states_types::Vector{StateTypes.T}
     "(**Do not modify.**) PowerSystems.jl internal reference"
     internal::InfrastructureSystemsInternal
 end

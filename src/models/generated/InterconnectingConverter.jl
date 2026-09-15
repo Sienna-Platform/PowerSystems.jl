@@ -18,8 +18,8 @@ This file is auto-generated. Do not edit.
         dc_current::Float64
         max_dc_current::Float64
         loss_function::Union{AnyLossCurve{LinearCurve}, AnyLossCurve{QuadraticCurve}}
-        dc_control::VSCDCControlModes
-        ac_control::VSCACControlModes
+        dc_control::VSCDCControlModes.T
+        ac_control::VSCACControlModes.T
         dc_setpoint::Float64
         ac_setpoint::Float64
         dc_voltage_droop::Float64
@@ -48,8 +48,8 @@ Interconnecting Power Converter (IPC) for transforming power from an ACBus to a 
 - `dc_current::Float64`: (default: `0.0`) DC current on the converter, in per unit power-equivalent on the converter `base_power` (I is approximately P at 1.0 pu DC voltage)
 - `max_dc_current::Float64`: (default: `1e8`) Maximum stable DC current limit, in per unit power-equivalent on the converter `base_power` (I is approximately P at 1.0 pu DC voltage)
 - `loss_function::Union{AnyLossCurve{LinearCurve}, AnyLossCurve{QuadraticCurve}}`: (default: `LossCurve(LinearCurve(0.0), NaturalUnit())`) Linear or quadratic loss function with respect to the converter current
-- `dc_control::VSCDCControlModes`: (default: `VSCDCControlModes.DC_VOLTAGE`) DC-side control mode of the converter; see [`VSCDCControlModes`](@ref).
-- `ac_control::VSCACControlModes`: (default: `VSCACControlModes.AC_REACTIVE_POWER`) AC-side control mode of the converter; see [`VSCACControlModes`](@ref).
+- `dc_control::VSCDCControlModes.T`: (default: `VSCDCControlModes.DC_VOLTAGE`) DC-side control mode of the converter; see [`VSCDCControlModes`](@ref).
+- `ac_control::VSCACControlModes.T`: (default: `VSCACControlModes.AC_REACTIVE_POWER`) AC-side control mode of the converter; see [`VSCACControlModes`](@ref).
 - `dc_setpoint::Float64`: (default: `0.0`) DC-voltage target (when dc_voltage_control is true) or active-power order (when false), in per unit.
 - `ac_setpoint::Float64`: (default: `1.0`) AC-voltage magnitude target (when ac_voltage_control is true), in per unit.
 - `dc_voltage_droop::Float64`: (default: `0.0`) DC-voltage droop gain relating DC voltage to converter active power as V_dc = dc_setpoint - dc_voltage_droop * P_c. A value of 0.0 disables droop.
@@ -88,9 +88,9 @@ mutable struct InterconnectingConverter <: StaticInjection
     "Linear or quadratic loss function with respect to the converter current"
     loss_function::Union{AnyLossCurve{LinearCurve}, AnyLossCurve{QuadraticCurve}}
     "DC-side control mode of the converter; see [`VSCDCControlModes`](@ref)."
-    dc_control::VSCDCControlModes
+    dc_control::VSCDCControlModes.T
     "AC-side control mode of the converter; see [`VSCACControlModes`](@ref)."
-    ac_control::VSCACControlModes
+    ac_control::VSCACControlModes.T
     "DC-voltage target (when dc_voltage_control is true) or active-power order (when false), in per unit."
     dc_setpoint::Float64
     "AC-voltage magnitude target (when ac_voltage_control is true), in per unit."

@@ -25,7 +25,7 @@ This file is auto-generated. Do not edit.
         ext::Dict{String, Any}
         states::Vector{Symbol}
         n_states::Int
-        states_types::Vector{StateTypes}
+        states_types::Vector{StateTypes.T}
         internal::InfrastructureSystemsInternal
     end
 
@@ -56,7 +56,7 @@ Parameters of IEEE Std 421.5 Type ST6B Excitacion System. ST6B in PSSE and PSLF
 	x_d: Regulator Derivative,
 	Vg: Regulator Feedback
 - `n_states::Int`: (**Do not modify.**) ST6B has 4 states
-- `states_types::Vector{StateTypes}`: (**Do not modify.**) ST6B has 4 states
+- `states_types::Vector{StateTypes.T}`: (**Do not modify.**) ST6B has 4 states
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
 """
 mutable struct ST6B <: AVR
@@ -103,7 +103,7 @@ mutable struct ST6B <: AVR
     "(**Do not modify.**) ST6B has 4 states"
     n_states::Int
     "(**Do not modify.**) ST6B has 4 states"
-    states_types::Vector{StateTypes}
+    states_types::Vector{StateTypes.T}
     "(**Do not modify.**) PowerSystems.jl internal reference"
     internal::InfrastructureSystemsInternal
 end

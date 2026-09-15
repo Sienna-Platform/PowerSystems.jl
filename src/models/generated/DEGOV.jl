@@ -18,7 +18,7 @@ This file is auto-generated. Do not edit.
         ext::Dict{String, Any}
         states::Vector{Symbol}
         n_states::Int
-        states_types::Vector{StateTypes}
+        states_types::Vector{StateTypes.T}
         internal::InfrastructureSystemsInternal
     end
 
@@ -42,7 +42,7 @@ Parameters Woodward Diesel Governor Model. DEGOV in PowerWorld
 	x_a2: Actuator 2,
 	x_a3: Actuator 3,
 - `n_states::Int`: (**Do not modify.**) DEGOV has 5 states
-- `states_types::Vector{StateTypes}`: (**Do not modify.**) DEGOV has 5 [differential](@ref states_list) [states](@ref S)
+- `states_types::Vector{StateTypes.T}`: (**Do not modify.**) DEGOV has 5 [differential](@ref states_list) [states](@ref S)
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
 """
 mutable struct DEGOV <: TurbineGov
@@ -76,7 +76,7 @@ mutable struct DEGOV <: TurbineGov
     "(**Do not modify.**) DEGOV has 5 states"
     n_states::Int
     "(**Do not modify.**) DEGOV has 5 [differential](@ref states_list) [states](@ref S)"
-    states_types::Vector{StateTypes}
+    states_types::Vector{StateTypes.T}
     "(**Do not modify.**) PowerSystems.jl internal reference"
     internal::InfrastructureSystemsInternal
 end

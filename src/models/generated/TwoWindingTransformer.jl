@@ -9,7 +9,7 @@ This file is auto-generated. Do not edit.
         name::String
         circuit::TransformerCircuit
         magnetizing_shunt::Complex{Float64}
-        shunt_location::TwoWindingTransformerShuntLocation
+        shunt_location::TwoWindingTransformerShuntLocation.T
         services::Vector{Service}
         ext::Dict{String, Any}
         internal::InfrastructureSystemsInternal
@@ -23,7 +23,7 @@ All series electrical data — the modeled arc, tap, phase shift, series impedan
 - `name::String`: Name of the component. Components of the same type (e.g., `PowerLoad`) must have unique names, but components of different types (e.g., `PowerLoad` and `ACBus`) can have the same name
 - `circuit::TransformerCircuit`: The [`TransformerCircuit`](@ref) carrying this transformer's arc, tap, phase shift, series impedance, ratings, per-winding base power/voltages, availability, and control
 - `magnetizing_shunt::Complex{Float64}`: (default: `0.0`) Magnetizing shunt admittance in pu (component base on the circuit's `base_power`) referenced to the circuit's `base_voltage_primary`
-- `shunt_location::TwoWindingTransformerShuntLocation`: (default: `TwoWindingTransformerShuntLocation.PRIMARY`) Placement of `magnetizing_shunt` on the two sides of the circuit arc. See [`TwoWindingTransformerShuntLocation`](@ref)
+- `shunt_location::TwoWindingTransformerShuntLocation.T`: (default: `TwoWindingTransformerShuntLocation.PRIMARY`) Placement of `magnetizing_shunt` on the two sides of the circuit arc. See [`TwoWindingTransformerShuntLocation`](@ref)
 - `services::Vector{Service}`: (default: `Device[]`) Services that this device contributes to
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
@@ -36,7 +36,7 @@ mutable struct TwoWindingTransformer <: ACTransmission
     "Magnetizing shunt admittance in pu (component base on the circuit's `base_power`) referenced to the circuit's `base_voltage_primary`"
     magnetizing_shunt::Complex{Float64}
     "Placement of `magnetizing_shunt` on the two sides of the circuit arc. See [`TwoWindingTransformerShuntLocation`](@ref)"
-    shunt_location::TwoWindingTransformerShuntLocation
+    shunt_location::TwoWindingTransformerShuntLocation.T
     "Services that this device contributes to"
     services::Vector{Service}
     "An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation."

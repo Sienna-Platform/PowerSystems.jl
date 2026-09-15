@@ -12,7 +12,7 @@ This file is auto-generated. Do not edit.
         active_power::Float64
         reactive_power::Float64
         rating::Float64
-        prime_mover_type::PrimeMovers
+        prime_mover_type::PrimeMovers.T
         reactive_power_limits::Union{Nothing, MinMax}
         power_factor::Float64
         operation_cost::OperationalCost
@@ -36,7 +36,7 @@ Renewable generators do not have a `max_active_power` parameter, which is instea
 - `active_power::Float64`: Initial active power set point of the unit in MW. For power flow, this is the steady state operating point of the system. For production cost modeling, this may or may not be used as the initial starting point for the solver, depending on the solver used
 - `reactive_power::Float64`: Initial reactive power set point of the unit (MVAR), used in some production cost modeling simulations. To set the reactive power in a load flow, use `power_factor`
 - `rating::Float64`: Maximum AC side output power rating of the unit. Stored in per unit of the device and not to be confused with base_power, validation range: `(0, nothing)`
-- `prime_mover_type::PrimeMovers`: Prime mover technology according to EIA 923. Options are listed [here](@ref pm_list)
+- `prime_mover_type::PrimeMovers.T`: Prime mover technology according to EIA 923. Options are listed [here](@ref pm_list)
 - `reactive_power_limits::Union{Nothing, MinMax}`: Minimum and maximum reactive power limits, used in some production cost model simulations and in power flow if the unit is connected to a [`PV`](@ref acbustypes_list) bus. Set to `nothing` if not applicable
 - `power_factor::Float64`: Power factor [0, 1] set-point, used in some production cost modeling and in load flow if the unit is connected to a [`PQ`](@ref acbustypes_list) bus, validation range: `(0, 1)`
 - `operation_cost::OperationalCost`: [`OperationalCost`](@ref) of generation
@@ -60,7 +60,7 @@ mutable struct RenewableDispatch <: RenewableGen
     "Maximum AC side output power rating of the unit. Stored in per unit of the device and not to be confused with base_power"
     rating::Float64
     "Prime mover technology according to EIA 923. Options are listed [here](@ref pm_list)"
-    prime_mover_type::PrimeMovers
+    prime_mover_type::PrimeMovers.T
     "Minimum and maximum reactive power limits, used in some production cost model simulations and in power flow if the unit is connected to a [`PV`](@ref acbustypes_list) bus. Set to `nothing` if not applicable"
     reactive_power_limits::Union{Nothing, MinMax}
     "Power factor [0, 1] set-point, used in some production cost modeling and in load flow if the unit is connected to a [`PQ`](@ref acbustypes_list) bus"
@@ -199,7 +199,7 @@ function from_openapi(po::PO.RenewableDispatch, refs::OpenAPIRefs, ::ComponentBa
         active_power = po.active_power,
         reactive_power = po.reactive_power,
         rating = po.rating,
-        prime_mover_type = PrimeMovers(po.prime_mover_type.value),
+        prime_mover_type = PrimeMovers.T(po.prime_mover_type.value),
         reactive_power_limits = _minmax_from_po(po.reactive_power_limits),
         power_factor = po.power_factor,
         operation_cost = convert_cost(po.operation_cost.value)::OperationalCost,
@@ -215,7 +215,7 @@ function from_openapi(po::PO.RenewableDispatch, refs::OpenAPIRefs, ::NaturalUnit
         active_power = po.active_power / po.base_power,
         reactive_power = po.reactive_power / po.base_power,
         rating = po.rating / po.base_power,
-        prime_mover_type = PrimeMovers(po.prime_mover_type.value),
+        prime_mover_type = PrimeMovers.T(po.prime_mover_type.value),
         reactive_power_limits = _minmax_from_po(po.reactive_power_limits, (/), po.base_power),
         power_factor = po.power_factor,
         operation_cost = convert_cost(po.operation_cost.value)::OperationalCost,

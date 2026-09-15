@@ -20,7 +20,7 @@ This file is auto-generated. Do not edit.
         ext::Dict{String, Any}
         states::Vector{Symbol}
         n_states::Int
-        states_types::Vector{StateTypes}
+        states_types::Vector{StateTypes.T}
         internal::InfrastructureSystemsInternal
     end
 
@@ -45,7 +45,7 @@ Parameters of an Automatic Voltage Regulator Type I - Resembles IEEE Type DC1
 	Vr2: Stabilizing Feedback State,
 	Vm: Measured voltage
 - `n_states::Int`: (**Do not modify.**) The AVR Type I has 4 states
-- `states_types::Vector{StateTypes}`: (**Do not modify.**) AVR Type I has 4 [differential](@ref states_list) [states](@ref S)
+- `states_types::Vector{StateTypes.T}`: (**Do not modify.**) AVR Type I has 4 [differential](@ref states_list) [states](@ref S)
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
 """
 mutable struct AVRTypeI <: AVR
@@ -82,7 +82,7 @@ mutable struct AVRTypeI <: AVR
     "(**Do not modify.**) The AVR Type I has 4 states"
     n_states::Int
     "(**Do not modify.**) AVR Type I has 4 [differential](@ref states_list) [states](@ref S)"
-    states_types::Vector{StateTypes}
+    states_types::Vector{StateTypes.T}
     "(**Do not modify.**) PowerSystems.jl internal reference"
     internal::InfrastructureSystemsInternal
 end

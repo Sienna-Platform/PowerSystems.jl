@@ -141,10 +141,10 @@ _key_association_id(key::IS.TimeSeriesKey) =
 
 """Wire representation of [`CurveStyles`](@ref): a plain integer (0/1) - see
 `cost_conversion.jl`'s `_curve_style_from_wire` for the import-direction counterpart."""
-_curve_style_to_wire(style::CurveStyles) = style.value
+_curve_style_to_wire(style::CurveStyles.T) = style.value
 """Wire representation of [`CurveMultiStep`](@ref): a plain integer (0/1), mirroring
 `_curve_style_to_wire`."""
-_curve_multistep_to_wire(flag::CurveMultiStep) = flag.value
+_curve_multistep_to_wire(flag::CurveMultiStep.T) = flag.value
 
 function convert_cost_to_openapi(curve::TimeSeriesInputOutputCurve)
     return PC.TimeSeriesInputOutputCurve(;

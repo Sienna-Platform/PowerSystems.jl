@@ -303,7 +303,7 @@
                     "name": "bustype",
                     "comment": "Used to describe the connectivity and behavior of this bus. [Options are listed here.](@ref acbustypes_list)",
                     "null_value": "nothing",
-                    "data_type": "Union{Nothing, ACBusTypes}",
+                    "data_type": "Union{Nothing, ACBusTypes.T}",
                     "openapi_enum": "ACBusType"
                 },
                 {
@@ -537,7 +537,7 @@
                     "name": "control_objective",
                     "comment": "Tap-changer / phase-shifter control objective. `UNDEFINED` means this circuit has no control block. See [`TransformerControlObjective`](@ref)",
                     "null_value": "TransformerControlObjective.UNDEFINED",
-                    "data_type": "TransformerControlObjective",
+                    "data_type": "TransformerControlObjective.T",
                     "default": "TransformerControlObjective.UNDEFINED"
                 },
                 {
@@ -991,7 +991,7 @@
                     "name": "discrete_branch_type",
                     "comment": "Type of discrete control",
                     "null_value": "DiscreteControlledBranchType.BREAKER",
-                    "data_type": "DiscreteControlledBranchType",
+                    "data_type": "DiscreteControlledBranchType.T",
                     "default": "DiscreteControlledBranchType.OTHER",
                     "openapi_enum": "DiscreteControlledACBranchDiscreteBranchType"
                 },
@@ -999,7 +999,7 @@
                     "name": "branch_status",
                     "comment": "Open or Close status",
                     "null_value": "DiscreteControlledBranchStatus.CLOSED",
-                    "data_type": "DiscreteControlledBranchStatus",
+                    "data_type": "DiscreteControlledBranchStatus.T",
                     "default": "DiscreteControlledBranchStatus.CLOSED",
                     "openapi_enum": "DiscreteControlledACBranchBranchStatus"
                 },
@@ -1007,7 +1007,7 @@
                     "name": "normal_branch_status",
                     "comment": "Normal (as-designed) open or close status of the device",
                     "null_value": "DiscreteControlledBranchStatus.CLOSED",
-                    "data_type": "DiscreteControlledBranchStatus",
+                    "data_type": "DiscreteControlledBranchStatus.T",
                     "default": "DiscreteControlledBranchStatus.CLOSED",
                     "openapi_enum": "DiscreteControlledACBranchNormalBranchStatus"
                 },
@@ -1245,7 +1245,7 @@
                     "name": "shunt_location",
                     "comment": "Placement of `magnetizing_shunt` on the two sides of the circuit arc. See [`TwoWindingTransformerShuntLocation`](@ref)",
                     "null_value": "TwoWindingTransformerShuntLocation.PRIMARY",
-                    "data_type": "TwoWindingTransformerShuntLocation",
+                    "data_type": "TwoWindingTransformerShuntLocation.T",
                     "default": "TwoWindingTransformerShuntLocation.PRIMARY"
                 },
                 {
@@ -1450,7 +1450,7 @@
                     "name": "shunt_location",
                     "comment": "Placement of `magnetizing_shunt` in the equivalent star model. See [`ThreeWindingTransformerShuntLocation`](@ref)",
                     "null_value": "ThreeWindingTransformerShuntLocation.PRIMARY",
-                    "data_type": "ThreeWindingTransformerShuntLocation",
+                    "data_type": "ThreeWindingTransformerShuntLocation.T",
                     "default": "ThreeWindingTransformerShuntLocation.PRIMARY"
                 },
                 {
@@ -1673,14 +1673,14 @@
                     "name": "dc_control_from",
                     "comment": "DC-side control mode of the `from` converter; see [`VSCDCControlModes`](@ref).",
                     "null_value": "VSCDCControlModes.DC_VOLTAGE",
-                    "data_type": "VSCDCControlModes",
+                    "data_type": "VSCDCControlModes.T",
                     "default": "VSCDCControlModes.DC_VOLTAGE"
                 },
                 {
                     "name": "ac_control_from",
                     "comment": "AC-side control mode of the `from` converter; see [`VSCACControlModes`](@ref).",
                     "null_value": "VSCACControlModes.AC_VOLTAGE",
-                    "data_type": "VSCACControlModes",
+                    "data_type": "VSCACControlModes.T",
                     "default": "VSCACControlModes.AC_VOLTAGE"
                 },
                 {
@@ -1775,14 +1775,14 @@
                     "name": "dc_control_to",
                     "comment": "DC-side control mode of the `to` converter; see [`VSCDCControlModes`](@ref).",
                     "null_value": "VSCDCControlModes.DC_VOLTAGE",
-                    "data_type": "VSCDCControlModes",
+                    "data_type": "VSCDCControlModes.T",
                     "default": "VSCDCControlModes.DC_VOLTAGE"
                 },
                 {
                     "name": "ac_control_to",
                     "comment": "AC-side control mode of the `to` converter; see [`VSCACControlModes`](@ref).",
                     "null_value": "VSCACControlModes.AC_VOLTAGE",
-                    "data_type": "VSCACControlModes",
+                    "data_type": "VSCACControlModes.T",
                     "default": "VSCACControlModes.AC_VOLTAGE"
                 },
                 {
@@ -2427,7 +2427,7 @@
                 {
                     "name": "conformity",
                     "comment": "Indicates whether the specified load is conforming or non-conforming. Options are [listed here](@ref loadconform_list).",
-                    "data_type": "LoadConformity",
+                    "data_type": "LoadConformity.T",
                     "default": "LoadConformity.UNDEFINED"
                 },
                 {
@@ -2508,7 +2508,7 @@
                 {
                     "name": "conformity",
                     "comment": "Indicates whether the specified load is conforming or non-conforming. Options are [listed here](@ref loadconform_list).",
-                    "data_type": "LoadConformity",
+                    "data_type": "LoadConformity.T",
                     "default": "LoadConformity.UNDEFINED"
                 },
                 {
@@ -2804,7 +2804,7 @@
                     "name": "control_mode",
                     "comment": "Control mode. Used to describe the behavior of the control device. [Options are listed here.](@ref factsmodes_list)",
                     "null_value": "nothing",
-                    "data_type": "Union{Nothing, FACTSOperationModes}"
+                    "data_type": "Union{Nothing, FACTSOperationModes.T}"
                 },
                 {
                     "name": "voltage_setpoint",
@@ -2834,7 +2834,7 @@
                     "comment": "Device class selecting the reactive-limit law (SVC vs STATCOM)",
                     "null_value": "FACTSShuntControlType.STATCOM",
                     "default": "FACTSShuntControlType.STATCOM",
-                    "data_type": "FACTSShuntControlType"
+                    "data_type": "FACTSShuntControlType.T"
                 },
                 {
                     "name": "regulated_bus_number",
@@ -3031,7 +3031,7 @@
                 {
                     "name": "control_mode",
                     "comment": "Switched-shunt control mode.",
-                    "data_type": "SwitchedAdmittanceControlMode",
+                    "data_type": "SwitchedAdmittanceControlMode.T",
                     "null_value": "SwitchedAdmittanceControlMode.FIXED",
                     "default": "SwitchedAdmittanceControlMode.FIXED"
                 },
@@ -3146,7 +3146,7 @@
                 {
                     "name": "conformity",
                     "comment": "Indicates whether the specified load is conforming or non-conforming. Options are [listed here](@ref loadconform_list).",
-                    "data_type": "LoadConformity",
+                    "data_type": "LoadConformity.T",
                     "default": "LoadConformity.UNDEFINED"
                 },
                 {
@@ -3269,7 +3269,7 @@
                     "name": "motor_technology",
                     "comment": "AC Motor type. Options are listed [here](@ref motor_list)",
                     "null_value": "MotorLoadTechnology.UNDETERMINED",
-                    "data_type": "MotorLoadTechnology",
+                    "data_type": "MotorLoadTechnology.T",
                     "default": "MotorLoadTechnology.UNDETERMINED",
                     "openapi_enum": "MotorLoadMotorTechnology"
                 },
@@ -3453,7 +3453,7 @@
                 {
                     "name": "conformity",
                     "comment": "Indicates whether the specified load is conforming or non-conforming. Options are [listed here](@ref loadconform_list).",
-                    "data_type": "LoadConformity",
+                    "data_type": "LoadConformity.T",
                     "default": "LoadConformity.UNDEFINED"
                 },
                 {
@@ -3584,7 +3584,7 @@
                 {
                     "name": "conformity",
                     "comment": "Indicates whether the specified load is conforming or non-conforming. Options are [listed here](@ref loadconform_list).",
-                    "data_type": "LoadConformity",
+                    "data_type": "LoadConformity.T",
                     "default": "LoadConformity.UNDEFINED"
                 },
                 {
@@ -4389,14 +4389,14 @@
                     "name": "dc_control",
                     "comment": "DC-side control mode of the converter; see [`VSCDCControlModes`](@ref).",
                     "null_value": "VSCDCControlModes.DC_VOLTAGE",
-                    "data_type": "VSCDCControlModes",
+                    "data_type": "VSCDCControlModes.T",
                     "default": "VSCDCControlModes.DC_VOLTAGE"
                 },
                 {
                     "name": "ac_control",
                     "comment": "AC-side control mode of the converter; see [`VSCACControlModes`](@ref).",
                     "null_value": "VSCACControlModes.AC_REACTIVE_POWER",
-                    "data_type": "VSCACControlModes",
+                    "data_type": "VSCACControlModes.T",
                     "default": "VSCACControlModes.AC_REACTIVE_POWER"
                 },
                 {
@@ -4716,7 +4716,7 @@
                     "name": "prime_mover_type",
                     "comment": "Prime mover technology according to EIA 923. Options are listed [here](@ref pm_list)",
                     "null_value": "PrimeMovers.HY",
-                    "data_type": "PrimeMovers"
+                    "data_type": "PrimeMovers.T"
                 },
                 {
                     "name": "active_power_limits",
@@ -4783,7 +4783,7 @@
                     "default": "OperationalStates.OFFLINE",
                     "name": "status",
                     "comment": "Operating state of the unit at the start of a simulation. Options are listed [here](@ref opstate_list)",
-                    "data_type": "OperationalStates"
+                    "data_type": "OperationalStates.T"
                 },
                 {
                     "null_value": "INFINITE_TIME",
@@ -4927,7 +4927,7 @@
                     "default": "OperationalStates.OFFLINE",
                     "name": "status",
                     "comment": "Operating state of the unit at the start of a simulation. Options are listed [here](@ref opstate_list)",
-                    "data_type": "OperationalStates"
+                    "data_type": "OperationalStates.T"
                 },
                 {
                     "null_value": "INFINITE_TIME",
@@ -4940,7 +4940,7 @@
                     "name": "commitment_mode",
                     "comment": "Commitment mode of the unit. Options are listed [here](@ref commit_list)",
                     "null_value": "CommitmentModes.UNCOMMITTED",
-                    "data_type": "CommitmentModes",
+                    "data_type": "CommitmentModes.T",
                     "default": "CommitmentModes.COMMITTED"
                 },
                 {
@@ -5013,7 +5013,7 @@
                     "name": "turbine_type",
                     "comment": "Type of the turbine",
                     "null_value": "HydroTurbineType.UNKNOWN",
-                    "data_type": "HydroTurbineType",
+                    "data_type": "HydroTurbineType.T",
                     "default": "HydroTurbineType.UNKNOWN",
                     "openapi_enum": "HydroTurbineTurbineType"
                 },
@@ -5028,7 +5028,7 @@
                     "name": "prime_mover_type",
                     "comment": "Prime mover technology according to EIA 923. Options are listed [here](@ref pm_list)",
                     "null_value": "PrimeMovers.OT",
-                    "data_type": "PrimeMovers",
+                    "data_type": "PrimeMovers.T",
                     "default": "PrimeMovers.HY"
                 },
                 {
@@ -5222,7 +5222,7 @@
                     "default": "HydroPumpTurbineStatus.OFF",
                     "name": "operating_mode",
                     "comment": "Mode the pumped‑storage unit is operating in: generating, pumping, or idle. See [HydroPumpTurbineStatus](@ref) for reference",
-                    "data_type": "HydroPumpTurbineStatus",
+                    "data_type": "HydroPumpTurbineStatus.T",
                     "openapi_enum": "HydroPumpTurbineOperatingMode"
                 },
                 {
@@ -5230,7 +5230,7 @@
                     "default": "OperationalStates.OFFLINE",
                     "name": "status",
                     "comment": "Operating state of the unit at the start of a simulation. Options are listed [here](@ref opstate_list)",
-                    "data_type": "OperationalStates"
+                    "data_type": "OperationalStates.T"
                 },
                 {
                     "null_value": "INFINITE_TIME",
@@ -5294,14 +5294,14 @@
                     "name": "commitment_mode",
                     "comment": "Commitment mode of the unit. Options are listed [here](@ref commit_list)",
                     "null_value": "CommitmentModes.UNCOMMITTED",
-                    "data_type": "CommitmentModes",
+                    "data_type": "CommitmentModes.T",
                     "default": "CommitmentModes.COMMITTED"
                 },
                 {
                     "name": "prime_mover_type",
                     "comment": "Prime mover technology according to EIA 923. Options are listed [here](@ref pm_list)",
                     "null_value": "PrimeMovers.OT",
-                    "data_type": "PrimeMovers",
+                    "data_type": "PrimeMovers.T",
                     "default": "PrimeMovers.PS"
                 },
                 {
@@ -5444,7 +5444,7 @@
                 {
                     "name": "level_data_type",
                     "null_value": "ReservoirDataType.USABLE_VOLUME",
-                    "data_type": "ReservoirDataType",
+                    "data_type": "ReservoirDataType.T",
                     "default": "ReservoirDataType.USABLE_VOLUME",
                     "comment": "Reservoir level data type. See [ReservoirDataType](@ref) for reference."
                 },
@@ -5523,7 +5523,7 @@
                     "name": "prime_mover_type",
                     "comment": "Prime mover technology according to EIA 923. Options are listed [here](@ref pm_list)",
                     "null_value": "PrimeMovers.OT",
-                    "data_type": "PrimeMovers"
+                    "data_type": "PrimeMovers.T"
                 },
                 {
                     "name": "reactive_power_limits",
@@ -5653,7 +5653,7 @@
                     "name": "prime_mover_type",
                     "comment": "Prime mover technology according to EIA 923. Options are listed [here](@ref pm_list)",
                     "null_value": "PrimeMovers.OT",
-                    "data_type": "PrimeMovers"
+                    "data_type": "PrimeMovers.T"
                 },
                 {
                     "name": "power_factor",
@@ -5733,7 +5733,7 @@
                     "null_value": "OperationalStates.OFFLINE",
                     "name": "status",
                     "comment": "Operating state of the unit at the start of a simulation. Options are listed [here](@ref opstate_list)",
-                    "data_type": "OperationalStates"
+                    "data_type": "OperationalStates.T"
                 },
                 {
                     "name": "bus",
@@ -5845,21 +5845,21 @@
                     "name": "commitment_mode",
                     "comment": "Commitment mode of the unit. Options are listed [here](@ref commit_list)",
                     "null_value": "CommitmentModes.UNCOMMITTED",
-                    "data_type": "CommitmentModes",
+                    "data_type": "CommitmentModes.T",
                     "default": "CommitmentModes.COMMITTED"
                 },
                 {
                     "name": "prime_mover_type",
                     "comment": "Prime mover technology according to EIA 923. Options are listed [here](@ref pm_list)",
                     "null_value": "PrimeMovers.OT",
-                    "data_type": "PrimeMovers",
+                    "data_type": "PrimeMovers.T",
                     "default": "PrimeMovers.OT"
                 },
                 {
                     "name": "fuel",
                     "comment": "Prime mover fuel according to EIA 923. Options are listed [here](@ref tf_list)",
                     "null_value": "ThermalFuels.OTHER",
-                    "data_type": "ThermalFuels",
+                    "data_type": "ThermalFuels.T",
                     "default": "ThermalFuels.OTHER"
                 },
                 {
@@ -6038,7 +6038,7 @@
                     "null_value": "OperationalStates.OFFLINE",
                     "name": "status",
                     "comment": "Operating state of the unit at the start of a simulation. Options are listed [here](@ref opstate_list)",
-                    "data_type": "OperationalStates"
+                    "data_type": "OperationalStates.T"
                 },
                 {
                     "name": "bus",
@@ -6084,13 +6084,13 @@
                     "name": "prime_mover_type",
                     "comment": "Prime mover technology according to EIA 923. Options are listed [here](@ref pm_list)",
                     "null_value": "PrimeMovers.OT",
-                    "data_type": "PrimeMovers"
+                    "data_type": "PrimeMovers.T"
                 },
                 {
                     "name": "fuel",
                     "comment": "Prime mover fuel according to EIA 923. Options are listed [here](@ref tf_list)",
                     "null_value": "ThermalFuels.OTHER",
-                    "data_type": "ThermalFuels"
+                    "data_type": "ThermalFuels.T"
                 },
                 {
                     "name": "active_power_limits",
@@ -6200,7 +6200,7 @@
                     "name": "commitment_mode",
                     "comment": "Commitment mode of the unit. Options are listed [here](@ref commit_list)",
                     "null_value": "CommitmentModes.UNCOMMITTED",
-                    "data_type": "CommitmentModes",
+                    "data_type": "CommitmentModes.T",
                     "default": "CommitmentModes.COMMITTED"
                 },
                 {
@@ -6255,13 +6255,13 @@
                     "name": "prime_mover_type",
                     "comment": "Prime mover technology according to EIA 923. Options are listed [here](@ref pm_list)",
                     "null_value": "PrimeMovers.BA",
-                    "data_type": "PrimeMovers"
+                    "data_type": "PrimeMovers.T"
                 },
                 {
                     "name": "storage_technology_type",
                     "comment": "Storage Technology Complementary to EIA 923. Options are listed [here](@ref storagetech_list)",
                     "null_value": "StorageTech.OTHER_CHEM",
-                    "data_type": "StorageTech"
+                    "data_type": "StorageTech.T"
                 },
                 {
                     "name": "storage_capacity",
@@ -6505,7 +6505,7 @@
                     "null_value": "OperationalStates.OFFLINE",
                     "name": "status",
                     "comment": "Operating state of the unit at the start of a simulation. Options are listed [here](@ref opstate_list)",
-                    "data_type": "OperationalStates"
+                    "data_type": "OperationalStates.T"
                 },
                 {
                     "name": "bus",
@@ -6803,7 +6803,7 @@
                     "name": "states_types",
                     "comment": "(**Do not modify.**) Fixed AVR has no [states](@ref S)",
                     "internal_default": "Vector{StateTypes}()",
-                    "data_type": "Vector{StateTypes}"
+                    "data_type": "Vector{StateTypes.T}"
                 },
                 {
                     "name": "internal",
@@ -6865,7 +6865,7 @@
                     "name": "states_types",
                     "comment": "(**Do not modify.**) Simple AVR has 1 [differential](@ref states_list) [states](@ref S)",
                     "internal_default": "[StateTypes.Differential]",
-                    "data_type": "Vector{StateTypes}"
+                    "data_type": "Vector{StateTypes.T}"
                 },
                 {
                     "name": "internal",
@@ -6963,7 +6963,7 @@
                     "name": "states_types",
                     "comment": "(**Do not modify.**) SEXS has 2 [differential](@ref states_list) [states](@ref S)",
                     "internal_default": "[StateTypes.Differential, StateTypes.Differential]",
-                    "data_type": "Vector{StateTypes}"
+                    "data_type": "Vector{StateTypes.T}"
                 },
                 {
                     "name": "internal",
@@ -7149,7 +7149,7 @@
                     "name": "states_types",
                     "comment": "(**Do not modify.**) ESDC1A has 5 [differential](@ref states_list) [states](@ref S)",
                     "internal_default": "[StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Differential, StateTypes.Differential]",
-                    "data_type": "Vector{StateTypes}"
+                    "data_type": "Vector{StateTypes.T}"
                 },
                 {
                     "name": "internal",
@@ -7336,7 +7336,7 @@
                     "name": "states_types",
                     "comment": "(**Do not modify.**) ESDC2A has 5 [differential](@ref states_list) [states](@ref S)",
                     "internal_default": "[StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Differential, StateTypes.Differential]",
-                    "data_type": "Vector{StateTypes}"
+                    "data_type": "Vector{StateTypes.T}"
                 },
                 {
                     "name": "internal",
@@ -7500,7 +7500,7 @@
                     "name": "states_types",
                     "comment": "(**Do not modify.**) IEEET1 I has 4 [differential](@ref states_list) [states](@ref S)",
                     "internal_default": "[StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Differential, StateTypes.Differential]",
-                    "data_type": "Vector{StateTypes}"
+                    "data_type": "Vector{StateTypes.T}"
                 },
                 {
                     "name": "internal",
@@ -7648,7 +7648,7 @@
                     "name": "states_types",
                     "comment": "(**Do not modify.**) AVR Type I has 4 [differential](@ref states_list) [states](@ref S)",
                     "internal_default": "[StateTypes.Differential, StateTypes.Differential, StateTypes.Differential, StateTypes.Differential]",
-                    "data_type": "Vector{StateTypes}"
+                    "data_type": "Vector{StateTypes.T}"
                 },
                 {
                     "name": "internal",
@@ -7796,7 +7796,7 @@
                     "name": "states_types",
                     "comment": "(**Do not modify.**) AVR Type II has 4 [differential](@ref states_list) [states](@ref S)",
                     "internal_default": "[StateTypes.Differential, StateTypes.Differential, StateTypes.Differential, StateTypes.Differential]",
-                    "data_type": "Vector{StateTypes}"
+                    "data_type": "Vector{StateTypes.T}"
                 },
                 {
                     "name": "internal",
@@ -7920,7 +7920,7 @@
                     "name": "states_types",
                     "comment": "(**Do not modify.**) SCRX has 2 [differential](@ref states_list) [states](@ref S)",
                     "internal_default": "[StateTypes.Differential, StateTypes.Hybrid]",
-                    "data_type": "Vector{StateTypes}"
+                    "data_type": "Vector{StateTypes.T}"
                 },
                 {
                     "name": "internal",
@@ -8123,7 +8123,7 @@
                     "name": "states_types",
                     "comment": "(**Do not modify.**) ESAC1A has 5 states",
                     "internal_default": "[StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Differential, StateTypes.Differential]",
-                    "data_type": "Vector{StateTypes}"
+                    "data_type": "Vector{StateTypes.T}"
                 },
                 {
                     "name": "internal",
@@ -8325,7 +8325,7 @@
                     "name": "states_types",
                     "comment": "(**Do not modify.**) EXAC1A has 5 states",
                     "internal_default": "[StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Differential, StateTypes.Differential]",
-                    "data_type": "Vector{StateTypes}"
+                    "data_type": "Vector{StateTypes.T}"
                 },
                 {
                     "name": "internal",
@@ -8521,7 +8521,7 @@
                     "name": "states_types",
                     "comment": "(**Do not modify.**) EXAC1 has 5 states",
                     "internal_default": "[StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Differential, StateTypes.Differential]",
-                    "data_type": "Vector{StateTypes}"
+                    "data_type": "Vector{StateTypes.T}"
                 },
                 {
                     "name": "internal",
@@ -8768,7 +8768,7 @@
                     "name": "states_types",
                     "comment": "(**Do not modify.**) EXAC2 has 5 states",
                     "internal_default": "[StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Differential, StateTypes.Differential]",
-                    "data_type": "Vector{StateTypes}"
+                    "data_type": "Vector{StateTypes.T}"
                 },
                 {
                     "name": "internal",
@@ -9014,7 +9014,7 @@
                     "name": "states_types",
                     "comment": "(**Do not modify.**) ESAC6A has 5 states",
                     "internal_default": "[StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Differential, StateTypes.Hybrid]",
-                    "data_type": "Vector{StateTypes}"
+                    "data_type": "Vector{StateTypes.T}"
                 },
                 {
                     "name": "internal",
@@ -9190,7 +9190,7 @@
                     "name": "states_types",
                     "comment": "(**Do not modify.**) ESAC8B has 5 states",
                     "internal_default": "[StateTypes.Hybrid, StateTypes.Differential, StateTypes.Differential, StateTypes.Hybrid, StateTypes.Differential]",
-                    "data_type": "Vector{StateTypes}"
+                    "data_type": "Vector{StateTypes.T}"
                 },
                 {
                     "name": "internal",
@@ -9412,7 +9412,7 @@
                     "name": "states_types",
                     "comment": "(**Do not modify.**) ST1A has 5 states",
                     "internal_default": "[StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Differential]",
-                    "data_type": "Vector{StateTypes}"
+                    "data_type": "Vector{StateTypes.T}"
                 },
                 {
                     "name": "internal",
@@ -9653,7 +9653,7 @@
                     "name": "states_types",
                     "comment": "(**Do not modify.**) EXPIC has 6 states",
                     "internal_default": "[StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Differential, StateTypes.Hybrid]",
-                    "data_type": "Vector{StateTypes}"
+                    "data_type": "Vector{StateTypes.T}"
                 },
                 {
                     "name": "internal",
@@ -9867,7 +9867,7 @@
                     "name": "states_types",
                     "comment": "(**Do not modify.**) ST4B has 4 states",
                     "internal_default": "[StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid]",
-                    "data_type": "Vector{StateTypes}"
+                    "data_type": "Vector{StateTypes.T}"
                 },
                 {
                     "name": "internal",
@@ -10073,7 +10073,7 @@
                     "name": "states_types",
                     "comment": "(**Do not modify.**) ST6B has 4 states",
                     "internal_default": "[StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid]",
-                    "data_type": "Vector{StateTypes}"
+                    "data_type": "Vector{StateTypes.T}"
                 },
                 {
                     "name": "internal",
@@ -10392,7 +10392,7 @@
                     "name": "states_types",
                     "comment": "(**Do not modify.**) ST8C has 5 states",
                     "internal_default": "[StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid]",
-                    "data_type": "Vector{StateTypes}"
+                    "data_type": "Vector{StateTypes.T}"
                 },
                 {
                     "name": "internal",
@@ -12670,7 +12670,7 @@
                     "name": "states_types",
                     "comment": "(**Do not modify.**) IEEEST has 7 [differential](@ref states_list) [states](@ref S)",
                     "internal_default": "[StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Differential]",
-                    "data_type": "Vector{StateTypes}"
+                    "data_type": "Vector{StateTypes.T}"
                 },
                 {
                     "name": "internal",
@@ -12787,7 +12787,7 @@
                     "name": "states_types",
                     "comment": "(**Do not modify.**) STAB1 has 3 [differential](@ref states_list) [states](@ref S)",
                     "internal_default": "[StateTypes.Differential, StateTypes.Differential, StateTypes.Differential]",
-                    "data_type": "Vector{StateTypes}"
+                    "data_type": "Vector{StateTypes.T}"
                 },
                 {
                     "name": "internal",
@@ -13055,7 +13055,7 @@
                     "name": "states_types",
                     "comment": "(**Do not modify.**) IEEEST has 16 [differential](@ref states_list) [states](@ref S)",
                     "internal_default": "[StateTypes.Differential, StateTypes.Differential, StateTypes.Differential, StateTypes.Differential, StateTypes.Differential, StateTypes.Differential, StateTypes.Differential, StateTypes.Differential, StateTypes.Differential, StateTypes.Differential, StateTypes.Differential, StateTypes.Differential, StateTypes.Differential, StateTypes.Differential, StateTypes.Differential, StateTypes.Differential]",
-                    "data_type": "Vector{StateTypes}"
+                    "data_type": "Vector{StateTypes.T}"
                 },
                 {
                     "name": "internal",
@@ -13357,7 +13357,7 @@
                     "name": "states_types",
                     "comment": "(**Do not modify.**) IEEEST has 17 [differential](@ref states_list) [states](@ref S)",
                     "internal_default": "[StateTypes.Differential, StateTypes.Differential, StateTypes.Differential, StateTypes.Differential, StateTypes.Differential, StateTypes.Differential, StateTypes.Differential, StateTypes.Differential, StateTypes.Differential, StateTypes.Differential, StateTypes.Differential, StateTypes.Differential, StateTypes.Differential, StateTypes.Differential, StateTypes.Differential, StateTypes.Differential]",
-                    "data_type": "Vector{StateTypes}"
+                    "data_type": "Vector{StateTypes.T}"
                 },
                 {
                     "name": "internal",
@@ -13715,7 +13715,7 @@
                     "name": "states_types",
                     "comment": "(**Do not modify.**) IEEEST has 19 [differential](@ref states_list) [states](@ref S)",
                     "internal_default": "[StateTypes.Differential, StateTypes.Differential, StateTypes.Differential, StateTypes.Differential, StateTypes.Differential, StateTypes.Differential, StateTypes.Differential, StateTypes.Differential, StateTypes.Differential, StateTypes.Differential, StateTypes.Differential, StateTypes.Differential, StateTypes.Differential, StateTypes.Differential, StateTypes.Differential, StateTypes.Differential]",
-                    "data_type": "Vector{StateTypes}"
+                    "data_type": "Vector{StateTypes.T}"
                 },
                 {
                     "name": "internal",
@@ -14169,7 +14169,7 @@
                     "name": "states_types",
                     "comment": "(**Do not modify.**) GAST has 3 [differential](@ref states_list) [states](@ref S)",
                     "internal_default": "[StateTypes.Differential, StateTypes.Differential, StateTypes.Differential]",
-                    "data_type": "Vector{StateTypes}"
+                    "data_type": "Vector{StateTypes.T}"
                 },
                 {
                     "name": "internal",
@@ -14301,7 +14301,7 @@
                     "name": "states_types",
                     "comment": "(**Do not modify.**) DEGOV has 5 [differential](@ref states_list) [states](@ref S)",
                     "internal_default": "[StateTypes.Differential, StateTypes.Differential, StateTypes.Differential, StateTypes.Differential, StateTypes.Differential]",
-                    "data_type": "Vector{StateTypes}"
+                    "data_type": "Vector{StateTypes.T}"
                 },
                 {
                     "name": "internal",
@@ -14853,7 +14853,7 @@
                     "name": "states_types",
                     "comment": "(**Do not modify.**) GGOV1 has 10 [differential](@ref states_list) [states](@ref S)",
                     "internal_default": "[StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Differential, StateTypes.Hybrid]",
-                    "data_type": "Vector{StateTypes}"
+                    "data_type": "Vector{StateTypes.T}"
                 },
                 {
                     "name": "internal",
@@ -15050,7 +15050,7 @@
                     "name": "states_types",
                     "comment": "(**Do not modify.**) PIDGOV has 7 [differential](@ref states_list) [states](@ref S)",
                     "internal_default": "[StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid]",
-                    "data_type": "Vector{StateTypes}"
+                    "data_type": "Vector{StateTypes.T}"
                 },
                 {
                     "name": "internal",
@@ -15231,7 +15231,7 @@
                     "name": "states_types",
                     "comment": "(**Do not modify.**) PIDGOV has 7 [differential](@ref states_list) [states](@ref S)",
                     "internal_default": "[StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid]",
-                    "data_type": "Vector{StateTypes}"
+                    "data_type": "Vector{StateTypes.T}"
                 },
                 {
                     "name": "internal",
@@ -15377,7 +15377,7 @@
                     "name": "states_types",
                     "comment": "(**Do not modify.**) TGOV1 has 2 [differential](@ref states_list) [states](@ref S)",
                     "internal_default": "[StateTypes.Differential, StateTypes.Differential]",
-                    "data_type": "Vector{StateTypes}"
+                    "data_type": "Vector{StateTypes.T}"
                 },
                 {
                     "name": "internal",
@@ -15545,7 +15545,7 @@
                     "name": "states_types",
                     "comment": "(**Do not modify.**) HYGOV has 4 [differential](@ref states_list) [states](@ref S)",
                     "internal_default": "[StateTypes.Differential, StateTypes.Differential, StateTypes.Differential, StateTypes.Differential]",
-                    "data_type": "Vector{StateTypes}"
+                    "data_type": "Vector{StateTypes.T}"
                 },
                 {
                     "name": "internal",
@@ -15801,7 +15801,7 @@
                     "name": "states_types",
                     "comment": "(**Do not modify.**) IEEEG1 has 6 [differential](@ref states_list) [states](@ref S)",
                     "internal_default": "[StateTypes.Differential, StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid]",
-                    "data_type": "Vector{StateTypes}"
+                    "data_type": "Vector{StateTypes.T}"
                 },
                 {
                     "name": "internal",
