@@ -469,12 +469,29 @@ function _from_file_document(document_path::AbstractString; system_kwargs...)
 end
 
 function _from_file_sienna(path::AbstractString; system_kwargs...)
-    # The extracted directory outlives this call, which `time_series_read_only = true` needs:
-    # IS then opens the extracted sidecar in place rather than copying it out first.
-    dir = IS.extract_sienna_archive(path)
-    sys = _from_file_directory(dir; system_kwargs...)
-    _load_sienna_extras!(sys, dir)
-    return sys
+    tsdir = something(
+        get(system_kwargs, :time_series_directory, nothing),
+        get(ENV, IS.TIME_SERIES_DIRECTORY_ENV_VAR, tempdir()),
+    )
+    mkpath(tsdir)
+    # Unzip here so /tmp doesn't have to fit the .h5.
+    if get(system_kwargs, :time_series_read_only, false)
+        # Store opens the sidecar in place; drop the JSONs once consumed.
+        dir = IS.extract_sienna_archive(path; directory = mktempdir(tsdir))
+        sys = _from_file_directory(dir; system_kwargs...)
+        _load_sienna_extras!(sys, dir)
+        for consumed in (SYSTEM_DOCUMENT_FILE, SIENNA_EXTRAS_FILE)
+            rm(joinpath(dir, consumed); force = true)
+        end
+        return sys
+    end
+    # Store copies out; the whole extraction is scoped to this block.
+    return mktempdir(tsdir) do dir
+        IS.extract_sienna_archive(path; directory = dir)
+        sys = _from_file_directory(dir; system_kwargs...)
+        _load_sienna_extras!(sys, dir)
+        return sys
+    end
 end
 
 """

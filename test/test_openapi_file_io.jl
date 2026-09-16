@@ -143,6 +143,48 @@ end
     end
 end
 
+@testset "from_file: .sn read-only extracts into time_series_directory and drops JSONs" begin
+    sys = _file_io_fixture()
+    mktempdir() do outer
+        archive = joinpath(outer, "case.sn")
+        to_file(sys, archive)
+
+        tsdir = mktempdir(outer)
+        sys2 = from_file(
+            archive;
+            time_series_directory = tsdir,
+            time_series_read_only = true,
+        )
+
+        subs = filter(isdir, joinpath.(tsdir, readdir(tsdir)))
+        @test length(subs) == 1
+        @test sort(readdir(only(subs))) == ["time_series.h5", "time_series.h5.sqlite"]
+
+        gen2 = get_component(ThermalStandard, sys2, "g1")
+        ts = get_time_series(SingleTimeSeries, gen2, "max_active_power")
+        @test TimeSeries.values(PSY.get_data(ts)) == [0.1, 0.2, 0.3, 0.4, 0.5, 0.6]
+        _close_sidecar_store!(sys2)
+    end
+end
+
+@testset "from_file: .sn writable extraction is scoped and cleaned up" begin
+    sys = _file_io_fixture()
+    mktempdir() do outer
+        archive = joinpath(outer, "case.sn")
+        to_file(sys, archive)
+
+        tsdir = mktempdir(outer)
+        sys2 = from_file(archive; time_series_directory = tsdir)
+
+        @test all(!isdir, joinpath.(tsdir, readdir(tsdir)))
+
+        gen2 = get_component(ThermalStandard, sys2, "g1")
+        ts = get_time_series(SingleTimeSeries, gen2, "max_active_power")
+        @test TimeSeries.values(PSY.get_data(ts)) == [0.1, 0.2, 0.3, 0.4, 0.5, 0.6]
+        _close_sidecar_store!(sys2)
+    end
+end
+
 @testset "to_file: .sn archive respects force" begin
     sys = _file_io_fixture(; with_time_series = false)
     mktempdir() do dir
