@@ -6,11 +6,12 @@ _po_linear_io(prop, const_) = PSY.PC.InputOutputCurve(;
     ),
 )
 
-_po_cost_curve(; power_units = "NATURAL_UNITS", vom_cost = nothing) = PSY.PC.CostCurve(;
-    power_units = power_units,
-    value_curve = PSY.PC.ValueCurve(_po_linear_io(10.0, 5.0)),
-    vom_cost = vom_cost,
-)
+_po_cost_curve(; power_units = "NATURAL_UNITS", vom_cost = _po_linear_io(0.0, 0.0)) =
+    PSY.PC.CostCurve(;
+        power_units = PSY.IC.UnitSystem(power_units),
+        value_curve = PSY.PC.ValueCurve(_po_linear_io(10.0, 5.0)),
+        vom_cost = vom_cost,
+    )
 
 @testset "convert_cost: FunctionData variants" begin
     @test PSY.convert_cost(
@@ -57,7 +58,7 @@ end
 
     avg = PSY.convert_cost(
         PSY.PC.AverageRateCurve(;
-            function_data = PSY.PC.IncrementalCurveFunctionData(
+            function_data = PSY.PC.AverageRateCurveFunctionData(
                 PSY.IC.LinearFunctionData(; proportional_term = 1.0, constant_term = 0.0),
             ),
             initial_input = 20.0,
@@ -70,11 +71,11 @@ end
     # The wire enum is COMPONENT_BASE/NATURAL_UNITS only — there is no system-base member.
     for (str, marker) in (
         ("NATURAL_UNITS", NaturalUnit()),
-        ("COMPONENT_BASE", DeviceBaseUnit()),
+        ("COMPONENT_BASE", ComponentBaseUnit()),
     )
         curve = PSY.convert_cost(_po_cost_curve(; power_units = str))
         @test get_power_units(curve) == marker
-        @test PSY._power_units_to_string(marker, curve) == str
+        @test PSY._power_units_to_string(marker, curve).value == str
     end
     # Tested directly against the barrier: PC.CostCurve's own OpenAPI-generated enum
     # validator would reject "BOGUS"/"SYSTEM_BASE" at construction time, before
@@ -86,7 +87,7 @@ end
     # The barrier hands `f` a CONCRETE marker, never a Union — that is the whole point of
     # its being higher-order, since the marker is a type parameter of the curve it builds.
     for (str, marker) in
-        (("NATURAL_UNITS", NaturalUnit()), ("COMPONENT_BASE", DeviceBaseUnit()))
+        (("NATURAL_UNITS", NaturalUnit()), ("COMPONENT_BASE", ComponentBaseUnit()))
         @test PSY._with_power_units(typeof, str) === typeof(marker)
     end
 
@@ -107,7 +108,7 @@ end
 
     fc = PSY.convert_cost(
         PSY.PC.FuelCurve(;
-            power_units = "NATURAL_UNITS",
+            power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
             value_curve = PSY.PC.ValueCurve(
                 PSY.PC.IncrementalCurve(;
                     function_data = PSY.PC.IncrementalCurveFunctionData(
@@ -120,6 +121,7 @@ end
                 ),
             ),
             fuel_cost = 3.5,
+            vom_cost = _po_linear_io(0.0, 0.0),
         ),
     )
     @test fc isa FuelCurve
@@ -146,7 +148,7 @@ end
     po = PSY.PC.ThermalGenerationCost(;
         fixed = 100.0,
         shut_down = 50.0,
-        start_up = 200.0,
+        start_up = PSY.PC.ThermalGenerationCostStartUp(200.0),
         variable_operation_cost = PSY.PC.ProductionVariableCostCurve(_po_cost_curve()),
     )
     cost = PSY.convert_cost(po)
@@ -168,13 +170,13 @@ end
     cost_stages = PSY.convert_cost(po_stages)
     @test get_start_up(cost_stages) == (hot = 1.0, warm = 2.0, cold = 3.0)
 
-    po_missing_variable = PSY.PC.ThermalGenerationCost(;
+    # `variable_operation_cost` has no `Nothing`/`Absent` variant on the wire, so a document
+    # cannot express its absence — a missing value fails at construction.
+    @test_throws UndefKeywordError PSY.PC.ThermalGenerationCost(;
         fixed = 0.0,
         shut_down = 0.0,
-        start_up = 0.0,
-        variable_operation_cost = nothing,
+        start_up = PSY.PC.ThermalGenerationCostStartUp(0.0),
     )
-    @test_throws ErrorException PSY.convert_cost(po_missing_variable)
 end
 
 @testset "convert_cost: RenewableGenerationCost" begin
@@ -219,7 +221,7 @@ end
         fixed = 5.0,
         shut_down = 0.0,
         start_up = PSY.PC.StorageCostStartUp(
-            PSY.PC.StorageCostStartUpOneOf(; charge = 1.0, discharge = 2.0),
+            PSY.PC.ChargeDischarge(; charge = 1.0, discharge = 2.0),
         ),
         energy_shortage_cost = 3.0,
         energy_surplus_cost = 4.0,
@@ -235,7 +237,7 @@ end
 end
 
 _po_offer_curve(x_coords, y_coords; power_units = "NATURAL_UNITS") = PSY.PC.CostCurve(;
-    power_units = power_units,
+    power_units = PSY.IC.UnitSystem(power_units),
     value_curve = PSY.PC.ValueCurve(
         PSY.PC.IncrementalCurve(;
             function_data = PSY.PC.IncrementalCurveFunctionData(
@@ -244,6 +246,7 @@ _po_offer_curve(x_coords, y_coords; power_units = "NATURAL_UNITS") = PSY.PC.Cost
             initial_input = 0.0,
         ),
     ),
+    vom_cost = _po_linear_io(0.0, 0.0),
 )
 
 @testset "convert_cost: ImportExportCost" begin
@@ -310,7 +313,7 @@ end
     @test PSY.convert_reserve_variable(nothing) === PSY.ZERO_OFFER_CURVE
 
     po_ordc = PSY.PC.CostCurve(;
-        power_units = "NATURAL_UNITS",
+        power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
         value_curve = PSY.PC.ValueCurve(
             PSY.PC.IncrementalCurve(;
                 function_data = PSY.PC.IncrementalCurveFunctionData(
@@ -319,6 +322,7 @@ end
                 initial_input = 0.0,
             ),
         ),
+        vom_cost = _po_linear_io(0.0, 0.0),
     )
     ordc = PSY.convert_reserve_variable(po_ordc)
     @test ordc isa CostCurve{PiecewiseIncrementalCurve}
@@ -330,18 +334,20 @@ end
     # Neither set.
     @test_throws ErrorException PSY.convert_cost(
         PSY.PC.FuelCurve(;
-            power_units = "NATURAL_UNITS",
+            power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
             value_curve = PSY.PC.ValueCurve(_po_linear_io(1.0, 0.0)),
+            vom_cost = _po_linear_io(0.0, 0.0),
         ),
     )
     # Both set — a document naming both is malformed regardless of whether either id
     # resolves, so this errors before ever touching a store.
     @test_throws ErrorException PSY.convert_cost(
         PSY.PC.FuelCurve(;
-            power_units = "NATURAL_UNITS",
+            power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
             value_curve = PSY.PC.ValueCurve(_po_linear_io(1.0, 0.0)),
             fuel_cost = 3.5,
             fuel_cost_time_series = 7,
+            vom_cost = _po_linear_io(0.0, 0.0),
         ),
     )
 end
@@ -371,22 +377,19 @@ end
                 ],
             ),
         )
-        batch = IS.make_add_batch()
-        IS.serialize_single!(
-            batch,
+        IS.add_time_series!(
+            store,
             1,
             "ThermalStandard",
             IS.get_owner_category(IS.InfrastructureSystemsComponent),
-            IS.get_name(series),
             series,
         )
-        IS.commit_batch!(store, batch)
         assoc_id = IS.get_association_id(only(IS.list_time_series_metadata(store)))
 
         fc = PSY._with_import_store(store) do
             PSY.convert_cost(
                 PSY.PC.FuelCurve(;
-                    power_units = "NATURAL_UNITS",
+                    power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
                     value_curve = PSY.PC.ValueCurve(
                         PSY.PC.TimeSeriesIncrementalCurve(;
                             function_data = PSY.IC.FunctionData(
@@ -398,6 +401,7 @@ end
                         ),
                     ),
                     fuel_cost = 3.5,
+                    vom_cost = _po_linear_io(0.0, 0.0),
                 ),
             )
         end
@@ -415,9 +419,10 @@ end
     # the 1-arg ambient form errors rather than silently treating it as absent.
     @test_throws ErrorException PSY.convert_cost(
         PSY.PC.FuelCurve(;
-            power_units = "NATURAL_UNITS",
+            power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
             value_curve = PSY.PC.ValueCurve(_po_linear_io(1.0, 0.0)),
             fuel_cost_time_series = 7,
+            vom_cost = _po_linear_io(0.0, 0.0),
         ),
     )
     @test_throws ErrorException PSY.convert_cost(
@@ -434,7 +439,7 @@ end
                 ),
             ),
             incremental_offer_curves = PSY.PC.CostCurve(;
-                power_units = "NATURAL_UNITS",
+                power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
                 value_curve = PSY.PC.ValueCurve(
                     PSY.PC.TimeSeriesIncrementalCurve(;
                         function_data = PSY.IC.FunctionData(
@@ -442,9 +447,10 @@ end
                         ),
                     ),
                 ),
+                vom_cost = _po_linear_io(0.0, 0.0),
             ),
             decremental_offer_curves = PSY.PC.CostCurve(;
-                power_units = "NATURAL_UNITS",
+                power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
                 value_curve = PSY.PC.ValueCurve(
                     PSY.PC.TimeSeriesIncrementalCurve(;
                         function_data = PSY.IC.FunctionData(
@@ -452,7 +458,9 @@ end
                         ),
                     ),
                 ),
+                vom_cost = _po_linear_io(0.0, 0.0),
             ),
+            ancillary_service_offers = Int64[],
         ),
     )
 end
@@ -503,16 +511,13 @@ end
                 ],
             ),
         )
-        batch = IS.make_add_batch()
-        IS.serialize_single!(
-            batch,
+        IS.add_time_series!(
+            store,
             1,
             "Source",
             IS.get_owner_category(IS.InfrastructureSystemsComponent),
-            IS.get_name(series),
             series,
         )
-        IS.commit_batch!(store, batch)
         assoc_id = IS.get_association_id(only(IS.list_time_series_metadata(store)))
         ts_key = IS.get_time_series_key(store, Int(assoc_id))
 
@@ -560,11 +565,11 @@ end
     add_component!(sys, bus)
 
     gen = ThermalStandard(;
-        name = "A", available = true, status = true, bus = bus,
+        name = "A", available = true, status = OperationalStates.ONLINE, bus = bus,
         active_power = 1.0, reactive_power = 0.0, rating = 2.0,
         active_power_limits = (min = 0.0, max = 2.0), reactive_power_limits = nothing,
         ramp_limits = nothing, operation_cost = ThermalGenerationCost(nothing),
-        base_power = 100.0, time_limits = nothing, must_run = false,
+        base_power = 100.0, time_limits = nothing,
         prime_mover_type = PrimeMovers.OT, fuel = ThermalFuels.OTHER,
     )
     add_component!(sys, gen)

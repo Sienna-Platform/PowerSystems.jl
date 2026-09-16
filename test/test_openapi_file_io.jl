@@ -115,12 +115,12 @@ end
 @testset "to_file: .json honors units on the way out" begin
     sys = _file_io_fixture(; with_time_series = false)
     mktempdir() do dir
-        for (marker, stamp) in ((DU, "COMPONENT_BASE"), (NU, "NATURAL_UNITS"))
+        for marker in (CU, NU)
             document = joinpath(dir, "case.json")
             to_file(sys, document; units = marker, force = true)
             doc = PSY.PD.read_document(document)
             gen = only(PSY.PD.get_components(doc, "ThermalStandard"))
-            @test gen.power_units == stamp
+            @test gen.power_units == PSY._power_units_string(marker)
         end
     end
 end
@@ -163,7 +163,7 @@ end
     end
 end
 
-@testset "to_file: .sn refuses any units but DU" begin
+@testset "to_file: .sn refuses any units but CU" begin
     sys = _file_io_fixture(; with_time_series = false)
     mktempdir() do dir
         archive = joinpath(dir, "case.sn")
@@ -323,7 +323,7 @@ end
         to_file(sys, bundle)
         @test_throws IS.DataFormatError to_file(sys, bundle)
         # ... and force makes it succeed.
-        @test isnothing(to_file(sys, bundle; units = DU, force = true))
+        @test isnothing(to_file(sys, bundle; units = CU, force = true))
     end
 
     # A directory that is not a bundle.
@@ -365,7 +365,7 @@ end
     # exactly one thing. A private attribute counter previously issued attribute id 1
     # alongside component id 1.
     sys = _file_io_fixture(; with_time_series = false)
-    doc = to_openapi(sys; units = DU)
+    doc = to_openapi(sys; units = CU)
 
     component_ids = Int[]
     for type_name in PSY.PD.component_type_names(doc)
@@ -412,7 +412,8 @@ end
 """The `power_units` stamp on the sole exported `ThermalStandard` blob, the regression guard
 for [`to_openapi`](@ref)'s uniform per-export stamp (no document-level `unit_system` exists to
 assert against instead)."""
-_gen_power_units(doc) = only(PSY.PD.get_components(doc, "ThermalStandard")).power_units
+_gen_power_units(doc) =
+    only(PSY.PD.get_components(doc, "ThermalStandard")).power_units.value
 
 @testset "export needs no ledger: a hand-built System serializes" begin
     # The unit-system assertions use the time-series-free fixture so that `to_openapi` needs
@@ -429,7 +430,7 @@ _gen_power_units(doc) = only(PSY.PD.get_components(doc, "ThermalStandard")).powe
 
     # Both remaining conventions are reachable on the same ledger-free System, and they are
     # exactly the document schema's two legal values.
-    for (marker, declared) in ((DU, "COMPONENT_BASE"), (NU, "NATURAL_UNITS"))
+    for (marker, declared) in ((CU, "COMPONENT_BASE"), (NU, "NATURAL_UNITS"))
         @test _gen_power_units(to_openapi(sys; units = marker)) == declared
     end
 

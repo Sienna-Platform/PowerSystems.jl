@@ -13,7 +13,7 @@ serializer** — there is no `format` keyword, and the archive builds the same b
 form does before archiving it, so there is no second writer to keep in sync.
 
 ```julia
-to_file(sys, path; units = DU, force = false, pretty = false)
+to_file(sys, path; units = CU, force = false, pretty = false)
 from_file(path; system_kwargs...)   # no type argument — the form is inferred from `path`
 ```
 
@@ -33,11 +33,11 @@ would turn a typo'd extension into a `MethodError` on an internal helper.
   directory. The document records only the sidecar's basename, so the pair moves together.
 - **`.sn`** — those two plus `time_series.h5.sqlite` (InfraStore's own catalog, authoritative on
   read) and `sienna_extras.json`. **Lossless**; the document forms are not. Only ever writes on
-  `DU` and throws on any other unit system — the archive form exists to avoid a conversion pass.
+  `CU` and throws on any other unit system — the archive form exists to avoid a conversion pass.
 - **`from_file`** infers: directory → directory form, `.json` → document form, `.sn` → archive,
   anything else → `DataFormatError`.
 
-**The keyword is `units`, and it takes a marker, not a Symbol.** `DU` (default) or `NU`; `SU` is
+**The keyword is `units`, and it takes a marker, not a Symbol.** `CU` (default) or `NU`; `SU` is
 refused, the wire enum having no system-base member. It governs every convertible field
 (`:mva`, `:ohm`, `:siemens`), not just power, and it is threaded straight into `to_openapi`'s own
 `units` keyword — the two now share a name and a type, and `_resolve_export_power_units` is gone.
@@ -47,9 +47,9 @@ and it keeps its name.
 
 `SU`'s rejection lives in `_power_units_string(::SystemBaseUnit)` (`src/openapi/refs.jl`) and is
 reached early through `_check_export_units`, so a rejected unit system leaves nothing
-half-written. The archive's `DU`-only rule is `_check_archive_units`, a no-op method on
-`DeviceBaseUnit` plus an erroring one on `IS.AbstractUnitSystem`. **Both are dispatch, not a
-`Union{DeviceBaseUnit, NaturalUnit}` annotation** — a marker added later lands on the error rather
+half-written. The archive's `CU`-only rule is `_check_archive_units`, a no-op method on
+`ComponentBaseUnit` plus an erroring one on `IS.AbstractUnitSystem`. **Both are dispatch, not a
+`Union{ComponentBaseUnit, NaturalUnit}` annotation** — a marker added later lands on the error rather
 than silently matching a two-type union. Keep it that way.
 
 **The archive container is not PSY's.** `IS.create_sienna_archive` / `IS.extract_sienna_archive` /
@@ -166,7 +166,7 @@ from this side:
   `to_file(sys, dir; power_units = …)` under IOM's *default* `system_to_file` setting, inside a try/catch
   that reports a successful solve as `FAILED` rather than surfacing the error.
 
-Both need the same two mechanical edits: `power_units = :component_base` → `units = PSY.DU` (a
+Both need the same two mechanical edits: `power_units = :component_base` → `units = PSY.CU` (a
 marker, not a Symbol — the keyword was briefly `unit_system::Symbol` mid-PR and is now `units`), and
 drop `System` from `from_file`'s arguments. PSB's `build_system.jl:120` writes a *directory*, which
 is still the extensionless form, so only the keyword changes there.
@@ -231,17 +231,17 @@ Five concrete transformer types became two, and series data moved onto a nested 
 ## The explicit-units engine (the defining psy6 feature)
 
 - Descriptor fields carry `needs_conversion: true` + `conversion_unit` (`:mva` / `:ohm` / `:siemens`) — **247 fields** across the descriptor. Codegen (IS-side) emits `get_X(comp, units)`, `get_X_unitful(comp, units)`, and `set_X!(comp, tagged_value)`.
-- Getters require the unit system explicitly: `get_rating(br, PSY.SU)`. `SU`/`DU`/`NU` markers come from `IS.RelativeUnits`; PSY gives them domain meaning (`base_power` is the device base, MVA).
+- Getters require the unit system explicitly: `get_rating(br, PSY.SU)`. `SU`/`CU`/`NU` markers come from `IS.RelativeUnits`; PSY gives them domain meaning (`base_power` is the component base, MVA).
 - Setters take **tagged** values and reject bare floats: `set_rating_b!(line, 0.9 * PSY.SU)`.
 - PSY extends `IS._strip_units` (required by the IS codegen contract) and overrides `IS.default_units(::Component)` to return `SU` for time-series multipliers.
 - **`with_units_base` / `set_units_base_system!` / `get_units_base` are GONE** (verified against `origin/psy6`: all three `isdefined(PowerSystems, …) == false`). The stateful units system was fully removed in the psy6 line — see `7ffbbdf8d` "remove last pieces of stateful units system". Every value is read with an explicit unit argument instead. The `UnitSystem` enum still exists as display metadata, but there is no setter. Downstream code calling any of the three must migrate to explicit unit args, not look for a replacement setter.
-- Serialization writes on whichever basis `to_file`'s `unit_system` names — `:component_base` (device base, the representation PSY stores, no conversion) or `:natural_units` (MW/MVAr/MVA, what a reader outside Sienna generally wants). A write is *uniform*: PSY tracks no per-component basis, so the choice stamps every power-bearing blob in the document. A read is *per component*: each blob converts according to the basis it carries, and a blob missing the field errors rather than guessing. `format = :sienna` is `:component_base` only.
+- Serialization writes on whichever basis `to_file`'s `units` keyword names — `CU` (component base, the representation PSY stores, no conversion) or `NU` (MW/MVAr/MVA, what a reader outside Sienna generally wants). A write is *uniform*: PSY tracks no per-component basis, so the choice stamps every power-bearing blob in the document. A read is *per component*: each blob converts according to the basis it carries, and a blob missing the field errors rather than guessing. The `.sn` archive is `CU` only.
 - Cost curves default to `power_units = IS.NaturalUnit()`; `CostCurve{T,U}`/`FuelCurve{T,U}` carry the unit as a type parameter (IS4).
 - Units test filter: `julia --project=test test/runtests.jl test_units` (fast, ~22 s).
 
 ### Known audit items (do not silently "fix"; coordinate)
 
-- **Resolved**: `check_rating_values(::Union{Line,MonitoredLine}, ::Float64)` at `src/utils/IO/branchdata_checks.jl` now mirrors its transformer sibling — it reads `device_base_power = _get_base_power(line)` and scales the raw DU rating fields through that, ignoring the passed `basemva`, instead of dividing the MW thresholds by a caller-supplied base. This closed the latent trap the previous note warned about: `base_power` was added to `Line`/`MonitoredLine` (and 10 other types whose base *is* the system base — see `base_power_kind`/`BasePowerKind` trait in `src/models/components.jl`), and `add_component!` now keeps that field synced to the system's base power on attachment.
+- **Resolved**: `check_rating_values(::Union{Line,MonitoredLine}, ::Float64)` at `src/utils/IO/branchdata_checks.jl` now mirrors its transformer sibling — it reads `component_base_power = _get_base_power(line)` and scales the raw CU rating fields through that, ignoring the passed `basemva`, instead of dividing the MW thresholds by a caller-supplied base. This closed the latent trap the previous note warned about: `base_power` was added to `Line`/`MonitoredLine` (and 10 other types whose base *is* the system base — see `base_power_kind`/`BasePowerKind` trait in `src/models/components.jl`), and `add_component!` now keeps that field synced to the system's base power on attachment.
 - `_set_units_base!` at `src/base.jl:574` — `IS.get_units_info` is nothing-unguarded for detached components on the display path; wants the `isnothing(...) && error(...)` guard matching `_get_system_base_power` (`src/models/components.jl`).
 - `src/base.jl:~3290` — copy-paste bug: `old_load.max_active_power` copied into `max_constant_reactive_power`. Known, pending a separate fix.
 - Setters bypass validation and `set_bus!` does not maintain `sys.bus_numbers` — mutation after `add_component!` is convention-trusted.

@@ -101,17 +101,17 @@ get_name(value::PowerLoad) = value.name
 get_available(value::PowerLoad) = value.available
 """Get [`PowerLoad`](@ref) `bus`."""
 get_bus(value::PowerLoad) = value.bus
-"""Get [`PowerLoad`](@ref) `active_power` as a bare number in the requested `units` (e.g. `SU`, `DU`; domain-provided units such as `MW` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_active_power_unitful`](@ref)."""
+"""Get [`PowerLoad`](@ref) `active_power` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_active_power_unitful`](@ref)."""
 get_active_power(value::PowerLoad, units) = InfrastructureSystems._strip_units(get_value(value, Val(:active_power), Val(:mw), units))
-"""Get [`PowerLoad`](@ref) `active_power` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `MW`). For a bare number see [`get_active_power`](@ref)."""
+"""Get [`PowerLoad`](@ref) `active_power` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_active_power`](@ref)."""
 get_active_power_unitful(value::PowerLoad, units) = get_value(value, Val(:active_power), Val(:mw), units)
 get_active_power(value::PowerLoad) = _units_arg_required(get_active_power, value, :active_power, Val(:mw))
 get_active_power_unitful(value::PowerLoad) = _units_arg_required(get_active_power_unitful, value, :active_power, Val(:mw))
 InfrastructureSystems.display_units_arg(::typeof(get_active_power), ::Type{PowerLoad}) = InfrastructureSystems.SU
 InfrastructureSystems.display_units_arg(::typeof(get_active_power_unitful), ::Type{PowerLoad}) = InfrastructureSystems.SU
-"""Get [`PowerLoad`](@ref) `reactive_power` as a bare number in the requested `units` (e.g. `SU`, `DU`; domain-provided units such as `MW` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_reactive_power_unitful`](@ref)."""
+"""Get [`PowerLoad`](@ref) `reactive_power` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_reactive_power_unitful`](@ref)."""
 get_reactive_power(value::PowerLoad, units) = InfrastructureSystems._strip_units(get_value(value, Val(:reactive_power), Val(:mvar), units))
-"""Get [`PowerLoad`](@ref) `reactive_power` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `MW`). For a bare number see [`get_reactive_power`](@ref)."""
+"""Get [`PowerLoad`](@ref) `reactive_power` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_reactive_power`](@ref)."""
 get_reactive_power_unitful(value::PowerLoad, units) = get_value(value, Val(:reactive_power), Val(:mvar), units)
 get_reactive_power(value::PowerLoad) = _units_arg_required(get_reactive_power, value, :reactive_power, Val(:mvar))
 get_reactive_power_unitful(value::PowerLoad) = _units_arg_required(get_reactive_power_unitful, value, :reactive_power, Val(:mvar))
@@ -119,17 +119,17 @@ InfrastructureSystems.display_units_arg(::typeof(get_reactive_power), ::Type{Pow
 InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_unitful), ::Type{PowerLoad}) = InfrastructureSystems.SU
 
 _get_base_power(value::PowerLoad) = value.base_power
-"""Get [`PowerLoad`](@ref) `max_active_power` as a bare number in the requested `units` (e.g. `SU`, `DU`; domain-provided units such as `MW` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_max_active_power_unitful`](@ref)."""
+"""Get [`PowerLoad`](@ref) `max_active_power` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_max_active_power_unitful`](@ref)."""
 get_max_active_power(value::PowerLoad, units) = InfrastructureSystems._strip_units(get_value(value, Val(:max_active_power), Val(:mw), units))
-"""Get [`PowerLoad`](@ref) `max_active_power` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `MW`). For a bare number see [`get_max_active_power`](@ref)."""
+"""Get [`PowerLoad`](@ref) `max_active_power` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_max_active_power`](@ref)."""
 get_max_active_power_unitful(value::PowerLoad, units) = get_value(value, Val(:max_active_power), Val(:mw), units)
 get_max_active_power(value::PowerLoad) = _units_arg_required(get_max_active_power, value, :max_active_power, Val(:mw))
 get_max_active_power_unitful(value::PowerLoad) = _units_arg_required(get_max_active_power_unitful, value, :max_active_power, Val(:mw))
 InfrastructureSystems.display_units_arg(::typeof(get_max_active_power), ::Type{PowerLoad}) = InfrastructureSystems.SU
 InfrastructureSystems.display_units_arg(::typeof(get_max_active_power_unitful), ::Type{PowerLoad}) = InfrastructureSystems.SU
-"""Get [`PowerLoad`](@ref) `max_reactive_power` as a bare number in the requested `units` (e.g. `SU`, `DU`; domain-provided units such as `MW` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_max_reactive_power_unitful`](@ref)."""
+"""Get [`PowerLoad`](@ref) `max_reactive_power` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_max_reactive_power_unitful`](@ref)."""
 get_max_reactive_power(value::PowerLoad, units) = InfrastructureSystems._strip_units(get_value(value, Val(:max_reactive_power), Val(:mvar), units))
-"""Get [`PowerLoad`](@ref) `max_reactive_power` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `MW`). For a bare number see [`get_max_reactive_power`](@ref)."""
+"""Get [`PowerLoad`](@ref) `max_reactive_power` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_max_reactive_power`](@ref)."""
 get_max_reactive_power_unitful(value::PowerLoad, units) = get_value(value, Val(:max_reactive_power), Val(:mvar), units)
 get_max_reactive_power(value::PowerLoad) = _units_arg_required(get_max_reactive_power, value, :max_reactive_power, Val(:mvar))
 get_max_reactive_power_unitful(value::PowerLoad) = _units_arg_required(get_max_reactive_power_unitful, value, :max_reactive_power, Val(:mvar))
@@ -170,7 +170,7 @@ set_services!(value::PowerLoad, val) = value.services = val
 set_ext!(value::PowerLoad, val) = value.ext = val
 
 
-function from_openapi(po::PO.PowerLoad, refs::OpenAPIRefs, ::DeviceBaseUnit)
+function from_openapi(po::PO.PowerLoad, refs::OpenAPIRefs, ::ComponentBaseUnit)
     return PowerLoad(;
         name = po.name,
         available = po.available,
@@ -180,7 +180,7 @@ function from_openapi(po::PO.PowerLoad, refs::OpenAPIRefs, ::DeviceBaseUnit)
         base_power = po.base_power,
         max_active_power = po.max_active_power,
         max_reactive_power = po.max_reactive_power,
-        conformity = LoadConformity(po.conformity),
+        conformity = _or_default_enum(po.conformity, LoadConformity.UNDEFINED),
     )
 end
 
@@ -194,7 +194,7 @@ function from_openapi(po::PO.PowerLoad, refs::OpenAPIRefs, ::NaturalUnit)
         base_power = po.base_power,
         max_active_power = po.max_active_power / po.base_power,
         max_reactive_power = po.max_reactive_power / po.base_power,
-        conformity = LoadConformity(po.conformity),
+        conformity = _or_default_enum(po.conformity, LoadConformity.UNDEFINED),
     )
 end
 
@@ -202,19 +202,19 @@ function from_openapi(po::PO.PowerLoad, refs::OpenAPIRefs)
     return from_openapi(po, refs, _power_units_marker("PowerLoad", po.id, po.power_units))
 end
 
-function to_openapi(value::PowerLoad, refs::OpenAPIRefs, ::DeviceBaseUnit)
+function to_openapi(value::PowerLoad, refs::OpenAPIRefs, ::ComponentBaseUnit)
     return PO.PowerLoad(;
         id = component_id(refs, value),
         name = get_name(value),
         available = get_available(value),
         bus = component_id(refs, get_bus(value)),
-        active_power = get_active_power(value, DU),
-        reactive_power = get_reactive_power(value, DU),
+        active_power = get_active_power(value, CU),
+        reactive_power = get_reactive_power(value, CU),
         base_power = _get_base_power(value),
-        max_active_power = get_max_active_power(value, DU),
-        max_reactive_power = get_max_reactive_power(value, DU),
-        conformity = string(get_conformity(value)),
-        power_units = _power_units_string(DU),
+        max_active_power = get_max_active_power(value, CU),
+        max_reactive_power = get_max_reactive_power(value, CU),
+        conformity = PO.LoadConformity(string(get_conformity(value))),
+        power_units = _power_units_string(CU),
     )
 end
 
@@ -224,12 +224,12 @@ function to_openapi(value::PowerLoad, refs::OpenAPIRefs, ::NaturalUnit)
         name = get_name(value),
         available = get_available(value),
         bus = component_id(refs, get_bus(value)),
-        active_power = get_active_power(value, DU) * _get_base_power(value),
-        reactive_power = get_reactive_power(value, DU) * _get_base_power(value),
+        active_power = get_active_power(value, CU) * _get_base_power(value),
+        reactive_power = get_reactive_power(value, CU) * _get_base_power(value),
         base_power = _get_base_power(value),
-        max_active_power = get_max_active_power(value, DU) * _get_base_power(value),
-        max_reactive_power = get_max_reactive_power(value, DU) * _get_base_power(value),
-        conformity = string(get_conformity(value)),
+        max_active_power = get_max_active_power(value, CU) * _get_base_power(value),
+        max_reactive_power = get_max_reactive_power(value, CU) * _get_base_power(value),
+        conformity = PO.LoadConformity(string(get_conformity(value))),
         power_units = _power_units_string(NU),
     )
 end

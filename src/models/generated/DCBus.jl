@@ -117,14 +117,14 @@ set_load_zone!(value::DCBus, val) = value.load_zone = val
 set_ext!(value::DCBus, val) = value.ext = val
 
 
-function from_openapi(po::PO.DCBus, refs::OpenAPIRefs, ::DeviceBaseUnit)
+function from_openapi(po::PO.DCBus, refs::OpenAPIRefs, ::ComponentBaseUnit)
     return DCBus(;
         number = po.number,
         name = po.name,
         available = po.available,
-        magnitude = po.magnitude,
+        magnitude = _or_default(po.magnitude, nothing),
         voltage_limits = _minmax_from_po(po.voltage_limits),
-        base_voltage = po.base_voltage,
+        base_voltage = _or_default(po.base_voltage, nothing),
         area = resolve_ref(refs, po.area, Area),
         load_zone = resolve_ref(refs, po.load_zone, LoadZone),
     )
@@ -135,27 +135,27 @@ function from_openapi(po::PO.DCBus, refs::OpenAPIRefs, ::NaturalUnit)
         number = po.number,
         name = po.name,
         available = po.available,
-        magnitude = po.magnitude,
+        magnitude = _or_default(po.magnitude, nothing),
         voltage_limits = _minmax_from_po(po.voltage_limits),
-        base_voltage = po.base_voltage,
+        base_voltage = _or_default(po.base_voltage, nothing),
         area = resolve_ref(refs, po.area, Area),
         load_zone = resolve_ref(refs, po.load_zone, LoadZone),
     )
 end
 
 function from_openapi(po::PO.DCBus, refs::OpenAPIRefs)
-    return from_openapi(po, refs, DU)
+    return from_openapi(po, refs, CU)
 end
 
-function to_openapi(value::DCBus, refs::OpenAPIRefs, ::DeviceBaseUnit)
+function to_openapi(value::DCBus, refs::OpenAPIRefs, ::ComponentBaseUnit)
     return PO.DCBus(;
         id = component_id(refs, value),
         number = get_number(value),
         name = get_name(value),
         available = get_available(value),
-        magnitude = get_magnitude(value),
+        magnitude = _optional_to_wire(get_magnitude(value)),
         voltage_limits = _minmax_po_optional(get_voltage_limits(value)),
-        base_voltage = get_base_voltage(value),
+        base_voltage = _optional_to_wire(get_base_voltage(value)),
         area = _component_id_optional(refs, get_area(value)),
         load_zone = _component_id_optional(refs, get_load_zone(value)),
     )
@@ -167,9 +167,9 @@ function to_openapi(value::DCBus, refs::OpenAPIRefs, ::NaturalUnit)
         number = get_number(value),
         name = get_name(value),
         available = get_available(value),
-        magnitude = get_magnitude(value),
+        magnitude = _optional_to_wire(get_magnitude(value)),
         voltage_limits = _minmax_po_optional(get_voltage_limits(value)),
-        base_voltage = get_base_voltage(value),
+        base_voltage = _optional_to_wire(get_base_voltage(value)),
         area = _component_id_optional(refs, get_area(value)),
         load_zone = _component_id_optional(refs, get_load_zone(value)),
     )

@@ -17,12 +17,12 @@ This file is auto-generated. Do not edit.
 
 A two-winding transformer connecting two buses.
 
-All series electrical data — the modeled arc, tap, phase shift, series impedance `r`/`x`, ratings, per-winding base power, base voltages, and control — lives on the single [`TransformerCircuit`](@ref) obtained with [`get_circuit`](@ref); availability is circuit-level (see [`get_available`](@ref)). The `magnetizing_shunt` admittance and its `shunt_location` are transformer-level. The model uses an equivalent circuit assuming the impedance is on the high-voltage side and allocates iron losses and magnetizing susceptance according to `shunt_location`. The transformer's device base is the circuit's `base_power`.
+All series electrical data — the modeled arc, tap, phase shift, series impedance `r`/`x`, ratings, per-winding base power, base voltages, and control — lives on the single [`TransformerCircuit`](@ref) obtained with [`get_circuit`](@ref); availability is circuit-level (see [`get_available`](@ref)). The `magnetizing_shunt` admittance and its `shunt_location` are transformer-level. The model uses an equivalent circuit assuming the impedance is on the high-voltage side and allocates iron losses and magnetizing susceptance according to `shunt_location`. The transformer's component base is the circuit's `base_power`.
 
 # Arguments
 - `name::String`: Name of the component. Components of the same type (e.g., `PowerLoad`) must have unique names, but components of different types (e.g., `PowerLoad` and `ACBus`) can have the same name
 - `circuit::TransformerCircuit`: The [`TransformerCircuit`](@ref) carrying this transformer's arc, tap, phase shift, series impedance, ratings, per-winding base power/voltages, availability, and control
-- `magnetizing_shunt::Complex{Float64}`: (default: `0.0`) Magnetizing shunt admittance in pu (device base on the circuit's `base_power`) referenced to the circuit's `base_voltage_primary`
+- `magnetizing_shunt::Complex{Float64}`: (default: `0.0`) Magnetizing shunt admittance in pu (component base on the circuit's `base_power`) referenced to the circuit's `base_voltage_primary`
 - `shunt_location::TwoWindingTransformerShuntLocation`: (default: `TwoWindingTransformerShuntLocation.PRIMARY`) Placement of `magnetizing_shunt` on the two sides of the circuit arc. See [`TwoWindingTransformerShuntLocation`](@ref)
 - `services::Vector{Service}`: (default: `Device[]`) Services that this device contributes to
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
@@ -33,7 +33,7 @@ mutable struct TwoWindingTransformer <: ACTransmission
     name::String
     "The [`TransformerCircuit`](@ref) carrying this transformer's arc, tap, phase shift, series impedance, ratings, per-winding base power/voltages, availability, and control"
     circuit::TransformerCircuit
-    "Magnetizing shunt admittance in pu (device base on the circuit's `base_power`) referenced to the circuit's `base_voltage_primary`"
+    "Magnetizing shunt admittance in pu (component base on the circuit's `base_power`) referenced to the circuit's `base_voltage_primary`"
     magnetizing_shunt::Complex{Float64}
     "Placement of `magnetizing_shunt` on the two sides of the circuit arc. See [`TwoWindingTransformerShuntLocation`](@ref)"
     shunt_location::TwoWindingTransformerShuntLocation
@@ -69,9 +69,9 @@ end
 get_name(value::TwoWindingTransformer) = value.name
 """Get [`TwoWindingTransformer`](@ref) `circuit`."""
 get_circuit(value::TwoWindingTransformer) = value.circuit
-"""Get [`TwoWindingTransformer`](@ref) `magnetizing_shunt` as a bare number in the requested `units` (e.g. `SU`, `DU`; domain-provided units such as `MW` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_magnetizing_shunt_unitful`](@ref)."""
+"""Get [`TwoWindingTransformer`](@ref) `magnetizing_shunt` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_magnetizing_shunt_unitful`](@ref)."""
 get_magnetizing_shunt(value::TwoWindingTransformer, units) = InfrastructureSystems._strip_units(get_value(value, Val(:magnetizing_shunt), Val(:siemens), units))
-"""Get [`TwoWindingTransformer`](@ref) `magnetizing_shunt` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `MW`). For a bare number see [`get_magnetizing_shunt`](@ref)."""
+"""Get [`TwoWindingTransformer`](@ref) `magnetizing_shunt` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_magnetizing_shunt`](@ref)."""
 get_magnetizing_shunt_unitful(value::TwoWindingTransformer, units) = get_value(value, Val(:magnetizing_shunt), Val(:siemens), units)
 get_magnetizing_shunt(value::TwoWindingTransformer) = _units_arg_required(get_magnetizing_shunt, value, :magnetizing_shunt, Val(:siemens))
 get_magnetizing_shunt_unitful(value::TwoWindingTransformer) = _units_arg_required(get_magnetizing_shunt_unitful, value, :magnetizing_shunt, Val(:siemens))

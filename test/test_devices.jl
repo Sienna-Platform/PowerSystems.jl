@@ -76,18 +76,18 @@ end
         ),
     )
     # Round-trip through a document: both `ShiftablePowerLoad` and `InterruptiblePowerLoad`
-    # are now in `DOCUMENT_PLAN`. COMPONENT_BASE is an exact pass-through, so the DU values
+    # are now in `DOCUMENT_PLAN`. COMPONENT_BASE is an exact pass-through, so the CU values
     # below survive unchanged.
     sys2 = roundtrip_system(sys)
     @test get_active_power(
-        get_component(ShiftablePowerLoad, sys2, "ShiftableLoadBus4"), DU) == 0.10
+        get_component(ShiftablePowerLoad, sys2, "ShiftableLoadBus4"), CU) == 0.10
     @test get_active_power(
-        get_component(InterruptiblePowerLoad, sys2, "IloadBus"), DU) == 0.10
+        get_component(InterruptiblePowerLoad, sys2, "IloadBus"), CU) == 0.10
     @test get_active_power_limits(
-        get_component(ShiftablePowerLoad, sys2, "ShiftableLoadBus4"), DU,
+        get_component(ShiftablePowerLoad, sys2, "ShiftableLoadBus4"), CU,
     ).min == 0.03
     @test get_active_power_limits(
-        get_component(ShiftablePowerLoad, sys2, "ShiftableLoadBus4"), DU,
+        get_component(ShiftablePowerLoad, sys2, "ShiftableLoadBus4"), CU,
     ).max == 0.10
 end
 
@@ -124,19 +124,20 @@ end
         FixedAdmittance(; name = "fa_tiny", available = true, bus = ACBus(nothing),
             Y = 1e-6 + 1e-6im),
     ) == false
-    @test supports_active_power(SwitchedAdmittance(nothing)) == false  # Y = 0, no blocks
-    @test supports_active_power(
-        SwitchedAdmittance(; name = "sa_g", available = true, bus = ACBus(nothing),
-            Y = 1.0 + 0.0im),
-    ) == true
-    # Zero base Y, but a switchable block adds real (active) admittance.
+    @test supports_active_power(SwitchedAdmittance(nothing)) == false  # no blocks
+    # A switchable block adds real (active) admittance.
     @test supports_active_power(
         SwitchedAdmittance(; name = "sa_gstep", available = true, bus = ACBus(nothing),
-            Y = 0.0 + 0.0im, number_of_steps = [2], Y_increase = [1.0 + 0.0im]),
+            number_of_steps = [2], Y_increase = [1.0 + 0.0im]),
     ) == true
     @test supports_active_power(
         SwitchedAdmittance(; name = "sa_bstep", available = true, bus = ACBus(nothing),
-            Y = 0.0 + 0.0im, number_of_steps = [2], Y_increase = [0.0 + 1.0im]),
+            number_of_steps = [2], Y_increase = [0.0 + 1.0im]),
+    ) == false
+    # A solved susceptance is reactive only: it never establishes active support.
+    @test supports_active_power(
+        SwitchedAdmittance(; name = "sa_solved_g", available = true, bus = ACBus(nothing),
+            solved_admittance = 1.0),
     ) == false
 
     # FACTSControlDevice active power depends on control_mode (true only for NML)
@@ -173,20 +174,25 @@ end
         FixedAdmittance(; name = "fa_tiny2", available = true, bus = ACBus(nothing),
             Y = 1e-6 + 1e-6im),
     ) == false
-    @test supports_reactive_power(SwitchedAdmittance(nothing)) == false  # Y = 0, no blocks
-    @test supports_reactive_power(
-        SwitchedAdmittance(; name = "sa_b", available = true, bus = ACBus(nothing),
-            Y = 0.0 + 1.0im),
-    ) == true
-    # Zero base Y, but a switchable block adds susceptance (reactive).
+    @test supports_reactive_power(SwitchedAdmittance(nothing)) == false  # no blocks
+    # A switchable block adds susceptance (reactive).
     @test supports_reactive_power(
         SwitchedAdmittance(; name = "sa_bstep2", available = true, bus = ACBus(nothing),
-            Y = 0.0 + 0.0im, number_of_steps = [2], Y_increase = [0.0 + 1.0im]),
+            number_of_steps = [2], Y_increase = [0.0 + 1.0im]),
     ) == true
     # A block with steps but a below-threshold increment does not count.
     @test supports_reactive_power(
         SwitchedAdmittance(; name = "sa_tinystep", available = true, bus = ACBus(nothing),
-            Y = 0.0 + 0.0im, number_of_steps = [2], Y_increase = [0.0 + 1e-6im]),
+            number_of_steps = [2], Y_increase = [0.0 + 1e-6im]),
+    ) == false
+    # A solved susceptance establishes reactive support on its own.
+    @test supports_reactive_power(
+        SwitchedAdmittance(; name = "sa_solved_b", available = true, bus = ACBus(nothing),
+            solved_admittance = 1.0),
+    ) == true
+    @test supports_reactive_power(
+        SwitchedAdmittance(; name = "sa_solved_tiny", available = true,
+            bus = ACBus(nothing), solved_admittance = 1e-6),
     ) == false
 
     # FACTSControlDevice reactive power depends on control_mode
@@ -252,7 +258,7 @@ end
 @testset "Test FACTS/SwitchedShunt interop fields (psy5 sync)" begin
     # FACTSControlDevice: new shunt-control fields ported from main
     fd = FACTSControlDevice(nothing)
-    @test ustrip(get_max_reactive_power(fd, DU)) == 0.0  # demo constructor => 0.0
+    @test ustrip(get_max_reactive_power(fd, CU)) == 0.0  # demo constructor => 0.0
     @test get_shunt_control_type(fd) == FACTSShuntControlType.STATCOM
     @test get_regulated_bus_number(fd) == 0
     @test get_reactive_power_required(fd) == 0.0
@@ -261,23 +267,23 @@ end
         name = "F1", available = true, bus = ACBus(nothing),
         control_mode = FACTSOperationModes.NML,
     )
-    @test ustrip(get_max_reactive_power(fd_kw, DU)) == 9999.0  # kwarg default
-    @test ustrip(get_max_shunt_current(fd_kw, DU)) == 9999.0
+    @test ustrip(get_max_reactive_power(fd_kw, CU)) == 9999.0  # kwarg default
+    @test ustrip(get_max_shunt_current(fd_kw, CU)) == 9999.0
     @test get_voltage_setpoint(fd_kw) == 1.0
     @test get_shunt_control_type(fd_kw) == FACTSShuntControlType.STATCOM
 
     set_shunt_control_type!(fd_kw, FACTSShuntControlType.SVC)
     set_regulated_bus_number!(fd_kw, 42)
-    set_max_reactive_power!(fd_kw, 150.0 * DU)
+    set_max_reactive_power!(fd_kw, 150.0 * CU)
     @test get_shunt_control_type(fd_kw) == FACTSShuntControlType.SVC
     @test get_regulated_bus_number(fd_kw) == 42
-    @test ustrip(get_max_reactive_power(fd_kw, DU)) == 150.0
+    @test ustrip(get_max_reactive_power(fd_kw, CU)) == 150.0
 
     # Positional constructor now threads the reworked scalar fields
     fd_pos = FACTSControlDevice("F2", true, ACBus(nothing), FACTSOperationModes.NML, 1.05)
     @test get_voltage_setpoint(fd_pos) == 1.05
-    @test ustrip(get_max_shunt_current(fd_pos, DU)) == 9999.0
-    @test ustrip(get_max_reactive_power(fd_pos, DU)) == 9999.0
+    @test ustrip(get_max_shunt_current(fd_pos, CU)) == 9999.0
+    @test ustrip(get_max_reactive_power(fd_pos, CU)) == 9999.0
 
     # SwitchedAdmittance: new control_mode + regulated_bus_number
     sa = SwitchedAdmittance(nothing)
@@ -285,7 +291,7 @@ end
     @test get_regulated_bus_number(sa) == 0
 
     sa_kw = SwitchedAdmittance(;
-        name = "sa1", available = true, bus = ACBus(nothing), Y = 1.0 + 0.0im,
+        name = "sa1", available = true, bus = ACBus(nothing),
         control_mode = SwitchedAdmittanceControlMode.DISCRETE_VOLTAGE,
         regulated_bus_number = 7,
     )
@@ -293,4 +299,24 @@ end
     @test get_regulated_bus_number(sa_kw) == 7
     set_control_mode!(sa_kw, SwitchedAdmittanceControlMode.CONTINUOUS_VOLTAGE)
     @test get_control_mode(sa_kw) == SwitchedAdmittanceControlMode.CONTINUOUS_VOLTAGE
+
+    # SwitchedAdmittance: number_engaged (PSS/E Si) and solved_admittance (PSS/E BINIT).
+    # Both default to their unset values, and power flow writes back to each.
+    @test get_number_engaged(sa) == Int[]
+    @test isnothing(get_solved_admittance(sa))
+
+    sa_solved = SwitchedAdmittance(;
+        name = "sa2", available = true, bus = ACBus(nothing),
+        number_engaged = [2, 1],
+        number_of_steps = [4, 3],
+        Y_increase = [0.0 + 0.1im, 0.0 + 0.2im],
+        solved_admittance = 0.35,
+    )
+    @test get_number_engaged(sa_solved) == [2, 1]
+    @test get_solved_admittance(sa_solved) == 0.35
+    # Both fields are written back by the power flow solve, so both stay settable.
+    set_number_engaged!(sa_solved, [3, 0])
+    @test get_number_engaged(sa_solved) == [3, 0]
+    set_solved_admittance!(sa_solved, nothing)
+    @test isnothing(get_solved_admittance(sa_solved))
 end

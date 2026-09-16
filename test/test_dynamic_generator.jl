@@ -17,7 +17,7 @@ nodes_OMIB = [
 static_gen = ThermalStandard(;
     name = "TestGen",
     available = true,
-    status = true,
+    status = OperationalStates.ONLINE,
     bus = nodes_OMIB[2],
     active_power = 0.40,
     reactive_power = 0.010,
@@ -542,7 +542,7 @@ end
     static = ThermalStandard(;
         name = "ReplaceTestGen",
         available = true,
-        status = true,
+        status = OperationalStates.ONLINE,
         bus = nodes[2],
         active_power = 0.40,
         reactive_power = 0.010,

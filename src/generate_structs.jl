@@ -85,14 +85,14 @@ end
 {{/has_null_values}}
 {{#accessors}}
 {{#needs_conversion}}
-{{#create_docstring}}\"\"\"Get [`{{struct_name}}`](@ref) `{{name}}` as a bare number in the requested `units` (e.g. `SU`, `DU`; domain-provided units such as `MW` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`{{accessor}}_unitful`](@ref).\"\"\"{{/create_docstring}}
+{{#create_docstring}}\"\"\"Get [`{{struct_name}}`](@ref) `{{name}}` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u\"MW\"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`{{accessor}}_unitful`](@ref).\"\"\"{{/create_docstring}}
 {{accessor}}(value::{{struct_name}}, units) = InfrastructureSystems._strip_units(get_value(value, Val(:{{name}}), Val({{conversion_unit}}), units))
-{{#create_docstring}}\"\"\"Get [`{{struct_name}}`](@ref) `{{name}}` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `MW`). For a bare number see [`{{accessor}}`](@ref).\"\"\"{{/create_docstring}}
+{{#create_docstring}}\"\"\"Get [`{{struct_name}}`](@ref) `{{name}}` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u\"MW\"`). For a bare number see [`{{accessor}}`](@ref).\"\"\"{{/create_docstring}}
 {{accessor}}_unitful(value::{{struct_name}}, units) = get_value(value, Val(:{{name}}), Val({{conversion_unit}}), units)
 {{accessor}}(value::{{struct_name}}) = _units_arg_required({{accessor}}, value, :{{name}}, Val({{conversion_unit}}))
 {{accessor}}_unitful(value::{{struct_name}}) = _units_arg_required({{accessor}}_unitful, value, :{{name}}, Val({{conversion_unit}}))
-InfrastructureSystems.display_units_arg(::typeof({{accessor}}), ::{{units_type_sig}}){{#units_bound}} where {T <: {{units_bound}}}{{/units_bound}} = InfrastructureSystems.{{display_units}}
-InfrastructureSystems.display_units_arg(::typeof({{accessor}}_unitful), ::{{units_type_sig}}){{#units_bound}} where {T <: {{units_bound}}}{{/units_bound}} = InfrastructureSystems.{{display_units}}
+InfrastructureSystems.display_units_arg(::typeof({{accessor}}), ::{{units_type_sig}}){{#units_bound}} where {T <: {{units_bound}}}{{/units_bound}} = {{{display_units}}}
+InfrastructureSystems.display_units_arg(::typeof({{accessor}}_unitful), ::{{units_type_sig}}){{#units_bound}} where {T <: {{units_bound}}}{{/units_bound}} = {{{display_units}}}
 {{/needs_conversion}}
 {{^needs_conversion}}
 {{#create_docstring}}\"\"\"Get [`{{struct_name}}`](@ref) `{{name}}`.\"\"\"{{/create_docstring}}
@@ -120,7 +120,7 @@ InfrastructureSystems.display_units_arg(::typeof({{accessor}}_unitful), ::{{unit
 {{/custom_code}}
 
 {{#openapi_type}}
-function from_openapi(po::{{{openapi_po_type}}}, refs::OpenAPIRefs, ::DeviceBaseUnit)
+function from_openapi(po::{{{openapi_po_type}}}, refs::OpenAPIRefs, ::ComponentBaseUnit)
     return {{struct_name}}(;
         {{#openapi_kwargs_device}}
         {{name}} = {{{expr}}},
@@ -136,6 +136,13 @@ function from_openapi(po::{{{openapi_po_type}}}, refs::OpenAPIRefs, ::NaturalUni
     )
 end
 
+{{! `exclude_openapi_import_selector` (struct-level, like the field-level
+    `exclude_getter`/`exclude_setter`) means "the plain 2-argument selector is
+    hand-written elsewhere", not "there is none" -- see the market components in
+    import_handwritten.jl, whose wire basis is natural units rather than the
+    component base defaulted to below. Emitting both would be a duplicate
+    definition, which precompilation rejects. }}
+{{^exclude_openapi_import_selector}}
 {{#has_power_units}}
 function from_openapi(po::{{{openapi_po_type}}}, refs::OpenAPIRefs)
     return from_openapi(po, refs, _power_units_marker("{{struct_name}}", po.id, po.power_units))
@@ -143,11 +150,12 @@ end
 {{/has_power_units}}
 {{^has_power_units}}
 function from_openapi(po::{{{openapi_po_type}}}, refs::OpenAPIRefs)
-    return from_openapi(po, refs, DU)
+    return from_openapi(po, refs, CU)
 end
 {{/has_power_units}}
+{{/exclude_openapi_import_selector}}
 
-function to_openapi(value::{{struct_name}}, refs::OpenAPIRefs, ::DeviceBaseUnit)
+function to_openapi(value::{{struct_name}}, refs::OpenAPIRefs, ::ComponentBaseUnit)
     return PO.{{struct_name}}(;
         {{#openapi_export_kwargs_device}}
         {{name}} = {{{expr}}},
@@ -170,7 +178,7 @@ end
 #
 # A descriptor entry carrying a top-level `openapi_type` key gets `from_openapi` and
 # `to_openapi` methods appended to its generated file, one per unit system
-# (`DeviceBaseUnit` pass-through, `NaturalUnit` with conversion arithmetic
+# (`ComponentBaseUnit` pass-through, `NaturalUnit` with conversion arithmetic
 # inlined, using the same `IS.RelativeUnits` singleton markers as the rest of PSY's
 # explicit-units engine). `from_openapi` builds a PSY component from a PO (OpenAPI model)
 # struct's fields; `to_openapi` builds a PO struct from the PSY component's `get_*`
@@ -223,10 +231,20 @@ const OPENAPI_COMPOUND_MEMBERS = Dict(
 )
 # The three power tokens share one per-unit base (S_base) and so one conversion
 # rule; they differ only in the natural unit the units engine prints them as.
-const OPENAPI_CONVERSION_KINDS = Dict(
+"""
+Which **per-unit base** anchors a field's natural-units conversion on the wire -- not
+which physical dimension it has. `:power` means "scale by S_base", `:impedance` by
+Z_base, `:admittance` by Y_base.
+
+A rate is `:power` for exactly this reason: `pu/min -> MW/min` is a multiplication by
+`base_power`, the same arithmetic as `pu -> MW`, because there is no time *base* to
+scale by -- the time denominator rides along untouched.
+"""
+const OPENAPI_CONVERSION_BASES = Dict(
     ":mw" => :power,
     ":mvar" => :power,
     ":mva" => :power,
+    ":mw_per_minute" => :power,
     ":ohm" => :impedance,
     ":siemens" => :admittance,
 )
@@ -320,11 +338,40 @@ function openapi_classify_field(struct_name, field, struct_names)
 end
 
 """
+The generated OpenAPI wrapper type for an enum field, defaulting to the PSY enum's own name.
+
+The two names agree for 28 of the 35 enum fields with generated converters. They diverge
+where the schemas name the enum differently from PSY (`ACBusTypes` → `ACBusType`) or where
+the property's enum is declared inline rather than as a shared definition, so the generator
+names it `<Owner><Property>` (`MotorLoadTechnology` → `MotorLoadMotorTechnology`). A field
+whose names differ carries an explicit `openapi_enum` in the descriptor.
+
+Not derivable: neither divergence follows a rule, and this generator reads only the
+descriptor -- it has no access to SiennaSchemas or to the generated packages. A wrong or
+missing override is not silent, though: it surfaces as an `UndefVarError` the first time
+PowerSystems precompiles against the generated packages.
+"""
+function openapi_enum_po_type(field, bare)
+    return get(field, "openapi_enum", bare)
+end
+
+"""Whether a `:cost`-kind field's declared PSY type carries its own OpenAPI `oneOf` wrapper —
+true for the abstract `"OperationalCost"` or a `Union` of concrete cost types, false when the
+field is already one concrete cost struct."""
+openapi_cost_needs_wrapper(bare) = bare == "OperationalCost" || startswith(bare, "Union{")
+
+"""The OpenAPI `oneOf` wrapper type name for a `:cost`-kind field that needs one:
+`<StructName><PascalCase(field_name)>`, e.g. `operation_cost` -> `OperationCost`."""
+function openapi_cost_po_type(struct_name, field_name)
+    return struct_name * join(uppercasefirst.(split(field_name, "_")))
+end
+
+"""
 Validate a field's optional `openapi_unit` override. Only `"pu"` is recognized: it means
 the OpenAPI document already carries this field per-unit (its schema `x-unit` is `pu`, not
 a natural unit), so a `conversion_unit`-driven division/multiplication would double-convert
 it — e.g. `Line.r`/`x`/`b`/`g`, which carry `needs_conversion` + `:ohm`/`:siemens` for PSY's
-own SU/DU accessor machinery, but are pu in the document. SiennaSchemas' parity checker is
+own SU/CU accessor machinery, but are pu in the document. SiennaSchemas' parity checker is
 the intended place to cross-check `"pu"` against the schema's declared `x-unit`; this
 generator only recognizes the one value and raises on anything else — never guesses.
 
@@ -393,7 +440,7 @@ function openapi_natural_conversion(struct_name, field)
         return :none
     end
     conversion_unit = get(field, "conversion_unit", nothing)
-    kind = get(OPENAPI_CONVERSION_KINDS, conversion_unit, nothing)
+    kind = get(OPENAPI_CONVERSION_BASES, conversion_unit, nothing)
     if isnothing(kind)
         throw(
             DataFormatError(
@@ -416,7 +463,8 @@ list, so it can never drift from the fields that are actually emitted.
 function openapi_has_power_units(item)
     for field in item["fields"]
         get(field, "needs_conversion", false) || continue
-        get(field, "conversion_unit", nothing) in (":mw", ":mvar", ":mva") && return true
+        get(field, "conversion_unit", nothing) in
+        (":mw", ":mvar", ":mva", ":mw_per_minute") && return true
     end
     return false
 end
@@ -479,25 +527,46 @@ future divergence is declared rather than guessed.
 """
 openapi_po_field_name(field) = get(field, "openapi_name", field["name"])
 
-"""Wrap `body` in the nothing-guard emitted for a nullable PO field."""
-function openapi_nullable_wrap(field_name, body)
-    return "(if isnothing(po.$field_name); nothing; else; $body; end)"
+"""Emit the `_or_default` call that falls back to `default_expr` when the wire value is
+absent. The guard is dispatch on `Union{Nothing, IC.Absent}` inside the helper, not a type
+check at the call site: `Absent` is a distinct sentinel from `Nothing`, and dispatch keeps
+each emitted expression a plain call the compiler can specialize."""
+function openapi_default_wrap(field_name, default_expr)
+    return "_or_default(po.$field_name, $default_expr)"
 end
 
-"""Device-base is always pass-through; only the natural-units expression varies with
-`conversion`. A nullable field with a real conversion needs a nothing-guard; a nullable
-field with no conversion does not since scalar field access on `nothing` is never attempted."""
-function openapi_scalar_exprs(field_name, conversion, nullable, bases)
+"""`openapi_default_wrap` for a field the natural-units method rescales: the helper applies
+`op(value, base)` only when the value is present, so the arithmetic never sees the sentinel
+and the default is returned unscaled."""
+function openapi_default_wrap_scaled(field_name, default_expr, op, base)
+    return "_or_default(po.$field_name, $default_expr, ($op), $base)"
+end
+
+"""Component-base is always pass-through; only the natural-units expression varies with
+`conversion`. Every optional-by-omission field needs an Absent guard — a descriptor
+`default` supplies the fallback value; a nullable field with no default falls back to
+`nothing` instead."""
+function openapi_scalar_exprs(field_name, conversion, nullable, bases, default_expr)
+    fallback = if !isnothing(default_expr)
+        default_expr
+    elseif nullable
+        "nothing"
+    else
+        nothing
+    end
     device = "po.$field_name"
+    if !isnothing(fallback)
+        device = openapi_default_wrap(field_name, fallback)
+    end
     if conversion == :none
         return (device, device)
     end
     op, base = openapi_conversion_op_base(conversion, bases)
     scaled = "po.$field_name $op $base"
-    if !nullable
-        return (device, scaled)
+    if !isnothing(fallback)
+        scaled = openapi_default_wrap_scaled(field_name, fallback, op, base)
     end
-    return (device, openapi_nullable_wrap(field_name, scaled))
+    return (device, scaled)
 end
 
 """
@@ -520,7 +589,7 @@ const OPENAPI_IMPORT_COMPOUND_EXTRACTORS = Dict(
 )
 
 """Compound fields always get member-rebuilt in both methods — the PO struct's compound
-type is never PSY's `NamedTuple` alias, so even device-base is not a bare `po.<name>`
+type is never PSY's `NamedTuple` alias, so even component-base is not a bare `po.<name>`
 passthrough (mirrors `minmax`/`updown`/`fromto` in the reference).
 
 The rebuild goes through the alias' extraction helper rather than inline `po.<name>.<m>`
@@ -571,7 +640,14 @@ function compute_openapi_converter!(item, struct_names)
             # whose `.value` is `Any`, so the call infers as `Any`. The descriptor states
             # the field's PSY type — assert it, so the constructor is handed something
             # bounded and a cost that converts to the wrong family fails here.
-            expr = "convert_cost(po.$po_name)::$bare"
+            # A field typed as one concrete cost struct carries no `oneOf` wrapper on the PO
+            # side; `.value` only applies when `openapi_cost_needs_wrapper` says it wraps.
+            po_cost = if openapi_cost_needs_wrapper(bare)
+                "po.$po_name.value"
+            else
+                "po.$po_name"
+            end
+            expr = "convert_cost($po_cost)::$bare"
             push!(kwargs_device, Dict("name" => name, "expr" => expr))
             push!(kwargs_natural, Dict("name" => name, "expr" => expr))
             continue
@@ -588,9 +664,17 @@ function compute_openapi_converter!(item, struct_names)
             continue
         end
         if kind == :enum
-            # `@scoped_enum` types construct straight from the document's string
-            # (`ACBusTypes("PV")`), so no per-enum lookup table is emitted.
-            expr = "$bare(po.$po_name)"
+            # `@scoped_enum` types construct straight from a string (`ACBusTypes("PV")`);
+            # each enum-constrained schema field is its own wrapper struct, so `.value`
+            # unwraps it. A field with a descriptor `default` is optional-by-omission on
+            # the wire despite being PSY-required, so it falls back to that default rather
+            # than dereferencing Absent's `.value`.
+            present = "$bare(po.$po_name.value)"
+            expr = if haskey(field, "default")
+                "_or_default_enum(po.$po_name, $(field["default"]))"
+            else
+                present
+            end
             push!(kwargs_device, Dict("name" => name, "expr" => expr))
             push!(kwargs_natural, Dict("name" => name, "expr" => expr))
             continue
@@ -602,7 +686,9 @@ function compute_openapi_converter!(item, struct_names)
         end
         bases = openapi_base_exprs(struct_name, name, conversion, field_names)
         if kind == :scalar
-            device, natural = openapi_scalar_exprs(po_name, conversion, nullable, bases)
+            device, natural = openapi_scalar_exprs(
+                po_name, conversion, nullable, bases, get(field, "default", nothing),
+            )
         else
             members = OPENAPI_COMPOUND_MEMBERS[bare]
             device, natural =
@@ -632,7 +718,7 @@ end
 """
 Where an exported struct reads its S_base anchor, and which unit system it requests the
 convertible field in. Every annotated struct reads its own `_get_base_power` in device
-units (`DU`) — the default, `openapi_export_base_kind` absent or `"device"`. A struct whose
+units (`CU`) — the default, `openapi_export_base_kind` absent or `"device"`. A struct whose
 `base_power_kind` (`src/models/components.jl`) is `SystemBasePower` is the exception: its own
 `base_power` field is not the per-unit anchor for a directly-constructed, unattached
 component (`add_component!` is what keeps it synced to the system base), so it must read the
@@ -642,7 +728,7 @@ document-level anchor instead (`get_base_power(refs)`, unit system `SU`) — set
 function openapi_export_base_source(item)
     kind = get(item, "openapi_export_base_kind", "device")
     if kind == "device"
-        return (unit_arg = "DU", base_expr = "_get_base_power(value)")
+        return (unit_arg = "CU", base_expr = "_get_base_power(value)")
     end
     if kind == "system"
         return (unit_arg = "SU", base_expr = "get_base_power(refs)")
@@ -653,6 +739,33 @@ function openapi_export_base_source(item)
             "$kind (only \"device\" or \"system\" are supported)",
         ),
     )
+end
+
+"""
+The `display_units_arg` trait's right-hand side for one field, as an emitted expression.
+
+A bare marker (`SU`/`CU`/`NU`) is qualified into `InfrastructureSystems`, where it is
+defined. A rate field's default has to name a time as well (`SU / u"minute"`), which is
+a PSY-side expression, so anything containing a `/` is emitted verbatim.
+"""
+function display_units_expr(field)
+    value = get(field, "display_units", "SU")
+    occursin("/", value) && return value
+    return "InfrastructureSystems.$value"
+end
+
+"""
+The unit argument the export-direction getter is called with for one field.
+
+Per *field*, not per struct: every convertible field on a struct reads the same base
+(`base_source.unit_arg`), but a rate field's getter rejects a bare marker -- it must be
+told the time its stored value is denominated in.
+"""
+function openapi_export_field_unit_arg(field, base_source)
+    if get(field, "conversion_unit", nothing) == ":mw_per_minute"
+        return "$(base_source.unit_arg) / u\"minute\""
+    end
+    return base_source.unit_arg
 end
 
 """The PSY-side accessor name for one field: the public `get_X`, unless the descriptor
@@ -719,12 +832,14 @@ function openapi_export_conversion_op_base(conversion, bases)
     return ("/", bases.z_base)
 end
 
-"""Device-base/natural-units export expressions for one non-`base_power` scalar field.
+"""Component-base/natural-units export expressions for one non-`base_power` scalar field.
 Device is `get_X(value)` with no conversion, or `get_X(value, unit_arg)` under a real
 conversion; natural additionally combines with the S_base/Z_base anchor and is otherwise
-identical to device (mirrors `openapi_scalar_exprs`, inverted). A nullable field scales
-through `_scale_optional_po`, which only multiplies — so a nullable field under
-`:admittance` (a divide) raises rather than guessing; no annotated struct today has one."""
+identical to device (mirrors `openapi_scalar_exprs`, inverted). A nullable field with no
+conversion wraps through `_optional_to_wire` (nothing → `IC.ABSENT`); one with a real
+conversion scales through `_scale_optional_po`, which only multiplies — so a nullable field
+under `:admittance` (a divide) raises rather than guessing; no annotated struct today has
+one."""
 function openapi_export_scalar_exprs(
     struct_name,
     field_name,
@@ -735,7 +850,11 @@ function openapi_export_scalar_exprs(
     unit_arg,
 )
     if conversion == :none
-        expr = "$getter(value)"
+        device = "$getter(value)"
+        if !nullable
+            return (device, device)
+        end
+        expr = "_optional_to_wire($device)"
         return (expr, expr)
     end
     device = "$getter(value, $unit_arg)"
@@ -776,7 +895,7 @@ function openapi_export_compound_ctor_natural(ctors, nullable, conversion)
     return ctors.required_scaled
 end
 
-"""Device-base/natural-units export expressions for one compound field (mirrors
+"""Component-base/natural-units export expressions for one compound field (mirrors
 `openapi_compound_exprs`, inverted). Every `_scaled`/`_scaled_optional` compound helper in
 `src/openapi/export_generated_types.jl` only multiplies, so `:power`/`:impedance` (both
 multiply on export) are implemented but `:admittance` (a divide) raises — no annotated
@@ -873,7 +992,15 @@ function compute_openapi_export_converter!(item, struct_names)
         end
         if kind == :cost
             getter = "$(openapi_export_getter_name(field))(value)"
-            expr = "convert_cost_to_openapi($getter)"
+            inner = "convert_cost_to_openapi($getter)"
+            # A field typed as one concrete cost struct is already the PO field's declared
+            # type; `openapi_cost_needs_wrapper` says when wrapping applies instead.
+            expr = if openapi_cost_needs_wrapper(bare)
+                po_type = openapi_cost_po_type(struct_name, field["name"])
+                "PO.$po_type($inner)"
+            else
+                inner
+            end
             push!(kwargs_device, Dict("name" => name, "expr" => expr))
             push!(kwargs_natural, Dict("name" => name, "expr" => expr))
             continue
@@ -890,9 +1017,11 @@ function compute_openapi_export_converter!(item, struct_names)
             continue
         end
         if kind == :enum
-            # `string` on a `@scoped_enum` yields the document's exact spelling, the
-            # inverse of the import direction's `EnumType(po.field)` constructor.
-            expr = "string($(openapi_export_getter_name(field))(value))"
+            # `string` on a `@scoped_enum` yields the document's exact spelling, which the
+            # PO wrapper then validates against the schema's allowed values — the inverse of
+            # the import direction's `EnumType(po.field.value)`.
+            po_enum = openapi_enum_po_type(field, bare)
+            expr = "PO.$po_enum(string($(openapi_export_getter_name(field))(value)))"
             push!(kwargs_device, Dict("name" => name, "expr" => expr))
             push!(kwargs_natural, Dict("name" => name, "expr" => expr))
             continue
@@ -916,7 +1045,7 @@ function compute_openapi_export_converter!(item, struct_names)
             if isnothing(base_source)
                 base_source = openapi_export_base_source(item)
             end
-            unit_arg = base_source.unit_arg
+            unit_arg = openapi_export_field_unit_arg(field, base_source)
             bases = openapi_export_base_exprs(
                 struct_name,
                 name,
@@ -940,9 +1069,11 @@ function compute_openapi_export_converter!(item, struct_names)
     end
 
     if get(item, "has_power_units", false)
+        # `_power_units_string` returns the `IC.UnitSystem` wrapper the document wants, so
+        # there is nothing to wrap here.
         push!(
             kwargs_device,
-            Dict("name" => "power_units", "expr" => "_power_units_string(DU)"),
+            Dict("name" => "power_units", "expr" => "_power_units_string(CU)"),
         )
         push!(
             kwargs_natural,
@@ -1054,7 +1185,7 @@ function generate_structs(directory, data::Vector; print_results = true)
                         "conversion_unit" => conversion_unit,
                         # Units argument used when displaying the field (tables, REPL);
                         # override per field in the descriptor with "display_units".
-                        "display_units" => get(param, "display_units", "SU"),
+                        "display_units" => display_units_expr(param),
                         # The units trait dispatches on the component's concrete
                         # type, so parametric structs need the `Type{Name{T}} where`
                         # form (`Type{Name}` is the UnionAll and never matches a

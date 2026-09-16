@@ -529,6 +529,7 @@ export get_c
 export get_c_dc
 export get_cf
 export get_circuit
+export get_commitment_mode
 export get_compounding_resistance
 export get_conformity
 export get_constant_active_power
@@ -606,7 +607,6 @@ export get_impedance_reactive_power_unitful
 export get_inflow
 export get_initial_ace
 export get_initial_level
-export get_initial_status
 export get_initial_storage_capacity_level
 export get_input_active_power_limits
 export get_input_active_power_limits_unitful
@@ -702,13 +702,14 @@ export get_max_supply
 export get_min_compounding_voltage
 export get_minimum_time
 export get_motor_technology
-export get_must_run
 export get_n_states
 export get_name
 export get_normal_branch_status
 export get_number
+export get_number_engaged
 export get_number_of_steps
 export get_number_of_tap_positions
+export get_operating_mode
 export get_operation_cost
 export get_outflow
 export get_outflow_limits
@@ -808,6 +809,7 @@ export get_services
 export get_settlement_point
 export get_shunt_control_type
 export get_shunt_location
+export get_solved_admittance
 export get_speed_error_signal
 export get_spillage_limits
 export get_spread_bid
@@ -1268,6 +1270,7 @@ export set_c!
 export set_c_dc!
 export set_cf!
 export set_circuit!
+export set_commitment_mode!
 export set_compounding_resistance!
 export set_conformity!
 export set_constant_active_power!
@@ -1336,7 +1339,6 @@ export set_impedance_reactive_power!
 export set_inflow!
 export set_initial_ace!
 export set_initial_level!
-export set_initial_status!
 export set_initial_storage_capacity_level!
 export set_input_active_power_limits!
 export set_input_code!
@@ -1418,13 +1420,14 @@ export set_max_supply!
 export set_min_compounding_voltage!
 export set_minimum_time!
 export set_motor_technology!
-export set_must_run!
 export set_n_states!
 export set_name!
 export set_normal_branch_status!
 export set_number!
+export set_number_engaged!
 export set_number_of_steps!
 export set_number_of_tap_positions!
+export set_operating_mode!
 export set_operation_cost!
 export set_outflow!
 export set_outflow_limits!
@@ -1503,6 +1506,7 @@ export set_services!
 export set_settlement_point!
 export set_shunt_control_type!
 export set_shunt_location!
+export set_solved_admittance!
 export set_speed_error_signal!
 export set_spillage_limits!
 export set_spread_bid!

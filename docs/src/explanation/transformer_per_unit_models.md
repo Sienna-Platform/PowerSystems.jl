@@ -13,7 +13,7 @@ For a multi-voltage system with transformers, you need to establish consistent b
         Where $V_{\text{rated, secondary}}$ and $V_{\text{rated, primary}}$ are the transformer's nominal (rated) line-to-line voltages on its secondary and primary sides, respectively.
       + This value can be slightly different that the attached bus voltage value. In certain low voltage systems, transformers with a higher base voltage can be connected to buses with lower voltage set points. As of PowerSystems v5 transformers now have field for the base voltage.
 
-  - How is the data stored?: Transformer impedance (usually reactive impedance, $X_{pu}$) is typically given on its own nameplate ratings (rated MVA and rated voltages). **The data in PowerSystems.jl is stored in the device base** and transformer to the system base when using the correct getter functions.
+  - How is the data stored?: Transformer impedance (usually reactive impedance, $X_{pu}$) is typically given on its own nameplate ratings (rated MVA and rated voltages). **The data in PowerSystems.jl is stored in the component base** and transformer to the system base when using the correct getter functions.
 
   - **Derived Base Impedance ($Z_{base}$):**
 

@@ -43,7 +43,7 @@
         ],
     )
     redirect_stdout(devnull) do
-        generate_struct_file(
+        IS.generate_struct_file(
             new_struct;
             filename = descriptor_file,
             output_directory = output_directory,
@@ -161,7 +161,7 @@ end
     # The generated code must parse as valid Julia syntax.
     @test Meta.parse("begin\n" * gen * "\nend") isa Expr
 
-    device_start = findfirst("DeviceBaseUnit", gen)
+    device_start = findfirst("ComponentBaseUnit", gen)
     natural_start = findfirst("NaturalUnit", gen)
     @test !isnothing(device_start)
     @test !isnothing(natural_start)
@@ -172,10 +172,11 @@ end
     # lookup table is emitted anywhere in the generated file.
     @test !occursin("_FROM_STRING", gen)
     @test !occursin("_TO_STRING", gen)
-    @test occursin("status = OATestStatus(po.status),", device_body)
-    @test occursin("status = OATestStatus(po.status),", natural_body)
-    # ... and the export direction is the inverse: `string` on the enum value.
-    @test occursin("status = string(get_status(value)),", gen)
+    @test occursin("status = OATestStatus(po.status.value),", device_body)
+    @test occursin("status = OATestStatus(po.status.value),", natural_body)
+    # ... and the export direction is the inverse: wraps `string` on the enum value in the
+    # PO enum's own validating wrapper type.
+    @test occursin("status = PO.OATestStatus(string(get_status(value))),", gen)
 
     # Reference: `resolve_ref(refs, po.<name>, <PSY type>)`, identical in both methods. Not
     # `refs[po.<name>]` — a schema-optional reference the document omits arrives as
@@ -185,13 +186,14 @@ end
     @test occursin("bus = resolve_ref(refs, po.bus, OATestBus),", natural_body)
 
     # Cost hook: identical in both methods, asserting the declared field type — the call
-    # itself infers as `Any`.
+    # itself infers as `Any`. `operation_cost::OperationalCost` (abstract) is a `oneOf`
+    # wrapper on the wire, unwrapped via `.value` before the cast.
     @test occursin(
-        "operation_cost = convert_cost(po.operation_cost)::OperationalCost,",
+        "operation_cost = convert_cost(po.operation_cost.value)::OperationalCost,",
         device_body,
     )
     @test occursin(
-        "operation_cost = convert_cost(po.operation_cost)::OperationalCost,",
+        "operation_cost = convert_cost(po.operation_cost.value)::OperationalCost,",
         natural_body,
     )
 
@@ -201,17 +203,19 @@ end
     @test !occursin("ext =", natural_body)
     @test !occursin("internal =", natural_body)
 
-    # Scalar power conversion: device-base is pass-through; natural-units divides by
+    # Scalar power conversion: component-base is pass-through; natural-units divides by
     # the component's own base_power (S_base).
     @test occursin("active_power = po.active_power,", device_body)
     @test occursin("active_power = po.active_power / po.base_power,", natural_body)
 
-    # Nullable scalar power conversion: device-base is still bare pass-through (no guard
-    # needed — scalar field access on `nothing` is never attempted); natural-units guards
-    # the division.
-    @test occursin("rating_b = po.rating_b,", device_body)
+    # Nullable scalar power conversion with a descriptor default: both methods fall back to
+    # that default through `_or_default`, which dispatches on `Union{Nothing, IC.Absent}` —
+    # an omitted wire value is distinct from `Nothing`, so a `nothing`-only guard misses it.
+    # The natural-units method passes `(/)` and the base so the division runs only on a
+    # value that is present.
+    @test occursin("rating_b = _or_default(po.rating_b, nothing),", device_body)
     @test occursin(
-        "rating_b = (if isnothing(po.rating_b); nothing; else; po.rating_b / po.base_power; end),",
+        "rating_b = _or_default(po.rating_b, nothing, (/), po.base_power),",
         natural_body,
     )
 
@@ -269,7 +273,7 @@ end
     gen = read(joinpath(outdir, "OATestPuDevice.jl"), String)
     @test Meta.parse("begin\n" * gen * "\nend") isa Expr
 
-    device_start = findfirst("DeviceBaseUnit", gen)
+    device_start = findfirst("ComponentBaseUnit", gen)
     natural_start = findfirst("NaturalUnit", gen)
     device_body = gen[first(device_start):(first(natural_start) - 1)]
     natural_body = gen[first(natural_start):end]

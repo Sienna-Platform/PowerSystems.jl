@@ -88,7 +88,7 @@ Sum of load ratings.
 """
 function total_load_rating(sys::System)
     sl = sum(
-        c -> get_max_active_power(c, MW),
+        c -> get_max_active_power(c, u"MW"),
         get_available_components(StaticLoad, sys);
         init = zero(MW_ACCUMULATOR_TYPE),
     )
@@ -101,9 +101,16 @@ function total_load_rating(sys::System)
             init = zero(MW_ACCUMULATOR_TYPE),
         ) * _get_base_power(sys)
     @debug "System has $fa MW of FixedAdmittance" _group = IS.LOG_GROUP_SYSTEM_CHECKS
+    # A switched shunt has no fixed admittance: its effective value is
+    # `solved_admittance` when set (a pure susceptance, so no active part) and
+    # otherwise the engaged blocks.
     sa =
         sum(
-            c -> real(get_Y(c)),
+            c -> if isnothing(get_solved_admittance(c))
+                real(sum(get_number_engaged(c) .* get_Y_increase(c); init = 0.0 + 0.0im))
+            else
+                zero(MW_ACCUMULATOR_TYPE)
+            end,
             get_available_components(SwitchedAdmittance, sys);
             init = zero(MW_ACCUMULATOR_TYPE),
         ) * _get_base_power(sys)
@@ -125,7 +132,7 @@ function total_capacity_rating(sys::System)
     total = zero(MW_ACCUMULATOR_TYPE)
     for component_type in (Generator, Storage)
         component_total = sum(
-            c -> get_rating(c, MW),
+            c -> get_rating(c, u"MW"),
             get_available_components(component_type, sys);
             init = zero(MW_ACCUMULATOR_TYPE),
         )

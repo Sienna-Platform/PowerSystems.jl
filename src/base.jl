@@ -1,6 +1,4 @@
 
-const SKIP_PM_VALIDATION = false
-
 const SYSTEM_KWARGS = Set((
     :config_path,
     :frequency,
@@ -361,8 +359,8 @@ _get_base_power(sys::System) = sys.base_power
 Return the system's base power as a bare `Float64` in natural units (MVA).
 
 Like the component accessor, `base_power` is always natural units: an optional
-units argument must be `NU` or a power-dimensioned `Unitful` unit (e.g. `MW`,
-`MVA`). Per-unit bases (`SU`, `DU`) and non-power units error. For the
+units argument must be `NU` or a power-dimensioned `Unitful` unit (e.g. `u"MW"`,
+`u"MVA"`). Per-unit bases (`SU`, `CU`) and non-power units error. For the
 unit-bearing value see [`get_base_power_unitful`](@ref).
 """
 get_base_power(sys::System) = _get_base_power(sys)
@@ -2051,11 +2049,6 @@ within the instance.
 """
 validate_component_with_system(component::Component, sys::System) = true
 
-Base.@deprecate validate_struct(sys::System, component::Component) validate_component_with_system(
-    component,
-    sys,
-) false
-
 # Keeps the code working with IS.
 IS.validate_struct(component::Component) = validate_component(component)
 
@@ -2164,7 +2157,7 @@ end
 
 """
 Check that all AC transmission [`Line`](@ref) and [`MonitoredLine`](@ref) components
-have valid rate values relative to their own device base power.
+have valid rate values relative to their own component base power.
 
 Returns `true` if all values are valid, `false` otherwise.
 """
@@ -2870,7 +2863,7 @@ function convert_component!(
     new_type::Type{StandardLoad};
     kwargs...,
 )
-    # Raw device-base values: struct fields are stored in device base (Float64);
+    # Raw component-base values: struct fields are stored in component base (Float64);
     # we copy the underlying field directly to avoid SU-conversion round-tripping.
     new_load = new_type(;
         name = get_name(old_load),
@@ -2939,13 +2932,6 @@ function _copy_internal_for_conversion(component::Component)
 end
 
 function _validate_or_skip!(sys, component, skip_validation)
-    if skip_validation && get_runchecks(sys)
-        @warn(
-            "skip_validation is deprecated; construct System with runchecks = true or call set_runchecks!. Disabling System.runchecks"
-        )
-        set_runchecks!(sys, false)
-    end
-
     # Always skip if system checks are disabled.
     if !skip_validation && !get_runchecks(sys)
         skip_validation = true

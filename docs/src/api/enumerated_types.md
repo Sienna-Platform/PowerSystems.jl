@@ -101,6 +101,42 @@ EIA Annual Energy Review. `ThermalFuels` has the options:
 | `OTHER`                                                                                                                            | OTH           | Other type of fuel                                                                                                                  |
 | *Asterisk denotes fuel codes not directly from the current EIA 923 form but kept for compatibility with older versions of the form |               |                                                                                                                                     |
 
+## [Operational States](@id opstate_list)
+
+Each committable [`ThermalGen`](@ref) generator, as well as [`HydroDispatch`](@ref),
+[`HydroTurbine`](@ref), [`HydroPumpTurbine`](@ref) and [`HybridSystem`](@ref), has a field
+for `status::OperationalStates`, the running on/off lifecycle of an in-service unit.
+`OperationalStates` values are mutually exclusive:
+
+| Name       | Description                      |
+|:---------- |:-------------------------------- |
+| `OFFLINE`  | Shut down and not synchronized   |
+| `ONLINE`   | Synchronized and able to produce |
+| `STARTUP`  | In its start-up sequence         |
+| `SHUTDOWN` | In its shut-down sequence        |
+
+Availability is not one of these values: a unit on outage is `available = false`, and an
+`OFFLINE` unit that is `available = true` is in service and eligible for re-commitment.
+
+[`HydroPumpTurbine`](@ref) keeps its pumping/generating mode in a separate
+`operating_mode::HydroPumpTurbineStatus` field; `status` there is the same lifecycle as
+everywhere else.
+
+## [Commitment Modes](@id commit_list)
+
+Each committable [`ThermalGen`](@ref) generator, as well as [`HydroTurbine`](@ref) and
+[`HydroPumpTurbine`](@ref), has a field for `commitment_mode::CommitmentModes`, why the unit
+is (or would be) committed, orthogonal to `OperationalStates`. `CommitmentModes` has the
+options:
+
+| Name             | Description                                                                                        |
+|:---------------- |:-------------------------------------------------------------------------------------------------- |
+| `UNCOMMITTED`    | Not committed; the unit is offline but available                                                   |
+| `COMMITTED`      | Committed by the scheduling process (a planning model's commitment decision or a cleared schedule) |
+| `SELF_SCHEDULED` | Scheduled by its owner rather than by the scheduling process                                       |
+| `RELIABILITY`    | Committed by the system operator for reliability rather than by the scheduling process             |
+| `MUST_RUN`       | Required to run by contract or operating constraint                                                |
+
 ## [Energy Storage](@id storagetech_list)
 
 `StorageTech` defines the storage technology used in an energy [`Storage`](@ref) system, based
@@ -178,6 +214,33 @@ tap changer, which can be used to determine the tap position during power flow c
 | `ACTIVE_POWER_FLOW`                     | Active power flow control                                                 |
 | `CONTROL_OF_DC_LINE`                    | Control of a DC line quantity                                             |
 | `ASYMMETRIC_ACTIVE_POWER_FLOW`          | Asymmetric active power flow control                                      |
+
+## [Market Bid Curve Styles](@id curvestyles_list)
+
+`CurveStyles` is the curve-clearing style of a [`MarketBidCost`](@ref) or
+[`MarketBidTimeSeriesCost`](@ref), the quantity structure of the bid. `FIXED` is mutually
+exclusive with linear interpolation (`incremental_slope`/`decremental_slope`) and requires a
+single-segment offer curve. `MarketBidCost` checks the segment count at construction.
+`MarketBidTimeSeriesCost` holds time series keys, so it does not check it at construction;
+the rule is enforced when the curves are resolved with a `start_time`. `CurveStyles` has the
+options:
+
+| Name       | Description                                             |
+|:---------- |:------------------------------------------------------- |
+| `VARIABLE` | Continuous quantity with one or more segments (default) |
+| `FIXED`    | All-or-nothing block with a single segment              |
+
+## [Market Bid Multi-Step Blocks](@id curvemultistep_list)
+
+`CurveMultiStep` is the multi-step block indicator of a [`MarketBidCost`](@ref) or
+[`MarketBidTimeSeriesCost`](@ref), the time structure of the bid counted in model steps so
+it applies at any resolution. It is independent of `CurveStyles`: the two switches compose.
+`CurveMultiStep` has the options:
+
+| Name          | Description                                                      |
+|:------------- |:---------------------------------------------------------------- |
+| `SINGLE_STEP` | Each step of the bid clears independently (default)              |
+| `MULTI_STEP`  | The bid must be awarded as one block across every step it covers |
 
 ## [Dynamic States](@id states_list)
 

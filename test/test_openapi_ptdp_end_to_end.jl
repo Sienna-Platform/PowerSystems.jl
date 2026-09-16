@@ -21,6 +21,12 @@ import Pkg
 
 const PDP = PowerTableDataParser
 
+"""A document row's optional label is `IC.Absent` when the wire never carried the key;
+`IS.get_units`/`get_quantity_kind` return `nothing` for the same "no label recorded" state.
+Normalize both to `nothing` so the two representations of the same absence compare equal."""
+_ptdp_e2e_label(::PSY.IC.Absent) = nothing
+_ptdp_e2e_label(value) = value
+
 """
 The `CaseData` fixture tree pinned by PowerTableDataParser's own test artifact.
 
@@ -96,11 +102,11 @@ which kind of owner it names — `owner_category` picks the accessor, the same w
 export/import code branches on it (`_export_all_time_series` in `export_document.jl`)."""
 function _ptdp_e2e_resolve_owner(sys::System, row)
     owner_id = Int(row.owner_id)
-    row.owner_category == "Component" && return IS.get_component(sys, owner_id)
-    row.owner_category == "SupplementalAttribute" &&
+    row.owner_category.value == "Component" && return IS.get_component(sys, owner_id)
+    row.owner_category.value == "SupplementalAttribute" &&
         return PSY.get_supplemental_attribute(sys, owner_id)
     return error(
-        "unmapped owner_category on a document time series row: $(row.owner_category)",
+        "unmapped owner_category on a document time series row: $(row.owner_category.value)",
     )
 end
 
@@ -350,9 +356,13 @@ function _ptdp_e2e_verify_time_series(doc, sys::System, staged, label::AbstractS
         @test stamps_ok
 
         # (d) the labels the store carries as columns, on the document row and the series.
+        # A document row's `units`/`quantity_kind` is `IC.Absent` when the wire never
+        # carried the key; `IS.get_units`/`get_quantity_kind` return `nothing` for the same
+        # "no label recorded" state, so both sides are normalized through `_ptdp_e2e_label`.
         labels_ok =
-            IS.get_units(loaded) == row.units &&
-            IS.get_quantity_kind(loaded) == row.quantity_kind &&
+            _ptdp_e2e_label(IS.get_units(loaded)) == _ptdp_e2e_label(row.units) &&
+            _ptdp_e2e_label(IS.get_quantity_kind(loaded)) ==
+            _ptdp_e2e_label(row.quantity_kind) &&
             IS.get_units(loaded) == IS.get_units(series) &&
             IS.get_quantity_kind(loaded) == IS.get_quantity_kind(series) &&
             IS.get_unit_system(loaded) == IS.get_unit_system(series)
@@ -421,9 +431,11 @@ end
         target = first(candidates)
         target_id = Int(target.id)
         target_name = target.name
-        geo_json = Dict{String, Any}(
-            "type" => "Point",
-            "coordinates" => [-97.5, 35.25],
+        geo_json = PSY.IC.GeographicInfoGeoJson(;
+            additional_properties = Dict{String, Any}(
+                "type" => "Point",
+                "coordinates" => [-97.5, 35.25],
+            ),
         )
         attr_id = PSY.PD.next_id!(doc)
         PSY.PD.add_supplemental_attribute!(
@@ -516,7 +528,7 @@ end
             attributes = collect(PSY.get_supplemental_attributes(load2))
             @test length(attributes) == 2
             geo2 = only(get_supplemental_attributes(GeographicInfo, load2))
-            @test IS.get_geo_json(geo2) == geo_json
+            @test IS.get_geo_json(geo2) == geo_json.additional_properties
             @test IS.get_id(geo2) == attr_id
             outage2 = only(get_supplemental_attributes(FixedForcedOutage, load2))
             @test IS.get_id(outage2) == ts_attr_id
@@ -581,7 +593,7 @@ end
             attributes3 = collect(PSY.get_supplemental_attributes(load3))
             @test length(attributes3) == 2
             geo3 = only(get_supplemental_attributes(GeographicInfo, load3))
-            @test IS.get_geo_json(geo3) == geo_json
+            @test IS.get_geo_json(geo3) == geo_json.additional_properties
             @test IS.get_id(geo3) == attr_id
             outage3 = only(get_supplemental_attributes(FixedForcedOutage, load3))
             @test IS.get_id(outage3) == ts_attr_id

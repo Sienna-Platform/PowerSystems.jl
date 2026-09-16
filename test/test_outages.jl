@@ -283,6 +283,50 @@ end
     @test_throws ArgumentError add_supplemental_attribute!(sys2, gen_for_attach, bad_kind)
 end
 
+@testset "Test identifier on Outage subtypes" begin
+    # Default is nothing for all three concrete types.
+    @test isnothing(
+        get_identifier(
+            GeometricDistributionForcedOutage(;
+                mean_time_to_recovery = 1.0, outage_transition_probability = 0.5,
+            ),
+        ),
+    )
+    @test isnothing(get_identifier(PlannedOutage(; outage_schedule = "x")))
+    @test isnothing(get_identifier(FixedForcedOutage(; outage_status = 0.0)))
+
+    # A user-supplied identifier (a name, a block id) is stored verbatim.
+    fo = GeometricDistributionForcedOutage(;
+        mean_time_to_recovery = 1.0,
+        outage_transition_probability = 0.5,
+        identifier = "unit7_forced",
+    )
+    @test get_identifier(fo) == "unit7_forced"
+    @test get_identifier(PlannedOutage(; outage_schedule = "x", identifier = "block_12")) ==
+          "block_12"
+    @test get_identifier(FixedForcedOutage(; outage_status = 1.0, identifier = "ffo_1")) ==
+          "ffo_1"
+
+    # JSON round trip: a set identifier and the nothing default both survive.
+    sys = create_system_with_outages()
+    gens = collect(get_components(ThermalStandard, sys))
+    tagged = PlannedOutage(; outage_schedule = "3", identifier = "block_12")
+    add_supplemental_attribute!(sys, gens[1], tagged)
+    sys2 = roundtrip_system(sys)
+    outages2 = collect(get_supplemental_attributes(Outage, sys2))
+    @test length(outages2) == 5
+    identifiers = Set(get_identifier(x) for x in outages2)
+    @test identifiers == Set(Union{Nothing, String}["block_12", nothing])
+    tagged2 = only(
+        get_supplemental_attributes(
+            x -> get_identifier(x) == "block_12",
+            PlannedOutage,
+            sys2,
+        ),
+    )
+    @test get_outage_schedule(tagged2) == "3"
+end
+
 @testset "Test JSON round-trip of monitored_components" begin
     sys = create_system_with_outages()
     gens = collect(get_components(ThermalStandard, sys))
@@ -354,7 +398,12 @@ end
     to_file(sys, dir; force = true)
     doc = PSY.PD.read_document(joinpath(dir, "system.json"))
 
-    geo_json = Dict{String, Any}("type" => "Point", "coordinates" => [0.0, 0.0])
+    geo_json = PSY.IC.GeographicInfoGeoJson(;
+        additional_properties = Dict{String, Any}(
+            "type" => "Point",
+            "coordinates" => [0.0, 0.0],
+        ),
+    )
     geo = PSY.IC.GeographicInfo(; id = PSY.PD.next_id!(doc), geo_json = geo_json)
     # A load carries none of the outage/GeographicInfo attributes the fixture attaches only
     # to the two generators and their buses, so it is unambiguously bare beforehand.
@@ -368,7 +417,7 @@ end
     component2 = IS.get_component(sys2, load_id)
     geos2 = get_supplemental_attributes(GeographicInfo, component2)
     @test length(geos2) == 1
-    @test IS.get_geo_json(only(geos2)) == geo_json
+    @test IS.get_geo_json(only(geos2)) == geo_json.additional_properties
 end
 
 @testset "Test loud error: attribute_type mismatch caught on the full import path" begin
@@ -378,8 +427,13 @@ end
     dir = mktempdir()
     to_file(sys, dir; force = true)
     doc = PSY.PD.read_document(joinpath(dir, "system.json"))
-    assoc = first(doc.supplemental_attribute_associations)
-    assoc.attribute_type = "EmissionsData"
+    # PO structs are immutable, so rebuild the row rather than mutating it in place, and
+    # replace it by index.
+    doc.supplemental_attribute_associations[1] =
+        PSY._po_with(
+            doc.supplemental_attribute_associations[1];
+            attribute_type = "EmissionsData",
+        )
 
     @test_throws Exception PSY.from_openapi(
         System, doc; time_series_storage_path = joinpath(dir, "time_series.h5"),
@@ -394,8 +448,11 @@ end
     dir = mktempdir()
     to_file(sys, dir; force = true)
     doc = PSY.PD.read_document(joinpath(dir, "system.json"))
-    row = first(doc.time_series_associations).value
-    row.name = "not_the_real_series_name"
+    # PO structs are immutable, so rebuild the row and its oneOf wrapper rather than
+    # mutating in place, and replace it by index.
+    wrapper = doc.time_series_associations[1]
+    new_row = PSY._po_with(wrapper.value; name = "not_the_real_series_name")
+    doc.time_series_associations[1] = typeof(wrapper)(new_row)
 
     @test_throws IS.DataFormatError PSY.from_openapi(
         System, doc; time_series_storage_path = joinpath(dir, "time_series.h5"),

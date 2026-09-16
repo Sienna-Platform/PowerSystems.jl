@@ -10,7 +10,7 @@
 # ── Arc ─────────────────────────────────────────────────────────────────────────
 # No unit-converted fields; both unit-system methods identical (mirrors import).
 
-function to_openapi(arc::Arc, refs::OpenAPIRefs, ::DeviceBaseUnit)
+function to_openapi(arc::Arc, refs::OpenAPIRefs, ::ComponentBaseUnit)
     return PO.Arc(;
         id = component_id(refs, arc),
         from_id = component_id(refs, get_from(arc)),
@@ -19,7 +19,7 @@ function to_openapi(arc::Arc, refs::OpenAPIRefs, ::DeviceBaseUnit)
 end
 
 function to_openapi(arc::Arc, refs::OpenAPIRefs, ::NaturalUnit)
-    return to_openapi(arc, refs, DU)
+    return to_openapi(arc, refs, CU)
 end
 
 # ── Area / LoadZone ─────────────────────────────────────────────────────────────
@@ -28,7 +28,7 @@ end
 # `get_base_power(refs)`. `load_response` has no `conversion_unit` and passes through
 # unconverted in both.
 
-function to_openapi(area::Area, refs::OpenAPIRefs, ::DeviceBaseUnit)
+function to_openapi(area::Area, refs::OpenAPIRefs, ::ComponentBaseUnit)
     return PO.Area(;
         id = component_id(refs, area),
         name = get_name(area),
@@ -36,7 +36,7 @@ function to_openapi(area::Area, refs::OpenAPIRefs, ::DeviceBaseUnit)
         peak_reactive_power = get_peak_reactive_power(area, SU),
         load_response = get_load_response(area),
         base_power = get_base_power(refs),
-        power_units = _power_units_string(DU),
+        power_units = _power_units_string(CU),
     )
 end
 
@@ -52,14 +52,14 @@ function to_openapi(area::Area, refs::OpenAPIRefs, ::NaturalUnit)
     )
 end
 
-function to_openapi(lz::LoadZone, refs::OpenAPIRefs, ::DeviceBaseUnit)
+function to_openapi(lz::LoadZone, refs::OpenAPIRefs, ::ComponentBaseUnit)
     return PO.LoadZone(;
         id = component_id(refs, lz),
         name = get_name(lz),
         peak_active_power = get_peak_active_power(lz, SU),
         peak_reactive_power = get_peak_reactive_power(lz, SU),
         base_power = get_base_power(refs),
-        power_units = _power_units_string(DU),
+        power_units = _power_units_string(CU),
     )
 end
 
@@ -79,16 +79,18 @@ end
 # field, mirroring Area/LoadZone above. `violation_penalty`/`direction_mapping` have no
 # `conversion_unit` and pass through unconverted in both.
 
-function to_openapi(tx::TransmissionInterface, refs::OpenAPIRefs, ::DeviceBaseUnit)
+function to_openapi(tx::TransmissionInterface, refs::OpenAPIRefs, ::ComponentBaseUnit)
     return PO.TransmissionInterface(;
         id = component_id(refs, tx),
         name = get_name(tx),
         available = get_available(tx),
         active_power_flow_limits = _minmax_po(get_active_power_flow_limits(tx, SU)),
         violation_penalty = get_violation_penalty(tx),
-        direction_mapping = get_direction_mapping(tx),
+        direction_mapping = PO.TransmissionInterfaceDirectionMapping(;
+            additional_properties = get_direction_mapping(tx),
+        ),
         base_power = get_base_power(refs),
-        power_units = _power_units_string(DU),
+        power_units = _power_units_string(CU),
     )
 end
 
@@ -102,7 +104,9 @@ function to_openapi(tx::TransmissionInterface, refs::OpenAPIRefs, ::NaturalUnit)
             get_base_power(refs),
         ),
         violation_penalty = get_violation_penalty(tx),
-        direction_mapping = get_direction_mapping(tx),
+        direction_mapping = PO.TransmissionInterfaceDirectionMapping(;
+            additional_properties = get_direction_mapping(tx),
+        ),
         base_power = get_base_power(refs),
         power_units = _power_units_string(NU),
     )
@@ -114,7 +118,7 @@ end
 # `base_power` on export is `get_base_power(refs)` exactly — the document's per-line
 # base_power is the denormalized system base, not reconstructed.
 
-function to_openapi(line::Line, refs::OpenAPIRefs, ::DeviceBaseUnit)
+function to_openapi(line::Line, refs::OpenAPIRefs, ::ComponentBaseUnit)
     return PO.Line(;
         id = component_id(refs, line),
         name = get_name(line),
@@ -127,11 +131,11 @@ function to_openapi(line::Line, refs::OpenAPIRefs, ::DeviceBaseUnit)
         base_power = get_base_power(refs),
         b = _fromto_po(get_b(line, SU)),
         rating = get_rating(line, SU),
-        rating_b = get_rating_b(line, SU),
-        rating_c = get_rating_c(line, SU),
+        rating_b = _optional_to_wire(get_rating_b(line, SU)),
+        rating_c = _optional_to_wire(get_rating_c(line, SU)),
         angle_limits = _minmax_po(get_angle_limits(line)),
         g = _fromto_po(get_g(line, SU)),
-        power_units = _power_units_string(DU),
+        power_units = _power_units_string(CU),
     )
 end
 
@@ -158,19 +162,19 @@ function to_openapi(line::Line, refs::OpenAPIRefs, ::NaturalUnit)
 end
 
 # ── HybridSystem ────────────────────────────────────────────────────────────────
-# Device base. The four subcomponent references are optional on the PSY side, so they go
+# Component base. The four subcomponent references are optional on the PSY side, so they go
 # through `_component_id_optional`. `reserves`-style membership does not apply here; the
 # subcomponents are genuine fields.
 
-function to_openapi(hyb::HybridSystem, refs::OpenAPIRefs, ::DeviceBaseUnit)
+function to_openapi(hyb::HybridSystem, refs::OpenAPIRefs, ::ComponentBaseUnit)
     return PO.HybridSystem(;
         id = component_id(refs, hyb),
         name = get_name(hyb),
         available = get_available(hyb),
-        status = get_status(hyb),
+        status = PO.OperationalStates(string(get_status(hyb))),
         bus = component_id(refs, get_bus(hyb)),
-        active_power = get_active_power(hyb, DU),
-        reactive_power = get_reactive_power(hyb, DU),
+        active_power = get_active_power(hyb, CU),
+        reactive_power = get_reactive_power(hyb, CU),
         base_power = _get_base_power(hyb),
         operation_cost = convert_cost_to_openapi(get_operation_cost(hyb)),
         thermal_unit = _component_id_optional(refs, get_thermal_unit(hyb)),
@@ -180,18 +184,18 @@ function to_openapi(hyb::HybridSystem, refs::OpenAPIRefs, ::DeviceBaseUnit)
         interconnection_impedance = _complex_number_po(
             get_interconnection_impedance(hyb),
         ),
-        interconnection_rating = get_interconnection_rating(hyb, DU),
+        interconnection_rating = get_interconnection_rating(hyb, CU),
         input_active_power_limits = _minmax_po_optional(
-            get_input_active_power_limits(hyb, DU),
+            get_input_active_power_limits(hyb, CU),
         ),
         output_active_power_limits = _minmax_po_optional(
-            get_output_active_power_limits(hyb, DU),
+            get_output_active_power_limits(hyb, CU),
         ),
-        reactive_power_limits = _minmax_po_optional(get_reactive_power_limits(hyb, DU)),
+        reactive_power_limits = _minmax_po_optional(get_reactive_power_limits(hyb, CU)),
         interconnection_efficiency = _inout_po_optional(
             get_interconnection_efficiency(hyb),
         ),
-        power_units = _power_units_string(DU),
+        power_units = _power_units_string(CU),
     )
 end
 
@@ -201,10 +205,10 @@ function to_openapi(hyb::HybridSystem, refs::OpenAPIRefs, ::NaturalUnit)
         id = component_id(refs, hyb),
         name = get_name(hyb),
         available = get_available(hyb),
-        status = get_status(hyb),
+        status = PO.OperationalStates(string(get_status(hyb))),
         bus = component_id(refs, get_bus(hyb)),
-        active_power = get_active_power(hyb, DU) * dbp,
-        reactive_power = get_reactive_power(hyb, DU) * dbp,
+        active_power = get_active_power(hyb, CU) * dbp,
+        reactive_power = get_reactive_power(hyb, CU) * dbp,
         base_power = dbp,
         operation_cost = convert_cost_to_openapi(get_operation_cost(hyb)),
         thermal_unit = _component_id_optional(refs, get_thermal_unit(hyb)),
@@ -215,16 +219,16 @@ function to_openapi(hyb::HybridSystem, refs::OpenAPIRefs, ::NaturalUnit)
             get_interconnection_impedance(hyb),
         ),
         interconnection_rating = _scale_optional_po(
-            get_interconnection_rating(hyb, DU), dbp,
+            get_interconnection_rating(hyb, CU), dbp,
         ),
         input_active_power_limits = _minmax_po_scaled_optional(
-            get_input_active_power_limits(hyb, DU), dbp,
+            get_input_active_power_limits(hyb, CU), dbp,
         ),
         output_active_power_limits = _minmax_po_scaled_optional(
-            get_output_active_power_limits(hyb, DU), dbp,
+            get_output_active_power_limits(hyb, CU), dbp,
         ),
         reactive_power_limits = _minmax_po_scaled_optional(
-            get_reactive_power_limits(hyb, DU), dbp,
+            get_reactive_power_limits(hyb, CU), dbp,
         ),
         interconnection_efficiency = _inout_po_optional(
             get_interconnection_efficiency(hyb),
@@ -234,28 +238,30 @@ function to_openapi(hyb::HybridSystem, refs::OpenAPIRefs, ::NaturalUnit)
 end
 
 # ── Source ──────────────────────────────────────────────────────────────────────
-# Device base: the MVA/MW fields multiply back by the source's own `base_power`, not the
+# Component base: the MVA/MW fields multiply back by the source's own `base_power`, not the
 # document system base.
 
-function to_openapi(src::Source, refs::OpenAPIRefs, ::DeviceBaseUnit)
+function to_openapi(src::Source, refs::OpenAPIRefs, ::ComponentBaseUnit)
     return PO.Source(;
         id = component_id(refs, src),
         name = get_name(src),
         available = get_available(src),
         bus = component_id(refs, get_bus(src)),
-        active_power = get_active_power(src, DU),
-        reactive_power = get_reactive_power(src, DU),
-        active_power_limits = _minmax_po(get_active_power_limits(src, DU)),
-        reactive_power_limits = _minmax_po_optional(get_reactive_power_limits(src, DU)),
-        parameter_units = "COMPONENT_BASE",
-        R_th = get_R_th(src),
-        X_th = get_X_th(src),
+        active_power = get_active_power(src, CU),
+        reactive_power = get_reactive_power(src, CU),
+        active_power_limits = _minmax_po(get_active_power_limits(src, CU)),
+        reactive_power_limits = _minmax_po_optional(get_reactive_power_limits(src, CU)),
+        parameter_units = PO.ImpedanceUnitBasis("COMPONENT_BASE"),
+        r_th = get_R_th(src),
+        x_th = get_X_th(src),
         internal_voltage = get_internal_voltage(src),
         internal_angle = get_internal_angle(src),
-        base_voltage = get_base_voltage(src),
+        base_voltage = _optional_to_wire(get_base_voltage(src)),
         base_power = _get_base_power(src),
-        operation_cost = convert_cost_to_openapi(get_operation_cost(src)),
-        power_units = _power_units_string(DU),
+        operation_cost = PO.SourceOperationCost(
+            convert_cost_to_openapi(get_operation_cost(src)),
+        ),
+        power_units = _power_units_string(CU),
     )
 end
 
@@ -266,20 +272,22 @@ function to_openapi(src::Source, refs::OpenAPIRefs, ::NaturalUnit)
         name = get_name(src),
         available = get_available(src),
         bus = component_id(refs, get_bus(src)),
-        active_power = get_active_power(src, DU) * dbp,
-        reactive_power = get_reactive_power(src, DU) * dbp,
-        active_power_limits = _minmax_po_scaled(get_active_power_limits(src, DU), dbp),
+        active_power = get_active_power(src, CU) * dbp,
+        reactive_power = get_reactive_power(src, CU) * dbp,
+        active_power_limits = _minmax_po_scaled(get_active_power_limits(src, CU), dbp),
         reactive_power_limits = _minmax_po_scaled_optional(
-            get_reactive_power_limits(src, DU), dbp,
+            get_reactive_power_limits(src, CU), dbp,
         ),
-        parameter_units = "COMPONENT_BASE",
-        R_th = get_R_th(src),
-        X_th = get_X_th(src),
+        parameter_units = PO.ImpedanceUnitBasis("COMPONENT_BASE"),
+        r_th = get_R_th(src),
+        x_th = get_X_th(src),
         internal_voltage = get_internal_voltage(src),
         internal_angle = get_internal_angle(src),
-        base_voltage = get_base_voltage(src),
+        base_voltage = _optional_to_wire(get_base_voltage(src)),
         base_power = dbp,
-        operation_cost = convert_cost_to_openapi(get_operation_cost(src)),
+        operation_cost = PO.SourceOperationCost(
+            convert_cost_to_openapi(get_operation_cost(src)),
+        ),
         power_units = _power_units_string(NU),
     )
 end
@@ -289,10 +297,10 @@ end
 # outright — fixed natural units, no `power_units` discriminator on this PO struct (see the
 # schema and import_handwritten.jl's header on this exact point) — so they multiply by
 # `get_base_power(refs)` in both methods, same posture as reserves' `requirement`. Both
-# methods are therefore identical, hence the trivial `DU` delegate below. `base_current` is
+# methods are therefore identical, hence the trivial `CU` delegate below. `base_current` is
 # written back untouched, being the anchor for `r`/`l`/`c` rather than for power.
 
-function to_openapi(line::TModelHVDCLine, refs::OpenAPIRefs, ::DeviceBaseUnit)
+function to_openapi(line::TModelHVDCLine, refs::OpenAPIRefs, ::ComponentBaseUnit)
     sbp = get_base_power(refs)
     return PO.TModelHVDCLine(;
         id = component_id(refs, line),
@@ -300,7 +308,7 @@ function to_openapi(line::TModelHVDCLine, refs::OpenAPIRefs, ::DeviceBaseUnit)
         available = get_available(line),
         active_power_flow = get_active_power_flow(line, SU) * sbp,
         arc = component_id(refs, get_arc(line)),
-        parameter_units = "COMPONENT_BASE",
+        parameter_units = PO.ImpedanceUnitBasis("COMPONENT_BASE"),
         base_current = get_base_current(line),
         r = get_r(line),
         l = get_l(line),
@@ -315,31 +323,31 @@ function to_openapi(line::TModelHVDCLine, refs::OpenAPIRefs, ::DeviceBaseUnit)
 end
 
 function to_openapi(line::TModelHVDCLine, refs::OpenAPIRefs, ::NaturalUnit)
-    return to_openapi(line, refs, DU)
+    return to_openapi(line, refs, CU)
 end
 
 # ── InterconnectingConverter ────────────────────────────────────────────────────
-# Device base throughout, `dc_current`/`max_dc_current` included — the descriptor tags those
+# Component base throughout, `dc_current`/`max_dc_current` included — the descriptor tags those
 # `:mva`, so they scale with the rest rather than against a current base.
 
-function to_openapi(conv::InterconnectingConverter, refs::OpenAPIRefs, ::DeviceBaseUnit)
+function to_openapi(conv::InterconnectingConverter, refs::OpenAPIRefs, ::ComponentBaseUnit)
     return PO.InterconnectingConverter(;
         id = component_id(refs, conv),
         name = get_name(conv),
         available = get_available(conv),
         bus = component_id(refs, get_bus(conv)),
         dc_bus = component_id(refs, get_dc_bus(conv)),
-        active_power = get_active_power(conv, DU),
-        rating = get_rating(conv, DU),
-        active_power_limits = _minmax_po(get_active_power_limits(conv, DU)),
+        active_power = get_active_power(conv, CU),
+        rating = get_rating(conv, CU),
+        active_power_limits = _minmax_po(get_active_power_limits(conv, CU)),
         base_power = _get_base_power(conv),
-        reactive_power_limits = _minmax_po_optional(get_reactive_power_limits(conv, DU)),
-        dc_current = get_dc_current(conv, DU),
-        max_dc_current = get_max_dc_current(conv, DU),
-        loss_function = convert_cost_to_openapi(get_loss_function(conv)),
-        dc_control = string(get_dc_control(conv)),
-        ac_control = string(get_ac_control(conv)),
-        voltage_setpoint_units = "COMPONENT_BASE",
+        reactive_power_limits = _minmax_po_optional(get_reactive_power_limits(conv, CU)),
+        dc_current = get_dc_current(conv, CU),
+        max_dc_current = get_max_dc_current(conv, CU),
+        loss_function = _hvdc_loss_to_openapi(get_loss_function(conv)),
+        dc_control = PO.VSCDCControlModes(string(get_dc_control(conv))),
+        ac_control = PO.VSCACControlModes(string(get_ac_control(conv))),
+        voltage_setpoint_units = PO.VoltageUnitBasis("COMPONENT_BASE"),
         dc_setpoint = get_dc_setpoint(conv),
         ac_setpoint = get_ac_setpoint(conv),
         dc_voltage_droop = get_dc_voltage_droop(conv),
@@ -347,7 +355,7 @@ function to_openapi(conv::InterconnectingConverter, refs::OpenAPIRefs, ::DeviceB
         rmpct = get_rmpct(conv),
         power_factor_weighting_fraction = get_power_factor_weighting_fraction(conv),
         voltage_limits = _minmax_po(get_voltage_limits(conv)),
-        power_units = _power_units_string(DU),
+        power_units = _power_units_string(CU),
     )
 end
 
@@ -359,19 +367,19 @@ function to_openapi(conv::InterconnectingConverter, refs::OpenAPIRefs, ::Natural
         available = get_available(conv),
         bus = component_id(refs, get_bus(conv)),
         dc_bus = component_id(refs, get_dc_bus(conv)),
-        active_power = get_active_power(conv, DU) * dbp,
-        rating = get_rating(conv, DU) * dbp,
-        active_power_limits = _minmax_po_scaled(get_active_power_limits(conv, DU), dbp),
+        active_power = get_active_power(conv, CU) * dbp,
+        rating = get_rating(conv, CU) * dbp,
+        active_power_limits = _minmax_po_scaled(get_active_power_limits(conv, CU), dbp),
         base_power = dbp,
         reactive_power_limits = _minmax_po_scaled_optional(
-            get_reactive_power_limits(conv, DU), dbp,
+            get_reactive_power_limits(conv, CU), dbp,
         ),
-        dc_current = get_dc_current(conv, DU) * dbp,
-        max_dc_current = get_max_dc_current(conv, DU) * dbp,
-        loss_function = convert_cost_to_openapi(get_loss_function(conv)),
-        dc_control = string(get_dc_control(conv)),
-        ac_control = string(get_ac_control(conv)),
-        voltage_setpoint_units = "COMPONENT_BASE",
+        dc_current = get_dc_current(conv, CU) * dbp,
+        max_dc_current = get_max_dc_current(conv, CU) * dbp,
+        loss_function = _hvdc_loss_to_openapi(get_loss_function(conv)),
+        dc_control = PO.VSCDCControlModes(string(get_dc_control(conv))),
+        ac_control = PO.VSCACControlModes(string(get_ac_control(conv))),
+        voltage_setpoint_units = PO.VoltageUnitBasis("COMPONENT_BASE"),
         dc_setpoint = get_dc_setpoint(conv),
         ac_setpoint = get_ac_setpoint(conv),
         dc_voltage_droop = get_dc_voltage_droop(conv),
@@ -386,7 +394,7 @@ end
 # ── MonitoredLine ───────────────────────────────────────────────────────────────
 # Mirrors `Line` above field for field, plus `flow_limits`, which scales with `rating`.
 
-function to_openapi(line::MonitoredLine, refs::OpenAPIRefs, ::DeviceBaseUnit)
+function to_openapi(line::MonitoredLine, refs::OpenAPIRefs, ::ComponentBaseUnit)
     return PO.MonitoredLine(;
         id = component_id(refs, line),
         name = get_name(line),
@@ -400,11 +408,11 @@ function to_openapi(line::MonitoredLine, refs::OpenAPIRefs, ::DeviceBaseUnit)
         b = _fromto_po(get_b(line, SU)),
         flow_limits = _fromto_tofrom_po(get_flow_limits(line, SU)),
         rating = get_rating(line, SU),
-        rating_b = get_rating_b(line, SU),
-        rating_c = get_rating_c(line, SU),
+        rating_b = _optional_to_wire(get_rating_b(line, SU)),
+        rating_c = _optional_to_wire(get_rating_c(line, SU)),
         angle_limits = _minmax_po(get_angle_limits(line)),
         g = _fromto_po(get_g(line, SU)),
-        power_units = _power_units_string(DU),
+        power_units = _power_units_string(CU),
     )
 end
 
@@ -435,7 +443,7 @@ end
 # `parameter_units` is stated rather than derived: the import side only accepts
 # "COMPONENT_BASE", so that is what export writes.
 
-function to_openapi(branch::GenericArcImpedance, refs::OpenAPIRefs, ::DeviceBaseUnit)
+function to_openapi(branch::GenericArcImpedance, refs::OpenAPIRefs, ::ComponentBaseUnit)
     return PO.GenericArcImpedance(;
         id = component_id(refs, branch),
         name = get_name(branch),
@@ -445,10 +453,10 @@ function to_openapi(branch::GenericArcImpedance, refs::OpenAPIRefs, ::DeviceBase
         max_flow = get_max_flow(branch, SU),
         arc = component_id(refs, get_arc(branch)),
         base_power = get_base_power(refs),
-        parameter_units = "COMPONENT_BASE",
+        parameter_units = PO.ImpedanceUnitBasis("COMPONENT_BASE"),
         r = get_r(branch, SU),
         x = get_x(branch, SU),
-        power_units = _power_units_string(DU),
+        power_units = _power_units_string(CU),
     )
 end
 
@@ -463,7 +471,7 @@ function to_openapi(branch::GenericArcImpedance, refs::OpenAPIRefs, ::NaturalUni
         max_flow = get_max_flow(branch, SU) * sbp,
         arc = component_id(refs, get_arc(branch)),
         base_power = sbp,
-        parameter_units = "COMPONENT_BASE",
+        parameter_units = PO.ImpedanceUnitBasis("COMPONENT_BASE"),
         r = get_r(branch, SU),
         x = get_x(branch, SU),
         power_units = _power_units_string(NU),
@@ -472,11 +480,15 @@ end
 
 # ── DiscreteControlledACBranch ───────────────────────────────────────────────────
 # `active_power_flow`/`reactive_power_flow`/`r`/`x` are declared `SU` (system base), `rating`
-# is declared `DU` — numerically identical for this type since `add_component!` keeps its
+# is declared `CU` — numerically identical for this type since `add_component!` keeps its
 # `base_power` synced to the System's, but the identity accessor for each field must still
 # match its own declared tier.
 
-function to_openapi(branch::DiscreteControlledACBranch, refs::OpenAPIRefs, ::DeviceBaseUnit)
+function to_openapi(
+    branch::DiscreteControlledACBranch,
+    refs::OpenAPIRefs,
+    ::ComponentBaseUnit,
+)
     return PO.DiscreteControlledACBranch(;
         id = component_id(refs, branch),
         name = get_name(branch),
@@ -487,15 +499,21 @@ function to_openapi(branch::DiscreteControlledACBranch, refs::OpenAPIRefs, ::Dev
         base_power = _get_base_power(branch),
         r = get_r(branch, SU),
         x = get_x(branch, SU),
-        rating = get_rating(branch, DU),
-        discrete_branch_type = string(get_discrete_branch_type(
-            branch,
-        )),
-        branch_status = string(get_branch_status(branch)),
-        normal_branch_status = string(get_normal_branch_status(
-            branch,
-        )),
-        power_units = _power_units_string(DU),
+        rating = get_rating(branch, CU),
+        discrete_branch_type = PO.DiscreteControlledACBranchDiscreteBranchType(
+            string(get_discrete_branch_type(
+                branch,
+            )),
+        ),
+        branch_status = PO.DiscreteControlledACBranchBranchStatus(
+            string(get_branch_status(branch)),
+        ),
+        normal_branch_status = PO.DiscreteControlledACBranchNormalBranchStatus(
+            string(get_normal_branch_status(
+                branch,
+            )),
+        ),
+        power_units = _power_units_string(CU),
     )
 end
 
@@ -511,14 +529,20 @@ function to_openapi(branch::DiscreteControlledACBranch, refs::OpenAPIRefs, ::Nat
         base_power = bp,
         r = get_r(branch, SU),
         x = get_x(branch, SU),
-        rating = get_rating(branch, DU) * bp,
-        discrete_branch_type = string(get_discrete_branch_type(
-            branch,
-        )),
-        branch_status = string(get_branch_status(branch)),
-        normal_branch_status = string(get_normal_branch_status(
-            branch,
-        )),
+        rating = get_rating(branch, CU) * bp,
+        discrete_branch_type = PO.DiscreteControlledACBranchDiscreteBranchType(
+            string(get_discrete_branch_type(
+                branch,
+            )),
+        ),
+        branch_status = PO.DiscreteControlledACBranchBranchStatus(
+            string(get_branch_status(branch)),
+        ),
+        normal_branch_status = PO.DiscreteControlledACBranchNormalBranchStatus(
+            string(get_normal_branch_status(
+                branch,
+            )),
+        ),
         power_units = _power_units_string(NU),
     )
 end
@@ -532,32 +556,34 @@ end
 # System component (no `addable` entry of its own), so this method is called directly on the
 # `TransformerCircuit` object the document walk already resolved to an id.
 
-function to_openapi(circuit::TransformerCircuit, refs::OpenAPIRefs, ::DeviceBaseUnit)
+function to_openapi(circuit::TransformerCircuit, refs::OpenAPIRefs, ::ComponentBaseUnit)
     return PO.TransformerCircuit(;
         id = component_id(refs, circuit),
         available = get_available(circuit),
         arc = component_id(refs, get_arc(circuit)),
         tap = get_tap(circuit),
         alpha = get_α(circuit),
-        parameter_units = "COMPONENT_BASE",
-        r = get_r(circuit, DU),
-        x = get_x(circuit, DU),
-        control_objective = string(get_control_objective(
-            circuit,
-        )),
+        parameter_units = PO.ImpedanceUnitBasis("COMPONENT_BASE"),
+        r = get_r(circuit, CU),
+        x = get_x(circuit, CU),
+        control_objective = PO.TransformerControlObjective(
+            string(get_control_objective(
+                circuit,
+            )),
+        ),
         regulated_bus_number = get_regulated_bus_number(circuit),
         control_limits = _minmax_po(get_control_limits(circuit)),
         controlled_quantity_limits = _minmax_po(get_controlled_quantity_limits(circuit)),
         number_of_tap_positions = get_number_of_tap_positions(circuit),
-        rating = get_rating(circuit, DU),
-        rating_b = get_rating_b(circuit, DU),
-        rating_c = get_rating_c(circuit, DU),
-        active_power_flow = get_active_power_flow(circuit, DU),
-        reactive_power_flow = get_reactive_power_flow(circuit, DU),
+        rating = _optional_to_wire(get_rating(circuit, CU)),
+        rating_b = _optional_to_wire(get_rating_b(circuit, CU)),
+        rating_c = _optional_to_wire(get_rating_c(circuit, CU)),
+        active_power_flow = get_active_power_flow(circuit, CU),
+        reactive_power_flow = get_reactive_power_flow(circuit, CU),
         base_power = get_base_power(circuit),
-        base_voltage_primary = get_base_voltage_primary(circuit),
-        base_voltage_secondary = get_base_voltage_secondary(circuit),
-        power_units = _power_units_string(DU),
+        base_voltage_primary = _optional_to_wire(get_base_voltage_primary(circuit)),
+        base_voltage_secondary = _optional_to_wire(get_base_voltage_secondary(circuit)),
+        power_units = _power_units_string(CU),
     )
 end
 
@@ -569,24 +595,26 @@ function to_openapi(circuit::TransformerCircuit, refs::OpenAPIRefs, ::NaturalUni
         arc = component_id(refs, get_arc(circuit)),
         tap = get_tap(circuit),
         alpha = get_α(circuit),
-        parameter_units = "COMPONENT_BASE",
-        r = get_r(circuit, DU),
-        x = get_x(circuit, DU),
-        control_objective = string(get_control_objective(
-            circuit,
-        )),
+        parameter_units = PO.ImpedanceUnitBasis("COMPONENT_BASE"),
+        r = get_r(circuit, CU),
+        x = get_x(circuit, CU),
+        control_objective = PO.TransformerControlObjective(
+            string(get_control_objective(
+                circuit,
+            )),
+        ),
         regulated_bus_number = get_regulated_bus_number(circuit),
         control_limits = _minmax_po(get_control_limits(circuit)),
         controlled_quantity_limits = _minmax_po(get_controlled_quantity_limits(circuit)),
         number_of_tap_positions = get_number_of_tap_positions(circuit),
-        rating = _scale_optional_po(get_rating(circuit, DU), dbp),
-        rating_b = _scale_optional_po(get_rating_b(circuit, DU), dbp),
-        rating_c = _scale_optional_po(get_rating_c(circuit, DU), dbp),
-        active_power_flow = get_active_power_flow(circuit, DU) * dbp,
-        reactive_power_flow = get_reactive_power_flow(circuit, DU) * dbp,
+        rating = _scale_optional_po(get_rating(circuit, CU), dbp),
+        rating_b = _scale_optional_po(get_rating_b(circuit, CU), dbp),
+        rating_c = _scale_optional_po(get_rating_c(circuit, CU), dbp),
+        active_power_flow = get_active_power_flow(circuit, CU) * dbp,
+        reactive_power_flow = get_reactive_power_flow(circuit, CU) * dbp,
         base_power = dbp,
-        base_voltage_primary = get_base_voltage_primary(circuit),
-        base_voltage_secondary = get_base_voltage_secondary(circuit),
+        base_voltage_primary = _optional_to_wire(get_base_voltage_primary(circuit)),
+        base_voltage_secondary = _optional_to_wire(get_base_voltage_secondary(circuit)),
         power_units = _power_units_string(NU),
     )
 end
@@ -595,35 +623,37 @@ end
 # `magnetizing_shunt` is pu on the circuit's `base_power` and identity in both document unit
 # systems (mirrors import).
 
-function to_openapi(xfmr::TwoWindingTransformer, refs::OpenAPIRefs, ::DeviceBaseUnit)
+function to_openapi(xfmr::TwoWindingTransformer, refs::OpenAPIRefs, ::ComponentBaseUnit)
     circuit = get_circuit(xfmr)
-    shunt = get_magnetizing_shunt(xfmr, DU)
+    shunt = get_magnetizing_shunt(xfmr, CU)
     return PO.TwoWindingTransformer(;
         id = component_id(refs, xfmr),
         name = get_name(xfmr),
         circuit = component_id(refs, circuit),
-        admittance_units = "COMPONENT_BASE",
+        admittance_units = PO.AdmittanceUnitBasis("COMPONENT_BASE"),
         magnetizing_shunt = _complex_number_po(shunt),
-        shunt_location = string(get_shunt_location(
-            xfmr,
-        )),
+        shunt_location = PO.TwoWindingTransformerShuntLocation(
+            string(get_shunt_location(
+                xfmr,
+            )),
+        ),
     )
 end
 
 function to_openapi(xfmr::TwoWindingTransformer, refs::OpenAPIRefs, ::NaturalUnit)
-    return to_openapi(xfmr, refs, DU)
+    return to_openapi(xfmr, refs, CU)
 end
 
 # ── ThreeWindingTransformer ──────────────────────────────────────────────────────
 # Mirrors TwoWindingTransformer's `magnetizing_shunt` handling exactly. The pairwise
-# impedances and their base powers are identity in DU (mirrors import); `parameter_units`/
+# impedances and their base powers are identity in CU (mirrors import); `parameter_units`/
 # `admittance_units` are always emitted as "COMPONENT_BASE", the only basis implemented on either
 # side. `primary_circuit`/`secondary_circuit`/`tertiary_circuit`/`star_bus` resolve via
 # `component_id` because the circuits are registered as standalone document rows by
 # `_plan_components` (export_document.jl), matching how import consumes them.
 
-function to_openapi(xfmr::ThreeWindingTransformer, refs::OpenAPIRefs, ::DeviceBaseUnit)
-    shunt = get_magnetizing_shunt(xfmr, DU)
+function to_openapi(xfmr::ThreeWindingTransformer, refs::OpenAPIRefs, ::ComponentBaseUnit)
+    shunt = get_magnetizing_shunt(xfmr, CU)
     return PO.ThreeWindingTransformer(;
         id = component_id(refs, xfmr),
         name = get_name(xfmr),
@@ -631,26 +661,28 @@ function to_openapi(xfmr::ThreeWindingTransformer, refs::OpenAPIRefs, ::DeviceBa
         secondary_circuit = component_id(refs, get_secondary_circuit(xfmr)),
         tertiary_circuit = component_id(refs, get_tertiary_circuit(xfmr)),
         star_bus = component_id(refs, get_star_bus(xfmr)),
-        parameter_units = "COMPONENT_BASE",
-        r_12 = get_r_12(xfmr, DU),
-        x_12 = get_x_12(xfmr, DU),
-        r_23 = get_r_23(xfmr, DU),
-        x_23 = get_x_23(xfmr, DU),
-        r_31 = get_r_31(xfmr, DU),
-        x_31 = get_x_31(xfmr, DU),
-        base_power_12 = get_base_power_12(xfmr),
-        base_power_23 = get_base_power_23(xfmr),
-        base_power_31 = get_base_power_31(xfmr),
-        admittance_units = "COMPONENT_BASE",
+        parameter_units = PO.ImpedanceUnitBasis("COMPONENT_BASE"),
+        r_12 = _optional_to_wire(get_r_12(xfmr, CU)),
+        x_12 = _optional_to_wire(get_x_12(xfmr, CU)),
+        r_23 = _optional_to_wire(get_r_23(xfmr, CU)),
+        x_23 = _optional_to_wire(get_x_23(xfmr, CU)),
+        r_31 = _optional_to_wire(get_r_31(xfmr, CU)),
+        x_31 = _optional_to_wire(get_x_31(xfmr, CU)),
+        base_power_12 = _optional_to_wire(get_base_power_12(xfmr)),
+        base_power_23 = _optional_to_wire(get_base_power_23(xfmr)),
+        base_power_31 = _optional_to_wire(get_base_power_31(xfmr)),
+        admittance_units = PO.AdmittanceUnitBasis("COMPONENT_BASE"),
         magnetizing_shunt = _complex_number_po(shunt),
-        shunt_location = string(get_shunt_location(
-            xfmr,
-        )),
+        shunt_location = PO.ThreeWindingTransformerShuntLocation(
+            string(get_shunt_location(
+                xfmr,
+            )),
+        ),
     )
 end
 
 function to_openapi(xfmr::ThreeWindingTransformer, refs::OpenAPIRefs, ::NaturalUnit)
-    return to_openapi(xfmr, refs, DU)
+    return to_openapi(xfmr, refs, CU)
 end
 
 # ── FixedAdmittance ─────────────────────────────────────────────────────────────
@@ -660,15 +692,15 @@ end
 # voltage) and multiplies by `get_base_power(refs)`, exactly inverting the `COMPONENT_MVAR`
 # division in `_fixed_admittance_pu`, in both methods.
 
-function to_openapi(shunt::FixedAdmittance, refs::OpenAPIRefs, ::DeviceBaseUnit)
+function to_openapi(shunt::FixedAdmittance, refs::OpenAPIRefs, ::ComponentBaseUnit)
     y = get_Y(shunt) * get_base_power(refs)
     return PO.FixedAdmittance(;
         id = component_id(refs, shunt),
         name = get_name(shunt),
         available = get_available(shunt),
         bus = component_id(refs, get_bus(shunt)),
-        admittance_units = "COMPONENT_MVAR",
-        Y = _complex_number_po(y),
+        admittance_units = PO.ShuntAdmittanceUnitBasis("COMPONENT_MVAR"),
+        y = _complex_number_po(y),
         # FixedAdmittance's base_power_kind is SystemBasePower (components.jl): the field is
         # kept in sync by add_component!, not authoritative on its own, so read `refs`'s
         # anchor (per `openapi_export_base_source` in generate_structs.jl), same as `y` above.
@@ -677,14 +709,18 @@ function to_openapi(shunt::FixedAdmittance, refs::OpenAPIRefs, ::DeviceBaseUnit)
 end
 
 function to_openapi(shunt::FixedAdmittance, refs::OpenAPIRefs, ::NaturalUnit)
-    return to_openapi(shunt, refs, DU)
+    return to_openapi(shunt, refs, CU)
 end
 
 # ── SwitchedAdmittance ────────────────────────────────────────────────────────────
-# Mirrors `FixedAdmittance`: `Y`/`Y_increase` are fixed-natural COMPONENT_MVAR-on-system-base
-# in both methods, so `NaturalUnit` delegates to `DeviceBaseUnit`.
+# Mirrors `FixedAdmittance`: `Y_increase` and `solved_admittance` are fixed-natural
+# COMPONENT_MVAR-on-system-base in both methods, so `NaturalUnit` delegates to
+# `ComponentBaseUnit`.
 
-function to_openapi(shunt::SwitchedAdmittance, refs::OpenAPIRefs, ::DeviceBaseUnit)
+_switched_admittance_solved_po(value, base_power) =
+    isnothing(value) ? nothing : value * base_power
+
+function to_openapi(shunt::SwitchedAdmittance, refs::OpenAPIRefs, ::ComponentBaseUnit)
     base_power = get_base_power(refs)
     y_increase = [
         _complex_number_po(v * base_power) for v in get_Y_increase(shunt)
@@ -694,19 +730,22 @@ function to_openapi(shunt::SwitchedAdmittance, refs::OpenAPIRefs, ::DeviceBaseUn
         name = get_name(shunt),
         available = get_available(shunt),
         bus = component_id(refs, get_bus(shunt)),
-        admittance_units = "COMPONENT_MVAR",
-        Y = _complex_number_po(get_Y(shunt) * base_power),
-        initial_status = get_initial_status(shunt),
+        admittance_units = PO.ShuntAdmittanceUnitBasis("COMPONENT_MVAR"),
+        number_engaged = get_number_engaged(shunt),
         number_of_steps = get_number_of_steps(shunt),
-        Y_increase = y_increase,
+        y_increase = y_increase,
+        solved_admittance = _switched_admittance_solved_po(
+            get_solved_admittance(shunt),
+            base_power,
+        ),
         admittance_limits = _minmax_po(get_admittance_limits(shunt)),
-        control_mode = string(get_control_mode(shunt)),
+        control_mode = PO.SwitchedAdmittanceControlMode(string(get_control_mode(shunt))),
         regulated_bus_number = get_regulated_bus_number(shunt),
     )
 end
 
 function to_openapi(shunt::SwitchedAdmittance, refs::OpenAPIRefs, ::NaturalUnit)
-    return to_openapi(shunt, refs, DU)
+    return to_openapi(shunt, refs, CU)
 end
 
 # ── FACTSControlDevice ────────────────────────────────────────────────────────────
@@ -715,7 +754,7 @@ end
 # device's own `base_power`. `voltage_setpoint` is always exported as "COMPONENT_BASE" (the only
 # basis import implements).
 
-function to_openapi(device::FACTSControlDevice, refs::OpenAPIRefs, ::DeviceBaseUnit)
+function to_openapi(device::FACTSControlDevice, refs::OpenAPIRefs, ::ComponentBaseUnit)
     control_mode = get_control_mode(device)
     return PO.FACTSControlDevice(;
         id = component_id(refs, device),
@@ -725,19 +764,21 @@ function to_openapi(device::FACTSControlDevice, refs::OpenAPIRefs, ::DeviceBaseU
         control_mode = if isnothing(control_mode)
             nothing
         else
-            string(control_mode)
+            PO.FACTSControlDeviceControlMode(string(control_mode))
         end,
-        voltage_setpoint_units = "COMPONENT_BASE",
+        voltage_setpoint_units = PO.VoltageUnitBasis("COMPONENT_BASE"),
         voltage_setpoint = get_voltage_setpoint(device),
         max_shunt_current = get_max_shunt_current(device, SU),
         reactive_power_required = get_reactive_power_required(device),
         max_reactive_power = get_max_reactive_power(device, SU),
-        shunt_control_type = string(get_shunt_control_type(
-            device,
-        )),
+        shunt_control_type = PO.FACTSControlDeviceShuntControlType(
+            string(get_shunt_control_type(
+                device,
+            )),
+        ),
         regulated_bus_number = get_regulated_bus_number(device),
         base_power = _get_base_power(device),
-        power_units = _power_units_string(DU),
+        power_units = _power_units_string(CU),
     )
 end
 
@@ -752,16 +793,18 @@ function to_openapi(device::FACTSControlDevice, refs::OpenAPIRefs, ::NaturalUnit
         control_mode = if isnothing(control_mode)
             nothing
         else
-            string(control_mode)
+            PO.FACTSControlDeviceControlMode(string(control_mode))
         end,
-        voltage_setpoint_units = "COMPONENT_BASE",
+        voltage_setpoint_units = PO.VoltageUnitBasis("COMPONENT_BASE"),
         voltage_setpoint = get_voltage_setpoint(device),
         max_shunt_current = get_max_shunt_current(device, SU) * base_power,
         reactive_power_required = get_reactive_power_required(device),
         max_reactive_power = get_max_reactive_power(device, SU) * base_power,
-        shunt_control_type = string(get_shunt_control_type(
-            device,
-        )),
+        shunt_control_type = PO.FACTSControlDeviceShuntControlType(
+            string(get_shunt_control_type(
+                device,
+            )),
+        ),
         regulated_bus_number = get_regulated_bus_number(device),
         base_power = base_power,
         power_units = _power_units_string(NU),
@@ -769,20 +812,28 @@ function to_openapi(device::FACTSControlDevice, refs::OpenAPIRefs, ::NaturalUnit
 end
 
 # ── TwoTerminalGenericHVDCLine ──────────────────────────────────────────────────
-# No device base; power fields fall back to the document-level system base
+# No component base; power fields fall back to the document-level system base
 # (`get_base_power(refs)`), same fallback reserves use. `loss` dispatches on PSY's two allowed
 # `ValueCurve` shapes (`InputOutputCurve` for a linear loss, `IncrementalCurve` for a piecewise
 # incremental one) — the import converter only implements the linear case, but PSY's own field
 # type allows both (a `System` built directly, not round-tripped, may hold either), so export
 # supports both rather than narrowing to what import currently reads.
 
-_hvdc_loss_to_openapi(curve::Union{InputOutputCurve, IncrementalCurve}) =
-    PC.TwoTerminalLoss(convert_cost_to_openapi(curve))
+# The schemas' `LossCurve` records the basis in its own required `power_units`, so the curve
+# travels on whatever basis PSY holds it and import reads the same field back (`_hvdc_loss`).
+function _hvdc_loss_to_openapi(loss::AnyLossCurve)
+    return PC.LossCurve(;
+        power_units = _power_units_string(get_power_units(loss)),
+        value_curve = PC.LossValueCurve(
+            convert_cost_to_openapi(loss_curve_to_openapi(loss)),
+        ),
+    )
+end
 
 function to_openapi(
     hvdc::TwoTerminalGenericHVDCLine,
     refs::OpenAPIRefs,
-    ::DeviceBaseUnit,
+    ::ComponentBaseUnit,
 )
     return PO.TwoTerminalGenericHVDCLine(;
         id = component_id(refs, hvdc),
@@ -796,7 +847,7 @@ function to_openapi(
         reactive_power_limits_to = _minmax_po(get_reactive_power_limits_to(hvdc, SU)),
         loss = _hvdc_loss_to_openapi(get_loss(hvdc)),
         base_power = get_base_power(refs),
-        power_units = _power_units_string(DU),
+        power_units = _power_units_string(CU),
     )
 end
 
@@ -850,7 +901,7 @@ _lcc_transfer_setpoint_to_openapi(transfer_setpoint, ::Val{true}, base_power) =
 _lcc_transfer_setpoint_to_openapi(transfer_setpoint, ::Val{false}, _base_power) =
     transfer_setpoint
 
-function to_openapi(lcc::TwoTerminalLCCLine, refs::OpenAPIRefs, ::DeviceBaseUnit)
+function to_openapi(lcc::TwoTerminalLCCLine, refs::OpenAPIRefs, ::ComponentBaseUnit)
     base_power = _get_base_power(lcc)
     rbv = get_rectifier_base_voltage(lcc)
     ibv = get_inverter_base_voltage(lcc)
@@ -861,10 +912,10 @@ function to_openapi(lcc::TwoTerminalLCCLine, refs::OpenAPIRefs, ::DeviceBaseUnit
         available = get_available(lcc),
         arc = component_id(refs, get_arc(lcc)),
         active_power_flow = get_active_power_flow(lcc, SU),
-        parameter_units = "NATURAL_UNITS",
+        parameter_units = PO.ImpedanceUnitBasis("NATURAL_UNITS"),
         r = _lcc_pu_to_ohm(get_r(lcc), dcv, base_power),
         transfer_setpoint = get_transfer_setpoint(lcc),
-        dc_voltage_units = "NATURAL_UNITS",
+        dc_voltage_units = PO.VoltageUnitBasis("NATURAL_UNITS"),
         scheduled_dc_voltage = dcv,
         rectifier_bridges = get_rectifier_bridges(lcc),
         rectifier_delay_angle_limits = _minmax_po(get_rectifier_delay_angle_limits(lcc)),
@@ -908,7 +959,7 @@ function to_openapi(lcc::TwoTerminalLCCLine, refs::OpenAPIRefs, ::DeviceBaseUnit
         reactive_power_limits_to = _minmax_po(get_reactive_power_limits_to(lcc, SU)),
         loss = _hvdc_loss_to_openapi(get_loss(lcc)),
         base_power = base_power,
-        power_units = _power_units_string(DU),
+        power_units = _power_units_string(CU),
     )
 end
 
@@ -923,12 +974,12 @@ function to_openapi(lcc::TwoTerminalLCCLine, refs::OpenAPIRefs, ::NaturalUnit)
         available = get_available(lcc),
         arc = component_id(refs, get_arc(lcc)),
         active_power_flow = get_active_power_flow(lcc, SU) * base_power,
-        parameter_units = "NATURAL_UNITS",
+        parameter_units = PO.ImpedanceUnitBasis("NATURAL_UNITS"),
         r = _lcc_pu_to_ohm(get_r(lcc), dcv, base_power),
         transfer_setpoint = _lcc_transfer_setpoint_to_openapi(
             get_transfer_setpoint(lcc), Val(get_power_mode(lcc)), base_power,
         ),
-        dc_voltage_units = "NATURAL_UNITS",
+        dc_voltage_units = PO.VoltageUnitBasis("NATURAL_UNITS"),
         scheduled_dc_voltage = dcv,
         rectifier_bridges = get_rectifier_bridges(lcc),
         rectifier_delay_angle_limits = _minmax_po(get_rectifier_delay_angle_limits(lcc)),
@@ -1029,7 +1080,7 @@ _vsc_dc_setpoint_to_openapi(
     _vsc, setpoint, ::Val{VSCDCControlModes.DC_POWER}, base_power, ::NaturalUnit,
 ) = setpoint * base_power
 _vsc_dc_setpoint_to_openapi(
-    _vsc, setpoint, ::Val{VSCDCControlModes.DC_POWER}, _base_power, ::DeviceBaseUnit,
+    _vsc, setpoint, ::Val{VSCDCControlModes.DC_POWER}, _base_power, ::ComponentBaseUnit,
 ) = setpoint
 _vsc_dc_setpoint_to_openapi(
     _vsc, setpoint, ::Val{VSCDCControlModes.DC_VOLTAGE}, _bp, _unit,
@@ -1064,14 +1115,14 @@ function _two_terminal_vsc_line_to_openapi(vsc::TwoTerminalVSCLine, refs::OpenAP
         active_power_limits_to = _vsc_minmax_to_openapi(
             get_active_power_limits_to(vsc, SU), base_power, unit,
         ),
-        admittance_units = "NATURAL_UNITS",
+        admittance_units = PO.AdmittanceUnitBasis("NATURAL_UNITS"),
         g = _vsc_pu_to_siemens(vsc, base_power),
         dc_current = get_dc_current(vsc),
         reactive_power_from = _vsc_power_to_openapi(
             get_reactive_power_from(vsc, SU), base_power, unit,
         ),
-        dc_control_from = string(dc_control_from),
-        ac_control_from = string(ac_control_from),
+        dc_control_from = PO.VSCDCControlModes(string(dc_control_from)),
+        ac_control_from = PO.VSCACControlModes(string(ac_control_from)),
         dc_setpoint_from = _vsc_dc_setpoint_to_openapi(
             vsc, get_dc_setpoint_from(vsc), Val(dc_control_from), base_power, unit,
         ),
@@ -1079,7 +1130,7 @@ function _two_terminal_vsc_line_to_openapi(vsc::TwoTerminalVSCLine, refs::OpenAP
             vsc, get_ac_setpoint_from(vsc), Val(ac_control_from),
         ),
         rated_ac_voltage_from = get_rated_ac_voltage_from(vsc),
-        converter_loss_from = convert_cost_to_openapi(get_converter_loss_from(vsc)),
+        converter_loss_from = _hvdc_loss_to_openapi(get_converter_loss_from(vsc)),
         max_dc_current_from = get_max_dc_current_from(vsc),
         rating_from = _vsc_power_to_openapi(get_rating_from(vsc, SU), base_power, unit),
         reactive_power_limits_from = _vsc_minmax_to_openapi(
@@ -1087,15 +1138,15 @@ function _two_terminal_vsc_line_to_openapi(vsc::TwoTerminalVSCLine, refs::OpenAP
         ),
         power_factor_weighting_fraction_from =
         get_power_factor_weighting_fraction_from(vsc),
-        voltage_units = "NATURAL_UNITS",
-        setpoint_voltage_units = "COMPONENT_BASE",
+        voltage_units = PO.VoltageUnitBasis("NATURAL_UNITS"),
+        setpoint_voltage_units = PO.VoltageUnitBasis("COMPONENT_BASE"),
         voltage_limits_from = _minmax_po(get_voltage_limits_from(vsc)),
         dc_voltage_droop_from = get_dc_voltage_droop_from(vsc),
         reactive_power_to = _vsc_power_to_openapi(
             get_reactive_power_to(vsc, SU), base_power, unit,
         ),
-        dc_control_to = string(dc_control_to),
-        ac_control_to = string(ac_control_to),
+        dc_control_to = PO.VSCDCControlModes(string(dc_control_to)),
+        ac_control_to = PO.VSCACControlModes(string(ac_control_to)),
         dc_setpoint_to = _vsc_dc_setpoint_to_openapi(
             vsc, get_dc_setpoint_to(vsc), Val(dc_control_to), base_power, unit,
         ),
@@ -1103,7 +1154,7 @@ function _two_terminal_vsc_line_to_openapi(vsc::TwoTerminalVSCLine, refs::OpenAP
             vsc, get_ac_setpoint_to(vsc), Val(ac_control_to),
         ),
         rated_ac_voltage_to = get_rated_ac_voltage_to(vsc),
-        converter_loss_to = convert_cost_to_openapi(get_converter_loss_to(vsc)),
+        converter_loss_to = _hvdc_loss_to_openapi(get_converter_loss_to(vsc)),
         max_dc_current_to = get_max_dc_current_to(vsc),
         rating_to = _vsc_power_to_openapi(get_rating_to(vsc, SU), base_power, unit),
         reactive_power_limits_to = _vsc_minmax_to_openapi(
@@ -1123,12 +1174,12 @@ function _two_terminal_vsc_line_to_openapi(vsc::TwoTerminalVSCLine, refs::OpenAP
 end
 
 _vsc_power_to_openapi(value, base_power, ::NaturalUnit) = value * base_power
-_vsc_power_to_openapi(value, _base_power, ::DeviceBaseUnit) = value
+_vsc_power_to_openapi(value, _base_power, ::ComponentBaseUnit) = value
 
 _vsc_minmax_to_openapi(m, base_power, ::NaturalUnit) = _minmax_po_scaled(m, base_power)
-_vsc_minmax_to_openapi(m, _base_power, ::DeviceBaseUnit) = _minmax_po(m)
+_vsc_minmax_to_openapi(m, _base_power, ::ComponentBaseUnit) = _minmax_po(m)
 
-to_openapi(vsc::TwoTerminalVSCLine, refs::OpenAPIRefs, unit::DeviceBaseUnit) =
+to_openapi(vsc::TwoTerminalVSCLine, refs::OpenAPIRefs, unit::ComponentBaseUnit) =
     _two_terminal_vsc_line_to_openapi(vsc, refs, unit)
 
 to_openapi(vsc::TwoTerminalVSCLine, refs::OpenAPIRefs, unit::NaturalUnit) =
@@ -1143,7 +1194,7 @@ to_openapi(vsc::TwoTerminalVSCLine, refs::OpenAPIRefs, unit::NaturalUnit) =
 # `_reservoir_devices` map `nothing` *to* on import — the natural inverse of that default).
 
 function _level_absolute(::Nothing, ::Real)
-    return nothing
+    return IC.ABSENT
 end
 
 function _level_absolute(fraction, max_level::Real)
@@ -1152,12 +1203,12 @@ end
 
 function _hydro_unit_ids(refs::OpenAPIRefs, units::AbstractVector)
     if isempty(units)
-        return nothing
+        return IC.ABSENT
     end
     return Int[component_id(refs, u) for u in units]
 end
 
-function to_openapi(res::HydroReservoir, refs::OpenAPIRefs, ::DeviceBaseUnit)
+function to_openapi(res::HydroReservoir, refs::OpenAPIRefs, ::ComponentBaseUnit)
     limits = get_storage_level_limits(res)
     return PO.HydroReservoir(;
         id = component_id(refs, res),
@@ -1176,56 +1227,62 @@ function to_openapi(res::HydroReservoir, refs::OpenAPIRefs, ::DeviceBaseUnit)
         upstream_turbines = _hydro_unit_ids(refs, get_upstream_turbines(res)),
         downstream_turbines = _hydro_unit_ids(refs, get_downstream_turbines(res)),
         upstream_reservoirs = _hydro_unit_ids(refs, get_upstream_reservoirs(res)),
-        operation_cost = convert_cost_to_openapi(get_operation_cost(res)),
+        operation_cost = PO.HydroReservoirOperationCost(
+            convert_cost_to_openapi(get_operation_cost(res)),
+        ),
         evaporative_loss = get_evaporative_loss(res),
-        level_data_type = string(get_level_data_type(res)),
+        level_data_type = PO.HydroReservoirLevelDataType(string(get_level_data_type(res))),
     )
 end
 
 function to_openapi(res::HydroReservoir, refs::OpenAPIRefs, ::NaturalUnit)
-    return to_openapi(res, refs, DU)
+    return to_openapi(res, refs, CU)
 end
 
 # ── EnergyReservoirStorage ──────────────────────────────────────────────────────
-# `storage_capacity` scales like any other device-base field even though it is an energy
+# `storage_capacity` scales like any other component-base field even though it is an energy
 # quantity (MWh), matching import's own rule for uniform division. `storage_level_limits`,
 # `initial_storage_capacity_level`, `efficiency`, `conversion_factor`, `storage_target`,
 # `self_discharge` are dimensionless and pass through in both methods. `energy_units` is always
 # emitted as "MWH" (the only basis implemented on either side, per import's
 # `_check_energy_units`).
 
-function to_openapi(storage::EnergyReservoirStorage, refs::OpenAPIRefs, ::DeviceBaseUnit)
+function to_openapi(storage::EnergyReservoirStorage, refs::OpenAPIRefs, ::ComponentBaseUnit)
     return PO.EnergyReservoirStorage(;
         id = component_id(refs, storage),
         name = get_name(storage),
         available = get_available(storage),
         bus = component_id(refs, get_bus(storage)),
-        prime_mover_type = string(get_prime_mover_type(storage)),
-        storage_technology_type = string(get_storage_technology_type(
-            storage,
-        )),
-        storage_capacity = get_storage_capacity(storage, DU),
-        energy_units = "MWH",
+        prime_mover_type = PO.PrimeMovers(string(get_prime_mover_type(storage))),
+        storage_technology_type = PO.StorageTech(
+            string(get_storage_technology_type(
+                storage,
+            )),
+        ),
+        storage_capacity = get_storage_capacity(storage, CU),
+        energy_units = PO.EnergyUnitBasis("MWH"),
         storage_level_limits = _minmax_po(get_storage_level_limits(storage)),
         initial_storage_capacity_level = get_initial_storage_capacity_level(storage),
-        rating = get_rating(storage, DU),
-        active_power = get_active_power(storage, DU),
-        input_active_power_limits = _minmax_po(get_input_active_power_limits(storage, DU)),
+        rating = get_rating(storage, CU),
+        active_power = get_active_power(storage, CU),
+        input_active_power_limits = _minmax_po(get_input_active_power_limits(storage, CU)),
         output_active_power_limits = _minmax_po(
-            get_output_active_power_limits(storage, DU),
+            get_output_active_power_limits(storage, CU),
         ),
         efficiency = _inout_po(get_efficiency(storage)),
-        reactive_power = get_reactive_power(storage, DU),
-        reactive_power_limits = _minmax_po_optional(get_reactive_power_limits(storage, DU)),
+        reactive_power = get_reactive_power(storage, CU),
+        reactive_power_limits = _minmax_po_optional(get_reactive_power_limits(storage, CU)),
         base_power = _get_base_power(storage),
-        operation_cost = convert_cost_to_openapi(get_operation_cost(storage)),
+        operation_cost = PO.EnergyReservoirStorageOperationCost(
+            convert_cost_to_openapi(get_operation_cost(storage)),
+        ),
         conversion_factor = get_conversion_factor(storage),
         storage_target = get_storage_target(storage),
         cycle_limits = get_cycle_limits(storage),
-        ramp_limits = _updown_po_optional(get_ramp_limits(storage, DU)),
+        ramp_limits = _updown_po_optional(get_ramp_limits(storage, CU / u"minute")),
         self_discharge = get_self_discharge(storage),
-        standing_loss = get_standing_loss(storage, DU),
-        power_units = _power_units_string(DU),
+        standing_loss = get_standing_loss(storage, CU),
+        power_units = _power_units_string(CU),
     )
 end
 
@@ -1240,32 +1297,39 @@ function to_openapi(
         name = get_name(storage),
         available = get_available(storage),
         bus = component_id(refs, get_bus(storage)),
-        prime_mover_type = string(get_prime_mover_type(storage)),
-        storage_technology_type = string(get_storage_technology_type(
-            storage,
-        )),
-        storage_capacity = get_storage_capacity(storage, DU) * base,
-        energy_units = "MWH",
+        prime_mover_type = PO.PrimeMovers(string(get_prime_mover_type(storage))),
+        storage_technology_type = PO.StorageTech(
+            string(get_storage_technology_type(
+                storage,
+            )),
+        ),
+        storage_capacity = get_storage_capacity(storage, CU) * base,
+        energy_units = PO.EnergyUnitBasis("MWH"),
         storage_level_limits = _minmax_po(get_storage_level_limits(storage)),
         initial_storage_capacity_level = get_initial_storage_capacity_level(storage),
-        rating = get_rating(storage, DU) * base,
-        active_power = get_active_power(storage, DU) * base,
+        rating = get_rating(storage, CU) * base,
+        active_power = get_active_power(storage, CU) * base,
         input_active_power_limits =
-        _minmax_po_scaled(get_input_active_power_limits(storage, DU), base),
+        _minmax_po_scaled(get_input_active_power_limits(storage, CU), base),
         output_active_power_limits =
-        _minmax_po_scaled(get_output_active_power_limits(storage, DU), base),
+        _minmax_po_scaled(get_output_active_power_limits(storage, CU), base),
         efficiency = _inout_po(get_efficiency(storage)),
-        reactive_power = get_reactive_power(storage, DU) * base,
+        reactive_power = get_reactive_power(storage, CU) * base,
         reactive_power_limits =
-        _minmax_po_scaled_optional(get_reactive_power_limits(storage, DU), base),
+        _minmax_po_scaled_optional(get_reactive_power_limits(storage, CU), base),
         base_power = base,
-        operation_cost = convert_cost_to_openapi(get_operation_cost(storage)),
+        operation_cost = PO.EnergyReservoirStorageOperationCost(
+            convert_cost_to_openapi(get_operation_cost(storage)),
+        ),
         conversion_factor = get_conversion_factor(storage),
         storage_target = get_storage_target(storage),
         cycle_limits = get_cycle_limits(storage),
-        ramp_limits = _updown_po_scaled_optional(get_ramp_limits(storage, DU), base),
+        ramp_limits = _updown_po_scaled_optional(
+            get_ramp_limits(storage, CU / u"minute"),
+            base,
+        ),
         self_discharge = get_self_discharge(storage),
-        standing_loss = get_standing_loss(storage, DU) * base,
+        standing_loss = get_standing_loss(storage, CU) * base,
         power_units = _power_units_string(NU),
     )
 end
@@ -1284,7 +1348,7 @@ const RESERVE_DIRECTION_TO_STRING = _invert(RESERVE_DIRECTION)
 function to_openapi(
     reserve::OnlineReserve{T, U},
     refs::OpenAPIRefs,
-    ::DeviceBaseUnit,
+    ::ComponentBaseUnit,
 ) where {T <: ReserveDirection, U}
     return PO.OnlineReserve(;
         id = component_id(refs, reserve),
@@ -1297,7 +1361,7 @@ function to_openapi(
         max_output_fraction = get_max_output_fraction(reserve),
         max_participation_factor = get_max_participation_factor(reserve),
         deployed_fraction = get_deployed_fraction(reserve),
-        reserve_direction = RESERVE_DIRECTION_TO_STRING[T],
+        reserve_direction = PO.ReserveDirection(RESERVE_DIRECTION_TO_STRING[T]),
     )
 end
 
@@ -1306,13 +1370,13 @@ function to_openapi(
     refs::OpenAPIRefs,
     ::NaturalUnit,
 ) where {T <: ReserveDirection, U}
-    return to_openapi(reserve, refs, DU)
+    return to_openapi(reserve, refs, CU)
 end
 
 function to_openapi(
     reserve::OfflineReserve{U},
     refs::OpenAPIRefs,
-    ::DeviceBaseUnit,
+    ::ComponentBaseUnit,
 ) where {U}
     return PO.OfflineReserve(;
         id = component_id(refs, reserve),
@@ -1333,20 +1397,20 @@ function to_openapi(
     refs::OpenAPIRefs,
     ::NaturalUnit,
 ) where {U}
-    return to_openapi(reserve, refs, DU)
+    return to_openapi(reserve, refs, CU)
 end
 
 function to_openapi(
     reserve::GroupReserve{T},
     refs::OpenAPIRefs,
-    ::DeviceBaseUnit,
+    ::ComponentBaseUnit,
 ) where {T <: ReserveDirection}
     return PO.GroupReserve(;
         id = component_id(refs, reserve),
         name = get_name(reserve),
         available = get_available(reserve),
         requirement = get_requirement(reserve, SU) * get_base_power(refs),
-        reserve_direction = RESERVE_DIRECTION_TO_STRING[T],
+        reserve_direction = PO.ReserveDirection(RESERVE_DIRECTION_TO_STRING[T]),
     )
 end
 
@@ -1355,5 +1419,5 @@ function to_openapi(
     refs::OpenAPIRefs,
     ::NaturalUnit,
 ) where {T <: ReserveDirection}
-    return to_openapi(reserve, refs, DU)
+    return to_openapi(reserve, refs, CU)
 end

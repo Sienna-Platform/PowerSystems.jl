@@ -4,7 +4,11 @@ CollapsedDocStrings = true
 
 # Internal API
 
+```@docs
+PowerSystems.StructGeneration
+```
+
 ```@autodocs
-Modules = [PowerSystems]
+Modules = [PowerSystems, PowerSystems.StructGeneration]
 Public = false
 ```

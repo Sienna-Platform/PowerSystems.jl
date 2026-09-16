@@ -26,9 +26,9 @@ end
 
 struct NonexistentComponent <: StaticInjection end
 
-"""Build a minimal `System` + `ThermalStandard` with the requested device base
+"""Build a minimal `System` + `ThermalStandard` with the requested component base
 so unit-conversion tests don't depend on PSB-built fixtures."""
-function _sys_with_thermal(; system_base = 100.0, device_base = 250.0)
+function _sys_with_thermal(; system_base = 100.0, component_base = 250.0)
     sys = System(system_base)
     bus = ACBus(;
         number = 1, name = "b1", available = true,
@@ -37,13 +37,13 @@ function _sys_with_thermal(; system_base = 100.0, device_base = 250.0)
     )
     add_component!(sys, bus)
     gen = ThermalStandard(;
-        name = "g1", available = true, status = true, bus = bus,
+        name = "g1", available = true, status = OperationalStates.ONLINE, bus = bus,
         active_power = 0.5, reactive_power = 0.1, rating = 1.0,
         active_power_limits = (min = 0.0, max = 1.0),
         reactive_power_limits = (min = -1.0, max = 1.0),
         ramp_limits = nothing,
         operation_cost = ThermalGenerationCost(nothing),
-        base_power = device_base,
+        base_power = component_base,
     )
     add_component!(sys, gen)
     return sys, gen
@@ -146,17 +146,17 @@ function test_accessors(component)
         end
 
         # Unit-aware getters are tagged via `display_units_arg`. For unattached
-        # test components, call with `DU` (device base) so the SU conversion
+        # test components, call with `CU` (component base) so the SU conversion
         # path — which needs system attachment — is skipped. Getters tagged `NU`
         # (e.g. `get_base_power`, which is only meaningful in natural units and
-        # rejects `DU`/`SU`) are called with their own `NU` tag instead.
+        # rejects `CU`/`SU`) are called with their own `NU` tag instead.
         units_arg = IS.display_units_arg(func, ps_type)
         val = if ismissing(units_arg)
             func(component)
         elseif units_arg == NU
             func(component, NU)
         else
-            func(component, DU)
+            func(component, CU)
         end
         # Getters now wrap values (e.g. `0.5 SU` instead of raw `0.5`), so
         # compare the unwrapped value's type to `field_type`.
@@ -200,13 +200,13 @@ Round-trip `sys` through `to_file`/`from_file` and return the rebuilt system.
 The serde itself is tested once, in `test_openapi_file_io.jl`. Use this only where a test needs
 a restored system to check that some *component* survives conversion. A document carries
 component ids rather than UUIDs and does not carry component `ext`, so neither survives.
-`:archive` only ever writes on `DU`, same as `to_file` itself — passing any other `units` with
+`:archive` only ever writes on `CU`, same as `to_file` itself — passing any other `units` with
 it throws.
 """
 function roundtrip_system(
     sys::System;
     form::Symbol = :directory,
-    units::IS.AbstractUnitSystem = PSY.DU,
+    units::IS.AbstractUnitSystem = PSY.CU,
     kwargs...,
 )
     dir = mktempdir()
@@ -228,9 +228,10 @@ function roundtrip_system(
 end
 
 """Round-trip a PO/PC struct through JSON, the same shape `JSON.parsefile` would hand to
-`PowerCoreOpenAPIModels.document_from_json` — avoids hand-writing nested `oneOf` cost-curve
-JSON."""
-openapi_raw(po) = JSON.parse(JSON.json(po); dicttype = Dict{String, Any})
+`PowerCoreOpenAPIModels.document_from_json`. Uses `_encode`, not generic `JSON.json`, which
+would serialize an enum wrapper's raw fields (`{"value": "SLACK"}`) instead of the wire
+shape (`"SLACK"`)."""
+openapi_raw(po) = JSON.parse(JSON.json(PSY.PC._encode(po)); dicttype = Dict{String, Any})
 
 """
 Parse a JSON-shaped test document into the `SystemDocument` `from_openapi` takes.
@@ -263,20 +264,23 @@ function make_openapi_test_doc(;
 )
     area_po = PSY.PO.Area(;
         id = 1, name = "area1", peak_active_power = 100.0, peak_reactive_power = 20.0,
-        load_response = 0.0, base_power = 100.0, power_units = "NATURAL_UNITS",
+        load_response = 0.0, base_power = 100.0,
+        power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
     )
     lz_po = PSY.PO.LoadZone(;
         id = 2, name = "lz1", peak_active_power = 100.0, peak_reactive_power = 20.0,
-        base_power = 100.0, power_units = "NATURAL_UNITS",
+        base_power = 100.0, power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
     )
     bus1_po = PSY.PO.ACBus(;
-        id = 3, number = 1, name = "bus1", available = true, bustype = bus1_bustype,
+        id = 3, number = 1, name = "bus1", available = true,
+        bustype = PSY.PC.ACBusType(bus1_bustype),
         angle = 0.0, magnitude = 1.0,
         voltage_limits = PSY.IC.MinMax(; min = 0.9, max = 1.1),
         base_voltage = 138.0, area = 1, load_zone = 2,
     )
     bus2_po = PSY.PO.ACBus(;
-        id = 4, number = 2, name = "bus2", available = true, bustype = "PQ",
+        id = 4, number = 2, name = "bus2", available = true,
+        bustype = PSY.PC.ACBusType("PQ"),
         angle = 0.0, magnitude = 1.0,
         voltage_limits = PSY.IC.MinMax(; min = 0.9, max = 1.1),
         base_voltage = 138.0, area = 1, load_zone = 2,
@@ -284,10 +288,12 @@ function make_openapi_test_doc(;
     arc_po = PSY.PO.Arc(; id = 5, from_id = 3, to_id = 4)
 
     cost_po = PSY.PC.ThermalGenerationCost(;
-        fixed = 100.0, shut_down = 50.0, start_up = 200.0,
+        cost_type = "THERMAL",
+        fixed = 100.0, shut_down = 50.0,
+        start_up = PSY.PC.ThermalGenerationCostStartUp(200.0),
         variable_operation_cost = PSY.PC.ProductionVariableCostCurve(
             PSY.PC.CostCurve(;
-                power_units = "NATURAL_UNITS",
+                power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
                 value_curve = PSY.PC.ValueCurve(
                     PSY.PC.InputOutputCurve(;
                         function_data = PSY.PC.InputOutputCurveFunctionData(
@@ -297,31 +303,43 @@ function make_openapi_test_doc(;
                         ),
                     ),
                 ),
+                vom_cost = PSY.PC.InputOutputCurve(;
+                    function_data = PSY.PC.InputOutputCurveFunctionData(
+                        PSY.IC.LinearFunctionData(;
+                            proportional_term = 0.0, constant_term = 0.0,
+                        ),
+                    ),
+                ),
             ),
         ),
     )
     thermal_po = PSY.PO.ThermalStandard(;
-        id = 6, name = "gen1", available = true, status = true, bus = 4,
+        id = 6, name = "gen1", available = true,
+        status = PSY.PO.OperationalStates("ONLINE"), bus = 4,
         active_power = 50.0, reactive_power = 10.0, rating = 100.0,
         active_power_limits = PSY.IC.MinMax(; min = 10.0, max = 100.0),
         reactive_power_limits = PSY.IC.MinMax(; min = -50.0, max = 50.0),
         ramp_limits = PSY.IC.UpDown(; up = 20.0, down = 20.0),
-        operation_cost = cost_po, base_power = 100.0, power_units = "NATURAL_UNITS",
+        operation_cost = PSY.PO.ThermalStandardOperationCost(cost_po),
+        base_power = 100.0,
+        power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
         time_limits = PSY.IC.UpDown(; up = 2.0, down = 2.0),
-        must_run = false, prime_mover_type = "OT", fuel = "NATURAL_GAS",
+        prime_mover_type = PSY.PC.PrimeMovers("OT"),
+        fuel = PSY.PC.ThermalFuels("NATURAL_GAS"),
         time_at_status = 100.0,
     )
     load_po = PSY.PO.PowerLoad(;
         id = 7, name = "load1", available = true, bus = 4,
         active_power = 30.0, reactive_power = 5.0, base_power = 100.0,
-        power_units = "NATURAL_UNITS",
-        max_active_power = 50.0, max_reactive_power = 10.0, conformity = "CONFORMING",
+        power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
+        max_active_power = 50.0, max_reactive_power = 10.0,
+        conformity = PSY.PO.LoadConformity("CONFORMING"),
     )
     reserve_po = PSY.PO.OnlineReserve(;
         id = 8, name = "spin_up", available = true, time_frame = 10.0,
-        requirement = 100.0, variable = nothing, sustained_time = 60.0,
+        requirement = 100.0, variable = PSY.IC.ABSENT, sustained_time = 60.0,
         max_output_fraction = 1.0, max_participation_factor = 1.0,
-        deployed_fraction = 1.0, reserve_direction = "UP",
+        deployed_fraction = 1.0, reserve_direction = PSY.PO.ReserveDirection("UP"),
     )
 
     components = Dict{String, Any}(
@@ -336,8 +354,9 @@ function make_openapi_test_doc(;
     if include_fixed_admittance
         shunt_po = PSY.PO.FixedAdmittance(;
             id = 9, name = "shunt1", available = true, bus = 4,
-            admittance_units = "COMPONENT_MVAR",
-            Y = PSY.IC.ComplexNumber(; real = 0.0, imag = -50.0),
+            admittance_units = PSY.PO.ShuntAdmittanceUnitBasis("COMPONENT_MVAR"),
+            y = PSY.IC.ComplexNumber(; real = 0.0, imag = -50.0),
+            base_power = 100.0,
         )
         components["FixedAdmittance"] = [openapi_raw(shunt_po)]
     end
@@ -456,4 +475,38 @@ function _market_hub_fixture()
     hub = TradingHub(; name = "western_hub", buses = [b1, b2])
     add_component!(sys, hub)
     return (sys, b1, b2, hub)
+end
+
+# Time-series cost-resolution helpers shared by test_cost_functions.jl and
+# test_market_components.jl. They live here so either file runs on its own; a helper
+# defined in one test file and used by another only works when the files run in order.
+# Each timestamp gets a *distinct* PiecewiseStepData so that resolving at a known
+# `start_time` produces an unambiguous expected slice.
+const _TS_RESOLVE_INITIAL_TIME = Dates.DateTime("2020-01-01")
+const _TS_RESOLVE_RESOLUTION = Dates.Hour(1)
+# Match RTS_GMLC's 24h forecast horizon. First step is distinct so the resolution
+# at `_TS_RESOLVE_INITIAL_TIME` is unambiguously identifiable.
+const _TS_RESOLVE_PWL_DATA = vcat(
+    [PiecewiseStepData([1.0, 3.0, 5.0], [2.0, 4.0])],
+    fill(PiecewiseStepData([2.0, 4.0, 6.0], [3.0, 5.0]), 23),
+)
+
+function _attach_pwl_forecast(sys, component, name)
+    fcst = IS.Deterministic(;
+        data = SortedDict(_TS_RESOLVE_INITIAL_TIME => _TS_RESOLVE_PWL_DATA),
+        name = name,
+        resolution = _TS_RESOLVE_RESOLUTION,
+    )
+    return add_time_series!(sys, component, fcst)
+end
+
+function _attach_linear_forecast(sys, component, name)
+    fcst = IS.Deterministic(;
+        data = SortedDict(
+            _TS_RESOLVE_INITIAL_TIME => fill(IS.LinearFunctionData(1.0, 0.0), 24),
+        ),
+        name = name,
+        resolution = _TS_RESOLVE_RESOLUTION,
+    )
+    return add_time_series!(sys, component, fcst)
 end

@@ -61,3 +61,14 @@ end
         @test_throws ArgumentError convert(enum, "not_a_member_of_$(enum)")
     end
 end
+
+@testset "OperationalStates and CommitmentModes reject Bool" begin
+    @test_throws ArgumentError PSY.OperationalStates(true)
+    @test_throws ArgumentError PSY.OperationalStates(false)
+    @test_throws ArgumentError convert(PSY.OperationalStates, true)
+    @test_throws ArgumentError convert(PSY.OperationalStates, false)
+    @test_throws ArgumentError PSY.CommitmentModes(true)
+    @test_throws ArgumentError PSY.CommitmentModes(false)
+    @test_throws ArgumentError convert(PSY.CommitmentModes, true)
+    @test_throws ArgumentError convert(PSY.CommitmentModes, false)
+end

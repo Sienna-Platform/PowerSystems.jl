@@ -106,33 +106,33 @@ get_name(value::InterruptiblePowerLoad) = value.name
 get_available(value::InterruptiblePowerLoad) = value.available
 """Get [`InterruptiblePowerLoad`](@ref) `bus`."""
 get_bus(value::InterruptiblePowerLoad) = value.bus
-"""Get [`InterruptiblePowerLoad`](@ref) `active_power` as a bare number in the requested `units` (e.g. `SU`, `DU`; domain-provided units such as `MW` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_active_power_unitful`](@ref)."""
+"""Get [`InterruptiblePowerLoad`](@ref) `active_power` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_active_power_unitful`](@ref)."""
 get_active_power(value::InterruptiblePowerLoad, units) = InfrastructureSystems._strip_units(get_value(value, Val(:active_power), Val(:mw), units))
-"""Get [`InterruptiblePowerLoad`](@ref) `active_power` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `MW`). For a bare number see [`get_active_power`](@ref)."""
+"""Get [`InterruptiblePowerLoad`](@ref) `active_power` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_active_power`](@ref)."""
 get_active_power_unitful(value::InterruptiblePowerLoad, units) = get_value(value, Val(:active_power), Val(:mw), units)
 get_active_power(value::InterruptiblePowerLoad) = _units_arg_required(get_active_power, value, :active_power, Val(:mw))
 get_active_power_unitful(value::InterruptiblePowerLoad) = _units_arg_required(get_active_power_unitful, value, :active_power, Val(:mw))
 InfrastructureSystems.display_units_arg(::typeof(get_active_power), ::Type{InterruptiblePowerLoad}) = InfrastructureSystems.SU
 InfrastructureSystems.display_units_arg(::typeof(get_active_power_unitful), ::Type{InterruptiblePowerLoad}) = InfrastructureSystems.SU
-"""Get [`InterruptiblePowerLoad`](@ref) `reactive_power` as a bare number in the requested `units` (e.g. `SU`, `DU`; domain-provided units such as `MW` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_reactive_power_unitful`](@ref)."""
+"""Get [`InterruptiblePowerLoad`](@ref) `reactive_power` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_reactive_power_unitful`](@ref)."""
 get_reactive_power(value::InterruptiblePowerLoad, units) = InfrastructureSystems._strip_units(get_value(value, Val(:reactive_power), Val(:mvar), units))
-"""Get [`InterruptiblePowerLoad`](@ref) `reactive_power` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `MW`). For a bare number see [`get_reactive_power`](@ref)."""
+"""Get [`InterruptiblePowerLoad`](@ref) `reactive_power` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_reactive_power`](@ref)."""
 get_reactive_power_unitful(value::InterruptiblePowerLoad, units) = get_value(value, Val(:reactive_power), Val(:mvar), units)
 get_reactive_power(value::InterruptiblePowerLoad) = _units_arg_required(get_reactive_power, value, :reactive_power, Val(:mvar))
 get_reactive_power_unitful(value::InterruptiblePowerLoad) = _units_arg_required(get_reactive_power_unitful, value, :reactive_power, Val(:mvar))
 InfrastructureSystems.display_units_arg(::typeof(get_reactive_power), ::Type{InterruptiblePowerLoad}) = InfrastructureSystems.SU
 InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_unitful), ::Type{InterruptiblePowerLoad}) = InfrastructureSystems.SU
-"""Get [`InterruptiblePowerLoad`](@ref) `max_active_power` as a bare number in the requested `units` (e.g. `SU`, `DU`; domain-provided units such as `MW` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_max_active_power_unitful`](@ref)."""
+"""Get [`InterruptiblePowerLoad`](@ref) `max_active_power` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_max_active_power_unitful`](@ref)."""
 get_max_active_power(value::InterruptiblePowerLoad, units) = InfrastructureSystems._strip_units(get_value(value, Val(:max_active_power), Val(:mw), units))
-"""Get [`InterruptiblePowerLoad`](@ref) `max_active_power` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `MW`). For a bare number see [`get_max_active_power`](@ref)."""
+"""Get [`InterruptiblePowerLoad`](@ref) `max_active_power` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_max_active_power`](@ref)."""
 get_max_active_power_unitful(value::InterruptiblePowerLoad, units) = get_value(value, Val(:max_active_power), Val(:mw), units)
 get_max_active_power(value::InterruptiblePowerLoad) = _units_arg_required(get_max_active_power, value, :max_active_power, Val(:mw))
 get_max_active_power_unitful(value::InterruptiblePowerLoad) = _units_arg_required(get_max_active_power_unitful, value, :max_active_power, Val(:mw))
 InfrastructureSystems.display_units_arg(::typeof(get_max_active_power), ::Type{InterruptiblePowerLoad}) = InfrastructureSystems.SU
 InfrastructureSystems.display_units_arg(::typeof(get_max_active_power_unitful), ::Type{InterruptiblePowerLoad}) = InfrastructureSystems.SU
-"""Get [`InterruptiblePowerLoad`](@ref) `max_reactive_power` as a bare number in the requested `units` (e.g. `SU`, `DU`; domain-provided units such as `MW` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_max_reactive_power_unitful`](@ref)."""
+"""Get [`InterruptiblePowerLoad`](@ref) `max_reactive_power` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_max_reactive_power_unitful`](@ref)."""
 get_max_reactive_power(value::InterruptiblePowerLoad, units) = InfrastructureSystems._strip_units(get_value(value, Val(:max_reactive_power), Val(:mvar), units))
-"""Get [`InterruptiblePowerLoad`](@ref) `max_reactive_power` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `MW`). For a bare number see [`get_max_reactive_power`](@ref)."""
+"""Get [`InterruptiblePowerLoad`](@ref) `max_reactive_power` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_max_reactive_power`](@ref)."""
 get_max_reactive_power_unitful(value::InterruptiblePowerLoad, units) = get_value(value, Val(:max_reactive_power), Val(:mvar), units)
 get_max_reactive_power(value::InterruptiblePowerLoad) = _units_arg_required(get_max_reactive_power, value, :max_reactive_power, Val(:mvar))
 get_max_reactive_power_unitful(value::InterruptiblePowerLoad) = _units_arg_required(get_max_reactive_power_unitful, value, :max_reactive_power, Val(:mvar))
@@ -179,7 +179,7 @@ set_services!(value::InterruptiblePowerLoad, val) = value.services = val
 set_ext!(value::InterruptiblePowerLoad, val) = value.ext = val
 
 
-function from_openapi(po::PO.InterruptiblePowerLoad, refs::OpenAPIRefs, ::DeviceBaseUnit)
+function from_openapi(po::PO.InterruptiblePowerLoad, refs::OpenAPIRefs, ::ComponentBaseUnit)
     return InterruptiblePowerLoad(;
         name = po.name,
         available = po.available,
@@ -189,8 +189,8 @@ function from_openapi(po::PO.InterruptiblePowerLoad, refs::OpenAPIRefs, ::Device
         max_active_power = po.max_active_power,
         max_reactive_power = po.max_reactive_power,
         base_power = po.base_power,
-        operation_cost = convert_cost(po.operation_cost)::OperationalCost,
-        conformity = LoadConformity(po.conformity),
+        operation_cost = convert_cost(po.operation_cost.value)::OperationalCost,
+        conformity = _or_default_enum(po.conformity, LoadConformity.UNDEFINED),
     )
 end
 
@@ -204,8 +204,8 @@ function from_openapi(po::PO.InterruptiblePowerLoad, refs::OpenAPIRefs, ::Natura
         max_active_power = po.max_active_power / po.base_power,
         max_reactive_power = po.max_reactive_power / po.base_power,
         base_power = po.base_power,
-        operation_cost = convert_cost(po.operation_cost)::OperationalCost,
-        conformity = LoadConformity(po.conformity),
+        operation_cost = convert_cost(po.operation_cost.value)::OperationalCost,
+        conformity = _or_default_enum(po.conformity, LoadConformity.UNDEFINED),
     )
 end
 
@@ -213,20 +213,20 @@ function from_openapi(po::PO.InterruptiblePowerLoad, refs::OpenAPIRefs)
     return from_openapi(po, refs, _power_units_marker("InterruptiblePowerLoad", po.id, po.power_units))
 end
 
-function to_openapi(value::InterruptiblePowerLoad, refs::OpenAPIRefs, ::DeviceBaseUnit)
+function to_openapi(value::InterruptiblePowerLoad, refs::OpenAPIRefs, ::ComponentBaseUnit)
     return PO.InterruptiblePowerLoad(;
         id = component_id(refs, value),
         name = get_name(value),
         available = get_available(value),
         bus = component_id(refs, get_bus(value)),
-        active_power = get_active_power(value, DU),
-        reactive_power = get_reactive_power(value, DU),
-        max_active_power = get_max_active_power(value, DU),
-        max_reactive_power = get_max_reactive_power(value, DU),
+        active_power = get_active_power(value, CU),
+        reactive_power = get_reactive_power(value, CU),
+        max_active_power = get_max_active_power(value, CU),
+        max_reactive_power = get_max_reactive_power(value, CU),
         base_power = _get_base_power(value),
-        operation_cost = convert_cost_to_openapi(get_operation_cost(value)),
-        conformity = string(get_conformity(value)),
-        power_units = _power_units_string(DU),
+        operation_cost = PO.InterruptiblePowerLoadOperationCost(convert_cost_to_openapi(get_operation_cost(value))),
+        conformity = PO.LoadConformity(string(get_conformity(value))),
+        power_units = _power_units_string(CU),
     )
 end
 
@@ -236,13 +236,13 @@ function to_openapi(value::InterruptiblePowerLoad, refs::OpenAPIRefs, ::NaturalU
         name = get_name(value),
         available = get_available(value),
         bus = component_id(refs, get_bus(value)),
-        active_power = get_active_power(value, DU) * _get_base_power(value),
-        reactive_power = get_reactive_power(value, DU) * _get_base_power(value),
-        max_active_power = get_max_active_power(value, DU) * _get_base_power(value),
-        max_reactive_power = get_max_reactive_power(value, DU) * _get_base_power(value),
+        active_power = get_active_power(value, CU) * _get_base_power(value),
+        reactive_power = get_reactive_power(value, CU) * _get_base_power(value),
+        max_active_power = get_max_active_power(value, CU) * _get_base_power(value),
+        max_reactive_power = get_max_reactive_power(value, CU) * _get_base_power(value),
         base_power = _get_base_power(value),
-        operation_cost = convert_cost_to_openapi(get_operation_cost(value)),
-        conformity = string(get_conformity(value)),
+        operation_cost = PO.InterruptiblePowerLoadOperationCost(convert_cost_to_openapi(get_operation_cost(value))),
+        conformity = PO.LoadConformity(string(get_conformity(value))),
         power_units = _power_units_string(NU),
     )
 end

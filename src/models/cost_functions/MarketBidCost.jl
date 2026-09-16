@@ -2,9 +2,9 @@
 $(TYPEDEF)
 $(TYPEDFIELDS)
 
-    MarketBidCost(minimum_energy_offer, start_up, shut_down, incremental_offer_curves, decremental_offer_curves, ancillary_service_offers, incremental_slope, decremental_slope, curve_style)
-    MarketBidCost(; minimum_energy_offer, start_up, shut_down, incremental_offer_curves, decremental_offer_curves, ancillary_service_offers, incremental_slope, decremental_slope, curve_style)
-    MarketBidCost(minimum_energy_offer, start_up::Real, shut_down, incremental_offer_curves, decremental_offer_curves, ancillary_service_offers, incremental_slope, decremental_slope, curve_style)
+    MarketBidCost(minimum_energy_offer, start_up, shut_down, incremental_offer_curves, decremental_offer_curves, ancillary_service_offers, incremental_slope, decremental_slope, curve_style, curve_multistep)
+    MarketBidCost(; minimum_energy_offer, start_up, shut_down, incremental_offer_curves, decremental_offer_curves, ancillary_service_offers, incremental_slope, decremental_slope, curve_style, curve_multistep)
+    MarketBidCost(minimum_energy_offer, start_up::Real, shut_down, incremental_offer_curves, decremental_offer_curves, ancillary_service_offers, incremental_slope, decremental_slope, curve_style, curve_multistep)
 
 An operating cost for static (non-time-varying) market bids of energy and ancillary
 services. For time-varying bids, use [`MarketBidTimeSeriesCost`](@ref).
@@ -26,8 +26,10 @@ mutable struct MarketBidCost{U <: IS.AbstractUnitSystem} <: OfferCurveCost
     incremental_slope::Bool
     "Linear-interpolation flag for the corresponding offer curve; false (default) is the step interpretation. Mutually exclusive with block groups on the same curve."
     decremental_slope::Bool
-    "Curve-clearing style for the bid ([`CurveStyles`](@ref)); CURVE (default) is ordinary divisible price-setting. A non-CURVE value is mutually exclusive with linear interpolation (`incremental_slope`/`decremental_slope`) on either offer curve."
+    "Curve-clearing style for the bid ([`CurveStyles`](@ref)); VARIABLE (default) is a continuous curve with one or more segments, FIXED an all-or-nothing block with a single segment. FIXED is mutually exclusive with linear interpolation (`incremental_slope`/`decremental_slope`), and the constructor rejects a FIXED bid whose offer curves have more than one segment."
     curve_style::CurveStyles
+    "Multi-step block indicator for the bid ([`CurveMultiStep`](@ref)); SINGLE_STEP (default) clears each step independently, MULTI_STEP must be awarded as one block across every step the bid covers. Independent of `curve_style`."
+    curve_multistep::CurveMultiStep
 end
 
 const ZERO_OFFER_CURVE = CostCurve(PiecewiseIncrementalCurve(0.0, [0.0, 0.0], [0.0]))
@@ -41,7 +43,8 @@ function MarketBidCost(;
     ancillary_service_offers = Vector{Service}(),
     incremental_slope = false,
     decremental_slope = false,
-    curve_style = CurveStyles.CURVE,
+    curve_style = CurveStyles.VARIABLE,
+    curve_multistep = CurveMultiStep.SINGLE_STEP,
 )
     U_inc = typeof(get_power_units(incremental_offer_curves))
     U_dec = typeof(get_power_units(decremental_offer_curves))
@@ -51,11 +54,17 @@ function MarketBidCost(;
         ),
     )
     check_curve_style_exclusivity(curve_style, incremental_slope, decremental_slope)
+    check_fixed_single_segment(
+        curve_style, incremental_offer_curves, "incremental_offer_curves",
+    )
+    check_fixed_single_segment(
+        curve_style, decremental_offer_curves, "decremental_offer_curves",
+    )
     return MarketBidCost{U_inc}(
         minimum_energy_offer, start_up, shut_down,
         incremental_offer_curves, decremental_offer_curves,
         ancillary_service_offers,
-        incremental_slope, decremental_slope, curve_style,
+        incremental_slope, decremental_slope, curve_style, curve_multistep,
     )
 end
 
@@ -79,7 +88,8 @@ function MarketBidCost(
     ancillary_service_offers = Vector{Service}(),
     incremental_slope = false,
     decremental_slope = false,
-    curve_style = CurveStyles.CURVE,
+    curve_style = CurveStyles.VARIABLE,
+    curve_multistep = CurveMultiStep.SINGLE_STEP,
 )
     start_up_multi = single_start_up_to_stages(start_up)
     return MarketBidCost(;
@@ -92,6 +102,7 @@ function MarketBidCost(
         incremental_slope = incremental_slope,
         decremental_slope = decremental_slope,
         curve_style = curve_style,
+        curve_multistep = curve_multistep,
     )
 end
 
@@ -113,6 +124,8 @@ get_incremental_slope(value::MarketBidCost) = value.incremental_slope
 get_decremental_slope(value::MarketBidCost) = value.decremental_slope
 """Get [`MarketBidCost`](@ref) `curve_style`."""
 get_curve_style(value::MarketBidCost) = value.curve_style
+"""Get [`MarketBidCost`](@ref) `curve_multistep`."""
+get_curve_multistep(value::MarketBidCost) = value.curve_multistep
 
 """Set [`MarketBidCost`](@ref) `minimum_energy_offer`."""
 set_minimum_energy_offer!(value::MarketBidCost, val) = value.minimum_energy_offer = val
@@ -135,6 +148,8 @@ set_incremental_slope!(value::MarketBidCost, val) = value.incremental_slope = va
 set_decremental_slope!(value::MarketBidCost, val) = value.decremental_slope = val
 """Set [`MarketBidCost`](@ref) `curve_style`."""
 set_curve_style!(value::MarketBidCost, val) = value.curve_style = val
+"""Set [`MarketBidCost`](@ref) `curve_multistep`."""
+set_curve_multistep!(value::MarketBidCost, val) = value.curve_multistep = val
 
 """Auxiliary Method for setting up start up that are not multi-start"""
 function set_start_up!(value::MarketBidCost, val::Real)

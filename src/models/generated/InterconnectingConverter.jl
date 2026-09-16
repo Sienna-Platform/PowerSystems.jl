@@ -17,7 +17,7 @@ This file is auto-generated. Do not edit.
         reactive_power_limits::Union{Nothing, MinMax}
         dc_current::Float64
         max_dc_current::Float64
-        loss_function::Union{LinearCurve, QuadraticCurve}
+        loss_function::Union{AnyLossCurve{LinearCurve}, AnyLossCurve{QuadraticCurve}}
         dc_control::VSCDCControlModes
         ac_control::VSCACControlModes
         dc_setpoint::Float64
@@ -47,7 +47,7 @@ Interconnecting Power Converter (IPC) for transforming power from an ACBus to a 
 - `reactive_power_limits::Union{Nothing, MinMax}`: (default: `nothing`) Minimum and maximum reactive power limits. Set to `Nothing` if not applicable
 - `dc_current::Float64`: (default: `0.0`) DC current on the converter, in per unit power-equivalent on the converter `base_power` (I is approximately P at 1.0 pu DC voltage)
 - `max_dc_current::Float64`: (default: `1e8`) Maximum stable DC current limit, in per unit power-equivalent on the converter `base_power` (I is approximately P at 1.0 pu DC voltage)
-- `loss_function::Union{LinearCurve, QuadraticCurve}`: (default: `LinearCurve(0.0)`) Linear or quadratic loss function with respect to the converter current
+- `loss_function::Union{AnyLossCurve{LinearCurve}, AnyLossCurve{QuadraticCurve}}`: (default: `LossCurve(LinearCurve(0.0), NaturalUnit())`) Linear or quadratic loss function with respect to the converter current
 - `dc_control::VSCDCControlModes`: (default: `VSCDCControlModes.DC_VOLTAGE`) DC-side control mode of the converter; see [`VSCDCControlModes`](@ref).
 - `ac_control::VSCACControlModes`: (default: `VSCACControlModes.AC_REACTIVE_POWER`) AC-side control mode of the converter; see [`VSCACControlModes`](@ref).
 - `dc_setpoint::Float64`: (default: `0.0`) DC-voltage target (when dc_voltage_control is true) or active-power order (when false), in per unit.
@@ -86,7 +86,7 @@ mutable struct InterconnectingConverter <: StaticInjection
     "Maximum stable DC current limit, in per unit power-equivalent on the converter `base_power` (I is approximately P at 1.0 pu DC voltage)"
     max_dc_current::Float64
     "Linear or quadratic loss function with respect to the converter current"
-    loss_function::Union{LinearCurve, QuadraticCurve}
+    loss_function::Union{AnyLossCurve{LinearCurve}, AnyLossCurve{QuadraticCurve}}
     "DC-side control mode of the converter; see [`VSCDCControlModes`](@ref)."
     dc_control::VSCDCControlModes
     "AC-side control mode of the converter; see [`VSCACControlModes`](@ref)."
@@ -115,11 +115,11 @@ mutable struct InterconnectingConverter <: StaticInjection
     internal::InfrastructureSystemsInternal
 end
 
-function InterconnectingConverter(name, available, bus, dc_bus, active_power, rating, active_power_limits, base_power, reactive_power_limits=nothing, dc_current=0.0, max_dc_current=1e8, loss_function=LinearCurve(0.0), dc_control=VSCDCControlModes.DC_VOLTAGE, ac_control=VSCACControlModes.AC_REACTIVE_POWER, dc_setpoint=0.0, ac_setpoint=1.0, dc_voltage_droop=0.0, remote_bus_control=nothing, rmpct=100.0, power_factor_weighting_fraction=1.0, voltage_limits=(min=0.0, max=999.9), services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), )
+function InterconnectingConverter(name, available, bus, dc_bus, active_power, rating, active_power_limits, base_power, reactive_power_limits=nothing, dc_current=0.0, max_dc_current=1e8, loss_function=LossCurve(LinearCurve(0.0), NaturalUnit()), dc_control=VSCDCControlModes.DC_VOLTAGE, ac_control=VSCACControlModes.AC_REACTIVE_POWER, dc_setpoint=0.0, ac_setpoint=1.0, dc_voltage_droop=0.0, remote_bus_control=nothing, rmpct=100.0, power_factor_weighting_fraction=1.0, voltage_limits=(min=0.0, max=999.9), services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), )
     InterconnectingConverter(name, available, bus, dc_bus, active_power, rating, active_power_limits, base_power, reactive_power_limits, dc_current, max_dc_current, loss_function, dc_control, ac_control, dc_setpoint, ac_setpoint, dc_voltage_droop, remote_bus_control, rmpct, power_factor_weighting_fraction, voltage_limits, services, dynamic_injector, ext, InfrastructureSystemsInternal(), )
 end
 
-function InterconnectingConverter(; name, available, bus, dc_bus, active_power, rating, active_power_limits, base_power, reactive_power_limits=nothing, dc_current=0.0, max_dc_current=1e8, loss_function=LinearCurve(0.0), dc_control=VSCDCControlModes.DC_VOLTAGE, ac_control=VSCACControlModes.AC_REACTIVE_POWER, dc_setpoint=0.0, ac_setpoint=1.0, dc_voltage_droop=0.0, remote_bus_control=nothing, rmpct=100.0, power_factor_weighting_fraction=1.0, voltage_limits=(min=0.0, max=999.9), services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), )
+function InterconnectingConverter(; name, available, bus, dc_bus, active_power, rating, active_power_limits, base_power, reactive_power_limits=nothing, dc_current=0.0, max_dc_current=1e8, loss_function=LossCurve(LinearCurve(0.0), NaturalUnit()), dc_control=VSCDCControlModes.DC_VOLTAGE, ac_control=VSCACControlModes.AC_REACTIVE_POWER, dc_setpoint=0.0, ac_setpoint=1.0, dc_voltage_droop=0.0, remote_bus_control=nothing, rmpct=100.0, power_factor_weighting_fraction=1.0, voltage_limits=(min=0.0, max=999.9), services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), )
     InterconnectingConverter(name, available, bus, dc_bus, active_power, rating, active_power_limits, base_power, reactive_power_limits, dc_current, max_dc_current, loss_function, dc_control, ac_control, dc_setpoint, ac_setpoint, dc_voltage_droop, remote_bus_control, rmpct, power_factor_weighting_fraction, voltage_limits, services, dynamic_injector, ext, internal, )
 end
 
@@ -137,7 +137,7 @@ function InterconnectingConverter(::Nothing)
         reactive_power_limits=nothing,
         dc_current=0.0,
         max_dc_current=0.0,
-        loss_function=LinearCurve(0.0),
+        loss_function=LossCurve(LinearCurve(0.0), NaturalUnit()),
         dc_control=VSCDCControlModes.DC_VOLTAGE,
         ac_control=VSCACControlModes.AC_REACTIVE_POWER,
         dc_setpoint=0.0,
@@ -161,25 +161,25 @@ get_available(value::InterconnectingConverter) = value.available
 get_bus(value::InterconnectingConverter) = value.bus
 """Get [`InterconnectingConverter`](@ref) `dc_bus`."""
 get_dc_bus(value::InterconnectingConverter) = value.dc_bus
-"""Get [`InterconnectingConverter`](@ref) `active_power` as a bare number in the requested `units` (e.g. `SU`, `DU`; domain-provided units such as `MW` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_active_power_unitful`](@ref)."""
+"""Get [`InterconnectingConverter`](@ref) `active_power` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_active_power_unitful`](@ref)."""
 get_active_power(value::InterconnectingConverter, units) = InfrastructureSystems._strip_units(get_value(value, Val(:active_power), Val(:mw), units))
-"""Get [`InterconnectingConverter`](@ref) `active_power` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `MW`). For a bare number see [`get_active_power`](@ref)."""
+"""Get [`InterconnectingConverter`](@ref) `active_power` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_active_power`](@ref)."""
 get_active_power_unitful(value::InterconnectingConverter, units) = get_value(value, Val(:active_power), Val(:mw), units)
 get_active_power(value::InterconnectingConverter) = _units_arg_required(get_active_power, value, :active_power, Val(:mw))
 get_active_power_unitful(value::InterconnectingConverter) = _units_arg_required(get_active_power_unitful, value, :active_power, Val(:mw))
 InfrastructureSystems.display_units_arg(::typeof(get_active_power), ::Type{InterconnectingConverter}) = InfrastructureSystems.SU
 InfrastructureSystems.display_units_arg(::typeof(get_active_power_unitful), ::Type{InterconnectingConverter}) = InfrastructureSystems.SU
-"""Get [`InterconnectingConverter`](@ref) `rating` as a bare number in the requested `units` (e.g. `SU`, `DU`; domain-provided units such as `MW` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_rating_unitful`](@ref)."""
+"""Get [`InterconnectingConverter`](@ref) `rating` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_rating_unitful`](@ref)."""
 get_rating(value::InterconnectingConverter, units) = InfrastructureSystems._strip_units(get_value(value, Val(:rating), Val(:mva), units))
-"""Get [`InterconnectingConverter`](@ref) `rating` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `MW`). For a bare number see [`get_rating`](@ref)."""
+"""Get [`InterconnectingConverter`](@ref) `rating` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_rating`](@ref)."""
 get_rating_unitful(value::InterconnectingConverter, units) = get_value(value, Val(:rating), Val(:mva), units)
 get_rating(value::InterconnectingConverter) = _units_arg_required(get_rating, value, :rating, Val(:mva))
 get_rating_unitful(value::InterconnectingConverter) = _units_arg_required(get_rating_unitful, value, :rating, Val(:mva))
-InfrastructureSystems.display_units_arg(::typeof(get_rating), ::Type{InterconnectingConverter}) = InfrastructureSystems.DU
-InfrastructureSystems.display_units_arg(::typeof(get_rating_unitful), ::Type{InterconnectingConverter}) = InfrastructureSystems.DU
-"""Get [`InterconnectingConverter`](@ref) `active_power_limits` as a bare number in the requested `units` (e.g. `SU`, `DU`; domain-provided units such as `MW` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_active_power_limits_unitful`](@ref)."""
+InfrastructureSystems.display_units_arg(::typeof(get_rating), ::Type{InterconnectingConverter}) = InfrastructureSystems.CU
+InfrastructureSystems.display_units_arg(::typeof(get_rating_unitful), ::Type{InterconnectingConverter}) = InfrastructureSystems.CU
+"""Get [`InterconnectingConverter`](@ref) `active_power_limits` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_active_power_limits_unitful`](@ref)."""
 get_active_power_limits(value::InterconnectingConverter, units) = InfrastructureSystems._strip_units(get_value(value, Val(:active_power_limits), Val(:mw), units))
-"""Get [`InterconnectingConverter`](@ref) `active_power_limits` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `MW`). For a bare number see [`get_active_power_limits`](@ref)."""
+"""Get [`InterconnectingConverter`](@ref) `active_power_limits` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_active_power_limits`](@ref)."""
 get_active_power_limits_unitful(value::InterconnectingConverter, units) = get_value(value, Val(:active_power_limits), Val(:mw), units)
 get_active_power_limits(value::InterconnectingConverter) = _units_arg_required(get_active_power_limits, value, :active_power_limits, Val(:mw))
 get_active_power_limits_unitful(value::InterconnectingConverter) = _units_arg_required(get_active_power_limits_unitful, value, :active_power_limits, Val(:mw))
@@ -187,25 +187,25 @@ InfrastructureSystems.display_units_arg(::typeof(get_active_power_limits), ::Typ
 InfrastructureSystems.display_units_arg(::typeof(get_active_power_limits_unitful), ::Type{InterconnectingConverter}) = InfrastructureSystems.SU
 
 _get_base_power(value::InterconnectingConverter) = value.base_power
-"""Get [`InterconnectingConverter`](@ref) `reactive_power_limits` as a bare number in the requested `units` (e.g. `SU`, `DU`; domain-provided units such as `MW` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_reactive_power_limits_unitful`](@ref)."""
+"""Get [`InterconnectingConverter`](@ref) `reactive_power_limits` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_reactive_power_limits_unitful`](@ref)."""
 get_reactive_power_limits(value::InterconnectingConverter, units) = InfrastructureSystems._strip_units(get_value(value, Val(:reactive_power_limits), Val(:mvar), units))
-"""Get [`InterconnectingConverter`](@ref) `reactive_power_limits` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `MW`). For a bare number see [`get_reactive_power_limits`](@ref)."""
+"""Get [`InterconnectingConverter`](@ref) `reactive_power_limits` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_reactive_power_limits`](@ref)."""
 get_reactive_power_limits_unitful(value::InterconnectingConverter, units) = get_value(value, Val(:reactive_power_limits), Val(:mvar), units)
 get_reactive_power_limits(value::InterconnectingConverter) = _units_arg_required(get_reactive_power_limits, value, :reactive_power_limits, Val(:mvar))
 get_reactive_power_limits_unitful(value::InterconnectingConverter) = _units_arg_required(get_reactive_power_limits_unitful, value, :reactive_power_limits, Val(:mvar))
 InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_limits), ::Type{InterconnectingConverter}) = InfrastructureSystems.SU
 InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_limits_unitful), ::Type{InterconnectingConverter}) = InfrastructureSystems.SU
-"""Get [`InterconnectingConverter`](@ref) `dc_current` as a bare number in the requested `units` (e.g. `SU`, `DU`; domain-provided units such as `MW` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_dc_current_unitful`](@ref)."""
+"""Get [`InterconnectingConverter`](@ref) `dc_current` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_dc_current_unitful`](@ref)."""
 get_dc_current(value::InterconnectingConverter, units) = InfrastructureSystems._strip_units(get_value(value, Val(:dc_current), Val(:mva), units))
-"""Get [`InterconnectingConverter`](@ref) `dc_current` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `MW`). For a bare number see [`get_dc_current`](@ref)."""
+"""Get [`InterconnectingConverter`](@ref) `dc_current` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_dc_current`](@ref)."""
 get_dc_current_unitful(value::InterconnectingConverter, units) = get_value(value, Val(:dc_current), Val(:mva), units)
 get_dc_current(value::InterconnectingConverter) = _units_arg_required(get_dc_current, value, :dc_current, Val(:mva))
 get_dc_current_unitful(value::InterconnectingConverter) = _units_arg_required(get_dc_current_unitful, value, :dc_current, Val(:mva))
 InfrastructureSystems.display_units_arg(::typeof(get_dc_current), ::Type{InterconnectingConverter}) = InfrastructureSystems.SU
 InfrastructureSystems.display_units_arg(::typeof(get_dc_current_unitful), ::Type{InterconnectingConverter}) = InfrastructureSystems.SU
-"""Get [`InterconnectingConverter`](@ref) `max_dc_current` as a bare number in the requested `units` (e.g. `SU`, `DU`; domain-provided units such as `MW` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_max_dc_current_unitful`](@ref)."""
+"""Get [`InterconnectingConverter`](@ref) `max_dc_current` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_max_dc_current_unitful`](@ref)."""
 get_max_dc_current(value::InterconnectingConverter, units) = InfrastructureSystems._strip_units(get_value(value, Val(:max_dc_current), Val(:mva), units))
-"""Get [`InterconnectingConverter`](@ref) `max_dc_current` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `MW`). For a bare number see [`get_max_dc_current`](@ref)."""
+"""Get [`InterconnectingConverter`](@ref) `max_dc_current` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_max_dc_current`](@ref)."""
 get_max_dc_current_unitful(value::InterconnectingConverter, units) = get_value(value, Val(:max_dc_current), Val(:mva), units)
 get_max_dc_current(value::InterconnectingConverter) = _units_arg_required(get_max_dc_current, value, :max_dc_current, Val(:mva))
 get_max_dc_current_unitful(value::InterconnectingConverter) = _units_arg_required(get_max_dc_current_unitful, value, :max_dc_current, Val(:mva))

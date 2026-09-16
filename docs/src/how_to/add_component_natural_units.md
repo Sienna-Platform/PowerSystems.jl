@@ -9,19 +9,19 @@ system = build_system(PSISystems, "modified_RTS_GMLC_DA_sys"); #hide
 `PowerSystems.jl` has [three per-unitization options](@ref per_unit) for getting and setting
 data, selected explicitly at each call site by a units argument.
 
-Constructors define a component's numeric fields in **device base** (`DU`): bare numbers
+Constructors define a component's numeric fields in **component base** (`CU`): bare numbers
 passed to a constructor are interpreted as per-unit on the device's own `base_power`. You can
 see [an example of defining a component this way here](@ref "Adding Loads and Generators").
 
 If you prefer to define data in **natural units** (e.g., MW, MVA, MVAR, or MW/min), pass
 unit-tagged values to the "setter" functions after constructing the component — the setters
-convert to the stored device-base representation for you. There is no longer a system-wide
+convert to the stored component-base representation for you. There is no longer a system-wide
 unit setting to toggle (see [Per-unit Conventions](@ref per_unit)).
 
 ### Step 1: Define Empty Component
 
 Define an empty component with `0.0` or `nothing` for all the power-related fields except
-`base_power`, which is always in MVA. (Bare numbers in the constructor are device-base
+`base_power`, which is always in MVA. (Bare numbers in the constructor are component-base
 per-unit; here every power field starts at `0.0`.)
 
 For example:
@@ -30,7 +30,7 @@ For example:
 gas1 = ThermalStandard(;
     name = "gas1",
     available = true,
-    status = true,
+    status = OperationalStates.ONLINE,
     bus = get_component(ACBus, system, "Cobb"), # Attach to a previously-defined bus named Cobb
     active_power = 0.0,
     reactive_power = 0.0,
@@ -41,7 +41,6 @@ gas1 = ThermalStandard(;
     operation_cost = ThermalGenerationCost(nothing),
     base_power = 30.0, # MVA
     time_limits = (up = 8.0, down = 8.0), # Hours, unaffected by per-unitization
-    must_run = false,
     prime_mover_type = PrimeMovers.CC,
     fuel = ThermalFuels.NATURAL_GAS,
 );
@@ -57,20 +56,27 @@ add_component!(system, gas1)
 
 ### Step 3: Add Data with "setter" Functions
 
-Use individual "setter" functions, passing **unit-tagged** natural-units values (`MW`,
-`MVAr`, etc.). The setters convert each value to device base behind the scenes:
+Use individual "setter" functions, passing **unit-tagged** natural-units values (`u"MW"`,
+`u"MVAr"`, etc. — Unitful's `u"..."` macro, re-exported by `PowerSystems`). The setters
+convert each value to device base behind the scenes:
 
 ```@repl add_in_nu
-set_rating!(gas1, 30.0 * MVA)
-set_active_power_limits!(gas1, (min = 6.0 * MW, max = 30.0 * MW))
-set_reactive_power_limits!(gas1, (min = 6.0 * MVAr, max = 30.0 * MVAr))
-set_ramp_limits!(gas1, (up = 6.0 * MW, down = 6.0 * MW)) # ramp limits per-unitize by base_power
+set_rating!(gas1, 30.0 * u"MVA")
+set_active_power_limits!(gas1, (min = 6.0 * u"MW", max = 30.0 * u"MW"))
+set_reactive_power_limits!(gas1, (min = 6.0 * u"MVAr", max = 30.0 * u"MVAr"))
+set_ramp_limits!(gas1, (up = 6.0 * u"MW/minute", down = 6.0 * u"MW/minute")) # a rate: power per unit time
 ```
 
 A bare number (e.g. `set_rating!(gas1, 30.0)`) is rejected with an `ArgumentError`: setters
-require the value to carry its units. Reading the values back in device base
-(`get_rating(gas1, DU)`) shows them divided by the `base_power` of 30 MVA — the per-unit
+require the value to carry its units. Reading the values back in component base
+(`get_rating(gas1, CU)`) shows them divided by the `base_power` of 30 MVA — the per-unit
 conversion the setters performed.
+
+`ramp_limits` is a **rate**, so its unit carries a time as well as a power: `u"MW/minute"`,
+`u"MW/hr"`, and `u"kW/s"` all work, and Unitful converts both axes at once. Only the power
+axis is per-unitized — there is no time base — so a relative target has to name the time
+too: `get_ramp_limits(gas1, CU/u"minute")` or `get_ramp_limits(gas1, SU/u"hr")`. A bare
+`CU`/`SU` is rejected, because it does not say per what time.
 
 !!! tip
 

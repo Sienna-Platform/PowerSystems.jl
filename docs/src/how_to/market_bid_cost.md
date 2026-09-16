@@ -25,7 +25,7 @@ bus = ACBus(1, "nodeE", true, "REF", 0, 1.0, (min = 0.9, max = 1.05), 230, nothi
 generator = ThermalStandard(;
     name = "Brighton",
     available = true,
-    status = true,
+    status = OperationalStates.ONLINE,
     bus = bus,
     active_power = 6.0,
     reactive_power = 1.50,
@@ -72,7 +72,7 @@ bus = ACBus(1, "nodeE", true, "REF", 0, 1.0, (min = 0.9, max = 1.05), 230, nothi
 generator = ThermalStandard(;
     name = "Brighton",
     available = true,
-    status = true,
+    status = OperationalStates.ONLINE,
     bus = bus,
     active_power = 6.0,
     reactive_power = 1.50,

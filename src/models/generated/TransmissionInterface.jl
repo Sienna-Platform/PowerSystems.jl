@@ -69,9 +69,9 @@ end
 get_name(value::TransmissionInterface) = value.name
 """Get [`TransmissionInterface`](@ref) `available`."""
 get_available(value::TransmissionInterface) = value.available
-"""Get [`TransmissionInterface`](@ref) `active_power_flow_limits` as a bare number in the requested `units` (e.g. `SU`, `DU`; domain-provided units such as `MW` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_active_power_flow_limits_unitful`](@ref)."""
+"""Get [`TransmissionInterface`](@ref) `active_power_flow_limits` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_active_power_flow_limits_unitful`](@ref)."""
 get_active_power_flow_limits(value::TransmissionInterface, units) = InfrastructureSystems._strip_units(get_value(value, Val(:active_power_flow_limits), Val(:mw), units))
-"""Get [`TransmissionInterface`](@ref) `active_power_flow_limits` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `MW`). For a bare number see [`get_active_power_flow_limits`](@ref)."""
+"""Get [`TransmissionInterface`](@ref) `active_power_flow_limits` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_active_power_flow_limits`](@ref)."""
 get_active_power_flow_limits_unitful(value::TransmissionInterface, units) = get_value(value, Val(:active_power_flow_limits), Val(:mw), units)
 get_active_power_flow_limits(value::TransmissionInterface) = _units_arg_required(get_active_power_flow_limits, value, :active_power_flow_limits, Val(:mw))
 get_active_power_flow_limits_unitful(value::TransmissionInterface) = _units_arg_required(get_active_power_flow_limits_unitful, value, :active_power_flow_limits, Val(:mw))

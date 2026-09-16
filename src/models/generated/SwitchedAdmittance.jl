@@ -9,10 +9,10 @@ This file is auto-generated. Do not edit.
         name::String
         available::Bool
         bus::ACBus
-        Y::Complex{Float64}
-        initial_status::Vector{Int}
+        number_engaged::Vector{Int}
         number_of_steps::Vector{Int}
         Y_increase::Vector{Complex{Float64}}
+        solved_admittance::Union{Nothing, Float64}
         admittance_limits::MinMax
         control_mode::SwitchedAdmittanceControlMode
         regulated_bus_number::Int
@@ -24,16 +24,16 @@ This file is auto-generated. Do not edit.
 
 A switched admittance, with discrete steps to adjust the admittance.
 
-Most often used in power flow studies, iterating over the steps to see impacts of admittance on the results. Total admittance is calculated as: `Y` + `number_of_steps` * `Y_increase`
+Most often used in power flow studies, iterating over the steps to see impacts of admittance on the results. Total admittance is `number_engaged` * `Y_increase`, unless `solved_admittance` is set, in which case that value is the effective admittance. There is no fixed base admittance: a PSS/E SWITCHED SHUNT record carries only BINIT and the per-block increments
 
 # Arguments
 - `name::String`: Name of the component. Components of the same type (e.g., `PowerLoad`) must have unique names, but components of different types (e.g., `PowerLoad` and `ACBus`) can have the same name
 - `available::Bool`: Indicator of whether the component is connected and online (`true`) or disconnected, offline, or down (`false`). Unavailable components are excluded during simulations
 - `bus::ACBus`: Bus that this component is connected to
-- `Y::Complex{Float64}`: Initial admittance at N = 0
-- `initial_status::Vector{Int}`: (default: `Int[]`) Vector of initial switched shunt status, one for in-service and zero for out-of-service for block i (1 through 8)
+- `number_engaged::Vector{Int}`: (default: `Int[]`) Vector with the number of steps currently engaged (switched in) for each adjustable shunt block. For example, `number_engaged[2]` is the number of steps in service at block 2, and cannot exceed `number_of_steps[2]`. Power flow writes the solved-for step count back to this field (PSS/E `Si`).
 - `number_of_steps::Vector{Int}`: (default: `Int[]`) Vector with number of steps for each adjustable shunt block. For example, `number_of_steps[2]` are the number of available steps for admittance increment at block 2.
 - `Y_increase::Vector{Complex{Float64}}`: (default: `Complex{Float64}[]`) Vector with admittance increment step for each adjustable shunt block. For example, `Y_increase[2]` is the complex admittance increment for each step at block 2.
+- `solved_admittance::Union{Nothing, Float64}`: (default: `nothing`) Solved-case switched shunt admittance (PSS/E `BINIT`), or `nothing` when unset. When non-`nothing`, this value is the shunt's effective admittance, used in place of `number_engaged` ⋅ `Y_increase`; power flow writes the solved-for admittance back to this field. Set it only when the case is to be treated as solved as read in, or when the device is locked (`control_mode == SwitchedAdmittanceControlMode.FIXED`).
 - `admittance_limits::MinMax`: (default: `(min=1.0, max=1.0)`) Shunt admittance limits for switched shunt model
 - `control_mode::SwitchedAdmittanceControlMode`: (default: `SwitchedAdmittanceControlMode.FIXED`) Switched-shunt control mode.
 - `regulated_bus_number::Int`: (default: `0`) Bus number whose voltage/quantity this shunt regulates; 0 ⇒ local bus.
@@ -49,14 +49,14 @@ mutable struct SwitchedAdmittance <: ElectricLoad
     available::Bool
     "Bus that this component is connected to"
     bus::ACBus
-    "Initial admittance at N = 0"
-    Y::Complex{Float64}
-    "Vector of initial switched shunt status, one for in-service and zero for out-of-service for block i (1 through 8)"
-    initial_status::Vector{Int}
+    "Vector with the number of steps currently engaged (switched in) for each adjustable shunt block. For example, `number_engaged[2]` is the number of steps in service at block 2, and cannot exceed `number_of_steps[2]`. Power flow writes the solved-for step count back to this field (PSS/E `Si`)."
+    number_engaged::Vector{Int}
     "Vector with number of steps for each adjustable shunt block. For example, `number_of_steps[2]` are the number of available steps for admittance increment at block 2."
     number_of_steps::Vector{Int}
     "Vector with admittance increment step for each adjustable shunt block. For example, `Y_increase[2]` is the complex admittance increment for each step at block 2."
     Y_increase::Vector{Complex{Float64}}
+    "Solved-case switched shunt admittance (PSS/E `BINIT`), or `nothing` when unset. When non-`nothing`, this value is the shunt's effective admittance, used in place of `number_engaged` ⋅ `Y_increase`; power flow writes the solved-for admittance back to this field. Set it only when the case is to be treated as solved as read in, or when the device is locked (`control_mode == SwitchedAdmittanceControlMode.FIXED`)."
+    solved_admittance::Union{Nothing, Float64}
     "Shunt admittance limits for switched shunt model"
     admittance_limits::MinMax
     "Switched-shunt control mode."
@@ -73,12 +73,12 @@ mutable struct SwitchedAdmittance <: ElectricLoad
     internal::InfrastructureSystemsInternal
 end
 
-function SwitchedAdmittance(name, available, bus, Y, initial_status=Int[], number_of_steps=Int[], Y_increase=Complex{Float64}[], admittance_limits=(min=1.0, max=1.0), control_mode=SwitchedAdmittanceControlMode.FIXED, regulated_bus_number=0, dynamic_injector=nothing, services=Device[], ext=Dict{String, Any}(), )
-    SwitchedAdmittance(name, available, bus, Y, initial_status, number_of_steps, Y_increase, admittance_limits, control_mode, regulated_bus_number, dynamic_injector, services, ext, InfrastructureSystemsInternal(), )
+function SwitchedAdmittance(name, available, bus, number_engaged=Int[], number_of_steps=Int[], Y_increase=Complex{Float64}[], solved_admittance=nothing, admittance_limits=(min=1.0, max=1.0), control_mode=SwitchedAdmittanceControlMode.FIXED, regulated_bus_number=0, dynamic_injector=nothing, services=Device[], ext=Dict{String, Any}(), )
+    SwitchedAdmittance(name, available, bus, number_engaged, number_of_steps, Y_increase, solved_admittance, admittance_limits, control_mode, regulated_bus_number, dynamic_injector, services, ext, InfrastructureSystemsInternal(), )
 end
 
-function SwitchedAdmittance(; name, available, bus, Y, initial_status=Int[], number_of_steps=Int[], Y_increase=Complex{Float64}[], admittance_limits=(min=1.0, max=1.0), control_mode=SwitchedAdmittanceControlMode.FIXED, regulated_bus_number=0, dynamic_injector=nothing, services=Device[], ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), )
-    SwitchedAdmittance(name, available, bus, Y, initial_status, number_of_steps, Y_increase, admittance_limits, control_mode, regulated_bus_number, dynamic_injector, services, ext, internal, )
+function SwitchedAdmittance(; name, available, bus, number_engaged=Int[], number_of_steps=Int[], Y_increase=Complex{Float64}[], solved_admittance=nothing, admittance_limits=(min=1.0, max=1.0), control_mode=SwitchedAdmittanceControlMode.FIXED, regulated_bus_number=0, dynamic_injector=nothing, services=Device[], ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), )
+    SwitchedAdmittance(name, available, bus, number_engaged, number_of_steps, Y_increase, solved_admittance, admittance_limits, control_mode, regulated_bus_number, dynamic_injector, services, ext, internal, )
 end
 
 # Constructor for demo purposes; non-functional.
@@ -87,10 +87,10 @@ function SwitchedAdmittance(::Nothing)
         name="init",
         available=false,
         bus=ACBus(nothing),
-        Y=0.0 + 0.0im,
-        initial_status=Int[],
+        number_engaged=Int[],
         number_of_steps=Int[],
         Y_increase=Complex{Float64}[],
+        solved_admittance=nothing,
         admittance_limits=(min=0.0, max=0.0),
         control_mode=SwitchedAdmittanceControlMode.FIXED,
         regulated_bus_number=0,
@@ -106,14 +106,14 @@ get_name(value::SwitchedAdmittance) = value.name
 get_available(value::SwitchedAdmittance) = value.available
 """Get [`SwitchedAdmittance`](@ref) `bus`."""
 get_bus(value::SwitchedAdmittance) = value.bus
-"""Get [`SwitchedAdmittance`](@ref) `Y`."""
-get_Y(value::SwitchedAdmittance) = value.Y
-"""Get [`SwitchedAdmittance`](@ref) `initial_status`."""
-get_initial_status(value::SwitchedAdmittance) = value.initial_status
+"""Get [`SwitchedAdmittance`](@ref) `number_engaged`."""
+get_number_engaged(value::SwitchedAdmittance) = value.number_engaged
 """Get [`SwitchedAdmittance`](@ref) `number_of_steps`."""
 get_number_of_steps(value::SwitchedAdmittance) = value.number_of_steps
 """Get [`SwitchedAdmittance`](@ref) `Y_increase`."""
 get_Y_increase(value::SwitchedAdmittance) = value.Y_increase
+"""Get [`SwitchedAdmittance`](@ref) `solved_admittance`."""
+get_solved_admittance(value::SwitchedAdmittance) = value.solved_admittance
 """Get [`SwitchedAdmittance`](@ref) `admittance_limits`."""
 get_admittance_limits(value::SwitchedAdmittance) = value.admittance_limits
 """Get [`SwitchedAdmittance`](@ref) `control_mode`."""
@@ -133,14 +133,14 @@ get_internal(value::SwitchedAdmittance) = value.internal
 set_available!(value::SwitchedAdmittance, val) = value.available = val
 """Set [`SwitchedAdmittance`](@ref) `bus`."""
 set_bus!(value::SwitchedAdmittance, val) = value.bus = val
-"""Set [`SwitchedAdmittance`](@ref) `Y`."""
-set_Y!(value::SwitchedAdmittance, val) = value.Y = val
-"""Set [`SwitchedAdmittance`](@ref) `initial_status`."""
-set_initial_status!(value::SwitchedAdmittance, val) = value.initial_status = val
+"""Set [`SwitchedAdmittance`](@ref) `number_engaged`."""
+set_number_engaged!(value::SwitchedAdmittance, val) = value.number_engaged = val
 """Set [`SwitchedAdmittance`](@ref) `number_of_steps`."""
 set_number_of_steps!(value::SwitchedAdmittance, val) = value.number_of_steps = val
 """Set [`SwitchedAdmittance`](@ref) `Y_increase`."""
 set_Y_increase!(value::SwitchedAdmittance, val) = value.Y_increase = val
+"""Set [`SwitchedAdmittance`](@ref) `solved_admittance`."""
+set_solved_admittance!(value::SwitchedAdmittance, val) = value.solved_admittance = val
 """Set [`SwitchedAdmittance`](@ref) `admittance_limits`."""
 set_admittance_limits!(value::SwitchedAdmittance, val) = value.admittance_limits = val
 """Set [`SwitchedAdmittance`](@ref) `control_mode`."""

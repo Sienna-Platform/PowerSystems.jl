@@ -6,8 +6,8 @@
 
 """Unwrap any `OpenAPI.jl` oneOf wrapper, whose sole `value` field holds the resolved
 variant chosen by the document's discriminator."""
-convert_cost(w::OpenAPI.OneOfAPIModel) = convert_cost(w.value)
-convert_cost(w::OpenAPI.OneOfAPIModel, store) = convert_cost(w.value, store)
+convert_cost(w::IC.OneOfAPIModel) = convert_cost(w.value)
+convert_cost(w::IC.OneOfAPIModel, store) = convert_cost(w.value, store)
 
 # ── Ambient import store, for association-id-bearing costs reached below a GENERATED
 # per-device `from_openapi` call site ────────────────────────────────────────────────
@@ -60,14 +60,20 @@ Call `f` with the unit marker the document string `s` names.
 
 Higher-order rather than marker-returning: the marker is a type parameter of
 `CostCurve`/`FuelCurve`, so returning it from a runtime string would hand the caller a
-`Union{NaturalUnit, DeviceBaseUnit}` and make the construction dynamic. Calling `f` inside each
+`Union{NaturalUnit, ComponentBaseUnit}` and make the construction dynamic. Calling `f` inside each
 branch specializes the whole construction on one concrete marker.
 """
-_with_power_units(::Any, ::Nothing) =
+_with_power_units(::Any, ::Union{Nothing, IC.Absent}) =
     error("convert_cost: power_units is required and missing")
+
+# The document's `power_units` is a validating wrapper struct under OpenAPI.jl 1.x, not the
+# bare string 0.2 produced; unwrap by dispatch so the branch below keeps specializing on a
+# concrete marker.
+_with_power_units(f, units::IC.UnitSystem) = _with_power_units(f, units.value)
+
 function _with_power_units(f, s::AbstractString)
     s == "NATURAL_UNITS" && return f(NaturalUnit())
-    s == "COMPONENT_BASE" && return f(DeviceBaseUnit())
+    s == "COMPONENT_BASE" && return f(ComponentBaseUnit())
     error(
         "convert_cost: unmapped power_units \"$s\" — expected one of " *
         "NATURAL_UNITS, COMPONENT_BASE",
@@ -92,12 +98,25 @@ convert_cost(fd) = error("convert_cost: unmapped variant $(typeof(fd))")
 
 # ── ValueCurve ──────────────────────────────────────────────────────────────────
 
+"""`Absent` (the field was never on the wire) and an explicit JSON `null` both mean the
+PSY-side optional value is `nothing` — same convention as `refs.jl`'s `_power_units_marker`."""
+_optional_from_wire(::Union{Nothing, IC.Absent}) = nothing
+_optional_from_wire(value) = value
+
 convert_cost(vc::PC.InputOutputCurve) =
-    InputOutputCurve(convert_cost(vc.function_data), vc.input_at_zero)
+    InputOutputCurve(convert_cost(vc.function_data), _optional_from_wire(vc.input_at_zero))
 convert_cost(vc::PC.IncrementalCurve) =
-    IncrementalCurve(convert_cost(vc.function_data), vc.initial_input, vc.input_at_zero)
+    IncrementalCurve(
+        convert_cost(vc.function_data),
+        _optional_from_wire(vc.initial_input),
+        _optional_from_wire(vc.input_at_zero),
+    )
 convert_cost(vc::PC.AverageRateCurve) =
-    AverageRateCurve(convert_cost(vc.function_data), vc.initial_input, vc.input_at_zero)
+    AverageRateCurve(
+        convert_cost(vc.function_data),
+        _optional_from_wire(vc.initial_input),
+        _optional_from_wire(vc.input_at_zero),
+    )
 
 # ── vom_cost / startup_fuel_offtake: always a LINEAR InputOutputCurve ──────────
 
@@ -149,27 +168,45 @@ convert_cost(fd::IC.TimeSeriesPiecewiseStepData, store) =
     )
 convert_cost(fd::IC.TimeSeriesPiecewiseStepData) = convert_cost(fd, _current_import_store())
 
-"""`nothing` stays `nothing`; a wire association id resolves against `store`."""
-_resolve_optional_key(::Any, ::Nothing) = nothing
+"""`nothing`/`Absent` (the field was never on the wire) both stay `nothing`; a wire
+association id resolves against `store`."""
+_resolve_optional_key(::Any, ::Union{Nothing, IC.Absent}) = nothing
 _resolve_optional_key(store, id::Integer) = IS.get_time_series_key(store, id)
 
-"""Wire representation of [`CurveStyles`](@ref): a plain integer (0/1/2), deliberately not
-the string-enum convention used elsewhere in the schemas — see `curve_style` on
+"""Wire representation of [`CurveStyles`](@ref): a plain integer (0/1), deliberately not
+the string-enum convention used elsewhere in the schemas - see `curve_style` on
 `MarketBidCost`/`MarketBidTimeSeriesCost`."""
 function _curve_style_from_wire(id::Integer)
-    if id ∉ (0, 1, 2)
+    if id ∉ (0, 1)
         throw(
             ArgumentError(
                 "convert_cost: curve_style $id is not a valid CurveStyles value; " *
-                "expected 0 (CURVE), 1 (FIXED), or 2 (VARIABLE)",
+                "expected 0 (VARIABLE) or 1 (FIXED)",
             ),
         )
     end
     return CurveStyles(Int(id))
 end
 
+"""Wire representation of [`CurveMultiStep`](@ref): a plain integer (0/1), the same
+convention as `curve_style`."""
+function _curve_multistep_from_wire(id::Integer)
+    if id ∉ (0, 1)
+        throw(
+            ArgumentError(
+                "convert_cost: curve_multistep $id is not a valid CurveMultiStep value; " *
+                "expected 0 (SINGLE_STEP) or 1 (MULTI_STEP)",
+            ),
+        )
+    end
+    return CurveMultiStep(Int(id))
+end
+
 convert_cost(vc::PC.TimeSeriesInputOutputCurve, store) =
-    TimeSeriesInputOutputCurve(convert_cost(vc.function_data, store), vc.input_at_zero)
+    TimeSeriesInputOutputCurve(
+        convert_cost(vc.function_data, store),
+        _optional_from_wire(vc.input_at_zero),
+    )
 convert_cost(vc::PC.TimeSeriesInputOutputCurve) = convert_cost(vc, _current_import_store())
 
 convert_cost(vc::PC.TimeSeriesIncrementalCurve, store) =
@@ -225,8 +262,11 @@ _fuel_cost_fields(::Any, ::Real, ::Integer) = error(
 function convert_cost(f::PC.FuelCurve, store)
     value_curve = convert_cost(_require(f.value_curve, "FuelCurve.value_curve"), store)
     vom_cost = _vom_cost(f.vom_cost)
-    fuel_cost, fuel_cost_time_series =
-        _fuel_cost_fields(store, f.fuel_cost, f.fuel_cost_time_series)
+    fuel_cost, fuel_cost_time_series = _fuel_cost_fields(
+        store,
+        _optional_from_wire(f.fuel_cost),
+        _optional_from_wire(f.fuel_cost_time_series),
+    )
     return _with_power_units(f.power_units) do units
         FuelCurve(;
             value_curve = value_curve,
@@ -262,8 +302,10 @@ non-time-series value curve still converts with no active import bound at all.""
 function convert_cost(f::PC.FuelCurve)
     value_curve = convert_cost(_require(f.value_curve, "FuelCurve.value_curve"))
     vom_cost = _vom_cost(f.vom_cost)
-    fuel_cost, fuel_cost_time_series =
-        _fuel_cost_fields_ambient(f.fuel_cost, f.fuel_cost_time_series)
+    fuel_cost, fuel_cost_time_series = _fuel_cost_fields_ambient(
+        _optional_from_wire(f.fuel_cost),
+        _optional_from_wire(f.fuel_cost_time_series),
+    )
     return _with_power_units(f.power_units) do units
         FuelCurve(;
             value_curve = value_curve,
@@ -299,7 +341,7 @@ _offer_curve(c::PC.CostCurve, context::AbstractString) =
 
 convert_cost(s::PC.StartUpStages) = (hot = s.hot, warm = s.warm, cold = s.cold)
 
-convert_cost(s::PC.StorageCostStartUpOneOf) = (charge = s.charge, discharge = s.discharge)
+convert_cost(s::PC.ChargeDischarge) = (charge = s.charge, discharge = s.discharge)
 
 # ── Operation-cost containers emitted by the parser ──────────────────────────
 
@@ -325,8 +367,8 @@ function convert_cost(po::PC.RenewableGenerationCost)
                 "RenewableGenerationCost.variable_operation_cost",
             ),
         ),
-        curtailment_cost = _optional_cost_curve(po.curtailment_cost),
-        fixed = po.fixed,
+        curtailment_cost = _optional_cost_curve(_optional_from_wire(po.curtailment_cost)),
+        fixed = _or_default(po.fixed, 0.0),
     )
 end
 
@@ -338,7 +380,7 @@ function convert_cost(po::PC.HydroGenerationCost)
                 "HydroGenerationCost.variable_operation_cost",
             ),
         ),
-        fixed = po.fixed,
+        fixed = _or_default(po.fixed, 0.0),
     )
 end
 
@@ -347,7 +389,7 @@ function convert_cost(po::PC.LoadCost)
         variable_operation_cost = convert_cost(
             _require(po.variable_operation_cost, "LoadCost.variable_operation_cost"),
         ),
-        fixed = po.fixed,
+        fixed = _or_default(po.fixed, 0.0),
     )
 end
 
@@ -378,7 +420,10 @@ function convert_cost(po::PC.MarketBidCost)
             "MarketBidCost.decremental_slope",
         ),
         curve_style = _curve_style_from_wire(
-            _require(po.curve_style, "MarketBidCost.curve_style"),
+            _require(po.curve_style, "MarketBidCost.curve_style").value,
+        ),
+        curve_multistep = _curve_multistep_from_wire(
+            _require(po.curve_multistep, "MarketBidCost.curve_multistep").value,
         ),
     )
 end
@@ -457,7 +502,10 @@ function convert_cost(po::PC.MarketBidTimeSeriesCost, store)
             po.decremental_slope, "MarketBidTimeSeriesCost.decremental_slope",
         ),
         curve_style = _curve_style_from_wire(
-            _require(po.curve_style, "MarketBidTimeSeriesCost.curve_style"),
+            _require(po.curve_style, "MarketBidTimeSeriesCost.curve_style").value,
+        ),
+        curve_multistep = _curve_multistep_from_wire(
+            _require(po.curve_multistep, "MarketBidTimeSeriesCost.curve_multistep").value,
         ),
     )
 end
@@ -512,27 +560,47 @@ _convert_source_operation_cost(po::PC.ImportExportTimeSeriesCost, store, base_po
 
 function convert_cost(po::PC.HydroReservoirCost)
     return HydroReservoirCost(;
-        level_shortage_cost = po.level_shortage_cost,
-        level_surplus_cost = po.level_surplus_cost,
-        spillage_cost = po.spillage_cost,
+        level_shortage_cost = _or_default(po.level_shortage_cost, 0.0),
+        level_surplus_cost = _or_default(po.level_surplus_cost, 0.0),
+        spillage_cost = _or_default(po.spillage_cost, 0.0),
     )
 end
 
 function convert_cost(po::PC.StorageCost)
     return StorageCost(;
-        charge_variable_cost = _optional_cost_curve(po.charge_variable_cost),
-        discharge_variable_cost = _optional_cost_curve(po.discharge_variable_cost),
+        charge_variable_cost = _optional_cost_curve(
+            _optional_from_wire(po.charge_variable_cost),
+        ),
+        discharge_variable_cost = _optional_cost_curve(
+            _optional_from_wire(po.discharge_variable_cost),
+        ),
         fixed = po.fixed,
         start_up = convert_cost(_require(po.start_up, "StorageCost.start_up")),
         shut_down = po.shut_down,
-        energy_shortage_cost = po.energy_shortage_cost,
-        energy_surplus_cost = po.energy_surplus_cost,
+        energy_shortage_cost = _or_default(po.energy_shortage_cost, 0.0),
+        energy_surplus_cost = _or_default(po.energy_surplus_cost, 0.0),
     )
 end
 
 # ── Operating Reserve Demand Curve ─────────────────────────────────────────────
 # A reserve's `variable` is never a FuelCurve; PSY stores `CostCurve{PiecewiseIncrementalCurve}`.
 
-"""Convert a reserve's `variable` field; `nothing` means no demand curve is defined."""
-convert_reserve_variable(po::Union{Nothing, PC.CostCurve}) =
-    _offer_curve(po, "a reserve demand curve")
+"""Convert a reserve's `variable` field; `nothing`/`Absent` means no demand curve is defined."""
+convert_reserve_variable(po::Union{Nothing, IC.Absent, PC.CostCurve}) =
+    _offer_curve(_optional_from_wire(po), "a reserve demand curve")
+
+# ── LossCurve ⇄ OpenAPI ────────────────────────────────────────────────────────
+# The schemas' `LossCurve` records the basis its curve is expressed in (`power_units`,
+# governing both axes), the same enum every power-bearing blob stamps. Import keeps that
+# basis and export writes PSY's `get_power_units`; neither side assumes natural units.
+
+"""Wrap a document's loss curve as a `LossCurve` on the basis its blob states."""
+loss_curve_from_openapi(curve::ValueCurve, units::IS.AbstractUnitSystem) =
+    LossCurve(curve, units)
+
+"""
+Unwrap a `LossCurve` to the bare curve the document's `value_curve` holds. The caller
+stamps `power_units` from `get_power_units(loss)` (`_hvdc_loss_to_openapi`), so the basis
+travels with the curve instead of being refused here.
+"""
+loss_curve_to_openapi(loss::AnyLossCurve) = get_value_curve(loss)

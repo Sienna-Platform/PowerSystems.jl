@@ -211,14 +211,14 @@ Any other extension is refused rather than guessed at.
 `units` is passed through to `to_openapi` and chooses the basis every value in the
 document is written on:
 
-  - `DU` (default) writes each component's values on its own `base_power`, the convention PSY
+  - `CU` (default) writes each component's values on its own `base_power`, the convention PSY
     stores natively. Nothing is converted, so the numbers on disk are the numbers in memory and
     the round trip is exact.
   - `NU` converts on the way out to physical units — MW, MVAr, MVA — which is what a reader
     outside Sienna generally wants.
 
 Both are complete: any `System` exports either way, whatever it was built from. `SU` is refused,
-having no representation in the wire enum. **An archive only ever writes `DU`** — that is the
+having no representation in the wire enum. **An archive only ever writes `CU`** — that is the
 representation PSY stores natively, so it costs no conversion pass over every component, and
 the archive form is chosen specifically to be cheap to produce. Passing any other unit system
 with a `$(IS.SIENNA_ARCHIVE_EXTENSION)` path throws rather than silently ignoring the keyword
@@ -239,7 +239,7 @@ components need no such handling in any form — they are re-masked on read when
 function to_file(
     sys::System,
     path::AbstractString;
-    units::IS.AbstractUnitSystem = DU,
+    units::IS.AbstractUnitSystem = CU,
     force::Bool = false,
     pretty::Bool = false,
 )
@@ -268,11 +268,11 @@ end
 """An archive is component-base only, so every other marker is refused by its own method
 rather than by a narrowed signature — a marker added later lands on the error, not on a
 silently accepted union."""
-_check_archive_units(::DeviceBaseUnit) = nothing
+_check_archive_units(::ComponentBaseUnit) = nothing
 
 function _check_archive_units(units::IS.AbstractUnitSystem)
     return error(
-        "a $(IS.SIENNA_ARCHIVE_EXTENSION) archive only ever writes on DU (it is the cheapest " *
+        "a $(IS.SIENNA_ARCHIVE_EXTENSION) archive only ever writes on CU (it is the cheapest " *
         "representation to produce); got units = $units",
     )
 end
@@ -377,7 +377,7 @@ function _to_file_sienna(
         _to_file_directory(
             sys,
             bundle;
-            units = DU,
+            units = CU,
             force = true,
             pretty = pretty,
             write_catalog = true,

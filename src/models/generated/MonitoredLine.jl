@@ -40,7 +40,7 @@ For example, monitored lines can be used to restrict line flow following a conti
 - `x::Float64`: Reactance in pu ([`SYSTEM_BASE`](@ref per_unit)), validation range: `(0, 4)`
 - `b::FromTo`: Shunt susceptance in pu ([`SYSTEM_BASE`](@ref per_unit)), specified both on the `from` and `to` ends of the line. These are commonly modeled with the same value, validation range: `(0, 2)`
 - `flow_limits::FromTo_ToFrom`: Minimum and maximum permissable flow on the line (MVA), if different from the thermal rating defined in `rating`
-- `rating::Float64`: Thermal rating (MVA). Flow on the line must be between -`rating` and `rating`. When defining a line before it is attached to a `System`, `rating` must be in pu ([`SYSTEM_BASE`](@ref per_unit)) using the base power of the `System` it will be attached to. Displays in device base ([`DEVICE_BASE`](@ref per_unit)) by default, unlike most converted fields which default to system base
+- `rating::Float64`: Thermal rating (MVA). Flow on the line must be between -`rating` and `rating`. When defining a line before it is attached to a `System`, `rating` must be in pu ([`SYSTEM_BASE`](@ref per_unit)) using the base power of the `System` it will be attached to. Displays in component base ([`DEVICE_BASE`](@ref per_unit)) by default, unlike most converted fields which default to system base
 - `angle_limits::MinMax`: Minimum and maximum angle limits (radians)
 - `rating_b::Union{Nothing, Float64}`: (default: `nothing`) Second current rating; entered in MVA.
 - `rating_c::Union{Nothing, Float64}`: (default: `nothing`) Third current rating; entered in MVA.
@@ -69,7 +69,7 @@ mutable struct MonitoredLine <: ACTransmission
     b::FromTo
     "Minimum and maximum permissable flow on the line (MVA), if different from the thermal rating defined in `rating`"
     flow_limits::FromTo_ToFrom
-    "Thermal rating (MVA). Flow on the line must be between -`rating` and `rating`. When defining a line before it is attached to a `System`, `rating` must be in pu ([`SYSTEM_BASE`](@ref per_unit)) using the base power of the `System` it will be attached to. Displays in device base ([`DEVICE_BASE`](@ref per_unit)) by default, unlike most converted fields which default to system base"
+    "Thermal rating (MVA). Flow on the line must be between -`rating` and `rating`. When defining a line before it is attached to a `System`, `rating` must be in pu ([`SYSTEM_BASE`](@ref per_unit)) using the base power of the `System` it will be attached to. Displays in component base ([`DEVICE_BASE`](@ref per_unit)) by default, unlike most converted fields which default to system base"
     rating::Float64
     "Minimum and maximum angle limits (radians)"
     angle_limits::MinMax
@@ -124,17 +124,17 @@ end
 get_name(value::MonitoredLine) = value.name
 """Get [`MonitoredLine`](@ref) `available`."""
 get_available(value::MonitoredLine) = value.available
-"""Get [`MonitoredLine`](@ref) `active_power_flow` as a bare number in the requested `units` (e.g. `SU`, `DU`; domain-provided units such as `MW` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_active_power_flow_unitful`](@ref)."""
+"""Get [`MonitoredLine`](@ref) `active_power_flow` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_active_power_flow_unitful`](@ref)."""
 get_active_power_flow(value::MonitoredLine, units) = InfrastructureSystems._strip_units(get_value(value, Val(:active_power_flow), Val(:mw), units))
-"""Get [`MonitoredLine`](@ref) `active_power_flow` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `MW`). For a bare number see [`get_active_power_flow`](@ref)."""
+"""Get [`MonitoredLine`](@ref) `active_power_flow` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_active_power_flow`](@ref)."""
 get_active_power_flow_unitful(value::MonitoredLine, units) = get_value(value, Val(:active_power_flow), Val(:mw), units)
 get_active_power_flow(value::MonitoredLine) = _units_arg_required(get_active_power_flow, value, :active_power_flow, Val(:mw))
 get_active_power_flow_unitful(value::MonitoredLine) = _units_arg_required(get_active_power_flow_unitful, value, :active_power_flow, Val(:mw))
 InfrastructureSystems.display_units_arg(::typeof(get_active_power_flow), ::Type{MonitoredLine}) = InfrastructureSystems.SU
 InfrastructureSystems.display_units_arg(::typeof(get_active_power_flow_unitful), ::Type{MonitoredLine}) = InfrastructureSystems.SU
-"""Get [`MonitoredLine`](@ref) `reactive_power_flow` as a bare number in the requested `units` (e.g. `SU`, `DU`; domain-provided units such as `MW` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_reactive_power_flow_unitful`](@ref)."""
+"""Get [`MonitoredLine`](@ref) `reactive_power_flow` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_reactive_power_flow_unitful`](@ref)."""
 get_reactive_power_flow(value::MonitoredLine, units) = InfrastructureSystems._strip_units(get_value(value, Val(:reactive_power_flow), Val(:mvar), units))
-"""Get [`MonitoredLine`](@ref) `reactive_power_flow` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `MW`). For a bare number see [`get_reactive_power_flow`](@ref)."""
+"""Get [`MonitoredLine`](@ref) `reactive_power_flow` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_reactive_power_flow`](@ref)."""
 get_reactive_power_flow_unitful(value::MonitoredLine, units) = get_value(value, Val(:reactive_power_flow), Val(:mvar), units)
 get_reactive_power_flow(value::MonitoredLine) = _units_arg_required(get_reactive_power_flow, value, :reactive_power_flow, Val(:mvar))
 get_reactive_power_flow_unitful(value::MonitoredLine) = _units_arg_required(get_reactive_power_flow_unitful, value, :reactive_power_flow, Val(:mvar))
@@ -142,67 +142,67 @@ InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_flow), ::Typ
 InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_flow_unitful), ::Type{MonitoredLine}) = InfrastructureSystems.SU
 """Get [`MonitoredLine`](@ref) `arc`."""
 get_arc(value::MonitoredLine) = value.arc
-"""Get [`MonitoredLine`](@ref) `r` as a bare number in the requested `units` (e.g. `SU`, `DU`; domain-provided units such as `MW` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_r_unitful`](@ref)."""
+"""Get [`MonitoredLine`](@ref) `r` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_r_unitful`](@ref)."""
 get_r(value::MonitoredLine, units) = InfrastructureSystems._strip_units(get_value(value, Val(:r), Val(:ohm), units))
-"""Get [`MonitoredLine`](@ref) `r` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `MW`). For a bare number see [`get_r`](@ref)."""
+"""Get [`MonitoredLine`](@ref) `r` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_r`](@ref)."""
 get_r_unitful(value::MonitoredLine, units) = get_value(value, Val(:r), Val(:ohm), units)
 get_r(value::MonitoredLine) = _units_arg_required(get_r, value, :r, Val(:ohm))
 get_r_unitful(value::MonitoredLine) = _units_arg_required(get_r_unitful, value, :r, Val(:ohm))
 InfrastructureSystems.display_units_arg(::typeof(get_r), ::Type{MonitoredLine}) = InfrastructureSystems.SU
 InfrastructureSystems.display_units_arg(::typeof(get_r_unitful), ::Type{MonitoredLine}) = InfrastructureSystems.SU
-"""Get [`MonitoredLine`](@ref) `x` as a bare number in the requested `units` (e.g. `SU`, `DU`; domain-provided units such as `MW` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_x_unitful`](@ref)."""
+"""Get [`MonitoredLine`](@ref) `x` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_x_unitful`](@ref)."""
 get_x(value::MonitoredLine, units) = InfrastructureSystems._strip_units(get_value(value, Val(:x), Val(:ohm), units))
-"""Get [`MonitoredLine`](@ref) `x` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `MW`). For a bare number see [`get_x`](@ref)."""
+"""Get [`MonitoredLine`](@ref) `x` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_x`](@ref)."""
 get_x_unitful(value::MonitoredLine, units) = get_value(value, Val(:x), Val(:ohm), units)
 get_x(value::MonitoredLine) = _units_arg_required(get_x, value, :x, Val(:ohm))
 get_x_unitful(value::MonitoredLine) = _units_arg_required(get_x_unitful, value, :x, Val(:ohm))
 InfrastructureSystems.display_units_arg(::typeof(get_x), ::Type{MonitoredLine}) = InfrastructureSystems.SU
 InfrastructureSystems.display_units_arg(::typeof(get_x_unitful), ::Type{MonitoredLine}) = InfrastructureSystems.SU
-"""Get [`MonitoredLine`](@ref) `b` as a bare number in the requested `units` (e.g. `SU`, `DU`; domain-provided units such as `MW` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_b_unitful`](@ref)."""
+"""Get [`MonitoredLine`](@ref) `b` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_b_unitful`](@ref)."""
 get_b(value::MonitoredLine, units) = InfrastructureSystems._strip_units(get_value(value, Val(:b), Val(:siemens), units))
-"""Get [`MonitoredLine`](@ref) `b` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `MW`). For a bare number see [`get_b`](@ref)."""
+"""Get [`MonitoredLine`](@ref) `b` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_b`](@ref)."""
 get_b_unitful(value::MonitoredLine, units) = get_value(value, Val(:b), Val(:siemens), units)
 get_b(value::MonitoredLine) = _units_arg_required(get_b, value, :b, Val(:siemens))
 get_b_unitful(value::MonitoredLine) = _units_arg_required(get_b_unitful, value, :b, Val(:siemens))
 InfrastructureSystems.display_units_arg(::typeof(get_b), ::Type{MonitoredLine}) = InfrastructureSystems.SU
 InfrastructureSystems.display_units_arg(::typeof(get_b_unitful), ::Type{MonitoredLine}) = InfrastructureSystems.SU
-"""Get [`MonitoredLine`](@ref) `flow_limits` as a bare number in the requested `units` (e.g. `SU`, `DU`; domain-provided units such as `MW` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_flow_limits_unitful`](@ref)."""
+"""Get [`MonitoredLine`](@ref) `flow_limits` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_flow_limits_unitful`](@ref)."""
 get_flow_limits(value::MonitoredLine, units) = InfrastructureSystems._strip_units(get_value(value, Val(:flow_limits), Val(:mw), units))
-"""Get [`MonitoredLine`](@ref) `flow_limits` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `MW`). For a bare number see [`get_flow_limits`](@ref)."""
+"""Get [`MonitoredLine`](@ref) `flow_limits` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_flow_limits`](@ref)."""
 get_flow_limits_unitful(value::MonitoredLine, units) = get_value(value, Val(:flow_limits), Val(:mw), units)
 get_flow_limits(value::MonitoredLine) = _units_arg_required(get_flow_limits, value, :flow_limits, Val(:mw))
 get_flow_limits_unitful(value::MonitoredLine) = _units_arg_required(get_flow_limits_unitful, value, :flow_limits, Val(:mw))
 InfrastructureSystems.display_units_arg(::typeof(get_flow_limits), ::Type{MonitoredLine}) = InfrastructureSystems.SU
 InfrastructureSystems.display_units_arg(::typeof(get_flow_limits_unitful), ::Type{MonitoredLine}) = InfrastructureSystems.SU
-"""Get [`MonitoredLine`](@ref) `rating` as a bare number in the requested `units` (e.g. `SU`, `DU`; domain-provided units such as `MW` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_rating_unitful`](@ref)."""
+"""Get [`MonitoredLine`](@ref) `rating` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_rating_unitful`](@ref)."""
 get_rating(value::MonitoredLine, units) = InfrastructureSystems._strip_units(get_value(value, Val(:rating), Val(:mva), units))
-"""Get [`MonitoredLine`](@ref) `rating` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `MW`). For a bare number see [`get_rating`](@ref)."""
+"""Get [`MonitoredLine`](@ref) `rating` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_rating`](@ref)."""
 get_rating_unitful(value::MonitoredLine, units) = get_value(value, Val(:rating), Val(:mva), units)
 get_rating(value::MonitoredLine) = _units_arg_required(get_rating, value, :rating, Val(:mva))
 get_rating_unitful(value::MonitoredLine) = _units_arg_required(get_rating_unitful, value, :rating, Val(:mva))
-InfrastructureSystems.display_units_arg(::typeof(get_rating), ::Type{MonitoredLine}) = InfrastructureSystems.DU
-InfrastructureSystems.display_units_arg(::typeof(get_rating_unitful), ::Type{MonitoredLine}) = InfrastructureSystems.DU
+InfrastructureSystems.display_units_arg(::typeof(get_rating), ::Type{MonitoredLine}) = InfrastructureSystems.CU
+InfrastructureSystems.display_units_arg(::typeof(get_rating_unitful), ::Type{MonitoredLine}) = InfrastructureSystems.CU
 """Get [`MonitoredLine`](@ref) `angle_limits`."""
 get_angle_limits(value::MonitoredLine) = value.angle_limits
-"""Get [`MonitoredLine`](@ref) `rating_b` as a bare number in the requested `units` (e.g. `SU`, `DU`; domain-provided units such as `MW` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_rating_b_unitful`](@ref)."""
+"""Get [`MonitoredLine`](@ref) `rating_b` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_rating_b_unitful`](@ref)."""
 get_rating_b(value::MonitoredLine, units) = InfrastructureSystems._strip_units(get_value(value, Val(:rating_b), Val(:mva), units))
-"""Get [`MonitoredLine`](@ref) `rating_b` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `MW`). For a bare number see [`get_rating_b`](@ref)."""
+"""Get [`MonitoredLine`](@ref) `rating_b` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_rating_b`](@ref)."""
 get_rating_b_unitful(value::MonitoredLine, units) = get_value(value, Val(:rating_b), Val(:mva), units)
 get_rating_b(value::MonitoredLine) = _units_arg_required(get_rating_b, value, :rating_b, Val(:mva))
 get_rating_b_unitful(value::MonitoredLine) = _units_arg_required(get_rating_b_unitful, value, :rating_b, Val(:mva))
 InfrastructureSystems.display_units_arg(::typeof(get_rating_b), ::Type{MonitoredLine}) = InfrastructureSystems.SU
 InfrastructureSystems.display_units_arg(::typeof(get_rating_b_unitful), ::Type{MonitoredLine}) = InfrastructureSystems.SU
-"""Get [`MonitoredLine`](@ref) `rating_c` as a bare number in the requested `units` (e.g. `SU`, `DU`; domain-provided units such as `MW` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_rating_c_unitful`](@ref)."""
+"""Get [`MonitoredLine`](@ref) `rating_c` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_rating_c_unitful`](@ref)."""
 get_rating_c(value::MonitoredLine, units) = InfrastructureSystems._strip_units(get_value(value, Val(:rating_c), Val(:mva), units))
-"""Get [`MonitoredLine`](@ref) `rating_c` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `MW`). For a bare number see [`get_rating_c`](@ref)."""
+"""Get [`MonitoredLine`](@ref) `rating_c` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_rating_c`](@ref)."""
 get_rating_c_unitful(value::MonitoredLine, units) = get_value(value, Val(:rating_c), Val(:mva), units)
 get_rating_c(value::MonitoredLine) = _units_arg_required(get_rating_c, value, :rating_c, Val(:mva))
 get_rating_c_unitful(value::MonitoredLine) = _units_arg_required(get_rating_c_unitful, value, :rating_c, Val(:mva))
 InfrastructureSystems.display_units_arg(::typeof(get_rating_c), ::Type{MonitoredLine}) = InfrastructureSystems.SU
 InfrastructureSystems.display_units_arg(::typeof(get_rating_c_unitful), ::Type{MonitoredLine}) = InfrastructureSystems.SU
-"""Get [`MonitoredLine`](@ref) `g` as a bare number in the requested `units` (e.g. `SU`, `DU`; domain-provided units such as `MW` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_g_unitful`](@ref)."""
+"""Get [`MonitoredLine`](@ref) `g` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_g_unitful`](@ref)."""
 get_g(value::MonitoredLine, units) = InfrastructureSystems._strip_units(get_value(value, Val(:g), Val(:siemens), units))
-"""Get [`MonitoredLine`](@ref) `g` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `DU`, `MW`). For a bare number see [`get_g`](@ref)."""
+"""Get [`MonitoredLine`](@ref) `g` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_g`](@ref)."""
 get_g_unitful(value::MonitoredLine, units) = get_value(value, Val(:g), Val(:siemens), units)
 get_g(value::MonitoredLine) = _units_arg_required(get_g, value, :g, Val(:siemens))
 get_g_unitful(value::MonitoredLine) = _units_arg_required(get_g_unitful, value, :g, Val(:siemens))

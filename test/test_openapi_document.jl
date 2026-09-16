@@ -27,16 +27,13 @@ function _openapi_test_sidecar(dir; owner_id = 7, owner_type = "PowerLoad")
     path = joinpath(dir, "doc_time_series_storage.h5")
     store = IS.Store(; in_memory = true)
     try
-        batch = IS.make_add_batch()
-        IS.serialize_single!(
-            batch,
+        IS.add_time_series!(
+            store,
             owner_id,
             owner_type,
             IS.get_owner_category(IS.InfrastructureSystemsComponent),
-            IS.get_name(series),
             series,
         )
-        IS.commit_batch!(store, batch)
         IS.serialize(store, path)
     finally
         IS.close!(store)
@@ -150,7 +147,16 @@ end
         # Association references an unresolved entity_id.
         doc = make_openapi_test_doc()
         doc["supplemental_attributes"] =
-            [openapi_raw(PSY.IC.GeographicInfo(; id = 1, geo_json = Dict{String, Any}()))]
+            [
+                openapi_raw(
+                    PSY.IC.GeographicInfo(;
+                        id = 1,
+                        geo_json = PSY.IC.GeographicInfoGeoJson(;
+                            additional_properties = Dict{String, Any}(),
+                        ),
+                    ),
+                ),
+            ]
         doc["supplemental_attribute_associations"] = [
             Dict{String, Any}(
                 "attribute_id" => 1, "component_id" => 999, "component_type" => "ACBus",
@@ -165,10 +171,15 @@ end
     doc = make_openapi_test_doc()
     geo_po = PSY.IC.GeographicInfo(;
         id = 100,
-        geo_json = Dict{String, Any}("type" => "Point", "coordinates" => [1.0, 2.0]),
+        geo_json = PSY.IC.GeographicInfoGeoJson(;
+            additional_properties = Dict{String, Any}(
+                "type" => "Point",
+                "coordinates" => [1.0, 2.0],
+            ),
+        ),
     )
     emissions_po = PSY.PO.EmissionsData(;
-        id = 101, name = "gen1_CO2", pollutant = "CO2",
+        id = 101, name = "gen1_CO2", pollutant = PSY.PC.PollutantType("CO2"),
         emission_rate = PSY.PC.ValueCurve(
             PSY.PC.IncrementalCurve(;
                 function_data = PSY.PC.IncrementalCurveFunctionData(
@@ -180,8 +191,9 @@ end
                 initial_input = 0.0,
             ),
         ),
-        basis = "FUEL_INPUT", start_up_adder = 0.0, mass_unit = "LB",
-        energy_unit = "MMBTU", gwp = 1.0, available = true,
+        basis = PSY.PC.EmissionBasis("FUEL_INPUT"), start_up_adder = 0.0,
+        mass_unit = PSY.PC.MassUnit("LB"),
+        energy_unit = PSY.PC.EnergyUnit("MMBTU"), gwp = 1.0, available = true,
     )
     doc["supplemental_attributes"] = [openapi_raw(geo_po), openapi_raw(emissions_po)]
     doc["supplemental_attribute_associations"] = [
@@ -222,7 +234,7 @@ end
     refs[1] = bus
 
     emissions_po = PSY.PO.EmissionsData(;
-        id = 2, name = "gen1_CO2", pollutant = "CO2",
+        id = 2, name = "gen1_CO2", pollutant = PSY.PC.PollutantType("CO2"),
         emission_rate = PSY.PC.ValueCurve(
             PSY.PC.IncrementalCurve(;
                 function_data = PSY.PC.IncrementalCurveFunctionData(
@@ -234,8 +246,9 @@ end
                 initial_input = 0.0,
             ),
         ),
-        basis = "FUEL_INPUT", start_up_adder = 0.0, mass_unit = "LB",
-        energy_unit = "MMBTU", gwp = 1.0, available = true,
+        basis = PSY.PC.EmissionBasis("FUEL_INPUT"), start_up_adder = 0.0,
+        mass_unit = PSY.PC.MassUnit("LB"),
+        energy_unit = PSY.PC.EnergyUnit("MMBTU"), gwp = 1.0, available = true,
     )
     emissions = PSY.from_openapi(emissions_po, refs)
     @test get_pollutant(emissions) == PollutantType.CO2
@@ -244,7 +257,7 @@ end
     @test get_energy_unit(emissions) == EnergyUnit.MMBTU
 
     outage_po = PSY.PO.GeometricDistributionForcedOutage(;
-        id = 3, mean_time_to_recovery = 480, outage_transition_probability = 0.001,
+        id = 3, mean_time_to_recovery = 480.0, outage_transition_probability = 0.001,
         monitored_components = [1],
     )
     outage = PSY.from_openapi(outage_po, refs)
@@ -259,12 +272,15 @@ end
     fixed = PSY.from_openapi(fixed_po, refs)
     @test PSY.get_outage_status(fixed) == 1.0
     @test get_monitored_components(fixed) == Set{Base.UUID}()
+    @test isnothing(get_identifier(fixed))
 
     planned_po = PSY.PO.PlannedOutage(;
         id = 5, outage_schedule = "maintenance_2024", monitored_components = [1],
+        identifier = "block_12",
     )
     planned = PSY.from_openapi(planned_po, refs)
     @test get_outage_schedule(planned) == "maintenance_2024"
+    @test get_identifier(planned) == "block_12"
 
     plant_po = PSY.PO.ThermalPowerPlant(; id = 6, name = "plant1")
     plant = PSY.from_openapi(plant_po, refs)
@@ -279,7 +295,8 @@ end
     @test get_name(renewable_plant) == "rp1"
 
     cc_block_po = PSY.PO.CombinedCycleBlock(;
-        id = 9, name = "cc1", configuration = "SingleShaftCombustionSteam",
+        id = 9, name = "cc1",
+        configuration = PSY.PO.CombinedCycleConfiguration("SingleShaftCombustionSteam"),
         heat_recovery_to_steam_factor = 0.5,
     )
     cc_block = PSY.from_openapi(cc_block_po, refs)
@@ -288,13 +305,22 @@ end
     @test get_heat_recovery_to_steam_factor(cc_block) == 0.5
 
     cc_frac_po =
-        PSY.PO.CombinedCycleFractional(; id = 10, name = "cc2", configuration = "Other")
+        PSY.PO.CombinedCycleFractional(;
+            id = 10,
+            name = "cc2",
+            configuration = PSY.PO.CombinedCycleConfiguration("Other"),
+        )
     cc_frac = PSY.from_openapi(cc_frac_po, refs)
     @test get_configuration(cc_frac) == CombinedCycleConfiguration.Other
 
     geo_po = PSY.IC.GeographicInfo(;
         id = 11,
-        geo_json = Dict{String, Any}("type" => "Point", "coordinates" => [1.0, 2.0]),
+        geo_json = PSY.IC.GeographicInfoGeoJson(;
+            additional_properties = Dict{String, Any}(
+                "type" => "Point",
+                "coordinates" => [1.0, 2.0],
+            ),
+        ),
     )
     geo = PSY.from_openapi(geo_po, refs)
     @test get_geo_json(geo)["type"] == "Point"
@@ -352,7 +378,8 @@ end
     @test get_decremental_offer_curves(mbc2) == get_decremental_offer_curves(mbc)
     @test get_incremental_slope(mbc2)
     @test !get_decremental_slope(mbc2)
-    @test get_curve_style(mbc2) == CurveStyles.CURVE
+    @test get_curve_style(mbc2) == CurveStyles.VARIABLE
+    @test get_curve_multistep(mbc2) == CurveMultiStep.SINGLE_STEP
     offers = get_ancillary_service_offers(mbc2)
     @test length(offers) == 1
     @test get_name(only(offers)) == "RESERVE"
@@ -389,6 +416,9 @@ function _market_bid_cost_fixture()
 end
 
 @testset "convert_cost(MarketBidCost): explicit null curve_style errors loudly, not MethodError" begin
+    # `_decode` validates the raw JSON against the schema eagerly: a malformed `curve_style`
+    # is rejected at document decode, before PSY's own `_curve_style_from_wire` ever runs,
+    # with a generic `oneOf` mismatch on the owning device's `operation_cost`.
     sys, gen = _market_bid_cost_fixture()
     mktempdir() do dir
         to_file(sys, dir; force = true)
@@ -396,11 +426,14 @@ end
         txt = read(document_path, String)
         @test occursin("\"curve_style\":0", txt)
         write(document_path, replace(txt, "\"curve_style\":0" => "\"curve_style\":null"))
-        @test_throws "MarketBidCost.curve_style is required and missing" from_file(dir)
+        @test_throws "schema validation failed while decoding ThermalStandard" from_file(
+            dir,
+        )
     end
 end
 
 @testset "convert_cost(MarketBidCost): explicit null incremental_slope errors loudly" begin
+    # Same decode-time schema rejection as the curve_style testset above.
     sys, gen = _market_bid_cost_fixture()
     mktempdir() do dir
         to_file(sys, dir; force = true)
@@ -411,20 +444,42 @@ end
             document_path,
             replace(txt, "\"incremental_slope\":false" => "\"incremental_slope\":null"),
         )
-        @test_throws "MarketBidCost.incremental_slope is required and missing" from_file(
+        @test_throws "schema validation failed while decoding ThermalStandard" from_file(
             dir,
         )
     end
 end
 
 @testset "_curve_style_from_wire rejects an out-of-range integer" begin
+    # Same decode-time schema rejection: the schema's own `curve_style` enum whitelist
+    # (0/1) rejects 2 before `_curve_style_from_wire` would ever see it.
     sys, gen = _market_bid_cost_fixture()
     mktempdir() do dir
         to_file(sys, dir; force = true)
         document_path = joinpath(dir, "system.json")
         txt = read(document_path, String)
-        write(document_path, replace(txt, "\"curve_style\":0" => "\"curve_style\":7"))
-        @test_throws "curve_style 7 is not a valid CurveStyles value" from_file(dir)
+        write(document_path, replace(txt, "\"curve_style\":0" => "\"curve_style\":2"))
+        @test_throws "schema validation failed while decoding ThermalStandard" from_file(
+            dir,
+        )
+    end
+end
+
+@testset "_curve_multistep_from_wire rejects an out-of-range integer" begin
+    # Same decode-time schema rejection as the curve_style testset above.
+    sys, gen = _market_bid_cost_fixture()
+    mktempdir() do dir
+        to_file(sys, dir; force = true)
+        document_path = joinpath(dir, "system.json")
+        txt = read(document_path, String)
+        @test occursin("\"curve_multistep\":0", txt)
+        write(
+            document_path,
+            replace(txt, "\"curve_multistep\":0" => "\"curve_multistep\":2"),
+        )
+        @test_throws "schema validation failed while decoding ThermalStandard" from_file(
+            dir,
+        )
     end
 end
 
@@ -496,14 +551,21 @@ end
         to_file(sys, dir; force = true)
         document_path = joinpath(dir, "system.json")
         doc = PSY.PD.read_document(document_path)
-        gen_row = only(
-            row for
-            row in PSY.PD.get_components(doc, "ThermalStandard") if Int(row.id) == gen_id
+        thermal_rows = PSY.PD.get_components(doc, "ThermalStandard")
+        gen_index = only(
+            i for i in eachindex(thermal_rows) if Int(thermal_rows[i].id) == gen_id
         )
+        gen_row = thermal_rows[gen_index]
         # `PD.read_document` parses the oneOf wrapper (`PO.ThermalStandardOperationCost`),
         # not the bare cost `to_openapi`'s in-memory path hands back — set the field on the
-        # unwrapped `.value`, exactly what `_load_market_bid_service_offers!` reads.
-        gen_row.operation_cost.value.ancillary_service_offers = Int64[svc_id]
+        # unwrapped `.value`, exactly what `_load_market_bid_service_offers!` reads. Every PO
+        # struct is immutable, so rebuild the cost, its wrapper, and the owning row rather
+        # than mutating in place, and replace the row by index.
+        new_cost = PSY._po_with(
+            gen_row.operation_cost.value; ancillary_service_offers = Int64[svc_id],
+        )
+        new_wrapper = typeof(gen_row.operation_cost)(new_cost)
+        thermal_rows[gen_index] = PSY._po_with(gen_row; operation_cost = new_wrapper)
         PSY.PD.write_document(doc, document_path; force = true)
 
         sys2 = from_file(dir)
@@ -568,16 +630,16 @@ end
         @test mbtc2 isa MarketBidTimeSeriesCost
         @test get_incremental_slope(mbtc2)
         @test !get_decremental_slope(mbtc2)
-        @test get_curve_style(mbtc2) == CurveStyles.CURVE
+        @test get_curve_style(mbtc2) == CurveStyles.VARIABLE
     end
 end
 
 @testset "MarketBidTimeSeriesCost round trip: curve_style" begin
     sys, gen = _mbtc_extension_fixture(; curve_style = CurveStyles.FIXED)
 
-    # The wire representation is a plain integer (0/1/2), not a string enum.
+    # The wire representation is a plain integer (0/1), not a string enum.
     wire = PSY.convert_cost_to_openapi(get_operation_cost(gen))
-    @test wire.curve_style == 1
+    @test wire.curve_style.value == 1
 
     mktempdir() do dir
         to_file(sys, dir; force = true)
@@ -588,6 +650,28 @@ end
         @test !get_incremental_slope(mbtc2)
         @test !get_decremental_slope(mbtc2)
         @test get_curve_style(mbtc2) == CurveStyles.FIXED
+    end
+end
+
+@testset "MarketBidTimeSeriesCost round trip: curve_multistep" begin
+    sys, gen = _mbtc_extension_fixture(;
+        curve_style = CurveStyles.VARIABLE,
+        curve_multistep = CurveMultiStep.MULTI_STEP,
+    )
+
+    # Same wire convention as curve_style: a plain integer (0/1).
+    wire = PSY.convert_cost_to_openapi(get_operation_cost(gen))
+    @test wire.curve_style.value == 0
+    @test wire.curve_multistep.value == 1
+
+    mktempdir() do dir
+        to_file(sys, dir; force = true)
+        sys2 = from_file(dir)
+        gen2 = get_component(ThermalStandard, sys2, "gen1")
+        mbtc2 = get_operation_cost(gen2)
+        @test mbtc2 isa MarketBidTimeSeriesCost
+        @test get_curve_style(mbtc2) == CurveStyles.VARIABLE
+        @test get_curve_multistep(mbtc2) == CurveMultiStep.MULTI_STEP
     end
 end
 
@@ -608,7 +692,7 @@ end
     gen.time_limits = (up = 2.0, down = 1.0)
     gen.start_time_limits = (hot = 2.0, warm = 4.0, cold = 8.0)
     gen.start_types = 3
-    gen.must_run = true
+    gen.commitment_mode = CommitmentModes.MUST_RUN
     add_component!(sys, gen)
     svc = OnlineReserve{ReserveUp}(;
         name = "RESERVE", available = true, time_frame = 10.0, requirement = 0.1)
@@ -621,19 +705,19 @@ end
     push!(get_ancillary_service_offers(mbc), svc)
     set_operation_cost!(gen, mbc)
 
-    for units in (DU, NU)
+    for units in (CU, NU)
         doc = to_openapi(sys; units = units)
         sys2 = from_openapi(System, doc)
         gen2 = get_component(ThermalMultiStart, sys2, "ms1")
         @test !isnothing(gen2)
         @test get_base_power(gen2) == 50.0
-        @test get_active_power_limits(gen2, PSY.DU) == (min = 0.2, max = 1.0)
-        @test get_ramp_limits(gen2, PSY.DU) == (up = 0.1, down = 0.1)
-        @test get_power_trajectory(gen2, PSY.DU) == (startup = 0.3, shutdown = 0.25)
+        @test get_active_power_limits(gen2, PSY.CU) == (min = 0.2, max = 1.0)
+        @test get_ramp_limits(gen2, PSY.CU / u"minute") == (up = 0.1, down = 0.1)
+        @test get_power_trajectory(gen2, PSY.CU) == (startup = 0.3, shutdown = 0.25)
         @test get_time_limits(gen2) == (up = 2.0, down = 1.0)
         @test get_start_time_limits(gen2) == (hot = 2.0, warm = 4.0, cold = 8.0)
         @test get_start_types(gen2) == 3
-        @test get_must_run(gen2)
+        @test get_commitment_mode(gen2) == CommitmentModes.MUST_RUN
         mbc2 = get_operation_cost(gen2)
         @test mbc2 isa MarketBidCost
         @test get_incremental_offer_curves(mbc2) == get_incremental_offer_curves(mbc)
@@ -686,7 +770,7 @@ end
     )
     add_component!(sys, tail)
 
-    for units in (DU, NU)
+    for units in (CU, NU)
         doc = to_openapi(sys; units = units)
         sys2 = from_openapi(System, doc)
 
@@ -724,7 +808,7 @@ end
     # `PowerSystems`, so an assertion that fired on stale generated code would make the
     # module unloadable and take regeneration down with it.
     for (po_type, psy_type, key, _addable) in PSY.DOCUMENT_PLAN
-        for units in (typeof(DU), typeof(NU))
+        for units in (typeof(CU), typeof(NU))
             @test hasmethod(PSY.from_openapi, (po_type, PSY.OpenAPIRefs, units))
             @test hasmethod(PSY.to_openapi, (psy_type, PSY.OpenAPIRefs, units))
             returned = Base.return_types(
@@ -734,4 +818,31 @@ end
             @test only(returned) <: psy_type
         end
     end
+end
+
+@testset "ImpedanceCorrectionData round trips through the document" begin
+    # Both enum fields are wrapper structs on the OpenAPI side, and neither direction
+    # converts implicitly: import must unwrap `.value`, export must construct the wrapper.
+    attr = ImpedanceCorrectionData(;
+        table_number = 3,
+        impedance_correction_curve = PiecewiseLinearData([
+            (x = 0.9, y = 1.0),
+            (x = 1.1, y = 1.2),
+        ]),
+        transformer_winding = WindingCategory.PRIMARY_WINDING,
+        transformer_control_mode = ImpedanceCorrectionTransformerControlMode.TAP_RATIO,
+    )
+    refs = PSY.OpenAPIRefs()
+    refs[7] = attr
+    po = PSY.to_openapi(attr, refs)
+    @test po.transformer_winding.value == "PRIMARY_WINDING"
+    @test po.transformer_control_mode.value == "TAP_RATIO"
+
+    back = PSY.from_openapi(po, refs)
+    @test get_table_number(back) == 3
+    @test get_transformer_winding(back) == WindingCategory.PRIMARY_WINDING
+    @test get_transformer_control_mode(back) ==
+          ImpedanceCorrectionTransformerControlMode.TAP_RATIO
+    @test get_impedance_correction_curve(back) ==
+          get_impedance_correction_curve(attr)
 end

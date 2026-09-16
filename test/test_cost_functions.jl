@@ -326,38 +326,6 @@ end
     @test get_level_surplus_cost(cost) == 20.0
 end
 
-# Helpers shared by the time-series cost-resolution tests below.
-# Each timestamp gets a *distinct* PiecewiseStepData so that resolving at a known
-# `start_time` produces an unambiguous expected slice.
-const _TS_RESOLVE_INITIAL_TIME = Dates.DateTime("2020-01-01")
-const _TS_RESOLVE_RESOLUTION = Dates.Hour(1)
-# Match RTS_GMLC's 24h forecast horizon. First step is distinct so the resolution
-# at `_TS_RESOLVE_INITIAL_TIME` is unambiguously identifiable.
-const _TS_RESOLVE_PWL_DATA = vcat(
-    [PiecewiseStepData([1.0, 3.0, 5.0], [2.0, 4.0])],
-    fill(PiecewiseStepData([2.0, 4.0, 6.0], [3.0, 5.0]), 23),
-)
-
-function _attach_pwl_forecast(sys, component, name)
-    fcst = IS.Deterministic(;
-        data = SortedDict(_TS_RESOLVE_INITIAL_TIME => _TS_RESOLVE_PWL_DATA),
-        name = name,
-        resolution = _TS_RESOLVE_RESOLUTION,
-    )
-    return add_time_series!(sys, component, fcst)
-end
-
-function _attach_linear_forecast(sys, component, name)
-    fcst = IS.Deterministic(;
-        data = SortedDict(
-            _TS_RESOLVE_INITIAL_TIME => fill(IS.LinearFunctionData(1.0, 0.0), 24),
-        ),
-        name = name,
-        resolution = _TS_RESOLVE_RESOLUTION,
-    )
-    return add_time_series!(sys, component, fcst)
-end
-
 @testset "MarketBidTimeSeriesCost resolves variable cost at start_time" begin
     sys = PSB.build_system(PSITestSystems, "test_RTS_GMLC_sys")
     generator = get_component(ThermalStandard, sys, "322_CT_6")

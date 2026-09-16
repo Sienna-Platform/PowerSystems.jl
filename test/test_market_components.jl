@@ -24,9 +24,17 @@ end
 @testset "CurveStyles numeric contract" begin
     # The wire representation (SiennaSchemas' `curve_style` field) is a plain integer,
     # not the string-enum convention used elsewhere in the schemas; pin the mapping.
-    @test CurveStyles.CURVE.value == 0
+    @test CurveStyles.VARIABLE.value == 0
     @test CurveStyles.FIXED.value == 1
-    @test CurveStyles.VARIABLE.value == 2
+    # The former three-way CURVE / FIXED / VARIABLE split collapsed into these two.
+    @test_throws ErrorException CurveStyles.CURVE
+end
+
+@testset "CurveMultiStep numeric contract" begin
+    # Same wire convention as `curve_style`: SiennaSchemas' `curve_multistep` is a plain
+    # integer (0/1), not a string enum; pin the mapping.
+    @test CurveMultiStep.SINGLE_STEP.value == 0
+    @test CurveMultiStep.MULTI_STEP.value == 1
 end
 
 @testset "MarketBidCost extensions" begin
@@ -34,18 +42,83 @@ end
     @test get_incremental_slope(c)
     @test !get_decremental_slope(c)
     @test !get_incremental_slope(MarketBidCost(nothing))
-    @test get_curve_style(MarketBidCost(nothing)) == CurveStyles.CURVE
+    @test get_curve_style(MarketBidCost(nothing)) == CurveStyles.VARIABLE
 
     c2 = MarketBidCost(; curve_style = CurveStyles.FIXED)
     @test get_curve_style(c2) == CurveStyles.FIXED
 
+    @test get_curve_multistep(MarketBidCost(nothing)) == CurveMultiStep.SINGLE_STEP
+    @test get_curve_multistep(c2) == CurveMultiStep.SINGLE_STEP
+    c3 = MarketBidCost(; curve_multistep = CurveMultiStep.MULTI_STEP)
+    @test get_curve_multistep(c3) == CurveMultiStep.MULTI_STEP
+    @test get_curve_style(c3) == CurveStyles.VARIABLE
+    set_curve_multistep!(c3, CurveMultiStep.SINGLE_STEP)
+    @test get_curve_multistep(c3) == CurveMultiStep.SINGLE_STEP
+
+    # The quantity switch (curve_style) and the time switch (curve_multistep) are independent:
+    # every combination constructs, and multi-step does not trip the slope exclusivity check.
+    c4 = MarketBidCost(;
+        curve_style = CurveStyles.FIXED,
+        curve_multistep = CurveMultiStep.MULTI_STEP,
+    )
+    @test get_curve_style(c4) == CurveStyles.FIXED
+    @test get_curve_multistep(c4) == CurveMultiStep.MULTI_STEP
+    c5 = MarketBidCost(;
+        incremental_slope = true,
+        curve_multistep = CurveMultiStep.MULTI_STEP,
+    )
+    @test get_incremental_slope(c5)
+    @test get_curve_multistep(c5) == CurveMultiStep.MULTI_STEP
+
+    # The positional (single start-up value) constructor forwards the kwarg.
+    c6 = MarketBidCost(
+        LinearCurve(0.0), 10.0, LinearCurve(0.0);
+        curve_multistep = CurveMultiStep.MULTI_STEP,
+    )
+    @test get_curve_multistep(c6) == CurveMultiStep.MULTI_STEP
+
+    # FIXED is all-or-nothing, so linear interpolation has no meaning on it; VARIABLE is
+    # the continuous curve and takes either interpretation.
     @test_throws ArgumentError MarketBidCost(;
         incremental_slope = true,
         curve_style = CurveStyles.FIXED,
     )
     @test_throws ArgumentError MarketBidCost(;
         decremental_slope = true,
+        curve_style = CurveStyles.FIXED,
+    )
+    c7 = MarketBidCost(; decremental_slope = true, curve_style = CurveStyles.VARIABLE)
+    @test get_decremental_slope(c7)
+    @test get_curve_style(c7) == CurveStyles.VARIABLE
+end
+
+@testset "MarketBidCost FIXED requires a single segment on both offer curves" begin
+    one_segment = make_market_bid_curve([0.0, 100.0], [10.0], 0.0)
+    two_segments = make_market_bid_curve([0.0, 50.0, 100.0], [10.0, 20.0], 0.0)
+
+    fixed = MarketBidCost(;
+        curve_style = CurveStyles.FIXED,
+        incremental_offer_curves = one_segment,
+        decremental_offer_curves = one_segment,
+    )
+    @test get_curve_style(fixed) == CurveStyles.FIXED
+
+    # VARIABLE is the continuous case and takes any number of segments.
+    variable = MarketBidCost(;
         curve_style = CurveStyles.VARIABLE,
+        incremental_offer_curves = two_segments,
+        decremental_offer_curves = two_segments,
+    )
+    @test get_curve_style(variable) == CurveStyles.VARIABLE
+
+    # FIXED is all-or-nothing: exactly one segment, on either side.
+    @test_throws "incremental_offer_curves" MarketBidCost(;
+        curve_style = CurveStyles.FIXED,
+        incremental_offer_curves = two_segments,
+    )
+    @test_throws "decremental_offer_curves" MarketBidCost(;
+        curve_style = CurveStyles.FIXED,
+        decremental_offer_curves = two_segments,
     )
 end
 
@@ -81,7 +154,22 @@ end
     )
     @test !get_incremental_slope(mbtc)
     @test !get_decremental_slope(mbtc)
-    @test get_curve_style(mbtc) == CurveStyles.CURVE
+    @test get_curve_style(mbtc) == CurveStyles.VARIABLE
+    @test get_curve_multistep(mbtc) == CurveMultiStep.SINGLE_STEP
+
+    mbtc_multistep = MarketBidTimeSeriesCost(;
+        minimum_energy_offer = IS.TimeSeriesLinearCurve(nl_key),
+        start_up = su_key,
+        shut_down = IS.TimeSeriesLinearCurve(sd_key),
+        incremental_offer_curves = make_market_bid_ts_curve(inc_key),
+        decremental_offer_curves = make_market_bid_ts_curve(dec_key),
+        curve_style = CurveStyles.VARIABLE,
+        curve_multistep = CurveMultiStep.MULTI_STEP,
+    )
+    @test get_curve_style(mbtc_multistep) == CurveStyles.VARIABLE
+    @test get_curve_multistep(mbtc_multistep) == CurveMultiStep.MULTI_STEP
+    set_curve_multistep!(mbtc_multistep, CurveMultiStep.SINGLE_STEP)
+    @test get_curve_multistep(mbtc_multistep) == CurveMultiStep.SINGLE_STEP
 
     mbtc_slope = MarketBidTimeSeriesCost(;
         minimum_energy_offer = IS.TimeSeriesLinearCurve(nl_key),
@@ -93,6 +181,9 @@ end
     )
     @test get_incremental_slope(mbtc_slope)
 
+    # The offer curves are keys, not data, so FIXED constructs even though the forecast
+    # behind `inc_key` has two segments; the single-segment rule is enforced at resolution
+    # (see the dedicated testset below).
     mbtc_fixed = MarketBidTimeSeriesCost(;
         minimum_energy_offer = IS.TimeSeriesLinearCurve(nl_key),
         start_up = su_key,
@@ -119,11 +210,88 @@ end
         incremental_offer_curves = make_market_bid_ts_curve(inc_key),
         decremental_offer_curves = make_market_bid_ts_curve(dec_key),
         decremental_slope = true,
+        curve_style = CurveStyles.FIXED,
+    )
+    mbtc_variable_slope = MarketBidTimeSeriesCost(;
+        minimum_energy_offer = IS.TimeSeriesLinearCurve(nl_key),
+        start_up = su_key,
+        shut_down = IS.TimeSeriesLinearCurve(sd_key),
+        incremental_offer_curves = make_market_bid_ts_curve(inc_key),
+        decremental_offer_curves = make_market_bid_ts_curve(dec_key),
+        decremental_slope = true,
         curve_style = CurveStyles.VARIABLE,
     )
+    @test get_decremental_slope(mbtc_variable_slope)
 end
 
-@testset "CurveStyles round-trips through JSON serialization" begin
+@testset "MarketBidTimeSeriesCost FIXED single segment is enforced at resolution" begin
+    sys = System(100.0)
+    bus = ACBus(nothing)
+    bus.bustype = ACBusTypes.REF
+    add_component!(sys, bus)
+    generator = ThermalStandard(nothing)
+    generator.name = "market_gen_fixed"
+    generator.bus = bus
+    add_component!(sys, generator)
+
+    # Two segments at every timestep: the time-series analogue of the static curve that
+    # `MarketBidCost` rejects at construction.
+    two_segment_key = _attach_pwl_forecast(sys, generator, "inc_two_segments")
+    one_segment_key = add_time_series!(
+        sys, generator,
+        IS.Deterministic(;
+            data = SortedDict(
+                _TS_RESOLVE_INITIAL_TIME =>
+                    fill(PiecewiseStepData([0.0, 5.0], [2.0]), 24),
+            ),
+            name = "inc_one_segment",
+            resolution = _TS_RESOLVE_RESOLUTION,
+        ),
+    )
+    nl_key = _attach_linear_forecast(sys, generator, "no_load_fixed")
+    sd_key = _attach_linear_forecast(sys, generator, "shut_down_fixed")
+    timestamps =
+        range(_TS_RESOLVE_INITIAL_TIME; step = _TS_RESOLVE_RESOLUTION, length = 24)
+    su_key = add_time_series!(
+        sys, generator,
+        IS.SingleTimeSeries(;
+            name = "start_up_stages_fixed",
+            data = TimeSeries.TimeArray(collect(timestamps), fill((0.0, 0.0, 0.0), 24)),
+        ),
+    )
+    _cost(style, inc_key, dec_key) = MarketBidTimeSeriesCost(;
+        minimum_energy_offer = IS.TimeSeriesLinearCurve(nl_key),
+        start_up = su_key,
+        shut_down = IS.TimeSeriesLinearCurve(sd_key),
+        incremental_offer_curves = make_market_bid_ts_curve(inc_key),
+        decremental_offer_curves = make_market_bid_ts_curve(dec_key),
+        curve_style = style,
+    )
+    t0 = _TS_RESOLVE_INITIAL_TIME
+
+    # The constructor holds keys only, so the multi-segment series constructs...
+    bad = _cost(CurveStyles.FIXED, two_segment_key, one_segment_key)
+    @test get_curve_style(bad) == CurveStyles.FIXED
+    # ...and the rule fires where the key meets its data: at resolution.
+    @test_throws "FIXED" get_variable_cost(generator, bad; start_time = t0)
+    @test_throws "FIXED" get_incremental_variable_cost(
+        generator, bad; start_time = t0, len = 24,
+    )
+    # The decremental side is single-segment, so it resolves on its own.
+    @test get_decremental_variable_cost(generator, bad; start_time = t0) isa CostCurve
+
+    good = _cost(CurveStyles.FIXED, one_segment_key, one_segment_key)
+    @test get_variable_cost(generator, good; start_time = t0) isa CostCurve
+    @test length(get_variable_cost(generator, good; start_time = t0, len = 24)) == 24
+    @test get_decremental_variable_cost(generator, good; start_time = t0) isa CostCurve
+
+    # VARIABLE is the continuous case: any number of segments resolves.
+    variable = _cost(CurveStyles.VARIABLE, two_segment_key, two_segment_key)
+    @test get_variable_cost(generator, variable; start_time = t0) isa CostCurve
+    @test get_decremental_variable_cost(generator, variable; start_time = t0) isa CostCurve
+end
+
+@testset "CurveStyles and CurveMultiStep round-trip through JSON serialization" begin
     sys = System(100.0)
     bus = ACBus(nothing)
     bus.bustype = ACBusTypes.REF
@@ -135,12 +303,14 @@ end
     mbc = MarketBidCost(;
         start_up = (hot = 0.0, warm = 0.0, cold = 0.0),
         curve_style = CurveStyles.FIXED,
+        curve_multistep = CurveMultiStep.MULTI_STEP,
     )
     set_operation_cost!(gen, mbc)
 
     sys2 = roundtrip_system(sys)
     gen2 = get_component(ThermalStandard, sys2, "curve_style_gen")
     @test get_curve_style(get_operation_cost(gen2)) == CurveStyles.FIXED
+    @test get_curve_multistep(get_operation_cost(gen2)) == CurveMultiStep.MULTI_STEP
 end
 
 @testset "MarketBidTimeSeriesCost keys survive JSON round trip as association ids" begin

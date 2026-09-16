@@ -1,5 +1,3 @@
-isdefined(Base, :__precompile__) && __precompile__()
-
 """
 Module for constructing self-contained power system objects.
 """
@@ -115,6 +113,7 @@ export InputOutputCurve, IncrementalCurve, AverageRateCurve
 export LinearCurve, QuadraticCurve
 export PiecewisePointCurve, PiecewiseIncrementalCurve, PiecewiseAverageCurve
 export ProductionVariableCostCurve, CostCurve, FuelCurve
+export LossCurve, AnyLossCurve
 export get_function_data, get_initial_input, get_input_at_zero
 export get_value_curve, get_power_units
 
@@ -326,6 +325,7 @@ export get_mean_time_to_recovery
 export get_outage_transition_probability
 export get_outage_schedule
 export get_monitored_components
+export get_identifier
 export set_monitored_components!
 export clear_monitored_components!
 export add_monitored_component!
@@ -402,6 +402,7 @@ export TransmissionInterface
 export AngleUnits
 export ACBusTypes
 export CurveStyles
+export CurveMultiStep
 export FACTSOperationModes
 export VSCDCControlModes
 export VSCACControlModes
@@ -411,6 +412,8 @@ export DiscreteControlledBranchStatus
 export DiscreteControlledBranchType
 export PrimeMovers
 export ThermalFuels
+export OperationalStates
+export CommitmentModes
 export StorageTech
 export StateTypes
 export ReservoirDataType
@@ -579,6 +582,7 @@ export get_ancillary_service_offers, set_ancillary_service_offers!
 export get_incremental_slope, set_incremental_slope!
 export get_decremental_slope, set_decremental_slope!
 export get_curve_style, set_curve_style!
+export get_curve_multistep, set_curve_multistep!
 export get_import_offer_curves, set_import_offer_curves!
 export get_export_offer_curves, set_export_offer_curves!
 export get_import_variable_cost, get_export_variable_cost
@@ -603,7 +607,6 @@ export CompressionTypes
 #export make_time_series
 export get_bus_numbers
 export set_bus_number!
-export set_number!  # Remove this in v5.0.
 export get_name
 export set_name!
 export get_component_ids
@@ -661,7 +664,7 @@ export check_component
 export check_components
 export check_ac_transmission_rate_values
 
-# From IS logging.jl, generate_struct_files.jl
+# From IS logging.jl
 export configure_logging
 export open_file_logger
 export make_logging_config_file
@@ -669,12 +672,13 @@ export MultiLogger
 export LogEventTracker
 export StructField
 export StructDefinition
-export generate_struct_file
-export generate_struct_files
 export UnitSystem # internal.jl
-# Unit types for explicit units in getters/setters
-export MW, MVAr, MVA, kV, OHMS, SIEMENS
-export DU, SU, NU, DeviceBaseUnit, SystemBaseUnit, NaturalUnit
+# Unit types for explicit units in getters/setters.
+# Natural units are Unitful's `u"..."` string macro (`u"MW"`, `u"kV"`, `u"Ω"`,
+# `u"S"`, and PSY's own `u"MVA"`/`u"MVAr"`); re-exporting `@u_str` means `using
+# PowerSystems` is enough to write them without also importing Unitful.
+export @u_str
+export CU, SU, NU, ComponentBaseUnit, SystemBaseUnit, NaturalUnit
 export AbstractRelativeUnit, RelativeQuantity
 export UnitCategory, AbstractPowerCategory,
     ActivePowerCategory, ReactivePowerCategory, ApparentPowerCategory,
@@ -725,12 +729,10 @@ export to_file
 # Imports
 
 import Base: @kwdef
-import LinearAlgebra
 import Unicode: normalize
 import Logging
 import Dates
 import TimeSeries
-import DataStructures: OrderedDict, SortedDict
 import JSON
 import Base.to_index
 import PrettyTables
@@ -741,7 +743,6 @@ import PowerOperationsOpenAPIModels
 import InfrastructureTimeSeriesOpenAPIModels
 import PowerOpenAPIModels
 import OpenAPI
-import TimeZones
 const IC = InfrastructureCoreOpenAPIModels
 const PC = PowerCoreOpenAPIModels
 const PO = PowerOperationsOpenAPIModels
@@ -750,16 +751,16 @@ const PD = PowerOpenAPIModels
 using Unitful: @u_str, @unit, Quantity, Units, uconvert, ustrip
 
 # Relative-unit primitives live in IS; PSY re-exports them for downstream
-# packages so that `PSY.DU`, `PSY.RelativeQuantity`, etc. keep working.
+# packages so that `PSY.CU`, `PSY.RelativeQuantity`, etc. keep working.
 # `get_value`/`set_value` are IS's units-interface generics: PSY EXTENDS them
 # (adds the power-domain methods) rather than defining its own functions.
 import InfrastructureSystems:
     AbstractRelativeUnit,
-    DeviceBaseUnit,
+    ComponentBaseUnit,
     SystemBaseUnit,
     NaturalUnit,
     RelativeQuantity,
-    DU,
+    CU,
     SU,
     NU,
     get_value,
@@ -877,7 +878,6 @@ import InfrastructureSystems:
     LOG_GROUP_PARSING,
     open_file_logger,
     make_logging_config_file,
-    validate_struct,
     MultiLogger,
     LogEventTracker,
     StructField,
@@ -924,6 +924,8 @@ import InfrastructureSystems:
     AverageRateCurve,
     LinearCurve,
     QuadraticCurve,
+    LossCurve,
+    AnyLossCurve,
     PiecewisePointCurve,
     PiecewiseIncrementalCurve,
     PiecewiseAverageCurve,
@@ -993,7 +995,6 @@ supports_supplemental_attributes(::Device) = true
 # Include utilities
 include("utils/logging.jl")
 include("utils/IO/base_checks.jl")
-include("utils/generate_struct_files.jl")
 
 # Units machinery (formerly PowerSystemsUnits.jl)
 include("units/types.jl")
@@ -1129,9 +1130,6 @@ include("utils/print_pt.jl")
 
 include("utils/enums_conversion.jl")
 include("models/serialization.jl")
-
-#Deprecated
-include("deprecated.jl")
 
 function __init__()
     Unitful.register(PowerSystems)

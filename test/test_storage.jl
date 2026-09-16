@@ -1,14 +1,14 @@
 # Tests for the EnergyReservoirStorage loss and ramp fields: `self_discharge`
 # (dimensionless pu/hr leakage loss, issue #1683), `standing_loss` (constant
-# standing-loss power in device-base pu, MVA unit system), and `ramp_limits`
+# standing-loss power in component-base pu, MVA unit system), and `ramp_limits`
 # (which mimics the ThermalStandard MVA-based unit system).
 
-# Minimal System + EnergyReservoirStorage at the requested device base so the
+# Minimal System + EnergyReservoirStorage at the requested component base so the
 # ramp_limits unit conversions don't depend on PSB-built fixtures (mirrors
 # `_sys_with_thermal` in common.jl).
 function _sys_with_storage(;
     system_base = 100.0,
-    device_base = 250.0,
+    component_base = 250.0,
     ramp_limits = nothing,
     standing_loss = 0.0,
 )
@@ -31,7 +31,7 @@ function _sys_with_storage(;
         output_active_power_limits = (min = 0.0, max = 1.0),
         efficiency = (in = 0.9, out = 0.9),
         reactive_power = 0.0, reactive_power_limits = (min = -1.0, max = 1.0),
-        base_power = device_base,
+        base_power = component_base,
         ramp_limits = ramp_limits,
         standing_loss = standing_loss,
     )
@@ -42,9 +42,13 @@ end
 @testset "EnergyReservoirStorage self_discharge / ramp_limits defaults" begin
     s = EnergyReservoirStorage(nothing)
     @test get_self_discharge(s) == 0.0
-    @test iszero(get_standing_loss(s, DU))
+    @test iszero(get_standing_loss(s, CU))
     sys, storage = _sys_with_storage()
     @test isnothing(get_ramp_limits(storage, NU))
+    @test isnothing(get_ramp_limits(storage, SU / u"minute"))
+    # An unset rate field has no units to get wrong: a bare `CU`/`SU`, rejected on a
+    # field that is set, still passes through as `nothing` here.
+    @test isnothing(get_ramp_limits(storage, CU))
     @test isnothing(get_ramp_limits(storage, SU))
     @test get_self_discharge(storage) == 0.0
     @test iszero(get_standing_loss(storage, SU))
@@ -58,25 +62,48 @@ end
 end
 
 @testset "EnergyReservoirStorage ramp_limits mimics ThermalStandard unit system" begin
-    device_base = 250.0
+    component_base = 250.0
     system_base = 100.0
     sys, storage =
-        _sys_with_storage(; system_base, device_base, ramp_limits = (up = 0.5, down = 0.4))
+        _sys_with_storage(;
+            system_base,
+            component_base,
+            ramp_limits = (up = 0.5, down = 0.4),
+        )
 
-    # Construction stores the raw value at the device base (DU).
-    ramp_du = get_ramp_limits(storage, DU)
+    # `ramp_limits` is a rate, so a relative target must name a time; a bare `CU`/`SU`
+    # does not say per what time and is rejected.
+    @test_throws ArgumentError get_ramp_limits(storage, CU)
+    @test_throws ArgumentError get_ramp_limits(storage, SU)
+    # …and the message names the field, as the setter's twin does, rather than the
+    # engine-internal category constant.
+    msg = try
+        get_ramp_limits(storage, SU)
+    catch e
+        sprint(showerror, e)
+    end
+    @test occursin("`EnergyReservoirStorage`'s `ramp_limits`", msg)
+    @test occursin("CU/u\"minute\"", msg)
+
+    # Construction stores the raw value at the component base, per minute.
+    ramp_du = get_ramp_limits(storage, CU / u"minute")
     @test ramp_du.up ≈ 0.5
     @test ramp_du.down ≈ 0.4
 
-    # System base: DU * device_base / system_base.
-    ramp_su = get_ramp_limits(storage, SU)
-    @test ramp_su.up ≈ 0.5 * device_base / system_base
-    @test ramp_su.down ≈ 0.4 * device_base / system_base
+    # System base: CU * component_base / system_base, time unchanged.
+    ramp_su = get_ramp_limits(storage, SU / u"minute")
+    @test ramp_su.up ≈ 0.5 * component_base / system_base
+    @test ramp_su.down ≈ 0.4 * component_base / system_base
 
-    # Natural units: DU * device_base.
+    # Natural units: CU * component_base per minute.
     ramp_nu = get_ramp_limits(storage, NU)
-    @test ramp_nu.up ≈ 0.5 * device_base
-    @test ramp_nu.down ≈ 0.4 * device_base
+    @test ramp_nu.up ≈ 0.5 * component_base
+    @test ramp_nu.down ≈ 0.4 * component_base
+    @test get_ramp_limits(storage, u"MW/minute") == ramp_nu
+
+    # The time axis converts independently of the power axis.
+    @test get_ramp_limits(storage, CU / u"hr").up ≈ 0.5 * 60
+    @test get_ramp_limits(storage, u"MW/hr").up ≈ 0.5 * component_base * 60
 
     # Nothing passthrough for the bare and `_unitful` companion, mirroring the
     # ThermalStandard contract in test_base_power.jl.
@@ -109,46 +136,46 @@ end
 end
 
 @testset "EnergyReservoirStorage standing_loss unit conversions" begin
-    device_base = 250.0
+    component_base = 250.0
     system_base = 100.0
     sys, storage =
-        _sys_with_storage(; system_base, device_base, standing_loss = 0.02)
+        _sys_with_storage(; system_base, component_base, standing_loss = 0.02)
 
-    # Construction stores the raw value at the device base (DU).
-    @test get_standing_loss(storage, DU) ≈ 0.02
+    # Construction stores the raw value at the component base (CU).
+    @test get_standing_loss(storage, CU) ≈ 0.02
 
-    # System base: DU * device_base / system_base.
-    @test get_standing_loss(storage, SU) ≈ 0.02 * device_base / system_base
+    # System base: CU * component_base / system_base.
+    @test get_standing_loss(storage, SU) ≈ 0.02 * component_base / system_base
 
-    # Natural units: DU * device_base.
-    @test get_standing_loss(storage, NU) ≈ 0.02 * device_base
+    # Natural units: CU * component_base.
+    @test get_standing_loss(storage, NU) ≈ 0.02 * component_base
 
     # MW (Unitful domain target): bare number reads the same as NU.
-    @test get_standing_loss(storage, MW) isa Float64
-    @test get_standing_loss(storage, MW) ≈ 0.02 * device_base
+    @test get_standing_loss(storage, u"MW") isa Float64
+    @test get_standing_loss(storage, u"MW") ≈ 0.02 * component_base
 
     # `_unitful` companion returns a tagged quantity with the same magnitude.
     @test IS._strip_units(get_standing_loss_unitful(storage, SU)) ≈
-          0.02 * device_base / system_base
-    @test get_standing_loss_unitful(storage, MW) isa Unitful.Quantity
+          0.02 * component_base / system_base
+    @test get_standing_loss_unitful(storage, u"MW") isa Unitful.Quantity
 end
 
 @testset "EnergyReservoirStorage standing_loss tagged setter" begin
-    device_base = 250.0
+    component_base = 250.0
     system_base = 100.0
-    sys, storage = _sys_with_storage(; system_base, device_base)
+    sys, storage = _sys_with_storage(; system_base, component_base)
 
     # Bare floats are rejected: units must be explicit.
     @test_throws ArgumentError set_standing_loss!(storage, 0.05)
 
-    # SU-tagged input converts to the device base for storage.
+    # SU-tagged input converts to the component base for storage.
     set_standing_loss!(storage, 0.05 * SU)
-    @test get_standing_loss(storage, DU) ≈ 0.05 * system_base / device_base
+    @test get_standing_loss(storage, CU) ≈ 0.05 * system_base / component_base
     @test get_standing_loss(storage, SU) ≈ 0.05
 
-    # DU-tagged input round-trips exactly.
-    set_standing_loss!(storage, 0.02 * DU)
-    @test get_standing_loss(storage, DU) ≈ 0.02
+    # CU-tagged input round-trips exactly.
+    set_standing_loss!(storage, 0.02 * CU)
+    @test get_standing_loss(storage, CU) ≈ 0.02
 end
 
 @testset "EnergyReservoirStorage negative standing_loss warns validation" begin
@@ -178,5 +205,5 @@ end
     sys, storage = _sys_with_storage(; standing_loss = 0.03)
     sys2 = roundtrip_system(sys)
     storage2 = get_component(EnergyReservoirStorage, sys2, "storage1")
-    @test get_standing_loss(storage2, DU) ≈ 0.03
+    @test get_standing_loss(storage2, CU) ≈ 0.03
 end

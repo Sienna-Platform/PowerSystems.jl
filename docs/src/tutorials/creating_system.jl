@@ -130,10 +130,10 @@ load = PowerLoad(;
     name = "load1",
     available = true,
     bus = bus2,
-    active_power = 0.5, # Per-unitized by device base_power
-    reactive_power = 0.0, # Per-unitized by device base_power
+    active_power = 0.5, # Per-unitized by component base_power
+    reactive_power = 0.0, # Per-unitized by component base_power
     base_power = 10.0, # MVA
-    max_active_power = 1.0, # 10 MW per-unitized by device base_power
+    max_active_power = 1.0, # 10 MW per-unitized by component base_power
     max_reactive_power = 0.0,
 );
 
@@ -151,11 +151,11 @@ solar = RenewableDispatch(;
     name = "solar1",
     available = true,
     bus = bus2,
-    active_power = 0.2, # Per-unitized by device base_power
-    reactive_power = 0.0, # Per-unitized by device base_power
-    rating = 1.0, # 5 MW per-unitized by device base_power
+    active_power = 0.2, # Per-unitized by component base_power
+    reactive_power = 0.0, # Per-unitized by component base_power
+    rating = 1.0, # 5 MW per-unitized by component base_power
     prime_mover_type = PrimeMovers.PVe,
-    reactive_power_limits = (min = 0.0, max = 0.05), # 0 MVAR to 0.25 MVAR per-unitized by device base_power
+    reactive_power_limits = (min = 0.0, max = 0.05), # 0 MVAR to 0.25 MVAR per-unitized by component base_power
     power_factor = 1.0,
     operation_cost = RenewableGenerationCost(nothing),
     base_power = 5.0, # MVA
@@ -169,18 +169,17 @@ solar = RenewableDispatch(;
 gas = ThermalStandard(;
     name = "gas1",
     available = true,
-    status = true,
+    status = OperationalStates.ONLINE,
     bus = bus1,
-    active_power = 0.0, # Per-unitized by device base_power
-    reactive_power = 0.0, # Per-unitized by device base_power
-    rating = 1.0, # 30 MW per-unitized by device base_power
-    active_power_limits = (min = 0.2, max = 1.0), # 6 MW to 30 MW per-unitized by device base_power
-    reactive_power_limits = nothing, # Per-unitized by device base_power
-    ramp_limits = (up = 0.2, down = 0.2), # 6 MW/min up or down, per-unitized by device base_power
+    active_power = 0.0, # Per-unitized by component base_power
+    reactive_power = 0.0, # Per-unitized by component base_power
+    rating = 1.0, # 30 MW per-unitized by component base_power
+    active_power_limits = (min = 0.2, max = 1.0), # 6 MW to 30 MW per-unitized by component base_power
+    reactive_power_limits = nothing, # Per-unitized by component base_power
+    ramp_limits = (up = 0.2, down = 0.2), # 6 MW/min up or down, per-unitized by component base_power
     operation_cost = ThermalGenerationCost(nothing),
     base_power = 30.0, # MVA
     time_limits = (up = 8.0, down = 8.0), # Hours
-    must_run = false,
     prime_mover_type = PrimeMovers.CC,
     fuel = ThermalFuels.NATURAL_GAS,
 );
@@ -245,9 +244,9 @@ get_base_power(sys)
 
 get_rating(retrieved_component, NU)
 
-# The value is now its "natural" value, 5.0 MVA. Finally, in **device base** (`DU`):
+# The value is now its "natural" value, 5.0 MVA. Finally, in **component base** (`CU`):
 
-get_rating(retrieved_component, DU)
+get_rating(retrieved_component, CU)
 
 # This reads 1.0 — 5.0 MVA per-unitized by the device's own `base_power` of 5.0 MVA, which is
 # the format we used to originally define the device.

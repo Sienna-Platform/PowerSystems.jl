@@ -5,7 +5,7 @@ Core abstraction: a UnitCategory defines a physical quantity (power, impedance, 
 with a natural unit and a way to compute the per-unit base value for any component.
 
 Downstream packages implement the interface functions:
-  - _get_device_base_power(c) → Float64 (MVA)
+  - _get_component_base_power(c) → Float64 (MVA)
   - _get_system_base_power(c) → Float64 (MVA)
   - get_base_voltage(c) → Float64 (kV)
 =#
@@ -15,11 +15,11 @@ Downstream packages implement the interface functions:
 # ============================================================
 
 """
-    _get_device_base_power(component) → Float64
+    _get_component_base_power(component) → Float64
 
 Return the device's base power in MVA as a raw Float64.
 """
-function _get_device_base_power end
+function _get_component_base_power end
 
 """
     _get_system_base_power(component) → Float64
@@ -39,23 +39,58 @@ function get_base_voltage end
 # Unit categories
 # ============================================================
 
-abstract type UnitCategory end
+"""
+    UnitCategory{NU, P, V}
+
+A physical quantity the conversion engine knows how to per-unitize, described by two
+things and nothing else:
+
+  - `NU`: the natural (physical) unit, as a `Unitful.Units` *type*. Compound units are
+    ordinary Unitful units, so a rate (`u"MW"/u"minute"`) or a cost rate
+    (`USD/u"hr"`) needs no special case here.
+  - `P`, `V`: the exponents of the component's base power and base voltage in this
+    quantity's per-unit base. Only those two bases are ever per-unitized; time,
+    currency and fuel ride along inside `NU` and are untouched by a change of base.
+
+Every base rule in this file is then one formula, `S^P * V^V`, instead of a hand-written
+case per category:
+
+| category   | `NU`  |  P |  V | `base_value` |
+|:-----------|:------|---:|---:|:-------------|
+| power      | `MW`  |  1 |  0 | `S`          |
+| voltage    | `kV`  |  0 |  1 | `V`          |
+| impedance  | `Ω`   | -1 |  2 | `V^2/S`      |
+| admittance | `S`   |  1 | -2 | `S/V^2`      |
+| current    | `kA`  |  1 | -1 | `S/V`        |
+
+Both parameters are part of the type, so `natural_unit`, `base_value` and
+`_cu_to_su_ratio` resolve at compile time and fold to a multiply or a divide.
+"""
+struct UnitCategory{NU <: Unitful.Units, P, V} end
+
+# The three power categories share a dimension and a base and differ only in the unit
+# they print as. `MVAr`/`MVA` are PSY's own `@unit` definitions, reachable as bare
+# constants here but not through `u"..."` until `Unitful.register` runs in `__init__`.
+const ActivePowerCategory = UnitCategory{typeof(u"MW"), 1, 0}
+const ReactivePowerCategory = UnitCategory{typeof(MVAr), 1, 0}
+const ApparentPowerCategory = UnitCategory{typeof(MVA), 1, 0}
+const ImpedanceCategory = UnitCategory{typeof(u"Ω"), -1, 2}
+const AdmittanceCategory = UnitCategory{typeof(u"S"), 1, -2}
+const VoltageCategory = UnitCategory{typeof(u"kV"), 0, 1}
+const CurrentCategory = UnitCategory{typeof(u"kA"), 1, -1}
+
+# A rate per-unitizes only its power axis -- there is no time base -- so its exponents
+# are the power category's and only the natural unit gains the time dimension. The
+# schema vocabulary calls this quantity `ActivePowerChangeRate` (Core/units.json), with
+# default unit MW/min.
+const ActivePowerChangeRateCategory = UnitCategory{typeof(u"MW" / u"minute"), 1, 0}
 
 """
-Supertype of the three power categories. Active, reactive, and apparent power share
-one dimension and one per-unit base (the device/system base power), so every base and
-ratio rule below is written once against this supertype; the categories differ only in
-which natural unit they print as (`MW` / `MVAr` / `MVA`).
+The power categories, which share one per-unit base. Formerly an abstract supertype;
+now a `Union`, so `isa` checks and dispatch on it keep working.
 """
-abstract type AbstractPowerCategory <: UnitCategory end
-
-struct ActivePowerCategory <: AbstractPowerCategory end
-struct ReactivePowerCategory <: AbstractPowerCategory end
-struct ApparentPowerCategory <: AbstractPowerCategory end
-struct ImpedanceCategory <: UnitCategory end
-struct AdmittanceCategory <: UnitCategory end
-struct VoltageCategory <: UnitCategory end
-struct CurrentCategory <: UnitCategory end
+const AbstractPowerCategory =
+    Union{ActivePowerCategory, ReactivePowerCategory, ApparentPowerCategory}
 
 const ACTIVE_POWER = ActivePowerCategory()
 const REACTIVE_POWER = ReactivePowerCategory()
@@ -64,6 +99,57 @@ const IMPEDANCE = ImpedanceCategory()
 const ADMITTANCE = AdmittanceCategory()
 const VOLTAGE = VoltageCategory()
 const CURRENT = CurrentCategory()
+const ACTIVE_POWER_CHANGE_RATE = ActivePowerChangeRateCategory()
+
+"""
+The categories denominated per unit time. A bare relative marker is rejected for these
+(it does not say per what time); they take `CU/u"minute"`, `SU/u"hr"`, or a natural
+compound unit like `u"MW/hr"`. Extend this `Union` when adding a rate category.
+"""
+const RateCategory = Union{ActivePowerChangeRateCategory}
+
+# The basis a rate category's *stored* per-unit value is denominated in: a stored
+# `ramp_limits` of 0.1 means 0.1 pu per minute. Declared rather than recovered from
+# `natural_unit`, which would mean picking the time factor out of a compound
+# `FreeUnits`' internals. See [`time_basis`](@ref).
+time_basis(::ActivePowerChangeRateCategory) = u"minute"
+
+# Categories compose, so a derived quantity's base and natural unit follow from its
+# parts rather than being declared: `VOLTAGE^Val(2) / POWER` *is* `IMPEDANCE`. The
+# exponents add and Unitful composes the natural unit, both at the type level.
+Base.:*(
+    ::UnitCategory{N1, P1, V1},
+    ::UnitCategory{N2, P2, V2},
+) where {N1, P1, V1, N2, P2, V2} =
+    UnitCategory{typeof(N1() * N2()), P1 + P2, V1 + V2}()
+Base.:/(
+    ::UnitCategory{N1, P1, V1},
+    ::UnitCategory{N2, P2, V2},
+) where {N1, P1, V1, N2, P2, V2} =
+    UnitCategory{typeof(N1() / N2()), P1 - P2, V1 - V2}()
+# The exponent is a `Val` so it is part of the type and the result stays a singleton.
+Base.:^(::UnitCategory{N, P, V}, ::Val{n}) where {N, P, V, n} =
+    UnitCategory{typeof(N()^n), P * n, V * n}()
+
+# A generated alias prints as its bare `UnitCategory{...}` parameters otherwise, which
+# is unreadable in an error message or at the REPL.
+const _CATEGORY_NAMES = (
+    (ACTIVE_POWER, "ACTIVE_POWER"),
+    (REACTIVE_POWER, "REACTIVE_POWER"),
+    (APPARENT_POWER, "APPARENT_POWER"),
+    (IMPEDANCE, "IMPEDANCE"),
+    (ADMITTANCE, "ADMITTANCE"),
+    (VOLTAGE, "VOLTAGE"),
+    (CURRENT, "CURRENT"),
+    (ACTIVE_POWER_CHANGE_RATE, "ACTIVE_POWER_CHANGE_RATE"),
+)
+
+function Base.show(io::IO, cat::UnitCategory{NU, P, V}) where {NU, P, V}
+    for (known, name) in _CATEGORY_NAMES
+        cat === known && return print(io, name)
+    end
+    return print(io, "UnitCategory($(NU()), S^$P V^$V)")
+end
 
 # ============================================================
 # natural_unit, base_value, system_base_value
@@ -74,13 +160,20 @@ const CURRENT = CurrentCategory()
 
 The natural (physical) unit for this category.
 """
-natural_unit(::ActivePowerCategory) = MW
-natural_unit(::ReactivePowerCategory) = MVAr
-natural_unit(::ApparentPowerCategory) = MVA
-natural_unit(::ImpedanceCategory) = u"Ω"
-natural_unit(::AdmittanceCategory) = u"S"
-natural_unit(::VoltageCategory) = u"kV"
-natural_unit(::CurrentCategory) = u"kA"
+natural_unit(::UnitCategory{NU}) where {NU} = NU()
+
+# Raise a base to a category exponent. The base is reached through `getter` rather than
+# passed by value so that an exponent of zero never calls it: `_checked_base_voltage`
+# errors when the base voltage is unset, and a quantity with `V == 0` must not care.
+# One method per exponent that actually occurs, so `^` (a libm `pow` call) never
+# appears in the generated code -- the same reason `_convert_curve_axes` in
+# InfrastructureSystems is written one method per `Val`.
+@inline _base_factor(::Val{0}, getter, c) = 1.0
+@inline _base_factor(::Val{1}, getter, c) = getter(c)
+@inline _base_factor(::Val{-1}, getter, c) = inv(getter(c))
+@inline _base_factor(::Val{2}, getter, c) = (v = getter(c); v * v)
+@inline _base_factor(::Val{-2}, getter, c) = (v = getter(c); inv(v * v))
+@inline _base_factor(::Val{N}, getter, c) where {N} = getter(c)^N
 
 # Voltage-dependent base values must fail loudly when the base voltage is
 # unset; a silent fallback would mislabel the returned number.
@@ -93,36 +186,27 @@ end
 """
     base_value(component, category) → Float64
 
-1.0 DU of this category = `base_value(c, cat)` natural units.
+1.0 CU of this category = `base_value(c, cat)` natural units.
 """
-base_value(c, ::AbstractPowerCategory) = _get_device_base_power(c)
-base_value(c, ::ImpedanceCategory) =
-    _checked_base_voltage(c)^2 / _get_device_base_power(c)
-base_value(c, ::AdmittanceCategory) =
-    _get_device_base_power(c) / _checked_base_voltage(c)^2
-base_value(c, ::VoltageCategory) = _checked_base_voltage(c)
-base_value(c, ::CurrentCategory) = _get_device_base_power(c) / _checked_base_voltage(c)
+base_value(c, ::UnitCategory{NU, P, V}) where {NU, P, V} =
+    _base_factor(Val(P), _get_component_base_power, c) *
+    _base_factor(Val(V), _checked_base_voltage, c)
 
 """
     system_base_value(component, category) → Float64
 
 1.0 SU of this category = `system_base_value(c, cat)` natural units.
 """
-system_base_value(c, ::AbstractPowerCategory) = _get_system_base_power(c)
-system_base_value(c, ::ImpedanceCategory) =
-    _checked_base_voltage(c)^2 / _get_system_base_power(c)
-system_base_value(c, ::AdmittanceCategory) =
-    _get_system_base_power(c) / _checked_base_voltage(c)^2
-system_base_value(c, ::VoltageCategory) = _checked_base_voltage(c)
-system_base_value(c, ::CurrentCategory) =
-    _get_system_base_power(c) / _checked_base_voltage(c)
+system_base_value(c, ::UnitCategory{NU, P, V}) where {NU, P, V} =
+    _base_factor(Val(P), _get_system_base_power, c) *
+    _base_factor(Val(V), _checked_base_voltage, c)
 
-# DU→SU ratio (voltage cancels, only power bases needed)
-_du_to_su_ratio(c, ::Union{AbstractPowerCategory, AdmittanceCategory, CurrentCategory}) =
-    _get_device_base_power(c) / _get_system_base_power(c)
-_du_to_su_ratio(c, ::ImpedanceCategory) =
-    _get_system_base_power(c) / _get_device_base_power(c)
-_du_to_su_ratio(::Any, ::VoltageCategory) = 1.0
+# CU→SU ratio. Only the power base differs between the two systems -- the base voltage
+# is the same in both and cancels -- so the ratio is the power ratio raised to the
+# category's power exponent, and a category with `P == 0` (voltage) needs no base at all.
+_cu_su_power_ratio(c) = _get_component_base_power(c) / _get_system_base_power(c)
+_cu_to_su_ratio(c, ::UnitCategory{NU, P, V}) where {NU, P, V} =
+    _base_factor(Val(P), _cu_su_power_ratio, c)
 
 # ============================================================
 # convert_units: value from one unit system to another
@@ -135,9 +219,9 @@ Convert a value between unit systems.
 
 # Examples
 ```julia
-convert_units(gen, 0.6, ACTIVE_POWER, DU, MW)       # → 30.0 MW
-convert_units(gen, 30.0MW, ACTIVE_POWER, MW, DU)    # → 0.6 DU
-convert_units(gen, 0.6, ACTIVE_POWER, DU, SU)       # → 0.3 SU
+convert_units(gen, 0.6, ACTIVE_POWER, CU, u"MW")       # → 30.0 MW
+convert_units(gen, 30.0u"MW", ACTIVE_POWER, u"MW", CU) # → 0.6 CU
+convert_units(gen, 0.6, ACTIVE_POWER, CU, SU)       # → 0.3 SU
 ```
 """
 function convert_units end
@@ -147,13 +231,13 @@ function convert_units end
 # makes those guards ambiguous.
 const _BareNumber = Union{Real, Complex}
 
-# --- From DU ---
+# --- From CU ---
 
 function convert_units(
     c,
     value::_BareNumber,
     cat::UnitCategory,
-    ::DeviceBaseUnit,
+    ::ComponentBaseUnit,
     units::Units,
 )
     natural = value * base_value(c, cat) * natural_unit(cat)
@@ -167,20 +251,20 @@ function convert_units(
     c,
     value::_BareNumber,
     cat::UnitCategory,
-    ::DeviceBaseUnit,
+    ::ComponentBaseUnit,
     ::SystemBaseUnit,
 )
-    return (value * _du_to_su_ratio(c, cat)) * SU
+    return (value * _cu_to_su_ratio(c, cat)) * SU
 end
 
 convert_units(
     ::Any,
     value::_BareNumber,
     ::UnitCategory,
-    ::DeviceBaseUnit,
-    ::DeviceBaseUnit,
+    ::ComponentBaseUnit,
+    ::ComponentBaseUnit,
 ) =
-    value * DU
+    value * CU
 
 # --- From SU ---
 
@@ -200,9 +284,9 @@ function convert_units(
     value::_BareNumber,
     cat::UnitCategory,
     ::SystemBaseUnit,
-    ::DeviceBaseUnit,
+    ::ComponentBaseUnit,
 )
-    return (value / _du_to_su_ratio(c, cat)) * DU
+    return (value / _cu_to_su_ratio(c, cat)) * CU
 end
 
 convert_units(
@@ -216,9 +300,9 @@ convert_units(
 
 # --- From natural units ---
 
-function convert_units(c, val::Quantity, cat::UnitCategory, ::Units, ::DeviceBaseUnit)
+function convert_units(c, val::Quantity, cat::UnitCategory, ::Units, ::ComponentBaseUnit)
     natural_val = Unitful.ustrip(natural_unit(cat), val)
-    return RelativeQuantity(natural_val / base_value(c, cat), DU)
+    return RelativeQuantity(natural_val / base_value(c, cat), CU)
 end
 
 function convert_units(c, val::Quantity, cat::UnitCategory, ::Units, ::SystemBaseUnit)
@@ -245,6 +329,126 @@ end
 
 # --- nothing passthrough ---
 convert_units(::Any, ::Nothing, ::UnitCategory, ::Any, ::Any) = nothing
+
+# --- rate categories: relative base per unit time ---
+
+# A value expressed per `FROM` becomes `value * _time_factor(FROM, TO)` per `TO`
+# (1/minute → 1/hr multiplies by hr/minute = 60). Both units are singleton types, so
+# this folds to a literal.
+_time_factor(::FROM, ::TO) where {FROM <: Unitful.Units, TO <: Unitful.Units} =
+    Unitful.ustrip(Unitful.uconvert(Unitful.NoUnits, 1.0 * (TO() / FROM())))
+
+# The CU <-> SU power re-basing on its own, factored out so the rate conversions can
+# reuse it.
+#
+# They cannot reach it by calling `convert_units(c, v, cat, CU, SU)`, because for a rate
+# category that signature *is* the rejection defined below, and it throws. That rejection
+# is aimed at a caller who names a bare `SU` as a target: incomplete, because it says
+# nothing about time. By the time the rate conversions need this they have already dealt
+# with the time axis themselves, and what is left -- scaling by the ratio of the two power
+# bases -- is identical to every other category's.
+_relative_rebase(::Any, v, ::UnitCategory, ::ComponentBaseUnit, ::ComponentBaseUnit) = v
+_relative_rebase(::Any, v, ::UnitCategory, ::SystemBaseUnit, ::SystemBaseUnit) = v
+_relative_rebase(c, v, cat::UnitCategory, ::ComponentBaseUnit, ::SystemBaseUnit) =
+    v * _cu_to_su_ratio(c, cat)
+_relative_rebase(c, v, cat::UnitCategory, ::SystemBaseUnit, ::ComponentBaseUnit) =
+    v / _cu_to_su_ratio(c, cat)
+
+# Storage (CU/SU at the category's storage time) → a relative rate marker: re-base the
+# power axis, rescale the time axis, then re-attach both markers.
+function convert_units(
+    c,
+    value::_BareNumber,
+    cat::RateCategory,
+    from::AbstractRelativeUnit,
+    to::RateUnit,
+)
+    base = relative_unit(to)
+    v = _relative_rebase(c, value, cat, from, base)
+    return RelativeQuantity(v * _time_factor(time_basis(cat), time_basis(to)), base) /
+           time_basis(to)
+end
+
+# A tagged rate value → anywhere: drop to the category's own time basis, then re-enter
+# the engine as an ordinary relative value. Mirrors the `RelativeQuantity` unwrap guard
+# below.
+# `from` is matched as `AbstractRelativeUnit` and the tag checked in the body rather
+# than tied to `U` in the signature: tying it leaves these ambiguous against the
+# "Unitful value carries a relative `from`" guard below, which they must beat.
+function convert_units(
+    c,
+    val::RelativeRate{T, U, D, TU},
+    cat::RateCategory,
+    from::AbstractRelativeUnit,
+    to::AbstractRelativeUnit,
+) where {T, U, D, TU}
+    _check_rate_tag(val, U(), from)
+    v = IS._strip_units(val) * _time_factor(time_basis(val), time_basis(cat))
+    return RelativeQuantity(_relative_rebase(c, v, cat, from, to), to)
+end
+
+# …and to a rate marker, where the time axis moves again rather than collapsing.
+function convert_units(
+    c,
+    val::RelativeRate{T, U, D, TU},
+    cat::RateCategory,
+    from::AbstractRelativeUnit,
+    to::RateUnit,
+) where {T, U, D, TU}
+    _check_rate_tag(val, U(), from)
+    v = IS._strip_units(val) * _time_factor(time_basis(val), time_basis(cat))
+    return convert_units(c, v, cat, from, to)
+end
+
+# Mirrors the `RelativeQuantity` tag/marker guard below: the value's own tag is
+# authoritative, so a contradicting `from` is a caller error, not something to coerce.
+@inline function _check_rate_tag(val, tag, from)
+    tag === from || throw(
+        ArgumentError(
+            "value $val is tagged $tag but `from = $from`; the tag and the `from` " *
+            "marker must agree",
+        ),
+    )
+    return nothing
+end
+
+# A bare relative marker does not name a time, so it is not a complete target for a rate.
+# One method per `(from, to)` marker pair, matching the specificity of the generic
+# methods above -- narrowing only the category would be an ambiguity, not an override.
+for FROM in (:ComponentBaseUnit, :SystemBaseUnit),
+    TO in (:ComponentBaseUnit, :SystemBaseUnit)
+
+    @eval function convert_units(
+        ::Any,
+        ::_BareNumber,
+        cat::RateCategory,
+        ::$FROM,
+        to::$TO,
+    )
+        throw(
+            ArgumentError(
+                "$(cat) is a rate; `$(to)` alone does not say per what time. Pass a " *
+                "relative base per unit time (e.g. `$(to)/u\"minute\"`, `$(to)/u\"hr\"`) " *
+                "or a natural unit such as `u\"MW/minute\"`.",
+            ),
+        )
+    end
+end
+
+# A rate marker is meaningless for a quantity that is not a rate.
+convert_units(
+    ::Any,
+    ::_BareNumber,
+    cat::UnitCategory,
+    ::AbstractRelativeUnit,
+    to::RateUnit,
+) =
+    throw(
+        ArgumentError(
+            "$(cat) is not a rate, so `$(relative_unit(to))/$(time_basis(to))` is not a " *
+            "valid target; pass `$(relative_unit(to))` on its own.",
+        ),
+    )
 
 # --- marker/value-type guards ---
 

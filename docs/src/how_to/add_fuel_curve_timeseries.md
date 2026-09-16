@@ -38,7 +38,7 @@ fuel_curve = FuelCurve(;
 
 # Create the ThermalGenerationCost
 thermal_cost = ThermalGenerationCost(;
-    variable = fuel_curve,
+    variable_operation_cost = fuel_curve,
     fixed = 10.0,
     start_up = 5000.0,
     shut_down = 2000.0,
@@ -48,7 +48,7 @@ thermal_cost = ThermalGenerationCost(;
 generator = ThermalStandard(;
     name = "generator1",
     available = true,
-    status = true,
+    status = OperationalStates.ONLINE,
     bus = bus,
     active_power = 250.0,
     reactive_power = 50.0,

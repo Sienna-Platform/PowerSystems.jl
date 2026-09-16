@@ -129,10 +129,10 @@ end
 end
 
 @testset "Test show units: attached vs detached component" begin
-    # device_base=250, system_base=100, active_power=0.5 (stored in DU) gives
+    # component_base=250, system_base=100, active_power=0.5 (stored in CU) gives
     # three distinguishable numeric values across the unit systems:
-    #   DU: 0.5, SU: 1.25, NU: 125.0
-    sys, gen = _sys_with_thermal(; system_base = 100.0, device_base = 250.0)
+    #   CU: 0.5, SU: 1.25, NU: 125.0
+    sys, gen = _sys_with_thermal(; system_base = 100.0, component_base = 250.0)
     io = IOBuffer()
     show(io, "text/plain", gen)
     attached_out = String(take!(io))
@@ -142,7 +142,8 @@ end
 
     bus = first(get_components(ACBus, sys))
     detached = ThermalStandard(;
-        name = "detached", available = true, status = true, bus = bus,
+        name = "detached", available = true, status = OperationalStates.ONLINE,
+        bus = bus,
         active_power = 0.5, reactive_power = 0.1, rating = 1.0,
         active_power_limits = (min = 0.0, max = 1.0),
         reactive_power_limits = (min = -1.0, max = 1.0),
@@ -158,11 +159,12 @@ end
     @test !occursin("active_power: 0.5", detached_out)
 end
 
-@testset "Test detached component: SU getter/setter errors, DU/NU OK" begin
-    sys, gen = _sys_with_thermal(; system_base = 100.0, device_base = 250.0)
+@testset "Test detached component: SU getter/setter errors, CU/NU OK" begin
+    sys, gen = _sys_with_thermal(; system_base = 100.0, component_base = 250.0)
     bus = first(get_components(ACBus, sys))
     detached = ThermalStandard(;
-        name = "detached", available = true, status = true, bus = bus,
+        name = "detached", available = true, status = OperationalStates.ONLINE,
+        bus = bus,
         active_power = 0.5, reactive_power = 0.1, rating = 1.0,
         active_power_limits = (min = 0.0, max = 1.0),
         reactive_power_limits = (min = -1.0, max = 1.0),
@@ -171,19 +173,19 @@ end
         base_power = 250.0,
     )
 
-    # Getters: SU errors, DU/NU work.
+    # Getters: SU errors, CU/NU work.
     @test_throws Exception get_active_power(detached, SU)
-    @test get_active_power(detached, DU) ≈ 0.5
+    @test get_active_power(detached, CU) ≈ 0.5
     @test get_active_power(detached, NU) ≈ 125.0
     @test_throws Exception get_active_power_unitful(detached, SU)
-    @test get_active_power_unitful(detached, DU) isa RelativeQuantity
+    @test get_active_power_unitful(detached, CU) isa RelativeQuantity
     @test get_active_power_unitful(detached, NU) isa Unitful.Quantity
 
-    # Setters: SU errors, DU/NU work.
+    # Setters: SU errors, CU/NU work.
     @test_throws Exception set_active_power!(detached, 1.0 * SU)
-    set_active_power!(detached, 0.4 * DU)
-    @test get_active_power(detached, DU) ≈ 0.4
-    set_active_power!(detached, 100.0 * MW)
+    set_active_power!(detached, 0.4 * CU)
+    @test get_active_power(detached, CU) ≈ 0.4
+    set_active_power!(detached, 100.0 * u"MW")
     @test get_active_power(detached, NU) ≈ 100.0
 end
 
@@ -215,9 +217,9 @@ end
           IS.SU
 end
 
-@testset "rating fields default to device-base display, unlike other converted fields" begin
+@testset "rating fields default to component-base display, unlike other converted fields" begin
     # `rating`/`rating_primary`/`rating_secondary`/`rating_tertiary` fields default to
-    # DU regardless of System attachment (issue #1128); other `needs_conversion` fields
+    # CU regardless of System attachment (issue #1128); other `needs_conversion` fields
     # keep the SU default (which falls back to NU when unattached, see the
     # "Test show units" testset below).
     rating_getters = [
@@ -235,10 +237,10 @@ end
         (TransformerCircuit, get_rating_c),
     ]
     for (T, getter) in rating_getters
-        @test IS.display_units_arg(getter, T) === IS.DU
+        @test IS.display_units_arg(getter, T) === IS.CU
         unitful_getter =
             getproperty(PowerSystems, Symbol(string(nameof(getter)), "_unitful"))
-        @test IS.display_units_arg(unitful_getter, T) === IS.DU
+        @test IS.display_units_arg(unitful_getter, T) === IS.CU
     end
 
     non_rating_getters = [
@@ -259,12 +261,12 @@ end
 end
 
 @testset "_show_accessor_value returns unit-tagged values" begin
-    sys, gen = _sys_with_thermal(; system_base = 100.0, device_base = 250.0)
+    sys, gen = _sys_with_thermal(; system_base = 100.0, component_base = 250.0)
 
-    # rating: always DU, regardless of System attachment.
+    # rating: always CU, regardless of System attachment.
     rating_val = PowerSystems._show_accessor_value(get_rating, gen)
     @test rating_val isa RelativeQuantity
-    @test rating_val == 1.0 * DU
+    @test rating_val == 1.0 * CU
 
     # active_power: attached defaults to SU.
     active_power_val = PowerSystems._show_accessor_value(get_active_power, gen)
@@ -272,18 +274,18 @@ end
     @test active_power_val == 1.25 * SU
 
     # An explicit `units` override takes precedence over the trait default.
-    forced_val = PowerSystems._show_accessor_value(get_active_power, gen; units = MW)
+    forced_val = PowerSystems._show_accessor_value(get_active_power, gen; units = u"MW")
     @test forced_val isa Unitful.Quantity
     @test Unitful.ustrip(forced_val) ≈ 125.0
 
     # Fields without a units trait (e.g. get_name) ignore `units` entirely.
-    @test PowerSystems._show_accessor_value(get_name, gen; units = MW) == "g1"
+    @test PowerSystems._show_accessor_value(get_name, gen; units = u"MW") == "g1"
 end
 
 @testset "show_component prints explicit unit suffixes" begin
-    sys, gen = _sys_with_thermal(; system_base = 100.0, device_base = 250.0)
+    sys, gen = _sys_with_thermal(; system_base = 100.0, component_base = 250.0)
 
-    # The verbose display spells `SU`/`DU` out; only terse contexts keep the tags.
+    # The verbose display spells `SU`/`CU` out; only terse contexts keep the tags.
     attached_out = sprint(show_component, gen)
     @test occursin("active_power: 1.25 p.u. in system base", attached_out)
     @test occursin("rating: 1.0 p.u. in component base", attached_out)
@@ -295,14 +297,15 @@ end
     )
 
     io = IOBuffer()
-    show_component(io, gen; units = MW)
+    show_component(io, gen; units = u"MW")
     forced_out = String(take!(io))
     @test occursin("active_power: 125.0 MW", forced_out)
     @test occursin("rating: 250.0 MW", forced_out)
 
     bus = first(get_components(ACBus, sys))
     detached = ThermalStandard(;
-        name = "detached", available = true, status = true, bus = bus,
+        name = "detached", available = true, status = OperationalStates.ONLINE,
+        bus = bus,
         active_power = 0.5, reactive_power = 0.1, rating = 1.0,
         active_power_limits = (min = 0.0, max = 1.0),
         reactive_power_limits = (min = -1.0, max = 1.0),
@@ -314,16 +317,16 @@ end
     @test occursin("active_power: 125.0 MW", detached_out) # SU fails, falls back to NU
     # Reactive power reads in MVAr and the apparent-power `rating` in MVA, not MW.
     @test occursin("reactive_power: 25.0 MVAr", detached_out)
-    @test occursin("rating: 1.0 p.u. in component base", detached_out) # DU regardless of attachment
+    @test occursin("rating: 1.0 p.u. in component base", detached_out) # CU regardless of attachment
     @test occursin("base_power: 250.0 MVA", detached_out)
 
     # An explicit override that fails (SU on an unattached component) errors
-    # rather than silently falling back to NU/DU.
+    # rather than silently falling back to NU/CU.
     @test_throws Exception show_component(devnull, detached; units = SU)
 end
 
 @testset "show_components preserves caller column order and honors units kwarg" begin
-    sys, gen = _sys_with_thermal(; system_base = 100.0, device_base = 250.0)
+    sys, gen = _sys_with_thermal(; system_base = 100.0, component_base = 250.0)
 
     # Column order must reflect the caller's Vector, not alphabetical order
     # (which would put active_power before reactive_power/rating).
@@ -336,7 +339,7 @@ end
     @test reactive_idx < rating_idx < active_idx
 
     io2 = IOBuffer()
-    show_components(io2, sys, ThermalStandard, [:rating, :active_power]; units = MW)
+    show_components(io2, sys, ThermalStandard, [:rating, :active_power]; units = u"MW")
     text2 = String(take!(io2))
     @test occursin("250.0 MW", text2)
     @test occursin("125.0 MW", text2)
@@ -347,14 +350,14 @@ end
         io3,
         sys,
         ThermalStandard,
-        Dict("doubled" => x -> 2 * get_rating(x, DU)),
+        Dict("doubled" => x -> 2 * get_rating(x, CU)),
     )
     text3 = String(take!(io3))
     @test occursin("2.0", text3)
 end
 
 @testset "show_components accepts per-column units" begin
-    sys, gen = _sys_with_thermal(; system_base = 100.0, device_base = 250.0)
+    sys, gen = _sys_with_thermal(; system_base = 100.0, component_base = 250.0)
 
     io = IOBuffer()
     show_components(
@@ -362,17 +365,17 @@ end
         sys,
         ThermalStandard,
         [:active_power, :rating];
-        units = Dict(:active_power => MW, :rating => DU),
+        units = Dict(:active_power => u"MW", :rating => CU),
     )
     text = String(take!(io))
     @test occursin("125.0 MW", text)
-    @test occursin("1.0 DU", text)
+    @test occursin("1.0 CU", text)
 
     # A column absent from the mapping keeps its own `display_units_arg` default
     # (SU for active_power) rather than inheriting a neighbour's unit.
     io2 = IOBuffer()
     show_components(io2, sys, ThermalStandard, [:active_power, :rating];
-        units = Dict(:rating => MW))
+        units = Dict(:rating => u"MW"))
     text2 = String(take!(io2))
     @test occursin("1.25 SU", text2)
     @test occursin("250.0 MW", text2)
@@ -380,9 +383,9 @@ end
     # NamedTuple mappings work the same way.
     io3 = IOBuffer()
     show_components(io3, sys, ThermalStandard, [:active_power, :rating];
-        units = (active_power = DU, rating = MW))
+        units = (active_power = CU, rating = u"MW"))
     text3 = String(take!(io3))
-    @test occursin("0.5 DU", text3)
+    @test occursin("0.5 CU", text3)
     @test occursin("250.0 MW", text3)
 end
 

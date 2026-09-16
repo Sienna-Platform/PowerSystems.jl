@@ -117,7 +117,7 @@ set_linked_crr!(value::PointToPointBid, val) = value.linked_crr = val
 set_ext!(value::PointToPointBid, val) = value.ext = val
 
 
-function from_openapi(po::PO.PointToPointBid, refs::OpenAPIRefs, ::DeviceBaseUnit)
+function from_openapi(po::PO.PointToPointBid, refs::OpenAPIRefs, ::ComponentBaseUnit)
     return PointToPointBid(;
         name = po.name,
         available = po.available,
@@ -125,8 +125,8 @@ function from_openapi(po::PO.PointToPointBid, refs::OpenAPIRefs, ::DeviceBaseUni
         to = resolve_ref(refs, po.to_id, Component),
         max_active_power = po.max_active_power,
         price_limits = _minmax_from_po(po.price_limits),
-        spread_bid = convert_cost(po.spread_bid)::Union{MarketBidCost, MarketBidTimeSeriesCost},
-        linked_crr = po.linked_crr,
+        spread_bid = convert_cost(po.spread_bid.value)::Union{MarketBidCost, MarketBidTimeSeriesCost},
+        linked_crr = _or_default(po.linked_crr, nothing),
     )
 end
 
@@ -138,12 +138,13 @@ function from_openapi(po::PO.PointToPointBid, refs::OpenAPIRefs, ::NaturalUnit)
         to = resolve_ref(refs, po.to_id, Component),
         max_active_power = po.max_active_power,
         price_limits = _minmax_from_po(po.price_limits),
-        spread_bid = convert_cost(po.spread_bid)::Union{MarketBidCost, MarketBidTimeSeriesCost},
-        linked_crr = po.linked_crr,
+        spread_bid = convert_cost(po.spread_bid.value)::Union{MarketBidCost, MarketBidTimeSeriesCost},
+        linked_crr = _or_default(po.linked_crr, nothing),
     )
 end
 
-function to_openapi(value::PointToPointBid, refs::OpenAPIRefs, ::DeviceBaseUnit)
+
+function to_openapi(value::PointToPointBid, refs::OpenAPIRefs, ::ComponentBaseUnit)
     return PO.PointToPointBid(;
         id = component_id(refs, value),
         name = get_name(value),
@@ -152,8 +153,8 @@ function to_openapi(value::PointToPointBid, refs::OpenAPIRefs, ::DeviceBaseUnit)
         to_id = component_id(refs, get_to(value)),
         max_active_power = get_max_active_power(value),
         price_limits = _minmax_po(get_price_limits(value)),
-        spread_bid = convert_cost_to_openapi(get_spread_bid(value)),
-        linked_crr = get_linked_crr(value),
+        spread_bid = PO.PointToPointBidSpreadBid(convert_cost_to_openapi(get_spread_bid(value))),
+        linked_crr = _optional_to_wire(get_linked_crr(value)),
     )
 end
 
@@ -166,7 +167,7 @@ function to_openapi(value::PointToPointBid, refs::OpenAPIRefs, ::NaturalUnit)
         to_id = component_id(refs, get_to(value)),
         max_active_power = get_max_active_power(value),
         price_limits = _minmax_po(get_price_limits(value)),
-        spread_bid = convert_cost_to_openapi(get_spread_bid(value)),
-        linked_crr = get_linked_crr(value),
+        spread_bid = PO.PointToPointBidSpreadBid(convert_cost_to_openapi(get_spread_bid(value))),
+        linked_crr = _optional_to_wire(get_linked_crr(value)),
     )
 end

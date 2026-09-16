@@ -37,14 +37,14 @@ Affected Types are:
 
   - [`Line`](@ref)
   - [`MonitoredLine`](@ref)
-  - [`PhaseShiftingTransformer`](@ref)
-  - [`TapTransformer`](@ref)
-  - [`Transformer2W`](@ref)
+  - `PhaseShiftingTransformer`
+  - `TapTransformer`
+  - `Transformer2W`
   - [`FuelCurve`](@ref) now has a new field for fuel offtake at the start of a thermal unit. This field defaults to a `LinearCurve(0.0)` value.
 
 ## New and Eliminated Types
 
-  - [`Transformer3W`](@ref) (see [Handle 3-winding transformer data](@ref 3wtdata))
+  - `Transformer3W` (see [Handle 3-winding transformer data](@ref 3wtdata))
   - [`TwoTerminalLCCLine`](@ref)
   - [`TwoTerminalVSCLine`](@ref)
   - [`HydroReservoir`](@ref)
@@ -83,7 +83,7 @@ Most of the transformer changes are included to bring PowerSystems.jl closer to 
   - The shunt branch in the transformer now uses a `Complex{Float64}` to model core losses as well as the core inductance.
   - Shunt allocation in the transformer between the primary and secondary. We now allocate the shunt to the primary following PSSe's convention. See [`this issue`](https://github.com/Sienna-Platform/PowerSystems.jl/issues/1411) for a description of the discrepancy with Matpower. Note that this mostly affect the results reporting between Matpower and PSSe.
 
-We also added support for [`Transformer3W`](@ref). See [`Handle 3-winding transformer data`](@ref 3wtdata) for more details.
+We also added support for `Transformer3W`. See [`Handle 3-winding transformer data`](@ref 3wtdata) for more details.
 
 These changes now provide the capability to obtain the impedance values for the transformer's
 depending on the [`Per-unit Conventions`](@ref per_unit).

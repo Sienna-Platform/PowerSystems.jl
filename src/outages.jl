@@ -13,6 +13,8 @@ accessors via multiple dispatch:
   post-contingency state should be modeled. The default
   [`get_monitored_components`](@ref) reads `value.monitored_components`; override
   it if your subtype does not carry the field directly.
+- `identifier::Union{Nothing, String}` - optional user-supplied identifier (a name or a
+  block id). The default [`get_identifier`](@ref) reads `value.identifier`.
 - `internal::InfrastructureSystemsInternal` — accessed via `get_internal`.
 
 The default [`supports_time_series`](@ref) returns `true`; override for custom
@@ -43,6 +45,12 @@ downstream consumers (e.g., PowerSimulations) decide whether empty means "monito
 nothing" or "monitor everything".
 """
 get_monitored_components(value::Outage) = value.monitored_components
+
+"""
+Get the optional user-supplied identifier of an [`Outage`](@ref), such as a name or a
+block id. Returns `nothing` when none was set.
+"""
+get_identifier(value::Outage) = value.identifier
 
 """
 Replace the monitored-components set for an [`Outage`](@ref) with the contents
@@ -119,17 +127,19 @@ series.
 - `mean_time_to_recovery::Float64`: Time elapsed to recovery after a failure, in minutes.
 - `outage_transition_probability::Float64`: Characterizes the probability of failure (1 - p) in the geometric distribution.
 - `monitored_components::Set{Int}`: ids of devices whose post-contingency state should be modeled when this outage occurs. Empty by default; semantics of an empty set are decided by the downstream consumer.
+- `identifier::Union{Nothing, String}`: Optional user-supplied identifier for the outage, such as a name or a block id. `nothing` when not set.
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems internal reference
 """
 struct GeometricDistributionForcedOutage <: UnplannedOutage
     mean_time_to_recovery::Float64
     outage_transition_probability::Float64
     monitored_components::Set{Int}
+    identifier::Union{Nothing, String}
     internal::InfrastructureSystemsInternal
 end
 
 """
-    GeometricDistributionForcedOutage(; mean_time_to_recovery, outage_transition_probability, monitored_components, internal)
+    GeometricDistributionForcedOutage(; mean_time_to_recovery, outage_transition_probability, monitored_components, identifier, internal)
 
 Construct a [`GeometricDistributionForcedOutage`](@ref).
 
@@ -137,18 +147,21 @@ Construct a [`GeometricDistributionForcedOutage`](@ref).
 - `mean_time_to_recovery::Float64`: (default: `0.0`) Time elapsed to recovery after a failure, in minutes.
 - `outage_transition_probability::Float64`: (default: `0.0`) Characterizes the probability of failure (1 - p) in the geometric distribution.
 - `monitored_components`: (default: `Int[]`) Any iterable of `Int` ids or [`Device`](@ref). Devices are converted to their ids internally; duplicates are collapsed.
+- `identifier::Union{Nothing, String}`: (default: `nothing`) Optional user-supplied identifier for the outage, such as a name or a block id.
 - `internal::InfrastructureSystemsInternal`: (default: `InfrastructureSystemsInternal()`) (**Do not modify.**) PowerSystems internal reference
 """
 function GeometricDistributionForcedOutage(;
     mean_time_to_recovery = 0.0,
     outage_transition_probability = 0.0,
     monitored_components = Int[],
+    identifier = nothing,
     internal = InfrastructureSystemsInternal(),
 )
     return GeometricDistributionForcedOutage(
         mean_time_to_recovery,
         outage_transition_probability,
         Set{Int}(_as_id(x) for x in monitored_components),
+        identifier,
         internal,
     )
 end
@@ -166,32 +179,37 @@ Attribute that contains information regarding planned outages.
 # Arguments
 - `outage_schedule::String`: String name of the time series used for the scheduled outages
 - `monitored_components::Set{Int}`: ids of devices whose post-contingency state should be modeled when this outage occurs. Empty by default; semantics of an empty set are decided by the downstream consumer.
+- `identifier::Union{Nothing, String}`: Optional user-supplied identifier for the outage, such as a name or a block id. `nothing` when not set.
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems internal reference
 """
 struct PlannedOutage <: Outage
     outage_schedule::String
     monitored_components::Set{Int}
+    identifier::Union{Nothing, String}
     internal::InfrastructureSystemsInternal
 end
 
 """
-    PlannedOutage(; outage_schedule, monitored_components, internal)
+    PlannedOutage(; outage_schedule, monitored_components, identifier, internal)
 
 Construct a [`PlannedOutage`](@ref).
 
 # Arguments
 - `outage_schedule::String`: String name of the time series used for the scheduled outages
 - `monitored_components`: (default: `Int[]`) Any iterable of `Int` ids or [`Device`](@ref). Devices are converted to their ids internally; duplicates are collapsed.
+- `identifier::Union{Nothing, String}`: (default: `nothing`) Optional user-supplied identifier for the outage, such as a name or a block id.
 - `internal::InfrastructureSystemsInternal`: (default: `InfrastructureSystemsInternal()`) (**Do not modify.**) PowerSystems internal reference
 """
 function PlannedOutage(;
     outage_schedule,
     monitored_components = Int[],
+    identifier = nothing,
     internal = InfrastructureSystemsInternal(),
 )
     return PlannedOutage(
         outage_schedule,
         Set{Int}(_as_id(x) for x in monitored_components),
+        identifier,
         internal,
     )
 end
@@ -206,32 +224,37 @@ The time series data for fixed outages can be obtained from the simulation of a 
 # Arguments
 - `outage_status::Float64`: The forced outage status in the model. 1 represents outaged and 0 represents available.
 - `monitored_components::Set{Int}`: ids of devices whose post-contingency state should be modeled when this outage occurs. Empty by default; semantics of an empty set are decided by the downstream consumer.
+- `identifier::Union{Nothing, String}`: Optional user-supplied identifier for the outage, such as a name or a block id. `nothing` when not set.
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems internal reference
 """
 struct FixedForcedOutage <: UnplannedOutage
     outage_status::Float64
     monitored_components::Set{Int}
+    identifier::Union{Nothing, String}
     internal::InfrastructureSystemsInternal
 end
 
 """
-    FixedForcedOutage(; outage_status, monitored_components, internal)
+    FixedForcedOutage(; outage_status, monitored_components, identifier, internal)
 
 Construct a [`FixedForcedOutage`](@ref).
 
 # Arguments
 - `outage_status::Float64`: The forced outage status in the model. 1 represents outaged and 0 represents available.
 - `monitored_components`: (default: `Int[]`) Any iterable of `Int` ids or [`Device`](@ref). Devices are converted to their ids internally; duplicates are collapsed.
+- `identifier::Union{Nothing, String}`: (default: `nothing`) Optional user-supplied identifier for the outage, such as a name or a block id.
 - `internal::InfrastructureSystemsInternal`: (default: `InfrastructureSystemsInternal()`) (**Do not modify.**) PowerSystems internal reference
 """
 function FixedForcedOutage(;
     outage_status,
     monitored_components = Int[],
+    identifier = nothing,
     internal = InfrastructureSystemsInternal(),
 )
     return FixedForcedOutage(
         outage_status,
         Set{Int}(_as_id(x) for x in monitored_components),
+        identifier,
         internal,
     )
 end
