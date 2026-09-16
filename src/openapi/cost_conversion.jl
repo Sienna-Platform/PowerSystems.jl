@@ -591,10 +591,10 @@ convert_reserve_variable(po::Union{Nothing, IC.Absent, PC.CostCurve}) =
 
 # ── LossCurve ⇄ OpenAPI ────────────────────────────────────────────────────────
 # The schemas' `LossCurve` records the basis its curve is expressed in (`power_units`,
-# governing both axes), the same enum every power-bearing blob stamps. Import keeps that
+# governing both axes), the same enum every power-bearing component records. Import keeps that
 # basis and export writes PSY's `get_power_units`; neither side assumes natural units.
 
-"""Wrap a document's loss curve as a `LossCurve` on the basis its blob states."""
+"""Wrap a document's loss curve as a `LossCurve` on the unit system it states."""
 loss_curve_from_openapi(curve::ValueCurve, units::IS.AbstractUnitSystem) =
     LossCurve(curve, units)
 

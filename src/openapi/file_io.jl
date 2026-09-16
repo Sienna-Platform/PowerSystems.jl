@@ -28,24 +28,12 @@
 #                    JSON members are deflated and the HDF5 one is stored uncompressed,
 #                    HDF5 carrying its own compression already.
 #
-# The archive's extra members are the difference between the forms, and the `.sqlite` one is a
-# difference about **where the association tables live** rather than about compression:
-#
-#   `.sns` keeps InfraStore's `.sqlite`, so the store is restored from its own tables. It is the
-#   lossless native form — the catalog holds columns the OpenAPI wire form has no field for —
-#   and it is Sienna-only, since reading it means reading InfraStore's catalog. It also carries
-#   `sienna_extras.json`, which is what makes it the only form that keeps subsystems.
-#
-#   The two document forms write the arrays alone and record the associations in the document's
-#   own `time_series_associations` table, which `from_openapi` replays into a freshly minted
-#   catalog. That is what makes them readable by any non-Julia client, and it bounds them by
-#   what the wire form can express.
-#
-# `to_openapi(sys; write_catalog)` is the knob.
+# Only the archive keeps InfraStore's `.sqlite`, which is what makes it lossless and
+# Sienna-only; the document forms record the same rows in the document itself, which is what
+# makes them readable by any client. `to_openapi(sys; write_catalog)` selects between them.
 
-"""Extension of the archive form: **s**ienna, **s**ystem. PowerSystemsInvestmentsPortfolios
-spells its own `.snp`, which is why the container in IS takes this from its caller rather
-than owning one extension."""
+"""Archive extension. Passed to IS rather than owned by it, so PowerSystemsInvestmentsPortfolios
+can use its own `.snp`."""
 const SYSTEM_ARCHIVE_EXTENSION = ".sns"
 
 """Document member of a serialized System directory."""
@@ -54,27 +42,20 @@ const SYSTEM_DOCUMENT_FILE = "system.json"
 """HDF5 sidecar member of a serialized System directory."""
 const TIME_SERIES_FILE = "time_series.h5"
 
-"""Suffix InfraStore gives its catalog: the sidecar's own name plus this. Named once so the
-document forms, which name their sidecar after the document, derive the same path."""
+"""InfraStore's catalog suffix."""
 const TIME_SERIES_CATALOG_SUFFIX = ".sqlite"
 
 """InfraStore's SQLite catalog, beside the HDF5 sidecar.
 
-A member of a `:sienna` bundle and not of a `:json` one — that is the difference between the
-formats. Named here either way, because a directory being overwritten is cleared of it: the
-arrays-only write refuses to publish beside a catalog whose rows would then point into the
-file it just replaced.
+Archive member only, but named here too so a document write clears it: its rows would
+otherwise point into a sidecar that write just replaced.
 """
 const TIME_SERIES_CATALOG_FILE = TIME_SERIES_FILE * TIME_SERIES_CATALOG_SUFFIX
 
 """
-Archive member holding the System state the OpenAPI document has no representation for.
-
-Archive form only, and it holds exactly one thing: subsystem membership. Everything
-else a System carries is either in the document already (frequency, so both formats keep it)
-or derived from it on read — masked components are re-masked by
-`handle_component_addition!(sys, ::StaticInjectionSubsystem)` when the owning
-`StaticInjectionSubsystem` is added, so recording them would give one truth two writers.
+Archive member holding subsystem membership — the only System state the document cannot
+represent. Masked components need no entry: `add_component!` re-masks them on read, and
+recording them would give one truth two writers.
 """
 const SIENNA_EXTRAS_FILE = "sienna_extras.json"
 
@@ -106,7 +87,7 @@ end
 """
 $(TYPEDSIGNATURES)
 
-Write the `:sienna` extras member into an already-built bundle directory.
+Write `sienna_extras.json` into an already-built bundle directory.
 
 Component ids are the document's own ids, so the two members agree without a translation
 step: PSY sets each component to its document id before adding it on import. Ids are sorted
@@ -123,7 +104,7 @@ function _write_sienna_extras(sys::System, dir::AbstractString, pretty::Bool)
     return nothing
 end
 
-"""Honor `to_file`'s `pretty` for this member too, so an archive is not half indented."""
+"""Honor `to_file`'s `pretty` for this member too."""
 function _print_extras(io::IO, extras::AbstractDict, pretty::Bool)
     if pretty
         JSON.print(io, extras, 2)
@@ -136,11 +117,10 @@ end
 """
 $(TYPEDSIGNATURES)
 
-Apply the `:sienna` extras member to a System just built from the bundle's document.
+Apply `sienna_extras.json` to a System just built from the archive's document.
 
-`IS.get_component(sys, id)` throws `ArgumentError` naming the id when the file references a
-component the document does not carry, which is the right outcome: the two members are written
-together from one System, so a mismatch means the archive is corrupt rather than merely old.
+A reference to a component the document does not carry throws, naming the id: both members are
+written together from one System, so a mismatch means a corrupt archive, not an old one.
 """
 function _load_sienna_extras!(sys::System, dir::AbstractString)
     path = joinpath(dir, SIENNA_EXTRAS_FILE)
@@ -163,11 +143,10 @@ function _load_sienna_extras!(sys::System, dir::AbstractString)
 end
 
 """
-Clear the paths a write is about to publish, or refuse the write.
+Clear the paths a write is about to use, or refuse the write.
 
-The catalog is listed even though neither document form writes one: an arrays-only write must
-not publish beside a catalog left by an earlier archive-shaped write, whose rows would then
-point into the file it just replaced.
+The catalog is listed even though neither document form writes one: its rows would otherwise
+point into a sidecar the write just replaced.
 """
 function _prepare_write_targets(paths, force::Bool)
     for path in paths
@@ -187,7 +166,6 @@ function _prepare_write_targets(paths, force::Bool)
     return nothing
 end
 
-"""Create `dir` when it names one; a bare filename has no parent to create."""
 function _ensure_parent_dir(dir::AbstractString)
     if !isempty(dir)
         mkpath(dir)
@@ -213,33 +191,23 @@ Any other extension is refused rather than guessed at.
 
 # The `units` keyword
 
-`units` is passed through to `to_openapi` and chooses the basis every value in the
-document is written on:
+`units` selects the unit system every value is written on, and is passed through to
+[`to_openapi`](@ref):
 
-  - `CU` (default) writes each component's values on its own `base_power`, the convention PSY
-    stores natively. Nothing is converted, so the numbers on disk are the numbers in memory and
-    the round trip is exact.
-  - `NU` converts on the way out to physical units — MW, MVAr, MVA — which is what a reader
-    outside Sienna generally wants.
+  - `CU` (default) writes each component's values on its own `base_power`. Nothing is
+    converted, so the round trip is exact.
+  - `NU` converts to physical units — MW, MVAr, MVA — which is what a reader outside Sienna
+    generally wants.
 
-Both are complete: any `System` exports either way, whatever it was built from. `SU` is refused,
-having no representation in the wire enum. **An archive only ever writes `CU`** — that is the
-representation PSY stores natively, so it costs no conversion pass over every component, and
-the archive form is chosen specifically to be cheap to produce. Passing any other unit system
-with a `$(SYSTEM_ARCHIVE_EXTENSION)` path throws rather than silently ignoring the keyword
-or paying the conversion cost the form exists to avoid.
+`SU` throws; so does any unit system but `CU` with an archive path, which exists to avoid a
+conversion pass.
 
-Note the asymmetry between writing and reading. **A write is uniform**: PSY does not track a
-per-component basis, so the choice made here stamps every power-bearing blob in the document
-with the same value. **A read is per component**: each blob is converted according to the unit
-system it carries, so a document written by another client with a mixed basis is read back
-correctly, and a blob missing the field is an error rather than a guess (see `from_openapi`).
-Writing then reading therefore returns what you exported regardless of which basis you chose.
+A write is uniform, a read is not: PSY records no per-component unit system, so the choice
+here applies to the whole document, while `from_openapi` honors whatever each component
+records. A mixed-unit document from another client therefore reads back correctly.
 
-`sys.subsystems` has no representation in the document, so both document forms warn (they do
-not error) when the System has any; an archive keeps them in `sienna_extras.json`. Masked
-components need no such handling in any form — they are re-masked on read when their owning
-`StaticInjectionSubsystem` is added.
+Subsystems survive only the archive form; both document forms warn. Masked components always
+round-trip.
 """
 function to_file(
     sys::System,
@@ -379,7 +347,7 @@ function _to_file_sienna(
     # goes inside it.
     IS.create_sienna_archive(path, SYSTEM_ARCHIVE_EXTENSION; force = force) do bundle
         # The archive keeps InfraStore's own `.sqlite` — see the format notes at the top of
-        # this file for why that is what makes `:sienna` the lossless one.
+        # this file for why that is what makes the archive the lossless one.
         _to_file_directory(
             sys,
             bundle;

@@ -21,7 +21,7 @@ struct OpenAPIRefs
     "The System's computational base power (MVA): the caller-supplied anchor for import
     (`from_openapi(::Type{System}, doc; base_power)`) or `get_base_power(sys)` on export, used
     by the handful of converters for types carrying no device-level per-unit basis of their
-    own (e.g. a reserve's `requirement`). Every power-bearing component blob is otherwise
+    own (e.g. a reserve's `requirement`). Every power-bearing component is otherwise
     self-interpretable via its own `base_power`/`power_units`."
     base_power::Float64
     "Component→component reference resolutions queued by [`defer_ref!`](@ref) because the
@@ -147,11 +147,11 @@ has_component_id(refs::OpenAPIRefs, component) = haskey(refs.id_by_component, co
 # it, as do the hand-written converters for the types the generator cannot emit.
 
 """
-The `CU`/`NU` marker `raw` (a component blob's `power_units` string) selects, for the type
+The `CU`/`NU` marker `raw` (a component's `power_units` string) selects, for the type
 named `component_type` and document id `id` — both carried only for the error message.
 
 Kept as an explicit check rather than leaning on deserialization: `decode` does enforce the
-schema's `required` under OpenAPI.jl 1.x (0.2's `from_json` did not), but a blob whose
+schema's `required` under OpenAPI.jl 1.x (0.2's `from_json` did not), but a component whose
 `power_units` still arrives absent must error here naming the offending type and id, rather
 than silently defaulting to either basis.
 """
@@ -170,18 +170,17 @@ end
 _power_units_marker(component_type::AbstractString, id, units::IC.UnitSystem) =
     _power_units_marker(component_type, id, units.value)
 
-# `Absent` (key missing) and `nothing` (explicit JSON null) both mean the blob never stated a
+# `Absent` (key missing) and `nothing` (explicit JSON null) both mean the component never stated a
 # basis. Erroring by dispatch keeps the two out of the string path, where they would compare
 # unequal to both spellings and report a confusing "unmapped" value.
 _power_units_marker(component_type::AbstractString, id, ::Union{Nothing, IC.Absent}) =
     error(
         "from_openapi: $component_type id=$id has no power_units — every power-bearing " *
-        "component blob must state \"COMPONENT_BASE\" or \"NATURAL_UNITS\"",
+        "component must state \"COMPONENT_BASE\" or \"NATURAL_UNITS\"",
     )
 
-"""The wire enum has no system-base member, so `SU` has nothing to stamp. A method rather than
-a narrowed signature upstream: every marker reaching export answers this, and a marker added
-later fails here by name instead of silently matching a two-type union."""
+"""`SU` cannot be exported: the OpenAPI enum has no system-base value. A method rather than a
+narrowed signature, so a marker added later fails here by name."""
 function _power_units_string(::SystemBaseUnit)
     return error(
         "cannot export on SystemBaseUnit(): the OpenAPI power_units enum accepts only " *
@@ -201,15 +200,15 @@ _power_units_string(::ComponentBaseUnit) = IC.UnitSystem("COMPONENT_BASE")
 _power_units_string(::NaturalUnit) = IC.UnitSystem("NATURAL_UNITS")
 
 """
-`po.base_power`, required: every power-bearing component blob must state its own. Checked
+`po.base_power`, required: every power-bearing component must state its own. Checked
 explicitly rather than left to deserialization: `decode` does enforce the schema's `required`
-under OpenAPI.jl 1.x (0.2's `from_json` did not), but a blob whose `base_power` still arrives
+under OpenAPI.jl 1.x (0.2's `from_json` did not), but a component whose `base_power` still arrives
 absent must error here, naming the offending type and id, rather than silently defaulting.
 """
 function _require_base_power(component_type::AbstractString, id, base_power)
     isnothing(base_power) && error(
         "from_openapi: $component_type id=$id has no base_power — every power-bearing " *
-        "component blob must state its own base_power",
+        "component must state its own base_power",
     )
     return Float64(base_power)
 end

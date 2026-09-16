@@ -245,9 +245,8 @@ function System(
 end
 
 """
-`System(::AbstractString)` no longer constructs a System — it always errors, pointing at the
-supported alternative. Use [`from_file`](@ref) to read a serialized `System` bundle/archive, or
-PowerSystems.jl's `PowerFlowFileParser.jl` companion package to parse a Matpower/PSSE file.
+Always throws, naming the replacement: [`from_file`](@ref) for a serialized bundle or archive,
+PowerFlowFileParser.jl for a Matpower/PSSE file.
 """
 function System(file_path::AbstractString; kwargs...)
     ext = lowercase(splitext(file_path)[2])

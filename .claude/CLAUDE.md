@@ -83,9 +83,10 @@ Expect their suites — and anything using PSB fixtures, which is most of the st
 `MethodError: no method matching from_file(::Type{System}, ::String)` until then. Neither is PSY's to fix
 from this side:
 
-- **PowerSystemCaseBuilder** — `src/build_system.jl:113` and `:139`, `src/parsers/openapi_pipeline.jl:30`.
-  Its system cache calls both old signatures, so most `build_system` calls throw. `test_component_selector.jl`
-  calls `PSB.build_system` at module top level, which aborts an unfiltered `runtests.jl` before later files load.
+- **PowerSystemCaseBuilder** — `src/build_system.jl:120` and `:139`, `src/parsers/openapi_pipeline.jl:30`.
+  Its system cache calls both old signatures, so most `build_system` calls throw. PSY's own
+  `test/test_component_selector.jl` calls `PSB.build_system` at module top level, which aborts an
+  unfiltered `runtests.jl` before later files load.
 - **PowerOperationsModels** — `src/operation/decision_model.jl:235`, `src/operation/emulation_model.jl:293`.
   `to_file(sys, dir; power_units = …)` under IOM's *default* `system_to_file` setting, inside a try/catch
   that reports a successful solve as `FAILED` rather than surfacing the error.

@@ -175,10 +175,7 @@ end
 
 # ── export unit system ───────────────────────────────────────────────────────────
 
-"""Reject a unit system with no wire representation before any blob is written.
-
-[`_power_units_string`](@ref) is the authority on which markers export; calling it here only
-moves its error to the entry point, so a rejected unit system leaves nothing half-written."""
+"""Throw on `SU` before anything is written, rather than partway through the document."""
 function _check_export_units(units::IS.AbstractUnitSystem)
     _power_units_string(units)
     return nothing
@@ -657,40 +654,28 @@ Build a `PowerCoreOpenAPIModels.SystemDocument` from `sys`, the reverse of
 `from_openapi(::Type{System}, doc)`.
 
 Returns the typed container, not JSON: writing it to disk belongs to
-`PowerCoreOpenAPIModels.write_document`, which [`to_file`](@ref) drives. Every id in the result
-— components and supplemental attributes alike — comes from the document's single counter, since
-consumers key a row by id without its type.
+`PowerCoreOpenAPIModels.write_document`, which [`to_file`](@ref) drives. Every id — components
+and supplemental attributes alike — comes from one counter.
 
-`units` selects the basis every value is written on, and the stamp each blob carries:
+`units` selects the unit system every value is written on, and the `power_units` each component
+records:
 
-  - `CU` (default) stamps every power-bearing blob `"COMPONENT_BASE"` and writes each
-    component's values on its own `base_power` — what PSY stores natively, so no conversion
-    runs and the numbers on disk are the numbers in memory.
-  - `NU` stamps `"NATURAL_UNITS"` and converts to physical units (MW, MVAr, MVA).
+  - `CU` (default) records `"COMPONENT_BASE"` and writes each component's values on its own
+    `base_power`, what PSY stores natively, so no conversion runs.
+  - `NU` records `"NATURAL_UNITS"` and converts to physical units (MW, MVAr, MVA).
 
-`SU` errors: the wire enum has no system-base member, so there is nothing to stamp.
+`SU` errors: there is no OpenAPI enum value for it.
 
-The stamp is uniform across an export because PSY records no per-component creation basis.
-Reading is not uniform: `from_openapi` honors the `power_units` stamp on each individual blob, so
-a document written elsewhere with a mixed basis loads correctly, and a blob that omits the field
-is an error — `OpenAPI.from_json` does not enforce the schema's `required`, so the check is
-made explicitly rather than defaulting to a basis and silently rescaling the value.
+The choice is uniform across an export, since PSY records no per-component unit system. Reading
+is not: `from_openapi` honors what each component records, so a mixed-unit document from another
+client loads correctly, and a component omitting the field is an error rather than a guess.
 
-Any `System` is exportable either way, however it was built.
-
-Walks components in [`DOCUMENT_PLAN`](@ref) order (symmetry with import, not a resolution
-requirement — every id already exists or is assigned fresh before it is ever read). Emits
-`PO.Line.base_power` (and the equivalent on every system-base-denormalized type) as
-`get_base_power(sys)` exactly — not reconstructed.
-
-Component `ext` is written through verbatim to `doc.ext`. Errors loudly rather than silently
-dropping data: a time series with no `time_series_storage_path` given.
+Component `ext` is written through verbatim to `doc.ext`.
 
 `write_catalog` decides whether InfraStore's `<sidecar>.sqlite` is written beside the arrays:
-`false` (default) writes the arrays alone, `true` keeps the catalog too and makes it
-authoritative on read. Either way the rows appear in `doc.time_series_associations` — the
-keyword adds a file, it does not move them. The notes at the top of `src/openapi/file_io.jl` say
-which of the three written forms uses which, and why.
+`false` (default) writes the arrays alone, `true` keeps the catalog and makes it authoritative
+on read. Either way the rows appear in `doc.time_series_associations`. It requires
+`time_series_storage_path` whenever `sys` carries time series.
 """
 function to_openapi(
     sys::System;

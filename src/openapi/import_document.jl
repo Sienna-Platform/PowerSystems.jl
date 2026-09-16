@@ -532,11 +532,8 @@ Only `name` and `description` are applied here (`base_power` is a `from_openapi`
 document field). `frequency` cannot be — `System` is immutable and takes it at construction —
 so [`_system_with_sidecar`](@ref) applies it there, via [`_frequency_kwarg`](@ref).
 
-`supplied` is the set of keywords the caller passed, and a field named in it is left alone: a
-caller who writes `name = ...` meant it, and overwriting that with the document's value would
-discard it silently. This is the same precedence `frequency` already has, where the caller's
-keyword is merged after the document's — the three document-owned keywords now agree instead
-of splitting on which one happens to be applied after construction.
+`supplied` is the set of keywords the caller passed; a field named in it is left alone, so a
+caller's `name = ...` is not silently overwritten by the document's.
 """
 function _apply_document_metadata!(sys::System, doc::PD.SystemDocument, supplied)
     :name in supplied || _apply_metadata_field!(set_name!, sys, PD.get_name(doc))
@@ -549,11 +546,9 @@ end
 The `frequency = ...` keyword the document asks for, as a `NamedTuple` to splat into
 `System`'s constructor — empty when the document names none.
 
-`frequency` is an optional field of the document and a construction-time keyword of an
-immutable `System`, so it can only be applied here, not assigned afterwards. Empty-when-absent
-is what keeps the original guarantee intact: a document that predates the field cannot
-silently reset a 50 Hz system to the 60 Hz default. A caller's own `frequency` in
-`system_kwargs` wins, since it is merged after this one.
+`System` is immutable, so frequency can only be applied at construction. Empty when the
+document names none, so a document without the field cannot reset a 50 Hz system to the
+default. A caller's own `frequency` wins, being merged after this one.
 """
 _frequency_kwarg(::Nothing) = (;)
 _frequency_kwarg(value) = (; frequency = Float64(value))
@@ -576,20 +571,13 @@ forward or same-type reference — e.g. a cascading `HydroReservoir` chain — s
 reserve membership from `service_associations`, and — when `time_series_storage_path` is
 given — adopts the HDF5 sidecar as the System's own time series store.
 
-What happens to `doc.time_series_associations` depends on what the sidecar brought. The
-bundle [`to_file`](@ref) writes is arrays only, so its catalog arrives empty and the
-document's rows *are* the catalog: they are replayed into it, ids included. A sidecar that
-came with its own `.sqlite` is authoritative instead, and the rows are cross-checked against
-it rather than written. See [`_load_time_series_associations!`](@ref).
+Time-series rows are reconciled against whatever the sidecar brought, by
+[`_load_time_series_associations!`](@ref).
 
-Errors loudly (naming the offending type, id, or field) rather than silently skipping:
-a component type with no registered converter, an unresolved attribute/plant/service
-association or entity reference, or time-series owner reference, an unmapped time-series
-type, scaling-factor multiplier, or supplemental `attribute_type` (see
-[`load_supplemental_attribute_associations!`](@ref)), a document that declares time series
-but supplies no `time_series_storage_path`, and any drift this validation catches.
+Errors loudly, naming the offending type, id or field, rather than silently skipping
+malformed input.
 
-`base_power` is the `System`'s own computational base (MVA); every component blob is
+`base_power` is the `System`'s own computational base (MVA); every component is
 self-interpretable via its own `power_units`/`base_power`. It defaults to the same `100.0`
 `System`'s own constructor defaults to.
 
@@ -657,19 +645,12 @@ function from_openapi(
 end
 
 """
-Put the document's `time_series_associations` rows into `store`, or cross-check them against
-the rows it already has.
+Replay the document's `time_series_associations` rows into an empty catalog, or validate them
+against one the store already brought — which depends on what the sidecar carried, not on which
+form wrote it.
 
-Which one depends on what the bundle carried, not on which format wrote it — `from_openapi`
-is public and does not know its producer. An arrays-only sidecar arrives with a freshly
-minted, empty catalog, so the document's rows are replayed, ids included; that is what keeps
-a cost's `association_id` resolving to the series it named. A sidecar that brought its own
-`.sqlite` is authoritative instead and the rows are only validated against it — the path a
-`.sns` archive, an older bundle, and a PowerSystemCaseBuilder cache all take.
-
-Runs before the component pass, not after it: a `MarketBidTimeSeriesCost` or time-series
-`FuelCurve` resolves its `association_id` against the store while its owner is being built,
-so the rows have to be there first.
+Runs before the component pass: a `MarketBidTimeSeriesCost` or time-series `FuelCurve` resolves
+its `association_id` against the store while its owner is being built.
 """
 _load_time_series_associations!(::System, ::PD.SystemDocument, ::Nothing) = nothing
 
@@ -686,8 +667,7 @@ function _load_time_series_associations!(sys::System, doc::PD.SystemDocument, st
     return nothing
 end
 
-"""Whether the adopted store brought its own association rows, in which case they outrank the
-document's. A count, not a listing: the answer is a yes/no and the catalog can be large."""
+"""Whether the store already has association rows, which then outrank the document's."""
 _catalog_is_authoritative(store) = !iszero(IS.get_num_time_series(store))
 
 """
