@@ -16,9 +16,9 @@
 #                    directory; the document records only its basename, so the pair moves
 #                    together.
 #
-#   - `case.sn`      four members, tar+gzip'd into one file
+#   - `case.sns`     four members, zipped into one file
 #
-#                        case.sn
+#                        case.sns
 #                          system.json
 #                          time_series.h5
 #                          time_series.h5.sqlite   InfraStore's own catalog
@@ -31,7 +31,7 @@
 # The archive's extra members are the difference between the forms, and the `.sqlite` one is a
 # difference about **where the association tables live** rather than about compression:
 #
-#   `.sn` keeps InfraStore's `.sqlite`, so the store is restored from its own tables. It is the
+#   `.sns` keeps InfraStore's `.sqlite`, so the store is restored from its own tables. It is the
 #   lossless native form — the catalog holds columns the OpenAPI wire form has no field for —
 #   and it is Sienna-only, since reading it means reading InfraStore's catalog. It also carries
 #   `sienna_extras.json`, which is what makes it the only form that keeps subsystems.
@@ -42,6 +42,11 @@
 #   what the wire form can express.
 #
 # `to_openapi(sys; write_catalog)` is the knob.
+
+"""Extension of the archive form: **s**ienna, **s**ystem. PowerSystemsInvestmentsPortfolios
+spells its own `.snp`, which is why the container in IS takes this from its caller rather
+than owning one extension."""
+const SYSTEM_ARCHIVE_EXTENSION = ".sns"
 
 """Document member of a serialized System directory."""
 const SYSTEM_DOCUMENT_FILE = "system.json"
@@ -93,7 +98,7 @@ function _warn_on_document_data_loss(sys::System)
     if !isempty(get_subsystems(sys))
         @warn "System has user-defined subsystems; an OpenAPI document does not represent " *
               "them, and they will not survive the round trip. Write a " *
-              "$(IS.SIENNA_ARCHIVE_EXTENSION) archive to keep them."
+              "$(SYSTEM_ARCHIVE_EXTENSION) archive to keep them."
     end
     return nothing
 end
@@ -142,8 +147,8 @@ function _load_sienna_extras!(sys::System, dir::AbstractString)
     if !isfile(path)
         throw(
             IS.DataFormatError(
-                "$(IS.SIENNA_ARCHIVE_EXTENSION) archive is missing its $SIENNA_EXTRAS_FILE " *
-                "member; it was not written by to_file(sys, \"....sn\")",
+                "$(SYSTEM_ARCHIVE_EXTENSION) archive is missing its $SIENNA_EXTRAS_FILE " *
+                "member; it was not written by to_file(sys, \"...$(SYSTEM_ARCHIVE_EXTENSION)\")",
             ),
         )
     end
@@ -200,7 +205,7 @@ Write `sys` to `path`. The extension of `path` chooses the form:
   - **`.json`** — `path` is the document itself; writes it plus a `.h5` sidecar taking the
     document's stem (`case.json` → `case.h5`) beside it. Several systems can therefore share
     one directory.
-  - **`$(IS.SIENNA_ARCHIVE_EXTENSION)`** — writes those two plus `time_series.h5.sqlite`
+  - **`$(SYSTEM_ARCHIVE_EXTENSION)`** — writes those two plus `time_series.h5.sqlite`
     (InfraStore's own catalog) and `sienna_extras.json` into a temporary directory and archives
     it with `Tar` + gzip. Lossless; the document forms are not.
 
@@ -221,7 +226,7 @@ Both are complete: any `System` exports either way, whatever it was built from. 
 having no representation in the wire enum. **An archive only ever writes `CU`** — that is the
 representation PSY stores natively, so it costs no conversion pass over every component, and
 the archive form is chosen specifically to be cheap to produce. Passing any other unit system
-with a `$(IS.SIENNA_ARCHIVE_EXTENSION)` path throws rather than silently ignoring the keyword
+with a `$(SYSTEM_ARCHIVE_EXTENSION)` path throws rather than silently ignoring the keyword
 or paying the conversion cost the form exists to avoid.
 
 Note the asymmetry between writing and reading. **A write is uniform**: PSY does not track a
@@ -247,7 +252,7 @@ function to_file(
     # `Val`-style dispatch reached first would turn a typo'd extension into a `MethodError` on
     # an internal helper instead of this message.
     ext = lowercase(splitext(path)[2])
-    if ext == IS.SIENNA_ARCHIVE_EXTENSION
+    if ext == SYSTEM_ARCHIVE_EXTENSION
         _check_archive_units(units)
         _to_file_sienna(sys, path; force = force, pretty = pretty)
     elseif ext == ".json"
@@ -259,7 +264,7 @@ function to_file(
     else
         error(
             "to_file: cannot tell from \"$path\" which form to write. Give a directory " *
-            "(no extension), a .json document, or a $(IS.SIENNA_ARCHIVE_EXTENSION) archive.",
+            "(no extension), a .json document, or a $(SYSTEM_ARCHIVE_EXTENSION) archive.",
         )
     end
     return nothing
@@ -272,7 +277,7 @@ _check_archive_units(::ComponentBaseUnit) = nothing
 
 function _check_archive_units(units::IS.AbstractUnitSystem)
     return error(
-        "a $(IS.SIENNA_ARCHIVE_EXTENSION) archive only ever writes on CU (it is the cheapest " *
+        "a $(SYSTEM_ARCHIVE_EXTENSION) archive only ever writes on CU (it is the cheapest " *
         "representation to produce); got units = $units",
     )
 end
@@ -369,9 +374,10 @@ function _to_file_sienna(
     force::Bool,
     pretty::Bool,
 )
-    # `IS.create_sienna_archive` owns the container — the extension rule, the guards, and the
-    # compression. What is PSY's is only what goes inside it.
-    IS.create_sienna_archive(path; force = force) do bundle
+    # `IS.create_sienna_archive` owns the container — the write guards and the compression —
+    # but not the extension, which is PSY's and is passed in. What is PSY's is also only what
+    # goes inside it.
+    IS.create_sienna_archive(path, SYSTEM_ARCHIVE_EXTENSION; force = force) do bundle
         # The archive keeps InfraStore's own `.sqlite` — see the format notes at the top of
         # this file for why that is what makes `:sienna` the lossless one.
         _to_file_directory(
@@ -402,7 +408,7 @@ $(TYPEDSIGNATURES)
 
 Read a `System` written by [`to_file`](@ref). The form is inferred from `path`: a directory
 reads the directory form, a `.json` file reads the document form, and a
-`$(IS.SIENNA_ARCHIVE_EXTENSION)` file reads the archive. Anything else is refused.
+`$(SYSTEM_ARCHIVE_EXTENSION)` file reads the archive. Anything else is refused.
 
 The sidecar is located by the document's own `time_series_storage_file`, resolved relative to
 the directory the document sits in — so a bundle stays readable after being moved or renamed. A
@@ -421,7 +427,7 @@ fields, and a value passed here outranks the document's.
 function from_file(path::AbstractString; system_kwargs...)
     if isdir(path)
         return _from_file_directory(path; system_kwargs...)
-    elseif IS.is_sienna_archive(path)
+    elseif IS.is_sienna_archive(path, SYSTEM_ARCHIVE_EXTENSION)
         return _from_file_sienna(path; system_kwargs...)
     elseif lowercase(splitext(path)[2]) == ".json"
         return _from_file_document(path; system_kwargs...)
@@ -429,7 +435,7 @@ function from_file(path::AbstractString; system_kwargs...)
         throw(
             IS.DataFormatError(
                 "$path is not a serialized System: expected a bundle directory, a .json " *
-                "document, or a $(IS.SIENNA_ARCHIVE_EXTENSION) archive",
+                "document, or a $(SYSTEM_ARCHIVE_EXTENSION) archive",
             ),
         )
     end

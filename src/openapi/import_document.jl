@@ -665,7 +665,7 @@ is public and does not know its producer. An arrays-only sidecar arrives with a 
 minted, empty catalog, so the document's rows are replayed, ids included; that is what keeps
 a cost's `association_id` resolving to the series it named. A sidecar that brought its own
 `.sqlite` is authoritative instead and the rows are only validated against it — the path a
-`.sn` archive, an older bundle, and a PowerSystemCaseBuilder cache all take.
+`.sns` archive, an older bundle, and a PowerSystemCaseBuilder cache all take.
 
 Runs before the component pass, not after it: a `MarketBidTimeSeriesCost` or time-series
 `FuelCurve` resolves its `association_id` against the store while its owner is being built,

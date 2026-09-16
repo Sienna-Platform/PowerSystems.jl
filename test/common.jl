@@ -195,7 +195,7 @@ end
 Round-trip `sys` through `to_file`/`from_file` and return the rebuilt system.
 
 `form` picks which of the three `to_file` writes to exercise: `:directory` (default),
-`:document` (a `.json` file plus its stem-named sidecar) or `:archive` (a `.sn` file).
+`:document` (a `.json` file plus its stem-named sidecar) or `:archive` (a `.sns` file).
 
 The serde itself is tested once, in `test_openapi_file_io.jl`. Use this only where a test needs
 a restored system to check that some *component* survives conversion. A document carries
@@ -219,7 +219,7 @@ function roundtrip_system(
         to_file(sys, document; units = units, force = true)
         return from_file(document; kwargs...)
     elseif form === :archive
-        archive = joinpath(dir, "case.sn")
+        archive = joinpath(dir, "case.sns")
         to_file(sys, archive; units = units, force = true)
         return from_file(archive; kwargs...)
     else

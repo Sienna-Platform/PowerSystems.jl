@@ -11,7 +11,7 @@ There are three forms, chosen by the extension of the path you pass to `to_file`
   - **a `.json` file** — the same two members, with the sidecar named after the document
     (`mysystem.json` and `mysystem.h5`) and sitting beside it, so several systems can share one
     directory.
-  - **a `.sn` file** — those two plus InfraStore's own `time_series.h5.sqlite` catalog and
+  - **a `.sns` file** — those two plus InfraStore's own `time_series.h5.sqlite` catalog and
     `sienna_extras.json`, tar+gzip'd into a single file. This is the lossless form.
 
 The two document forms are readable by any client that can read the OpenAPI schema; the archive
@@ -24,7 +24,7 @@ is Sienna-only, because reading it means reading InfraStore's catalog.
     written before this format. A `System` serialized in either old shape must be rebuilt from
     source and re-serialized with the current `to_file`.
 
-    Only the `.sn` archive preserves a `System`'s user-defined subsystems; the two document
+    Only the `.sns` archive preserves a `System`'s user-defined subsystems; the two document
     forms warn (they do not error) when the system has any, because the document has no
     representation for them. Masked components — for example some internal uses of
     `HybridSystem` subcomponents — survive every form, being re-masked on read when their owning
@@ -71,10 +71,10 @@ so several systems can share one directory:
 to_file(sys, "mysystem.json")
 ```
 
-Or as a single lossless `.sn` archive, the only form that keeps subsystems:
+Or as a single lossless `.sns` archive, the only form that keeps subsystems:
 
 ```@repl serialize_data
-to_file(sys, "mysystem.sn")
+to_file(sys, "mysystem.sns")
 ```
 
 ## Viewing the document in JSON format
@@ -111,14 +111,14 @@ jq '.components.ThermalStandard[] | select(.active_power > 2.3)' system.json
 ## Read a bundle, document or archive back into a `System`
 
 `from_file` infers the form from `path` the same way `to_file` does — a directory, a `.json`
-document, or a `.sn` archive:
+document, or a `.sns` archive:
 
 ```@repl serialize_data
 sys2 = from_file(bundle)
 sys3 = from_file("mysystem.json")
-sys4 = from_file("mysystem.sn")
+sys4 = from_file("mysystem.sns")
 rm(bundle; recursive = true); #hide
 rm("mysystem.json");
 rm("mysystem.h5"; force = true); #hide
-rm("mysystem.sn"); #hide
+rm("mysystem.sns"); #hide
 ```

@@ -125,10 +125,10 @@ end
     end
 end
 
-@testset "to_file/from_file: .sn archive round trip" begin
+@testset "to_file/from_file: .sns archive round trip" begin
     sys = _file_io_fixture()
     mktempdir() do dir
-        archive = joinpath(dir, "case.sn")
+        archive = joinpath(dir, "case.sns")
         to_file(sys, archive)
         @test isfile(archive)
 
@@ -143,10 +143,10 @@ end
     end
 end
 
-@testset "from_file: .sn read-only extracts into time_series_directory and drops JSONs" begin
+@testset "from_file: .sns read-only extracts into time_series_directory and drops JSONs" begin
     sys = _file_io_fixture()
     mktempdir() do outer
-        archive = joinpath(outer, "case.sn")
+        archive = joinpath(outer, "case.sns")
         to_file(sys, archive)
 
         tsdir = mktempdir(outer)
@@ -158,7 +158,13 @@ end
 
         subs = filter(isdir, joinpath.(tsdir, readdir(tsdir)))
         @test length(subs) == 1
-        @test sort(readdir(only(subs))) == ["time_series.h5", "time_series.h5.sqlite"]
+        members = readdir(only(subs))
+        # The sidecar pair persists, the two JSONs are consumed and deleted. Not an equality
+        # check: the store is still open read-only, so SQLite's own -wal/-shm sit beside it.
+        @test issubset(["time_series.h5", "time_series.h5.sqlite"], members)
+        @test isempty(
+            intersect([PSY.SYSTEM_DOCUMENT_FILE, PSY.SIENNA_EXTRAS_FILE], members),
+        )
 
         gen2 = get_component(ThermalStandard, sys2, "g1")
         ts = get_time_series(SingleTimeSeries, gen2, "max_active_power")
@@ -167,10 +173,10 @@ end
     end
 end
 
-@testset "from_file: .sn writable extraction is scoped and cleaned up" begin
+@testset "from_file: .sns writable extraction is scoped and cleaned up" begin
     sys = _file_io_fixture()
     mktempdir() do outer
-        archive = joinpath(outer, "case.sn")
+        archive = joinpath(outer, "case.sns")
         to_file(sys, archive)
 
         tsdir = mktempdir(outer)
@@ -185,10 +191,10 @@ end
     end
 end
 
-@testset "to_file: .sn archive respects force" begin
+@testset "to_file: .sns archive respects force" begin
     sys = _file_io_fixture(; with_time_series = false)
     mktempdir() do dir
-        archive = joinpath(dir, "case.sn")
+        archive = joinpath(dir, "case.sns")
         to_file(sys, archive)
         @test_throws IS.DataFormatError to_file(sys, archive)
         @test isnothing(to_file(sys, archive; force = true))
@@ -198,17 +204,17 @@ end
 @testset "to_file: an unrecognized extension names the three forms" begin
     sys = _file_io_fixture(; with_time_series = false)
     mktempdir() do dir
-        # A path that is neither extensionless, .json nor .sn is refused rather than guessed
+        # A path that is neither extensionless, .json nor .sns is refused rather than guessed
         # at — the form is inferred from the extension and there is no default.
         @test_throws ErrorException to_file(sys, joinpath(dir, "case.bogus"))
         @test !ispath(joinpath(dir, "case.bogus"))
     end
 end
 
-@testset "to_file: .sn refuses any units but CU" begin
+@testset "to_file: .sns refuses any units but CU" begin
     sys = _file_io_fixture(; with_time_series = false)
     mktempdir() do dir
-        archive = joinpath(dir, "case.sn")
+        archive = joinpath(dir, "case.sns")
         # The default is fine: it is what an archive always writes anyway.
         @test isnothing(
             to_file(sys, archive),
@@ -228,34 +234,34 @@ end
     sys = _file_io_fixture(; with_time_series = false)
     mktempdir() do dir
         @test_throws(
-            "$(IS.SIENNA_ARCHIVE_EXTENSION)",
+            "$(PSY.SYSTEM_ARCHIVE_EXTENSION)",
             to_file(sys, joinpath(dir, "case.tar.gz")),
         )
         @test !isfile(joinpath(dir, "case.tar.gz"))
     end
 end
 
-@testset "to_file: .sn refuses an existing directory at path" begin
+@testset "to_file: .sns refuses an existing directory at path" begin
     sys = _file_io_fixture(; with_time_series = false)
     mktempdir() do dir
-        target = joinpath(dir, "case.sn")
+        target = joinpath(dir, "case.sns")
         mkpath(target)
         @test_throws IS.DataFormatError to_file(sys, target)
     end
 end
 
-@testset "to_file: .sn creates missing parent directories" begin
+@testset "to_file: .sns creates missing parent directories" begin
     sys = _file_io_fixture(; with_time_series = false)
     mktempdir() do dir
-        archive = joinpath(dir, "out", "sub", "case.sn")
+        archive = joinpath(dir, "out", "sub", "case.sns")
         @test isnothing(to_file(sys, archive))
         @test isfile(archive)
     end
 end
 
-@testset "from_file: missing .sn archive errors loudly" begin
+@testset "from_file: missing .sns archive errors loudly" begin
     mktempdir() do dir
-        @test_throws IS.DataFormatError from_file(joinpath(dir, "missing.sn"))
+        @test_throws IS.DataFormatError from_file(joinpath(dir, "missing.sns"))
     end
 end
 
@@ -304,7 +310,7 @@ end
         bundle = joinpath(dir, "case")
         to_file(freq_sys, bundle)
         @test get_frequency(from_file(bundle)) == 50.0
-        archive = joinpath(dir, "case.sn")
+        archive = joinpath(dir, "case.sns")
         to_file(freq_sys, archive)
         @test get_frequency(from_file(archive)) == 50.0
     end
