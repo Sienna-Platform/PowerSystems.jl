@@ -9,142 +9,66 @@ The Sienna power-system **data model**: the `System` container plus ~210 compone
 ## System file I/O — `to_file` / `from_file` only
 
 `src/openapi/file_io.jl` owns the surface. **Three forms, one path-inferred dispatch, one
-serializer** — there is no `format` keyword, and the archive builds the same bundle a document
-form does before archiving it, so there is no second writer to keep in sync.
+serializer** — no `format` keyword, and the archive builds the same bundle a document form does
+before archiving it, so there is no second writer to keep in sync.
 
 ```julia
 to_file(sys, path; units = CU, force = false, pretty = false)
 from_file(path; system_kwargs...)   # no type argument — the form is inferred from `path`
 ```
 
-The extension of `path` chooses the form. `to_file` refuses an unrecognized extension in its own
-`else` branch, **before** anything dispatches on the form — a `Val`-style dispatch reached first
-would turn a typo'd extension into a `MethodError` on an internal helper.
+The extension of `path` chooses the form, and `to_file` refuses an unrecognized one in its own
+`else` branch *before* anything dispatches on the form — keep that order, or a typo'd extension
+becomes a `MethodError` on an internal helper.
 
-- **directory** (no extension) — two members, `system.json` (the OpenAPI document, via
-  `PD.write_document`) and, only when the system has time series, `time_series.h5`. Created if
-  absent (`mkpath`). No `.sqlite`: the document's `time_series_associations` table already holds
-  every row of that catalog, down to each row's `association_id` and its `data_hash` pointer into
-  the arrays, so `from_openapi` replays those rows into a freshly minted catalog instead. A system
-  with no time series gets the document alone and a null `time_series_storage_file` — never an
-  empty HDF5 file.
-- **`.json`** — the same two members, but the sidecar takes the document's stem and sits beside
-  it (`case.json` → `case.h5`, via `_document_sidecar_path`), so several systems can share one
-  directory. The document records only the sidecar's basename, so the pair moves together.
-- **`.sns`** — those two plus `time_series.h5.sqlite` (InfraStore's own catalog, authoritative on
-  read) and `sienna_extras.json`. **Lossless**; the document forms are not. Only ever writes on
-  `CU` and throws on any other unit system — the archive form exists to avoid a conversion pass.
-- **`from_file`** infers: directory → directory form, `.json` → document form, `.sns` → archive,
-  anything else → `DataFormatError`.
+- **directory** (no extension) — `system.json` plus `time_series.h5` when there are time series.
+- **`.json`** — the same two, sidecar named from the document's stem (`case.json` → `case.h5`)
+  and beside it, so several systems can share a directory.
+- **`.sns`** — those two plus `time_series.h5.sqlite` (InfraStore's catalog, authoritative on
+  read) and `sienna_extras.json`. **The only lossless form.** Writes on `CU` only and throws
+  otherwise — the form exists to avoid a conversion pass.
 
-**The keyword is `units`, and it takes a marker, not a Symbol.** `CU` (default) or `NU`; `SU` is
-refused, the wire enum having no system-base member. It governs every convertible field
-(`:mva`, `:ohm`, `:siemens`), not just power, and it is threaded straight into `to_openapi`'s own
-`units` keyword — the two now share a name and a type, and `_resolve_export_power_units` is gone.
-Do not confuse this with the **`power_units` field** on cost curves and on every power-bearing
-component blob: that is per-value data, spelled `"COMPONENT_BASE"`/`"NATURAL_UNITS"` on the wire,
-and it keeps its name.
+Neither document form writes a `.sqlite`: the document's `time_series_associations` table
+already holds every row, `association_id` and `data_hash` included, and `from_openapi` replays
+them into a fresh catalog. `_load_time_series_associations!` dispatches on whether the adopted
+store brought its own rows — if it did, it outranks the document and the rows are only
+validated. The replay runs **before** the component pass, so a `MarketBidTimeSeriesCost`
+resolves its `association_id` while its owner is being built.
 
-`SU`'s rejection lives in `_power_units_string(::SystemBaseUnit)` (`src/openapi/refs.jl`) and is
-reached early through `_check_export_units`, so a rejected unit system leaves nothing
-half-written. The archive's `CU`-only rule is `_check_archive_units`, a no-op method on
-`ComponentBaseUnit` plus an erroring one on `IS.AbstractUnitSystem`. **Both are dispatch, not a
-`Union{ComponentBaseUnit, NaturalUnit}` annotation** — a marker added later lands on the error rather
-than silently matching a two-type union. Keep it that way.
+**The `units` keyword takes a marker, not a Symbol.** `CU` (default) or `NU`; `SU` throws, the
+wire enum having no system-base member. It governs every convertible field (`:mva`, `:ohm`,
+`:siemens`). Do not confuse it with the **`power_units` field** on cost curves and power-bearing
+blobs — that is per-value data spelled `"COMPONENT_BASE"`/`"NATURAL_UNITS"` on the wire.
 
-**The archive container is not PSY's.** `IS.create_sienna_archive` / `IS.extract_sienna_archive` /
-`IS.is_sienna_archive` own the `.sns` extension rule, the write guards and the tar+gzip, so
-PowerSystemsInvestmentsPortfolios can produce the same format. `Tar` and `CodecZlib` are IS
-dependencies, not PSY's — do not re-add them here. What stays here is only what goes *inside* the
-archive.
+The `SU` rejection and the archive's `CU`-only rule (`_check_export_units`,
+`_check_archive_units`) are **dispatch, not a `Union{ComponentBaseUnit, NaturalUnit}`
+annotation** — a marker added later must land on the error, not match a two-type union.
 
-**The one knob that separates the forms** is `to_openapi(sys; write_catalog::Bool)`: `false` (the
-document forms) calls `IS.serialize_arrays`, `true` (the archive) calls `IS.serialize`. The rows
-land in `doc.time_series_associations` either way — the keyword adds a file, it does not move
-them. `_to_file_directory` passes it; `_to_file_document` never does.
+**The archive container is IS's, the extension is PSY's.** `IS.create_sienna_archive` /
+`extract_sienna_archive` / `is_sienna_archive` own the zip and the write guards but take the
+extension from the caller, so PowerSystemsInvestmentsPortfolios can use `.snp`. PSY passes
+`SYSTEM_ARCHIVE_EXTENSION = ".sns"`. Members are deflated except `.h5`/`.hdf5`, which HDF5
+already compresses. Do not add zip or archive dependencies here.
 
-Both document forms share `_write_bundle`, which builds the document against a resolved sidecar
-path and writes it; they differ only in where the two members sit, which their callers resolve.
-`_sidecar_path_for_write` decides only *whether* there is a sidecar (`Val(has_time_series_data)`),
-not where it goes.
-
-**The read path takes no form flag beyond the path.** Every form funnels through
-`_from_file_document`, which reads a document at an explicit path and resolves its sidecar
-relative to the directory the document sits in; `_from_file_directory` only supplies the
-conventional `system.json` name, and `_from_file_sienna` extracts first.
-`_load_time_series_associations!` then dispatches on whether the adopted store brought rows
-(`_catalog_is_authoritative`): an empty catalog means the document is the catalog and its rows are
-replayed, ids included; a populated one outranks the document and the rows are only validated
-against it. That second path is what a `.sns`, an older three-file bundle, and a
-PowerSystemCaseBuilder cache all take, so this is not a flag day. The replay runs **before** the
-component pass — a `MarketBidTimeSeriesCost` resolves its `association_id` against the store while
-its owner is being built.
-
-**`System(::AbstractString)` throws `DataFormatError` and names its replacement** — `.json` points
-at `from_file` (which now reads that form, though not the old native single-file JSON), `.raw`/`.m`
-at PowerFlowFileParser.jl **plus** `from_openapi`/`from_file`, since PFFP has no PowerSystems
-dependency and cannot return a `System` on its own. Do not "restore" a constructor here, and do not
-add a shim.
-
-**`to_json`/`from_json` are no longer exported from PSY at all** — a `System` reaches disk only through
-`to_file`/`from_file`, so PSY stops offering the JSON-document verbs entirely rather than offering them
-with a `System`-shaped hole. (`serialize`/`deserialize` are still exported for components and other
-types; note that `IS.serialize(sys)` on a whole `System` returns a dict nothing can read back, so don't
-build on it.)
+**What the document forms lose:** subsystem membership, which only `sienna_extras.json` carries —
+`_warn_on_document_data_loss` warns (never errors) from the document forms only. Frequency
+survives both. Masked components survive both but are **derived, not recorded**:
+`handle_component_addition!(sys, ::StaticInjectionSubsystem)` re-masks on import. Do not add a
+list for them — that would give one truth two writers.
 
 **Deleted, stays deleted:** `src/data_format_conversions.jl`, `DATA_FORMAT_VERSION`,
-`_post_deserialize_handling` (and with it `assign_new_ids` on read — no read path can reach it),
-`from_dict(::Type{System}, …)`, `deserialize_components!`, `test/test_serialization.jl`, the
-`format` keyword, and `_resolve_export_power_units`.
+`_post_deserialize_handling`, `from_dict(::Type{System}, …)`, `deserialize_components!`,
+`test/test_serialization.jl`, the `format` keyword, and `_resolve_export_power_units`.
+`System(::AbstractString)` throws and names its replacement; `to_json`/`from_json` are no longer
+exported for `System` at all. Do not restore any of them, and do not add a shim.
 
-### What each form carries
+Migration between lines belongs to **PowerSystemsUpdater.jl**, not here. There is no migration
+path from pre-cutover files — regenerate them.
 
-Only one of the three things that used to be lost is actually form-dependent.
-
-| State | `.sns` | document forms | Where it lives |
-| --- | --- | --- | --- |
-| Frequency | kept | kept | An optional field of the document itself. It was dropped only because `from_openapi` never applied it. |
-| Subsystem membership | kept | **dropped, warned** | `sienna_extras.json` — the document has no representation for it. |
-| Masked components | kept | kept | **Derived, not recorded.** `mask_component!` is not exported; the only masking path is `handle_component_addition!(sys, ::StaticInjectionSubsystem)`, which `add_component!` re-runs on import. Do not add a list for it — that would give one truth two writers. |
-
-`_warn_on_document_data_loss` is called from both document forms and not from the archive, because
-the archive is the only lossless one.
-
-`sienna_extras.json` holds one map keyed by the document's own component ids (PSY sets each component
-to its document id before adding it, so no translation step), sorted for byte-reproducibility:
-`{"subsystems": {"west": [1, 2]}}`.
-
-**Frequency needs the constructor, not a setter.** `System` is immutable and takes `frequency` at
-construction, so `_frequency_kwarg` threads the document's value into `_system_with_sidecar` as a
-`NamedTuple` that is *empty* when the document names none — which is what keeps a document predating
-the field from resetting a 50 Hz system to the default.
-
-**Caller keywords outrank the document.** `name`, `description` and `frequency` all name document
-fields; a value passed to `from_file`/`from_openapi` wins over the document's, and fields the caller
-did not name still come from the document. `_apply_document_metadata!` takes the supplied keyword set
-to skip the ones it must not overwrite. Keep the three consistent — they used to split, with
-`frequency` honouring the caller and `name`/`description` silently overwriting.
-
-There is **no migration path** from pre-cutover files — regenerate them.
-
-**Upstream, now landed:** `IS.serialize_arrays`, `IS.deserialize_arrays`,
-`IS.import_time_series_association_rows!` and the three `*_sienna_archive` functions are **merged
-into `IS4`** (InfrastructureSystems PR #632, merge `30971141`). PSY tracks `IS4` by git rev in
-`[sources]`; `[compat] InfraStore` is `0.12`, matching IS4's own bound. Do **not** run
-`Pkg.free("InfrastructureSystems")` — it discards the `[sources]` pin and resolves the *registered*
-IS 3.6.3 (the psy5 line), which fails with `UndefVarError: AbstractUnitSystem`. `Pkg.add`/`Pkg.free`
-also rewrite `Project.toml`, stripping comments and sometimes the `[sources]` entry itself; check
+**Do not run `Pkg.free("InfrastructureSystems")`** — it discards the `[sources]` pin and resolves
+the registered psy5 IS, failing with `UndefVarError: AbstractUnitSystem`. `Pkg.add`/`Pkg.free`
+also rewrite `Project.toml`, stripping comments and sometimes `[sources]` itself; check
 `git diff Project.toml` after any Pkg operation.
-
-**Known break from InfraStore 0.12:** its Rust validator now *requires* `timestamps_uri` on a
-`NonSequentialTimeSeries` association row, but canonical `SiennaSchemas/TimeSeries/
-NonSequentialTimeSeries.json` does not define the field (only infrastore's own vendored
-`crates/infrastore-core/sienna_schemas/` copy does), so the generated
-`model_NonSequentialTimeSeries.jl` cannot carry it. One testset — "NonSequentialTimeSeries round
-trips with no grid columns" in `test/test_openapi_file_io.jl` — errors with
-`InfraStore.InvalidParameterError`. Fixed bottom-up outside PSY: add it to SiennaSchemas, regenerate
-PowerOpenAPIModels, then populate it on export.
-
 ## Downstream blast radius
 
 PNM, PF, POM, and PSB all consume PSY; SiennaSchemas mirrors PSY component fields (JSON schemas), so field renames/retypes create schema drift the sync tooling must catch. After a PSY change:

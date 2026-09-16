@@ -12,17 +12,12 @@ There are three forms, chosen by the extension of the path you pass to `to_file`
     (`mysystem.json` and `mysystem.h5`) and sitting beside it, so several systems can share one
     directory.
   - **a `.sns` file** — those two plus InfraStore's own `time_series.h5.sqlite` catalog and
-    `sienna_extras.json`, tar+gzip'd into a single file. This is the lossless form.
+    `sienna_extras.json`, zipped into a single file. This is the lossless form.
 
 The two document forms are readable by any client that can read the OpenAPI schema; the archive
 is Sienna-only, because reading it means reading InfraStore's catalog.
 
 !!! warning
-
-    There is no migration path from the old single-file native JSON format (written by the
-    removed `IS.to_json`/`System(path)` constructor) or from a `to_file`/`from_file` bundle
-    written before this format. A `System` serialized in either old shape must be rebuilt from
-    source and re-serialized with the current `to_file`.
 
     Only the `.sns` archive preserves a `System`'s user-defined subsystems; the two document
     forms warn (they do not error) when the system has any, because the document has no

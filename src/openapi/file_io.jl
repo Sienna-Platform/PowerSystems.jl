@@ -24,9 +24,9 @@
 #                          time_series.h5.sqlite   InfraStore's own catalog
 #                          sienna_extras.json
 #
-#                    Entries sit at the archive root rather than under a `case/` prefix,
-#                    because `Tar.create` archives a directory's contents, not the
-#                    directory itself.
+#                    Entries sit at the archive root rather than under a `case/` prefix.
+#                    JSON members are deflated and the HDF5 one is stored uncompressed,
+#                    HDF5 carrying its own compression already.
 #
 # The archive's extra members are the difference between the forms, and the `.sqlite` one is a
 # difference about **where the association tables live** rather than about compression:
@@ -206,8 +206,8 @@ Write `sys` to `path`. The extension of `path` chooses the form:
     document's stem (`case.json` → `case.h5`) beside it. Several systems can therefore share
     one directory.
   - **`$(SYSTEM_ARCHIVE_EXTENSION)`** — writes those two plus `time_series.h5.sqlite`
-    (InfraStore's own catalog) and `sienna_extras.json` into a temporary directory and archives
-    it with `Tar` + gzip. Lossless; the document forms are not.
+    (InfraStore's own catalog) and `sienna_extras.json` into a temporary directory and zips
+    it. Lossless; the document forms are not.
 
 Any other extension is refused rather than guessed at.
 

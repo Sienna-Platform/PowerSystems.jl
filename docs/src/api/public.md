@@ -34,15 +34,6 @@ Public = true
 Private = false
 ```
 
-## Serialization
-
-```@autodocs
-Modules = [PowerSystems]
-Pages   = ["file_io.jl"]
-Public = true
-Private = false
-```
-
 ## Supplemental Attributes
 
 ```@autodocs
