@@ -377,16 +377,13 @@ end
                 ],
             ),
         )
-        batch = IS.make_add_batch()
-        IS.serialize_single!(
-            batch,
+        IS.add_time_series!(
+            store,
             1,
             "ThermalStandard",
             IS.get_owner_category(IS.InfrastructureSystemsComponent),
-            IS.get_name(series),
             series,
         )
-        IS.commit_batch!(store, batch)
         assoc_id = IS.get_association_id(only(IS.list_time_series_metadata(store)))
 
         fc = PSY._with_import_store(store) do
@@ -514,16 +511,13 @@ end
                 ],
             ),
         )
-        batch = IS.make_add_batch()
-        IS.serialize_single!(
-            batch,
+        IS.add_time_series!(
+            store,
             1,
             "Source",
             IS.get_owner_category(IS.InfrastructureSystemsComponent),
-            IS.get_name(series),
             series,
         )
-        IS.commit_batch!(store, batch)
         assoc_id = IS.get_association_id(only(IS.list_time_series_metadata(store)))
         ts_key = IS.get_time_series_key(store, Int(assoc_id))
 
