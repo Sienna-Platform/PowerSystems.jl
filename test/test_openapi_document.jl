@@ -27,16 +27,13 @@ function _openapi_test_sidecar(dir; owner_id = 7, owner_type = "PowerLoad")
     path = joinpath(dir, "doc_time_series_storage.h5")
     store = IS.Store(; in_memory = true)
     try
-        batch = IS.make_add_batch()
-        IS.serialize_single!(
-            batch,
+        IS.add_time_series!(
+            store,
             owner_id,
             owner_type,
             IS.get_owner_category(IS.InfrastructureSystemsComponent),
-            IS.get_name(series),
             series,
         )
-        IS.commit_batch!(store, batch)
         IS.serialize(store, path)
     finally
         IS.close!(store)
