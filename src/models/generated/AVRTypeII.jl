@@ -20,7 +20,7 @@ This file is auto-generated. Do not edit.
         ext::Dict{String, Any}
         states::Vector{Symbol}
         n_states::Int
-        states_types::Vector{StateTypes.T}
+        states_types::Vector{StateTypes.Value}
         internal::InfrastructureSystemsInternal
     end
 
@@ -45,7 +45,7 @@ Parameters of an Automatic Voltage Regulator Type II -  Typical static exciter m
 	Vr2: Second lead-lag state,
 	Vm: Measured voltage
 - `n_states::Int`: (**Do not modify.**) AVR Type II has 4 states
-- `states_types::Vector{StateTypes.T}`: (**Do not modify.**) AVR Type II has 4 [differential](@ref states_list) [states](@ref S)
+- `states_types::Vector{StateTypes.Value}`: (**Do not modify.**) AVR Type II has 4 [differential](@ref states_list) [states](@ref S)
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
 """
 mutable struct AVRTypeII <: AVR
@@ -82,7 +82,7 @@ mutable struct AVRTypeII <: AVR
     "(**Do not modify.**) AVR Type II has 4 states"
     n_states::Int
     "(**Do not modify.**) AVR Type II has 4 [differential](@ref states_list) [states](@ref S)"
-    states_types::Vector{StateTypes.T}
+    states_types::Vector{StateTypes.Value}
     "(**Do not modify.**) PowerSystems.jl internal reference"
     internal::InfrastructureSystemsInternal
 end

@@ -871,7 +871,7 @@ function from_openapi(po::PO.FACTSControlDevice, refs::OpenAPIRefs, ::ComponentB
         control_mode = if isnothing(po.control_mode)
             nothing
         else
-            FACTSOperationModes.T(po.control_mode.value)
+            FACTSOperationModes.Value(po.control_mode.value)
         end,
         voltage_setpoint = po.voltage_setpoint,
         max_shunt_current = po.max_shunt_current,
@@ -896,7 +896,7 @@ function from_openapi(po::PO.FACTSControlDevice, refs::OpenAPIRefs, ::NaturalUni
         control_mode = if isnothing(po.control_mode)
             nothing
         else
-            FACTSOperationModes.T(po.control_mode.value)
+            FACTSOperationModes.Value(po.control_mode.value)
         end,
         voltage_setpoint = po.voltage_setpoint,
         max_shunt_current = po.max_shunt_current / bp,
@@ -958,7 +958,7 @@ function from_openapi(po::PO.HydroReservoir, refs::OpenAPIRefs, ::ComponentBaseU
         downstream_turbines = HydroUnit[],
         upstream_reservoirs = Device[],
         operation_cost = convert_cost(po.operation_cost),
-        level_data_type = ReservoirDataType.T(po.level_data_type.value),
+        level_data_type = ReservoirDataType.Value(po.level_data_type.value),
     )
     defer_ref!(
         refs,
@@ -1004,8 +1004,8 @@ function from_openapi(
         name = po.name,
         available = po.available,
         bus = refs[po.bus],
-        prime_mover_type = PrimeMovers.T(po.prime_mover_type.value),
-        storage_technology_type = StorageTech.T(po.storage_technology_type.value),
+        prime_mover_type = PrimeMovers.Value(po.prime_mover_type.value),
+        storage_technology_type = StorageTech.Value(po.storage_technology_type.value),
         storage_capacity = po.storage_capacity,
         storage_level_limits = _minmax(po.storage_level_limits),
         initial_storage_capacity_level = po.initial_storage_capacity_level,
@@ -1038,8 +1038,8 @@ function from_openapi(
         name = po.name,
         available = po.available,
         bus = refs[po.bus],
-        prime_mover_type = PrimeMovers.T(po.prime_mover_type.value),
-        storage_technology_type = StorageTech.T(po.storage_technology_type.value),
+        prime_mover_type = PrimeMovers.Value(po.prime_mover_type.value),
+        storage_technology_type = StorageTech.Value(po.storage_technology_type.value),
         storage_capacity = po.storage_capacity / dbp,
         storage_level_limits = _minmax(po.storage_level_limits),
         initial_storage_capacity_level = po.initial_storage_capacity_level,
@@ -1870,7 +1870,7 @@ function from_openapi(po::PO.HybridSystem, refs::OpenAPIRefs, ::ComponentBaseUni
     return HybridSystem(;
         name = po.name,
         available = po.available,
-        status = OperationalStates.T(po.status.value),
+        status = OperationalStates.Value(po.status.value),
         bus = resolve_ref(refs, po.bus, ACBus),
         active_power = po.active_power,
         reactive_power = po.reactive_power,
@@ -1895,7 +1895,7 @@ function from_openapi(po::PO.HybridSystem, refs::OpenAPIRefs, ::NaturalUnit)
     return HybridSystem(;
         name = po.name,
         available = po.available,
-        status = OperationalStates.T(po.status.value),
+        status = OperationalStates.Value(po.status.value),
         bus = resolve_ref(refs, po.bus, ACBus),
         active_power = po.active_power / dbp,
         reactive_power = po.reactive_power / dbp,

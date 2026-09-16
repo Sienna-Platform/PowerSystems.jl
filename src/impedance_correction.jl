@@ -11,8 +11,8 @@ Attribute that contains information regarding the Impedance Correction Table (IC
 struct ImpedanceCorrectionData <: SupplementalAttribute
     table_number::Int64
     impedance_correction_curve::PiecewiseLinearData
-    transformer_winding::WindingCategory.T
-    transformer_control_mode::ImpedanceCorrectionTransformerControlMode.T
+    transformer_winding::WindingCategory.Value
+    transformer_control_mode::ImpedanceCorrectionTransformerControlMode.Value
     internal::InfrastructureSystemsInternal
 end
 

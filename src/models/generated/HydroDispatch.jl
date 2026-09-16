@@ -12,13 +12,13 @@ This file is auto-generated. Do not edit.
         active_power::Float64
         reactive_power::Float64
         rating::Float64
-        prime_mover_type::PrimeMovers.T
+        prime_mover_type::PrimeMovers.Value
         active_power_limits::MinMax
         reactive_power_limits::Union{Nothing, MinMax}
         ramp_limits::Union{Nothing, UpDown}
         time_limits::Union{Nothing, UpDown}
         base_power::Float64
-        status::OperationalStates.T
+        status::OperationalStates.Value
         time_at_status::Float64
         operation_cost::OperationalCost
         services::Vector{Service}
@@ -38,13 +38,13 @@ For hydro generators with an upper reservoir, see [`HydroReservoir`](@ref)
 - `active_power::Float64`: Initial active power set point of the unit in MW. For power flow, this is the steady state operating point of the system. For production cost modeling, this may or may not be used as the initial starting point for the solver, depending on the solver used
 - `reactive_power::Float64`: Initial reactive power set point of the unit (MVAR), validation range: `reactive_power_limits`
 - `rating::Float64`: Maximum AC side output power rating of the unit. Stored in per unit of the device and not to be confused with base_power, validation range: `(0, nothing)`
-- `prime_mover_type::PrimeMovers.T`: Prime mover technology according to EIA 923. Options are listed [here](@ref pm_list)
+- `prime_mover_type::PrimeMovers.Value`: Prime mover technology according to EIA 923. Options are listed [here](@ref pm_list)
 - `active_power_limits::MinMax`: Minimum and maximum stable active power levels (MW), validation range: `(0, nothing)`
 - `reactive_power_limits::Union{Nothing, MinMax}`: Minimum and maximum reactive power limits. Set to `Nothing` if not applicable
 - `ramp_limits::Union{Nothing, UpDown}`: Ramp up and ramp down limits (MW/min), validation range: `(0, nothing)`
 - `time_limits::Union{Nothing, UpDown}`: Minimum up and Minimum down time limits in minutes, validation range: `(0, nothing)`
 - `base_power::Float64`: Base power of the unit (MVA) for [per unitization](@ref per_unit), validation range: `(0.0001, nothing)`
-- `status::OperationalStates.T`: (default: `OperationalStates.OFFLINE`) Operating state of the unit at the start of a simulation. Options are listed [here](@ref opstate_list)
+- `status::OperationalStates.Value`: (default: `OperationalStates.OFFLINE`) Operating state of the unit at the start of a simulation. Options are listed [here](@ref opstate_list)
 - `time_at_status::Float64`: (default: `INFINITE_TIME`) Time (e.g., `Minutes(360)`) the generator has been on or off, as indicated by `status`
 - `operation_cost::OperationalCost`: (default: `HydroGenerationCost(nothing)`) [`OperationalCost`](@ref) of generation
 - `services::Vector{Service}`: (default: `Device[]`) Services that this device contributes to
@@ -66,7 +66,7 @@ mutable struct HydroDispatch <: HydroGen
     "Maximum AC side output power rating of the unit. Stored in per unit of the device and not to be confused with base_power"
     rating::Float64
     "Prime mover technology according to EIA 923. Options are listed [here](@ref pm_list)"
-    prime_mover_type::PrimeMovers.T
+    prime_mover_type::PrimeMovers.Value
     "Minimum and maximum stable active power levels (MW)"
     active_power_limits::MinMax
     "Minimum and maximum reactive power limits. Set to `Nothing` if not applicable"
@@ -78,7 +78,7 @@ mutable struct HydroDispatch <: HydroGen
     "Base power of the unit (MVA) for [per unitization](@ref per_unit)"
     base_power::Float64
     "Operating state of the unit at the start of a simulation. Options are listed [here](@ref opstate_list)"
-    status::OperationalStates.T
+    status::OperationalStates.Value
     "Time (e.g., `Minutes(360)`) the generator has been on or off, as indicated by `status`"
     time_at_status::Float64
     "[`OperationalCost`](@ref) of generation"
@@ -249,7 +249,7 @@ function from_openapi(po::PO.HydroDispatch, refs::OpenAPIRefs, ::ComponentBaseUn
         active_power = po.active_power,
         reactive_power = po.reactive_power,
         rating = po.rating,
-        prime_mover_type = PrimeMovers.T(po.prime_mover_type.value),
+        prime_mover_type = PrimeMovers.Value(po.prime_mover_type.value),
         active_power_limits = _minmax_from_po(po.active_power_limits),
         reactive_power_limits = _minmax_from_po(po.reactive_power_limits),
         ramp_limits = _updown_from_po(po.ramp_limits),
@@ -269,7 +269,7 @@ function from_openapi(po::PO.HydroDispatch, refs::OpenAPIRefs, ::NaturalUnit)
         active_power = po.active_power / po.base_power,
         reactive_power = po.reactive_power / po.base_power,
         rating = po.rating / po.base_power,
-        prime_mover_type = PrimeMovers.T(po.prime_mover_type.value),
+        prime_mover_type = PrimeMovers.Value(po.prime_mover_type.value),
         active_power_limits = _minmax_from_po(po.active_power_limits, (/), po.base_power),
         reactive_power_limits = _minmax_from_po(po.reactive_power_limits, (/), po.base_power),
         ramp_limits = _updown_from_po(po.ramp_limits, (/), po.base_power),

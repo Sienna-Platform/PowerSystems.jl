@@ -11,7 +11,7 @@ This file is auto-generated. Do not edit.
         ext::Dict{String, Any}
         states::Vector{Symbol}
         n_states::Int
-        states_types::Vector{StateTypes.T}
+        states_types::Vector{StateTypes.Value}
         internal::InfrastructureSystemsInternal
     end
 
@@ -23,7 +23,7 @@ Parameters of a AVR that returns a fixed voltage to the rotor winding
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
 - `states::Vector{Symbol}`: (**Do not modify.**) Fixed AVR has no [states](@ref S)
 - `n_states::Int`: (**Do not modify.**) Fixed AVR has no [states](@ref S)
-- `states_types::Vector{StateTypes.T}`: (**Do not modify.**) Fixed AVR has no [states](@ref S)
+- `states_types::Vector{StateTypes.Value}`: (**Do not modify.**) Fixed AVR has no [states](@ref S)
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
 """
 mutable struct AVRFixed <: AVR
@@ -38,7 +38,7 @@ mutable struct AVRFixed <: AVR
     "(**Do not modify.**) Fixed AVR has no [states](@ref S)"
     n_states::Int
     "(**Do not modify.**) Fixed AVR has no [states](@ref S)"
-    states_types::Vector{StateTypes.T}
+    states_types::Vector{StateTypes.Value}
     "(**Do not modify.**) PowerSystems.jl internal reference"
     internal::InfrastructureSystemsInternal
 end

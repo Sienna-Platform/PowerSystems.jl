@@ -30,9 +30,9 @@ mutable struct MarketBidTimeSeriesCost{U <: IS.AbstractUnitSystem} <: OfferCurve
     "Linear-interpolation flag for the corresponding offer curve; false (default) is the step interpretation. Mutually exclusive with block groups on the same curve."
     decremental_slope::Bool
     "Curve-clearing style for the bid ([`CurveStyles`](@ref)); VARIABLE (default) is a continuous curve with one or more segments, FIXED an all-or-nothing block with a single segment. FIXED is mutually exclusive with linear interpolation (`incremental_slope`/`decremental_slope`). The offer curves are time series keys, so the single-segment rule for FIXED is not checked at construction; it is enforced when the curves are resolved against their data (`get_variable_cost`/`get_decremental_variable_cost` with a `start_time`)."
-    curve_style::CurveStyles.T
+    curve_style::CurveStyles.Value
     "Multi-step block indicator for the bid ([`CurveMultiStep`](@ref)); SINGLE_STEP (default) clears each step independently, MULTI_STEP must be awarded as one block across every step the bid covers. Independent of `curve_style`."
-    curve_multistep::CurveMultiStep.T
+    curve_multistep::CurveMultiStep.Value
 end
 
 function MarketBidTimeSeriesCost(;

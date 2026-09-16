@@ -63,12 +63,12 @@ end
 end
 
 @testset "OperationalStates and CommitmentModes reject Bool" begin
-    @test_throws ArgumentError PSY.OperationalStates.T(true)
-    @test_throws ArgumentError PSY.OperationalStates.T(false)
-    @test_throws ArgumentError convert(PSY.OperationalStates.T, true)
-    @test_throws ArgumentError convert(PSY.OperationalStates.T, false)
-    @test_throws ArgumentError PSY.CommitmentModes.T(true)
-    @test_throws ArgumentError PSY.CommitmentModes.T(false)
-    @test_throws ArgumentError convert(PSY.CommitmentModes.T, true)
-    @test_throws ArgumentError convert(PSY.CommitmentModes.T, false)
+    @test_throws ArgumentError PSY.OperationalStates.Value(true)
+    @test_throws ArgumentError PSY.OperationalStates.Value(false)
+    @test_throws ArgumentError convert(PSY.OperationalStates.Value, true)
+    @test_throws ArgumentError convert(PSY.OperationalStates.Value, false)
+    @test_throws ArgumentError PSY.CommitmentModes.Value(true)
+    @test_throws ArgumentError PSY.CommitmentModes.Value(false)
+    @test_throws ArgumentError convert(PSY.CommitmentModes.Value, true)
+    @test_throws ArgumentError convert(PSY.CommitmentModes.Value, false)
 end
