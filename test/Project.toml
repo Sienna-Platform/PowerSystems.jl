@@ -39,6 +39,10 @@ InfraStore = "6aee0376-896a-4a59-96ff-12f221c99746"
 [sources]
 # Branch pins until the OpenAPI packages are registered and the psy6-line branches merge.
 PowerSystems = {path = ".."}
+# IS4 carries the association-id time series keys and the arrays-only sidecar (IS #632,
+# merged); InfraStore 0.14 is registered, so it needs no source pin. The one pin this
+# branch adds over psy6: IS's EnumX move (IS #643) is not on IS4 yet. Revert to IS4 once
+# #643 merges.
 InfrastructureSystems = {url = "https://github.com/Sienna-Platform/InfrastructureSystems.jl.git", rev = "lk/enumx"}
 InfrastructureCoreOpenAPIModels = {url = "https://github.com/Sienna-Platform/PowerOpenAPIModels.git", rev = "main", subdir = "InfrastructureCoreOpenAPIModels.jl"}
 InfrastructureTimeSeriesOpenAPIModels = {url = "https://github.com/Sienna-Platform/PowerOpenAPIModels.git", rev = "main", subdir = "InfrastructureTimeSeriesOpenAPIModels.jl"}

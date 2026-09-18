@@ -191,52 +191,40 @@ function test_accessors(component)
     end
 end
 
-function validate_serialization(
-    sys::System;
-    time_series_read_only = false,
-    runchecks = PSY.get_runchecks(sys),
-    assign_new_ids = false,
-)
-    # Every path below is absolute, so nothing here depends on the working directory.
-    path = joinpath(mktempdir(), "test_system_serialization.json")
-    @info "Serializing to $path"
-    get_ext(sys)["data"] = 5
-    bus = first(get_components(PSY.ACBus, sys))
-    ext_test_bus_name = PSY.get_name(bus)
-    PSY.get_ext(bus)["test_field"] = 1
-    to_json(sys, path; force = true)
-
-    data = open(path, "r") do io
-        JSON.parse(io; dicttype = Dict{String, Any})
-    end
-    @test data["data_format_version"] == PSY.DATA_FORMAT_VERSION
-
-    sys2 = System(
-        path;
-        time_series_read_only = time_series_read_only,
-        runchecks = runchecks,
-        assign_new_ids = assign_new_ids,
-    )
-    @test !isempty(get_bus_numbers(sys2))
-    @test get_ext(sys2)["data"] == 5
-    bus2 = PSY.get_component(PSY.ACBus, sys2, ext_test_bus_name)
-    isnothing(bus2) && error("the deserialized system lost bus $ext_test_bus_name")
-    @test PSY.get_ext(bus2)["test_field"] == 1
-    return sys2, PSY.compare_values(sys, sys2; compare_ids = !assign_new_ids)
-end
-
 """
-Round-trip `sys` through a `to_file`/`from_file` bundle and return the rebuilt system.
+Round-trip `sys` through `to_file`/`from_file` and return the rebuilt system.
+
+`form` picks which of the three `to_file` writes to exercise: `:directory` (default),
+`:document` (a `.json` file plus its stem-named sidecar) or `:archive` (a `.sns` file).
 
 The serde itself is tested once, in `test_openapi_file_io.jl`. Use this only where a test needs
 a restored system to check that some *component* survives conversion. A document carries
 component ids rather than UUIDs and does not carry component `ext`, so neither survives.
+`:archive` only ever writes on `CU`, same as `to_file` itself — passing any other `units` with
+it throws.
 """
-function roundtrip_system(sys::System; power_units = :component_base, kwargs...)
+function roundtrip_system(
+    sys::System;
+    form::Symbol = :directory,
+    units::IS.AbstractUnitSystem = PSY.CU,
+    kwargs...,
+)
     dir = mktempdir()
-    bundle = joinpath(dir, "case")
-    to_file(sys, bundle; power_units = power_units, force = true)
-    return from_file(System, bundle; kwargs...)
+    if form === :directory
+        bundle = joinpath(dir, "case")
+        to_file(sys, bundle; units = units, force = true)
+        return from_file(bundle; kwargs...)
+    elseif form === :document
+        document = joinpath(dir, "case.json")
+        to_file(sys, document; units = units, force = true)
+        return from_file(document; kwargs...)
+    elseif form === :archive
+        archive = joinpath(dir, "case.sns")
+        to_file(sys, archive; units = units, force = true)
+        return from_file(archive; kwargs...)
+    else
+        error("form = $form is not supported. Use :directory, :document or :archive.")
+    end
 end
 
 """Round-trip a PO/PC struct through JSON, the same shape `JSON.parsefile` would hand to

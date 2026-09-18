@@ -6802,7 +6802,7 @@
                 {
                     "name": "states_types",
                     "comment": "(**Do not modify.**) Fixed AVR has no [states](@ref S)",
-                    "internal_default": "Vector{StateTypes}()",
+                    "internal_default": "Vector{StateTypes.Value}()",
                     "data_type": "Vector{StateTypes.Value}"
                 },
                 {

@@ -44,10 +44,10 @@ mutable struct AVRFixed <: AVR
 end
 
 function AVRFixed(Vf, V_ref=1.0, ext=Dict{String, Any}(), )
-    AVRFixed(Vf, V_ref, ext, Vector{Symbol}(), 0, Vector{StateTypes}(), InfrastructureSystemsInternal(), )
+    AVRFixed(Vf, V_ref, ext, Vector{Symbol}(), 0, Vector{StateTypes.Value}(), InfrastructureSystemsInternal(), )
 end
 
-function AVRFixed(; Vf, V_ref=1.0, ext=Dict{String, Any}(), states=Vector{Symbol}(), n_states=0, states_types=Vector{StateTypes}(), internal=InfrastructureSystemsInternal(), )
+function AVRFixed(; Vf, V_ref=1.0, ext=Dict{String, Any}(), states=Vector{Symbol}(), n_states=0, states_types=Vector{StateTypes.Value}(), internal=InfrastructureSystemsInternal(), )
     AVRFixed(Vf, V_ref, ext, states, n_states, states_types, internal, )
 end
 
