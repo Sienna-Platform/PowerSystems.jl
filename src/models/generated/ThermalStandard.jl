@@ -25,6 +25,7 @@ This file is auto-generated. Do not edit.
         services::Vector{Service}
         time_at_status::Float64
         dynamic_injector::Union{Nothing, DynamicInjection}
+        switching_times::Union{Nothing, UpDown}
         ext::Dict{String, Any}
         internal::InfrastructureSystemsInternal
     end
@@ -53,6 +54,7 @@ This is a standard representation with options to include a minimum up time, min
 - `services::Vector{Service}`: (default: `Device[]`) Services that this device contributes to
 - `time_at_status::Float64`: (default: `INFINITE_TIME`) Time (e.g., `Minutes(360)`) the generator has been in its current `status`
 - `dynamic_injector::Union{Nothing, DynamicInjection}`: (default: `nothing`) corresponding dynamic injection device
+- `switching_times::Union{Nothing, UpDown}`: (default: `nothing`) Time it takes the unit to switch ONLINE or OFFLINE after a start or shut-down is initiated, in minutes, validation range: `(0, nothing)`
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
 - `input_basis`: (keyword constructor only, required) `u"CU"` or `u"NU"`, the units of bare numbers on unit-bearing fields. Tagged values (`50.0u"MW"`) keep their own units
@@ -96,18 +98,20 @@ mutable struct ThermalStandard <: ThermalGen
     time_at_status::Float64
     "corresponding dynamic injection device"
     dynamic_injector::Union{Nothing, DynamicInjection}
+    "Time it takes the unit to switch ONLINE or OFFLINE after a start or shut-down is initiated, in minutes"
+    switching_times::Union{Nothing, UpDown}
     "An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation."
     ext::Dict{String, Any}
     "(**Do not modify.**) PowerSystems.jl internal reference"
     internal::InfrastructureSystemsInternal
 end
 
-function ThermalStandard(name, available, status, bus, active_power, reactive_power, rating, active_power_limits, reactive_power_limits, ramp_limits, operation_cost, base_power, time_limits=nothing, commitment_mode=CommitmentModes.COMMITTED, prime_mover_type=PrimeMovers.OT, fuel=ThermalFuels.OTHER, services=Device[], time_at_status=INFINITE_TIME, dynamic_injector=nothing, ext=Dict{String, Any}(), )
-    ThermalStandard(name, available, status, bus, active_power, reactive_power, rating, active_power_limits, reactive_power_limits, ramp_limits, operation_cost, base_power, time_limits, commitment_mode, prime_mover_type, fuel, services, time_at_status, dynamic_injector, ext, InfrastructureSystemsInternal(), )
+function ThermalStandard(name, available, status, bus, active_power, reactive_power, rating, active_power_limits, reactive_power_limits, ramp_limits, operation_cost, base_power, time_limits=nothing, commitment_mode=CommitmentModes.COMMITTED, prime_mover_type=PrimeMovers.OT, fuel=ThermalFuels.OTHER, services=Device[], time_at_status=INFINITE_TIME, dynamic_injector=nothing, switching_times=nothing, ext=Dict{String, Any}(), )
+    ThermalStandard(name, available, status, bus, active_power, reactive_power, rating, active_power_limits, reactive_power_limits, ramp_limits, operation_cost, base_power, time_limits, commitment_mode, prime_mover_type, fuel, services, time_at_status, dynamic_injector, switching_times, ext, InfrastructureSystemsInternal(), )
 end
 
-function ThermalStandard(; name, available, status, bus, active_power, reactive_power, rating, active_power_limits, reactive_power_limits, ramp_limits, operation_cost, base_power, time_limits=nothing, commitment_mode=CommitmentModes.COMMITTED, prime_mover_type=PrimeMovers.OT, fuel=ThermalFuels.OTHER, services=Device[], time_at_status=INFINITE_TIME, dynamic_injector=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Unitful.Units, )
-    value = ThermalStandard(name, available, status, bus, _placeholder(active_power), _placeholder(reactive_power), _placeholder(rating), _placeholder(active_power_limits), _placeholder(reactive_power_limits), _placeholder(ramp_limits), operation_cost, base_power, time_limits, commitment_mode, prime_mover_type, fuel, services, time_at_status, dynamic_injector, ext, internal, )
+function ThermalStandard(; name, available, status, bus, active_power, reactive_power, rating, active_power_limits, reactive_power_limits, ramp_limits, operation_cost, base_power, time_limits=nothing, commitment_mode=CommitmentModes.COMMITTED, prime_mover_type=PrimeMovers.OT, fuel=ThermalFuels.OTHER, services=Device[], time_at_status=INFINITE_TIME, dynamic_injector=nothing, switching_times=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Unitful.Units, )
+    value = ThermalStandard(name, available, status, bus, _placeholder(active_power), _placeholder(reactive_power), _placeholder(rating), _placeholder(active_power_limits), _placeholder(reactive_power_limits), _placeholder(ramp_limits), operation_cost, base_power, time_limits, commitment_mode, prime_mover_type, fuel, services, time_at_status, dynamic_injector, switching_times, ext, internal, )
     set_active_power!(value, _tag(active_power, input_basis, Val(:mw)))
     set_reactive_power!(value, _tag(reactive_power, input_basis, Val(:mvar)))
     set_rating!(value, _tag(rating, input_basis, Val(:mva)))
@@ -140,6 +144,7 @@ function ThermalStandard(::Nothing)
         services=Device[],
         time_at_status=INFINITE_TIME,
         dynamic_injector=nothing,
+        switching_times=nothing,
         ext=Dict{String, Any}(),
         input_basis=u"CU",
     )
@@ -219,6 +224,8 @@ get_services(value::ThermalStandard) = value.services
 get_time_at_status(value::ThermalStandard) = value.time_at_status
 """Get [`ThermalStandard`](@ref) `dynamic_injector`."""
 get_dynamic_injector(value::ThermalStandard) = value.dynamic_injector
+"""Get [`ThermalStandard`](@ref) `switching_times`."""
+get_switching_times(value::ThermalStandard) = value.switching_times
 """Get [`ThermalStandard`](@ref) `ext`."""
 get_ext(value::ThermalStandard) = value.ext
 """Get [`ThermalStandard`](@ref) `internal`."""
@@ -265,6 +272,8 @@ set_fuel!(value::ThermalStandard, val) = value.fuel = val
 set_services!(value::ThermalStandard, val) = value.services = val
 """Set [`ThermalStandard`](@ref) `time_at_status`."""
 set_time_at_status!(value::ThermalStandard, val) = value.time_at_status = val
+"""Set [`ThermalStandard`](@ref) `switching_times`."""
+set_switching_times!(value::ThermalStandard, val) = value.switching_times = val
 """Set [`ThermalStandard`](@ref) `ext`."""
 set_ext!(value::ThermalStandard, val) = value.ext = val
 
@@ -288,6 +297,7 @@ function from_openapi(po::PO.ThermalStandard, refs::OpenAPIRefs, ::ComponentBase
         prime_mover_type = _or_default_enum(po.prime_mover_type, PrimeMovers.OT),
         fuel = _or_default_enum(po.fuel, ThermalFuels.OTHER),
         time_at_status = _or_default(po.time_at_status, INFINITE_TIME),
+        switching_times = _updown_from_po(po.switching_times),
         input_basis = u"CU",
     )
 end
@@ -311,6 +321,7 @@ function from_openapi(po::PO.ThermalStandard, refs::OpenAPIRefs, ::NaturalUnit)
         prime_mover_type = _or_default_enum(po.prime_mover_type, PrimeMovers.OT),
         fuel = _or_default_enum(po.fuel, ThermalFuels.OTHER),
         time_at_status = _or_default(po.time_at_status, INFINITE_TIME),
+        switching_times = _updown_from_po(po.switching_times),
         input_basis = u"CU",
     )
 end
@@ -339,6 +350,7 @@ function to_openapi(value::ThermalStandard, refs::OpenAPIRefs, ::ComponentBaseUn
         prime_mover_type = PO.PrimeMovers(string(get_prime_mover_type(value))),
         fuel = PO.ThermalFuels(string(get_fuel(value))),
         time_at_status = get_time_at_status(value),
+        switching_times = _updown_po_optional(get_switching_times(value)),
         power_units = _power_units_string(CU),
     )
 end
@@ -363,6 +375,7 @@ function to_openapi(value::ThermalStandard, refs::OpenAPIRefs, ::NaturalUnit)
         prime_mover_type = PO.PrimeMovers(string(get_prime_mover_type(value))),
         fuel = PO.ThermalFuels(string(get_fuel(value))),
         time_at_status = get_time_at_status(value),
+        switching_times = _updown_po_optional(get_switching_times(value)),
         power_units = _power_units_string(NU),
     )
 end
