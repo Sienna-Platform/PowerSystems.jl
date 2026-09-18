@@ -28,6 +28,7 @@ This file is auto-generated. Do not edit.
         time_at_status::Float64
         commitment_mode::CommitmentModes
         dynamic_injector::Union{Nothing, DynamicInjection}
+        switching_times::Union{Nothing, UpDown}
         ext::Dict{String, Any}
         internal::InfrastructureSystemsInternal
     end
@@ -59,6 +60,7 @@ A thermal generator, such as a fossil fuel or nuclear generator, that can start-
 - `time_at_status::Float64`: (default: `INFINITE_TIME`) Time (e.g., `Minutes(360)`) the generator has been in its current `status`
 - `commitment_mode::CommitmentModes`: (default: `CommitmentModes.COMMITTED`) Commitment mode of the unit. Options are listed [here](@ref commit_list)
 - `dynamic_injector::Union{Nothing, DynamicInjection}`: (default: `nothing`) corresponding dynamic injection device
+- `switching_times::Union{Nothing, UpDown}`: (default: `nothing`) Time it takes the unit to switch ONLINE or OFFLINE after a start or shut-down is initiated, in minutes, validation range: `(0, nothing)`
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
 """
@@ -107,18 +109,20 @@ mutable struct ThermalMultiStart <: ThermalGen
     commitment_mode::CommitmentModes
     "corresponding dynamic injection device"
     dynamic_injector::Union{Nothing, DynamicInjection}
+    "Time it takes the unit to switch ONLINE or OFFLINE after a start or shut-down is initiated, in minutes"
+    switching_times::Union{Nothing, UpDown}
     "An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation."
     ext::Dict{String, Any}
     "(**Do not modify.**) PowerSystems.jl internal reference"
     internal::InfrastructureSystemsInternal
 end
 
-function ThermalMultiStart(name, available, status, bus, active_power, reactive_power, rating, prime_mover_type, fuel, active_power_limits, reactive_power_limits, ramp_limits, power_trajectory, time_limits, start_time_limits, start_types, operation_cost, base_power, services=Device[], time_at_status=INFINITE_TIME, commitment_mode=CommitmentModes.COMMITTED, dynamic_injector=nothing, ext=Dict{String, Any}(), )
-    ThermalMultiStart(name, available, status, bus, active_power, reactive_power, rating, prime_mover_type, fuel, active_power_limits, reactive_power_limits, ramp_limits, power_trajectory, time_limits, start_time_limits, start_types, operation_cost, base_power, services, time_at_status, commitment_mode, dynamic_injector, ext, InfrastructureSystemsInternal(), )
+function ThermalMultiStart(name, available, status, bus, active_power, reactive_power, rating, prime_mover_type, fuel, active_power_limits, reactive_power_limits, ramp_limits, power_trajectory, time_limits, start_time_limits, start_types, operation_cost, base_power, services=Device[], time_at_status=INFINITE_TIME, commitment_mode=CommitmentModes.COMMITTED, dynamic_injector=nothing, switching_times=nothing, ext=Dict{String, Any}(), )
+    ThermalMultiStart(name, available, status, bus, active_power, reactive_power, rating, prime_mover_type, fuel, active_power_limits, reactive_power_limits, ramp_limits, power_trajectory, time_limits, start_time_limits, start_types, operation_cost, base_power, services, time_at_status, commitment_mode, dynamic_injector, switching_times, ext, InfrastructureSystemsInternal(), )
 end
 
-function ThermalMultiStart(; name, available, status, bus, active_power, reactive_power, rating, prime_mover_type, fuel, active_power_limits, reactive_power_limits, ramp_limits, power_trajectory, time_limits, start_time_limits, start_types, operation_cost, base_power, services=Device[], time_at_status=INFINITE_TIME, commitment_mode=CommitmentModes.COMMITTED, dynamic_injector=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), )
-    ThermalMultiStart(name, available, status, bus, active_power, reactive_power, rating, prime_mover_type, fuel, active_power_limits, reactive_power_limits, ramp_limits, power_trajectory, time_limits, start_time_limits, start_types, operation_cost, base_power, services, time_at_status, commitment_mode, dynamic_injector, ext, internal, )
+function ThermalMultiStart(; name, available, status, bus, active_power, reactive_power, rating, prime_mover_type, fuel, active_power_limits, reactive_power_limits, ramp_limits, power_trajectory, time_limits, start_time_limits, start_types, operation_cost, base_power, services=Device[], time_at_status=INFINITE_TIME, commitment_mode=CommitmentModes.COMMITTED, dynamic_injector=nothing, switching_times=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), )
+    ThermalMultiStart(name, available, status, bus, active_power, reactive_power, rating, prime_mover_type, fuel, active_power_limits, reactive_power_limits, ramp_limits, power_trajectory, time_limits, start_time_limits, start_types, operation_cost, base_power, services, time_at_status, commitment_mode, dynamic_injector, switching_times, ext, internal, )
 end
 
 # Constructor for demo purposes; non-functional.
@@ -146,6 +150,7 @@ function ThermalMultiStart(::Nothing)
         time_at_status=INFINITE_TIME,
         commitment_mode=CommitmentModes.UNCOMMITTED,
         dynamic_injector=nothing,
+        switching_times=nothing,
         ext=Dict{String, Any}(),
     )
 end
@@ -236,6 +241,8 @@ get_time_at_status(value::ThermalMultiStart) = value.time_at_status
 get_commitment_mode(value::ThermalMultiStart) = value.commitment_mode
 """Get [`ThermalMultiStart`](@ref) `dynamic_injector`."""
 get_dynamic_injector(value::ThermalMultiStart) = value.dynamic_injector
+"""Get [`ThermalMultiStart`](@ref) `switching_times`."""
+get_switching_times(value::ThermalMultiStart) = value.switching_times
 """Get [`ThermalMultiStart`](@ref) `ext`."""
 get_ext(value::ThermalMultiStart) = value.ext
 """Get [`ThermalMultiStart`](@ref) `internal`."""
@@ -290,6 +297,8 @@ set_services!(value::ThermalMultiStart, val) = value.services = val
 set_time_at_status!(value::ThermalMultiStart, val) = value.time_at_status = val
 """Set [`ThermalMultiStart`](@ref) `commitment_mode`."""
 set_commitment_mode!(value::ThermalMultiStart, val) = value.commitment_mode = val
+"""Set [`ThermalMultiStart`](@ref) `switching_times`."""
+set_switching_times!(value::ThermalMultiStart, val) = value.switching_times = val
 """Set [`ThermalMultiStart`](@ref) `ext`."""
 set_ext!(value::ThermalMultiStart, val) = value.ext = val
 
@@ -316,6 +325,7 @@ function from_openapi(po::PO.ThermalMultiStart, refs::OpenAPIRefs, ::ComponentBa
         base_power = po.base_power,
         time_at_status = _or_default(po.time_at_status, INFINITE_TIME),
         commitment_mode = _or_default_enum(po.commitment_mode, CommitmentModes.COMMITTED),
+        switching_times = _updown_from_po(po.switching_times),
     )
 end
 
@@ -341,6 +351,7 @@ function from_openapi(po::PO.ThermalMultiStart, refs::OpenAPIRefs, ::NaturalUnit
         base_power = po.base_power,
         time_at_status = _or_default(po.time_at_status, INFINITE_TIME),
         commitment_mode = _or_default_enum(po.commitment_mode, CommitmentModes.COMMITTED),
+        switching_times = _updown_from_po(po.switching_times),
     )
 end
 
@@ -371,6 +382,7 @@ function to_openapi(value::ThermalMultiStart, refs::OpenAPIRefs, ::ComponentBase
         base_power = _get_base_power(value),
         time_at_status = get_time_at_status(value),
         commitment_mode = PO.CommitmentModes(string(get_commitment_mode(value))),
+        switching_times = _updown_po_optional(get_switching_times(value)),
         power_units = _power_units_string(CU),
     )
 end
@@ -398,6 +410,7 @@ function to_openapi(value::ThermalMultiStart, refs::OpenAPIRefs, ::NaturalUnit)
         base_power = _get_base_power(value),
         time_at_status = get_time_at_status(value),
         commitment_mode = PO.CommitmentModes(string(get_commitment_mode(value))),
+        switching_times = _updown_po_optional(get_switching_times(value)),
         power_units = _power_units_string(NU),
     )
 end

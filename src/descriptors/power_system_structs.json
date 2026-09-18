@@ -5885,6 +5885,18 @@
                     "default": "nothing"
                 },
                 {
+                    "name": "switching_times",
+                    "comment": "Time it takes the unit to switch ONLINE or OFFLINE after a start or shut-down is initiated, in minutes",
+                    "null_value": "nothing",
+                    "data_type": "Union{Nothing, UpDown}",
+                    "valid_range": {
+                        "min": 0,
+                        "max": null
+                    },
+                    "validation_action": "error",
+                    "default": "nothing"
+                },
+                {
                     "name": "ext",
                     "comment": "An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.",
                     "data_type": "Dict{String, Any}",
@@ -6209,6 +6221,18 @@
                     "comment": "corresponding dynamic injection device",
                     "null_value": "nothing",
                     "exclude_setter": true,
+                    "default": "nothing"
+                },
+                {
+                    "name": "switching_times",
+                    "comment": "Time it takes the unit to switch ONLINE or OFFLINE after a start or shut-down is initiated, in minutes",
+                    "null_value": "nothing",
+                    "data_type": "Union{Nothing, UpDown}",
+                    "valid_range": {
+                        "min": 0,
+                        "max": null
+                    },
+                    "validation_action": "error",
                     "default": "nothing"
                 },
                 {
