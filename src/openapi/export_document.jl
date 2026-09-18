@@ -755,10 +755,10 @@ _sidecar_basename(::Nothing) = nothing
 _sidecar_basename(path) = basename(String(path))
 
 """
-Fill each exported `MarketBidCost`'s `ancillary_service_offers` with the ids of the offered
-services. Runs after `_export_components!` so every service already has an id;
-`convert_cost_to_openapi(::MarketBidCost)` exports the list empty because the per-cost
-converter has no id registry.
+Fill `ancillary_service_offers` on each exported `MarketBidCost` and
+`MarketBidTimeSeriesCost` with the ids of the offered services. Runs after
+`_export_components!` so every service already has an id; the per-cost converters export the
+list empty because they have no id registry.
 """
 function _export_market_bid_service_offers!(doc::PD.SystemDocument, refs::OpenAPIRefs)
     for po_components in values(doc.components)

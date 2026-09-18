@@ -345,25 +345,12 @@ function convert_cost_to_openapi(cost::ImportExportCost)
 end
 
 """
-Time-varying market bid. Unlike `convert_cost_to_openapi(::MarketBidCost)`, whose
-`ancillary_service_offers` the document-level `_export_market_bid_service_offers!`
-(`export_document.jl`) fills in after every component has an id, this cost type's ids are
-NOT filled by that pass — it gates on `PC.MarketBidCost` only, and extending it is blocked:
-`export_document.jl` is out of this task's edit scope. Rather than silently emitting an
-empty list and dropping real offers, this errors loudly on a non-empty
-`ancillary_service_offers` so the gap is visible instead of a silent data loss on export.
+Time-varying market bid. `ancillary_service_offers` holds `Service` objects but the document
+stores component ids, and this converter has no id registry, so it exports the list empty;
+`_export_market_bid_service_offers!` fills the ids in a document-level pass, exactly as for
+`MarketBidCost`.
 """
 function convert_cost_to_openapi(cost::MarketBidTimeSeriesCost)
-    offers = get_ancillary_service_offers(cost)
-    if !isempty(offers)
-        error(
-            "convert_cost_to_openapi(MarketBidTimeSeriesCost): $(length(offers)) " *
-            "ancillary_service_offers cannot be exported — the document-level id-filling " *
-            "pass (_export_market_bid_service_offers!, export_document.jl) only resolves " *
-            "them for the static MarketBidCost, not this time-series variant. Remove the " *
-            "ancillary service offers before exporting, or resolve them another way.",
-        )
-    end
     return PC.MarketBidTimeSeriesCost(;
         minimum_energy_offer = convert_cost_to_openapi(get_minimum_energy_offer(cost)),
         start_up_association_id = _key_association_id(get_start_up(cost)),
