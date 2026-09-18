@@ -32,6 +32,10 @@ const STRING_TO_UNIT = Dict{String, Any}(
     "Ω" => u"Ω",
     "S" => u"S",
     "kA" => u"kA",
+    "USD" => USD,
+    "USD hr^-1" => USD / u"hr",
+    "USD/hr" => USD / u"hr",
+    "USD/h" => USD / u"hr",
     # Compound (rate) units. The canonical spelling is the ASCII exponent form emitted
     # by `unit_to_string`; the Unicode and slashed forms are lenient aliases. The
     # Unicode one is not hypothetical: it is what Unitful prints by default on macOS.
