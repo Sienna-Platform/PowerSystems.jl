@@ -601,11 +601,7 @@ function from_openapi(
     sys = _system_with_sidecar(base_power, doc, time_series_storage_path; system_kwargs...)
     _apply_document_metadata!(sys, doc, keys(system_kwargs))
 
-    store = if isnothing(time_series_storage_path)
-        nothing
-    else
-        sys.data.time_series_manager.data_store
-    end
+    store = _key_source(sys, doc, time_series_storage_path)
     _load_time_series_associations!(sys, doc, store)
     refs = OpenAPIRefs(base_power; store = store)
 
@@ -654,17 +650,89 @@ its `association_id` against the store while its owner is being built.
 """
 _load_time_series_associations!(::System, ::PD.SystemDocument, ::Nothing) = nothing
 
-function _load_time_series_associations!(sys::System, doc::PD.SystemDocument, store)
+"""The catalog-only form has no store to load into: its keys were built from the rows
+themselves."""
+_load_time_series_associations!(::System, ::PD.SystemDocument, ::DocumentKeys) = nothing
+
+function _load_time_series_associations!(
+    sys::System,
+    doc::PD.SystemDocument,
+    source::StoreKeys,
+)
     isempty(doc.time_series_associations) && return nothing
-    if _catalog_is_authoritative(store)
+    if _catalog_is_authoritative(source.store)
         return _validate_time_series_associations!(sys, doc)
     end
     # `IC.encode`, not bare `JSON.json`: each row is a oneOf wrapper, and JSON would write
     # its `value` field rather than the member the store's importer expects.
     IS.import_time_series_association_rows!(
-        store, JSON.json(IC.encode(doc.time_series_associations)),
+        source.store, JSON.json(IC.encode(doc.time_series_associations)),
     )
     return nothing
+end
+
+"""
+Where this import resolves a cost's `association_id`, or `nothing` when the document names no
+series at all.
+
+With a sidecar it is the adopted store, which minted the ids. Without one the document is the
+catalog-only form and answers for them itself: InfraStore refuses a row naming an array it does
+not hold, so the rows cannot be replayed into the empty store, and the keys are built from the
+rows instead.
+"""
+_key_source(sys::System, ::PD.SystemDocument, ::AbstractString) =
+    StoreKeys(sys.data.time_series_manager.data_store)
+
+function _key_source(::System, doc::PD.SystemDocument, ::Nothing)
+    isempty(doc.time_series_associations) && return nothing
+    keys = Dict{Int64, IS.TimeSeriesKey}()
+    for assoc in doc.time_series_associations
+        row = assoc.value
+        keys[Int64(row.association_id)] = _key_from_document_row(row)
+    end
+    return DocumentKeys(keys)
+end
+
+"""
+The `TimeSeriesKey` a document row names, rebuilt without a store.
+
+`IS.deserialize` owns the rebuild — a serialized key is exactly `(association_id,
+time_series_type, element_type)` — so this only translates the store's `element_type` spelling
+into the one a serialized key uses.
+"""
+_key_from_document_row(row) = IS.deserialize(
+    IS.TimeSeriesKey,
+    Dict{String, Any}(
+        "association_id" => row.association_id,
+        "time_series_type" => row.time_series_type,
+        "element_type" => _key_element_name(row.element_type),
+    ),
+)
+
+"""The store's `element_type` vocabulary, in the spelling a serialized `TimeSeriesKey` uses.
+Both are fixed wire formats, so this is a translation table, not a guess."""
+const _STORE_ELEMENT_TYPE_NAMES = Dict{String, String}(
+    "f64" => "Float64", "f32" => "Float32",
+    "i64" => "Int64", "i32" => "Int32", "i16" => "Int16", "i8" => "Int8",
+    "u64" => "UInt64", "u32" => "UInt32", "u16" => "UInt16", "u8" => "UInt8",
+    "bool" => "Bool",
+    "linear_function" => "LinearFunctionData",
+    "quadratic_function" => "QuadraticFunctionData",
+    "piecewise_linear" => "PiecewiseLinearData",
+    "piecewise_step" => "PiecewiseStepData",
+)
+
+const _STORE_TUPLE_ELEMENT = r"^tuple\((\d+),f64\)$"
+
+function _key_element_name(element_type::AbstractString)
+    name = String(element_type)
+    haskey(_STORE_ELEMENT_TYPE_NAMES, name) && return _STORE_ELEMENT_TYPE_NAMES[name]
+    m = match(_STORE_TUPLE_ELEMENT, name)
+    isnothing(m) && error(
+        "from_openapi: a time series association row names element_type \"$name\", which " *
+        "PowerSystems cannot translate into a TimeSeriesKey element type",
+    )
+    return "NTuple{$(m.captures[1]),Float64}"
 end
 
 """Whether the store already has association rows, which then outrank the document's."""

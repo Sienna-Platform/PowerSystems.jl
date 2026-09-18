@@ -25,23 +25,65 @@ convert_cost(w::IC.OneOfAPIModel, store) = convert_cost(w.value, store)
 # serialized key now carries its time series and element types alongside the id and
 # rebuilds itself without a catalog. Only this wire format still names a series by a bare
 # `association_id`, so only this import still needs a store to resolve one against.
-const _IMPORT_STORE = Base.ScopedValues.ScopedValue{IS.Store}()
+"""
+How an import turns a wire `association_id` into a `TimeSeriesKey`.
 
-"""No sidecar was adopted, so there is nothing to bind; a document that then names a
-time-series-backed cost fails in `_current_import_store`."""
+Two forms, because a document either brings its values or does not, and the answer has to
+come from somewhere either way.
+"""
+abstract type AssociationKeySource end
+
+"""The adopted sidecar's catalog. The store minted these ids, so it answers for them."""
+struct StoreKeys <: AssociationKeySource
+    store::IS.Store
+end
+
+"""
+A catalog-only document's own association rows.
+
+A key is its id plus the stored type, and a row carries both, so the keys are built from the
+document with no store in sight. The series they name have no arrays behind them — reading one
+off the rebuilt `System` finds nothing.
+"""
+struct DocumentKeys <: AssociationKeySource
+    keys::Dict{Int64, IS.TimeSeriesKey}
+end
+
+_association_key(src::StoreKeys, id::Integer) = _association_key(src.store, id)
+
+"""A bare store answers directly — what a caller holding one, rather than a bound import,
+passes in."""
+_association_key(store::IS.Store, id::Integer) = IS.get_time_series_key(store, id)
+
+function _association_key(src::DocumentKeys, id::Integer)
+    haskey(src.keys, Int64(id)) || error(
+        "convert_cost: a cost names association_id=$id, which is not among the " *
+        "$(length(src.keys)) row(s) the document describes",
+    )
+    return src.keys[Int64(id)]
+end
+
+const _IMPORT_STORE = Base.ScopedValues.ScopedValue{AssociationKeySource}()
+
+"""The document names no series at all, so there is nothing to bind; a document that then
+names a time-series-backed cost fails in `_current_import_store`."""
 _with_import_store(f, ::Nothing) = f()
 
-"""Bind `store` for the duration of `f()`. `ScopedValue`-based, so a nested import and a
+"""Bind `source` for the duration of `f()`. `ScopedValue`-based, so a nested import and a
 task spawned inside one both see the innermost binding."""
-_with_import_store(f, store::IS.Store) =
-    Base.ScopedValues.with(f, _IMPORT_STORE => store)
+_with_import_store(f, source::AssociationKeySource) =
+    Base.ScopedValues.with(f, _IMPORT_STORE => source)
+
+"""A bare store binds as the store form — the common case, and what a caller holding one
+already means."""
+_with_import_store(f, store::IS.Store) = _with_import_store(f, StoreKeys(store))
 
 function _current_import_store()
     store = Base.ScopedValues.get(_IMPORT_STORE)
     isnothing(store) && error(
-        "convert_cost: the document names a time-series-backed cost, but no time series " *
-        "store is bound — either this ran outside an active from_openapi(System, doc) " *
-        "import, or no time_series_storage_path sidecar was adopted for it",
+        "convert_cost: the document names a time-series-backed cost, but no key source is " *
+        "bound — either this ran outside an active from_openapi(System, doc) import, or " *
+        "the document describes no time series at all",
     )
     return something(store)
 end
@@ -139,7 +181,7 @@ convert_cost(v::Real) = Float64(v)
 """The `TimeSeriesKey` the wire type's required `association_id` names. `what` names the
 wire type for the error a missing id raises."""
 _function_data_key(fd, store, what::AbstractString) =
-    IS.get_time_series_key(store, _require(fd.association_id, "$what.association_id"))
+    _association_key(store, _require(fd.association_id, "$what.association_id"))
 
 convert_cost(fd::IC.TimeSeriesLinearFunctionData, store) =
     TimeSeriesFunctionData{LinearFunctionData}(
@@ -171,7 +213,7 @@ convert_cost(fd::IC.TimeSeriesPiecewiseStepData) = convert_cost(fd, _current_imp
 """`nothing`/`Absent` (the field was never on the wire) both stay `nothing`; a wire
 association id resolves against `store`."""
 _resolve_optional_key(::Any, ::Union{Nothing, IC.Absent}) = nothing
-_resolve_optional_key(store, id::Integer) = IS.get_time_series_key(store, id)
+_resolve_optional_key(store, id::Integer) = _association_key(store, id)
 
 """Wire representation of [`CurveStyles`](@ref): a plain integer (0/1), deliberately not
 the string-enum convention used elsewhere in the schemas - see `curve_style` on
@@ -250,7 +292,7 @@ end
 scalar branch, so a plain `fuel_cost` converts with no active import at all."""
 _fuel_cost_fields(::Any, fuel_cost::Real, ::Nothing) = (Float64(fuel_cost), nothing)
 _fuel_cost_fields(store, ::Nothing, fuel_cost_time_series::Integer) =
-    (nothing, IS.get_time_series_key(store, fuel_cost_time_series))
+    (nothing, _association_key(store, fuel_cost_time_series))
 _fuel_cost_fields(::Any, ::Nothing, ::Nothing) = error(
     "convert_cost: FuelCurve requires exactly one of fuel_cost or fuel_cost_time_series",
 )
@@ -283,7 +325,7 @@ store is pulled lazily, only inside the `fuel_cost_time_series` branch, so a pla
 `fuel_cost` still needs no active import bound at all."""
 _fuel_cost_fields_ambient(fuel_cost::Real, ::Nothing) = (Float64(fuel_cost), nothing)
 _fuel_cost_fields_ambient(::Nothing, fuel_cost_time_series::Integer) =
-    (nothing, IS.get_time_series_key(_current_import_store(), fuel_cost_time_series))
+    (nothing, _association_key(_current_import_store(), fuel_cost_time_series))
 _fuel_cost_fields_ambient(::Nothing, ::Nothing) = error(
     "convert_cost: FuelCurve requires exactly one of fuel_cost or fuel_cost_time_series",
 )
@@ -469,7 +511,7 @@ function convert_cost(po::PC.MarketBidTimeSeriesCost, store)
                 "MarketBidTimeSeriesCost.minimum_energy_offer",
             ), store,
         ),
-        start_up = IS.get_time_series_key(
+        start_up = _association_key(
             store,
             Int(
                 _require(

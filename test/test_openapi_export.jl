@@ -1741,7 +1741,7 @@ end
     end
 end
 
-@testset "OpenAPI export: include_time_series = false" begin
+@testset "OpenAPI export: catalog-only document" begin
     bus = _export_bus(; number = 1)
     sys = System(100.0)
     add_component!(sys, bus)
@@ -1759,12 +1759,52 @@ end
     # Without the flag this errors: series are attached and no sidecar path was given.
     @test_throws ErrorException PSY.to_openapi(sys)
 
-    doc = PSY.to_openapi(sys; include_time_series = false)
-    @test isempty(doc.time_series_associations)
+    doc = PSY.to_openapi(sys; include_time_series_data = false)
+    # The rows travel, the values do not -- that is what makes it catalog-only.
+    @test length(doc.time_series_associations) == 1
     @test isnothing(doc.time_series_storage_file)
     @test length(PSY.PD.get_components(doc, "PowerLoad")) == 1
 
     sys2 = PSY.from_openapi(System, doc)
     @test get_name(get_component(PowerLoad, sys2, "load1")) == "load1"
+    # No arrays came with it, so the rebuilt System holds no series.
+    @test iszero(IS.get_num_time_series(sys2.data))
+end
+
+@testset "OpenAPI export: a catalog-only document still resolves a cost's association_id" begin
+    bus = _export_bus(; number = 1)
+    sys = System(100.0)
+    add_component!(sys, bus)
+    gen = ThermalStandard(;
+        name = "gen1", available = true, status = OperationalStates.ONLINE, bus = bus,
+        active_power = 1.0, reactive_power = 0.0, rating = 2.0,
+        active_power_limits = (min = 0.0, max = 2.0),
+        reactive_power_limits = (min = -1.0, max = 1.0),
+        ramp_limits = nothing, time_limits = nothing,
+        operation_cost = ThermalGenerationCost(
+            CostCurve(LinearCurve(20.0), NaturalUnit()), 0.0, 0.0, 0.0,
+        ),
+        base_power = 100.0,
+    )
+    add_component!(sys, gen)
+    fuel = TimeSeries.TimeArray(
+        [Dates.DateTime(2024, 1, 1, h) for h in 0:2], [3.0, 3.5, 4.0],
+    )
+    add_time_series!(sys, gen, SingleTimeSeries(; name = "fuel_cost", data = fuel))
+    key = IS.get_time_series_key(
+        only(IS.list_time_series_metadata(IS.get_data_store(sys.data))),
+    )
+    set_operation_cost!(
+        gen,
+        ThermalGenerationCost(
+            FuelCurve(LinearCurve(1.0), key), 0.0, 0.0, 0.0,
+        ),
+    )
+
+    doc = PSY.to_openapi(sys; include_time_series_data = false)
+    sys2 = PSY.from_openapi(System, doc)
+    cost = get_operation_cost(get_component(ThermalStandard, sys2, "gen1"))
+    # The key is rebuilt from the document row, not from a store -- same association id.
+    @test get_fuel_cost_time_series(get_variable_operation_cost(cost)) == key
     @test iszero(IS.get_num_time_series(sys2.data))
 end

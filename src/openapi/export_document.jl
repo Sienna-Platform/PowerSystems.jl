@@ -594,29 +594,12 @@ function _check_costs_reference_declared_series!(doc::PD.SystemDocument, emitted
     )
 end
 
-"""
-Refuse a time-series-free document whose costs are backed by time series.
-
-Such a cost records an association id, and the import that resolves it would have neither a row
-nor a store to resolve it against — the System would come back with a cost pointing at nothing.
-"""
-function _check_costs_survive_without_series(emitted::Set{Int}, include_time_series::Bool)
-    (include_time_series || isempty(emitted)) && return nothing
-    throw(
-        IS.DataFormatError(
-            "to_openapi: include_time_series = false, but $(length(emitted)) cost(s) are " *
-            "backed by time series and reference association id(s) " *
-            "$(join(sort!(collect(emitted)), ", ")). Export this System with its time " *
-            "series, or replace those costs.",
-        ),
-    )
-end
-
 function _export_all_time_series(
     sys::System,
     refs::OpenAPIRefs,
     time_series_storage_path,
     write_catalog::Bool,
+    include_data::Bool,
 )
     rows = PTS.TimeSeriesAssociation[]
     # Counted, not `isempty(store)`: one store holds the supplemental attribute associations
@@ -624,10 +607,13 @@ function _export_all_time_series(
     # otherwise demand a sidecar it has nothing to put in.
     num_time_series = IS.get_num_time_series(sys.data)
     iszero(num_time_series) && return rows
-    isnothing(time_series_storage_path) && error(
-        "to_openapi: $num_time_series time series are attached but no " *
-        "time_series_storage_path was given — cannot write the sidecar",
-    )
+    if include_data && isnothing(time_series_storage_path)
+        error(
+            "to_openapi: $num_time_series time series are attached but no " *
+            "time_series_storage_path was given — cannot write the sidecar. Pass " *
+            "include_time_series_data = false for a catalog-only document.",
+        )
+    end
     skipped_counts = Dict{String, Int}()
     for assoc in IS.openapi_time_series_association_rows(sys.data)
         row = assoc.value
@@ -653,6 +639,22 @@ function _export_all_time_series(
     end
     # The rows above go into the document either way; `write_catalog` decides only whether
     # InfraStore's own `.sqlite` is written beside the arrays as well. See `to_file`.
+    _write_time_series_values(
+        sys, time_series_storage_path, write_catalog, Val(include_data),
+    )
+    return rows
+end
+
+"""The catalog-only form writes no values: the rows are already in the document, and whoever
+asked for that form keeps the arrays somewhere of its own."""
+_write_time_series_values(::System, ::Any, ::Bool, ::Val{false}) = nothing
+
+function _write_time_series_values(
+    sys::System,
+    time_series_storage_path,
+    write_catalog::Bool,
+    ::Val{true},
+)
     store = IS.get_data_store(sys.data)
     path = String(time_series_storage_path)
     if write_catalog
@@ -660,7 +662,7 @@ function _export_all_time_series(
     else
         IS.serialize_arrays(store, path)
     end
-    return rows
+    return nothing
 end
 
 # ── document-level entry point ──────────────────────────────────────────────────
@@ -695,17 +697,19 @@ Component `ext` is written through verbatim to `doc.ext`.
 on read. Either way the rows appear in `doc.time_series_associations`. It requires
 `time_series_storage_path` whenever `sys` carries time series.
 
-`include_time_series = false` describes only the components and attributes: no association rows
-and no sidecar, so no `time_series_storage_path` is needed for a System that has series. The
-result is a standalone document for consumers that already hold the series elsewhere; it is
-lossy by construction and `from_openapi` rebuilds the System without them.
+`include_time_series_data = false` writes the **catalog-only** form: the association rows go
+into the document as always, but no values are written, so no `time_series_storage_path` is
+needed for a System that has series. `from_openapi` replays the rows into a fresh catalog, which
+is what a cost's `association_id` resolves against — the System comes back knowing which series
+exist and who owns them, with no arrays behind them. It is for a consumer that already holds the
+values elsewhere; read one and you get metadata, not data.
 """
 function to_openapi(
     sys::System;
     units::IS.AbstractUnitSystem = CU,
     time_series_storage_path = nothing,
     write_catalog::Bool = false,
-    include_time_series::Bool = true,
+    include_time_series_data::Bool = true,
 )
     warn_unexportable_components(sys)
     _check_export_units(units)
@@ -715,7 +719,9 @@ function to_openapi(
         name = get_name(sys),
         description = get_description(sys),
         frequency = sys.frequency,
-        time_series_storage_file = _sidecar_basename(time_series_storage_path),
+        time_series_storage_file = _sidecar_basename(
+            _values_sidecar(time_series_storage_path, Val(include_time_series_data)),
+        ),
     )
     emitted = Set{Int}()
     task_local_storage(_EMITTED_ASSOCIATION_IDS_KEY, emitted) do
@@ -738,14 +744,16 @@ function to_openapi(
             doc.trading_hub_associations,
             _export_trading_hub_associations(refs, sys),
         )
-        include_time_series && append!(
+        append!(
             doc.time_series_associations,
-            _export_all_time_series(sys, refs, time_series_storage_path, write_catalog),
+            _export_all_time_series(
+                sys, refs, time_series_storage_path, write_catalog,
+                include_time_series_data,
+            ),
         )
         _reserve_ids!(doc, refs)
     end
 
-    _check_costs_survive_without_series(emitted, include_time_series)
     _check_costs_reference_declared_series!(doc, emitted)
     PD.validate_document(doc)
     return doc
@@ -753,6 +761,11 @@ end
 
 _sidecar_basename(::Nothing) = nothing
 _sidecar_basename(path) = basename(String(path))
+
+"""The sidecar an export names in the document: the caller's path when the values go with it,
+and none in the catalog-only form, where the rows travel alone."""
+_values_sidecar(path, ::Val{true}) = path
+_values_sidecar(::Any, ::Val{false}) = nothing
 
 """
 Fill `ancillary_service_offers` on each exported `MarketBidCost` and

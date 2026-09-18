@@ -28,11 +28,12 @@ struct OpenAPIRefs
     referenced component had not converted yet — drained by [`resolve_deferred_refs!`](@ref).
     Import-only; export never defers, so this stays empty on that side."
     deferred_refs::Vector{Function}
-    "Import-only: the adopted sidecar's time series store, used to resolve an
-    association-id-bearing cost's wire id to a `TimeSeriesKey` (`IS.get_time_series_key(store,
-    id)`). `nothing` on export — export reads association ids straight off PSY's own keys via
-    `IS.get_association_id`, no store needed — and on an import with no sidecar."
-    store::Union{Nothing, IS.Store}
+    "Import-only: where an association-id-bearing cost's wire id resolves to a
+    `TimeSeriesKey` (`_association_key(source, id)`) — the adopted sidecar's store, or a
+    catalog-only document's own rows. `nothing` on export — export reads association ids
+    straight off PSY's own keys via `IS.get_association_id` — and on an import of a document
+    that names no series."
+    store::Union{Nothing, AssociationKeySource}
 end
 
 function OpenAPIRefs(base_power::Real = 100.0; store = nothing)
