@@ -432,6 +432,82 @@ _unit_category(::Val{:siemens}) = ADMITTANCE
 _unit_category(::Val{:mw_per_minute}) = ACTIVE_POWER_CHANGE_RATE
 
 #######################################################
+# Component-aware curve rebasing
+#
+# `IS.convert_power_units(curve, to, ratio)` does the curve arithmetic but takes the
+# x-axis base ratio as a number: `InfrastructureSystems` has no component to derive it
+# from. This is the layer its docstring defers to.
+#
+# Unlike a scalar field, a curve is self-describing -- it carries its power basis in its
+# own `U` type parameter -- so there is no canonical storage basis to convert *to* on
+# write, and no setter counterpart to these getters.
+#######################################################
+
+# The x-axis of every `ValueCurveWithUnits` is active power, so one category covers all
+# the families. `NU` needs no component: its base is 1.0 by definition.
+_x_axis_base_value(_, ::NaturalUnit) = 1.0
+_x_axis_base_value(c, ::ComponentBaseUnit) = base_value(c, ACTIVE_POWER)
+_x_axis_base_value(c, ::SystemBaseUnit) = system_base_value(c, ACTIVE_POWER)
+
+"""
+    convert_power_units(component, curve, to) -> curve
+
+Rebase `curve`'s power axes onto the `to` unit system, resolving the base powers from
+`component`. The `to`-basis copy is returned; `curve` is unchanged.
+
+Works for any curve family: a [`CostCurve`](@ref) or `FuelCurve` has a currency or fuel
+y-axis and only its x-axis moves, while a `LossCurve`'s y-axis is power and moves with it.
+That difference lives in `y_axis_power_dimension` downstream, not here.
+"""
+function IS.convert_power_units(
+    c::Component,
+    curve::IS.ValueCurveWithUnits,
+    to::IS.AbstractUnitSystem,
+)
+    from = IS.get_power_units(curve)
+    # Asking for the basis the curve is already in changes nothing, and must not be
+    # routed through `scale_x`: that rejects a time-series-backed curve outright, so
+    # the identity conversion would throw rather than hand back what it was given.
+    from === to && return curve
+    # `x_U = P / base_U`, so `x_from = (base_to / base_from) * x_to`.
+    ratio = _x_axis_base_value(c, to) / _x_axis_base_value(c, from)
+    return IS.convert_power_units(curve, to, ratio)
+end
+
+# The curve-bearing fields, by where the curve is reached from. Each name gets a
+# `get_<name>(component, to)` method returning the curve rebased onto `to`; the
+# no-units getters are untouched. Listed rather than discovered so that adding a curve
+# field is a deliberate edit here, and so the names are greppable.
+
+# Reached through the component's `operation_cost`.
+for field in (
+    :variable_operation_cost,     # Thermal/Hydro/Renewable/Load generation cost
+    :curtailment_cost,            # RenewableGenerationCost
+    :charge_variable_cost,        # StorageCost
+    :discharge_variable_cost,     # StorageCost
+    :incremental_offer_curves,    # MarketBidCost, MarketBidTimeSeriesCost
+    :decremental_offer_curves,    # MarketBidCost, MarketBidTimeSeriesCost
+    :import_offer_curves,         # ImportExportCost, ImportExportTimeSeriesCost
+    :export_offer_curves,         # ImportExportCost, ImportExportTimeSeriesCost
+)
+    getter = Symbol(:get_, field)
+    @eval $getter(c::Component, to::IS.AbstractUnitSystem) =
+        IS.convert_power_units(c, $getter(get_operation_cost(c)), to)
+end
+
+# Loss curves are fields of the component itself, not of an `operation_cost`.
+for field in (
+    :loss_function,               # InterconnectingConverter
+    :loss,                        # TwoTerminalGenericHVDCLine, TwoTerminalLCCLine
+    :converter_loss_from,         # TwoTerminalVSCLine
+    :converter_loss_to,           # TwoTerminalVSCLine
+)
+    getter = Symbol(:get_, field)
+    @eval $getter(c::Component, to::IS.AbstractUnitSystem) =
+        IS.convert_power_units(c, $getter(c), to)
+end
+
+#######################################################
 # Explicit-units error messages
 #
 # Every convertible field's accessors are generated in pairs: the working

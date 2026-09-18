@@ -85,6 +85,14 @@ const CurrentCategory = UnitCategory{typeof(u"kA"), 1, -1}
 # default unit MW/min.
 const ActivePowerChangeRateCategory = UnitCategory{typeof(u"MW" / u"minute"), 1, 0}
 
+# Currency has no base and there is no time base, so a cost rate per-unitizes nothing.
+# The schema vocabulary calls this quantity `CostPerTime` (Core/units.json), default USD/h.
+#
+# Curve coefficients are derived, never declared: for `y = sum a_n x^n` the category of
+# `a_n` is `Y / X^Val(n)`, e.g. `COST_PER_TIME / ACTIVE_POWER^Val(2)` -> USD hr^-1 MW^-2,
+# base 1/S^2. A cost curve of any degree needs no new constant here.
+const CostPerTimeCategory = UnitCategory{typeof(USD / u"hr"), 0, 0}
+
 """
 The power categories, which share one per-unit base. Formerly an abstract supertype;
 now a `Union`, so `isa` checks and dispatch on it keep working.
@@ -100,6 +108,7 @@ const ADMITTANCE = AdmittanceCategory()
 const VOLTAGE = VoltageCategory()
 const CURRENT = CurrentCategory()
 const ACTIVE_POWER_CHANGE_RATE = ActivePowerChangeRateCategory()
+const COST_PER_TIME = CostPerTimeCategory()
 
 """
 The categories denominated per unit time. A bare relative marker is rejected for these
@@ -142,6 +151,7 @@ const _CATEGORY_NAMES = (
     (VOLTAGE, "VOLTAGE"),
     (CURRENT, "CURRENT"),
     (ACTIVE_POWER_CHANGE_RATE, "ACTIVE_POWER_CHANGE_RATE"),
+    (COST_PER_TIME, "COST_PER_TIME"),
 )
 
 function Base.show(io::IO, cat::UnitCategory{NU, P, V}) where {NU, P, V}

@@ -20,6 +20,11 @@
 @unit MVAr "MVAr" MVAr 1u"MW" false
 @unit MVA "MVA" MVA 1u"MW" false
 
+# Currency is its own base dimension, so unlike `MVAr`/`MVA` there is no existing unit
+# to scale from. USD is functionally "a fixed currency," could change to generic "dollars."
+@dimension 𝐂 "𝐂" Currency
+@refunit USD "USD" USD 𝐂 false
+
 ###############################
 # Relative units per unit time
 #
