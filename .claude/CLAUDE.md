@@ -28,27 +28,18 @@ becomes a `MethodError` on an internal helper.
   read) and `sienna_extras.json`. **The only lossless form.** Writes on `CU` only and throws
   otherwise — the form exists to avoid a conversion pass.
 
-Neither document form writes a `.sqlite`: the document's `time_series_associations` table
-already holds every row, `association_id` and `data_hash` included, and `from_openapi` replays
-them into a fresh catalog. `_load_time_series_associations!` dispatches on whether the adopted
-store brought its own rows — if it did, it outranks the document and the rows are only
-validated. The replay runs **before** the component pass, so a `MarketBidTimeSeriesCost`
-resolves its `association_id` while its owner is being built.
+Neither document form writes a `.sqlite` — the document's own `time_series_associations` table
+holds every row, and `from_openapi` replays them into a fresh catalog.
 
-**The `units` keyword takes a marker, not a Symbol.** `CU` (default) or `NU`; `SU` throws, the
-wire enum having no system-base member. It governs every convertible field (`:mva`, `:ohm`,
-`:siemens`). Do not confuse it with the **`power_units` field** on cost curves and power-bearing
-blobs — that is per-value data spelled `"COMPONENT_BASE"`/`"NATURAL_UNITS"` on the wire.
+**The `units` keyword takes a marker, not a Symbol** — `CU` (default) or `NU`; `SU` throws by
+dispatch (no `Union` check), since it has no system-base member on the wire. It governs every
+convertible field. Don't confuse it with the **`power_units` field** on cost curves and
+power-bearing blobs — that is per-value wire data, spelled `"COMPONENT_BASE"`/`"NATURAL_UNITS"`.
 
-The `SU` rejection and the archive's `CU`-only rule (`_check_export_units`,
-`_check_archive_units`) are **dispatch, not a `Union{ComponentBaseUnit, NaturalUnit}`
-annotation** — a marker added later must land on the error, not match a two-type union.
-
-**The archive container is IS's, the extension is PSY's.** `IS.create_sienna_archive` /
-`extract_sienna_archive` / `is_sienna_archive` own the zip and the write guards but take the
-extension from the caller, so PowerSystemsInvestmentsPortfolios can use `.snp`. PSY passes
-`SYSTEM_ARCHIVE_EXTENSION = ".sns"`. Members are deflated except `.h5`/`.hdf5`, which HDF5
-already compresses. Do not add zip or archive dependencies here.
+**The archive container is IS's, the extension is PSY's** — `IS.create_sienna_archive` /
+`extract_sienna_archive` / `is_sienna_archive` own the zip; PSY only supplies the extension
+(`SYSTEM_ARCHIVE_EXTENSION = ".sns"`, so PowerSystemsInvestmentsPortfolios can reuse the same
+container under `.snp`). Do not add zip or archive dependencies here.
 
 **What the document forms lose:** subsystem membership, which only `sienna_extras.json` carries —
 `_warn_on_document_data_loss` warns (never errors) from the document forms only. Frequency
@@ -76,25 +67,6 @@ PNM, PF, POM, and PSB all consume PSY; SiennaSchemas mirrors PSY component field
 1. compile-smoke the stack: `julia --project=<psy6-workspace-root> -e 'using PowerNetworkMatrices, PowerFlows, PowerOperationsModels, PowerSystemCaseBuilder'`
 2. **clear PSB's `data/serialized_system/` cache** — it has no version-aware invalidation, and stale cached systems produce confusing deserialization failures downstream.
 3. if the change touched a component field also present in SiennaSchemas, flag the schema counterpart (example of real drift: `head_to_volume_factor` moved to `FunctionData` in PSY commit `ed30a682` while `SiennaSchemas/Operations/StaticInjection/HydroReservoir.json` still `$ref`s `ValueCurve`).
-
-**Open cross-repo break (as of the `to_file`/`from_file` cutover):** two packages still call the
-pre-cutover signatures from their own source and are knowingly left broken until they get their own PRs.
-Expect their suites — and anything using PSB fixtures, which is most of the stack — to fail with
-`MethodError: no method matching from_file(::Type{System}, ::String)` until then. Neither is PSY's to fix
-from this side:
-
-- **PowerSystemCaseBuilder** — `src/build_system.jl:120` and `:139`, `src/parsers/openapi_pipeline.jl:30`.
-  Its system cache calls both old signatures, so most `build_system` calls throw. PSY's own
-  `test/test_component_selector.jl` calls `PSB.build_system` at module top level, which aborts an
-  unfiltered `runtests.jl` before later files load.
-- **PowerOperationsModels** — `src/operation/decision_model.jl:235`, `src/operation/emulation_model.jl:293`.
-  `to_file(sys, dir; power_units = …)` under IOM's *default* `system_to_file` setting, inside a try/catch
-  that reports a successful solve as `FAILED` rather than surfacing the error.
-
-Both need the same two mechanical edits: `power_units = :component_base` → `units = PSY.CU` (a
-marker, not a Symbol — the keyword was briefly `unit_system::Symbol` mid-PR and is now `units`), and
-drop `System` from `from_file`'s arguments. PSB's `build_system.jl:120` writes a *directory*, which
-is still the extensionless form, so only the keyword changes there.
 
 ## Source layout — the non-obvious parts
 
@@ -160,7 +132,7 @@ Five concrete transformer types became two, and series data moved onto a nested 
 - Setters take **tagged** values and reject bare floats: `set_rating_b!(line, 0.9 * PSY.SU)`.
 - PSY extends `IS._strip_units` (required by the IS codegen contract) and overrides `IS.default_units(::Component)` to return `SU` for time-series multipliers.
 - **`with_units_base` / `set_units_base_system!` / `get_units_base` are GONE** (verified against `origin/psy6`: all three `isdefined(PowerSystems, …) == false`). The stateful units system was fully removed in the psy6 line — see `7ffbbdf8d` "remove last pieces of stateful units system". Every value is read with an explicit unit argument instead. The `UnitSystem` enum still exists as display metadata, but there is no setter. Downstream code calling any of the three must migrate to explicit unit args, not look for a replacement setter.
-- Serialization writes on whichever basis `to_file`'s `units` keyword names — `CU` (component base, the representation PSY stores, no conversion) or `NU` (MW/MVAr/MVA, what a reader outside Sienna generally wants). A write is *uniform*: PSY tracks no per-component basis, so the choice stamps every power-bearing blob in the document. A read is *per component*: each blob converts according to the basis it carries, and a blob missing the field errors rather than guessing. The `.sns` archive is `CU` only.
+- Serialization writes on whichever basis `to_file`'s `units` keyword names (`CU`/`NU`) — see "System file I/O" above for the write/read asymmetry and the `.sns` `CU`-only rule.
 - Cost curves default to `power_units = IS.NaturalUnit()`; `CostCurve{T,U}`/`FuelCurve{T,U}` carry the unit as a type parameter (IS4).
 - Units test filter: `julia --project=test test/runtests.jl test_units` (fast, ~22 s).
 
