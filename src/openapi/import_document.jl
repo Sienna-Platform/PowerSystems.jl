@@ -381,12 +381,12 @@ end
 function from_openapi(po::PO.EmissionsData, ::OpenAPIRefs)
     return EmissionsData(;
         name = po.name,
-        pollutant = PollutantType(po.pollutant.value),
+        pollutant = PollutantType.Value(po.pollutant.value),
         emission_rate = convert_cost(po.emission_rate),
-        basis = EmissionBasis(po.basis.value),
+        basis = EmissionBasis.Value(po.basis.value),
         start_up_adder = _or_default(po.start_up_adder, 0.0),
-        mass_unit = MassUnit(po.mass_unit.value),
-        energy_unit = EnergyUnit(po.energy_unit.value),
+        mass_unit = MassUnit.Value(po.mass_unit.value),
+        energy_unit = EnergyUnit.Value(po.energy_unit.value),
         gwp = _or_default(po.gwp, 1.0),
         available = po.available,
     )
@@ -427,7 +427,7 @@ from_openapi(po::PO.RenewablePowerPlant, ::OpenAPIRefs) =
 function from_openapi(po::PO.CombinedCycleBlock, ::OpenAPIRefs)
     return CombinedCycleBlock(;
         name = po.name,
-        configuration = CombinedCycleConfiguration(po.configuration.value),
+        configuration = CombinedCycleConfiguration.Value(po.configuration.value),
         heat_recovery_to_steam_factor = po.heat_recovery_to_steam_factor,
     )
 end
@@ -435,7 +435,7 @@ end
 function from_openapi(po::PO.CombinedCycleFractional, ::OpenAPIRefs)
     return CombinedCycleFractional(;
         name = po.name,
-        configuration = CombinedCycleConfiguration(po.configuration.value),
+        configuration = CombinedCycleConfiguration.Value(po.configuration.value),
     )
 end
 
@@ -453,8 +453,8 @@ from_openapi(po::PO.ImpedanceCorrectionData, ::OpenAPIRefs) =
     ImpedanceCorrectionData(;
         table_number = po.table_number,
         impedance_correction_curve = convert_cost(po.impedance_correction_curve),
-        transformer_winding = WindingCategory(po.transformer_winding.value),
-        transformer_control_mode = ImpedanceCorrectionTransformerControlMode(
+        transformer_winding = WindingCategory.Value(po.transformer_winding.value),
+        transformer_control_mode = ImpedanceCorrectionTransformerControlMode.Value(
             po.transformer_control_mode.value,
         ),
     )

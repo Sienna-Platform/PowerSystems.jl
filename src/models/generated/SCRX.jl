@@ -17,7 +17,7 @@ This file is auto-generated. Do not edit.
         ext::Dict{String, Any}
         states::Vector{Symbol}
         n_states::Int
-        states_types::Vector{StateTypes}
+        states_types::Vector{StateTypes.Value}
         internal::InfrastructureSystemsInternal
     end
 
@@ -37,7 +37,7 @@ This exciter is based on an IEEE type SCRX solid state exciter.  The output fiel
 	Vr1: First integrator,
 	Vr2: Second integrator
 - `n_states::Int`: (**Do not modify.**) SCRX has 2 states
-- `states_types::Vector{StateTypes}`: (**Do not modify.**) SCRX has 2 [differential](@ref states_list) [states](@ref S)
+- `states_types::Vector{StateTypes.Value}`: (**Do not modify.**) SCRX has 2 [differential](@ref states_list) [states](@ref S)
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
 """
 mutable struct SCRX <: AVR
@@ -66,7 +66,7 @@ mutable struct SCRX <: AVR
     "(**Do not modify.**) SCRX has 2 states"
     n_states::Int
     "(**Do not modify.**) SCRX has 2 [differential](@ref states_list) [states](@ref S)"
-    states_types::Vector{StateTypes}
+    states_types::Vector{StateTypes.Value}
     "(**Do not modify.**) PowerSystems.jl internal reference"
     internal::InfrastructureSystemsInternal
 end

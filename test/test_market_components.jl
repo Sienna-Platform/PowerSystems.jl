@@ -24,17 +24,17 @@ end
 @testset "CurveStyles numeric contract" begin
     # The wire representation (SiennaSchemas' `curve_style` field) is a plain integer,
     # not the string-enum convention used elsewhere in the schemas; pin the mapping.
-    @test CurveStyles.VARIABLE.value == 0
-    @test CurveStyles.FIXED.value == 1
+    @test Integer(CurveStyles.VARIABLE) == 0
+    @test Integer(CurveStyles.FIXED) == 1
     # The former three-way CURVE / FIXED / VARIABLE split collapsed into these two.
-    @test_throws ErrorException CurveStyles.CURVE
+    @test_throws UndefVarError CurveStyles.CURVE
 end
 
 @testset "CurveMultiStep numeric contract" begin
     # Same wire convention as `curve_style`: SiennaSchemas' `curve_multistep` is a plain
     # integer (0/1), not a string enum; pin the mapping.
-    @test CurveMultiStep.SINGLE_STEP.value == 0
-    @test CurveMultiStep.MULTI_STEP.value == 1
+    @test Integer(CurveMultiStep.SINGLE_STEP) == 0
+    @test Integer(CurveMultiStep.MULTI_STEP) == 1
 end
 
 @testset "MarketBidCost extensions" begin

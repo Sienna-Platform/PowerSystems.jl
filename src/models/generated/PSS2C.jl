@@ -41,7 +41,7 @@ This file is auto-generated. Do not edit.
         ext::Dict{String, Any}
         states::Vector{Symbol}
         n_states::Int
-        states_types::Vector{StateTypes}
+        states_types::Vector{StateTypes.Value}
         internal::InfrastructureSystemsInternal
     end
 
@@ -102,7 +102,7 @@ IEEE 421.5 2016 PSS2C IEEE Dual-Input Stabilizer Model
 	x_p18: 4th lead-lag, 
 	x_p19: washout block for compensated frequency,
 - `n_states::Int`: (**Do not modify.**) IEEEST has 19 states
-- `states_types::Vector{StateTypes}`: (**Do not modify.**) IEEEST has 19 [differential](@ref states_list) [states](@ref S)
+- `states_types::Vector{StateTypes.Value}`: (**Do not modify.**) IEEEST has 19 [differential](@ref states_list) [states](@ref S)
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
 """
 mutable struct PSS2C <: PSS
@@ -196,7 +196,7 @@ mutable struct PSS2C <: PSS
     "(**Do not modify.**) IEEEST has 19 states"
     n_states::Int
     "(**Do not modify.**) IEEEST has 19 [differential](@ref states_list) [states](@ref S)"
-    states_types::Vector{StateTypes}
+    states_types::Vector{StateTypes.Value}
     "(**Do not modify.**) PowerSystems.jl internal reference"
     internal::InfrastructureSystemsInternal
 end

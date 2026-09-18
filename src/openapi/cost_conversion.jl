@@ -185,7 +185,7 @@ function _curve_style_from_wire(id::Integer)
             ),
         )
     end
-    return CurveStyles(Int(id))
+    return CurveStyles.Value(Int(id))
 end
 
 """Wire representation of [`CurveMultiStep`](@ref): a plain integer (0/1), the same
@@ -199,7 +199,7 @@ function _curve_multistep_from_wire(id::Integer)
             ),
         )
     end
-    return CurveMultiStep(Int(id))
+    return CurveMultiStep.Value(Int(id))
 end
 
 convert_cost(vc::PC.TimeSeriesInputOutputCurve, store) =
