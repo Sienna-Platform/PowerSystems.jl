@@ -594,6 +594,24 @@ function _check_costs_reference_declared_series!(doc::PD.SystemDocument, emitted
     )
 end
 
+"""
+Refuse a time-series-free document whose costs are backed by time series.
+
+Such a cost records an association id, and the import that resolves it would have neither a row
+nor a store to resolve it against — the System would come back with a cost pointing at nothing.
+"""
+function _check_costs_survive_without_series(emitted::Set{Int}, include_time_series::Bool)
+    (include_time_series || isempty(emitted)) && return nothing
+    throw(
+        IS.DataFormatError(
+            "to_openapi: include_time_series = false, but $(length(emitted)) cost(s) are " *
+            "backed by time series and reference association id(s) " *
+            "$(join(sort!(collect(emitted)), ", ")). Export this System with its time " *
+            "series, or replace those costs.",
+        ),
+    )
+end
+
 function _export_all_time_series(
     sys::System,
     refs::OpenAPIRefs,
@@ -676,12 +694,18 @@ Component `ext` is written through verbatim to `doc.ext`.
 `false` (default) writes the arrays alone, `true` keeps the catalog and makes it authoritative
 on read. Either way the rows appear in `doc.time_series_associations`. It requires
 `time_series_storage_path` whenever `sys` carries time series.
+
+`include_time_series = false` describes only the components and attributes: no association rows
+and no sidecar, so no `time_series_storage_path` is needed for a System that has series. The
+result is a standalone document for consumers that already hold the series elsewhere; it is
+lossy by construction and `from_openapi` rebuilds the System without them.
 """
 function to_openapi(
     sys::System;
     units::IS.AbstractUnitSystem = CU,
     time_series_storage_path = nothing,
     write_catalog::Bool = false,
+    include_time_series::Bool = true,
 )
     warn_unexportable_components(sys)
     _check_export_units(units)
@@ -714,13 +738,14 @@ function to_openapi(
             doc.trading_hub_associations,
             _export_trading_hub_associations(refs, sys),
         )
-        append!(
+        include_time_series && append!(
             doc.time_series_associations,
             _export_all_time_series(sys, refs, time_series_storage_path, write_catalog),
         )
         _reserve_ids!(doc, refs)
     end
 
+    _check_costs_survive_without_series(emitted, include_time_series)
     _check_costs_reference_declared_series!(doc, emitted)
     PD.validate_document(doc)
     return doc
