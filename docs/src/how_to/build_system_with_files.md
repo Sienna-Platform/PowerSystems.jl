@@ -14,8 +14,8 @@ manually is:
     your dataset. Use [`add_component!`](@ref) to add each component to the [`System`](@ref).
  4. Similarly, add cost and time series data either within each `for` loop, or after the
     components have been defined using [`time_series_transaction`](@ref).
- 5. [Save your `System` to a JSON](@ref "Write, View, and Load Data with a JSON") once you are
-    finished
+ 5. [Save your `System` to a file](@ref "Write, View, and Load Data as a Bundle or Archive") once
+    you are finished
 
 The following example demonstrates this process for selected component
 types (e.g., [`ACBus`](@ref), [`ThermalStandard`](@ref), [`RenewableDispatch`](@ref)), but
@@ -688,5 +688,5 @@ Additional resources to help you built your own custom [`System`](@ref):
   - See how to [Add a New or Custom Type](@ref)
   - See how to [Add a Component in Natural Units](@ref), which is an alternative to the
     per-unitized `for` loops above, but requires more code
-  - See how to [Write, View, and Load Data with a JSON](@ref) to efficiently save your
+  - See how to [Write, View, and Load Data as a Bundle or Archive](@ref) to efficiently save your
     [`System`](@ref) once you've built it

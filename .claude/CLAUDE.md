@@ -4,6 +4,62 @@ The Sienna power-system **data model**: the `System` container plus ~210 compone
 
 **This branch has NO parsers.** `src/parsers/` was removed in the psy6 line; all Matpower/PSSE/table parsing lives in PowerFlowFileParser.jl (and PSB's parser wrappers). Do not re-add parsing here.
 
+**There is also NO native JSON serializer.** `to_file`/`from_file` are the only way a `System` reaches or leaves disk — see "System file I/O" below before touching anything serialization-shaped.
+
+## System file I/O — `to_file` / `from_file` only
+
+`src/openapi/file_io.jl` owns the surface. **Three forms, one path-inferred dispatch, one
+serializer** — no `format` keyword, and the archive builds the same bundle a document form does
+before archiving it, so there is no second writer to keep in sync.
+
+```julia
+to_file(sys, path; units = CU, force = false, pretty = false)
+from_file(path; system_kwargs...)   # no type argument — the form is inferred from `path`
+```
+
+The extension of `path` chooses the form, and `to_file` refuses an unrecognized one in its own
+`else` branch *before* anything dispatches on the form — keep that order, or a typo'd extension
+becomes a `MethodError` on an internal helper.
+
+- **directory** (no extension) — `system.json` plus `time_series.h5` when there are time series.
+- **`.json`** — the same two, sidecar named from the document's stem (`case.json` → `case.h5`)
+  and beside it, so several systems can share a directory.
+- **`.sns`** — those two plus `time_series.h5.sqlite` (InfraStore's catalog, authoritative on
+  read) and `sienna_extras.json`. **The only lossless form.** Writes on `CU` only and throws
+  otherwise — the form exists to avoid a conversion pass.
+
+Neither document form writes a `.sqlite` — the document's own `time_series_associations` table
+holds every row, and `from_openapi` replays them into a fresh catalog.
+
+**The `units` keyword takes a marker, not a Symbol** — `CU` (default) or `NU`; `SU` throws by
+dispatch (no `Union` check), since it has no system-base member on the wire. It governs every
+convertible field. Don't confuse it with the **`power_units` field** on cost curves and
+power-bearing blobs — that is per-value wire data, spelled `"COMPONENT_BASE"`/`"NATURAL_UNITS"`.
+
+**The archive container is IS's, the extension is PSY's** — `IS.create_sienna_archive` /
+`extract_sienna_archive` / `is_sienna_archive` own the zip; PSY only supplies the extension
+(`SYSTEM_ARCHIVE_EXTENSION = ".sns"`, so PowerSystemsInvestmentsPortfolios can reuse the same
+container under `.snp`). Do not add zip or archive dependencies here.
+
+**What the document forms lose:** subsystem membership, which only `sienna_extras.json` carries —
+`_warn_on_document_data_loss` warns (never errors) from the document forms only. Frequency
+survives both. Masked components survive both but are **derived, not recorded**:
+`handle_component_addition!(sys, ::StaticInjectionSubsystem)` re-masks on import. Do not add a
+list for them — that would give one truth two writers.
+
+**Deleted, stays deleted:** `src/data_format_conversions.jl`, `DATA_FORMAT_VERSION`,
+`_post_deserialize_handling`, `from_dict(::Type{System}, …)`, `deserialize_components!`,
+`test/test_serialization.jl`, the `format` keyword, and `_resolve_export_power_units`.
+`System(::AbstractString)` throws and names its replacement; `to_json`/`from_json` are no longer
+exported for `System` at all. Do not restore any of them, and do not add a shim.
+
+Migration between lines belongs to **PowerSystemsUpdater.jl**, not here. There is no migration
+path from pre-cutover files — regenerate them.
+
+**Do not run `Pkg.free("InfrastructureSystems")`** — it discards the `[sources]` pin and resolves
+the registered psy5 IS, failing with `UndefVarError: AbstractUnitSystem`. `Pkg.add`/`Pkg.free`
+also rewrite `Project.toml`, stripping comments and sometimes `[sources]` itself; check
+`git diff Project.toml` after any Pkg operation.
 ## Downstream blast radius
 
 PNM, PF, POM, and PSB all consume PSY; SiennaSchemas mirrors PSY component fields (JSON schemas), so field renames/retypes create schema drift the sync tooling must catch. After a PSY change:
@@ -76,7 +132,7 @@ Five concrete transformer types became two, and series data moved onto a nested 
 - Setters take **tagged** values and reject bare floats: `set_rating_b!(line, 0.9 * PSY.SU)`.
 - PSY extends `IS._strip_units` (required by the IS codegen contract) and overrides `IS.default_units(::Component)` to return `SU` for time-series multipliers.
 - **`with_units_base` / `set_units_base_system!` / `get_units_base` are GONE** (verified against `origin/psy6`: all three `isdefined(PowerSystems, …) == false`). The stateful units system was fully removed in the psy6 line — see `7ffbbdf8d` "remove last pieces of stateful units system". Every value is read with an explicit unit argument instead. The `UnitSystem` enum still exists as display metadata, but there is no setter. Downstream code calling any of the three must migrate to explicit unit args, not look for a replacement setter.
-- Serialization stores component values in **component base**; there is no natural-units export path yet (documented-not-implemented; the OpenAPI/GridDB pipeline expects natural units — that converter is the unclosed loop).
+- Serialization writes on whichever basis `to_file`'s `units` keyword names (`CU`/`NU`) — see "System file I/O" above for the write/read asymmetry and the `.sns` `CU`-only rule.
 - Cost curves default to `power_units = IS.NaturalUnit()`; `CostCurve{T,U}`/`FuelCurve{T,U}` carry the unit as a type parameter (IS4).
 - Units test filter: `julia --project=test test/runtests.jl test_units` (fast, ~22 s).
 

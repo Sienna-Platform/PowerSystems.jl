@@ -200,10 +200,10 @@ add_component!(sys, device)
 retrived_device = get_component(NewType, sys, "component_name")
 
 # Serialize
-to_json(sys, "sys.json")
+to_file(sys, "mysystem")
 
 # Re-create the system and find your component.
-sys2 = System("sys.json")
+sys2 = from_file("mysystem")
 serialized_device = get_component(NewType, sys, "component_name")
 
 @test get_name(retrieved_device) == get_name(serialized_device)

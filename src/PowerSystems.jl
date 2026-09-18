@@ -20,6 +20,7 @@ export get_aggregation_topology_accessor
 export SupplementalAttribute
 export GeographicInfo
 export DataSource
+export DataFormatError
 export get_geo_json
 export get_organization
 export get_retrieved_at
@@ -614,8 +615,6 @@ export get_description
 export set_description!
 export get_frequency
 export get_frequency_droop
-export to_json
-export from_json
 export serialize
 export deserialize
 export clear_ext!

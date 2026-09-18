@@ -666,7 +666,22 @@ end
 end
 
 @testset "Invalid constructor" begin
-    @test_throws IS.DataFormatError System("data.invalid")
+    # Unrecognized extension: generic error.
+    @test_throws DataFormatError System("data.invalid")
+
+    # .json: point at from_file.
+    @test_throws "from_file" System("sys.json")
+
+    # .raw / .m: point at PowerFlowFileParser.jl, not this package.
+    for ext in (".raw", ".m")
+        @test_throws "PowerFlowFileParser" System("case$ext")
+    end
+end
+
+@testset "to_json/from_json are not part of the System API" begin
+    # PSY no longer exports them: a System reaches disk only through to_file/from_file.
+    @test !(:to_json in names(PowerSystems))
+    @test !(:from_json in names(PowerSystems))
 end
 
 @testset "Test deepcopy with runchecks" begin

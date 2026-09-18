@@ -365,7 +365,7 @@ end
     push!(get_ancillary_service_offers(mbc), svc)
     set_operation_cost!(gen, mbc)
 
-    doc = to_openapi(sys; power_units = :natural_units)
+    doc = to_openapi(sys; units = NU)
     sys2 = from_openapi(System, doc)
 
     gen2 = get_component(ThermalStandard, sys2, "gen1")
@@ -427,7 +427,7 @@ end
         @test occursin("\"curve_style\":0", txt)
         write(document_path, replace(txt, "\"curve_style\":0" => "\"curve_style\":null"))
         @test_throws "schema validation failed while decoding ThermalStandard" from_file(
-            System, dir,
+            dir,
         )
     end
 end
@@ -445,7 +445,7 @@ end
             replace(txt, "\"incremental_slope\":false" => "\"incremental_slope\":null"),
         )
         @test_throws "schema validation failed while decoding ThermalStandard" from_file(
-            System, dir,
+            dir,
         )
     end
 end
@@ -460,7 +460,7 @@ end
         txt = read(document_path, String)
         write(document_path, replace(txt, "\"curve_style\":0" => "\"curve_style\":2"))
         @test_throws "schema validation failed while decoding ThermalStandard" from_file(
-            System, dir,
+            dir,
         )
     end
 end
@@ -478,7 +478,7 @@ end
             replace(txt, "\"curve_multistep\":0" => "\"curve_multistep\":2"),
         )
         @test_throws "schema validation failed while decoding ThermalStandard" from_file(
-            System, dir,
+            dir,
         )
     end
 end
@@ -535,7 +535,7 @@ end
     push!(get_ancillary_service_offers(get_operation_cost(gen)), svc)
     @test_throws ErrorException PSY.convert_cost_to_openapi(get_operation_cost(gen))
     # The document-level export path hits the same error rather than silently dropping it.
-    @test_throws ErrorException to_openapi(sys; power_units = :natural_units)
+    @test_throws ErrorException to_openapi(sys; units = NU)
 end
 
 @testset "MarketBidTimeSeriesCost: ancillary_service_offers resolve on import" begin
@@ -568,7 +568,7 @@ end
         thermal_rows[gen_index] = PSY._po_with(gen_row; operation_cost = new_wrapper)
         PSY.PD.write_document(doc, document_path; force = true)
 
-        sys2 = from_file(System, dir)
+        sys2 = from_file(dir)
         gen2 = get_component(ThermalStandard, sys2, "gen1")
         mbtc2 = get_operation_cost(gen2)
         @test mbtc2 isa MarketBidTimeSeriesCost
@@ -624,7 +624,7 @@ end
     sys, gen = _mbtc_extension_fixture(; incremental_slope = true)
     mktempdir() do dir
         to_file(sys, dir; force = true)
-        sys2 = from_file(System, dir)
+        sys2 = from_file(dir)
         gen2 = get_component(ThermalStandard, sys2, "gen1")
         mbtc2 = get_operation_cost(gen2)
         @test mbtc2 isa MarketBidTimeSeriesCost
@@ -643,7 +643,7 @@ end
 
     mktempdir() do dir
         to_file(sys, dir; force = true)
-        sys2 = from_file(System, dir)
+        sys2 = from_file(dir)
         gen2 = get_component(ThermalStandard, sys2, "gen1")
         mbtc2 = get_operation_cost(gen2)
         @test mbtc2 isa MarketBidTimeSeriesCost
@@ -666,7 +666,7 @@ end
 
     mktempdir() do dir
         to_file(sys, dir; force = true)
-        sys2 = from_file(System, dir)
+        sys2 = from_file(dir)
         gen2 = get_component(ThermalStandard, sys2, "gen1")
         mbtc2 = get_operation_cost(gen2)
         @test mbtc2 isa MarketBidTimeSeriesCost
@@ -705,8 +705,8 @@ end
     push!(get_ancillary_service_offers(mbc), svc)
     set_operation_cost!(gen, mbc)
 
-    for power_units in (:component_base, :natural_units)
-        doc = to_openapi(sys; power_units = power_units)
+    for units in (CU, NU)
+        doc = to_openapi(sys; units = units)
         sys2 = from_openapi(System, doc)
         gen2 = get_component(ThermalMultiStart, sys2, "ms1")
         @test !isnothing(gen2)
@@ -770,8 +770,8 @@ end
     )
     add_component!(sys, tail)
 
-    for power_units in (:component_base, :natural_units)
-        doc = to_openapi(sys; power_units = power_units)
+    for units in (CU, NU)
+        doc = to_openapi(sys; units = units)
         sys2 = from_openapi(System, doc)
 
         pump2 = get_component(HydroPumpTurbine, sys2, "pump1")

@@ -196,10 +196,10 @@ function from_openapi(po::PO.Arc, refs::OpenAPIRefs, ::NaturalUnit)
 end
 
 # ── Area / LoadZone ─────────────────────────────────────────────────────────────
-# `peak_active_power`/`peak_reactive_power` are discriminated by the blob's own `power_units`,
+# `peak_active_power`/`peak_reactive_power` are discriminated by its own `power_units`,
 # like every other power-family field: COMPONENT_BASE passes through pu, NATURAL_UNITS divides
-# by the blob's own (required) `base_power` — `_require_base_power` errors naming the type/id
-# when a blob omits it. `Area.load_response` (x-unit MW/Hz) has no `conversion_unit` in the PSY
+# by its own (required) `base_power` — `_require_base_power` errors naming the type/id
+# when a component omits it. `Area.load_response` (x-unit MW/Hz) has no `conversion_unit` in the PSY
 # descriptor and passes through unconverted in both methods. `direction_mapping::Dict{String,
 # Int}` (TransmissionInterface, below) is unclassifiable to the generator, which is what keeps
 # these hand-written rather than generated.
@@ -294,7 +294,7 @@ end
 # pattern for a device that does), and that is what keeps this hand-written.
 # `rating`/`rating_b`/`rating_c`/`active_power_flow`/`reactive_power_flow` are natural MVA/MW
 # divided by the line's own (required) `base_power` only under `NaturalUnit`; `_require_base_power`
-# errors, naming the type/id, when a blob omits it.
+# errors, naming the type/id, when a component omits it.
 
 function from_openapi(po::PO.Line, refs::OpenAPIRefs, ::ComponentBaseUnit)
     return Line(;
@@ -845,7 +845,7 @@ end
 # ── FACTSControlDevice ────────────────────────────────────────────────────────────
 # `max_shunt_current`/`max_reactive_power` (both MVA, declared `SU` on the PSY side) are
 # discriminated by `power_units` like every other power-family field: COMPONENT_BASE passes
-# through pu, NATURAL_UNITS divides by the blob's own (required) `base_power`. `voltage_setpoint`
+# through pu, NATURAL_UNITS divides by its own (required) `base_power`. `voltage_setpoint`
 # is pu on system base per PSY's own docstring; only `voltage_setpoint_units == "COMPONENT_BASE"`
 # is implemented — `NATURAL_UNITS` (kV) would need a bus base-voltage conversion no current
 # producer exercises, so it errors loudly rather than guessing. `reactive_power_required` (a
@@ -1460,7 +1460,7 @@ _vsc_converter_loss(curve, ::Any) = error(
 
 """
 Unwrap a `converter_loss_*`/`loss_function` `LossCurve` the same way `_hvdc_loss` does,
-keeping the basis the blob states, then hand the bare curve to `_vsc_converter_loss`; absent
+keeping the unit system it states, then hand the bare curve to `_vsc_converter_loss`; absent
 on the wire falls back to the shared PSY descriptor default (a zero linear loss curve).
 """
 _vsc_loss(::Union{Nothing, IC.Absent}) = LossCurve(LinearCurve(0.0), NaturalUnit())

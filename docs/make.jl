@@ -37,7 +37,7 @@ pages = OrderedDict(
                 "Parse a MATPOWER or PSS/e file" => "how_to/parse_matpower_psse.md",
                 "Parse PSS/e dynamic data" => "how_to/parse_dynamic_data.md",
                 "Build a `System` using .csv files" => "how_to/build_system_with_files.md",
-                "Save and read data with a JSON" => "how_to/serialize_data.md",
+                "Save and read data as a bundle or archive" => "how_to/serialize_data.md",
             ],
             "...add a component using natural units (MW)" => "how_to/add_component_natural_units.md",
             "...use context managers for bulk operations" => "how_to/use_context_managers.md",
