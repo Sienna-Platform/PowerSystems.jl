@@ -335,7 +335,7 @@ end
         emission_rate = emissions_po.emission_rate, basis = "FUEL_INPUT",
         mass_unit = "LB", energy_unit = "MMBTU",
     )
-    @test_throws Exception PollutantType("BOGUS")
+    @test_throws Exception PollutantType.Value("BOGUS")
 end
 
 @testset "MarketBidCost round trip: fields and ancillary service offer ids" begin
@@ -485,11 +485,10 @@ end
 
 """Build a `System` with one `ThermalStandard` (`gen1`) carrying a
 `MarketBidTimeSeriesCost` and one `OnlineReserve{ReserveUp}` (`RESERVE`) the generator
-contributes to. Returns `(sys, gen, svc)`. Shared by the two testsets below: export cannot
-carry `ancillary_service_offers` for this cost type (the id-filling pass is gated on
-`MarketBidCost`, `export_document.jl`, out of edit scope), so one test proves export errors
-loudly instead of dropping them, and the other proves import resolves them correctly when a
-document (from any producer, not necessarily PSY's own writer) already carries the ids."""
+contributes to. Returns `(sys, gen, svc)`. Shared by the two testsets below: one round-trips
+the cost's `ancillary_service_offers` through `to_file`/`from_file`; the other hand-patches
+the ids into a document, as an external producer would write it, and checks that import
+resolves them."""
 function _mbtc_service_offer_fixture()
     sys = System(100.0)
     bus = ACBus(nothing)
@@ -530,19 +529,36 @@ function _mbtc_service_offer_fixture()
     return (sys, gen, svc)
 end
 
-@testset "convert_cost_to_openapi(MarketBidTimeSeriesCost): non-empty ancillary_service_offers errors loudly" begin
+@testset "MarketBidTimeSeriesCost: ancillary_service_offers round-trip" begin
     sys, gen, svc = _mbtc_service_offer_fixture()
     push!(get_ancillary_service_offers(get_operation_cost(gen)), svc)
-    @test_throws ErrorException PSY.convert_cost_to_openapi(get_operation_cost(gen))
-    # The document-level export path hits the same error rather than silently dropping it.
-    @test_throws ErrorException to_openapi(sys; units = NU)
+
+    # The per-cost converter has no id registry, so it exports the list empty and the
+    # document-level pass fills it in.
+    @test isempty(
+        PSY.convert_cost_to_openapi(get_operation_cost(gen)).ancillary_service_offers,
+    )
+
+    mktempdir() do dir
+        to_file(sys, dir; force = true)
+        doc = PSY.PD.read_document(joinpath(dir, "system.json"))
+        gen_row = only(PSY.PD.get_components(doc, "ThermalStandard"))
+        @test PSY._unwrap_oneof(gen_row.operation_cost).ancillary_service_offers ==
+              Int64[IS.get_id(svc)]
+
+        sys2 = from_file(dir)
+        gen2 = get_component(ThermalStandard, sys2, "gen1")
+        mbtc2 = get_operation_cost(gen2)
+        @test mbtc2 isa MarketBidTimeSeriesCost
+        offers = get_ancillary_service_offers(mbtc2)
+        @test length(offers) == 1
+        @test only(offers) === get_component(OnlineReserve{ReserveUp}, sys2, "RESERVE")
+    end
 end
 
 @testset "MarketBidTimeSeriesCost: ancillary_service_offers resolve on import" begin
-    # Export cannot produce this document (the test above proves it errors instead), so this
-    # builds one the way an external producer's document would arrive: exported with no
-    # offers, then hand-patched to carry the id — exactly the shape
-    # `_load_market_bid_service_offers!` must resolve.
+    # Stand in for an external producer's document: export with no offers, then hand-patch
+    # the id in. That is exactly the shape `_load_market_bid_service_offers!` must resolve.
     sys, gen, svc = _mbtc_service_offer_fixture()
     gen_id = IS.get_id(gen)
     svc_id = IS.get_id(svc)

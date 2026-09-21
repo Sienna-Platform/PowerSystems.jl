@@ -14,7 +14,7 @@ This file is auto-generated. Do not edit.
         Y_increase::Vector{Complex{Float64}}
         solved_admittance::Union{Nothing, Float64}
         admittance_limits::MinMax
-        control_mode::SwitchedAdmittanceControlMode
+        control_mode::SwitchedAdmittanceControlMode.Value
         regulated_bus_number::Int
         dynamic_injector::Union{Nothing, DynamicInjection}
         services::Vector{Service}
@@ -35,7 +35,7 @@ Most often used in power flow studies, iterating over the steps to see impacts o
 - `Y_increase::Vector{Complex{Float64}}`: (default: `Complex{Float64}[]`) Vector with admittance increment step for each adjustable shunt block. For example, `Y_increase[2]` is the complex admittance increment for each step at block 2.
 - `solved_admittance::Union{Nothing, Float64}`: (default: `nothing`) Solved-case switched shunt admittance (PSS/E `BINIT`), or `nothing` when unset. When non-`nothing`, this value is the shunt's effective admittance, used in place of `number_engaged` ⋅ `Y_increase`; power flow writes the solved-for admittance back to this field. Set it only when the case is to be treated as solved as read in, or when the device is locked (`control_mode == SwitchedAdmittanceControlMode.FIXED`).
 - `admittance_limits::MinMax`: (default: `(min=1.0, max=1.0)`) Shunt admittance limits for switched shunt model
-- `control_mode::SwitchedAdmittanceControlMode`: (default: `SwitchedAdmittanceControlMode.FIXED`) Switched-shunt control mode.
+- `control_mode::SwitchedAdmittanceControlMode.Value`: (default: `SwitchedAdmittanceControlMode.FIXED`) Switched-shunt control mode.
 - `regulated_bus_number::Int`: (default: `0`) Bus number whose voltage/quantity this shunt regulates; 0 ⇒ local bus.
 - `dynamic_injector::Union{Nothing, DynamicInjection}`: (default: `nothing`) corresponding dynamic injection model for admittance
 - `services::Vector{Service}`: (default: `Device[]`) Services that this device contributes to
@@ -60,7 +60,7 @@ mutable struct SwitchedAdmittance <: ElectricLoad
     "Shunt admittance limits for switched shunt model"
     admittance_limits::MinMax
     "Switched-shunt control mode."
-    control_mode::SwitchedAdmittanceControlMode
+    control_mode::SwitchedAdmittanceControlMode.Value
     "Bus number whose voltage/quantity this shunt regulates; 0 ⇒ local bus."
     regulated_bus_number::Int
     "corresponding dynamic injection model for admittance"

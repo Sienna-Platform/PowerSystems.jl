@@ -9,14 +9,14 @@ instance can be attached to one or many components via [`add_supplemental_attrib
 
 # Arguments
 - `name::String`: Identifier for this emissions attribute.
-- `pollutant::PollutantType`: Scoped enum (CO2, CO2E, CH4, N2O, NOX, SO2, PM25, PM10, HG, HAP, CUSTOM).
+- `pollutant::PollutantType.Value`: Scoped enum (CO2, CO2E, CH4, N2O, NOX, SO2, PM25, PM10, HG, HAP, CUSTOM).
 - `emission_rate::ValueCurve`: Emission rate as a [`ValueCurve`](@ref), typically an
     [`IncrementalCurve`](@ref). A convenience constructor accepts a `Real` scalar, which
     is wrapped in an `IncrementalCurve` with constant rate.
-- `basis::EmissionBasis`: FUEL_INPUT (mass per unit of heat input) or POWER_OUTPUT (mass per unit of electrical output).
-- `energy_unit::EnergyUnit`: Energy unit for the rate denominator (MMBTU, GJ, or MWH). Must be consistent with `basis`.
+- `basis::EmissionBasis.Value`: FUEL_INPUT (mass per unit of heat input) or POWER_OUTPUT (mass per unit of electrical output).
+- `energy_unit::EnergyUnit.Value`: Energy unit for the rate denominator (MMBTU, GJ, or MWH). Must be consistent with `basis`.
 - `start_up_adder::Float64`: (default: `0.0`) Per-start emission pulse, in `mass_unit`.
-- `mass_unit::MassUnit`: (default: `MassUnit.KG`) KG, LB, SHORT_TON, METRIC_TON.
+- `mass_unit::MassUnit.Value`: (default: `MassUnit.KG`) KG, LB, SHORT_TON, METRIC_TON.
 - `gwp::Float64`: (default: `1.0`) GWP100 multiplier for CO2-equivalent reporting.
 - `available::Bool`: (default: `true`) Whether this attribute is active.
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) Extra metadata dictionary.
@@ -24,12 +24,12 @@ instance can be attached to one or many components via [`add_supplemental_attrib
 """
 mutable struct EmissionsData <: SupplementalAttribute
     name::String
-    pollutant::PollutantType
+    pollutant::PollutantType.Value
     emission_rate::IS.ValueCurve
-    basis::EmissionBasis
+    basis::EmissionBasis.Value
     start_up_adder::Float64
-    mass_unit::MassUnit
-    energy_unit::EnergyUnit
+    mass_unit::MassUnit.Value
+    energy_unit::EnergyUnit.Value
     gwp::Float64
     available::Bool
     ext::Dict{String, Any}
@@ -43,7 +43,10 @@ function _validate_nonneg_finite(val::Real, field::String)
     end
 end
 
-function _validate_basis_energy_unit(basis::EmissionBasis, energy_unit::EnergyUnit)
+function _validate_basis_energy_unit(
+    basis::EmissionBasis.Value,
+    energy_unit::EnergyUnit.Value,
+)
     if basis == EmissionBasis.FUEL_INPUT
         if energy_unit != EnergyUnit.MMBTU && energy_unit != EnergyUnit.GJ
             throw(
@@ -128,12 +131,12 @@ Construct an [`EmissionsData`](@ref) with validation.
 """
 function EmissionsData(;
     name::AbstractString,
-    pollutant::PollutantType,
+    pollutant::PollutantType.Value,
     emission_rate::Union{Real, IS.ValueCurve},
-    basis::EmissionBasis,
-    energy_unit::EnergyUnit,
+    basis::EmissionBasis.Value,
+    energy_unit::EnergyUnit.Value,
     start_up_adder::Real = 0.0,
-    mass_unit::MassUnit = MassUnit.KG,
+    mass_unit::MassUnit.Value = MassUnit.KG,
     gwp::Real = 1.0,
     available::Bool = true,
     ext::Dict{String, Any} = Dict{String, Any}(),
@@ -228,13 +231,13 @@ function set_gwp!(value::EmissionsData, val::Real)
 end
 
 """Set [`EmissionsData`](@ref) `pollutant`."""
-function set_pollutant!(value::EmissionsData, val::PollutantType)
+function set_pollutant!(value::EmissionsData, val::PollutantType.Value)
     value.pollutant = val
     return
 end
 
 """Set [`EmissionsData`](@ref) `mass_unit`."""
-function set_mass_unit!(value::EmissionsData, val::MassUnit)
+function set_mass_unit!(value::EmissionsData, val::MassUnit.Value)
     value.mass_unit = val
     return
 end
@@ -244,14 +247,14 @@ Set [`EmissionsData`](@ref) `basis`, validating it against the current `energy_u
 switch between FUEL_INPUT and POWER_OUTPUT (which also requires changing `energy_unit`),
 use [`set_basis_and_energy_unit!`](@ref) instead.
 """
-function set_basis!(value::EmissionsData, val::EmissionBasis)
+function set_basis!(value::EmissionsData, val::EmissionBasis.Value)
     _validate_basis_energy_unit(val, value.energy_unit)
     value.basis = val
     return
 end
 
 """Set [`EmissionsData`](@ref) `energy_unit`, validating it against the current `basis`."""
-function set_energy_unit!(value::EmissionsData, val::EnergyUnit)
+function set_energy_unit!(value::EmissionsData, val::EnergyUnit.Value)
     _validate_basis_energy_unit(value.basis, val)
     value.energy_unit = val
     return
@@ -265,8 +268,8 @@ basis/energy_unit invariant.
 """
 function set_basis_and_energy_unit!(
     value::EmissionsData,
-    basis::EmissionBasis,
-    energy_unit::EnergyUnit,
+    basis::EmissionBasis.Value,
+    energy_unit::EnergyUnit.Value,
 )
     _validate_basis_energy_unit(basis, energy_unit)
     value.basis = basis

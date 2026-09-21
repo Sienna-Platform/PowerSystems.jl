@@ -126,7 +126,7 @@ For aggregate representations consider using [`CombinedCycleFractional`](@ref).
 
 # Arguments
 - `name::String`: Name of the combined cycle block
-- `configuration::CombinedCycleConfiguration`: Configuration type of the combined cycle
+- `configuration::CombinedCycleConfiguration.Value`: Configuration type of the combined cycle
 - `heat_recovery_to_steam_factor::Float64`: Factor for heat recovery to steam conversion
 - `hrsg_ct_map::Dict{Int, Vector{Int}}`: Mapping of HRSG numbers to CT unit ids (CTs as HRSG inputs)
 - `hrsg_ca_map::Dict{Int, Vector{Int}}`: Mapping of HRSG numbers to CA unit ids (CAs as HRSG outputs)
@@ -134,7 +134,7 @@ For aggregate representations consider using [`CombinedCycleFractional`](@ref).
 """
 struct CombinedCycleBlock <: PowerPlant
     name::String
-    configuration::CombinedCycleConfiguration
+    configuration::CombinedCycleConfiguration.Value
     heat_recovery_to_steam_factor::Float64
     hrsg_ct_map::Dict{Int, Vector{Int}}
     hrsg_ca_map::Dict{Int, Vector{Int}}
@@ -144,7 +144,7 @@ end
 # Deserialization variant: converts string-keyed dicts from JSON
 function CombinedCycleBlock(
     name::String,
-    configuration::CombinedCycleConfiguration,
+    configuration::CombinedCycleConfiguration.Value,
     heat_recovery_to_steam_factor::Float64,
     hrsg_ct_map::Dict{String, <:Any},
     hrsg_ca_map::Dict{String, <:Any},
@@ -190,7 +190,7 @@ Construct a [`CombinedCycleBlock`](@ref).
 
 # Arguments
 - `name::String`: Name of the combined cycle block
-- `configuration::CombinedCycleConfiguration`: Configuration type of the combined cycle
+- `configuration::CombinedCycleConfiguration.Value`: Configuration type of the combined cycle
 - `heat_recovery_to_steam_factor::Float64`: (default: `0.0`) Factor for heat recovery to steam conversion
 - `hrsg_ct_map::AbstractDict`: (default: empty dict) Mapping of HRSG numbers to CT unit ids (CTs as HRSG inputs)
 - `hrsg_ca_map::AbstractDict`: (default: empty dict) Mapping of HRSG numbers to CA unit ids (CAs as HRSG outputs)
@@ -237,13 +237,13 @@ For block-level representations consider using [`CombinedCycleBlock`](@ref).
 
 # Arguments
 - `name::String`: Name of the combined cycle fractional plant
-- `configuration::CombinedCycleConfiguration`: Configuration type of the combined cycle
+- `configuration::CombinedCycleConfiguration.Value`: Configuration type of the combined cycle
 - `operation_exclusion_map::Dict{Int, Vector{Int}}`: Mapping of operation exclusion group numbers to unit ids (only units in the same group can operate simultaneously)
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems internal reference
 """
 struct CombinedCycleFractional <: PowerPlant
     name::String
-    configuration::CombinedCycleConfiguration
+    configuration::CombinedCycleConfiguration.Value
     operation_exclusion_map::Dict{Int, Vector{Int}}
     internal::InfrastructureSystemsInternal
 end
@@ -251,7 +251,7 @@ end
 # Deserialization variant: converts string-keyed dicts from JSON
 function CombinedCycleFractional(
     name::String,
-    configuration::CombinedCycleConfiguration,
+    configuration::CombinedCycleConfiguration.Value,
     operation_exclusion_map::Dict{String, <:Any},
     internal::InfrastructureSystemsInternal,
 )
@@ -287,7 +287,7 @@ Construct a [`CombinedCycleFractional`](@ref).
 
 # Arguments
 - `name::String`: Name of the combined cycle fractional plant
-- `configuration::CombinedCycleConfiguration`: Configuration type of the combined cycle
+- `configuration::CombinedCycleConfiguration.Value`: Configuration type of the combined cycle
 - `operation_exclusion_map::AbstractDict`: (default: empty dict) Mapping of operation exclusion group numbers to unit ids
 - `internal::InfrastructureSystemsInternal`: (default: `InfrastructureSystemsInternal()`) (**Do not modify.**) PowerSystems internal reference
 """

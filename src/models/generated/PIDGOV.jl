@@ -25,7 +25,7 @@ This file is auto-generated. Do not edit.
         ext::Dict{String, Any}
         states::Vector{Symbol}
         n_states::Int
-        states_types::Vector{StateTypes}
+        states_types::Vector{StateTypes.Value}
         internal::InfrastructureSystemsInternal
     end
 
@@ -58,7 +58,7 @@ Hydro Turbine-Governor with PID controller.
 	x_g6: Gate position state, 
 	x_g7: Water inertia state
 - `n_states::Int`: (**Do not modify.**) PIDGOV has 7 states
-- `states_types::Vector{StateTypes}`: (**Do not modify.**) PIDGOV has 7 [differential](@ref states_list) [states](@ref S)
+- `states_types::Vector{StateTypes.Value}`: (**Do not modify.**) PIDGOV has 7 [differential](@ref states_list) [states](@ref S)
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
 """
 mutable struct PIDGOV <: TurbineGov
@@ -108,7 +108,7 @@ mutable struct PIDGOV <: TurbineGov
     "(**Do not modify.**) PIDGOV has 7 states"
     n_states::Int
     "(**Do not modify.**) PIDGOV has 7 [differential](@ref states_list) [states](@ref S)"
-    states_types::Vector{StateTypes}
+    states_types::Vector{StateTypes.Value}
     "(**Do not modify.**) PowerSystems.jl internal reference"
     internal::InfrastructureSystemsInternal
 end

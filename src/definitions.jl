@@ -123,14 +123,14 @@ Availability is not one of these values: a unit on outage is `available = false`
 `OFFLINE` unit that is `available = true` is in service and eligible for re-commitment.
 " OperationalStates
 
-function OperationalStatesModule.OperationalStates(value::Bool)
+function OperationalStates.Value(value::Bool)
     return throw(
         ArgumentError(
             "status is an OperationalStates value (OperationalStates.ONLINE or .OFFLINE), not a Bool; got $value",
         ),
     )
 end
-Base.convert(::Type{OperationalStates}, value::Bool) = OperationalStates(value)
+Base.convert(::Type{OperationalStates.Value}, value::Bool) = OperationalStates.Value(value)
 
 IS.@scoped_enum(
     CommitmentModes,
@@ -152,14 +152,14 @@ Why a committable unit is (or would be) committed, orthogonal to `OperationalSta
 | `MUST_RUN`       | Required to run by contract or operating constraint                |
 " CommitmentModes
 
-function CommitmentModesModule.CommitmentModes(value::Bool)
+function CommitmentModes.Value(value::Bool)
     return throw(
         ArgumentError(
             "commitment_mode is a CommitmentModes value (e.g. CommitmentModes.COMMITTED), not a Bool; got $value",
         ),
     )
 end
-Base.convert(::Type{CommitmentModes}, value::Bool) = CommitmentModes(value)
+Base.convert(::Type{CommitmentModes.Value}, value::Bool) = CommitmentModes.Value(value)
 
 IS.@scoped_enum(
     FACTSOperationModes,
@@ -562,7 +562,7 @@ IS.@scoped_enum(
 HydroPumpTurbineStatus
 
 Which mode a pumped‑storage hydro unit is operating in, stored in its `operating_mode` field.
-The on/off lifecycle is separate, in `status::OperationalStates`.
+The on/off lifecycle is separate, in `status::OperationalStates.Value`.
 
 Values
 - OFF = 0: Unit is idle — neither generating nor pumping.

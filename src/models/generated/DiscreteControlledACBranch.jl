@@ -14,9 +14,9 @@ This file is auto-generated. Do not edit.
         r::Float64
         x::Float64
         rating::Float64
-        discrete_branch_type::DiscreteControlledBranchType
-        branch_status::DiscreteControlledBranchStatus
-        normal_branch_status::DiscreteControlledBranchStatus
+        discrete_branch_type::DiscreteControlledBranchType.Value
+        branch_status::DiscreteControlledBranchStatus.Value
+        normal_branch_status::DiscreteControlledBranchStatus.Value
         base_power::Float64
         ext::Dict{String, Any}
         internal::InfrastructureSystemsInternal
@@ -33,9 +33,9 @@ Used to represent switches and breakers connecting AC Buses
 - `r::Float64`: Resistance in pu ([`SYSTEM_BASE`](@ref per_unit)), validation range: `(0, 4)`
 - `x::Float64`: Reactance in pu ([`SYSTEM_BASE`](@ref per_unit)), validation range: `(0, 4)`
 - `rating::Float64`: Thermal rating (MVA). Flow on the branch must be between -`rating` and `rating`. When defining a branch before it is attached to a `System`, `rating` must be in pu ([`SYSTEM_BASE`](@ref per_unit)) using the base power of the `System` it will be attached to. Displays in component base ([`DEVICE_BASE`](@ref per_unit)) by default, unlike most converted fields which default to system base
-- `discrete_branch_type::DiscreteControlledBranchType`: (default: `DiscreteControlledBranchType.OTHER`) Type of discrete control
-- `branch_status::DiscreteControlledBranchStatus`: (default: `DiscreteControlledBranchStatus.CLOSED`) Open or Close status
-- `normal_branch_status::DiscreteControlledBranchStatus`: (default: `DiscreteControlledBranchStatus.CLOSED`) Normal (as-designed) open or close status of the device
+- `discrete_branch_type::DiscreteControlledBranchType.Value`: (default: `DiscreteControlledBranchType.OTHER`) Type of discrete control
+- `branch_status::DiscreteControlledBranchStatus.Value`: (default: `DiscreteControlledBranchStatus.CLOSED`) Open or Close status
+- `normal_branch_status::DiscreteControlledBranchStatus.Value`: (default: `DiscreteControlledBranchStatus.CLOSED`) Normal (as-designed) open or close status of the device
 - `base_power::Float64`: (default: `100.0`) System base power for per-unitization of this component's per-unit fields, recorded per component in lieu of a system-level table (MVA), validation range: `(0.0001, nothing)`
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
@@ -58,11 +58,11 @@ mutable struct DiscreteControlledACBranch <: ACTransmission
     "Thermal rating (MVA). Flow on the branch must be between -`rating` and `rating`. When defining a branch before it is attached to a `System`, `rating` must be in pu ([`SYSTEM_BASE`](@ref per_unit)) using the base power of the `System` it will be attached to. Displays in component base ([`DEVICE_BASE`](@ref per_unit)) by default, unlike most converted fields which default to system base"
     rating::Float64
     "Type of discrete control"
-    discrete_branch_type::DiscreteControlledBranchType
+    discrete_branch_type::DiscreteControlledBranchType.Value
     "Open or Close status"
-    branch_status::DiscreteControlledBranchStatus
+    branch_status::DiscreteControlledBranchStatus.Value
     "Normal (as-designed) open or close status of the device"
-    normal_branch_status::DiscreteControlledBranchStatus
+    normal_branch_status::DiscreteControlledBranchStatus.Value
     "System base power for per-unitization of this component's per-unit fields, recorded per component in lieu of a system-level table (MVA)"
     base_power::Float64
     "An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation."

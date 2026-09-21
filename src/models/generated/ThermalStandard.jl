@@ -8,7 +8,7 @@ This file is auto-generated. Do not edit.
     mutable struct ThermalStandard <: ThermalGen
         name::String
         available::Bool
-        status::OperationalStates
+        status::OperationalStates.Value
         bus::ACBus
         active_power::Float64
         reactive_power::Float64
@@ -19,9 +19,9 @@ This file is auto-generated. Do not edit.
         operation_cost::OperationalCost
         base_power::Float64
         time_limits::Union{Nothing, UpDown}
-        commitment_mode::CommitmentModes
-        prime_mover_type::PrimeMovers
-        fuel::ThermalFuels
+        commitment_mode::CommitmentModes.Value
+        prime_mover_type::PrimeMovers.Value
+        fuel::ThermalFuels.Value
         services::Vector{Service}
         time_at_status::Float64
         dynamic_injector::Union{Nothing, DynamicInjection}
@@ -36,7 +36,7 @@ This is a standard representation with options to include a minimum up time, min
 # Arguments
 - `name::String`: Name of the component. Components of the same type (e.g., `PowerLoad`) must have unique names, but components of different types (e.g., `PowerLoad` and `ACBus`) can have the same name
 - `available::Bool`: Indicator of whether the component is connected and online (`true`) or disconnected, offline, or down (`false`). Unavailable components are excluded during simulations
-- `status::OperationalStates`: Operating state of the unit at the start of a simulation. Options are listed [here](@ref opstate_list)
+- `status::OperationalStates.Value`: Operating state of the unit at the start of a simulation. Options are listed [here](@ref opstate_list)
 - `bus::ACBus`: Bus that this component is connected to
 - `active_power::Float64`: Initial active power set point of the unit in MW. For power flow, this is the steady state operating point of the system. For production cost modeling, this may or may not be used as the initial starting point for the solver, depending on the solver used, validation range: `active_power_limits`
 - `reactive_power::Float64`: Initial reactive power set point of the unit (MVAR), validation range: `reactive_power_limits`
@@ -47,9 +47,9 @@ This is a standard representation with options to include a minimum up time, min
 - `operation_cost::OperationalCost`: [`OperationalCost`](@ref) of generation
 - `base_power::Float64`: Base power of the unit (MVA) for [per unitization](@ref per_unit), validation range: `(0.0001, nothing)`
 - `time_limits::Union{Nothing, UpDown}`: (default: `nothing`) Minimum up and Minimum down time limits in minutes, validation range: `(0, nothing)`
-- `commitment_mode::CommitmentModes`: (default: `CommitmentModes.COMMITTED`) Commitment mode of the unit. Options are listed [here](@ref commit_list)
-- `prime_mover_type::PrimeMovers`: (default: `PrimeMovers.OT`) Prime mover technology according to EIA 923. Options are listed [here](@ref pm_list)
-- `fuel::ThermalFuels`: (default: `ThermalFuels.OTHER`) Prime mover fuel according to EIA 923. Options are listed [here](@ref tf_list)
+- `commitment_mode::CommitmentModes.Value`: (default: `CommitmentModes.COMMITTED`) Commitment mode of the unit. Options are listed [here](@ref commit_list)
+- `prime_mover_type::PrimeMovers.Value`: (default: `PrimeMovers.OT`) Prime mover technology according to EIA 923. Options are listed [here](@ref pm_list)
+- `fuel::ThermalFuels.Value`: (default: `ThermalFuels.OTHER`) Prime mover fuel according to EIA 923. Options are listed [here](@ref tf_list)
 - `services::Vector{Service}`: (default: `Device[]`) Services that this device contributes to
 - `time_at_status::Float64`: (default: `INFINITE_TIME`) Time (e.g., `Minutes(360)`) the generator has been in its current `status`
 - `dynamic_injector::Union{Nothing, DynamicInjection}`: (default: `nothing`) corresponding dynamic injection device
@@ -62,7 +62,7 @@ mutable struct ThermalStandard <: ThermalGen
     "Indicator of whether the component is connected and online (`true`) or disconnected, offline, or down (`false`). Unavailable components are excluded during simulations"
     available::Bool
     "Operating state of the unit at the start of a simulation. Options are listed [here](@ref opstate_list)"
-    status::OperationalStates
+    status::OperationalStates.Value
     "Bus that this component is connected to"
     bus::ACBus
     "Initial active power set point of the unit in MW. For power flow, this is the steady state operating point of the system. For production cost modeling, this may or may not be used as the initial starting point for the solver, depending on the solver used"
@@ -84,11 +84,11 @@ mutable struct ThermalStandard <: ThermalGen
     "Minimum up and Minimum down time limits in minutes"
     time_limits::Union{Nothing, UpDown}
     "Commitment mode of the unit. Options are listed [here](@ref commit_list)"
-    commitment_mode::CommitmentModes
+    commitment_mode::CommitmentModes.Value
     "Prime mover technology according to EIA 923. Options are listed [here](@ref pm_list)"
-    prime_mover_type::PrimeMovers
+    prime_mover_type::PrimeMovers.Value
     "Prime mover fuel according to EIA 923. Options are listed [here](@ref tf_list)"
-    fuel::ThermalFuels
+    fuel::ThermalFuels.Value
     "Services that this device contributes to"
     services::Vector{Service}
     "Time (e.g., `Minutes(360)`) the generator has been in its current `status`"
@@ -263,7 +263,7 @@ function from_openapi(po::PO.ThermalStandard, refs::OpenAPIRefs, ::ComponentBase
     return ThermalStandard(;
         name = po.name,
         available = po.available,
-        status = OperationalStates(po.status.value),
+        status = OperationalStates.Value(po.status.value),
         bus = resolve_ref(refs, po.bus, ACBus),
         active_power = po.active_power,
         reactive_power = po.reactive_power,
@@ -285,7 +285,7 @@ function from_openapi(po::PO.ThermalStandard, refs::OpenAPIRefs, ::NaturalUnit)
     return ThermalStandard(;
         name = po.name,
         available = po.available,
-        status = OperationalStates(po.status.value),
+        status = OperationalStates.Value(po.status.value),
         bus = resolve_ref(refs, po.bus, ACBus),
         active_power = po.active_power / po.base_power,
         reactive_power = po.reactive_power / po.base_power,

@@ -26,7 +26,7 @@ This file is auto-generated. Do not edit.
         ext::Dict{String, Any}
         states::Vector{Symbol}
         n_states::Int
-        states_types::Vector{StateTypes}
+        states_types::Vector{StateTypes.Value}
         internal::InfrastructureSystemsInternal
     end
 
@@ -60,7 +60,7 @@ Parameters of IEEE Std 421.5 Type AC1A Excitacion System. EXAC1A in PSSE and PSL
 	Ve: Integrator output state,
 	Vr3: Feedback output state
 - `n_states::Int`: (**Do not modify.**) EXAC1A has 5 states
-- `states_types::Vector{StateTypes}`: (**Do not modify.**) EXAC1A has 5 states
+- `states_types::Vector{StateTypes.Value}`: (**Do not modify.**) EXAC1A has 5 states
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
 """
 mutable struct EXAC1A <: AVR
@@ -110,7 +110,7 @@ mutable struct EXAC1A <: AVR
     "(**Do not modify.**) EXAC1A has 5 states"
     n_states::Int
     "(**Do not modify.**) EXAC1A has 5 states"
-    states_types::Vector{StateTypes}
+    states_types::Vector{StateTypes.Value}
     "(**Do not modify.**) PowerSystems.jl internal reference"
     internal::InfrastructureSystemsInternal
 end
