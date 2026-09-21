@@ -829,6 +829,7 @@ export get_storage_target
 export get_storage_technology_type
 export get_switch
 export get_switch_mode_voltage
+export get_switching_times
 export get_tF_delay
 export get_tV_delay
 export get_tap
@@ -1524,6 +1525,7 @@ export set_storage_target!
 export set_storage_technology_type!
 export set_switch!
 export set_switch_mode_voltage!
+export set_switching_times!
 export set_tF_delay!
 export set_tV_delay!
 export set_tap!
