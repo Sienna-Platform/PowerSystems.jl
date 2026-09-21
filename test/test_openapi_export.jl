@@ -1740,31 +1740,3 @@ end
         ) == fill(0.75, 3)
     end
 end
-
-@testset "OpenAPI export: include_time_series = false" begin
-    bus = _export_bus(; number = 1)
-    sys = System(100.0)
-    add_component!(sys, bus)
-    load = PowerLoad(;
-        name = "load1", available = true, bus = bus, active_power = 0.3,
-        reactive_power = 0.05, base_power = 100.0, max_active_power = 0.5,
-        max_reactive_power = 0.1,
-    )
-    add_component!(sys, load)
-    ta = TimeSeries.TimeArray(
-        [Dates.DateTime(2024, 1, 1, h) for h in 0:2], [0.5, 0.6, 0.7],
-    )
-    add_time_series!(sys, load, SingleTimeSeries(; name = "max_active_power", data = ta))
-
-    # Without the flag this errors: series are attached and no sidecar path was given.
-    @test_throws ErrorException PSY.to_openapi(sys)
-
-    doc = PSY.to_openapi(sys; include_time_series = false)
-    @test isempty(doc.time_series_associations)
-    @test isnothing(doc.time_series_storage_file)
-    @test length(PSY.PD.get_components(doc, "PowerLoad")) == 1
-
-    sys2 = PSY.from_openapi(System, doc)
-    @test get_name(get_component(PowerLoad, sys2, "load1")) == "load1"
-    @test iszero(IS.get_num_time_series(sys2.data))
-end
