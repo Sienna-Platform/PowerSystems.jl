@@ -864,8 +864,6 @@ import InfrastructureSystems:
     has_supplemental_attributes,
     get_base_value,
     set_base_value!,
-    to_json,
-    from_json,
     serialize,
     deserialize,
     get_time_series_multiple,
