@@ -633,7 +633,7 @@ function _export_all_time_series(
     refs::OpenAPIRefs,
     time_series_storage_path,
     write_catalog::Bool,
-    include_data::Bool,
+    write_data::Bool,
     store_rows::ExportStoreRows,
 )
     rows = PTS.TimeSeriesAssociation[]
@@ -642,11 +642,12 @@ function _export_all_time_series(
     # otherwise demand a sidecar it has nothing to put in.
     num_time_series = store_rows.num_time_series
     iszero(num_time_series) && return rows
-    if include_data && isnothing(time_series_storage_path)
+    if isnothing(time_series_storage_path)
         error(
             "to_openapi: $num_time_series time series are attached but no " *
-            "time_series_storage_path was given — cannot write the sidecar. Pass " *
-            "include_time_series_data = false for a catalog-only document.",
+            "time_series_storage_path was given — a document carrying association rows has " *
+            "to name the file their values live in. Pass the path even when " *
+            "write_time_series_data = false, where the arrays are already there.",
         )
     end
     skipped_counts = Dict{String, Int}()
@@ -675,13 +676,13 @@ function _export_all_time_series(
     # The rows above go into the document either way; `write_catalog` decides only whether
     # InfraStore's own `.sqlite` is written beside the arrays as well. See `to_file`.
     _write_time_series_values(
-        sys, time_series_storage_path, write_catalog, Val(include_data),
+        sys, time_series_storage_path, write_catalog, Val(write_data),
     )
     return rows
 end
 
-"""The catalog-only form writes no values: the rows are already in the document, and whoever
-asked for that form keeps the arrays somewhere of its own."""
+"""`write_time_series_data = false` writes nothing: the arrays at `time_series_storage_path` were
+produced by whoever asked for that form, and the document only points at them."""
 _write_time_series_values(::System, ::Any, ::Bool, ::Val{false}) = nothing
 
 function _write_time_series_values(
@@ -735,22 +736,22 @@ on read. Either way the rows appear in `doc.time_series_associations`. It requir
 `store_rows` is every row the export reads out of the time series store, read up front. The
 default reads it here; a caller that wants the component pass on another thread reads it
 itself, on the thread that owns the store, and passes it in — see [`ExportStoreRows`](@ref).
-Writing the values (`include_time_series_data = true`) still touches the store at the end, so
-only the catalog-only form is fully off-thread.
+Writing the values still touches the store at the end, so only `write_time_series_data = false`
+is fully off-thread.
 
-`include_time_series_data = false` writes the **catalog-only** form: the association rows go
-into the document as always, but no values are written, so no `time_series_storage_path` is
-needed for a System that has series. The rows are what a cost's `association_id` resolves
-against: `from_openapi` rebuilds its `TimeSeriesKey` from the row rather than from a store, so
-the System comes back with its costs intact and no arrays behind them. It is for a consumer
-that already holds the values elsewhere.
+`write_time_series_data = false` describes arrays **someone else already wrote**: the document
+names `time_series_storage_path` and carries its rows as always, but no values are written here.
+That is what lets a results writer point a document at a sidecar it produced itself — the
+parameters a model used, say — while the rows still come from the store that wrote them, so
+every `uri` resolves on read. The path is required either way: a document carrying rows must
+name the file they live in.
 """
 function to_openapi(
     sys::System;
     units::IS.AbstractUnitSystem = CU,
     time_series_storage_path = nothing,
     write_catalog::Bool = false,
-    include_time_series_data::Bool = true,
+    write_time_series_data::Bool = true,
     store_rows::ExportStoreRows = read_export_store_rows(sys),
 )
     warn_unexportable_components(sys)
@@ -761,9 +762,7 @@ function to_openapi(
         name = get_name(sys),
         description = get_description(sys),
         frequency = sys.frequency,
-        time_series_storage_file = _sidecar_basename(
-            _values_sidecar(time_series_storage_path, Val(include_time_series_data)),
-        ),
+        time_series_storage_file = _sidecar_basename(time_series_storage_path),
     )
     emitted = Set{Int}()
     task_local_storage(_EMITTED_ASSOCIATION_IDS_KEY, emitted) do
@@ -790,7 +789,7 @@ function to_openapi(
             doc.time_series_associations,
             _export_all_time_series(
                 sys, refs, time_series_storage_path, write_catalog,
-                include_time_series_data, store_rows,
+                write_time_series_data, store_rows,
             ),
         )
         _reserve_ids!(doc, refs)
@@ -803,11 +802,6 @@ end
 
 _sidecar_basename(::Nothing) = nothing
 _sidecar_basename(path) = basename(String(path))
-
-"""The sidecar an export names in the document: the caller's path when the values go with it,
-and none in the catalog-only form, where the rows travel alone."""
-_values_sidecar(path, ::Val{true}) = path
-_values_sidecar(::Any, ::Val{false}) = nothing
 
 """
 Fill `ancillary_service_offers` on each exported `MarketBidCost` and
