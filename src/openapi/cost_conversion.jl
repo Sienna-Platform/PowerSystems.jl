@@ -25,58 +25,20 @@ convert_cost(w::IC.OneOfAPIModel, store) = convert_cost(w.value, store)
 # serialized key now carries its time series and element types alongside the id and
 # rebuilds itself without a catalog. Only this wire format still names a series by a bare
 # `association_id`, so only this import still needs a store to resolve one against.
-"""
-How an import turns a wire `association_id` into a `TimeSeriesKey`.
-
-Two forms, because a document either brings its values or does not, and the answer has to
-come from somewhere either way.
-"""
-abstract type AssociationKeySource end
-
-"""The adopted sidecar's catalog. The store minted these ids, so it answers for them."""
-struct StoreKeys <: AssociationKeySource
-    store::IS.Store
-end
-
-"""
-A catalog-only document's own association rows.
-
-A key is its id plus the stored type, and a row carries both, so the keys are built from the
-document with no store in sight. The series they name have no arrays behind them — reading one
-off the rebuilt `System` finds nothing.
-"""
-struct DocumentKeys <: AssociationKeySource
-    keys::Dict{Int64, IS.TimeSeriesKey}
-end
-
-_association_key(src::StoreKeys, id::Integer) = _association_key(src.store, id)
-
-"""A bare store answers directly — what a caller holding one, rather than a bound import,
-passes in."""
+"""Resolve a wire `association_id` to the `TimeSeriesKey` it names, against the adopted
+sidecar's catalog. The store minted these ids, so it is the thing that answers for them."""
 _association_key(store::IS.Store, id::Integer) = IS.get_time_series_key(store, id)
 
-function _association_key(src::DocumentKeys, id::Integer)
-    haskey(src.keys, Int64(id)) || error(
-        "convert_cost: a cost names association_id=$id, which is not among the " *
-        "$(length(src.keys)) row(s) the document describes",
-    )
-    return src.keys[Int64(id)]
-end
-
-const _IMPORT_STORE = Base.ScopedValues.ScopedValue{AssociationKeySource}()
+const _IMPORT_STORE = Base.ScopedValues.ScopedValue{IS.Store}()
 
 """The document names no series at all, so there is nothing to bind; a document that then
 names a time-series-backed cost fails in `_current_import_store`."""
 _with_import_store(f, ::Nothing) = f()
 
-"""Bind `source` for the duration of `f()`. `ScopedValue`-based, so a nested import and a
-task spawned inside one both see the innermost binding."""
-_with_import_store(f, source::AssociationKeySource) =
-    Base.ScopedValues.with(f, _IMPORT_STORE => source)
-
-"""A bare store binds as the store form — the common case, and what a caller holding one
-already means."""
-_with_import_store(f, store::IS.Store) = _with_import_store(f, StoreKeys(store))
+"""Bind `store` for the duration of `f()`. `ScopedValue`-based, so a nested import and a task
+spawned inside one both see the innermost binding."""
+_with_import_store(f, store::IS.Store) =
+    Base.ScopedValues.with(f, _IMPORT_STORE => store)
 
 function _current_import_store()
     store = Base.ScopedValues.get(_IMPORT_STORE)

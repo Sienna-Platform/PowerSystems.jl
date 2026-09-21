@@ -1038,10 +1038,8 @@ include("models/cost_functions/HydroReservoirCost.jl")
 # OpenAPI serde: hand-written pieces the generated from_openapi/to_openapi methods
 # build on. Must precede the generated includes. The rest of src/openapi/ is included
 # further down, after base.jl defines `System`.
-# `cost_conversion.jl` first: it defines `AssociationKeySource`, which `OpenAPIRefs` has a
-# field of.
-include("openapi/cost_conversion.jl")
 include("openapi/refs.jl")
+include("openapi/cost_conversion.jl")
 include("openapi/import_generated_types.jl")
 
 # Include all auto-generated structs.
