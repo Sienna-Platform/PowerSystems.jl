@@ -12,7 +12,7 @@ This file is auto-generated. Do not edit.
         α::Float64
         r::Float64
         x::Float64
-        control_objective::TransformerControlObjective
+        control_objective::TransformerControlObjective.Value
         regulated_bus_number::Int
         control_limits::MinMax
         controlled_quantity_limits::MinMax
@@ -39,7 +39,7 @@ A [`TwoWindingTransformer`](@ref) has one circuit; a [`ThreeWindingTransformer`]
 - `α::Float64`: (default: `0.0`) Initial condition of phase shift (radians) across this circuit
 - `r::Float64`: (default: `0.0`) Circuit resistance in pu (component base on `base_power`) referenced to `base_voltage_primary`. For a two-winding transformer this is the series impedance; for a three-winding transformer it is the star-leg equivalent, validation range: `(-2, 4)`
 - `x::Float64`: (default: `0.0`) Circuit reactance in pu (component base on `base_power`) referenced to `base_voltage_primary`. For a two-winding transformer this is the series impedance; for a three-winding transformer it is the star-leg equivalent, validation range: `(-2, 4)`
-- `control_objective::TransformerControlObjective`: (default: `TransformerControlObjective.UNDEFINED`) Tap-changer / phase-shifter control objective. `UNDEFINED` means this circuit has no control block. See [`TransformerControlObjective`](@ref)
+- `control_objective::TransformerControlObjective.Value`: (default: `TransformerControlObjective.UNDEFINED`) Tap-changer / phase-shifter control objective. `UNDEFINED` means this circuit has no control block. See [`TransformerControlObjective`](@ref)
 - `regulated_bus_number::Int`: (default: `0`) Controlled bus number; the sign indicates the regulation side
 - `control_limits::MinMax`: (default: `(min=0.9, max=1.1)`) Control band: tap-ratio bounds for voltage/reactive-power control or phase-angle bounds (rad) for active-power control
 - `controlled_quantity_limits::MinMax`: (default: `(min=0.9, max=1.1)`) Controlled-quantity band: pu voltage / MVAr / MW bounds depending on `control_objective`
@@ -68,7 +68,7 @@ mutable struct TransformerCircuit <: DeviceParameter
     "Circuit reactance in pu (component base on `base_power`) referenced to `base_voltage_primary`. For a two-winding transformer this is the series impedance; for a three-winding transformer it is the star-leg equivalent"
     x::Float64
     "Tap-changer / phase-shifter control objective. `UNDEFINED` means this circuit has no control block. See [`TransformerControlObjective`](@ref)"
-    control_objective::TransformerControlObjective
+    control_objective::TransformerControlObjective.Value
     "Controlled bus number; the sign indicates the regulation side"
     regulated_bus_number::Int
     "Control band: tap-ratio bounds for voltage/reactive-power control or phase-angle bounds (rad) for active-power control"

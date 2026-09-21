@@ -9,11 +9,11 @@ This file is auto-generated. Do not edit.
         name::String
         available::Bool
         bus::ACBus
-        control_mode::Union{Nothing, FACTSOperationModes}
+        control_mode::Union{Nothing, FACTSOperationModes.Value}
         voltage_setpoint::Float64
         max_shunt_current::Float64
         max_reactive_power::Float64
-        shunt_control_type::FACTSShuntControlType
+        shunt_control_type::FACTSShuntControlType.Value
         regulated_bus_number::Int
         reactive_power_required::Float64
         base_power::Float64
@@ -31,11 +31,11 @@ Most often used in AC power flow studies as a control of voltage and, active and
 - `name::String`: Name of the component. Components of the same type (e.g., `PowerLoad`) must have unique names, but components of different types (e.g., `PowerLoad` and `ACBus`) can have the same name
 - `available::Bool`: Indicator of whether the component is connected and online (`true`) or disconnected, offline, or down (`false`). Unavailable components are excluded during simulations
 - `bus::ACBus`: Sending end bus number
-- `control_mode::Union{Nothing, FACTSOperationModes}`: Control mode. Used to describe the behavior of the control device. [Options are listed here.](@ref factsmodes_list)
+- `control_mode::Union{Nothing, FACTSOperationModes.Value}`: Control mode. Used to describe the behavior of the control device. [Options are listed here.](@ref factsmodes_list)
 - `voltage_setpoint::Float64`: (default: `1.0`) Voltage setpoint at the sending end bus, it has to be a [`PV`](@ref ACBusTypes) bus, in p.u. ([`SYSTEM_BASE`](@ref per_unit)).
 - `max_shunt_current::Float64`: (default: `9999.0`) Maximum shunt current at unity voltage, MVA; the STATCOM current limit and SVC susceptance base.
 - `max_reactive_power::Float64`: (default: `9999.0`) Independent maximum reactive power ceiling (MVA); the device reactive limit is min(the current/susceptance law on max_shunt_current, this value). Non-binding at the 9999.0 default.
-- `shunt_control_type::FACTSShuntControlType`: (default: `FACTSShuntControlType.STATCOM`) Device class selecting the reactive-limit law (SVC vs STATCOM)
+- `shunt_control_type::FACTSShuntControlType.Value`: (default: `FACTSShuntControlType.STATCOM`) Device class selecting the reactive-limit law (SVC vs STATCOM)
 - `regulated_bus_number::Int`: (default: `0`) Bus whose voltage this device regulates; 0 ⇒ local (sending) bus
 - `reactive_power_required::Float64`: (default: `0.0`) Solver-populated: delivered reactive power after solve (output; not parsed from input)
 - `base_power::Float64`: (default: `100.0`) System base power for per-unitization of this component's per-unit fields, recorded per component in lieu of a system-level table (MVA), validation range: `(0.0001, nothing)`
@@ -52,7 +52,7 @@ mutable struct FACTSControlDevice <: StaticInjection
     "Sending end bus number"
     bus::ACBus
     "Control mode. Used to describe the behavior of the control device. [Options are listed here.](@ref factsmodes_list)"
-    control_mode::Union{Nothing, FACTSOperationModes}
+    control_mode::Union{Nothing, FACTSOperationModes.Value}
     "Voltage setpoint at the sending end bus, it has to be a [`PV`](@ref ACBusTypes) bus, in p.u. ([`SYSTEM_BASE`](@ref per_unit))."
     voltage_setpoint::Float64
     "Maximum shunt current at unity voltage, MVA; the STATCOM current limit and SVC susceptance base."
@@ -60,7 +60,7 @@ mutable struct FACTSControlDevice <: StaticInjection
     "Independent maximum reactive power ceiling (MVA); the device reactive limit is min(the current/susceptance law on max_shunt_current, this value). Non-binding at the 9999.0 default."
     max_reactive_power::Float64
     "Device class selecting the reactive-limit law (SVC vs STATCOM)"
-    shunt_control_type::FACTSShuntControlType
+    shunt_control_type::FACTSShuntControlType.Value
     "Bus whose voltage this device regulates; 0 ⇒ local (sending) bus"
     regulated_bus_number::Int
     "Solver-populated: delivered reactive power after solve (output; not parsed from input)"

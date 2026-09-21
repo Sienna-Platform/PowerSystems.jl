@@ -325,7 +325,9 @@ function openapi_classify_field(struct_name, field, struct_names)
     if bare in struct_names || bare in OPENAPI_REFERENCE_TYPES
         return (:reference, bare, nullable)
     end
-    if !occursin(r"^[A-Za-z_][A-Za-z0-9_]*$", bare)
+    # `Name.Value`: an `IS.@scoped_enum` is an `EnumX` module `Name` whose type is
+    # `Name.Value`.
+    if !occursin(r"^[A-Za-z_][A-Za-z0-9_]*(\.Value)?$", bare)
         throw(
             DataFormatError(
                 "openapi_type=$struct_name field=$name data_type=$(field["data_type"]) " *
@@ -352,7 +354,10 @@ missing override is not silent, though: it surfaces as an `UndefVarError` the fi
 PowerSystems precompiles against the generated packages.
 """
 function openapi_enum_po_type(field, bare)
-    return get(field, "openapi_enum", bare)
+    # `bare` is the PSY *type* (`ACBusTypes.Value`); the PO wrapper is named for the enum
+    # itself, so the default drops the `.Value` that `@scoped_enum`'s module namespace
+    # adds.
+    return get(field, "openapi_enum", replace(bare, r"\.Value$" => ""))
 end
 
 """Whether a `:cost`-kind field's declared PSY type carries its own OpenAPI `oneOf` wrapper —
@@ -664,7 +669,7 @@ function compute_openapi_converter!(item, struct_names)
             continue
         end
         if kind == :enum
-            # `@scoped_enum` types construct straight from a string (`ACBusTypes("PV")`);
+            # `@scoped_enum` types construct straight from a string (`ACBusTypes.Value("PV")`);
             # each enum-constrained schema field is its own wrapper struct, so `.value`
             # unwraps it. A field with a descriptor `default` is optional-by-omission on
             # the wire despite being PSY-required, so it falls back to that default rather

@@ -16,8 +16,8 @@ This file is auto-generated. Do not edit.
         g::Float64
         dc_current::Float64
         reactive_power_from::Float64
-        dc_control_from::VSCDCControlModes
-        ac_control_from::VSCACControlModes
+        dc_control_from::VSCDCControlModes.Value
+        ac_control_from::VSCACControlModes.Value
         dc_setpoint_from::Float64
         ac_setpoint_from::Float64
         rated_ac_voltage_from::Float64
@@ -29,8 +29,8 @@ This file is auto-generated. Do not edit.
         voltage_limits_from::MinMax
         dc_voltage_droop_from::Float64
         reactive_power_to::Float64
-        dc_control_to::VSCDCControlModes
-        ac_control_to::VSCACControlModes
+        dc_control_to::VSCDCControlModes.Value
+        ac_control_to::VSCACControlModes.Value
         dc_setpoint_to::Float64
         ac_setpoint_to::Float64
         rated_ac_voltage_to::Float64
@@ -67,8 +67,8 @@ This model is appropriate for operational simulations with a linearized DC power
 - `g::Float64`: (default: `0.0`) Series conductance of the DC line in pu ([`SYSTEM_BASE`](@ref per_unit))
 - `dc_current::Float64`: (default: `0.0`) DC current (A) on the converter flowing in the DC line, from `from` bus to `to` bus.
 - `reactive_power_from::Float64`: (default: `0.0`) Initial condition of reactive power flowing into the from-bus.
-- `dc_control_from::VSCDCControlModes`: (default: `VSCDCControlModes.DC_VOLTAGE`) DC-side control mode of the `from` converter; see [`VSCDCControlModes`](@ref).
-- `ac_control_from::VSCACControlModes`: (default: `VSCACControlModes.AC_VOLTAGE`) AC-side control mode of the `from` converter; see [`VSCACControlModes`](@ref).
+- `dc_control_from::VSCDCControlModes.Value`: (default: `VSCDCControlModes.DC_VOLTAGE`) DC-side control mode of the `from` converter; see [`VSCDCControlModes`](@ref).
+- `ac_control_from::VSCACControlModes.Value`: (default: `VSCACControlModes.AC_VOLTAGE`) AC-side control mode of the `from` converter; see [`VSCACControlModes`](@ref).
 - `dc_setpoint_from::Float64`: (default: `0.0`) Converter DC setpoint on the `from` bus converter, in per-unit. For a DC-voltage-controlling mode (`dc_control_from` is `DC_VOLTAGE` or `DC_VOLTAGE_DROOP`) this is the DC-side voltage in per-unit of `rated_dc_voltage`. For `DC_POWER` this is the active-power demand in per-unit ([`SYSTEM_BASE`](@ref per_unit)); positive means the converter supplies power to the AC network at the `from` bus, negative means it withdraws.
 - `ac_setpoint_from::Float64`: (default: `1.0`) Converter AC setpoint in the `from` bus converter. When `ac_control_from` is `AC_VOLTAGE` this is the AC voltage on the AC side of the converter, in per-unit of `rated_ac_voltage_from`. When `ac_control_from` is `AC_REACTIVE_POWER`, this value is the power factor setpoint.
 - `rated_ac_voltage_from::Float64`: (default: `0.0`) Rated (base) AC voltage at the `from` converter's AC terminal in kV. Used as the AC voltage base for interpreting `ac_setpoint_from` when `ac_control_from` is `AC_VOLTAGE`; `0.0` means unspecified (the setpoint is taken as per-unit directly).
@@ -80,8 +80,8 @@ This model is appropriate for operational simulations with a linearized DC power
 - `voltage_limits_from::MinMax`: (default: `(min=0.0, max=999.9)`) Limits on the Voltage at the DC `from` Bus in [per unit](@ref per_unit.
 - `dc_voltage_droop_from::Float64`: (default: `0.0`) DC-voltage droop gain on the `from` converter, used when `dc_control_from` is `DC_VOLTAGE_DROOP`: `V_dc = dc_setpoint_from + dc_voltage_droop_from * P_c` (with `P_c` the converter's AC-side active-power injection).
 - `reactive_power_to::Float64`: (default: `0.0`) Initial condition of reactive power flowing into the to-bus.
-- `dc_control_to::VSCDCControlModes`: (default: `VSCDCControlModes.DC_VOLTAGE`) DC-side control mode of the `to` converter; see [`VSCDCControlModes`](@ref).
-- `ac_control_to::VSCACControlModes`: (default: `VSCACControlModes.AC_VOLTAGE`) AC-side control mode of the `to` converter; see [`VSCACControlModes`](@ref).
+- `dc_control_to::VSCDCControlModes.Value`: (default: `VSCDCControlModes.DC_VOLTAGE`) DC-side control mode of the `to` converter; see [`VSCDCControlModes`](@ref).
+- `ac_control_to::VSCACControlModes.Value`: (default: `VSCACControlModes.AC_VOLTAGE`) AC-side control mode of the `to` converter; see [`VSCACControlModes`](@ref).
 - `dc_setpoint_to::Float64`: (default: `0.0`) Converter DC setpoint on the `to` bus converter, in per-unit. For a DC-voltage-controlling mode (`dc_control_to` is `DC_VOLTAGE` or `DC_VOLTAGE_DROOP`) this is the DC-side voltage in per-unit of `rated_dc_voltage`. For `DC_POWER` this is the active-power demand in per-unit ([`SYSTEM_BASE`](@ref per_unit)); positive means the converter supplies power to the AC network at the `to` bus, negative means it withdraws.
 - `ac_setpoint_to::Float64`: (default: `1.0`) Converter AC setpoint in the `to` bus converter. When `ac_control_to` is `AC_VOLTAGE` this is the AC voltage on the AC side of the converter, in per-unit of `rated_ac_voltage_to`. When `ac_control_to` is `AC_REACTIVE_POWER`, this value is the power factor setpoint.
 - `rated_ac_voltage_to::Float64`: (default: `0.0`) Rated (base) AC voltage at the `to` converter's AC terminal in kV. Used as the AC voltage base for interpreting `ac_setpoint_to` when `ac_control_to` is `AC_VOLTAGE`; `0.0` means unspecified (the setpoint is taken as per-unit directly).
@@ -124,9 +124,9 @@ mutable struct TwoTerminalVSCLine <: TwoTerminalHVDC
     "Initial condition of reactive power flowing into the from-bus."
     reactive_power_from::Float64
     "DC-side control mode of the `from` converter; see [`VSCDCControlModes`](@ref)."
-    dc_control_from::VSCDCControlModes
+    dc_control_from::VSCDCControlModes.Value
     "AC-side control mode of the `from` converter; see [`VSCACControlModes`](@ref)."
-    ac_control_from::VSCACControlModes
+    ac_control_from::VSCACControlModes.Value
     "Converter DC setpoint on the `from` bus converter, in per-unit. For a DC-voltage-controlling mode (`dc_control_from` is `DC_VOLTAGE` or `DC_VOLTAGE_DROOP`) this is the DC-side voltage in per-unit of `rated_dc_voltage`. For `DC_POWER` this is the active-power demand in per-unit ([`SYSTEM_BASE`](@ref per_unit)); positive means the converter supplies power to the AC network at the `from` bus, negative means it withdraws."
     dc_setpoint_from::Float64
     "Converter AC setpoint in the `from` bus converter. When `ac_control_from` is `AC_VOLTAGE` this is the AC voltage on the AC side of the converter, in per-unit of `rated_ac_voltage_from`. When `ac_control_from` is `AC_REACTIVE_POWER`, this value is the power factor setpoint."
@@ -150,9 +150,9 @@ mutable struct TwoTerminalVSCLine <: TwoTerminalHVDC
     "Initial condition of reactive power flowing into the to-bus."
     reactive_power_to::Float64
     "DC-side control mode of the `to` converter; see [`VSCDCControlModes`](@ref)."
-    dc_control_to::VSCDCControlModes
+    dc_control_to::VSCDCControlModes.Value
     "AC-side control mode of the `to` converter; see [`VSCACControlModes`](@ref)."
-    ac_control_to::VSCACControlModes
+    ac_control_to::VSCACControlModes.Value
     "Converter DC setpoint on the `to` bus converter, in per-unit. For a DC-voltage-controlling mode (`dc_control_to` is `DC_VOLTAGE` or `DC_VOLTAGE_DROOP`) this is the DC-side voltage in per-unit of `rated_dc_voltage`. For `DC_POWER` this is the active-power demand in per-unit ([`SYSTEM_BASE`](@ref per_unit)); positive means the converter supplies power to the AC network at the `to` bus, negative means it withdraws."
     dc_setpoint_to::Float64
     "Converter AC setpoint in the `to` bus converter. When `ac_control_to` is `AC_VOLTAGE` this is the AC voltage on the AC side of the converter, in per-unit of `rated_ac_voltage_to`. When `ac_control_to` is `AC_REACTIVE_POWER`, this value is the power factor setpoint."

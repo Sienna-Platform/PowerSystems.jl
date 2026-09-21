@@ -21,7 +21,7 @@ This file is auto-generated. Do not edit.
         base_power_23::Union{Nothing, Float64}
         base_power_31::Union{Nothing, Float64}
         magnetizing_shunt::Complex{Float64}
-        shunt_location::ThreeWindingTransformerShuntLocation
+        shunt_location::ThreeWindingTransformerShuntLocation.Value
         services::Vector{Service}
         ext::Dict{String, Any}
         internal::InfrastructureSystemsInternal
@@ -47,7 +47,7 @@ The model uses an equivalent star model with a star (hidden) bus. Each of the th
 - `base_power_23::Union{Nothing, Float64}`: (default: `nothing`) Base power (MVA) for [per unitization](@ref per_unit) for secondary-tertiary windings. Optional; all pairwise measured-impedance fields must be set together or all be `nothing`., validation range: `(0.0001, nothing)`
 - `base_power_31::Union{Nothing, Float64}`: (default: `nothing`) Base power (MVA) for [per unitization](@ref per_unit) for tertiary-primary windings. Optional; all pairwise measured-impedance fields must be set together or all be `nothing`., validation range: `(0.0001, nothing)`
 - `magnetizing_shunt::Complex{Float64}`: (default: `0.0`) Magnetizing shunt admittance in pu (component base on the primary circuit's `base_power`) referenced to the primary circuit's base voltage
-- `shunt_location::ThreeWindingTransformerShuntLocation`: (default: `ThreeWindingTransformerShuntLocation.PRIMARY`) Placement of `magnetizing_shunt` in the equivalent star model. See [`ThreeWindingTransformerShuntLocation`](@ref)
+- `shunt_location::ThreeWindingTransformerShuntLocation.Value`: (default: `ThreeWindingTransformerShuntLocation.PRIMARY`) Placement of `magnetizing_shunt` in the equivalent star model. See [`ThreeWindingTransformerShuntLocation`](@ref)
 - `services::Vector{Service}`: (default: `Device[]`) Services that this device contributes to
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
@@ -84,7 +84,7 @@ mutable struct ThreeWindingTransformer <: ACTransmission
     "Magnetizing shunt admittance in pu (component base on the primary circuit's `base_power`) referenced to the primary circuit's base voltage"
     magnetizing_shunt::Complex{Float64}
     "Placement of `magnetizing_shunt` in the equivalent star model. See [`ThreeWindingTransformerShuntLocation`](@ref)"
-    shunt_location::ThreeWindingTransformerShuntLocation
+    shunt_location::ThreeWindingTransformerShuntLocation.Value
     "Services that this device contributes to"
     services::Vector{Service}
     "An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation."

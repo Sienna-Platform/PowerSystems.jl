@@ -23,7 +23,7 @@ This file is auto-generated. Do not edit.
         ext::Dict{String, Any}
         states::Vector{Symbol}
         n_states::Int
-        states_types::Vector{StateTypes}
+        states_types::Vector{StateTypes.Value}
         internal::InfrastructureSystemsInternal
     end
 
@@ -52,7 +52,7 @@ Excitation System AC8B. Used to represent the Basler Digital Excitation Control 
 	Vr: Voltage regulator state,
 	Efd: Exciter output state
 - `n_states::Int`: (**Do not modify.**) ESAC8B has 5 states
-- `states_types::Vector{StateTypes}`: (**Do not modify.**) ESAC8B has 5 states
+- `states_types::Vector{StateTypes.Value}`: (**Do not modify.**) ESAC8B has 5 states
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
 """
 mutable struct ESAC8B <: AVR
@@ -96,7 +96,7 @@ mutable struct ESAC8B <: AVR
     "(**Do not modify.**) ESAC8B has 5 states"
     n_states::Int
     "(**Do not modify.**) ESAC8B has 5 states"
-    states_types::Vector{StateTypes}
+    states_types::Vector{StateTypes.Value}
     "(**Do not modify.**) PowerSystems.jl internal reference"
     internal::InfrastructureSystemsInternal
 end
