@@ -486,6 +486,36 @@ function _group_association!(
 end
 
 """
+Every row a document export reads out of the time series store, taken in one pass.
+
+The rest of [`to_openapi`](@ref) walks the `System`'s in-memory containers, so this is the
+whole of its contact with the store — and the store is a single SQLite connection that aborts
+the process when two threads are inside it at once. A caller that wants the export off the
+thread owning the store reads this there, first, and hands the rest away; see
+`PowerSimulations`' simulation build for the shape of that. Everyone else lets `to_openapi`
+read it and never sees the type.
+
+`num_time_series` rides along because the count is a catalog query too.
+"""
+struct ExportStoreRows
+    supplemental_attribute_associations::Vector{IC.SupplementalAttributeAssociation}
+    num_time_series::Int
+    time_series_associations::Vector{PTS.TimeSeriesAssociation}
+end
+
+"""
+$(TYPEDSIGNATURES)
+
+Read `sys`'s [`ExportStoreRows`](@ref). Cheap — three catalog queries — next to the component
+pass it lets a caller move to another thread.
+"""
+read_export_store_rows(sys::System) = ExportStoreRows(
+    IS.openapi_supplemental_attribute_association_rows(sys.data),
+    IS.get_num_time_series(sys.data),
+    IS.openapi_time_series_association_rows(sys.data),
+)
+
+"""
 Emit the attribute rows and their associations from the store's own OpenAPI export
 ([`IS.openapi_supplemental_attribute_association_rows`](@ref)) rather than converting each
 association row by hand: the rows already carry `component_id`/`attribute_id` in the
@@ -497,7 +527,11 @@ with the component itself. Each distinct attribute is registered into `refs` und
 before `to_openapi(attr, refs)` reads that id back. The store's rows already arrive sorted by
 `(component_id, attribute_id)`, so document order tracks component order with no local sort.
 """
-function _export_supplemental_attributes(refs::OpenAPIRefs, sys::System)
+function _export_supplemental_attributes(
+    refs::OpenAPIRefs,
+    sys::System,
+    store_rows::ExportStoreRows,
+)
     attribute_rows = IC.APIModel[]
     association_rows = IC.SupplementalAttributeAssociation[]
     plant_association_rows = PO.PlantAssociation[]
@@ -505,7 +539,7 @@ function _export_supplemental_attributes(refs::OpenAPIRefs, sys::System)
     attributes_by_id = Dict{Int, SupplementalAttribute}(
         IS.get_id(attr) => attr for attr in IS.iterate_supplemental_attributes(sys.data)
     )
-    for row in IS.openapi_supplemental_attribute_association_rows(sys.data)
+    for row in store_rows.supplemental_attribute_associations
         entity_id = Int(row.component_id)
         has_ref(refs, entity_id) || continue
         attr_id = Int(row.attribute_id)
@@ -600,12 +634,13 @@ function _export_all_time_series(
     time_series_storage_path,
     write_catalog::Bool,
     include_data::Bool,
+    store_rows::ExportStoreRows,
 )
     rows = PTS.TimeSeriesAssociation[]
     # Counted, not `isempty(store)`: one store holds the supplemental attribute associations
     # as well, so a System with attributes and no series has a non-empty store and would
     # otherwise demand a sidecar it has nothing to put in.
-    num_time_series = IS.get_num_time_series(sys.data)
+    num_time_series = store_rows.num_time_series
     iszero(num_time_series) && return rows
     if include_data && isnothing(time_series_storage_path)
         error(
@@ -615,7 +650,7 @@ function _export_all_time_series(
         )
     end
     skipped_counts = Dict{String, Int}()
-    for assoc in IS.openapi_time_series_association_rows(sys.data)
+    for assoc in store_rows.time_series_associations
         row = assoc.value
         owner_id = Int(row.owner_id)
         if !has_ref(refs, owner_id)
@@ -697,12 +732,18 @@ Component `ext` is written through verbatim to `doc.ext`.
 on read. Either way the rows appear in `doc.time_series_associations`. It requires
 `time_series_storage_path` whenever `sys` carries time series.
 
+`store_rows` is every row the export reads out of the time series store, read up front. The
+default reads it here; a caller that wants the component pass on another thread reads it
+itself, on the thread that owns the store, and passes it in — see [`ExportStoreRows`](@ref).
+Writing the values (`include_time_series_data = true`) still touches the store at the end, so
+only the catalog-only form is fully off-thread.
+
 `include_time_series_data = false` writes the **catalog-only** form: the association rows go
 into the document as always, but no values are written, so no `time_series_storage_path` is
-needed for a System that has series. `from_openapi` replays the rows into a fresh catalog, which
-is what a cost's `association_id` resolves against — the System comes back knowing which series
-exist and who owns them, with no arrays behind them. It is for a consumer that already holds the
-values elsewhere; read one and you get metadata, not data.
+needed for a System that has series. The rows are what a cost's `association_id` resolves
+against: `from_openapi` rebuilds its `TimeSeriesKey` from the row rather than from a store, so
+the System comes back with its costs intact and no arrays behind them. It is for a consumer
+that already holds the values elsewhere.
 """
 function to_openapi(
     sys::System;
@@ -710,6 +751,7 @@ function to_openapi(
     time_series_storage_path = nothing,
     write_catalog::Bool = false,
     include_time_series_data::Bool = true,
+    store_rows::ExportStoreRows = read_export_store_rows(sys),
 )
     warn_unexportable_components(sys)
     _check_export_units(units)
@@ -731,7 +773,7 @@ function to_openapi(
         supplemental_attribute_associations,
         plant_associations,
         combined_cycle_associations =
-            _export_supplemental_attributes(refs, sys)
+            _export_supplemental_attributes(refs, sys, store_rows)
         append!(doc.supplemental_attributes, supplemental_attributes)
         append!(
             doc.supplemental_attribute_associations,
@@ -748,7 +790,7 @@ function to_openapi(
             doc.time_series_associations,
             _export_all_time_series(
                 sys, refs, time_series_storage_path, write_catalog,
-                include_time_series_data,
+                include_time_series_data, store_rows,
             ),
         )
         _reserve_ids!(doc, refs)
