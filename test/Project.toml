@@ -40,10 +40,9 @@ InfraStore = "6aee0376-896a-4a59-96ff-12f221c99746"
 # Branch pins until the OpenAPI packages are registered and the psy6-line branches merge.
 PowerSystems = {path = ".."}
 # IS4 carries the association-id time series keys and the arrays-only sidecar (IS #632,
-# merged); InfraStore 0.14 is registered, so it needs no source pin. The one pin this
-# branch adds over psy6: IS's EnumX move (IS #643) is not on IS4 yet. Revert to IS4 once
-# #643 merges.
-InfrastructureSystems = {url = "https://github.com/Sienna-Platform/InfrastructureSystems.jl.git", rev = "lk/enumx"}
+# merged) and the EnumX move this branch follows (IS #643, merged); InfraStore 0.14 is
+# registered, so it needs no source pin.
+InfrastructureSystems = {url = "https://github.com/Sienna-Platform/InfrastructureSystems.jl.git", rev = "IS4"}
 InfrastructureCoreOpenAPIModels = {url = "https://github.com/Sienna-Platform/PowerOpenAPIModels.git", rev = "main", subdir = "InfrastructureCoreOpenAPIModels.jl"}
 InfrastructureTimeSeriesOpenAPIModels = {url = "https://github.com/Sienna-Platform/PowerOpenAPIModels.git", rev = "main", subdir = "InfrastructureTimeSeriesOpenAPIModels.jl"}
 PowerCoreOpenAPIModels = {url = "https://github.com/Sienna-Platform/PowerOpenAPIModels.git", rev = "main", subdir = "PowerCoreOpenAPIModels.jl"}
@@ -52,8 +51,9 @@ PowerFlowFileParser = {url = "https://github.com/Sienna-Platform/PowerFlowFilePa
 PowerInvestmentsOpenAPIModels = {url = "https://github.com/Sienna-Platform/PowerOpenAPIModels.git", rev = "main", subdir = "PowerInvestmentsOpenAPIModels.jl"}
 PowerOpenAPIModels = {url = "https://github.com/Sienna-Platform/PowerOpenAPIModels.git", rev = "main", subdir = "PowerOpenAPIModels.jl"}
 PowerOperationsOpenAPIModels = {url = "https://github.com/Sienna-Platform/PowerOpenAPIModels.git", rev = "main", subdir = "PowerOperationsOpenAPIModels.jl"}
-PowerSystemCaseBuilder = {url = "https://github.com/Sienna-Platform/PowerSystemCaseBuilder.jl.git", rev = "psy6"}
-PowerTableDataParser = {url = "https://github.com/NLR-Sienna/PowerTableDataParser.jl.git", rev = "psy6"}
+# Revert to psy6 when the companion EnumX PRs land (PSB #225, PTDP #11).
+PowerSystemCaseBuilder = {url = "https://github.com/Sienna-Platform/PowerSystemCaseBuilder.jl.git", rev = "lk/enumx"}
+PowerTableDataParser = {url = "https://github.com/luke-kiernan/PowerTableDataParser.jl.git", rev = "lk/enumx"}
 
 [compat]
 InfrastructureSystems = "3"
