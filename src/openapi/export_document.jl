@@ -745,6 +745,13 @@ That is what lets a results writer point a document at a sidecar it produced its
 parameters a model used, say — while the rows still come from the store that wrote them, so
 every `uri` resolves on read. The path is required either way: a document carrying rows must
 name the file they live in.
+
+`association_id_map` remaps every time-series-backed cost's emitted `association_id` before it
+reaches the document — for a results writer whose `store_rows` come from its own parameter
+store rather than the System's, so the ids the System's keys carry mean nothing there. Empty
+(the default) is a no-op: every cost emits its key's own id. Non-empty, every emitted id must be
+a key of the map or `to_openapi` throws `IS.DataFormatError` naming it — a map that misses an id
+is a caller error, not a fall-through to the wrong series.
 """
 function to_openapi(
     sys::System;
@@ -753,6 +760,7 @@ function to_openapi(
     write_catalog::Bool = false,
     write_time_series_data::Bool = true,
     store_rows::ExportStoreRows = read_export_store_rows(sys),
+    association_id_map::AbstractDict{Int64, Int64} = Dict{Int64, Int64}(),
 )
     warn_unexportable_components(sys)
     _check_export_units(units)
@@ -766,33 +774,35 @@ function to_openapi(
     )
     emitted = Set{Int}()
     task_local_storage(_EMITTED_ASSOCIATION_IDS_KEY, emitted) do
-        _export_components!(doc, refs, sys, units)
-        _export_market_bid_service_offers!(doc, refs)
-        supplemental_attributes,
-        supplemental_attribute_associations,
-        plant_associations,
-        combined_cycle_associations =
-            _export_supplemental_attributes(refs, sys, store_rows)
-        append!(doc.supplemental_attributes, supplemental_attributes)
-        append!(
-            doc.supplemental_attribute_associations,
+        task_local_storage(_ASSOCIATION_ID_MAP_KEY, association_id_map) do
+            _export_components!(doc, refs, sys, units)
+            _export_market_bid_service_offers!(doc, refs)
+            supplemental_attributes,
             supplemental_attribute_associations,
-        )
-        append!(doc.plant_associations, plant_associations)
-        append!(doc.combined_cycle_associations, combined_cycle_associations)
-        append!(doc.service_associations, _export_service_associations(refs, sys))
-        append!(
-            doc.trading_hub_associations,
-            _export_trading_hub_associations(refs, sys),
-        )
-        append!(
-            doc.time_series_associations,
-            _export_all_time_series(
-                sys, refs, time_series_storage_path, write_catalog,
-                write_time_series_data, store_rows,
-            ),
-        )
-        _reserve_ids!(doc, refs)
+            plant_associations,
+            combined_cycle_associations =
+                _export_supplemental_attributes(refs, sys, store_rows)
+            append!(doc.supplemental_attributes, supplemental_attributes)
+            append!(
+                doc.supplemental_attribute_associations,
+                supplemental_attribute_associations,
+            )
+            append!(doc.plant_associations, plant_associations)
+            append!(doc.combined_cycle_associations, combined_cycle_associations)
+            append!(doc.service_associations, _export_service_associations(refs, sys))
+            append!(
+                doc.trading_hub_associations,
+                _export_trading_hub_associations(refs, sys),
+            )
+            append!(
+                doc.time_series_associations,
+                _export_all_time_series(
+                    sys, refs, time_series_storage_path, write_catalog,
+                    write_time_series_data, store_rows,
+                ),
+            )
+            _reserve_ids!(doc, refs)
+        end
     end
 
     _check_costs_reference_declared_series!(doc, emitted)

@@ -134,10 +134,34 @@ function _record_emitted_association_id(id::Int)
     return id
 end
 
-"""`nothing` stays `nothing`; a present key emits its `association_id`."""
+# A results writer's document points at a store other than the System's own -- the parameter
+# store that wrote the arrays -- whose ids differ from the ones PSY's keys carry. Bound for
+# the duration of one `to_openapi` call, the same way `_EMITTED_ASSOCIATION_IDS_KEY` is.
+const _ASSOCIATION_ID_MAP_KEY = :psy_openapi_export_association_id_map
+
+"""The id a cost emits for `id`: itself when no remap is in force, its image when one is.
+A remap that omits an emitted id is a caller error, never a silent fall-through."""
+function _remap_association_id(id::Int)
+    map = get(task_local_storage(), _ASSOCIATION_ID_MAP_KEY, nothing)
+    if isnothing(map) || isempty(map)
+        return id
+    end
+    if !haskey(map, id)
+        throw(
+            IS.DataFormatError(
+                "to_openapi: a time-series-backed cost references association id $id, " *
+                "but the supplied association_id_map does not cover it",
+            ),
+        )
+    end
+    return map[id]
+end
+
+"""`nothing` stays `nothing`; a present key emits its `association_id`, remapped through
+[`_remap_association_id`](@ref) when `to_openapi`'s `association_id_map` is in force."""
 _key_association_id(::Nothing) = nothing
 _key_association_id(key::IS.TimeSeriesKey) =
-    _record_emitted_association_id(IS.get_association_id(key))
+    _record_emitted_association_id(_remap_association_id(IS.get_association_id(key)))
 
 """Wire representation of [`CurveStyles`](@ref): a plain integer (0/1) - see
 `cost_conversion.jl`'s `_curve_style_from_wire` for the import-direction counterpart."""

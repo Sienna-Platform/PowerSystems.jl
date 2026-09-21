@@ -1848,3 +1848,98 @@ end
         @test !iszero(IS.get_num_time_series(sys2.data))
     end
 end
+
+@testset "OpenAPI export: association_id_map remaps cost keys onto a foreign store's rows" begin
+    mktempdir() do dir
+        bus = _export_bus(; number = 1)
+        sys = System(100.0)
+        add_component!(sys, bus)
+        gen = ThermalStandard(;
+            name = "gen1", available = true, status = OperationalStates.ONLINE,
+            bus = bus,
+            active_power = 1.0, reactive_power = 0.0, rating = 2.0,
+            active_power_limits = (min = 0.0, max = 2.0),
+            reactive_power_limits = (min = -1.0, max = 1.0),
+            ramp_limits = nothing, time_limits = nothing,
+            operation_cost = ThermalGenerationCost(
+                CostCurve(LinearCurve(20.0), NaturalUnit()), 0.0, 0.0, 0.0,
+            ),
+            base_power = 100.0,
+        )
+        add_component!(sys, gen)
+        stamps = [Dates.DateTime(2024, 1, 1, h) for h in 0:2]
+        filler = TimeSeries.TimeArray(stamps, zeros(length(stamps)))
+        # Two throwaway series ahead of the real one so `original_id` lands past every id
+        # the foreign store below ever mints: both stores count from 1, and without this
+        # gap the "no map" case below could pass by an accidental id collision with an
+        # unrelated foreign row rather than by exercising the remap at all.
+        add_time_series!(sys, gen, SingleTimeSeries(; name = "filler1", data = filler))
+        add_time_series!(sys, gen, SingleTimeSeries(; name = "filler2", data = filler))
+        fuel = TimeSeries.TimeArray(stamps, [3.0, 3.5, 4.0])
+        add_time_series!(sys, gen, SingleTimeSeries(; name = "fuel_cost", data = fuel))
+        original_key = IS.get_time_series_key(
+            only(
+                IS.list_time_series_metadata(
+                    IS.get_data_store(sys.data); name = "fuel_cost",
+                ),
+            ),
+        )
+        original_id = IS.get_association_id(original_key)
+        set_operation_cost!(
+            gen,
+            ThermalGenerationCost(
+                FuelCurve(LinearCurve(1.0), original_key), 0.0, 0.0, 0.0,
+            ),
+        )
+
+        # A second store standing in for a results writer's parameter store. A dummy series
+        # first, so the remapped id cannot collide with the original by accident.
+        foreign = IS.Store(; in_memory = true)
+        dummy = TimeSeries.TimeArray(stamps, zeros(length(stamps)))
+        IS.add_time_series!(
+            foreign, IS.get_id(gen), "ThermalStandard",
+            IS.get_owner_category(IS.InfrastructureSystemsComponent),
+            SingleTimeSeries(; name = "unrelated", data = dummy),
+        )
+        new_key = IS.add_time_series!(
+            foreign, IS.get_id(gen), "ThermalStandard",
+            IS.get_owner_category(IS.InfrastructureSystemsComponent),
+            SingleTimeSeries(; name = "fuel_cost", data = fuel),
+        )
+        new_id = IS.get_association_id(new_key)
+        @test new_id != original_id
+
+        sidecar = joinpath(dir, PSY.TIME_SERIES_FILE)
+        IS.serialize(foreign, sidecar)
+        rows = IS.openapi_time_series_association_rows(foreign)
+        store_rows = PSY.ExportStoreRows(
+            IS.openapi_supplemental_attribute_association_rows(sys.data),
+            length(rows),
+            rows,
+        )
+
+        # Without the map the cost still names the original id, which the foreign rows do
+        # not declare: the declared-series check must refuse.
+        @test_throws IS.DataFormatError PSY.to_openapi(
+            sys; time_series_storage_path = sidecar, write_time_series_data = false,
+            store_rows = store_rows,
+        )
+
+        doc = PSY.to_openapi(
+            sys; time_series_storage_path = sidecar, write_time_series_data = false,
+            store_rows = store_rows, association_id_map = Dict(original_id => new_id),
+        )
+        gen_out = only(PSY.PD.get_components(doc, "ThermalStandard"))
+        @test gen_out.operation_cost.value.variable_operation_cost.value.fuel_cost_time_series ==
+              new_id
+
+        # A map in force that omits an emitted id is an error, not a fall-through.
+        @test_throws IS.DataFormatError PSY.to_openapi(
+            sys; time_series_storage_path = sidecar, write_time_series_data = false,
+            store_rows = store_rows, association_id_map = Dict(
+            original_id + 1000 => new_id,
+        ),
+        )
+        IS.close!(foreign)
+    end
+end
