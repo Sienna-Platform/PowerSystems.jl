@@ -648,3 +648,64 @@ end
     @test_throws ArgumentError set_import_variable_cost!(
         sysb, sourceb, new_import, IS.SystemBaseUnit())
 end
+
+@testset "get_time_series_keys enumerates every key a cost holds" begin
+    scalar =
+        ThermalGenerationCost(CostCurve(LinearCurve(20.0), NaturalUnit()), 0.0, 0.0, 0.0)
+    @test isempty(get_time_series_keys(scalar))
+
+    sys, gen = _sys_with_thermal()
+    stamps = [Dates.DateTime(2024, 1, 1, h) for h in 0:2]
+    fuel_ta = TimeSeries.TimeArray(stamps, [3.0, 3.5, 4.0])
+    fuel_key =
+        add_time_series!(
+            sys,
+            gen,
+            IS.SingleTimeSeries(; name = "fuel_cost", data = fuel_ta),
+        )
+    fuel = ThermalGenerationCost(FuelCurve(LinearCurve(1.0), fuel_key), 0.0, 0.0, 0.0)
+    @test get_time_series_keys(fuel) == [fuel_key]
+
+    inc_key = _attach_pwl_forecast(sys, gen, "inc_offer_keys")
+    dec_key = _attach_pwl_forecast(sys, gen, "dec_offer_keys")
+    nl_key = _attach_linear_forecast(sys, gen, "no_load_keys")
+    sd_key = _attach_linear_forecast(sys, gen, "shut_down_keys")
+    timestamps =
+        range(_TS_RESOLVE_INITIAL_TIME; step = _TS_RESOLVE_RESOLUTION, length = 24)
+    su_ta = TimeSeries.TimeArray(collect(timestamps), fill((0.0, 0.0, 0.0), 24))
+    su_key = add_time_series!(
+        sys, gen, IS.SingleTimeSeries(; name = "start_up_stages_keys", data = su_ta),
+    )
+    ii_ts = IS.Deterministic(;
+        data = SortedDict(_TS_RESOLVE_INITIAL_TIME => fill(1.0, 24)),
+        name = "initial_input_keys",
+        resolution = _TS_RESOLVE_RESOLUTION,
+    )
+    ii_key = add_time_series!(sys, gen, ii_ts)
+
+    market = MarketBidTimeSeriesCost(;
+        minimum_energy_offer = IS.TimeSeriesLinearCurve(nl_key),
+        start_up = su_key,
+        shut_down = IS.TimeSeriesLinearCurve(sd_key),
+        incremental_offer_curves = make_market_bid_ts_curve(inc_key, ii_key),
+        decremental_offer_curves = make_market_bid_ts_curve(dec_key),
+    )
+    keys = get_time_series_keys(market)
+    @test length(keys) == 6
+    for k in (nl_key, su_key, sd_key, inc_key, ii_key, dec_key)
+        @test k in keys
+    end
+end
+
+@testset "get_time_series_keys does not walk into referenced components" begin
+    sys, = _sys_with_thermal()
+    cc = CostCurve(PiecewiseIncrementalCurve(0.0, [0.0, 100.0], [25.0]))
+    reserve = OnlineReserve{ReserveUp}(;
+        variable = cc, name = "TestReserve", available = true, time_frame = 10.0,
+    )
+    add_component!(sys, reserve)
+    _attach_pwl_forecast(sys, reserve, "reserve_owned_forecast")
+
+    cost = MarketBidCost(; ancillary_service_offers = [reserve])
+    @test isempty(get_time_series_keys(cost))
+end
