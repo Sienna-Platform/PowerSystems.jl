@@ -17,9 +17,10 @@ to_file(sys, path; units = CU, force = false, pretty = false)
 from_file(path; system_kwargs...)   # no type argument — the form is inferred from `path`
 ```
 
-The extension of `path` chooses the form, and `to_file` refuses an unrecognized one in its own
-`else` branch *before* anything dispatches on the form — keep that order, or a typo'd extension
-becomes a `MethodError` on an internal helper.
+The extension of `path` chooses the form on **both** sides — `from_file` does not sniff content
+(`isdir`, zip magic). Each function is one `if`/`elseif` over the three extensions with an
+`else` that refuses the rest; every form funnels into one `_write_bundle` / `_read_bundle`, the
+archive wrapping them in IS's container.
 
 - **directory** (no extension) — `system.json` plus `time_series.h5` when there are time series.
 - **`.json`** — the same two, sidecar named from the document's stem (`case.json` → `case.h5`)

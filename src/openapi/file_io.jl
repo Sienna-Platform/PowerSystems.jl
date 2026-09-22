@@ -143,37 +143,6 @@ function _load_sienna_extras!(sys::System, dir::AbstractString)
 end
 
 """
-Clear the paths a write is about to use, or refuse the write.
-
-The catalog is listed even though neither document form writes one: its rows would otherwise
-point into a sidecar the write just replaced.
-"""
-function _prepare_write_targets(paths, force::Bool)
-    for path in paths
-        if isfile(path) && !force
-            throw(
-                IS.DataFormatError(
-                    "$path already exists; pass force = true to overwrite it",
-                ),
-            )
-        end
-        # Removed rather than truncated: Hdf5TimeSeriesStorage appends to an existing file,
-        # so a stale sidecar would leave orphaned series behind in the new bundle.
-        if force
-            rm(path; force = true)
-        end
-    end
-    return nothing
-end
-
-function _ensure_parent_dir(dir::AbstractString)
-    if !isempty(dir)
-        mkpath(dir)
-    end
-    return nothing
-end
-
-"""
 $(TYPEDSIGNATURES)
 
 Write `sys` to `path`. The extension of `path` chooses the form:
@@ -187,7 +156,8 @@ Write `sys` to `path`. The extension of `path` chooses the form:
     (InfraStore's own catalog) and `sienna_extras.json` into a temporary directory and zips
     it. Lossless; the document forms are not.
 
-Any other extension is refused rather than guessed at.
+Any other extension is refused rather than guessed at. [`from_file`](@ref) reads each form
+from the same extension.
 
 # The `units` keyword
 
@@ -216,25 +186,53 @@ function to_file(
     force::Bool = false,
     pretty::Bool = false,
 )
-    # The unknown-extension case is refused here, before anything dispatches on the form: a
-    # `Val`-style dispatch reached first would turn a typo'd extension into a `MethodError` on
-    # an internal helper instead of this message.
     ext = lowercase(splitext(path)[2])
     if ext == SYSTEM_ARCHIVE_EXTENSION
         _check_archive_units(units)
-        _to_file_sienna(sys, path; force = force, pretty = pretty)
+        # IS owns the container (write guards, compression); PSY supplies the extension and
+        # what goes inside.
+        IS.create_sienna_archive(path, SYSTEM_ARCHIVE_EXTENSION; force = force) do bundle
+            _write_bundle(
+                sys,
+                joinpath(bundle, SYSTEM_DOCUMENT_FILE),
+                joinpath(bundle, TIME_SERIES_FILE);
+                units = CU,
+                force = true,
+                pretty = pretty,
+                write_catalog = true,
+            )
+            _write_sienna_extras(sys, bundle, pretty)
+        end
     elseif ext == ".json"
         _warn_on_document_data_loss(sys)
-        _to_file_document(sys, path; units = units, force = force, pretty = pretty)
+        _write_bundle(
+            sys,
+            path,
+            string(splitext(path)[1], ".h5");
+            units = units,
+            force = force,
+            pretty = pretty,
+            write_catalog = false,
+        )
     elseif isempty(ext)
         _warn_on_document_data_loss(sys)
-        _to_file_directory(sys, path; units = units, force = force, pretty = pretty)
+        mkpath(path)
+        _write_bundle(
+            sys,
+            joinpath(path, SYSTEM_DOCUMENT_FILE),
+            joinpath(path, TIME_SERIES_FILE);
+            units = units,
+            force = force,
+            pretty = pretty,
+            write_catalog = false,
+        )
     else
         error(
             "to_file: cannot tell from \"$path\" which form to write. Give a directory " *
             "(no extension), a .json document, or a $(SYSTEM_ARCHIVE_EXTENSION) archive.",
         )
     end
+    @info "Serialized System to $path"
     return nothing
 end
 
@@ -250,79 +248,44 @@ function _check_archive_units(units::IS.AbstractUnitSystem)
     )
 end
 
-"""Write the directory form: both members named by convention inside `dir`."""
-function _to_file_directory(
-    sys::System,
-    dir::AbstractString;
-    units::IS.AbstractUnitSystem,
-    force::Bool,
-    pretty::Bool,
-    write_catalog::Bool = false,
-)
-    mkpath(dir)
-    _prepare_write_targets(
-        (
-            joinpath(dir, SYSTEM_DOCUMENT_FILE),
-            joinpath(dir, TIME_SERIES_FILE),
-            joinpath(dir, TIME_SERIES_CATALOG_FILE),
-        ),
-        force,
-    )
-    _write_bundle(
-        sys,
-        joinpath(dir, SYSTEM_DOCUMENT_FILE),
-        _sidecar_path_for_write(sys, joinpath(dir, TIME_SERIES_FILE));
-        units = units,
-        force = force,
-        pretty = pretty,
-        write_catalog = write_catalog,
-    )
-    @info "Serialized System to $dir"
-    return nothing
-end
-
-"""Write the document form: the document at `path`, its sidecar beside it on the same stem."""
-function _to_file_document(
-    sys::System,
-    path::AbstractString;
-    units::IS.AbstractUnitSystem,
-    force::Bool,
-    pretty::Bool,
-)
-    _ensure_parent_dir(dirname(path))
-    sidecar = _document_sidecar_path(path)
-    _prepare_write_targets(
-        (path, sidecar, sidecar * TIME_SERIES_CATALOG_SUFFIX),
-        force,
-    )
-    _write_bundle(
-        sys,
-        path,
-        _sidecar_path_for_write(sys, sidecar);
-        units = units,
-        force = force,
-        pretty = pretty,
-        write_catalog = false,
-    )
-    @info "Serialized System to $path"
-    return nothing
-end
-
 """
-Build the document against `storage_path` and write it to `document_path`.
+Write the document at `document_path` and, when `sys` has time series, its sidecar at
+`sidecar_path` — the one writer every form goes through.
 
-The one writer both document forms share: they differ only in where the two members sit, which
-their callers have already resolved.
+Refuses to replace an existing file unless `force`. The catalog beside the sidecar is cleared
+too even when this write produces none: its rows would otherwise point into the sidecar this
+write replaces. Files are removed rather than truncated because `Hdf5TimeSeriesStorage`
+appends to an existing file, which would leave orphaned series in the new bundle.
 """
 function _write_bundle(
     sys::System,
     document_path::AbstractString,
-    storage_path;
+    sidecar_path::AbstractString;
     units::IS.AbstractUnitSystem,
     force::Bool,
     pretty::Bool,
     write_catalog::Bool,
 )
+    dir = dirname(document_path)
+    if !isempty(dir)
+        mkpath(dir)
+    end
+    for target in (document_path, sidecar_path, sidecar_path * TIME_SERIES_CATALOG_SUFFIX)
+        if isfile(target) && !force
+            throw(
+                IS.DataFormatError(
+                    "$target already exists; pass force = true to overwrite it",
+                ),
+            )
+        end
+        rm(target; force = true)
+    end
+    # No sidecar at all for a System without time series, rather than an empty HDF5 file
+    # that would suggest the data went missing.
+    storage_path = nothing
+    if has_time_series_data(sys)
+        storage_path = sidecar_path
+    end
     doc = to_openapi(
         sys;
         units = units,
@@ -333,50 +296,12 @@ function _write_bundle(
     return nothing
 end
 
-"""The sidecar beside a `.json` document: its stem, with the HDF5 extension."""
-_document_sidecar_path(path::AbstractString) = string(splitext(path)[1], ".h5")
-
-function _to_file_sienna(
-    sys::System,
-    path::AbstractString;
-    force::Bool,
-    pretty::Bool,
-)
-    # `IS.create_sienna_archive` owns the container — the write guards and the compression —
-    # but not the extension, which is PSY's and is passed in. What is PSY's is also only what
-    # goes inside it.
-    IS.create_sienna_archive(path, SYSTEM_ARCHIVE_EXTENSION; force = force) do bundle
-        # The archive keeps InfraStore's own `.sqlite` — see the format notes at the top of
-        # this file for why that is what makes the archive the lossless one.
-        _to_file_directory(
-            sys,
-            bundle;
-            units = CU,
-            force = true,
-            pretty = pretty,
-            write_catalog = true,
-        )
-        _write_sienna_extras(sys, bundle, pretty)
-    end
-    @info "Serialized System to $path"
-    return nothing
-end
-
-"""The sidecar path a write should use, or `nothing` when `sys` has no time series to put in
-one. The caller resolves *where* the sidecar goes; this decides only whether there is one."""
-function _sidecar_path_for_write(sys::System, candidate::AbstractString)
-    return _sidecar_path_for_write(Val(has_time_series_data(sys)), candidate)
-end
-
-_sidecar_path_for_write(::Val{false}, ::AbstractString) = nothing
-_sidecar_path_for_write(::Val{true}, candidate::AbstractString) = candidate
-
 """
 $(TYPEDSIGNATURES)
 
-Read a `System` written by [`to_file`](@ref). The form is inferred from `path`: a directory
-reads the directory form, a `.json` file reads the document form, and a
-`$(SYSTEM_ARCHIVE_EXTENSION)` file reads the archive. Anything else is refused.
+Read a `System` written by [`to_file`](@ref). The extension of `path` chooses the form, exactly
+as it does for `to_file`: no extension reads a bundle directory, `.json` a document, and
+`$(SYSTEM_ARCHIVE_EXTENSION)` an archive. Anything else is refused.
 
 The sidecar is located by the document's own `time_series_storage_file`, resolved relative to
 the directory the document sits in — so a bundle stays readable after being moved or renamed. A
@@ -393,79 +318,69 @@ fields, and a value passed here outranks the document's.
 `time_series_directory`, `runchecks`, ...).
 """
 function from_file(path::AbstractString; system_kwargs...)
-    if isdir(path)
-        return _from_file_directory(path; system_kwargs...)
-    elseif IS.is_sienna_archive(path, SYSTEM_ARCHIVE_EXTENSION)
-        return _from_file_sienna(path; system_kwargs...)
-    elseif lowercase(splitext(path)[2]) == ".json"
-        return _from_file_document(path; system_kwargs...)
+    ext = lowercase(splitext(path)[2])
+    if ext == SYSTEM_ARCHIVE_EXTENSION
+        return _from_archive(path; system_kwargs...)
+    elseif ext == ".json"
+        return _read_bundle(path; system_kwargs...)
+    elseif isempty(ext)
+        return _read_bundle(joinpath(path, SYSTEM_DOCUMENT_FILE); system_kwargs...)
     else
         throw(
             IS.DataFormatError(
-                "$path is not a serialized System: expected a bundle directory, a .json " *
-                "document, or a $(SYSTEM_ARCHIVE_EXTENSION) archive",
+                "from_file: cannot tell from \"$path\" which form to read. Give a bundle " *
+                "directory (no extension), a .json document, or a " *
+                "$(SYSTEM_ARCHIVE_EXTENSION) archive.",
             ),
         )
     end
 end
 
-"""Read the directory form, whose document member is named by convention."""
-function _from_file_directory(dir::AbstractString; system_kwargs...)
-    document_path = joinpath(dir, SYSTEM_DOCUMENT_FILE)
-    if !isfile(document_path)
-        throw(
-            IS.DataFormatError(
-                "$dir is not a serialized System bundle: no $SYSTEM_DOCUMENT_FILE in it",
-            ),
-        )
-    end
-    return _from_file_document(document_path; system_kwargs...)
-end
-
 """
-Read a document at an explicit path, sidecar and all.
+Unzip the archive under `time_series_directory` (so `/tmp` need not fit the `.h5`) and read it.
 
-The one reader every form goes through: the document records its sidecar's basename, so the
-directory the document sits in is all that is needed to find it, whichever form put it there.
+A read-only store opens the extracted sidecar in place, so the sidecar outlives this call and
+only the consumed JSON members are removed here; otherwise the store has taken its own copy and
+the whole extraction is removed.
 """
-function _from_file_document(document_path::AbstractString; system_kwargs...)
-    if !isfile(document_path)
-        throw(IS.DataFormatError("$document_path is not a file"))
+function _from_archive(path::AbstractString; system_kwargs...)
+    if !isfile(path)
+        throw(IS.DataFormatError("$path is not a $(SYSTEM_ARCHIVE_EXTENSION) archive file"))
     end
-    doc = PD.read_document(document_path)
-    dir = dirname(document_path)
-    return from_openapi(
-        System,
-        doc;
-        time_series_storage_path = _resolve_sidecar(doc, isempty(dir) ? "." : dir),
-        system_kwargs...,
-    )
-end
-
-function _from_file_sienna(path::AbstractString; system_kwargs...)
     tsdir = something(
         get(system_kwargs, :time_series_directory, nothing),
         get(ENV, IS.TIME_SERIES_DIRECTORY_ENV_VAR, tempdir()),
     )
     mkpath(tsdir)
-    # Unzip here so /tmp doesn't have to fit the .h5.
+    dir = IS.extract_sienna_archive(path; directory = mktempdir(tsdir))
+    sys = _read_bundle(joinpath(dir, SYSTEM_DOCUMENT_FILE); system_kwargs...)
+    _load_sienna_extras!(sys, dir)
     if get(system_kwargs, :time_series_read_only, false)
-        # Store opens the sidecar in place; drop the JSONs once consumed.
-        dir = IS.extract_sienna_archive(path; directory = mktempdir(tsdir))
-        sys = _from_file_directory(dir; system_kwargs...)
-        _load_sienna_extras!(sys, dir)
         for consumed in (SYSTEM_DOCUMENT_FILE, SIENNA_EXTRAS_FILE)
             rm(joinpath(dir, consumed); force = true)
         end
-        return sys
+    else
+        rm(dir; recursive = true)
     end
-    # Store copies out; the whole extraction is scoped to this block.
-    return mktempdir(tsdir) do dir
-        IS.extract_sienna_archive(path; directory = dir)
-        sys = _from_file_directory(dir; system_kwargs...)
-        _load_sienna_extras!(sys, dir)
-        return sys
+    return sys
+end
+
+"""Read the document at `document_path`, adopting the sidecar it names from beside it."""
+function _read_bundle(document_path::AbstractString; system_kwargs...)
+    if !isfile(document_path)
+        throw(IS.DataFormatError("$document_path is not a serialized System document"))
     end
+    doc = PD.read_document(document_path)
+    dir = dirname(document_path)
+    if isempty(dir)
+        dir = "."
+    end
+    return from_openapi(
+        System,
+        doc;
+        time_series_storage_path = _resolve_sidecar(doc, dir),
+        system_kwargs...,
+    )
 end
 
 """
