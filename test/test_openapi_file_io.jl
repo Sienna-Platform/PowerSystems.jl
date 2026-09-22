@@ -690,6 +690,42 @@ end
           get_function_data(get_value_curve(cc))
 end
 
+# The ORDC as a market posts it: an hourly curve per interval, so `variable` is keyed to a
+# time series on the reserve instead of holding one static curve.
+@testset "roundtrip: reserve with a time-series-backed demand curve ($form)" for form in
+                                                                                 (
+    :directory,
+    :document,
+    :archive,
+)
+    sys = System(100.0)
+    bus = ACBus(nothing)
+    bus.name = "bus1"
+    bus.number = 1
+    bus.bustype = ACBusTypes.REF
+    add_component!(sys, bus)
+    gen = ThermalStandard(nothing)
+    gen.bus = bus
+    gen.name = "gen1"
+    add_component!(sys, gen)
+
+    service = OnlineReserve{ReserveUp}(;
+        name = "ordc",
+        available = true,
+        time_frame = 10.0,
+    )
+    add_service!(sys, service, [gen])
+    key = _attach_pwl_forecast(sys, service, "variable_cost")
+    set_variable!(service, make_market_bid_ts_curve(key, nothing, IS.NaturalUnit()))
+
+    sys2 = roundtrip_system(sys; form = form)
+    service2 = get_component(OnlineReserve{ReserveUp}, sys2, "ordc")
+    @test service2 !== nothing
+    @test get_value_curve(get_variable(service2)) isa TimeSeriesPiecewiseIncrementalCurve
+    resolved = get_variable_cost(service2; start_time = _TS_RESOLVE_INITIAL_TIME)
+    @test get_function_data(get_value_curve(resolved)) == _TS_RESOLVE_PWL_DATA[1]
+end
+
 @testset "roundtrip: System field metadata (name/description)" begin
     # frequency is deliberately NOT asserted here: src/openapi/import_document.jl's
     # _apply_document_metadata! (pre-existing on this branch, unrelated to this plan) only
