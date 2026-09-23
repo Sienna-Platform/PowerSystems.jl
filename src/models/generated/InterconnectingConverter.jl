@@ -61,6 +61,7 @@ Interconnecting Power Converter (IPC) for transforming power from an ACBus to a 
 - `dynamic_injector::Union{Nothing, DynamicInjection}`: (default: `nothing`) corresponding dynamic injection device
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
+- `input_basis`: (keyword constructor only, required) `CU` or `NU`, the units of bare numbers on unit-bearing fields. Tagged values (`50.0u"MW"`) keep their own units
 """
 mutable struct InterconnectingConverter <: StaticInjection
     "Name of the component. Components of the same type (e.g., `PowerLoad`) must have unique names, but components of different types (e.g., `PowerLoad` and `ACBus`) can have the same name"
@@ -119,9 +120,17 @@ function InterconnectingConverter(name, available, bus, dc_bus, active_power, ra
     InterconnectingConverter(name, available, bus, dc_bus, active_power, rating, active_power_limits, base_power, reactive_power_limits, dc_current, max_dc_current, loss_function, dc_control, ac_control, dc_setpoint, ac_setpoint, dc_voltage_droop, remote_bus_control, rmpct, power_factor_weighting_fraction, voltage_limits, services, dynamic_injector, ext, InfrastructureSystemsInternal(), )
 end
 
-function InterconnectingConverter(; name, available, bus, dc_bus, active_power, rating, active_power_limits, base_power, reactive_power_limits=nothing, dc_current=0.0, max_dc_current=1e8, loss_function=LossCurve(LinearCurve(0.0), NaturalUnit()), dc_control=VSCDCControlModes.DC_VOLTAGE, ac_control=VSCACControlModes.AC_REACTIVE_POWER, dc_setpoint=0.0, ac_setpoint=1.0, dc_voltage_droop=0.0, remote_bus_control=nothing, rmpct=100.0, power_factor_weighting_fraction=1.0, voltage_limits=(min=0.0, max=999.9), services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), )
-    InterconnectingConverter(name, available, bus, dc_bus, active_power, rating, active_power_limits, base_power, reactive_power_limits, dc_current, max_dc_current, loss_function, dc_control, ac_control, dc_setpoint, ac_setpoint, dc_voltage_droop, remote_bus_control, rmpct, power_factor_weighting_fraction, voltage_limits, services, dynamic_injector, ext, internal, )
+function InterconnectingConverter(; name, available, bus, dc_bus, active_power, rating, active_power_limits, base_power, reactive_power_limits=nothing, dc_current=0.0, max_dc_current=1e8, loss_function=LossCurve(LinearCurve(0.0), NaturalUnit()), dc_control=VSCDCControlModes.DC_VOLTAGE, ac_control=VSCACControlModes.AC_REACTIVE_POWER, dc_setpoint=0.0, ac_setpoint=1.0, dc_voltage_droop=0.0, remote_bus_control=nothing, rmpct=100.0, power_factor_weighting_fraction=1.0, voltage_limits=(min=0.0, max=999.9), services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Union{ComponentBaseUnit, NaturalUnit}, )
+    value = InterconnectingConverter(name, available, bus, dc_bus, _placeholder(active_power), _placeholder(rating), _placeholder(active_power_limits), base_power, _placeholder(reactive_power_limits), _placeholder(dc_current), _placeholder(max_dc_current), loss_function, dc_control, ac_control, dc_setpoint, ac_setpoint, dc_voltage_droop, remote_bus_control, rmpct, power_factor_weighting_fraction, voltage_limits, services, dynamic_injector, ext, internal, )
+    set_active_power!(value, _tag(active_power, input_basis, Val(:mw)))
+    set_rating!(value, _tag(rating, input_basis, Val(:mva)))
+    set_active_power_limits!(value, _tag(active_power_limits, input_basis, Val(:mw)))
+    set_reactive_power_limits!(value, _tag(reactive_power_limits, input_basis, Val(:mvar)))
+    set_dc_current!(value, _tag(dc_current, input_basis, Val(:mva)))
+    set_max_dc_current!(value, _tag(max_dc_current, input_basis, Val(:mva)))
+    return value
 end
+_takes_input_basis(::Type{<:InterconnectingConverter}) = true
 
 # Constructor for demo purposes; non-functional.
 function InterconnectingConverter(::Nothing)
@@ -150,6 +159,7 @@ function InterconnectingConverter(::Nothing)
         services=Device[],
         dynamic_injector=nothing,
         ext=Dict{String, Any}(),
+        input_basis=CU,
     )
 end
 

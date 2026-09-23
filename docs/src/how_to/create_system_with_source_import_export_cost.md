@@ -99,6 +99,7 @@ source = Source(;
     internal_angle = 0.0,
     base_power = 100.0,
     operation_cost = ie_cost,
+    input_basis = CU,
 )
 ```
 

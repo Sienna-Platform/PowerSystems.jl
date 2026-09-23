@@ -55,6 +55,7 @@ This is a standard representation with options to include a minimum up time, min
 - `dynamic_injector::Union{Nothing, DynamicInjection}`: (default: `nothing`) corresponding dynamic injection device
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
+- `input_basis`: (keyword constructor only, required) `CU` or `NU`, the units of bare numbers on unit-bearing fields. Tagged values (`50.0u"MW"`) keep their own units
 """
 mutable struct ThermalStandard <: ThermalGen
     "Name of the component. Components of the same type (e.g., `PowerLoad`) must have unique names, but components of different types (e.g., `PowerLoad` and `ACBus`) can have the same name"
@@ -105,9 +106,17 @@ function ThermalStandard(name, available, status, bus, active_power, reactive_po
     ThermalStandard(name, available, status, bus, active_power, reactive_power, rating, active_power_limits, reactive_power_limits, ramp_limits, operation_cost, base_power, time_limits, commitment_mode, prime_mover_type, fuel, services, time_at_status, dynamic_injector, ext, InfrastructureSystemsInternal(), )
 end
 
-function ThermalStandard(; name, available, status, bus, active_power, reactive_power, rating, active_power_limits, reactive_power_limits, ramp_limits, operation_cost, base_power, time_limits=nothing, commitment_mode=CommitmentModes.COMMITTED, prime_mover_type=PrimeMovers.OT, fuel=ThermalFuels.OTHER, services=Device[], time_at_status=INFINITE_TIME, dynamic_injector=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), )
-    ThermalStandard(name, available, status, bus, active_power, reactive_power, rating, active_power_limits, reactive_power_limits, ramp_limits, operation_cost, base_power, time_limits, commitment_mode, prime_mover_type, fuel, services, time_at_status, dynamic_injector, ext, internal, )
+function ThermalStandard(; name, available, status, bus, active_power, reactive_power, rating, active_power_limits, reactive_power_limits, ramp_limits, operation_cost, base_power, time_limits=nothing, commitment_mode=CommitmentModes.COMMITTED, prime_mover_type=PrimeMovers.OT, fuel=ThermalFuels.OTHER, services=Device[], time_at_status=INFINITE_TIME, dynamic_injector=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Union{ComponentBaseUnit, NaturalUnit}, )
+    value = ThermalStandard(name, available, status, bus, _placeholder(active_power), _placeholder(reactive_power), _placeholder(rating), _placeholder(active_power_limits), _placeholder(reactive_power_limits), _placeholder(ramp_limits), operation_cost, base_power, time_limits, commitment_mode, prime_mover_type, fuel, services, time_at_status, dynamic_injector, ext, internal, )
+    set_active_power!(value, _tag(active_power, input_basis, Val(:mw)))
+    set_reactive_power!(value, _tag(reactive_power, input_basis, Val(:mvar)))
+    set_rating!(value, _tag(rating, input_basis, Val(:mva)))
+    set_active_power_limits!(value, _tag(active_power_limits, input_basis, Val(:mw)))
+    set_reactive_power_limits!(value, _tag(reactive_power_limits, input_basis, Val(:mvar)))
+    set_ramp_limits!(value, _tag(ramp_limits, input_basis, Val(:mw_per_minute)))
+    return value
 end
+_takes_input_basis(::Type{<:ThermalStandard}) = true
 
 # Constructor for demo purposes; non-functional.
 function ThermalStandard(::Nothing)
@@ -132,6 +141,7 @@ function ThermalStandard(::Nothing)
         time_at_status=INFINITE_TIME,
         dynamic_injector=nothing,
         ext=Dict{String, Any}(),
+        input_basis=CU,
     )
 end
 
@@ -278,6 +288,7 @@ function from_openapi(po::PO.ThermalStandard, refs::OpenAPIRefs, ::ComponentBase
         prime_mover_type = _or_default_enum(po.prime_mover_type, PrimeMovers.OT),
         fuel = _or_default_enum(po.fuel, ThermalFuels.OTHER),
         time_at_status = _or_default(po.time_at_status, INFINITE_TIME),
+        input_basis = CU,
     )
 end
 
@@ -300,6 +311,7 @@ function from_openapi(po::PO.ThermalStandard, refs::OpenAPIRefs, ::NaturalUnit)
         prime_mover_type = _or_default_enum(po.prime_mover_type, PrimeMovers.OT),
         fuel = _or_default_enum(po.fuel, ThermalFuels.OTHER),
         time_at_status = _or_default(po.time_at_status, INFINITE_TIME),
+        input_basis = CU,
     )
 end
 

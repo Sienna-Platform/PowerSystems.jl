@@ -41,6 +41,7 @@ A [static](@ref S) power load that can be compensated for temporary or continuou
 - `dynamic_injector::Union{Nothing, DynamicInjection}`: (default: `nothing`) corresponding dynamic injection device
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
+- `input_basis`: (keyword constructor only, required) `CU` or `NU`, the units of bare numbers on unit-bearing fields. Tagged values (`50.0u"MW"`) keep their own units
 """
 mutable struct InterruptiblePowerLoad <: ControllableLoad
     "Name of the component. Components of the same type (e.g., `PowerLoad`) must have unique names, but components of different types (e.g., `PowerLoad` and `ACBus`) can have the same name"
@@ -77,9 +78,15 @@ function InterruptiblePowerLoad(name, available, bus, active_power, reactive_pow
     InterruptiblePowerLoad(name, available, bus, active_power, reactive_power, max_active_power, max_reactive_power, base_power, operation_cost, conformity, services, dynamic_injector, ext, InfrastructureSystemsInternal(), )
 end
 
-function InterruptiblePowerLoad(; name, available, bus, active_power, reactive_power, max_active_power, max_reactive_power, base_power, operation_cost, conformity=LoadConformity.UNDEFINED, services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), )
-    InterruptiblePowerLoad(name, available, bus, active_power, reactive_power, max_active_power, max_reactive_power, base_power, operation_cost, conformity, services, dynamic_injector, ext, internal, )
+function InterruptiblePowerLoad(; name, available, bus, active_power, reactive_power, max_active_power, max_reactive_power, base_power, operation_cost, conformity=LoadConformity.UNDEFINED, services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Union{ComponentBaseUnit, NaturalUnit}, )
+    value = InterruptiblePowerLoad(name, available, bus, _placeholder(active_power), _placeholder(reactive_power), _placeholder(max_active_power), _placeholder(max_reactive_power), base_power, operation_cost, conformity, services, dynamic_injector, ext, internal, )
+    set_active_power!(value, _tag(active_power, input_basis, Val(:mw)))
+    set_reactive_power!(value, _tag(reactive_power, input_basis, Val(:mvar)))
+    set_max_active_power!(value, _tag(max_active_power, input_basis, Val(:mw)))
+    set_max_reactive_power!(value, _tag(max_reactive_power, input_basis, Val(:mvar)))
+    return value
 end
+_takes_input_basis(::Type{<:InterruptiblePowerLoad}) = true
 
 # Constructor for demo purposes; non-functional.
 function InterruptiblePowerLoad(::Nothing)
@@ -97,6 +104,7 @@ function InterruptiblePowerLoad(::Nothing)
         services=Device[],
         dynamic_injector=nothing,
         ext=Dict{String, Any}(),
+        input_basis=CU,
     )
 end
 
@@ -191,6 +199,7 @@ function from_openapi(po::PO.InterruptiblePowerLoad, refs::OpenAPIRefs, ::Compon
         base_power = po.base_power,
         operation_cost = convert_cost(po.operation_cost.value)::OperationalCost,
         conformity = _or_default_enum(po.conformity, LoadConformity.UNDEFINED),
+        input_basis = CU,
     )
 end
 
@@ -206,6 +215,7 @@ function from_openapi(po::PO.InterruptiblePowerLoad, refs::OpenAPIRefs, ::Natura
         base_power = po.base_power,
         operation_cost = convert_cost(po.operation_cost.value)::OperationalCost,
         conformity = _or_default_enum(po.conformity, LoadConformity.UNDEFINED),
+        input_basis = CU,
     )
 end
 

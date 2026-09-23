@@ -33,6 +33,7 @@ A virtual impedance between two buses that does not correspond to a physical com
 - `base_power::Float64`: (default: `100.0`) System base power for per-unitization of this component's per-unit fields, recorded per component in lieu of a system-level table (MVA), validation range: `(0.0001, nothing)`
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
+- `input_basis`: (keyword constructor only, required) `CU` or `NU`, the units of bare numbers on unit-bearing fields. Tagged values (`50.0u"MW"`) keep their own units
 """
 mutable struct GenericArcImpedance <: ACTransmission
     "Name of the component. Components of the same type (e.g., `PowerLoad`) must have unique names, but components of different types (e.g., `PowerLoad` and `ACBus`) can have the same name"
@@ -63,9 +64,16 @@ function GenericArcImpedance(name, available, active_power_flow, reactive_power_
     GenericArcImpedance(name, available, active_power_flow, reactive_power_flow, max_flow, arc, r, x, base_power, ext, InfrastructureSystemsInternal(), )
 end
 
-function GenericArcImpedance(; name, available, active_power_flow, reactive_power_flow, max_flow, arc, r, x, base_power=100.0, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), )
-    GenericArcImpedance(name, available, active_power_flow, reactive_power_flow, max_flow, arc, r, x, base_power, ext, internal, )
+function GenericArcImpedance(; name, available, active_power_flow, reactive_power_flow, max_flow, arc, r, x, base_power=100.0, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Union{ComponentBaseUnit, NaturalUnit}, )
+    value = GenericArcImpedance(name, available, _placeholder(active_power_flow), _placeholder(reactive_power_flow), _placeholder(max_flow), arc, _placeholder(r), _placeholder(x), base_power, ext, internal, )
+    set_active_power_flow!(value, _tag(active_power_flow, input_basis, Val(:mw)))
+    set_reactive_power_flow!(value, _tag(reactive_power_flow, input_basis, Val(:mvar)))
+    set_max_flow!(value, _tag(max_flow, input_basis, Val(:mw)))
+    set_r!(value, _tag(r, input_basis, Val(:ohm)))
+    set_x!(value, _tag(x, input_basis, Val(:ohm)))
+    return value
 end
+_takes_input_basis(::Type{<:GenericArcImpedance}) = true
 
 # Constructor for demo purposes; non-functional.
 function GenericArcImpedance(::Nothing)
@@ -80,6 +88,7 @@ function GenericArcImpedance(::Nothing)
         x=0.0,
         base_power=100.0,
         ext=Dict{String, Any}(),
+        input_basis=CU,
     )
 end
 

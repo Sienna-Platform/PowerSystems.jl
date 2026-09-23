@@ -57,7 +57,8 @@ inf_source = Source(;
     reactive_power = 0.0,
     bus = slack_bus, #bus
     R_th = 0.0, #Rth
-    X_th = 5e-6, #Xth
+    X_th = 5e-6, #Xth,
+    input_basis = CU,
 );
 
 # And add it to the system:

@@ -279,10 +279,12 @@ end
         base_power = 100.0,
         r = 0.01,
         x = 0.1,
+        input_basis = CU,
     )
     xfrm = TwoWindingTransformer(;
         name = "negxfrm",
         circuit = circuit,
+        input_basis = CU,
     )
     add_component!(sys, xfrm)
 

@@ -27,6 +27,7 @@ All series electrical data — the modeled arc, tap, phase shift, series impedan
 - `services::Vector{Service}`: (default: `Device[]`) Services that this device contributes to
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
+- `input_basis`: (keyword constructor only, required) `CU` or `NU`, the units of bare numbers on unit-bearing fields. Tagged values (`50.0u"MW"`) keep their own units
 """
 mutable struct TwoWindingTransformer <: ACTransmission
     "Name of the component. Components of the same type (e.g., `PowerLoad`) must have unique names, but components of different types (e.g., `PowerLoad` and `ACBus`) can have the same name"
@@ -49,9 +50,12 @@ function TwoWindingTransformer(name, circuit, magnetizing_shunt=0.0, shunt_locat
     TwoWindingTransformer(name, circuit, magnetizing_shunt, shunt_location, services, ext, InfrastructureSystemsInternal(), )
 end
 
-function TwoWindingTransformer(; name, circuit, magnetizing_shunt=0.0, shunt_location=TwoWindingTransformerShuntLocation.PRIMARY, services=Device[], ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), )
-    TwoWindingTransformer(name, circuit, magnetizing_shunt, shunt_location, services, ext, internal, )
+function TwoWindingTransformer(; name, circuit, magnetizing_shunt=0.0, shunt_location=TwoWindingTransformerShuntLocation.PRIMARY, services=Device[], ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Union{ComponentBaseUnit, NaturalUnit}, )
+    value = TwoWindingTransformer(name, circuit, _placeholder(magnetizing_shunt), shunt_location, services, ext, internal, )
+    set_magnetizing_shunt!(value, _tag(magnetizing_shunt, input_basis, Val(:siemens)))
+    return value
 end
+_takes_input_basis(::Type{<:TwoWindingTransformer}) = true
 
 # Constructor for demo purposes; non-functional.
 function TwoWindingTransformer(::Nothing)
@@ -62,6 +66,7 @@ function TwoWindingTransformer(::Nothing)
         shunt_location=TwoWindingTransformerShuntLocation.PRIMARY,
         services=Device[],
         ext=Dict{String, Any}(),
+        input_basis=CU,
     )
 end
 

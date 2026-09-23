@@ -571,6 +571,7 @@ end
         ramp_limits = nothing, operation_cost = ThermalGenerationCost(nothing),
         base_power = 100.0, time_limits = nothing,
         prime_mover_type = PrimeMovers.OT, fuel = ThermalFuels.OTHER,
+        input_basis = CU,
     )
     add_component!(sys, gen)
 
@@ -578,6 +579,7 @@ end
         name = "S", available = true, bus = bus, active_power = 0.0,
         reactive_power = 0.0, R_th = 0.0, X_th = 1.0, internal_voltage = 1.0,
         internal_angle = 0.0,
+        input_basis = CU,
     )
     add_component!(sys, src)
 

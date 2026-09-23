@@ -87,10 +87,11 @@ show_components(sys, ACBus)
 
 # ## Adding a Transmission Line
 # Let's connect our buses. We'll add a transmission [`Line`](@ref) between `bus1` and `bus2`.
-# !!! warning
-#     When defining a line that isn't attached to a [`System`](@ref) yet, you must define the
-#     thermal rating of the transmission line in per-unit using the base power of the
-#     [`System`](@ref) you plan to connect it to -- in this case, 100 MVA.
+# !!! note
+#     `input_basis = CU` says the bare numbers below are per-unit on the line's `base_power`.
+#     A `Line` has no rating of its own, so its `base_power` (100 MVA unless given) must
+#     match the [`System`](@ref)'s: `add_component!` throws otherwise. Pass
+#     `input_basis = NU` to give the rating in MVA and the impedances in Ω and S instead.
 
 line = Line(;
     name = "line1",
@@ -103,6 +104,7 @@ line = Line(;
     b = (from = 0.00356, to = 0.00356), # Per-unit
     rating = 2.0, # Line rating of 200 MVA / System base of 100 MVA
     angle_limits = (min = -0.7, max = 0.7),
+    input_basis = CU,
 );
 
 # Note that we also had to define an [`Arc`](@ref) in the process to define the connection between
@@ -119,11 +121,11 @@ sys
 # ## Adding Loads and Generators
 # Now that our network topology is complete, we'll start adding components that [inject](@ref I) or
 # withdraw power from the network.
-# !!! warning
-#     When you define components that aren't attached to a [`System`](@ref) yet, you must define
-#     all fields related to power (with units such as MW, MVA, MVAR, or MW/min) in
-#     per-unit using the `base_power` of the component (with the exception of `base_power`
-#     itself, which is in MVA).
+# !!! note
+#     `input_basis = CU` says the bare power values below (MW, MVA, MVAR, or MW/min) are
+#     per-unit on the component's own `base_power`, which is itself always in MVA. Pass
+#     `input_basis = NU` to give them in natural units, or tag any single value, e.g.
+#     `active_power = 5.0u"MW"`. See [Add a Component in Natural Units](@ref).
 # We'll start with defining a 10 MW [load](@ref PowerLoad) to `bus2`:
 
 load = PowerLoad(;
@@ -135,6 +137,7 @@ load = PowerLoad(;
     base_power = 10.0, # MVA
     max_active_power = 1.0, # 10 MW per-unitized by component base_power
     max_reactive_power = 0.0,
+    input_basis = CU,
 );
 
 # Notice that we defined the `max_active_power`, which is 10 MW, as 1.0 in per-unit using the
@@ -158,7 +161,8 @@ solar = RenewableDispatch(;
     reactive_power_limits = (min = 0.0, max = 0.05), # 0 MVAR to 0.25 MVAR per-unitized by component base_power
     power_factor = 1.0,
     operation_cost = RenewableGenerationCost(nothing),
-    base_power = 5.0, # MVA
+    base_power = 5.0, # MVA,
+    input_basis = CU,
 );
 
 # Note that we've used a generic [renewable generator](@ref RenewableDispatch) to model
@@ -182,6 +186,7 @@ gas = ThermalStandard(;
     time_limits = (up = 8.0, down = 8.0), # Hours
     prime_mover_type = PrimeMovers.CC,
     fuel = ThermalFuels.NATURAL_GAS,
+    input_basis = CU,
 );
 
 # This time, let's add these components to our [`System`](@ref) using [`add_components!`](@ref)

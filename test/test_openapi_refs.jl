@@ -1,6 +1,11 @@
 @testset "OpenAPIRefs: setindex!/getindex hit and miss" begin
     refs = PSY.OpenAPIRefs()
-    area = Area(; name = "area1", peak_active_power = 0.0, peak_reactive_power = 0.0)
+    area = Area(;
+        name = "area1",
+        peak_active_power = 0.0,
+        peak_reactive_power = 0.0,
+        input_basis = CU,
+    )
     refs[1] = area
     @test refs[1] === area
     @test PSY.has_ref(refs, 1)
@@ -10,8 +15,18 @@ end
 
 @testset "OpenAPIRefs: duplicate id rejected" begin
     refs = PSY.OpenAPIRefs()
-    area1 = Area(; name = "a1", peak_active_power = 0.0, peak_reactive_power = 0.0)
-    area2 = Area(; name = "a2", peak_active_power = 0.0, peak_reactive_power = 0.0)
+    area1 = Area(;
+        name = "a1",
+        peak_active_power = 0.0,
+        peak_reactive_power = 0.0,
+        input_basis = CU,
+    )
+    area2 = Area(;
+        name = "a2",
+        peak_active_power = 0.0,
+        peak_reactive_power = 0.0,
+        input_basis = CU,
+    )
     refs[1] = area1
     @test_throws ErrorException (refs[1] = area2)
     @test refs[1] === area1
@@ -19,8 +34,18 @@ end
 
 @testset "OpenAPIRefs: component -> id reverse lookup" begin
     refs = PSY.OpenAPIRefs()
-    area = Area(; name = "a1", peak_active_power = 0.0, peak_reactive_power = 0.0)
-    other = Area(; name = "a2", peak_active_power = 0.0, peak_reactive_power = 0.0)
+    area = Area(;
+        name = "a1",
+        peak_active_power = 0.0,
+        peak_reactive_power = 0.0,
+        input_basis = CU,
+    )
+    other = Area(;
+        name = "a2",
+        peak_active_power = 0.0,
+        peak_reactive_power = 0.0,
+        input_basis = CU,
+    )
     refs[7] = area
     @test PSY.component_id(refs, area) == 7
     @test PSY.has_component_id(refs, area)

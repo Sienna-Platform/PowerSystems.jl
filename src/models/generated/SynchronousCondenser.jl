@@ -35,6 +35,7 @@ A Synchronous Machine connected to the system to provide inertia or reactive pow
 - `dynamic_injector::Union{Nothing, DynamicInjection}`: (default: `nothing`) corresponding dynamic injection device
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
+- `input_basis`: (keyword constructor only, required) `CU` or `NU`, the units of bare numbers on unit-bearing fields. Tagged values (`50.0u"MW"`) keep their own units
 """
 mutable struct SynchronousCondenser <: StaticInjection
     "Name of the component. Components of the same type (e.g., `PowerLoad`) must have unique names, but components of different types (e.g., `PowerLoad` and `ACBus`) can have the same name"
@@ -67,9 +68,15 @@ function SynchronousCondenser(name, available, bus, reactive_power, rating, reac
     SynchronousCondenser(name, available, bus, reactive_power, rating, reactive_power_limits, base_power, active_power_losses, services, dynamic_injector, ext, InfrastructureSystemsInternal(), )
 end
 
-function SynchronousCondenser(; name, available, bus, reactive_power, rating, reactive_power_limits, base_power, active_power_losses=0.0, services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), )
-    SynchronousCondenser(name, available, bus, reactive_power, rating, reactive_power_limits, base_power, active_power_losses, services, dynamic_injector, ext, internal, )
+function SynchronousCondenser(; name, available, bus, reactive_power, rating, reactive_power_limits, base_power, active_power_losses=0.0, services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Union{ComponentBaseUnit, NaturalUnit}, )
+    value = SynchronousCondenser(name, available, bus, _placeholder(reactive_power), _placeholder(rating), _placeholder(reactive_power_limits), base_power, _placeholder(active_power_losses), services, dynamic_injector, ext, internal, )
+    set_reactive_power!(value, _tag(reactive_power, input_basis, Val(:mvar)))
+    set_rating!(value, _tag(rating, input_basis, Val(:mva)))
+    set_reactive_power_limits!(value, _tag(reactive_power_limits, input_basis, Val(:mvar)))
+    set_active_power_losses!(value, _tag(active_power_losses, input_basis, Val(:mw)))
+    return value
 end
+_takes_input_basis(::Type{<:SynchronousCondenser}) = true
 
 # Constructor for demo purposes; non-functional.
 function SynchronousCondenser(::Nothing)
@@ -85,6 +92,7 @@ function SynchronousCondenser(::Nothing)
         services=Device[],
         dynamic_injector=nothing,
         ext=Dict{String, Any}(),
+        input_basis=CU,
     )
 end
 
@@ -170,6 +178,7 @@ function from_openapi(po::PO.SynchronousCondenser, refs::OpenAPIRefs, ::Componen
         reactive_power_limits = _minmax_from_po(po.reactive_power_limits),
         base_power = po.base_power,
         active_power_losses = _or_default(po.active_power_losses, 0.0),
+        input_basis = CU,
     )
 end
 
@@ -183,6 +192,7 @@ function from_openapi(po::PO.SynchronousCondenser, refs::OpenAPIRefs, ::NaturalU
         reactive_power_limits = _minmax_from_po(po.reactive_power_limits, (/), po.base_power),
         base_power = po.base_power,
         active_power_losses = _or_default(po.active_power_losses, 0.0, (/), po.base_power),
+        input_basis = CU,
     )
 end
 

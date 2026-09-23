@@ -45,6 +45,7 @@ Renewable generators do not have a `max_active_power` parameter, which is instea
 - `dynamic_injector::Union{Nothing, DynamicInjection}`: (default: `nothing`) corresponding dynamic injection device
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
+- `input_basis`: (keyword constructor only, required) `CU` or `NU`, the units of bare numbers on unit-bearing fields. Tagged values (`50.0u"MW"`) keep their own units
 """
 mutable struct RenewableDispatch <: RenewableGen
     "Name of the component. Components of the same type (e.g., `PowerLoad`) must have unique names, but components of different types (e.g., `PowerLoad` and `ACBus`) can have the same name"
@@ -83,9 +84,15 @@ function RenewableDispatch(name, available, bus, active_power, reactive_power, r
     RenewableDispatch(name, available, bus, active_power, reactive_power, rating, prime_mover_type, reactive_power_limits, power_factor, operation_cost, base_power, services, dynamic_injector, ext, InfrastructureSystemsInternal(), )
 end
 
-function RenewableDispatch(; name, available, bus, active_power, reactive_power, rating, prime_mover_type, reactive_power_limits, power_factor, operation_cost, base_power, services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), )
-    RenewableDispatch(name, available, bus, active_power, reactive_power, rating, prime_mover_type, reactive_power_limits, power_factor, operation_cost, base_power, services, dynamic_injector, ext, internal, )
+function RenewableDispatch(; name, available, bus, active_power, reactive_power, rating, prime_mover_type, reactive_power_limits, power_factor, operation_cost, base_power, services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Union{ComponentBaseUnit, NaturalUnit}, )
+    value = RenewableDispatch(name, available, bus, _placeholder(active_power), _placeholder(reactive_power), _placeholder(rating), prime_mover_type, _placeholder(reactive_power_limits), power_factor, operation_cost, base_power, services, dynamic_injector, ext, internal, )
+    set_active_power!(value, _tag(active_power, input_basis, Val(:mw)))
+    set_reactive_power!(value, _tag(reactive_power, input_basis, Val(:mvar)))
+    set_rating!(value, _tag(rating, input_basis, Val(:mva)))
+    set_reactive_power_limits!(value, _tag(reactive_power_limits, input_basis, Val(:mvar)))
+    return value
 end
+_takes_input_basis(::Type{<:RenewableDispatch}) = true
 
 # Constructor for demo purposes; non-functional.
 function RenewableDispatch(::Nothing)
@@ -104,6 +111,7 @@ function RenewableDispatch(::Nothing)
         services=Device[],
         dynamic_injector=nothing,
         ext=Dict{String, Any}(),
+        input_basis=CU,
     )
 end
 
@@ -204,6 +212,7 @@ function from_openapi(po::PO.RenewableDispatch, refs::OpenAPIRefs, ::ComponentBa
         power_factor = po.power_factor,
         operation_cost = convert_cost(po.operation_cost.value)::OperationalCost,
         base_power = po.base_power,
+        input_basis = CU,
     )
 end
 
@@ -220,6 +229,7 @@ function from_openapi(po::PO.RenewableDispatch, refs::OpenAPIRefs, ::NaturalUnit
         power_factor = po.power_factor,
         operation_cost = convert_cost(po.operation_cost.value)::OperationalCost,
         base_power = po.base_power,
+        input_basis = CU,
     )
 end
 

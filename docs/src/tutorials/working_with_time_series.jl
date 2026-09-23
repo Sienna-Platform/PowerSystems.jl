@@ -48,7 +48,8 @@ wind1 = RenewableDispatch(;
     reactive_power_limits = (min = 0.0, max = 0.0), # per-unitized by component base_power
     power_factor = 1.0,
     operation_cost = RenewableGenerationCost(nothing),
-    base_power = 10.0, # MVA
+    base_power = 10.0, # MVA,
+    input_basis = CU,
 );
 load1 = PowerLoad(;
     name = "load1",
@@ -59,6 +60,7 @@ load1 = PowerLoad(;
     base_power = 10.0, # MVA
     max_active_power = 1.0, # 10 MW per-unitized by component base_power
     max_reactive_power = 0.0,
+    input_basis = CU,
 );
 load2 = PowerLoad(;
     name = "load2",
@@ -69,6 +71,7 @@ load2 = PowerLoad(;
     base_power = 30.0, # MVA
     max_active_power = 1.0, # 30 MW per-unitized by component base_power
     max_reactive_power = 0.0,
+    input_basis = CU,
 );
 add_components!(system, [bus1, wind1, load1, load2])
 

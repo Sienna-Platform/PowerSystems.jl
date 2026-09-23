@@ -43,6 +43,7 @@ A [static](@ref S) power load that can be partially or completed shifted to late
 - `dynamic_injector::Union{Nothing, DynamicInjection}`: (default: `nothing`) corresponding dynamic injection device
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
+- `input_basis`: (keyword constructor only, required) `CU` or `NU`, the units of bare numbers on unit-bearing fields. Tagged values (`50.0u"MW"`) keep their own units
 """
 mutable struct ShiftablePowerLoad <: ControllableLoad
     "Name of the component. Components of the same type (e.g., `PowerLoad`) must have unique names, but components of different types (e.g., `PowerLoad` and `ACBus`) can have the same name"
@@ -81,9 +82,16 @@ function ShiftablePowerLoad(name, available, bus, active_power, active_power_lim
     ShiftablePowerLoad(name, available, bus, active_power, active_power_limits, reactive_power, max_active_power, max_reactive_power, base_power, load_balance_time_horizon, operation_cost, services, dynamic_injector, ext, InfrastructureSystemsInternal(), )
 end
 
-function ShiftablePowerLoad(; name, available, bus, active_power, active_power_limits, reactive_power, max_active_power, max_reactive_power, base_power, load_balance_time_horizon, operation_cost, services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), )
-    ShiftablePowerLoad(name, available, bus, active_power, active_power_limits, reactive_power, max_active_power, max_reactive_power, base_power, load_balance_time_horizon, operation_cost, services, dynamic_injector, ext, internal, )
+function ShiftablePowerLoad(; name, available, bus, active_power, active_power_limits, reactive_power, max_active_power, max_reactive_power, base_power, load_balance_time_horizon, operation_cost, services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Union{ComponentBaseUnit, NaturalUnit}, )
+    value = ShiftablePowerLoad(name, available, bus, _placeholder(active_power), _placeholder(active_power_limits), _placeholder(reactive_power), _placeholder(max_active_power), _placeholder(max_reactive_power), base_power, load_balance_time_horizon, operation_cost, services, dynamic_injector, ext, internal, )
+    set_active_power!(value, _tag(active_power, input_basis, Val(:mw)))
+    set_active_power_limits!(value, _tag(active_power_limits, input_basis, Val(:mw)))
+    set_reactive_power!(value, _tag(reactive_power, input_basis, Val(:mvar)))
+    set_max_active_power!(value, _tag(max_active_power, input_basis, Val(:mw)))
+    set_max_reactive_power!(value, _tag(max_reactive_power, input_basis, Val(:mvar)))
+    return value
 end
+_takes_input_basis(::Type{<:ShiftablePowerLoad}) = true
 
 # Constructor for demo purposes; non-functional.
 function ShiftablePowerLoad(::Nothing)
@@ -102,6 +110,7 @@ function ShiftablePowerLoad(::Nothing)
         services=Device[],
         dynamic_injector=nothing,
         ext=Dict{String, Any}(),
+        input_basis=CU,
     )
 end
 
@@ -209,6 +218,7 @@ function from_openapi(po::PO.ShiftablePowerLoad, refs::OpenAPIRefs, ::ComponentB
         base_power = po.base_power,
         load_balance_time_horizon = po.load_balance_time_horizon,
         operation_cost = convert_cost(po.operation_cost.value)::OperationalCost,
+        input_basis = CU,
     )
 end
 
@@ -225,6 +235,7 @@ function from_openapi(po::PO.ShiftablePowerLoad, refs::OpenAPIRefs, ::NaturalUni
         base_power = po.base_power,
         load_balance_time_horizon = po.load_balance_time_horizon,
         operation_cost = convert_cost(po.operation_cost.value)::OperationalCost,
+        input_basis = CU,
     )
 end
 

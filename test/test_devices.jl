@@ -24,6 +24,7 @@ end
         from_area = area1,
         to_area = area2,
         flow_limits = (from_to = 100.0, to_from = 100.0),
+        input_basis = CU,
     )
     area_interchange13 = AreaInterchange(;
         name = "interchange_a1_a3",
@@ -32,6 +33,7 @@ end
         from_area = area1,
         to_area = area3,
         flow_limits = (from_to = 100.0, to_from = 100.0),
+        input_basis = CU,
     )
     add_component!(sys, area_interchange12)
     add_component!(sys, area_interchange13)
@@ -266,6 +268,7 @@ end
     fd_kw = FACTSControlDevice(;
         name = "F1", available = true, bus = ACBus(nothing),
         control_mode = FACTSOperationModes.NML,
+        input_basis = CU,
     )
     @test ustrip(get_max_reactive_power(fd_kw, CU)) == 9999.0  # kwarg default
     @test ustrip(get_max_shunt_current(fd_kw, CU)) == 9999.0

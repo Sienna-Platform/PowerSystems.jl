@@ -43,6 +43,7 @@ generator = ThermalStandard(;
         incremental_offer_curves = proposed_offer_curve,
     ),
     base_power = 100.0,
+    input_basis = CU,
 )
 ```
 
@@ -89,6 +90,7 @@ generator = ThermalStandard(;
         shut_down = 0.0,
     ),
     base_power = 100.0,
+    input_basis = CU,
 )
 ```
 

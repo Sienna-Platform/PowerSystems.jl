@@ -42,6 +42,9 @@ This file is auto-generated. Do not edit.
 {{#parameters}}
 - `{{name}}::{{{data_type}}}`:{{#default}} (default: `{{{default}}}`){{/default}}{{#comment}} {{{comment}}}{{/comment}}{{#valid_range}}, validation range: `{{{valid_range}}}`{{/valid_range}}
 {{/parameters}}
+{{#has_conversion}}
+- `input_basis`: (keyword constructor only, required) `CU` or `NU`, the units of bare numbers on unit-bearing fields. Tagged values (`50.0u"MW"`) keep their own units
+{{/has_conversion}}
 \"\"\"
 mutable struct {{struct_name}}{{#parametric}}{T <: {{parametric}}}{{/parametric}} <: {{supertype}}
     {{#parameters}}
@@ -66,9 +69,21 @@ function {{constructor_func}}({{#parameters}}{{^internal_default}}{{name}}{{#def
 end
 {{/needs_positional_constructor}}
 
+{{^has_conversion}}
 function {{constructor_func}}(; {{#parameters}}{{name}}{{#kwarg_value}}{{{kwarg_value}}}{{/kwarg_value}}, {{/parameters}}){{{closing_constructor_text}}}
     {{constructor_func}}({{#parameters}}{{name}}, {{/parameters}})
 end
+{{/has_conversion}}
+{{#has_conversion}}
+function {{constructor_func}}(; {{#parameters}}{{name}}{{#kwarg_value}}{{{kwarg_value}}}{{/kwarg_value}}, {{/parameters}}input_basis::Union{ComponentBaseUnit, NaturalUnit}, ){{{closing_constructor_text}}}
+    value = {{constructor_func}}({{#parameters}}{{#converts}}_placeholder({{name}}){{/converts}}{{^converts}}{{name}}{{/converts}}, {{/parameters}})
+    {{#conversion_setters}}
+    {{setter}}(value, _tag({{name}}, input_basis, Val({{conversion_unit}})))
+    {{/conversion_setters}}
+    return value
+end
+_takes_input_basis(::Type{<:{{struct_name}}}) = true
+{{/has_conversion}}
 
 {{#has_null_values}}
 # Constructor for demo purposes; non-functional.
@@ -79,6 +94,9 @@ function {{constructor_func}}(::Nothing){{{closing_constructor_text}}}
         {{name}}={{#quotes}}"{{null_value}}"{{/quotes}}{{^quotes}}{{null_value}}{{/quotes}},
         {{/internal_default}}
         {{/parameters}}
+        {{#has_conversion}}
+        input_basis=CU,
+        {{/has_conversion}}
     )
 end
 
@@ -125,6 +143,9 @@ function from_openapi(po::{{{openapi_po_type}}}, refs::OpenAPIRefs, ::ComponentB
         {{#openapi_kwargs_device}}
         {{name}} = {{{expr}}},
         {{/openapi_kwargs_device}}
+        {{#has_conversion}}
+        input_basis = CU,
+        {{/has_conversion}}
     )
 end
 
@@ -133,6 +154,9 @@ function from_openapi(po::{{{openapi_po_type}}}, refs::OpenAPIRefs, ::NaturalUni
         {{#openapi_kwargs_natural}}
         {{name}} = {{{expr}}},
         {{/openapi_kwargs_natural}}
+        {{#has_conversion}}
+        input_basis = CU,
+        {{/has_conversion}}
     )
 end
 
@@ -1147,9 +1171,11 @@ function generate_structs(directory, data::Vector; print_results = true)
         end
 
         parameters = Vector{Dict}()
+        conversion_setters = Vector{Dict}()
         for field in item["fields"]
             param = field
             param["struct_name"] = item["struct_name"]
+            param["converts"] = get(param, "needs_conversion", false)
             if haskey(param, "valid_range")
                 if typeof(param["valid_range"]) == Dict{String, Any}
                     min = param["valid_range"]["min"]
@@ -1219,6 +1245,17 @@ function generate_structs(directory, data::Vector; print_results = true)
                 )
             end
             include_setter = !get(param, "exclude_setter", false)
+            # The kwarg constructor calls these, so `exclude_setter` needs a hand-written one.
+            if param["converts"]
+                push!(
+                    conversion_setters,
+                    Dict(
+                        "name" => param["name"],
+                        "setter" => setter_name,
+                        "conversion_unit" => conversion_unit,
+                    ),
+                )
+            end
             if include_setter
                 push!(
                     setters,
@@ -1277,6 +1314,8 @@ function generate_structs(directory, data::Vector; print_results = true)
         end
 
         item["parameters"] = parameters
+        item["conversion_setters"] = conversion_setters
+        item["has_conversion"] = !isempty(conversion_setters)
         item["accessors"] = accessors
         item["setters"] = setters
         # If all parameters have defaults then the positional constructor will
