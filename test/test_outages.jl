@@ -441,12 +441,16 @@ end
 end
 
 @testset "Test loud error: document/sidecar time series row drift caught by validation" begin
-    # The document's own `time_series_associations` rows are informational, but a strict
-    # validation against the adopted sidecar's catalog still catches drift between the two
-    # rather than silently trusting whichever the caller kept.
+    # When the sidecar carries its own catalog, the document's `time_series_associations`
+    # rows are informational, and a strict validation against that catalog catches drift
+    # between the two rather than silently trusting whichever the caller kept. A plain
+    # directory bundle is arrays-only (its document rows are the catalog), so write the
+    # catalog-bearing bundle the archive form uses.
     sys = create_system_with_outages()
     dir = mktempdir()
-    to_file(sys, dir; force = true)
+    PSY._to_file_directory(sys, dir; units = CU, force = true, pretty = false,
+        write_catalog = true)
+    @test isfile(joinpath(dir, "time_series.h5.sqlite"))
     doc = PSY.PD.read_document(joinpath(dir, "system.json"))
     # PO structs are immutable, so rebuild the row and its oneOf wrapper rather than
     # mutating in place, and replace it by index.

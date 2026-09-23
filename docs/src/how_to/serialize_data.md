@@ -46,6 +46,7 @@ gen = ThermalStandard(;
     reactive_power_limits = (min = -1.0, max = 1.0),
     ramp_limits = nothing, operation_cost = ThermalGenerationCost(nothing),
     base_power = 100.0,
+    input_basis = CU,
 )
 add_component!(sys, gen)
 ```

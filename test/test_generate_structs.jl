@@ -161,8 +161,8 @@ end
     # The generated code must parse as valid Julia syntax.
     @test Meta.parse("begin\n" * gen * "\nend") isa Expr
 
-    device_start = findfirst("ComponentBaseUnit", gen)
-    natural_start = findfirst("NaturalUnit", gen)
+    device_start = findfirst("refs::OpenAPIRefs, ::ComponentBaseUnit)", gen)
+    natural_start = findfirst("refs::OpenAPIRefs, ::NaturalUnit)", gen)
     @test !isnothing(device_start)
     @test !isnothing(natural_start)
     device_body = gen[first(device_start):(first(natural_start) - 1)]
@@ -273,8 +273,8 @@ end
     gen = read(joinpath(outdir, "OATestPuDevice.jl"), String)
     @test Meta.parse("begin\n" * gen * "\nend") isa Expr
 
-    device_start = findfirst("ComponentBaseUnit", gen)
-    natural_start = findfirst("NaturalUnit", gen)
+    device_start = findfirst("refs::OpenAPIRefs, ::ComponentBaseUnit)", gen)
+    natural_start = findfirst("refs::OpenAPIRefs, ::NaturalUnit)", gen)
     device_body = gen[first(device_start):(first(natural_start) - 1)]
     natural_body = gen[first(natural_start):end]
 

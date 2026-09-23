@@ -39,6 +39,7 @@ This model is appropriate for operational simulations with a linearized DC power
 - `base_power::Float64`: (default: `100.0`) System base power for per-unitization of this component's per-unit fields, recorded per component in lieu of a system-level table (MVA), validation range: `(0.0001, nothing)`
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
+- `input_basis`: (keyword constructor only, required) `CU` or `NU`, the units of bare numbers on unit-bearing fields. Tagged values (`50.0u"MW"`) keep their own units
 """
 mutable struct TwoTerminalGenericHVDCLine <: TwoTerminalHVDC
     "Name of the component. Components of the same type (e.g., `PowerLoad`) must have unique names, but components of different types (e.g., `PowerLoad` and `ACBus`) can have the same name"
@@ -73,9 +74,16 @@ function TwoTerminalGenericHVDCLine(name, available, active_power_flow, arc, act
     TwoTerminalGenericHVDCLine(name, available, active_power_flow, arc, active_power_limits_from, active_power_limits_to, reactive_power_limits_from, reactive_power_limits_to, loss, services, base_power, ext, InfrastructureSystemsInternal(), )
 end
 
-function TwoTerminalGenericHVDCLine(; name, available, active_power_flow, arc, active_power_limits_from, active_power_limits_to, reactive_power_limits_from, reactive_power_limits_to, loss=LossCurve(LinearCurve(0.0), NaturalUnit()), services=Device[], base_power=100.0, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), )
-    TwoTerminalGenericHVDCLine(name, available, active_power_flow, arc, active_power_limits_from, active_power_limits_to, reactive_power_limits_from, reactive_power_limits_to, loss, services, base_power, ext, internal, )
+function TwoTerminalGenericHVDCLine(; name, available, active_power_flow, arc, active_power_limits_from, active_power_limits_to, reactive_power_limits_from, reactive_power_limits_to, loss=LossCurve(LinearCurve(0.0), NaturalUnit()), services=Device[], base_power=100.0, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Union{ComponentBaseUnit, NaturalUnit}, )
+    value = TwoTerminalGenericHVDCLine(name, available, _placeholder(active_power_flow), arc, _placeholder(active_power_limits_from), _placeholder(active_power_limits_to), _placeholder(reactive_power_limits_from), _placeholder(reactive_power_limits_to), loss, services, base_power, ext, internal, )
+    set_active_power_flow!(value, _tag(active_power_flow, input_basis, Val(:mw)))
+    set_active_power_limits_from!(value, _tag(active_power_limits_from, input_basis, Val(:mw)))
+    set_active_power_limits_to!(value, _tag(active_power_limits_to, input_basis, Val(:mw)))
+    set_reactive_power_limits_from!(value, _tag(reactive_power_limits_from, input_basis, Val(:mvar)))
+    set_reactive_power_limits_to!(value, _tag(reactive_power_limits_to, input_basis, Val(:mvar)))
+    return value
 end
+_takes_input_basis(::Type{<:TwoTerminalGenericHVDCLine}) = true
 
 # Constructor for demo purposes; non-functional.
 function TwoTerminalGenericHVDCLine(::Nothing)
@@ -92,6 +100,7 @@ function TwoTerminalGenericHVDCLine(::Nothing)
         services=Device[],
         base_power=100.0,
         ext=Dict{String, Any}(),
+        input_basis=CU,
     )
 end
 

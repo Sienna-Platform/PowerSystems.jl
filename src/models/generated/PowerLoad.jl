@@ -39,6 +39,7 @@ This load consumes a set amount of power (set by `active_power` for a power flow
 - `dynamic_injector::Union{Nothing, DynamicInjection}`: (default: `nothing`) corresponding dynamic injection device
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
+- `input_basis`: (keyword constructor only, required) `CU` or `NU`, the units of bare numbers on unit-bearing fields. Tagged values (`50.0u"MW"`) keep their own units
 """
 mutable struct PowerLoad <: StaticLoad
     "Name of the component. Components of the same type (e.g., `PowerLoad`) must have unique names, but components of different types (e.g., `PowerLoad` and `ACBus`) can have the same name"
@@ -73,9 +74,15 @@ function PowerLoad(name, available, bus, active_power, reactive_power, base_powe
     PowerLoad(name, available, bus, active_power, reactive_power, base_power, max_active_power, max_reactive_power, conformity, services, dynamic_injector, ext, InfrastructureSystemsInternal(), )
 end
 
-function PowerLoad(; name, available, bus, active_power, reactive_power, base_power, max_active_power, max_reactive_power, conformity=LoadConformity.UNDEFINED, services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), )
-    PowerLoad(name, available, bus, active_power, reactive_power, base_power, max_active_power, max_reactive_power, conformity, services, dynamic_injector, ext, internal, )
+function PowerLoad(; name, available, bus, active_power, reactive_power, base_power, max_active_power, max_reactive_power, conformity=LoadConformity.UNDEFINED, services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Union{ComponentBaseUnit, NaturalUnit}, )
+    value = PowerLoad(name, available, bus, _placeholder(active_power), _placeholder(reactive_power), base_power, _placeholder(max_active_power), _placeholder(max_reactive_power), conformity, services, dynamic_injector, ext, internal, )
+    set_active_power!(value, _tag(active_power, input_basis, Val(:mw)))
+    set_reactive_power!(value, _tag(reactive_power, input_basis, Val(:mvar)))
+    set_max_active_power!(value, _tag(max_active_power, input_basis, Val(:mw)))
+    set_max_reactive_power!(value, _tag(max_reactive_power, input_basis, Val(:mvar)))
+    return value
 end
+_takes_input_basis(::Type{<:PowerLoad}) = true
 
 # Constructor for demo purposes; non-functional.
 function PowerLoad(::Nothing)
@@ -92,6 +99,7 @@ function PowerLoad(::Nothing)
         services=Device[],
         dynamic_injector=nothing,
         ext=Dict{String, Any}(),
+        input_basis=CU,
     )
 end
 
@@ -181,6 +189,7 @@ function from_openapi(po::PO.PowerLoad, refs::OpenAPIRefs, ::ComponentBaseUnit)
         max_active_power = po.max_active_power,
         max_reactive_power = po.max_reactive_power,
         conformity = _or_default_enum(po.conformity, LoadConformity.UNDEFINED),
+        input_basis = CU,
     )
 end
 
@@ -195,6 +204,7 @@ function from_openapi(po::PO.PowerLoad, refs::OpenAPIRefs, ::NaturalUnit)
         max_active_power = po.max_active_power / po.base_power,
         max_reactive_power = po.max_reactive_power / po.base_power,
         conformity = _or_default_enum(po.conformity, LoadConformity.UNDEFINED),
+        input_basis = CU,
     )
 end
 

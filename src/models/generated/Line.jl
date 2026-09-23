@@ -45,6 +45,7 @@ An AC transmission line
 - `base_power::Float64`: (default: `100.0`) System base power for per-unitization of this component's per-unit fields, recorded per component in lieu of a system-level table (MVA), validation range: `(0.0001, nothing)`
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
+- `input_basis`: (keyword constructor only, required) `CU` or `NU`, the units of bare numbers on unit-bearing fields. Tagged values (`50.0u"MW"`) keep their own units
 """
 mutable struct Line <: ACTransmission
     "Name of the component. Components of the same type (e.g., `PowerLoad`) must have unique names, but components of different types (e.g., `PowerLoad` and `ACBus`) can have the same name"
@@ -87,9 +88,20 @@ function Line(name, available, active_power_flow, reactive_power_flow, arc, r, x
     Line(name, available, active_power_flow, reactive_power_flow, arc, r, x, b, rating, angle_limits, rating_b, rating_c, g, services, base_power, ext, InfrastructureSystemsInternal(), )
 end
 
-function Line(; name, available, active_power_flow, reactive_power_flow, arc, r, x, b, rating, angle_limits, rating_b=nothing, rating_c=nothing, g=(from=0.0, to=0.0), services=Device[], base_power=100.0, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), )
-    Line(name, available, active_power_flow, reactive_power_flow, arc, r, x, b, rating, angle_limits, rating_b, rating_c, g, services, base_power, ext, internal, )
+function Line(; name, available, active_power_flow, reactive_power_flow, arc, r, x, b, rating, angle_limits, rating_b=nothing, rating_c=nothing, g=(from=0.0, to=0.0), services=Device[], base_power=100.0, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Union{ComponentBaseUnit, NaturalUnit}, )
+    value = Line(name, available, _placeholder(active_power_flow), _placeholder(reactive_power_flow), arc, _placeholder(r), _placeholder(x), _placeholder(b), _placeholder(rating), angle_limits, _placeholder(rating_b), _placeholder(rating_c), _placeholder(g), services, base_power, ext, internal, )
+    set_active_power_flow!(value, _tag(active_power_flow, input_basis, Val(:mw)))
+    set_reactive_power_flow!(value, _tag(reactive_power_flow, input_basis, Val(:mvar)))
+    set_r!(value, _tag(r, input_basis, Val(:ohm)))
+    set_x!(value, _tag(x, input_basis, Val(:ohm)))
+    set_b!(value, _tag(b, input_basis, Val(:siemens)))
+    set_rating!(value, _tag(rating, input_basis, Val(:mva)))
+    set_rating_b!(value, _tag(rating_b, input_basis, Val(:mva)))
+    set_rating_c!(value, _tag(rating_c, input_basis, Val(:mva)))
+    set_g!(value, _tag(g, input_basis, Val(:siemens)))
+    return value
 end
+_takes_input_basis(::Type{<:Line}) = true
 
 # Constructor for demo purposes; non-functional.
 function Line(::Nothing)
@@ -110,6 +122,7 @@ function Line(::Nothing)
         services=Device[],
         base_power=100.0,
         ext=Dict{String, Any}(),
+        input_basis=CU,
     )
 end
 

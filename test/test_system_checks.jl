@@ -16,6 +16,7 @@
         active_power = 0.5, reactive_power = 0.0,
         base_power = 100.0,
         max_active_power = 0.5, max_reactive_power = 0.0,
+        input_basis = CU,
     )
     add_component!(sys, load)
 

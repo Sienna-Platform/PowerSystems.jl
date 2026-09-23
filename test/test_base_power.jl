@@ -28,6 +28,7 @@ function thermal_with_base_power(bus::PSY.Bus, name::String, base_power::Float64
         services = Device[],
         dynamic_injector = nothing,
         ext = Dict{String, Any}(),
+        input_basis = CU,
     )
 end
 
@@ -259,6 +260,7 @@ end
         reactive_power_flow = 0.0, arc = Arc(; from = bus1, to = bus2),
         r = 0.01, x = 0.1, b = (from = 0.001, to = 0.001),
         rating = 2.0, angle_limits = (min = -1.0, max = 1.0),
+        input_basis = CU,
     )
     add_component!(sys, line)
 
@@ -617,7 +619,7 @@ end
     @test get_r_12(t_full, SU) ≈ 0.01 * (100.0 / 15.0)
 end
 
-@testset "SystemBasePower components track the system base, not 100 MVA" begin
+@testset "SystemBasePower components must state the system base" begin
     system_base = 1000.0
     sys = System(system_base)
     b1 = ACBus(;
@@ -633,25 +635,31 @@ end
     add_component!(sys, b1)
     add_component!(sys, b2)
 
-    ln = Line(;
+    line(; kwargs...) = Line(;
         name = "l1", available = true, active_power_flow = 0.0,
         reactive_power_flow = 0.0, arc = Arc(; from = b1, to = b2),
         r = 0.01, x = 0.1, b = (from = 0.0, to = 0.0), rating = 1.0,
         angle_limits = (min = -1.5, max = 1.5),
+        input_basis = CU, kwargs...,
     )
+
+    # The default base_power (100) doesn't match the system's.
+    @test_throws ArgumentError add_component!(sys, line())
+    @test_throws ArgumentError add_component!(sys, Area(; name = "a0", input_basis = CU))
+    @test isnothing(get_component(Line, sys, "l1"))
+
+    ln = line(; base_power = system_base)
     add_component!(sys, ln)
-
-    area = Area(; name = "a1")
+    area = Area(; name = "a1", base_power = system_base, input_basis = CU)
     add_component!(sys, area)
-
-    # The descriptor's 100.0 default must not survive attachment: this is the
-    # bug being pinned. Both Line and Area are among the 12 types whose
-    # base_power field records the system base, not an independent component base.
     @test PSY._get_base_power(ln) == system_base
     @test PSY._get_base_power(area) == system_base
 
-    # CU is a pass-through (unaffected by system base); SU must scale by the
-    # true system base, not the stale 100.0 default.
+    ln_nu = line(; name = "l3", rating = 500.0, base_power = system_base, input_basis = NU)
+    add_component!(sys, ln_nu)
+    @test get_rating(ln_nu, u"MVA") ≈ 500.0
+
+    # CU is a pass-through; SU scales by the system base.
     @test get_rating(ln, CU) ≈ 1.0
     @test get_rating(ln, SU) ≈ 1.0
 
@@ -668,12 +676,12 @@ end
         reactive_power_flow = 0.0, arc = Arc(ACBus(nothing), ACBus(nothing)),
         r = 0.01, x = 0.1, b = (from = 0.0, to = 0.0), rating = 1.0,
         angle_limits = (min = -1.5, max = 1.5),
+        input_basis = CU,
     )
     @test PSY._get_base_power(ln_detached) == 100.0
     @test get_rating(ln_detached, CU) ≈ 1.0
     @test_throws ErrorException get_rating(ln_detached, SU)
     # Detached, `base_power` reads back whatever was stated (a document records it per
-    # component); `add_component!` syncs it to the system base on attach. The wrong-base
-    # risk is covered by the SU throw above, not by guarding this read.
+    # component); `add_component!` checks it against the system base.
     @test get_base_power(ln_detached) == 100.0
 end

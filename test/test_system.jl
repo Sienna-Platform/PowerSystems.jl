@@ -702,7 +702,7 @@ end
     ts_dir = mktempdir()
     sys = System(100.0; time_series_directory = ts_dir)
     sys2 = deepcopy(sys)
-    @test dirname(IS.get_file_path(sys2.data.time_series_manager.data_store)) == ts_dir
+    @test dirname(IS.get_file_path(IS.get_data_store(sys2.data))) == ts_dir
 end
 
 @testset "Test time series counts" begin

@@ -51,6 +51,7 @@ The model uses an equivalent star model with a star (hidden) bus. Each of the th
 - `services::Vector{Service}`: (default: `Device[]`) Services that this device contributes to
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
+- `input_basis`: (keyword constructor only, required) `CU` or `NU`, the units of bare numbers on unit-bearing fields. Tagged values (`50.0u"MW"`) keep their own units
 """
 mutable struct ThreeWindingTransformer <: ACTransmission
     "Name of the component. Components of the same type (e.g., `PowerLoad`) must have unique names, but components of different types (e.g., `PowerLoad` and `ACBus`) can have the same name"
@@ -97,9 +98,18 @@ function ThreeWindingTransformer(name, primary_circuit, secondary_circuit, terti
     ThreeWindingTransformer(name, primary_circuit, secondary_circuit, tertiary_circuit, star_bus, r_12, x_12, r_23, x_23, r_31, x_31, base_power_12, base_power_23, base_power_31, magnetizing_shunt, shunt_location, services, ext, InfrastructureSystemsInternal(), )
 end
 
-function ThreeWindingTransformer(; name, primary_circuit, secondary_circuit, tertiary_circuit, star_bus, r_12=nothing, x_12=nothing, r_23=nothing, x_23=nothing, r_31=nothing, x_31=nothing, base_power_12=nothing, base_power_23=nothing, base_power_31=nothing, magnetizing_shunt=0.0, shunt_location=ThreeWindingTransformerShuntLocation.PRIMARY, services=Device[], ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), )
-    ThreeWindingTransformer(name, primary_circuit, secondary_circuit, tertiary_circuit, star_bus, r_12, x_12, r_23, x_23, r_31, x_31, base_power_12, base_power_23, base_power_31, magnetizing_shunt, shunt_location, services, ext, internal, )
+function ThreeWindingTransformer(; name, primary_circuit, secondary_circuit, tertiary_circuit, star_bus, r_12=nothing, x_12=nothing, r_23=nothing, x_23=nothing, r_31=nothing, x_31=nothing, base_power_12=nothing, base_power_23=nothing, base_power_31=nothing, magnetizing_shunt=0.0, shunt_location=ThreeWindingTransformerShuntLocation.PRIMARY, services=Device[], ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Union{ComponentBaseUnit, NaturalUnit}, )
+    value = ThreeWindingTransformer(name, primary_circuit, secondary_circuit, tertiary_circuit, star_bus, _placeholder(r_12), _placeholder(x_12), _placeholder(r_23), _placeholder(x_23), _placeholder(r_31), _placeholder(x_31), base_power_12, base_power_23, base_power_31, _placeholder(magnetizing_shunt), shunt_location, services, ext, internal, )
+    set_r_12!(value, _tag(r_12, input_basis, Val(:ohm)))
+    set_x_12!(value, _tag(x_12, input_basis, Val(:ohm)))
+    set_r_23!(value, _tag(r_23, input_basis, Val(:ohm)))
+    set_x_23!(value, _tag(x_23, input_basis, Val(:ohm)))
+    set_r_31!(value, _tag(r_31, input_basis, Val(:ohm)))
+    set_x_31!(value, _tag(x_31, input_basis, Val(:ohm)))
+    set_magnetizing_shunt!(value, _tag(magnetizing_shunt, input_basis, Val(:siemens)))
+    return value
 end
+_takes_input_basis(::Type{<:ThreeWindingTransformer}) = true
 
 # Constructor for demo purposes; non-functional.
 function ThreeWindingTransformer(::Nothing)
@@ -122,6 +132,7 @@ function ThreeWindingTransformer(::Nothing)
         shunt_location=ThreeWindingTransformerShuntLocation.PRIMARY,
         services=Device[],
         ext=Dict{String, Any}(),
+        input_basis=CU,
     )
 end
 

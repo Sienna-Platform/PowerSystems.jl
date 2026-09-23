@@ -57,6 +57,7 @@ The subcomponents (`thermal_unit`, `electric_load`, `storage`, `renewable_unit`)
 - `dynamic_injector::Union{Nothing, DynamicInjection}`: (default: `nothing`) corresponding dynamic injection device
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
+- `input_basis`: (keyword constructor only, required) `CU` or `NU`, the units of bare numbers on unit-bearing fields. Tagged values (`50.0u"MW"`) keep their own units
 """
 mutable struct HybridSystem <: StaticInjectionSubsystem
     "Name of the component. Components of the same type (e.g., `PowerLoad`) must have unique names, but components of different types (e.g., `PowerLoad` and `ACBus`) can have the same name"
@@ -109,9 +110,17 @@ function HybridSystem(name, available, status, bus, active_power=0.0, reactive_p
     HybridSystem(name, available, status, bus, active_power, reactive_power, base_power, operation_cost, thermal_unit, electric_load, storage, renewable_unit, interconnection_impedance, interconnection_rating, input_active_power_limits, output_active_power_limits, reactive_power_limits, interconnection_efficiency, services, dynamic_injector, ext, InfrastructureSystemsInternal(), )
 end
 
-function HybridSystem(; name, available, status, bus, active_power=0.0, reactive_power=0.0, base_power=100.0, operation_cost=MarketBidCost(nothing), thermal_unit=nothing, electric_load=nothing, storage=nothing, renewable_unit=nothing, interconnection_impedance=0.0, interconnection_rating=nothing, input_active_power_limits=nothing, output_active_power_limits=nothing, reactive_power_limits=nothing, interconnection_efficiency=nothing, services=Service[], dynamic_injector=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), )
-    HybridSystem(name, available, status, bus, active_power, reactive_power, base_power, operation_cost, thermal_unit, electric_load, storage, renewable_unit, interconnection_impedance, interconnection_rating, input_active_power_limits, output_active_power_limits, reactive_power_limits, interconnection_efficiency, services, dynamic_injector, ext, internal, )
+function HybridSystem(; name, available, status, bus, active_power=0.0, reactive_power=0.0, base_power=100.0, operation_cost=MarketBidCost(nothing), thermal_unit=nothing, electric_load=nothing, storage=nothing, renewable_unit=nothing, interconnection_impedance=0.0, interconnection_rating=nothing, input_active_power_limits=nothing, output_active_power_limits=nothing, reactive_power_limits=nothing, interconnection_efficiency=nothing, services=Service[], dynamic_injector=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Union{ComponentBaseUnit, NaturalUnit}, )
+    value = HybridSystem(name, available, status, bus, _placeholder(active_power), _placeholder(reactive_power), base_power, operation_cost, thermal_unit, electric_load, storage, renewable_unit, interconnection_impedance, _placeholder(interconnection_rating), _placeholder(input_active_power_limits), _placeholder(output_active_power_limits), _placeholder(reactive_power_limits), interconnection_efficiency, services, dynamic_injector, ext, internal, )
+    set_active_power!(value, _tag(active_power, input_basis, Val(:mw)))
+    set_reactive_power!(value, _tag(reactive_power, input_basis, Val(:mvar)))
+    set_interconnection_rating!(value, _tag(interconnection_rating, input_basis, Val(:mva)))
+    set_input_active_power_limits!(value, _tag(input_active_power_limits, input_basis, Val(:mw)))
+    set_output_active_power_limits!(value, _tag(output_active_power_limits, input_basis, Val(:mw)))
+    set_reactive_power_limits!(value, _tag(reactive_power_limits, input_basis, Val(:mvar)))
+    return value
 end
+_takes_input_basis(::Type{<:HybridSystem}) = true
 
 # Constructor for demo purposes; non-functional.
 function HybridSystem(::Nothing)
@@ -137,6 +146,7 @@ function HybridSystem(::Nothing)
         services=Service[],
         dynamic_injector=nothing,
         ext=Dict{String, Any}(),
+        input_basis=CU,
     )
 end
 

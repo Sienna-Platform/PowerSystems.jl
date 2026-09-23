@@ -1986,7 +1986,7 @@
                 },
                 {
                     "name": "transfer_setpoint",
-                    "comment": "Desired set-point of power. If `power_mode = true` this value is in MW units, and if `power_mode = false` is in Amperes units. This parameter must not be specified in per-unit. A positive value represents the desired consumed power at the rectifier bus, while a negative value represents the desired power at the inverter bus (i.e. the absolute value of `transfer_setpoint` is the generated power at the inverter bus).",
+                    "comment": "Desired set-point. If `power_mode = true` it is a power, stored per-unit on the component base like the other power fields; read it with `get_transfer_setpoint(lcc, units)` (e.g. `NU` for MW). If `power_mode = false` it is a current in Amperes, which no power base converts. A positive value represents the desired consumed power at the rectifier bus, while a negative value represents the desired power at the inverter bus (i.e. the absolute value of `transfer_setpoint` is the generated power at the inverter bus).",
                     "null_value": "0.0",
                     "data_type": "Float64"
                 },
@@ -2059,7 +2059,7 @@
                 {
                     "name": "power_mode",
                     "data_type": "Bool",
-                    "comment": "Boolean flag to identify if the LCC line is in power mode or current mode. If `power_mode = true`, setpoint values must be specified in MW, and if `power_mode = false` setpoint values must be specified in Amperes.",
+                    "comment": "Boolean flag to identify if the LCC line is in power mode or current mode. If `power_mode = true`, `transfer_setpoint` is a power (per-unit on the component base), and if `power_mode = false` it is a current in Amperes.",
                     "null_value": "false",
                     "default": "true"
                 },

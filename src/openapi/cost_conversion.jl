@@ -587,11 +587,23 @@ function convert_cost(po::PC.StorageCost)
 end
 
 # ── Operating Reserve Demand Curve ─────────────────────────────────────────────
-# A reserve's `variable` is never a FuelCurve; PSY stores `CostCurve{PiecewiseIncrementalCurve}`.
+# A reserve's `variable` is never a FuelCurve; PSY stores a static or a time-series-backed
+# `CostCurve` over a piecewise incremental curve, the two shapes the field admits.
+
+_as_reserve_demand_curve(cost::CostCurve{PiecewiseIncrementalCurve}) = cost
+_as_reserve_demand_curve(cost::CostCurve{<:TimeSeriesPiecewiseIncrementalCurve}) = cost
+_as_reserve_demand_curve(cost::CostCurve) = error(
+    "convert_cost: a reserve demand curve must be a PiecewiseIncrementalCurve or " *
+    "TimeSeriesPiecewiseIncrementalCurve CostCurve, " *
+    "got CostCurve{$(typeof(get_value_curve(cost)))}",
+)
+
+_reserve_demand_curve(::Nothing) = ZERO_OFFER_CURVE
+_reserve_demand_curve(c::PC.CostCurve) = _as_reserve_demand_curve(convert_cost(c))
 
 """Convert a reserve's `variable` field; `nothing`/`Absent` means no demand curve is defined."""
 convert_reserve_variable(po::Union{Nothing, IC.Absent, PC.CostCurve}) =
-    _offer_curve(_optional_from_wire(po), "a reserve demand curve")
+    _reserve_demand_curve(_optional_from_wire(po))
 
 # ── LossCurve ⇄ OpenAPI ────────────────────────────────────────────────────────
 # The schemas' `LossCurve` records the basis its curve is expressed in (`power_units`,

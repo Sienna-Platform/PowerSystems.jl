@@ -105,6 +105,7 @@ function IS.deserialize(
     end
 
     type = IS.get_type_from_serialization_metadata(data[IS.METADATA_KEY])
+    _takes_input_basis(type) && return type(; vals..., input_basis = CU)
     return type(; vals...)
 end
 

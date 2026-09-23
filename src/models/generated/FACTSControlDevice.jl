@@ -43,6 +43,7 @@ Most often used in AC power flow studies as a control of voltage and, active and
 - `dynamic_injector::Union{Nothing, DynamicInjection}`: (default: `nothing`) Corresponding dynamic injection model for FACTS control device
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
+- `input_basis`: (keyword constructor only, required) `CU` or `NU`, the units of bare numbers on unit-bearing fields. Tagged values (`50.0u"MW"`) keep their own units
 """
 mutable struct FACTSControlDevice <: StaticInjection
     "Name of the component. Components of the same type (e.g., `PowerLoad`) must have unique names, but components of different types (e.g., `PowerLoad` and `ACBus`) can have the same name"
@@ -81,9 +82,13 @@ function FACTSControlDevice(name, available, bus, control_mode, voltage_setpoint
     FACTSControlDevice(name, available, bus, control_mode, voltage_setpoint, max_shunt_current, max_reactive_power, shunt_control_type, regulated_bus_number, reactive_power_required, base_power, services, dynamic_injector, ext, InfrastructureSystemsInternal(), )
 end
 
-function FACTSControlDevice(; name, available, bus, control_mode, voltage_setpoint=1.0, max_shunt_current=9999.0, max_reactive_power=9999.0, shunt_control_type=FACTSShuntControlType.STATCOM, regulated_bus_number=0, reactive_power_required=0.0, base_power=100.0, services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), )
-    FACTSControlDevice(name, available, bus, control_mode, voltage_setpoint, max_shunt_current, max_reactive_power, shunt_control_type, regulated_bus_number, reactive_power_required, base_power, services, dynamic_injector, ext, internal, )
+function FACTSControlDevice(; name, available, bus, control_mode, voltage_setpoint=1.0, max_shunt_current=9999.0, max_reactive_power=9999.0, shunt_control_type=FACTSShuntControlType.STATCOM, regulated_bus_number=0, reactive_power_required=0.0, base_power=100.0, services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Union{ComponentBaseUnit, NaturalUnit}, )
+    value = FACTSControlDevice(name, available, bus, control_mode, voltage_setpoint, _placeholder(max_shunt_current), _placeholder(max_reactive_power), shunt_control_type, regulated_bus_number, reactive_power_required, base_power, services, dynamic_injector, ext, internal, )
+    set_max_shunt_current!(value, _tag(max_shunt_current, input_basis, Val(:mva)))
+    set_max_reactive_power!(value, _tag(max_reactive_power, input_basis, Val(:mvar)))
+    return value
 end
+_takes_input_basis(::Type{<:FACTSControlDevice}) = true
 
 # Constructor for demo purposes; non-functional.
 function FACTSControlDevice(::Nothing)
@@ -102,6 +107,7 @@ function FACTSControlDevice(::Nothing)
         services=Device[],
         dynamic_injector=nothing,
         ext=Dict{String, Any}(),
+        input_basis=CU,
     )
 end
 

@@ -61,6 +61,7 @@ A thermal generator, such as a fossil fuel or nuclear generator, that can start-
 - `dynamic_injector::Union{Nothing, DynamicInjection}`: (default: `nothing`) corresponding dynamic injection device
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
+- `input_basis`: (keyword constructor only, required) `CU` or `NU`, the units of bare numbers on unit-bearing fields. Tagged values (`50.0u"MW"`) keep their own units
 """
 mutable struct ThermalMultiStart <: ThermalGen
     "Name of the component. Components of the same type (e.g., `PowerLoad`) must have unique names, but components of different types (e.g., `PowerLoad` and `ACBus`) can have the same name"
@@ -117,9 +118,18 @@ function ThermalMultiStart(name, available, status, bus, active_power, reactive_
     ThermalMultiStart(name, available, status, bus, active_power, reactive_power, rating, prime_mover_type, fuel, active_power_limits, reactive_power_limits, ramp_limits, power_trajectory, time_limits, start_time_limits, start_types, operation_cost, base_power, services, time_at_status, commitment_mode, dynamic_injector, ext, InfrastructureSystemsInternal(), )
 end
 
-function ThermalMultiStart(; name, available, status, bus, active_power, reactive_power, rating, prime_mover_type, fuel, active_power_limits, reactive_power_limits, ramp_limits, power_trajectory, time_limits, start_time_limits, start_types, operation_cost, base_power, services=Device[], time_at_status=INFINITE_TIME, commitment_mode=CommitmentModes.COMMITTED, dynamic_injector=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), )
-    ThermalMultiStart(name, available, status, bus, active_power, reactive_power, rating, prime_mover_type, fuel, active_power_limits, reactive_power_limits, ramp_limits, power_trajectory, time_limits, start_time_limits, start_types, operation_cost, base_power, services, time_at_status, commitment_mode, dynamic_injector, ext, internal, )
+function ThermalMultiStart(; name, available, status, bus, active_power, reactive_power, rating, prime_mover_type, fuel, active_power_limits, reactive_power_limits, ramp_limits, power_trajectory, time_limits, start_time_limits, start_types, operation_cost, base_power, services=Device[], time_at_status=INFINITE_TIME, commitment_mode=CommitmentModes.COMMITTED, dynamic_injector=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Union{ComponentBaseUnit, NaturalUnit}, )
+    value = ThermalMultiStart(name, available, status, bus, _placeholder(active_power), _placeholder(reactive_power), _placeholder(rating), prime_mover_type, fuel, _placeholder(active_power_limits), _placeholder(reactive_power_limits), _placeholder(ramp_limits), _placeholder(power_trajectory), time_limits, start_time_limits, start_types, operation_cost, base_power, services, time_at_status, commitment_mode, dynamic_injector, ext, internal, )
+    set_active_power!(value, _tag(active_power, input_basis, Val(:mw)))
+    set_reactive_power!(value, _tag(reactive_power, input_basis, Val(:mvar)))
+    set_rating!(value, _tag(rating, input_basis, Val(:mva)))
+    set_active_power_limits!(value, _tag(active_power_limits, input_basis, Val(:mw)))
+    set_reactive_power_limits!(value, _tag(reactive_power_limits, input_basis, Val(:mvar)))
+    set_ramp_limits!(value, _tag(ramp_limits, input_basis, Val(:mw_per_minute)))
+    set_power_trajectory!(value, _tag(power_trajectory, input_basis, Val(:mw)))
+    return value
 end
+_takes_input_basis(::Type{<:ThermalMultiStart}) = true
 
 # Constructor for demo purposes; non-functional.
 function ThermalMultiStart(::Nothing)
@@ -147,6 +157,7 @@ function ThermalMultiStart(::Nothing)
         commitment_mode=CommitmentModes.UNCOMMITTED,
         dynamic_injector=nothing,
         ext=Dict{String, Any}(),
+        input_basis=CU,
     )
 end
 
@@ -316,6 +327,7 @@ function from_openapi(po::PO.ThermalMultiStart, refs::OpenAPIRefs, ::ComponentBa
         base_power = po.base_power,
         time_at_status = _or_default(po.time_at_status, INFINITE_TIME),
         commitment_mode = _or_default_enum(po.commitment_mode, CommitmentModes.COMMITTED),
+        input_basis = CU,
     )
 end
 
@@ -341,6 +353,7 @@ function from_openapi(po::PO.ThermalMultiStart, refs::OpenAPIRefs, ::NaturalUnit
         base_power = po.base_power,
         time_at_status = _or_default(po.time_at_status, INFINITE_TIME),
         commitment_mode = _or_default_enum(po.commitment_mode, CommitmentModes.COMMITTED),
+        input_basis = CU,
     )
 end
 

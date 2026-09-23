@@ -27,6 +27,7 @@ The interface can be used to constrain the power flow across it
 - `direction_mapping::Dict{String, Int}`: (default: `Dict{String, Int}()`) Dictionary of the line `name`s in the interface and their direction of flow (1 or -1) relative to the flow of the interface
 - `base_power::Float64`: (default: `100.0`) System base power for per-unitization of this component's per-unit fields, recorded per component in lieu of a system-level table (MVA), validation range: `(0.0001, nothing)`
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
+- `input_basis`: (keyword constructor only, required) `CU` or `NU`, the units of bare numbers on unit-bearing fields. Tagged values (`50.0u"MW"`) keep their own units
 """
 mutable struct TransmissionInterface <: Service
     "Name of the component. Components of the same type (e.g., `PowerLoad`) must have unique names, but components of different types (e.g., `PowerLoad` and `ACBus`) can have the same name"
@@ -49,9 +50,12 @@ function TransmissionInterface(name, available, active_power_flow_limits, violat
     TransmissionInterface(name, available, active_power_flow_limits, violation_penalty, direction_mapping, base_power, InfrastructureSystemsInternal(), )
 end
 
-function TransmissionInterface(; name, available, active_power_flow_limits, violation_penalty=INFINITE_COST, direction_mapping=Dict{String, Int}(), base_power=100.0, internal=InfrastructureSystemsInternal(), )
-    TransmissionInterface(name, available, active_power_flow_limits, violation_penalty, direction_mapping, base_power, internal, )
+function TransmissionInterface(; name, available, active_power_flow_limits, violation_penalty=INFINITE_COST, direction_mapping=Dict{String, Int}(), base_power=100.0, internal=InfrastructureSystemsInternal(), input_basis::Union{ComponentBaseUnit, NaturalUnit}, )
+    value = TransmissionInterface(name, available, _placeholder(active_power_flow_limits), violation_penalty, direction_mapping, base_power, internal, )
+    set_active_power_flow_limits!(value, _tag(active_power_flow_limits, input_basis, Val(:mw)))
+    return value
 end
+_takes_input_basis(::Type{<:TransmissionInterface}) = true
 
 # Constructor for demo purposes; non-functional.
 function TransmissionInterface(::Nothing)
@@ -62,6 +66,7 @@ function TransmissionInterface(::Nothing)
         violation_penalty=0.0,
         direction_mapping=Dict{String, Int}(),
         base_power=100.0,
+        input_basis=CU,
     )
 end
 

@@ -63,6 +63,7 @@ A hydropower generator that must have a [`HydroReservoir`](@ref) attached, suita
 - `dynamic_injector::Union{Nothing, DynamicInjection}`: (default: `nothing`) corresponding dynamic injection device
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
+- `input_basis`: (keyword constructor only, required) `CU` or `NU`, the units of bare numbers on unit-bearing fields. Tagged values (`50.0u"MW"`) keep their own units
 """
 mutable struct HydroTurbine <: HydroUnit
     "Name of the component. Components of the same type (e.g., `PowerLoad`) must have unique names, but components of different types (e.g., `PowerLoad` and `ACBus`) can have the same name"
@@ -123,9 +124,17 @@ function HydroTurbine(name, available, bus, active_power, reactive_power, rating
     HydroTurbine(name, available, bus, active_power, reactive_power, rating, active_power_limits, reactive_power_limits, base_power, status, time_at_status, commitment_mode, operation_cost, powerhouse_elevation, ramp_limits, time_limits, outflow_limits, efficiency, turbine_type, conversion_factor, prime_mover_type, travel_time, services, dynamic_injector, ext, InfrastructureSystemsInternal(), )
 end
 
-function HydroTurbine(; name, available, bus, active_power, reactive_power, rating, active_power_limits, reactive_power_limits, base_power, status=OperationalStates.OFFLINE, time_at_status=INFINITE_TIME, commitment_mode=CommitmentModes.COMMITTED, operation_cost=HydroGenerationCost(nothing), powerhouse_elevation=0.0, ramp_limits=nothing, time_limits=nothing, outflow_limits=nothing, efficiency=1.0, turbine_type=HydroTurbineType.UNKNOWN, conversion_factor=1.0, prime_mover_type=PrimeMovers.HY, travel_time=nothing, services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), )
-    HydroTurbine(name, available, bus, active_power, reactive_power, rating, active_power_limits, reactive_power_limits, base_power, status, time_at_status, commitment_mode, operation_cost, powerhouse_elevation, ramp_limits, time_limits, outflow_limits, efficiency, turbine_type, conversion_factor, prime_mover_type, travel_time, services, dynamic_injector, ext, internal, )
+function HydroTurbine(; name, available, bus, active_power, reactive_power, rating, active_power_limits, reactive_power_limits, base_power, status=OperationalStates.OFFLINE, time_at_status=INFINITE_TIME, commitment_mode=CommitmentModes.COMMITTED, operation_cost=HydroGenerationCost(nothing), powerhouse_elevation=0.0, ramp_limits=nothing, time_limits=nothing, outflow_limits=nothing, efficiency=1.0, turbine_type=HydroTurbineType.UNKNOWN, conversion_factor=1.0, prime_mover_type=PrimeMovers.HY, travel_time=nothing, services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Union{ComponentBaseUnit, NaturalUnit}, )
+    value = HydroTurbine(name, available, bus, _placeholder(active_power), _placeholder(reactive_power), _placeholder(rating), _placeholder(active_power_limits), _placeholder(reactive_power_limits), base_power, status, time_at_status, commitment_mode, operation_cost, powerhouse_elevation, _placeholder(ramp_limits), time_limits, outflow_limits, efficiency, turbine_type, conversion_factor, prime_mover_type, travel_time, services, dynamic_injector, ext, internal, )
+    set_active_power!(value, _tag(active_power, input_basis, Val(:mw)))
+    set_reactive_power!(value, _tag(reactive_power, input_basis, Val(:mvar)))
+    set_rating!(value, _tag(rating, input_basis, Val(:mva)))
+    set_active_power_limits!(value, _tag(active_power_limits, input_basis, Val(:mw)))
+    set_reactive_power_limits!(value, _tag(reactive_power_limits, input_basis, Val(:mvar)))
+    set_ramp_limits!(value, _tag(ramp_limits, input_basis, Val(:mw_per_minute)))
+    return value
 end
+_takes_input_basis(::Type{<:HydroTurbine}) = true
 
 # Constructor for demo purposes; non-functional.
 function HydroTurbine(::Nothing)
@@ -155,6 +164,7 @@ function HydroTurbine(::Nothing)
         services=Device[],
         dynamic_injector=nothing,
         ext=Dict{String, Any}(),
+        input_basis=CU,
     )
 end
 
@@ -326,6 +336,7 @@ function from_openapi(po::PO.HydroTurbine, refs::OpenAPIRefs, ::ComponentBaseUni
         conversion_factor = _or_default(po.conversion_factor, 1.0),
         prime_mover_type = _or_default_enum(po.prime_mover_type, PrimeMovers.HY),
         travel_time = _or_default(po.travel_time, nothing),
+        input_basis = CU,
     )
 end
 
@@ -353,6 +364,7 @@ function from_openapi(po::PO.HydroTurbine, refs::OpenAPIRefs, ::NaturalUnit)
         conversion_factor = _or_default(po.conversion_factor, 1.0),
         prime_mover_type = _or_default_enum(po.prime_mover_type, PrimeMovers.HY),
         travel_time = _or_default(po.travel_time, nothing),
+        input_basis = CU,
     )
 end
 

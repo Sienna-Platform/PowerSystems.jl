@@ -52,11 +52,22 @@ _export_vsc(
     dc_voltage_droop_to = 0.0, rated_dc_voltage = rated_dc_voltage,
     remote_bus_control_from = nothing, remote_bus_control_to = 2,
     rmpct_from = 100.0, rmpct_to = 100.0, base_power = 100.0,
+    input_basis = CU,
 )
 
 @testset "OpenAPI export converters: ACBus / Area / LoadZone / Arc" begin
-    area = Area(; name = "area1", peak_active_power = 2.5, peak_reactive_power = 0.5)
-    lz = LoadZone(; name = "lz1", peak_active_power = 2.5, peak_reactive_power = 0.5)
+    area = Area(;
+        name = "area1",
+        peak_active_power = 2.5,
+        peak_reactive_power = 0.5,
+        input_basis = CU,
+    )
+    lz = LoadZone(;
+        name = "lz1",
+        peak_active_power = 2.5,
+        peak_reactive_power = 0.5,
+        input_basis = CU,
+    )
     bus1 = _export_bus(; number = 1, area = area, load_zone = lz)
     bus2 = _export_bus(; number = 2, area = area, load_zone = lz, bustype = ACBusTypes.PQ)
 
@@ -115,6 +126,7 @@ end
         arc = arc, r = 0.01, x = 0.1, b = (from = 0.001, to = 0.002), rating = 1.75,
         angle_limits = (min = -1.57, max = 1.57), rating_b = 1.75, rating_c = nothing,
         g = (from = 0.0, to = 0.0),
+        input_basis = CU,
     )
     sys = System(100.0)
     add_component!(sys, bus1)
@@ -159,11 +171,13 @@ end
         rating_c = nothing,
         active_power_flow = 0.1, reactive_power_flow = 0.02, base_power = 50.0,
         base_voltage_primary = 138.0, base_voltage_secondary = 69.0,
+        input_basis = CU,
     )
     xfmr = TwoWindingTransformer(;
         name = "xfmr1", circuit = circuit,
         magnetizing_shunt = Complex(0.01, 0.02),
         shunt_location = TwoWindingTransformerShuntLocation.PRIMARY,
+        input_basis = CU,
     )
     sys = System(100.0)
     add_component!(sys, bus1)
@@ -207,11 +221,13 @@ end
         reactive_power_flow = 0.02, arc = Arc(; from = bus1, to = bus1), r = 0.01,
         x = 0.1, b = (from = 0.0, to = 0.0), rating = 1.0,
         angle_limits = (min = -1.57, max = 1.57),
+        input_basis = CU,
     )
     tx = TransmissionInterface(; name = "iface1", available = true,
         active_power_flow_limits = (min = -10.0, max = 10.0),
         violation_penalty = 5000.0,
         direction_mapping = Dict("line1" => 1),
+        input_basis = CU,
     )
     sys = System(100.0)
     add_component!(sys, bus1)
@@ -336,6 +352,7 @@ end
     src = Source(;
         name = "src1", available = true, bus = bus1, active_power = 0.1, R_th = 0.01,
         X_th = 0.1, base_power = 100.0,
+        input_basis = CU,
     )
     sys = System(100.0)
     add_component!(sys, bus1)
@@ -395,6 +412,7 @@ end
         reactive_power_limits_from = (min = -0.5, max = 0.5),
         reactive_power_limits_to = (min = -0.5, max = 0.5),
         loss = LossCurve(LinearCurve(0.01, 0.0), NaturalUnit()),
+        input_basis = CU,
     )
     sys = System(100.0)
     add_component!(sys, bus1)
@@ -426,6 +444,7 @@ end
         reactive_power_limits_from = (min = -0.5, max = 0.5),
         reactive_power_limits_to = (min = -0.5, max = 0.5),
         loss = LossCurve(LinearCurve(0.01, 0.0), ComponentBaseUnit()),
+        input_basis = CU,
     )
     add_component!(sys, hvdc_cu)
     refs[5] = hvdc_cu
@@ -455,6 +474,7 @@ end
         active_power_limits_from = (min = -1.0, max = 1.0),
         active_power_limits_to = (min = -1.0, max = 1.0),
         base_current = 200.0,
+        input_basis = CU,
     )
     sys = System(250.0)
     add_component!(sys, dcbus1)
@@ -487,12 +507,13 @@ end
     # for this newly openapi_type-annotated struct is hand-written here to match exactly
     # what such a generator would emit, same as every other generated-import type in
     # export_generated_types.jl.
-    area1 = Area(; name = "area1")
-    area2 = Area(; name = "area2")
+    area1 = Area(; name = "area1", input_basis = CU)
+    area2 = Area(; name = "area2", input_basis = CU)
     interchange = AreaInterchange(;
         name = "flow12", available = true, active_power_flow = 0.25,
         from_area = area1, to_area = area2,
         flow_limits = (from_to = 1.0, to_from = -1.0),
+        input_basis = CU,
     )
     sys = System(100.0)
     add_component!(sys, area1)
@@ -544,12 +565,14 @@ end
         time_limits = (up = 2.0, down = 2.0),
         prime_mover_type = PrimeMovers.OT, fuel = ThermalFuels.NATURAL_GAS,
         time_at_status = 100.0,
+        input_basis = CU,
     )
     load = PowerLoad(;
         name = "load1", available = true, bus = bus, active_power = 0.3,
         reactive_power = 0.05,
         base_power = 100.0, max_active_power = 0.5, max_reactive_power = 0.1,
         conformity = LoadConformity.CONFORMING,
+        input_basis = CU,
     )
     sys = System(100.0)
     add_component!(sys, bus)
@@ -642,6 +665,7 @@ end
         outflow_limits = (min = 0.0, max = 500.0), efficiency = 0.9,
         turbine_type = HydroTurbineType.FRANCIS, conversion_factor = 1.0,
         prime_mover_type = PrimeMovers.HY, travel_time = 5.0,
+        input_basis = CU,
     )
     ror = HydroDispatch(;
         name = "ror1", available = true, bus = bus, active_power = 0.15,
@@ -652,6 +676,7 @@ end
         ramp_limits = (up = 0.1, down = 0.1), time_limits = (up = 1.0, down = 1.0),
         base_power = 100.0, status = OperationalStates.ONLINE, time_at_status = 50.0,
         operation_cost = hydro_cost,
+        input_basis = CU,
     )
     ren_cost = RenewableGenerationCost(;
         variable_operation_cost = CostCurve(;
@@ -664,18 +689,21 @@ end
         rating = 0.5, prime_mover_type = PrimeMovers.WT,
         reactive_power_limits = (min = -0.2, max = 0.2), power_factor = 0.95,
         operation_cost = ren_cost, base_power = 100.0,
+        input_basis = CU,
     )
     solar = RenewableNonDispatch(;
         name = "solar1", available = true, bus = bus, active_power = 0.15,
         reactive_power = 0.02,
         rating = 0.3, prime_mover_type = PrimeMovers.PVe, power_factor = 0.98,
         base_power = 100.0,
+        input_basis = CU,
     )
     condenser = SynchronousCondenser(;
         name = "syncon1", available = true, bus = bus, reactive_power = 0.05,
         rating = 0.2,
         reactive_power_limits = (min = -0.2, max = 0.2), base_power = 100.0,
         active_power_losses = 0.01,
+        input_basis = CU,
     )
     storage_cost = StorageCost(; fixed = 0.0, shut_down = 0.0, start_up = 0.0)
     storage = EnergyReservoirStorage(;
@@ -693,6 +721,7 @@ end
         storage_target = 0.5, cycle_limits = 10000,
         ramp_limits = (up = 0.5, down = 0.5),
         self_discharge = 0.0, standing_loss = 0.01,
+        input_basis = CU,
     )
 
     sys = System(100.0)
@@ -765,6 +794,7 @@ end
         rating = 0.5, active_power_limits = (min = 0.0, max = 0.5),
         reactive_power_limits = (min = -0.2, max = 0.2), base_power = 100.0,
         operation_cost = hydro_cost,
+        input_basis = CU,
     )
     reservoir = HydroReservoir(;
         name = "reservoir1", available = true,
@@ -1112,6 +1142,7 @@ end
             reactive_power_flow = 0.02, arc = arc, r = 0.01, x = 0.1,
             b = (from = 0.0, to = 0.0), rating = 1.0,
             angle_limits = (min = -1.57, max = 1.57),
+            input_basis = CU,
         )
         add_component!(sys, line)
         out = PSY.to_openapi(sys; units = NU)
@@ -1128,6 +1159,7 @@ end
         name = "load1", available = true, bus = bus, active_power = 0.3,
         reactive_power = 0.05,
         base_power = 100.0, max_active_power = 0.5, max_reactive_power = 0.1,
+        input_basis = CU,
     )
     add_component!(sys, load)
 
@@ -1296,6 +1328,7 @@ end
             name = "load1", available = true, bus = bus, active_power = 0.3,
             reactive_power = 0.05,
             base_power = 100.0, max_active_power = 0.5, max_reactive_power = 0.1,
+            input_basis = CU,
         )
         add_component!(sys, load)
 
@@ -1555,6 +1588,7 @@ _export_thermal_gen(bus; name = "gen1") = ThermalStandard(;
     time_limits = nothing, ramp_limits = nothing,
     operation_cost = ThermalGenerationCost(CostCurve(LinearCurve(1400.0)), 0.0, 4.0, 2.0),
     base_power = 100.0,
+    input_basis = CU,
 )
 
 @testset "OpenAPI export: time series owned by a supplemental attribute round-trips" begin
@@ -1652,6 +1686,7 @@ _cc_thermal_gen(bus, name, prime_mover) = ThermalStandard(;
     operation_cost = ThermalGenerationCost(nothing), base_power = 100.0,
     time_limits = nothing, prime_mover_type = prime_mover,
     fuel = ThermalFuels.NATURAL_GAS,
+    input_basis = CU,
 )
 
 """The issue's MWE: a CT and a CA on the same bus, both members of one `CombinedCycleBlock`,
@@ -1718,7 +1753,12 @@ end
     sys = System(100.0)
     bus = _export_bus(; number = 1)
     add_component!(sys, bus)
-    zone = LoadZone(; name = "lz1", peak_active_power = 1.0, peak_reactive_power = 0.0)
+    zone = LoadZone(;
+        name = "lz1",
+        peak_active_power = 1.0,
+        peak_reactive_power = 0.0,
+        input_basis = CU,
+    )
     add_component!(sys, zone)
     stamps = collect(range(DateTime(2026, 1, 1); step = Hour(1), length = 3))
     for (number, value) in ((1, 0.25), (2, 0.75))

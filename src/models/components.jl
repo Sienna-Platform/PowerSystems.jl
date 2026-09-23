@@ -17,8 +17,8 @@ _get_base_power(c::Component) = _get_system_base_power(c)
 # independently-set component base (generators, loads, storage, ...) from the
 # arc/area-ish types below whose `base_power` field only exists because the
 # schema records the system base per-component "in lieu of a system-level table"
-# (see SiennaSchemas). `add_component!` uses this trait to keep that field in
-# sync with the system's base power; it must never be set independently.
+# (see SiennaSchemas). `add_component!` uses this trait to check that field against
+# the system's base power; it must never be set independently.
 abstract type BasePowerKind end
 struct ComponentBasePower <: BasePowerKind end
 struct SystemBasePower <: BasePowerKind end
@@ -42,12 +42,19 @@ base_power_kind(::TwoTerminalLCCLine) = SystemBasePower()
 base_power_kind(::TwoTerminalVSCLine) = SystemBasePower()
 
 """
-Write the system's base power onto `component.base_power` for `SystemBasePower`
-types; a no-op for genuine component-base types. Called from `add_component!` so
-the field never drifts from the system it is recorded against.
+Called from `add_component!`: a `SystemBasePower` component's stored per-unit values are
+relative to its own `base_power`, so it must match the system's.
 """
 _sync_base_power!(::ComponentBasePower, component, system_base_power) = nothing
 function _sync_base_power!(::SystemBasePower, component, system_base_power)
+    base_power = component.base_power
+    isapprox(base_power, system_base_power) || throw(
+        ArgumentError(
+            "$(summary(component)) has base_power = $base_power MVA, but the system " *
+            "base is $system_base_power MVA and its per-unit values are relative to " *
+            "that. Construct it with `base_power = $system_base_power`.",
+        ),
+    )
     component.base_power = system_base_power
     return
 end
@@ -367,6 +374,24 @@ set_value(c::UnitsBearer, field, val::NamedTuple{(:startup, :shutdown)}, cu::Val
 
 # ---- Nothing passthrough ----
 set_value(::UnitsBearer, _, ::Nothing, ::Val) = nothing
+
+# `input_basis` kwarg constructors build the struct with placeholders in the convertible
+# fields, then call each setter: the half-built component supplies its own bases.
+_placeholder(::Number) = NaN
+_placeholder(v::NamedTuple) = map(_placeholder, v)
+_placeholder(::Nothing) = nothing
+
+# A bare number takes `input_basis`; a tagged value keeps its own units.
+_tag(v::_UntaggedNumber, basis, cu::Val) = v * _basis_unit(basis, _unit_category(cu))
+_tag(v, basis, cu::Val) = v
+_tag(v::NamedTuple, basis, cu::Val) = map(x -> _tag(x, basis, cu), v)
+
+_basis_unit(::ComponentBaseUnit, ::UnitCategory) = CU
+_basis_unit(::ComponentBaseUnit, cat::RateCategory) = CU / time_basis(cat)
+_basis_unit(::NaturalUnit, cat::UnitCategory) = natural_unit(cat)
+
+# Generated `true` for types whose kwarg constructor requires `input_basis`.
+_takes_input_basis(::Type) = false
 
 ######################################
 ########### Transformer 3W ###########
