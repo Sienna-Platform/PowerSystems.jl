@@ -1787,6 +1787,7 @@ end
         sys = System(100.0)
         add_component!(sys, bus)
         load = PowerLoad(;
+            input_basis = CU,
             name = "load1", available = true, bus = bus, active_power = 0.3,
             reactive_power = 0.05, base_power = 100.0, max_active_power = 0.5,
             max_reactive_power = 0.1,
@@ -1823,6 +1824,7 @@ end
     sys = System(100.0)
     add_component!(sys, bus)
     load = PowerLoad(;
+        input_basis = CU,
         name = "load1", available = true, bus = bus, active_power = 0.3,
         reactive_power = 0.05, base_power = 100.0, max_active_power = 0.5,
         max_reactive_power = 0.1,
@@ -1843,26 +1845,13 @@ end
         bus = _export_bus(; number = 1)
         sys = System(100.0)
         add_component!(sys, bus)
-        gen = ThermalStandard(;
-            name = "gen1", available = true, status = OperationalStates.ONLINE,
-            bus = bus,
-            active_power = 1.0, reactive_power = 0.0, rating = 2.0,
-            active_power_limits = (min = 0.0, max = 2.0),
-            reactive_power_limits = (min = -1.0, max = 1.0),
-            ramp_limits = nothing, time_limits = nothing,
-            operation_cost = ThermalGenerationCost(
-                CostCurve(LinearCurve(20.0), NaturalUnit()), 0.0, 0.0, 0.0,
-            ),
-            base_power = 100.0,
-        )
+        gen = _export_thermal_gen(bus)
         add_component!(sys, gen)
         fuel = TimeSeries.TimeArray(
             [Dates.DateTime(2024, 1, 1, h) for h in 0:2], [3.0, 3.5, 4.0],
         )
-        add_time_series!(sys, gen, SingleTimeSeries(; name = "fuel_cost", data = fuel))
-        key = IS.get_time_series_key(
-            only(IS.list_time_series_metadata(IS.get_data_store(sys.data))),
-        )
+        key =
+            add_time_series!(sys, gen, SingleTimeSeries(; name = "fuel_cost", data = fuel))
         set_operation_cost!(
             gen,
             ThermalGenerationCost(
@@ -1894,18 +1883,7 @@ end
         bus = _export_bus(; number = 1)
         sys = System(100.0)
         add_component!(sys, bus)
-        gen = ThermalStandard(;
-            name = "gen1", available = true, status = OperationalStates.ONLINE,
-            bus = bus,
-            active_power = 1.0, reactive_power = 0.0, rating = 2.0,
-            active_power_limits = (min = 0.0, max = 2.0),
-            reactive_power_limits = (min = -1.0, max = 1.0),
-            ramp_limits = nothing, time_limits = nothing,
-            operation_cost = ThermalGenerationCost(
-                CostCurve(LinearCurve(20.0), NaturalUnit()), 0.0, 0.0, 0.0,
-            ),
-            base_power = 100.0,
-        )
+        gen = _export_thermal_gen(bus)
         add_component!(sys, gen)
         stamps = [Dates.DateTime(2024, 1, 1, h) for h in 0:2]
         filler = TimeSeries.TimeArray(stamps, zeros(length(stamps)))
@@ -1916,14 +1894,8 @@ end
         add_time_series!(sys, gen, SingleTimeSeries(; name = "filler1", data = filler))
         add_time_series!(sys, gen, SingleTimeSeries(; name = "filler2", data = filler))
         fuel = TimeSeries.TimeArray(stamps, [3.0, 3.5, 4.0])
-        add_time_series!(sys, gen, SingleTimeSeries(; name = "fuel_cost", data = fuel))
-        original_key = IS.get_time_series_key(
-            only(
-                IS.list_time_series_metadata(
-                    IS.get_data_store(sys.data); name = "fuel_cost",
-                ),
-            ),
-        )
+        original_key =
+            add_time_series!(sys, gen, SingleTimeSeries(; name = "fuel_cost", data = fuel))
         original_id = IS.get_association_id(original_key)
         set_operation_cost!(
             gen,

@@ -29,7 +29,7 @@ struct OpenAPIRefs
     Import-only; export never defers, so this stays empty on that side."
     deferred_refs::Vector{Function}
     "Import-only: the adopted sidecar's time series store, where an association-id-bearing
-    cost's wire id resolves to a `TimeSeriesKey` (`_association_key(store, id)`). `nothing` on
+    cost's wire id resolves to a `TimeSeriesKey` (`IS.get_time_series_key(store, id)`). `nothing` on
     export — export reads association ids straight off PSY's own keys via
     `IS.get_association_id` — and on an import of a document that names no series."
     store::Union{Nothing, IS.Store}

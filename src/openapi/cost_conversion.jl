@@ -25,10 +25,6 @@ convert_cost(w::IC.OneOfAPIModel, store) = convert_cost(w.value, store)
 # serialized key now carries its time series and element types alongside the id and
 # rebuilds itself without a catalog. Only this wire format still names a series by a bare
 # `association_id`, so only this import still needs a store to resolve one against.
-"""Resolve a wire `association_id` to the `TimeSeriesKey` it names, against the adopted
-sidecar's catalog. The store minted these ids, so it is the thing that answers for them."""
-_association_key(store::IS.Store, id::Integer) = IS.get_time_series_key(store, id)
-
 const _IMPORT_STORE = Base.ScopedValues.ScopedValue{IS.Store}()
 
 """The document names no series at all, so there is nothing to bind; a document that then
@@ -43,7 +39,7 @@ _with_import_store(f, store::IS.Store) =
 function _current_import_store()
     store = Base.ScopedValues.get(_IMPORT_STORE)
     isnothing(store) && error(
-        "convert_cost: the document names a time-series-backed cost, but no key source is " *
+        "convert_cost: the document names a time-series-backed cost, but no time series store is " *
         "bound — either this ran outside an active from_openapi(System, doc) import, or " *
         "the document describes no time series at all",
     )
@@ -143,7 +139,7 @@ convert_cost(v::Real) = Float64(v)
 """The `TimeSeriesKey` the wire type's required `association_id` names. `what` names the
 wire type for the error a missing id raises."""
 _function_data_key(fd, store, what::AbstractString) =
-    _association_key(store, _require(fd.association_id, "$what.association_id"))
+    IS.get_time_series_key(store, _require(fd.association_id, "$what.association_id"))
 
 convert_cost(fd::IC.TimeSeriesLinearFunctionData, store) =
     TimeSeriesFunctionData{LinearFunctionData}(
@@ -175,7 +171,7 @@ convert_cost(fd::IC.TimeSeriesPiecewiseStepData) = convert_cost(fd, _current_imp
 """`nothing`/`Absent` (the field was never on the wire) both stay `nothing`; a wire
 association id resolves against `store`."""
 _resolve_optional_key(::Any, ::Union{Nothing, IC.Absent}) = nothing
-_resolve_optional_key(store, id::Integer) = _association_key(store, id)
+_resolve_optional_key(store, id::Integer) = IS.get_time_series_key(store, id)
 
 """Wire representation of [`CurveStyles`](@ref): a plain integer (0/1), deliberately not
 the string-enum convention used elsewhere in the schemas - see `curve_style` on
@@ -254,7 +250,7 @@ end
 scalar branch, so a plain `fuel_cost` converts with no active import at all."""
 _fuel_cost_fields(::Any, fuel_cost::Real, ::Nothing) = (Float64(fuel_cost), nothing)
 _fuel_cost_fields(store, ::Nothing, fuel_cost_time_series::Integer) =
-    (nothing, _association_key(store, fuel_cost_time_series))
+    (nothing, IS.get_time_series_key(store, fuel_cost_time_series))
 _fuel_cost_fields(::Any, ::Nothing, ::Nothing) = error(
     "convert_cost: FuelCurve requires exactly one of fuel_cost or fuel_cost_time_series",
 )
@@ -287,7 +283,7 @@ store is pulled lazily, only inside the `fuel_cost_time_series` branch, so a pla
 `fuel_cost` still needs no active import bound at all."""
 _fuel_cost_fields_ambient(fuel_cost::Real, ::Nothing) = (Float64(fuel_cost), nothing)
 _fuel_cost_fields_ambient(::Nothing, fuel_cost_time_series::Integer) =
-    (nothing, _association_key(_current_import_store(), fuel_cost_time_series))
+    (nothing, IS.get_time_series_key(_current_import_store(), fuel_cost_time_series))
 _fuel_cost_fields_ambient(::Nothing, ::Nothing) = error(
     "convert_cost: FuelCurve requires exactly one of fuel_cost or fuel_cost_time_series",
 )
@@ -473,7 +469,7 @@ function convert_cost(po::PC.MarketBidTimeSeriesCost, store)
                 "MarketBidTimeSeriesCost.minimum_energy_offer",
             ), store,
         ),
-        start_up = _association_key(
+        start_up = IS.get_time_series_key(
             store,
             Int(
                 _require(

@@ -711,3 +711,55 @@ end
     cost = MarketBidCost(; ancillary_service_offers = [reserve])
     @test isempty(get_time_series_keys(cost))
 end
+
+@testset "every cost type names its own time series fields" begin
+    fallback = which(PSY._collect_time_series_keys!, (Vector{IS.TimeSeriesKey}, Any))
+    for T in IS.get_all_concrete_subtypes(PSY.OperationalCost)
+        @test which(PSY._collect_time_series_keys!, (Vector{IS.TimeSeriesKey}, T)) !=
+              fallback
+    end
+end
+
+@testset "get_time_series_keys reaches the time-series curves of every cost type" begin
+    sys, gen = _sys_with_thermal()
+    lin = [_attach_linear_forecast(sys, gen, "linear_keys_$i") for i in 1:5]
+    ts_curve(key) = CostCurve(IS.TimeSeriesLinearCurve(key), NaturalUnit())
+
+    renewable = RenewableGenerationCost(;
+        variable_operation_cost = ts_curve(lin[1]),
+        curtailment_cost = ts_curve(lin[2]),
+    )
+    @test get_time_series_keys(renewable) == [lin[1], lin[2]]
+
+    storage = StorageCost(;
+        charge_variable_cost = ts_curve(lin[3]),
+        discharge_variable_cost = ts_curve(lin[4]),
+    )
+    @test get_time_series_keys(storage) == [lin[3], lin[4]]
+
+    load = LoadCost(; variable_operation_cost = ts_curve(lin[5]), fixed = 0.0)
+    @test get_time_series_keys(load) == [lin[5]]
+
+    imp_key = _attach_pwl_forecast(sys, gen, "import_keys")
+    exp_key = _attach_pwl_forecast(sys, gen, "export_keys")
+    import_export = ImportExportTimeSeriesCost(;
+        import_offer_curves = make_import_export_ts_curve(imp_key),
+        export_offer_curves = make_import_export_ts_curve(exp_key),
+    )
+    @test get_time_series_keys(import_export) == [imp_key, exp_key]
+
+    offer_key = _attach_pwl_forecast(sys, gen, "offer_keys")
+    zero_ts = IS.Deterministic(;
+        data = SortedDict(_TS_RESOLVE_INITIAL_TIME => fill(0.0, 24)),
+        name = "input_at_zero_keys",
+        resolution = _TS_RESOLVE_RESOLUTION,
+    )
+    zero_key = add_time_series!(sys, gen, zero_ts)
+    curve = make_market_bid_ts_curve(offer_key; input_at_zero_key = zero_key)
+    @test get_time_series_keys(
+        ImportExportTimeSeriesCost(;
+            import_offer_curves = curve,
+            export_offer_curves = make_import_export_ts_curve(exp_key),
+        ),
+    ) == [offer_key, zero_key, exp_key]
+end

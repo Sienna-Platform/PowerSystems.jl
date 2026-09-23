@@ -45,13 +45,6 @@ const TIME_SERIES_FILE = "time_series.h5"
 """InfraStore's catalog suffix."""
 const TIME_SERIES_CATALOG_SUFFIX = ".sqlite"
 
-"""InfraStore's SQLite catalog, beside the HDF5 sidecar.
-
-Archive member only, but named here too so a document write clears it: its rows would
-otherwise point into a sidecar that write just replaced.
-"""
-const TIME_SERIES_CATALOG_FILE = TIME_SERIES_FILE * TIME_SERIES_CATALOG_SUFFIX
-
 """
 Archive member holding subsystem membership — the only System state the document cannot
 represent. Masked components need no entry: `add_component!` re-masks them on read, and
@@ -216,7 +209,6 @@ function to_file(
         )
     elseif isempty(ext)
         _warn_on_document_data_loss(sys)
-        mkpath(path)
         _write_bundle(
             sys,
             joinpath(path, SYSTEM_DOCUMENT_FILE),
@@ -352,16 +344,26 @@ function _from_archive(path::AbstractString; system_kwargs...)
         get(ENV, IS.TIME_SERIES_DIRECTORY_ENV_VAR, tempdir()),
     )
     mkpath(tsdir)
-    dir = IS.extract_sienna_archive(path; directory = mktempdir(tsdir))
+    if !get(system_kwargs, :time_series_read_only, false)
+        return mktempdir(dir -> _read_archive(path, dir; system_kwargs...), tsdir)
+    end
+    dir = mktempdir(tsdir)
+    sys = try
+        _read_archive(path, dir; system_kwargs...)
+    catch
+        rm(dir; recursive = true, force = true)
+        rethrow()
+    end
+    for consumed in (SYSTEM_DOCUMENT_FILE, SIENNA_EXTRAS_FILE)
+        rm(joinpath(dir, consumed); force = true)
+    end
+    return sys
+end
+
+function _read_archive(path::AbstractString, dir::AbstractString; system_kwargs...)
+    IS.extract_sienna_archive(path; directory = dir)
     sys = _read_bundle(joinpath(dir, SYSTEM_DOCUMENT_FILE); system_kwargs...)
     _load_sienna_extras!(sys, dir)
-    if get(system_kwargs, :time_series_read_only, false)
-        for consumed in (SYSTEM_DOCUMENT_FILE, SIENNA_EXTRAS_FILE)
-            rm(joinpath(dir, consumed); force = true)
-        end
-    else
-        rm(dir; recursive = true)
-    end
     return sys
 end
 

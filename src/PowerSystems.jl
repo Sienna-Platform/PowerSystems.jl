@@ -1035,6 +1035,7 @@ include("models/cost_functions/RenewableGenerationCost.jl")
 include("models/cost_functions/StorageCost.jl")
 include("models/cost_functions/ThermalGenerationCost.jl")
 include("models/cost_functions/HydroReservoirCost.jl")
+include("models/cost_functions/time_series_keys.jl")
 
 # OpenAPI serde: hand-written pieces the generated from_openapi/to_openapi methods
 # build on. Must precede the generated includes. The rest of src/openapi/ is included

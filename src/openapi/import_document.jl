@@ -601,7 +601,7 @@ function from_openapi(
     sys = _system_with_sidecar(base_power, doc, time_series_storage_path; system_kwargs...)
     _apply_document_metadata!(sys, doc, keys(system_kwargs))
 
-    store = _key_source(sys, doc, time_series_storage_path)
+    store = _import_store(sys, doc, time_series_storage_path)
     _load_time_series_associations!(sys, doc, store)
     refs = OpenAPIRefs(base_power; store = store)
 
@@ -664,16 +664,13 @@ function _load_time_series_associations!(sys::System, doc::PD.SystemDocument, st
 end
 
 """
-The store this import resolves a cost's `association_id` against, or `nothing` when the document
-names no series at all.
-
-Always the adopted sidecar: a document carrying association rows names the file its values live
-in, so there is always a store to answer for the ids. `to_openapi` will not produce one without.
+The adopted sidecar's store, which resolves a cost's `association_id`, or `nothing` when the
+document names no series at all.
 """
-_key_source(sys::System, ::PD.SystemDocument, ::AbstractString) =
-    sys.data.time_series_manager.data_store
+_import_store(sys::System, ::PD.SystemDocument, ::AbstractString) =
+    IS.get_data_store(sys.data)
 
-function _key_source(::System, doc::PD.SystemDocument, ::Nothing)
+function _import_store(::System, doc::PD.SystemDocument, ::Nothing)
     isempty(doc.time_series_associations) && return nothing
     throw(
         IS.DataFormatError(

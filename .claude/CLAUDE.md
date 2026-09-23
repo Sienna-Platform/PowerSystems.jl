@@ -38,7 +38,7 @@ convertible field. Don't confuse it with the **`power_units` field** on cost cur
 power-bearing blobs — that is per-value wire data, spelled `"COMPONENT_BASE"`/`"NATURAL_UNITS"`.
 
 **The archive container is IS's, the extension is PSY's** — `IS.create_sienna_archive` /
-`extract_sienna_archive` / `is_sienna_archive` own the zip; PSY only supplies the extension
+`extract_sienna_archive` own the zip; PSY only supplies the extension
 (`SYSTEM_ARCHIVE_EXTENSION = ".sns"`, so PowerSystemsInvestmentsPortfolios can reuse the same
 container under `.snp`). Do not add zip or archive dependencies here.
 

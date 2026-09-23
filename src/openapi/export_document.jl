@@ -486,16 +486,10 @@ function _group_association!(
 end
 
 """
-Every row a document export reads out of the time series store, taken in one pass.
-
-The rest of [`to_openapi`](@ref) walks the `System`'s in-memory containers, so this is the
-whole of its contact with the store — and the store is a single SQLite connection that aborts
-the process when two threads are inside it at once. A caller that wants the export off the
-thread owning the store reads this there, first, and hands the rest away; see
-`PowerSimulations`' simulation build for the shape of that. Everyone else lets `to_openapi`
-read it and never sees the type.
-
-`num_time_series` rides along because the count is a catalog query too.
+The store rows a document export declares: its supplemental attribute associations, its time
+series associations, and their count. [`to_openapi`](@ref) reads them from `sys`'s own store
+by default ([`read_export_store_rows`](@ref)); a document pointing at another store's sidecar
+takes that store's rows instead.
 """
 struct ExportStoreRows
     supplemental_attribute_associations::Vector{IC.SupplementalAttributeAssociation}
@@ -506,8 +500,7 @@ end
 """
 $(TYPEDSIGNATURES)
 
-Read `sys`'s [`ExportStoreRows`](@ref). Cheap — three catalog queries — next to the component
-pass it lets a caller move to another thread.
+Read `sys`'s own [`ExportStoreRows`](@ref), the rows [`to_openapi`](@ref) declares by default.
 """
 read_export_store_rows(sys::System) = ExportStoreRows(
     IS.openapi_supplemental_attribute_association_rows(sys.data),
@@ -646,8 +639,7 @@ function _export_all_time_series(
         error(
             "to_openapi: $num_time_series time series are attached but no " *
             "time_series_storage_path was given — a document carrying association rows has " *
-            "to name the file their values live in. Pass the path even when " *
-            "write_time_series_data = false, where the arrays are already there.",
+            "to name the file their values live in.",
         )
     end
     skipped_counts = Dict{String, Int}()
@@ -675,21 +667,16 @@ function _export_all_time_series(
     end
     # The rows above go into the document either way; `write_catalog` decides only whether
     # InfraStore's own `.sqlite` is written beside the arrays as well. See `to_file`.
-    _write_time_series_values(
-        sys, time_series_storage_path, write_catalog, Val(write_data),
-    )
+    if write_data
+        _write_time_series_values(sys, time_series_storage_path, write_catalog)
+    end
     return rows
 end
-
-"""`write_time_series_data = false` writes nothing: the arrays at `time_series_storage_path` were
-produced by whoever asked for that form, and the document only points at them."""
-_write_time_series_values(::System, ::Any, ::Bool, ::Val{false}) = nothing
 
 function _write_time_series_values(
     sys::System,
     time_series_storage_path,
     write_catalog::Bool,
-    ::Val{true},
 )
     store = IS.get_data_store(sys.data)
     path = String(time_series_storage_path)
@@ -733,25 +720,15 @@ Component `ext` is written through verbatim to `doc.ext`.
 on read. Either way the rows appear in `doc.time_series_associations`. It requires
 `time_series_storage_path` whenever `sys` carries time series.
 
-`store_rows` is every row the export reads out of the time series store, read up front. The
-default reads it here; a caller that wants the component pass on another thread reads it
-itself, on the thread that owns the store, and passes it in — see [`ExportStoreRows`](@ref).
-Writing the values still touches the store at the end, so only `write_time_series_data = false`
-is fully off-thread.
+A document can instead point at a sidecar another store wrote:
 
-`write_time_series_data = false` describes arrays **someone else already wrote**: the document
-names `time_series_storage_path` and carries its rows as always, but no values are written here.
-That is what lets a results writer point a document at a sidecar it produced itself — the
-parameters a model used, say — while the rows still come from the store that wrote them, so
-every `uri` resolves on read. The path is required either way: a document carrying rows must
-name the file they live in.
-
-`association_id_map` remaps every time-series-backed cost's emitted `association_id` before it
-reaches the document — for a results writer whose `store_rows` come from its own parameter
-store rather than the System's, so the ids the System's keys carry mean nothing there. Empty
-(the default) is a no-op: every cost emits its key's own id. Non-empty, every emitted id must be
-a key of the map or `to_openapi` throws `IS.DataFormatError` naming it — a map that misses an id
-is a caller error, not a fall-through to the wrong series.
+  - `store_rows` holds the rows the document declares; it defaults to `sys`'s own
+    ([`ExportStoreRows`](@ref)).
+  - `write_time_series_data = false` writes no values; `time_series_storage_path` is still
+    required, since a document carrying rows must name their file.
+  - `association_id_map` remaps each cost's emitted `association_id` onto that store's ids. Empty
+    (the default) is a no-op; non-empty, it must cover every emitted id or `to_openapi` throws
+    `IS.DataFormatError`.
 """
 function to_openapi(
     sys::System;
@@ -772,40 +749,38 @@ function to_openapi(
         frequency = sys.frequency,
         time_series_storage_file = _sidecar_basename(time_series_storage_path),
     )
-    emitted = Set{Int}()
-    task_local_storage(_EMITTED_ASSOCIATION_IDS_KEY, emitted) do
-        task_local_storage(_ASSOCIATION_ID_MAP_KEY, association_id_map) do
-            _export_components!(doc, refs, sys, units)
-            _export_market_bid_service_offers!(doc, refs)
-            supplemental_attributes,
+    context = _ExportContext(Set{Int}(), Dict{Int64, Int64}(association_id_map))
+    Base.ScopedValues.with(_EXPORT_CONTEXT => context) do
+        _export_components!(doc, refs, sys, units)
+        _export_market_bid_service_offers!(doc, refs)
+        supplemental_attributes,
+        supplemental_attribute_associations,
+        plant_associations,
+        combined_cycle_associations =
+            _export_supplemental_attributes(refs, sys, store_rows)
+        append!(doc.supplemental_attributes, supplemental_attributes)
+        append!(
+            doc.supplemental_attribute_associations,
             supplemental_attribute_associations,
-            plant_associations,
-            combined_cycle_associations =
-                _export_supplemental_attributes(refs, sys, store_rows)
-            append!(doc.supplemental_attributes, supplemental_attributes)
-            append!(
-                doc.supplemental_attribute_associations,
-                supplemental_attribute_associations,
-            )
-            append!(doc.plant_associations, plant_associations)
-            append!(doc.combined_cycle_associations, combined_cycle_associations)
-            append!(doc.service_associations, _export_service_associations(refs, sys))
-            append!(
-                doc.trading_hub_associations,
-                _export_trading_hub_associations(refs, sys),
-            )
-            append!(
-                doc.time_series_associations,
-                _export_all_time_series(
-                    sys, refs, time_series_storage_path, write_catalog,
-                    write_time_series_data, store_rows,
-                ),
-            )
-            _reserve_ids!(doc, refs)
-        end
+        )
+        append!(doc.plant_associations, plant_associations)
+        append!(doc.combined_cycle_associations, combined_cycle_associations)
+        append!(doc.service_associations, _export_service_associations(refs, sys))
+        append!(
+            doc.trading_hub_associations,
+            _export_trading_hub_associations(refs, sys),
+        )
+        append!(
+            doc.time_series_associations,
+            _export_all_time_series(
+                sys, refs, time_series_storage_path, write_catalog,
+                write_time_series_data, store_rows,
+            ),
+        )
+        _reserve_ids!(doc, refs)
     end
 
-    _check_costs_reference_declared_series!(doc, emitted)
+    _check_costs_reference_declared_series!(doc, context.emitted_ids)
     PD.validate_document(doc)
     return doc
 end

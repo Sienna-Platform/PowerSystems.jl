@@ -448,8 +448,15 @@ end
     # catalog-bearing bundle the archive form uses.
     sys = create_system_with_outages()
     dir = mktempdir()
-    PSY._to_file_directory(sys, dir; units = CU, force = true, pretty = false,
-        write_catalog = true)
+    PSY._write_bundle(
+        sys,
+        joinpath(dir, PSY.SYSTEM_DOCUMENT_FILE),
+        joinpath(dir, PSY.TIME_SERIES_FILE);
+        units = CU,
+        force = true,
+        pretty = false,
+        write_catalog = true,
+    )
     @test isfile(joinpath(dir, "time_series.h5.sqlite"))
     doc = PSY.PD.read_document(joinpath(dir, "system.json"))
     # PO structs are immutable, so rebuild the row and its oneOf wrapper rather than
