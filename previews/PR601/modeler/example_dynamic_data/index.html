@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Creating a Dynamic System · PowerSystems.jl</title><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.png" alt="PowerSystems.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit">PowerSystems.jl</span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Welcome Page</a></li><li><span class="tocitem">User Guide</span><ul><li><a class="tocitem" href="../../user_guide/installation/">Installation</a></li><li><a class="tocitem" href="../../user_guide/quick_start_guide/">Quick Start Guide</a></li><li><a class="tocitem" href="../../user_guide/system/">System</a></li><li><a class="tocitem" href="../../user_guide/generated_type_structure/">Type Structure</a></li></ul></li><li><span class="tocitem">Modeler</span><ul><li><a class="tocitem" href="../parsing/">Constructing a System from raw data</a></li><li><a class="tocitem" href="../data/">Saving and Viewing PowerSystems Data</a></li><li class="is-active"><a class="tocitem" href>Creating a Dynamic System</a><ul class="internal"><li><a class="tocitem" href="#Static-System-creation"><span>Static System creation</span></a></li><li><a class="tocitem" href="#Dynamic-Lines-case:-Data-creation"><span>Dynamic Lines case: Data creation</span></a></li></ul></li><li><a class="tocitem" href="../generated_modeling_with_JuMP/">Modeling With Jump</a></li><li><a class="tocitem" href="../generated_network_matrices/">Network Matrices</a></li><li><a class="tocitem" href="../generated_power_flow/">Power Flow</a></li></ul></li><li><span class="tocitem">Model Developer</span><ul><li><a class="tocitem" href="../../model_developer/extending_parsing/">Extending Parsing</a></li><li><a class="tocitem" href="../../model_developer/adding_types/">Adding Types</a></li></ul></li><li><span class="tocitem">Developer</span><ul><li><a class="tocitem" href="../../developer/style/">Style Guide</a></li><li><a class="tocitem" href="../../developer/testing/">Testing</a></li><li><a class="tocitem" href="../../developer/logging/">Logging</a></li></ul></li><li><span class="tocitem">Model Library</span><ul><li><input class="collapse-toggle" id="menuitem-6-1" type="checkbox"/><label class="tocitem" for="menuitem-6-1"><span class="docs-label">DeviceParameter</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../model_library/generated_MultiStartCost/">MultiStartCost</a></li><li><a class="tocitem" href="../../model_library/generated_MarketBidCost/">MarketBidCost</a></li><li><a class="tocitem" href="../../model_library/generated_ThreePartCost/">ThreePartCost</a></li><li><a class="tocitem" href="../../model_library/generated_TwoPartCost/">TwoPartCost</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-6-2" type="checkbox"/><label class="tocitem" for="menuitem-6-2"><span class="docs-label">DynamicInverterComponent</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../model_library/generated_Converter/">Converter</a></li><li><a class="tocitem" href="../../model_library/generated_DCSource/">DCSource</a></li><li><a class="tocitem" href="../../model_library/generated_Filter/">Filter</a></li><li><a class="tocitem" href="../../model_library/generated_FrequencyEstimator/">FrequencyEstimator</a></li><li><a class="tocitem" href="../../model_library/generated_InnerControl/">InnerControl</a></li><li><a class="tocitem" href="../../model_library/outer_control/">OuterControl</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-6-3" type="checkbox"/><label class="tocitem" for="menuitem-6-3"><span class="docs-label">StaticInjection</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../model_library/generated_InterruptibleLoad/">InterruptibleLoad</a></li><li><a class="tocitem" href="../../model_library/generated_FixedAdmittance/">FixedAdmittance</a></li><li><a class="tocitem" href="../../model_library/generated_PowerLoad/">PowerLoad</a></li><li><a class="tocitem" href="../../model_library/generated_HydroDispatch/">HydroDispatch</a></li><li><a class="tocitem" href="../../model_library/generated_HydroEnergyReservoir/">HydroEnergyReservoir</a></li><li><a class="tocitem" href="../../model_library/generated_HydroPumpedStorage/">HydroPumpedStorage</a></li><li><a class="tocitem" href="../../model_library/generated_RenewableDispatch/">RenewableDispatch</a></li><li><a class="tocitem" href="../../model_library/generated_RenewableFix/">RenewableFix</a></li><li><a class="tocitem" href="../../model_library/generated_ThermalMultiStart/">ThermalMultiStart</a></li><li><a class="tocitem" href="../../model_library/generated_ThermalStandard/">ThermalStandard</a></li><li><a class="tocitem" href="../../model_library/generated_Source/">Source</a></li><li><a class="tocitem" href="../../model_library/generated_GenericBattery/">GenericBattery</a></li><li><a class="tocitem" href="../../model_library/regulation_device/">Regulation Device</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-6-4" type="checkbox"/><label class="tocitem" for="menuitem-6-4"><span class="docs-label">Topology</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../model_library/generated_Area/">Area</a></li><li><a class="tocitem" href="../../model_library/generated_LoadZone/">LoadZone</a></li><li><a class="tocitem" href="../../model_library/generated_Arc/">Arc</a></li><li><a class="tocitem" href="../../model_library/generated_Bus/">Bus</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-6-5" type="checkbox"/><label class="tocitem" for="menuitem-6-5"><span class="docs-label">DynamicInjection</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../model_library/dynamic_inverter/">Dynamic Inverter</a></li><li><a class="tocitem" href="../../model_library/dynamic_generator/">Dynamic Generator</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-6-6" type="checkbox"/><label class="tocitem" for="menuitem-6-6"><span class="docs-label">Service</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../model_library/generated_AGC/">AGC</a></li><li><a class="tocitem" href="../../model_library/generated_StaticReserveNonSpinning/">StaticReserveNonSpinning</a></li><li><a class="tocitem" href="../../model_library/generated_VariableReserveNonSpinning/">VariableReserveNonSpinning</a></li><li><a class="tocitem" href="../../model_library/generated_Transfer/">Transfer</a></li><li><a class="tocitem" href="../../model_library/reserves/">Reserves</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-6-7" type="checkbox"/><label class="tocitem" for="menuitem-6-7"><span class="docs-label">Branch</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../model_library/generated_Line/">Line</a></li><li><a class="tocitem" href="../../model_library/generated_MonitoredLine/">MonitoredLine</a></li><li><a class="tocitem" href="../../model_library/generated_PhaseShiftingTransformer/">PhaseShiftingTransformer</a></li><li><a class="tocitem" href="../../model_library/generated_TapTransformer/">TapTransformer</a></li><li><a class="tocitem" href="../../model_library/generated_Transformer2W/">Transformer2W</a></li><li><a class="tocitem" href="../../model_library/generated_HVDCLine/">HVDCLine</a></li><li><a class="tocitem" href="../../model_library/generated_VSCDCLine/">VSCDCLine</a></li><li><a class="tocitem" href="../../model_library/dynamic_branch/">Dynamic Lines</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-6-8" type="checkbox"/><label class="tocitem" for="menuitem-6-8"><span class="docs-label">DynamicGeneratorComponent</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../model_library/generated_AVR/">AVR</a></li><li><a class="tocitem" href="../../model_library/generated_Machine/">Machine</a></li><li><a class="tocitem" href="../../model_library/generated_PSS/">PSS</a></li><li><a class="tocitem" href="../../model_library/generated_Shaft/">Shaft</a></li><li><a class="tocitem" href="../../model_library/generated_TurbineGov/">TurbineGov</a></li></ul></li></ul></li><li><a class="tocitem" href="../../api/internal/">Internal API</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Modeler</a></li><li class="is-active"><a href>Creating a Dynamic System</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Creating a Dynamic System</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/NREL-SIIP/PowerSystems.jl/blob/master/docs/src/modeler/example_dynamic_data.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Creating-a-Dynamic-System"><a class="docs-heading-anchor" href="#Creating-a-Dynamic-System">Creating a Dynamic System</a><a id="Creating-a-Dynamic-System-1"></a><a class="docs-heading-anchor-permalink" href="#Creating-a-Dynamic-System" title="Permalink"></a></h1><p>This tutorial briefly introduces how to create a system using <code>PowerSystems.jl</code> data structures. The tutorial will guide you to create the JSON data file for the tutorial 1. We start by calling <code>PowerSystems.jl</code>:</p><pre><code class="language-julia">using PowerSystems
+const PSY = PowerSystems</code></pre><p>The following describes the system creation for the OMIB case.</p><h2 id="Static-System-creation"><a class="docs-heading-anchor" href="#Static-System-creation">Static System creation</a><a id="Static-System-creation-1"></a><a class="docs-heading-anchor-permalink" href="#Static-System-creation" title="Permalink"></a></h2><p>There are plenty of ways to define a static system (for Power Flow purposes), but the recommended option for users is to use a <a href="https://labs.ece.uw.edu/pstca/formats/pti.txt">PTI data format</a> (<code>.raw</code> file) or a <a href="https://matpower.org/docs/manual.pdf">Matpower data format</a> (<code>.m</code> file), since parsers are available. The following <code>OMIB.raw</code> file is used to create the OMIB system:</p><pre><code class="language-raw">0, 100, 33, 0, 0, 60  / 24-Apr-2020 17:05:49 - MATPOWER 7.0.1-dev
+
+
+     101, &#39;BUS 1       &#39;,       230, 3,    1,    1, 1,        1.05,           0, 1.06, 0.94, 1.06, 0.94
+     102, &#39;BUS 2       &#39;,       230, 2,    1,    1, 1,        1.04,           0, 1.06, 0.94, 1.06, 0.94
+0 / END OF BUS DATA, BEGIN LOAD DATA
+0 / END OF LOAD DATA, BEGIN FIXED SHUNT DATA
+0 / END OF FIXED SHUNT DATA, BEGIN GENERATOR DATA
+     102,  1,        50,         0,       100,      -100,     1.00, 0,     100, 0, 1, 0, 0, 1, 1, 100,       100,         0, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1
+0 / END OF GENERATOR DATA, BEGIN BRANCH DATA
+     101,      102, 1,    0.00,     0.05,   0.000,     100,     100,     100, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1
+0 / END OF BRANCH DATA, BEGIN TRANSFORMER DATA
+0 / END OF TRANSFORMER DATA, BEGIN AREA DATA
+0 / END OF AREA DATA, BEGIN TWO-TERMINAL DC DATA
+0 / END OF TWO-TERMINAL DC DATA, BEGIN VOLTAGE SOURCE CONVERTER DATA
+0 / END OF VOLTAGE SOURCE CONVERTER DATA, BEGIN IMPEDANCE CORRECTION DATA
+0 / END OF IMPEDANCE CORRECTION DATA, BEGIN MULTI-TERMINAL DC DATA
+0 / END OF MULTI-TERMINAL DC DATA, BEGIN MULTI-SECTION LINE DATA
+0 / END OF MULTI-SECTION LINE DATA, BEGIN ZONE DATA
+0 / END OF ZONE DATA, BEGIN INTER-AREA TRANSFER DATA
+0 / END OF INTER-AREA TRANSFER DATA, BEGIN OWNER DATA
+0 / END OF OWNER DATA, BEGIN FACTS CONTROL DEVICE DATA
+0 / END OF FACTS CONTROL DEVICE DATA, BEGIN SWITCHED SHUNT DATA
+0 / END OF SWITCHED SHUNT DATA, BEGIN GNE DEVICE DATA
+0 / END OF GNE DEVICE DATA, BEGIN INDUCTION MACHINE DATA
+0 / END OF INDUCTION MACHINE DATA
+Q</code></pre><p>Based on the description provided in PTI files, this is a two-bus system, on which the bus 101 (bus 1) is the reference bus at 1.05 pu, and bus 102 (bus 2) is PV bus, to be set at 1.04 pu. There is one 100 MVA generator connected at bus 2, producing 50 MW. There is an equivalent line connecting buses 1 and 2 with a reactance of <span>$0.05$</span> pu.</p><pre><code class="language-julia">#To create the system you need to pass the location of the RAW file
+file_dir = &quot;OMIB.raw&quot;
+omib_sys = System(omib_file_dir)</code></pre><p>Note that this system does not have an injection device in bus 1 (the reference bus). We can add a source with small impedance directly using a function like:</p><pre><code class="language-julia">function add_source_to_ref(sys::System)
+    for g in get_components(StaticInjection, sys)
+        isa(g, ElectricLoad) &amp;&amp; continue
+        g.bus.bustype == BusTypes.REF &amp;&amp;
+            error(&quot;A device is already attached to the REF bus&quot;)
+    end
+
+    slack_bus = [b for b in get_components(Bus, sys) if b.bustype == BusTypes.REF][1]
+    inf_source = Source(
+        name = &quot;InfBus&quot;, #name
+        available = true, #availability
+        active_power = 0.0,
+        reactive_power = 0.0,
+        bus = slack_bus, #bus
+        R_th = 0.0, #Rth
+        X_th = 5e-6, #Xth
+    )
+    add_component!(sys, inf_source)
+    return
+end
+
+add_source_to_ref(omib_sys)</code></pre><p>This function attempts to add a infinite source with <span>$X_{th} = 5\cdot 10^{-6}$</span> pu if no other device is already attached to the reference bus.</p><p>The system can be explored directly using functions like:</p><pre><code class="language-julia">collect(get_components(Source, omib_sys))
+collect(get_components(Generators, omib_sys))</code></pre><p>By exploring those it can be seen that the generators are named as: <code>generator-bus_number-id</code>. Then, the generator attached at bus 2 is simply named <code>generator-102-1</code>.</p><h3 id="Dynamic-Injections"><a class="docs-heading-anchor" href="#Dynamic-Injections">Dynamic Injections</a><a id="Dynamic-Injections-1"></a><a class="docs-heading-anchor-permalink" href="#Dynamic-Injections" title="Permalink"></a></h3><p>We are now interested in attaching to the system the dynamic component that will be modeling our dynamic generator. Later versions will include a parser for <code>.dyr</code> files.</p><p>Dynamic generator devices are composed by 5 components, namely, <code>machine</code>, <code>shaft</code>, <code>avr</code>, <code>tg</code> and <code>pss</code>. So we will be adding functions to create all of its components and the generator itself:</p><pre><code class="language-julia">#Machine
+machine_classic() = BaseMachine(
+    0.0, #R
+    0.2995, #Xd_p
+    0.7087, #eq_p
+)
+
+#Shaft
+shaft_damping() = SingleMass(
+    3.148, #H
+    2.0, #D
+)
+
+#AVR
+avr_none() = AVRFixed(0.0)
+#TG
+tg_none() = TGFixed(1.0) #efficiency
+#PSS
+pss_none() = PSSFixed(0.0)
+
+function dyn_gen_classic(generator)
+    return DynamicGenerator(
+        generator,
+        1.0, #ω_ref
+        machine_classic(), #machine
+        shaft_damping(), #shaft
+        avr_none(), #avr
+        tg_none(), #tg
+        pss_none(), #pss
+    )
+end</code></pre><p>The last function receives a static generator, and creates a <code>DynamicGenerator</code> based on that specific static generator, with the specific components defined previously. This is a classic machine model without AVR, Turbine Governor and PSS.</p><p>Then we can simply create the dynamic generator as:</p><pre><code class="language-julia">#Collect the static gen in the system
+static_gen = get_component(Generator, omib_sys, &quot;generator-102-1&quot;)
+#Creates the dynamic generator
+dyn_gen = dyn_gen_classic(static_gen)
+#Add the dynamic generator the system
+add_component!(omib_sys, dyn_gen)</code></pre><p>Then we can simply export our system data such that it can be later read as:</p><pre><code class="language-julia">to_json(omib_sys, &quot;YOUR_DIR/omib_sys.json&quot;)</code></pre><h2 id="Dynamic-Lines-case:-Data-creation"><a class="docs-heading-anchor" href="#Dynamic-Lines-case:-Data-creation">Dynamic Lines case: Data creation</a><a id="Dynamic-Lines-case:-Data-creation-1"></a><a class="docs-heading-anchor-permalink" href="#Dynamic-Lines-case:-Data-creation" title="Permalink"></a></h2><p>We will now create a three bus system with one inverter and one generator. In order to do so, we will parse the following <code>ThreebusInverter.raw</code> network:</p><pre><code class="language-raw">0, 100, 33, 0, 0, 60  / 24-Apr-2020 19:28:39 - MATPOWER 7.0.1-dev
+
+
+     101, &#39;BUS 1       &#39;,       138, 3,    1,    1, 1,           1.02,        0,  1.1,  0.9,  1.1,  0.9
+     102, &#39;BUS 2       &#39;,       138, 2,    1,    1, 1,           1.0142,           0,  1.1,  0.9,  1.1,  0.9
+     103, &#39;BUS 3       &#39;,       138, 2,    1,    1, 1,           1.0059,           0,  1.1,  0.9,  1.1,  0.9
+0 / END OF BUS DATA, BEGIN LOAD DATA
+     101,  1, 1,    1,    1,       50,       10, 0, 0, 0, 0, 1, 1, 0
+     102,  1, 1,    1,    1,       100,      30, 0, 0, 0, 0, 1, 1, 0
+     103,  1, 1,    1,    1,       30,       10, 0, 0, 0, 0, 1, 1, 0
+0 / END OF LOAD DATA, BEGIN FIXED SHUNT DATA
+0 / END OF FIXED SHUNT DATA, BEGIN GENERATOR DATA
+     102,  1,       70,         0,       100,      -100,   1.0142, 0,     100, 0, 1, 0, 0, 1, 1, 100,       318,         0, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1
+     103,  1,       80,         0,       100,      -100,   1.0059, 0,     100, 0, 1, 0, 0, 1, 1, 100,       318,         0, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1
+0 / END OF GENERATOR DATA, BEGIN BRANCH DATA
+     101,      103, 1,  0.01000,     0.12,      0.2,     250,     250,     250, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1
+     101,      102, 1,  0.01000,     0.12,      0.2,     250,     250,     250, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1
+     102,      103, 1,  0.02000,     0.9,      1.0,     250,     250,     250, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1
+0 / END OF BRANCH DATA, BEGIN TRANSFORMER DATA
+0 / END OF TRANSFORMER DATA, BEGIN AREA DATA
+0 / END OF AREA DATA, BEGIN TWO-TERMINAL DC DATA
+0 / END OF TWO-TERMINAL DC DATA, BEGIN VOLTAGE SOURCE CONVERTER DATA
+0 / END OF VOLTAGE SOURCE CONVERTER DATA, BEGIN IMPEDANCE CORRECTION DATA
+0 / END OF IMPEDANCE CORRECTION DATA, BEGIN MULTI-TERMINAL DC DATA
+0 / END OF MULTI-TERMINAL DC DATA, BEGIN MULTI-SECTION LINE DATA
+0 / END OF MULTI-SECTION LINE DATA, BEGIN ZONE DATA
+0 / END OF ZONE DATA, BEGIN INTER-AREA TRANSFER DATA
+0 / END OF INTER-AREA TRANSFER DATA, BEGIN OWNER DATA
+0 / END OF OWNER DATA, BEGIN FACTS CONTROL DEVICE DATA
+0 / END OF FACTS CONTROL DEVICE DATA, BEGIN SWITCHED SHUNT DATA
+0 / END OF SWITCHED SHUNT DATA, BEGIN GNE DEVICE DATA
+0 / END OF GNE DEVICE DATA, BEGIN INDUCTION MACHINE DATA
+0 / END OF INDUCTION MACHINE DATA
+Q</code></pre><p>That describes a three bus connected system, with generators connected at bus 2 and 3, and loads in three buses. We can load the system and attach an infinite source on the reference bus:</p><pre><code class="language-julia">sys_file_dir = &quot;ThreeBusInverter.raw&quot;)
+threebus_sys = System(sys_file_dir)
+add_source_to_ref(threebus_sys)</code></pre><p>We will connect a One-d-one-q machine at bus 102, and a Virtual Synchronous Generator Inverter at bus 103. An inverter is composed by a <code>converter</code>, <code>outer control</code>, <code>inner control</code>, <code>dc source</code>, <code>frequency estimator</code> and a <code>filter</code>.</p><h3 id="Dynamic-Inverter-definition"><a class="docs-heading-anchor" href="#Dynamic-Inverter-definition">Dynamic Inverter definition</a><a id="Dynamic-Inverter-definition-1"></a><a class="docs-heading-anchor-permalink" href="#Dynamic-Inverter-definition" title="Permalink"></a></h3><p>We will create specific functions to create the components of the inverter as follows:</p><pre><code class="language-julia">#Define converter as an AverageConverter
+converter_high_power() = AverageConverter(rated_voltage = 138.0, rated_current = 100.0)
+
+#Define Outer Control as a composition of Virtual Inertia + Reactive Power Droop
+function outer_control()
+    function virtual_inertia()
+        return VirtualInertia(Ta = 2.0, kd = 400.0, kω = 20.0)
+    end
+    function reactive_droop()
+        return ReactivePowerDroop(kq = 0.2, ωf = 1000.0)
+    end
+    return OuterControl(virtual_inertia(), reactive_droop())
+end
+
+#Define an Inner Control as a Voltage+Current Controler with Virtual Impedance:
+inner_control() = CurrentControl(
+    kpv = 0.59,     #Voltage controller proportional gain
+    kiv = 736.0,    #Voltage controller integral gain
+    kffv = 0.0,     #Binary variable enabling the voltage feed-forward in output of current controllers
+    rv = 0.0,       #Virtual resistance in pu
+    lv = 0.2,       #Virtual inductance in pu
+    kpc = 1.27,     #Current controller proportional gain
+    kic = 14.3,     #Current controller integral gain
+    kffi = 0.0,     #Binary variable enabling the current feed-forward in output of current controllers
+    ωad = 50.0,     #Active damping low pass filter cut-off frequency
+    kad = 0.2,      #Active damping gain
+)
+
+#Define DC Source as a FixedSource:
+dc_source_lv() = FixedDCSource(voltage = 600.0)
+
+#Define a Frequency Estimator as a PLL based on Vikram Kaura and Vladimir Blaskoc 1997 paper:
+pll() = KauraPLL(
+    ω_lp = 500.0, #Cut-off frequency for LowPass filter of PLL filter.
+    kp_pll = 0.084,  #PLL proportional gain
+    ki_pll = 4.69,   #PLL integral gain
+)
+
+#Define an LCL filter:
+filt() = LCLFilter(lf = 0.08, rf = 0.003, cf = 0.074, lg = 0.2, rg = 0.01)
+
+#Construct the Inverter:
+function inv_case78(static_device)
+    return DynamicInverter(
+        static_device,
+        1.0, # ω_ref,
+        converter_high_power(), #converter
+        outer_control(), #outer control
+        inner_control(), #inner control voltage source
+        dc_source_lv(), #dc source
+        pll(), #pll
+        filt(), #filter
+    )
+end</code></pre><p>The last function receives a static device, typically a generator, and defines a dynamic inverter based on the components already defined.</p><h3 id="Dynamic-Generator-definition"><a class="docs-heading-anchor" href="#Dynamic-Generator-definition">Dynamic Generator definition</a><a id="Dynamic-Generator-definition-1"></a><a class="docs-heading-anchor-permalink" href="#Dynamic-Generator-definition" title="Permalink"></a></h3><p>Similarly we will construct a dynamic generator as follows:</p><pre><code class="language-julia">#Create the machine
+machine_oneDoneQ() = OneDOneQMachine(
+    0.0, #R
+    1.3125, #Xd
+    1.2578, #Xq
+    0.1813, #Xd_p
+    0.25, #Xq_p
+    5.89, #Td0_p
+    0.6, #Tq0_p
+)
+
+#Shaft
+shaft_no_damping() = SingleMass(
+    3.01, #H (M = 6.02 -&gt; H = M/2)
+    0.0,
+) #D
+
+#AVR: Type I: Resembles a DC1 AVR
+avr_type1() = AVRTypeI(
+    20.0, #Ka - Gain
+    0.01, #Ke
+    0.063, #Kf
+    0.2, #Ta
+    0.314, #Te
+    0.35, #Tf
+    0.001, #Tr
+    5.0, #Vrmax
+    -5.0, #Vrmin
+    0.0039, #Ae - 1st ceiling coefficient
+    1.555, #Be - 2nd ceiling coefficient
+)
+
+#No TG
+tg_none() = TGFixed(1.0) #efficiency
+
+#No PSS
+pss_none() = PSSFixed(0.0) #Vs
+
+#Construct the generator
+function dyn_gen_second_order(generator)
+    return DynamicGenerator(
+        generator,
+        1.0, # ω_ref,
+        machine_oneDoneQ(), #machine
+        shaft_no_damping(), #shaft
+        avr_type1(), #avr
+        tg_none(), #tg
+        pss_none(), #pss
+    )
+end</code></pre><h3 id="Add-the-components-to-the-system"><a class="docs-heading-anchor" href="#Add-the-components-to-the-system">Add the components to the system</a><a id="Add-the-components-to-the-system-1"></a><a class="docs-heading-anchor-permalink" href="#Add-the-components-to-the-system" title="Permalink"></a></h3><pre><code class="language-julia">for g in get_components(Generator, threebus_sys)
+    #Find the generator at bus 102
+    if get_number(get_bus(g)) == 102
+        #Create the dynamic generator
+        case_gen = dyn_gen_second_order(g)
+        #Attach the dynamic generator to the system
+        add_component!(threebus_sys, case_gen)
+    #Find the generator at bus 103
+    elseif get_number(get_bus(g)) == 103
+        #Create the dynamic inverter
+        case_inv = inv_case78(g)
+        #Attach the dynamic inverter to the system
+        add_component!(threebus_sys, case_inv)
+    end
+end</code></pre><h3 id="Save-the-system-in-a-JSON-file"><a class="docs-heading-anchor" href="#Save-the-system-in-a-JSON-file">Save the system in a JSON file</a><a id="Save-the-system-in-a-JSON-file-1"></a><a class="docs-heading-anchor-permalink" href="#Save-the-system-in-a-JSON-file" title="Permalink"></a></h3><pre><code class="language-julia">to_json(threebus_sys, &quot;YOUR_DIR/threebus_sys.json&quot;)</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../data/">« Saving and Viewing PowerSystems Data</a><a class="docs-footer-nextpage" href="../generated_modeling_with_JuMP/">Modeling With Jump »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Tuesday 1 September 2020 22:39">Tuesday 1 September 2020</span>. Using Julia version 1.4.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

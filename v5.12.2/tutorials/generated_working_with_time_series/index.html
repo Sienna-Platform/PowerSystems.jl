@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Working with Time Series · PowerSystems.jl</title><meta name="title" content="Working with Time Series · PowerSystems.jl"/><meta property="og:title" content="Working with Time Series · PowerSystems.jl"/><meta property="twitter:title" content="Working with Time Series · PowerSystems.jl"/><meta name="description" content="Documentation for PowerSystems.jl."/><meta property="og:description" content="Documentation for PowerSystems.jl."/><meta property="twitter:description" content="Documentation for PowerSystems.jl."/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.png" alt="PowerSystems.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../../">PowerSystems.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Welcome Page</a></li><li><span class="tocitem">Tutorials</span><ul><li><a class="tocitem" href="../generated_creating_system/">Create and Explore a Power <code>System</code></a></li><li><a class="tocitem" href="../generated_manipulating_datasets/">Manipulating Data Sets</a></li><li class="is-active"><a class="tocitem" href>Working with Time Series</a><ul class="internal"><li><a class="tocitem" href="#Example-Data-and-Setup"><span>Example Data and Setup</span></a></li><li class="toplevel"><a class="tocitem" href="#Add-and-Retrieve-a-Single-Time-Series"><span>Add and Retrieve a Single Time Series</span></a></li><li class="toplevel"><a class="tocitem" href="#Add-and-Retrieve-a-Forecast"><span>Add and Retrieve a Forecast</span></a></li><li class="toplevel"><a class="tocitem" href="#Add-A-Time-Series-Using-Scaling-Factors"><span>Add A Time Series Using Scaling Factors</span></a></li><li class="toplevel"><a class="tocitem" href="#Transform-a-[SingleTimeSeries](@ref)-into-a-Forecast"><span>Transform a <code>SingleTimeSeries</code> into a Forecast</span></a></li><li class="toplevel"><a class="tocitem" href="#Transform-with-Multiple-Intervals"><span>Transform with Multiple Intervals</span></a></li><li class="toplevel"><a class="tocitem" href="#Add-Time-Series-to-Supplemental-Attributes"><span>Add Time Series to Supplemental Attributes</span></a></li><li class="toplevel"><a class="tocitem" href="#Finding,-Retrieving,-and-Inspecting-Time-Series"><span>Finding, Retrieving, and Inspecting Time Series</span></a></li><li><a class="tocitem" href="#Getting-Timestamps-and-Values-Separately"><span>Getting Timestamps and Values Separately</span></a></li><li><a class="tocitem" href="#Inspecting-Time-Series-Metadata"><span>Inspecting Time Series Metadata</span></a></li><li class="toplevel"><a class="tocitem" href="#Next-Steps"><span>Next Steps</span></a></li></ul></li><li><a class="tocitem" href="../generated_add_dynamic_data/">Adding Data for Dynamic Simulations</a></li></ul></li><li><span class="tocitem">How to...</span><ul><li><input class="collapse-toggle" id="menuitem-3-1" type="checkbox"/><label class="tocitem" for="menuitem-3-1"><span class="docs-label">...import data</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../how_to/parse_matpower_psse/">Parse a MATPOWER or PSS/e file</a></li><li><a class="tocitem" href="../../how_to/parse_dynamic_data/">Parse PSS/e dynamic data</a></li><li><a class="tocitem" href="../../how_to/build_system_with_files/">Build a <code>System</code> using .csv files</a></li><li><a class="tocitem" href="../../how_to/serialize_data/">Save and read data with a JSON</a></li></ul></li><li><a class="tocitem" href="../../how_to/add_component_natural_units/">...add a component using natural units (MW)</a></li><li><input class="collapse-toggle" id="menuitem-3-3" type="checkbox"/><label class="tocitem" for="menuitem-3-3"><span class="docs-label">...add time-series data</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../how_to/parse_ts_from_csvs/">Parse time series data from .csv files</a></li><li><a class="tocitem" href="../../how_to/improve_ts_performance/">Improve performance with time series data</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-3-4" type="checkbox"/><label class="tocitem" for="menuitem-3-4"><span class="docs-label">...add cost data</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../how_to/add_cost_curve/">Add an Operating Cost</a></li><li><a class="tocitem" href="../../how_to/market_bid_cost/">Add a market bid</a></li><li><a class="tocitem" href="../../how_to/create_system_with_source_import_export_cost/">Add costs for imported/exported power</a></li><li><a class="tocitem" href="../../how_to/add_fuel_curve_timeseries/">Add time series fuel costs</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-3-5" type="checkbox"/><label class="tocitem" for="menuitem-3-5"><span class="docs-label">...add supplemental data beyond component fields</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../how_to/add_supplemental_attributes/">Attach supplemental data to components</a></li><li><a class="tocitem" href="../../how_to/use_supplemental_attributes/">Query contextual data on a system</a></li><li><a class="tocitem" href="../../how_to/group_generators_into_plants/">Group generators into plants</a></li><li><a class="tocitem" href="../../how_to/model_outages/">Model Outages</a></li><li><a class="tocitem" href="../../how_to/add_emissions_to_generators/">Add emissions to generators</a></li><li><a class="tocitem" href="../../how_to/adding_additional_fields/">Add custom data to a component</a></li></ul></li><li><a class="tocitem" href="../../how_to/convert_unit_systems/">...read component values in different unit systems</a></li><li><a class="tocitem" href="../../how_to/use_subsystems/">...use subsystems</a></li><li><a class="tocitem" href="../../how_to/use_context_managers/">...use context managers for bulk operations</a></li><li><a class="tocitem" href="../../how_to/add_new_types/">...customize or add a new Type</a></li><li><a class="tocitem" href="../../how_to/link_hydro_reservoirs_to_turbines/">...link hydro reservoirs and turbines</a></li><li><a class="tocitem" href="../../how_to/convert_transformer_impedance/">...convert transformer impedances between per-unit bases</a></li><li><a class="tocitem" href="../../how_to/jump/">...use PowerSystems.jl with JuMP.jl</a></li><li><a class="tocitem" href="../../how_to/reduce_repl_printing/">...reduce REPL printing</a></li><li><input class="collapse-toggle" id="menuitem-3-14" type="checkbox"/><label class="tocitem" for="menuitem-3-14"><span class="docs-label">...update to a new <code>PowerSystems.jl</code> version</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../how_to/migrating_to_psy5/">Migrate from version 4.0 to 5.0</a></li></ul></li></ul></li><li><span class="tocitem">Explanation</span><ul><li><a class="tocitem" href="../../explanation/system/">System</a></li><li><a class="tocitem" href="../../explanation/type_structure/">Type Structure</a></li><li><a class="tocitem" href="../../explanation/buses_type_explanation/">Understanding ACBusTypes</a></li><li><a class="tocitem" href="../../explanation/per_unit/">Per-unit Conventions</a></li><li><a class="tocitem" href="../../explanation/power_concepts/">Power Concepts: Base Power, Rating, and Max Active Power</a></li><li><a class="tocitem" href="../../explanation/time_series/">Time Series Data</a></li><li><a class="tocitem" href="../../explanation/dynamic_data/">Dynamic Devices</a></li><li><a class="tocitem" href="../../explanation/three_winding_transformers/">3-winding transformer representation</a></li><li><a class="tocitem" href="../../explanation/supplemental_attributes/">Supplemental attributes</a></li><li><a class="tocitem" href="../../explanation/conforming_and_non_conforming_loads/">Conforming and Non-Conforming Loads</a></li><li><a class="tocitem" href="../../explanation/grouping_generators_into_plants/">Grouping generators into plants</a></li><li><a class="tocitem" href="../../explanation/hydro_reservoir_topology/">Hydro reservoir topology</a></li><li><a class="tocitem" href="../../explanation/emissions_metadata/">Emissions metadata</a></li><li><a class="tocitem" href="../../explanation/outage_and_contingency_data/">Outage and contingency data</a></li></ul></li><li><span class="tocitem">Model Library</span><ul><li><input class="collapse-toggle" id="menuitem-5-1" type="checkbox"/><label class="tocitem" for="menuitem-5-1"><span class="docs-label">DynamicInverterComponent</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../model_library/generated_Converter/">Converter</a></li><li><a class="tocitem" href="../../model_library/generated_DCSource/">DCSource</a></li><li><a class="tocitem" href="../../model_library/generated_Filter/">Filter</a></li><li><a class="tocitem" href="../../model_library/generated_FrequencyEstimator/">FrequencyEstimator</a></li><li><a class="tocitem" href="../../model_library/generated_InnerControl/">InnerControl</a></li><li><a class="tocitem" href="../../model_library/generated_OutputCurrentLimiter/">OutputCurrentLimiter</a></li><li><a class="tocitem" href="../../model_library/outer_control/">OuterControl</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-5-2" type="checkbox"/><label class="tocitem" for="menuitem-5-2"><span class="docs-label">StaticInjection</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../model_library/generated_FixedAdmittance/">FixedAdmittance</a></li><li><a class="tocitem" href="../../model_library/generated_InterruptiblePowerLoad/">InterruptiblePowerLoad</a></li><li><a class="tocitem" href="../../model_library/generated_InterruptibleStandardLoad/">InterruptibleStandardLoad</a></li><li><a class="tocitem" href="../../model_library/generated_ShiftablePowerLoad/">ShiftablePowerLoad</a></li><li><a class="tocitem" href="../../model_library/generated_ExponentialLoad/">ExponentialLoad</a></li><li><a class="tocitem" href="../../model_library/generated_MotorLoad/">MotorLoad</a></li><li><a class="tocitem" href="../../model_library/generated_PowerLoad/">PowerLoad</a></li><li><a class="tocitem" href="../../model_library/generated_StandardLoad/">StandardLoad</a></li><li><a class="tocitem" href="../../model_library/generated_SwitchedAdmittance/">SwitchedAdmittance</a></li><li><a class="tocitem" href="../../model_library/generated_FACTSControlDevice/">FACTSControlDevice</a></li><li><a class="tocitem" href="../../model_library/generated_HydroDispatch/">HydroDispatch</a></li><li><a class="tocitem" href="../../model_library/generated_HydroPumpTurbine/">HydroPumpTurbine</a></li><li><a class="tocitem" href="../../model_library/generated_HydroTurbine/">HydroTurbine</a></li><li><a class="tocitem" href="../../model_library/generated_RenewableDispatch/">RenewableDispatch</a></li><li><a class="tocitem" href="../../model_library/generated_RenewableNonDispatch/">RenewableNonDispatch</a></li><li><a class="tocitem" href="../../model_library/generated_ThermalMultiStart/">ThermalMultiStart</a></li><li><a class="tocitem" href="../../model_library/generated_ThermalStandard/">ThermalStandard</a></li><li><a class="tocitem" href="../../model_library/generated_InterconnectingConverter/">InterconnectingConverter</a></li><li><a class="tocitem" href="../../model_library/generated_Source/">Source</a></li><li><a class="tocitem" href="../../model_library/generated_EnergyReservoirStorage/">EnergyReservoirStorage</a></li><li><a class="tocitem" href="../../model_library/generated_SynchronousCondenser/">SynchronousCondenser</a></li><li><a class="tocitem" href="../../model_library/hybrid_system/">HybridSystem</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-5-3" type="checkbox"/><label class="tocitem" for="menuitem-5-3"><span class="docs-label">Operating Costs</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../model_library/thermal_generation_cost/">ThermalGenerationCost</a></li><li><a class="tocitem" href="../../model_library/hydro_generation_cost/">HydroGenerationCost</a></li><li><a class="tocitem" href="../../model_library/hydro_reservoir_cost/">HydroReservoirCost</a></li><li><a class="tocitem" href="../../model_library/renewable_generation_cost/">RenewableGenerationCost</a></li><li><a class="tocitem" href="../../model_library/storage_cost/">StorageCost</a></li><li><a class="tocitem" href="../../model_library/load_cost/">LoadCost</a></li><li><a class="tocitem" href="../../model_library/market_bid_cost/">MarketBidCost</a></li><li><a class="tocitem" href="../../model_library/import_export_cost/">ImportExportCost</a></li><li><a class="tocitem" href="../../model_library/offer_curve_cost/">OfferCurveCost</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-5-4" type="checkbox"/><label class="tocitem" for="menuitem-5-4"><span class="docs-label">Topology</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../model_library/generated_Area/">Area</a></li><li><a class="tocitem" href="../../model_library/generated_LoadZone/">LoadZone</a></li><li><a class="tocitem" href="../../model_library/generated_Arc/">Arc</a></li><li><a class="tocitem" href="../../model_library/generated_ACBus/">ACBus</a></li><li><a class="tocitem" href="../../model_library/generated_DCBus/">DCBus</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-5-5" type="checkbox"/><label class="tocitem" for="menuitem-5-5"><span class="docs-label">DynamicInjection</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../model_library/generated_ActiveConstantPowerLoad/">ActiveConstantPowerLoad</a></li><li><a class="tocitem" href="../../model_library/generated_AggregateDistributedGenerationA/">AggregateDistributedGenerationA</a></li><li><a class="tocitem" href="../../model_library/generated_CSVGN1/">CSVGN1</a></li><li><a class="tocitem" href="../../model_library/generated_DynamicExponentialLoad/">DynamicExponentialLoad</a></li><li><a class="tocitem" href="../../model_library/generated_GenericDER/">GenericDER</a></li><li><a class="tocitem" href="../../model_library/generated_PeriodicVariableSource/">PeriodicVariableSource</a></li><li><a class="tocitem" href="../../model_library/generated_SimplifiedSingleCageInductionMachine/">SimplifiedSingleCageInductionMachine</a></li><li><a class="tocitem" href="../../model_library/generated_SingleCageInductionMachine/">SingleCageInductionMachine</a></li><li><a class="tocitem" href="../../model_library/dynamic_inverter/">Dynamic Inverter</a></li><li><a class="tocitem" href="../../model_library/dynamic_generator/">Dynamic Generator</a></li></ul></li><li><a class="tocitem" href="../../model_library/hydro_reservoir/">HydroReservoir</a></li><li><input class="collapse-toggle" id="menuitem-5-7" type="checkbox"/><label class="tocitem" for="menuitem-5-7"><span class="docs-label">Service</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../model_library/generated_AGC/">AGC</a></li><li><a class="tocitem" href="../../model_library/generated_ConstantReserveNonSpinning/">ConstantReserveNonSpinning</a></li><li><a class="tocitem" href="../../model_library/generated_VariableReserveNonSpinning/">VariableReserveNonSpinning</a></li><li><a class="tocitem" href="../../model_library/generated_TransmissionInterface/">TransmissionInterface</a></li><li><a class="tocitem" href="../../model_library/reserves/">Reserves</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-5-8" type="checkbox"/><label class="tocitem" for="menuitem-5-8"><span class="docs-label">Branch</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../model_library/generated_DiscreteControlledACBranch/">DiscreteControlledACBranch</a></li><li><a class="tocitem" href="../../model_library/generated_GenericArcImpedance/">GenericArcImpedance</a></li><li><a class="tocitem" href="../../model_library/generated_Line/">Line</a></li><li><a class="tocitem" href="../../model_library/generated_MonitoredLine/">MonitoredLine</a></li><li><a class="tocitem" href="../../model_library/generated_PhaseShiftingTransformer3W/">PhaseShiftingTransformer3W</a></li><li><a class="tocitem" href="../../model_library/generated_Transformer3W/">Transformer3W</a></li><li><a class="tocitem" href="../../model_library/generated_PhaseShiftingTransformer/">PhaseShiftingTransformer</a></li><li><a class="tocitem" href="../../model_library/generated_TapTransformer/">TapTransformer</a></li><li><a class="tocitem" href="../../model_library/generated_Transformer2W/">Transformer2W</a></li><li><a class="tocitem" href="../../model_library/generated_TwoTerminalGenericHVDCLine/">TwoTerminalGenericHVDCLine</a></li><li><a class="tocitem" href="../../model_library/generated_TwoTerminalLCCLine/">TwoTerminalLCCLine</a></li><li><a class="tocitem" href="../../model_library/generated_TwoTerminalVSCLine/">TwoTerminalVSCLine</a></li><li><a class="tocitem" href="../../model_library/generated_AreaInterchange/">AreaInterchange</a></li><li><a class="tocitem" href="../../model_library/generated_TModelHVDCLine/">TModelHVDCLine</a></li><li><a class="tocitem" href="../../model_library/dynamic_branch/">Dynamic Lines</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-5-9" type="checkbox"/><label class="tocitem" for="menuitem-5-9"><span class="docs-label">DynamicGeneratorComponent</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../model_library/generated_AVR/">AVR</a></li><li><a class="tocitem" href="../../model_library/generated_Machine/">Machine</a></li><li><a class="tocitem" href="../../model_library/generated_PSS/">PSS</a></li><li><a class="tocitem" href="../../model_library/generated_Shaft/">Shaft</a></li><li><a class="tocitem" href="../../model_library/generated_TurbineGov/">TurbineGov</a></li></ul></li></ul></li><li><span class="tocitem">Reference</span><ul><li><a class="tocitem" href="../../reference/public/">Public API</a></li><li><a class="tocitem" href="../../reference/glossary/">Glossary and Acronyms</a></li><li><a class="tocitem" href="../../reference/type_tree/">Type Tree</a></li><li><a class="tocitem" href="../../reference/valuecurve_options/"><code>ValueCurve</code> Options</a></li><li><a class="tocitem" href="../../reference/psse_models/">Supported PSS/e Models</a></li><li><a class="tocitem" href="../../reference/static_injection_subtypes/">Comparison of Load, Generator, and Storage Types</a></li><li><a class="tocitem" href="../../reference/citation/">Citation</a></li><li><input class="collapse-toggle" id="menuitem-6-8" type="checkbox"/><label class="tocitem" for="menuitem-6-8"><span class="docs-label">Developers</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../reference/developer_guidelines/">Developer Guidelines</a></li><li><a class="tocitem" href="../../reference/internal/">Internals</a></li></ul></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Tutorials</a></li><li class="is-active"><a href>Working with Time Series</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Working with Time Series</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/Sienna-Platform/PowerSystems.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/Sienna-Platform/PowerSystems.jl/blob/main/docs/src/tutorials/working_with_time_series.jl" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Working-with-Time-Series-Data"><a class="docs-heading-anchor" href="#Working-with-Time-Series-Data">Working with Time Series Data</a><a id="Working-with-Time-Series-Data-1"></a><a class="docs-heading-anchor-permalink" href="#Working-with-Time-Series-Data" title="Permalink"></a></h1><p><em>To follow along, you can download this tutorial as a <a href="https://sienna-platform.github.io/PowerSystems.jl/v5.12.2/tutorials/working_with_time_series.jl">Julia script (.jl)</a> or <a href="https://sienna-platform.github.io/PowerSystems.jl/v5.12.2/tutorials/generated_working_with_time_series.ipynb">Jupyter notebook (.ipynb)</a>.</em></p><p>In this tutorial, we will manually add, retrieve, and inspect time-series data in different formats, including identifying which components in a power <a href="../../reference/public/#System"><code>System</code></a> have time series data. Along the way, we will also use workarounds for missing forecast data and reuse identical time series profiles to avoid unnecessary memory usage. For a conceptual overview of how time series data is structured in <code>PowerSystems.jl</code>, see <a href="../../explanation/time_series/#ts_data">Time Series Data</a>.</p><h2 id="Example-Data-and-Setup"><a class="docs-heading-anchor" href="#Example-Data-and-Setup">Example Data and Setup</a><a id="Example-Data-and-Setup-1"></a><a class="docs-heading-anchor-permalink" href="#Example-Data-and-Setup" title="Permalink"></a></h2><p>We will make an example <a href="../../reference/public/#System"><code>System</code></a> with a wind generator, a gas <a href="../../model_library/generated_ThermalStandard/#ThermalStandard"><code>ThermalStandard</code></a>, and two loads, then add the time series needed to model, for example, wind forecast uncertainty, time-varying fuel prices, and a planned generator outage. Here is the available data:</p><img src="../../assets/time_series_tutorial.png" width="100%"/><p>For the wind generator, we have the historical point (deterministic) forecasts of power output. The forecasts were generated every 30 minutes with a 5-minute <a href="../../reference/glossary/#R">resolution</a> and 1-hour <a href="../../reference/glossary/#H">horizon</a>. We also have measurements of what actually happened at 5-minute resolution over the 2 hours. For the gas generator, we have natural-gas fuel prices (/GJ) at 5-minute resolution (for illustrative purposes only) over the same 2-hour window. Later we will add a planned-outage schedule that takes the unit out of service during the second hour. For the loads, note that the forecast data is missing. We only have the historical measurements of total load for the system, which is normalized to the system&#39;s peak load. Load the <code>PowerSystems</code>, <code>Dates</code>, and <code>TimeSeries</code> packages to get started:</p><pre><code class="language-julia hljs">using PowerSystems
+using Dates
+using TimeSeries</code></pre><p>As usual, we need to define a power <a href="../../reference/public/#System"><code>System</code></a> that holds all our data. Let&#39;s define a simple system with a bus, a wind generator, a gas thermal unit with a time-invariant cost (see <a href="../../how_to/add_cost_curve/#cost_how_to">Adding an Operating Cost</a>), and two loads:</p><pre><code class="language-julia hljs">system = System(100.0); # 100 MVA base power
+bus1 = ACBus(;
+    number = 1,
+    name = &quot;bus1&quot;,
+    available = true,
+    bustype = ACBusTypes.REF,
+    angle = 0.0,
+    magnitude = 1.0,
+    voltage_limits = (min = 0.9, max = 1.05),
+    base_voltage = 230.0,
+);
+wind1 = RenewableDispatch(;
+    name = &quot;wind1&quot;,
+    available = true,
+    bus = bus1,
+    active_power = 0.0, # Per-unitized by device base_power
+    reactive_power = 0.0, # Per-unitized by device base_power
+    rating = 1.0, # 10 MW per-unitized by device base_power
+    prime_mover_type = PrimeMovers.WT,
+    reactive_power_limits = (min = 0.0, max = 0.0), # per-unitized by device base_power
+    power_factor = 1.0,
+    operation_cost = RenewableGenerationCost(nothing),
+    base_power = 10.0, # MVA
+);
+load1 = PowerLoad(;
+    name = &quot;load1&quot;,
+    available = true,
+    bus = bus1,
+    active_power = 0.0, # Per-unitized by device base_power
+    reactive_power = 0.0, # Per-unitized by device base_power
+    base_power = 10.0, # MVA
+    max_active_power = 1.0, # 10 MW per-unitized by device base_power
+    max_reactive_power = 0.0,
+);
+load2 = PowerLoad(;
+    name = &quot;load2&quot;,
+    available = true,
+    bus = bus1,
+    active_power = 0.0, # Per-unitized by device base_power
+    reactive_power = 0.0, # Per-unitized by device base_power
+    base_power = 30.0, # MVA
+    max_active_power = 1.0, # 30 MW per-unitized by device base_power
+    max_reactive_power = 0.0,
+);
+heat_rate_curve = PiecewisePointCurve([
+    (5.0, 7.0),
+    (15.0, 8.0),
+    (25.0, 9.0),
+])
+fuel_curve = FuelCurve(; value_curve = heat_rate_curve, fuel_cost = 5.0)
+thermal_cost = ThermalGenerationCost(;
+    variable = fuel_curve,
+    fixed = 0.0,
+    start_up = 0.0,
+    shut_down = 0.0,
+)
+gas1 = ThermalStandard(;
+    name = &quot;gas1&quot;,
+    available = true,
+    status = true,
+    bus = bus1,
+    active_power = 0.0,
+    reactive_power = 0.0,
+    rating = 1.0,
+    active_power_limits = (min = 0.2, max = 1.0),
+    reactive_power_limits = nothing,
+    ramp_limits = (up = 0.2, down = 0.2),
+    operation_cost = thermal_cost,
+    base_power = 25.0,
+    time_limits = (up = 1.0, down = 1.0),
+    must_run = false,
+    prime_mover_type = PrimeMovers.CC,
+    fuel = ThermalFuels.NATURAL_GAS,
+)
+add_components!(system, [bus1, wind1, gas1, load1, load2])</code></pre><p>Recall that we can also set the <a href="../../reference/public/#System"><code>System</code></a>&#39;s unit base to natural units (MW) to make it easier to inspect results:</p><pre><code class="language-julia hljs">set_units_base_system!(system, &quot;NATURAL_UNITS&quot;)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi"><span class="sgr36"><span class="sgr1">[ Info: </span></span>Unit System changed to UnitSystem.NATURAL_UNITS = 2</code></pre><p>Before we get started, recall that we also can see a summary of the system by printing it:</p><pre><code class="language-julia hljs">system</code></pre><table>
+  <thead>
+    <tr class = "title">
+      <td colspan = "2" style = "font-size: x-large; font-weight: bold; text-align: center;">System</td>
+    </tr>
+    <tr class = "columnLabelRow">
+      <th style = "font-weight: bold; text-align: left;">Property</th>
+      <th style = "font-weight: bold; text-align: left;">Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr class = "dataRow">
+      <td style = "text-align: left;">Name</td>
+      <td style = "text-align: left;"></td>
+    </tr>
+    <tr class = "dataRow">
+      <td style = "text-align: left;">Description</td>
+      <td style = "text-align: left;"></td>
+    </tr>
+    <tr class = "dataRow">
+      <td style = "text-align: left;">System Units Base</td>
+      <td style = "text-align: left;">NATURAL_UNITS</td>
+    </tr>
+    <tr class = "dataRow">
+      <td style = "text-align: left;">Base Power</td>
+      <td style = "text-align: left;">100.0</td>
+    </tr>
+    <tr class = "dataRow">
+      <td style = "text-align: left;">Base Frequency</td>
+      <td style = "text-align: left;">60.0</td>
+    </tr>
+    <tr class = "dataRow">
+      <td style = "text-align: left;">Num Components</td>
+      <td style = "text-align: left;">5</td>
+    </tr>
+  </tbody>
+</table>
+
+<table>
+  <thead>
+    <tr class = "title">
+      <td colspan = "2" style = "font-size: x-large; font-weight: bold; text-align: center;">Static Components</td>
+    </tr>
+    <tr class = "columnLabelRow">
+      <th style = "font-weight: bold; text-align: left;">Type</th>
+      <th style = "font-weight: bold; text-align: left;">Count</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr class = "dataRow">
+      <td style = "text-align: left;">ACBus</td>
+      <td style = "text-align: left;">1</td>
+    </tr>
+    <tr class = "dataRow">
+      <td style = "text-align: left;">PowerLoad</td>
+      <td style = "text-align: left;">2</td>
+    </tr>
+    <tr class = "dataRow">
+      <td style = "text-align: left;">RenewableDispatch</td>
+      <td style = "text-align: left;">1</td>
+    </tr>
+    <tr class = "dataRow">
+      <td style = "text-align: left;">ThermalStandard</td>
+      <td style = "text-align: left;">1</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Observe that there is no mention of time series data in the system yet.</p><h1 id="Add-and-Retrieve-a-Single-Time-Series"><a class="docs-heading-anchor" href="#Add-and-Retrieve-a-Single-Time-Series">Add and Retrieve a Single Time Series</a><a id="Add-and-Retrieve-a-Single-Time-Series-1"></a><a class="docs-heading-anchor-permalink" href="#Add-and-Retrieve-a-Single-Time-Series" title="Permalink"></a></h1><p>Define shared time stamps with 5-minute <a href="../../reference/glossary/#R">resolution</a> for the 2-hour window, which will be reused across our time series:</p><pre><code class="language-julia hljs">resolution = Dates.Minute(5)
+timestamps = range(DateTime(&quot;2020-01-01T08:00:00&quot;); step = resolution, length = 24)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Dates.DateTime(&quot;2020-01-01T08:00:00&quot;):Dates.Minute(5):Dates.DateTime(&quot;2020-01-01T09:55:00&quot;)</code></pre><h3 id="Fuel-cost-(cost-specific-API)"><a class="docs-heading-anchor" href="#Fuel-cost-(cost-specific-API)">Fuel cost (cost-specific API)</a><a id="Fuel-cost-(cost-specific-API)-1"></a><a class="docs-heading-anchor-permalink" href="#Fuel-cost-(cost-specific-API)" title="Permalink"></a></h3><p>Start with fuel prices for <code>gas1</code>. Build the <a href="../../reference/public/#InfrastructureSystems.SingleTimeSeries"><code>SingleTimeSeries</code></a> using a <code>TimeSeries.TimeArray</code> of input data:</p><pre><code class="language-julia hljs">fuel_cost_values = [
+    4.5, 4.6, 4.7, 4.8, 5.0, 5.2, 5.5, 5.8, 6.0, 6.2, 6.5, 6.8,
+    7.0, 7.0, 6.8, 6.5, 6.2, 6.0, 5.8, 5.5, 5.2, 5.0, 4.8, 4.6,
+]
+fuel_cost_timearray = TimeArray(timestamps, fuel_cost_values)
+fuel_cost_ts = SingleTimeSeries(; name = &quot;gas_price&quot;, data = fuel_cost_timearray)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">SingleTimeSeries(&quot;gas_price&quot;, 24×1 TimeSeries.TimeArray{Float64, 1, Dates.DateTime, Vector{Float64}} 2020-01-01T08:00:00 to 2020-01-01T09:55:00, Dates.Millisecond(300000), nothing, InfrastructureSystems.InfrastructureSystemsInternal(Base.UUID(&quot;370cdbc4-02c7-4515-a7cc-cb9d664dfb4c&quot;), nothing, nothing, nothing))</code></pre><div class="admonition is-success" id="Tip-402ae6394a3b1b05"><header class="admonition-header">Tip<a class="admonition-anchor" href="#Tip-402ae6394a3b1b05" title="Permalink"></a></header><div class="admonition-body"><p>This 2-hour window illustrates the API. Production cost models typically use longer horizons (for example, hourly fuel prices over a full day).</p></div></div><p>So far, this time series has been defined, but not attached to our <a href="../../reference/public/#System"><code>System</code></a> in any way. Attach with <a href="../../reference/public/#PowerSystems.set_fuel_cost!-Tuple{System, StaticInjection, Union{Float64, TimeSeriesData}}"><code>set_fuel_cost!</code></a> because <code>gas1</code> uses a <a href="../../reference/public/#InfrastructureSystems.FuelCurve"><code>FuelCurve</code></a> in its <a href="../../model_library/thermal_generation_cost/#ThermalGenerationCost"><code>ThermalGenerationCost</code></a>:</p><pre><code class="language-julia hljs">set_fuel_cost!(system, gas1, fuel_cost_ts)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">FuelCurve:
+  value_curve: PiecewisePointCurve (a type of InputOutputCurve) where function is: piecewise linear y = f(x) connecting points:
+    (x = 5.0, y = 7.0)
+    (x = 15.0, y = 8.0)
+    (x = 25.0, y = 9.0)
+  power_units: UnitSystem.NATURAL_UNITS = 2
+  fuel_cost: StaticTimeSeriesKey(SingleTimeSeries, &quot;gas_price&quot;, Dates.DateTime(&quot;2020-01-01T08:00:00&quot;), Dates.Millisecond(300000), 24, Dict{String, Any}())
+  startup_fuel_offtake: LinearCurve (a type of InputOutputCurve) where function is: f(x) = 0.0 x + 0.0
+  vom_cost: LinearCurve (a type of InputOutputCurve) where function is: f(x) = 0.0 x + 0.0</code></pre><p>Notice that <code>fuel_cost</code> now points to a key with the same name we defined above: &quot;gas_price&quot;.</p><p>Retrieve the profile with <a href="../../reference/public/#InfrastructureSystems.get_fuel_cost-Tuple{HybridSystem}"><code>get_fuel_cost</code></a> (values are in <span>$</span>/GJ; multiply by the heat rate for <span>$</span>/MWh):</p><pre><code class="language-julia hljs">get_fuel_cost(gas1; start_time = DateTime(&quot;2020-01-01T08:00:00&quot;))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">24×1 TimeSeries.TimeArray{Float64, 1, Dates.DateTime, Vector{Float64}} 2020-01-01T08:00:00 to 2020-01-01T09:55:00
+┌─────────────────────┬─────┐
+│<span class="sgr1">                     </span>│<span class="sgr1"> A   </span>│
+├─────────────────────┼─────┤
+│ 2020-01-01T08:00:00 │ 4.5 │
+│ 2020-01-01T08:05:00 │ 4.6 │
+│ 2020-01-01T08:10:00 │ 4.7 │
+│ 2020-01-01T08:15:00 │ 4.8 │
+│ 2020-01-01T08:20:00 │ 5.0 │
+│ 2020-01-01T08:25:00 │ 5.2 │
+│ 2020-01-01T08:30:00 │ 5.5 │
+│ 2020-01-01T08:35:00 │ 5.8 │
+│          ⋮          │  ⋮  │
+│ 2020-01-01T09:25:00 │ 6.0 │
+│ 2020-01-01T09:30:00 │ 5.8 │
+│ 2020-01-01T09:35:00 │ 5.5 │
+│ 2020-01-01T09:40:00 │ 5.2 │
+│ 2020-01-01T09:45:00 │ 5.0 │
+│ 2020-01-01T09:50:00 │ 4.8 │
+│ 2020-01-01T09:55:00 │ 4.6 │
+└─────────────────────┴─────┘
+<span class="sgr36">               9 rows omitted</span></code></pre><h3 id="Wind-measurements-(component-field-API)"><a class="docs-heading-anchor" href="#Wind-measurements-(component-field-API)">Wind measurements (component-field API)</a><a id="Wind-measurements-(component-field-API)-1"></a><a class="docs-heading-anchor-permalink" href="#Wind-measurements-(component-field-API)" title="Permalink"></a></h3><p>A single time-varying profile is always built the same way. What differs is <em>where</em> and <em>how</em> you attach the data. We just attached one to a cost structure, and now we&#39;ll attach one to a component field.</p><p>First, print <code>wind1</code> to see its data:</p><pre><code class="language-julia hljs">wind1</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">RenewableDispatch: wind1:
+   name: wind1
+   available: true
+   bus: ACBus: bus1
+   active_power: 0.0
+   reactive_power: 0.0
+   rating: 10.0
+   prime_mover_type: PrimeMovers.WT = 22
+   reactive_power_limits: (min = 0.0, max = 0.0)
+   power_factor: 1.0
+   operation_cost: RenewableGenerationCost composed of variable: CostCurve{LinearCurve}, curtailment_cost: CostCurve{LinearCurve}
+   base_power: 10.0
+   services: 0-element Vector{Service}
+   dynamic_injector: nothing
+   ext: Dict{String, Any}()
+   InfrastructureSystems.SystemUnitsSettings:
+      base_value: 100.0
+      unit_system: UnitSystem.NATURAL_UNITS = 2
+   has_supplemental_attributes: false
+   has_time_series: false</code></pre><p>See the <code>has_time_series</code> field at the bottom is <code>false</code>. Now, use same construction pattern above to define the wind output measurements:</p><pre><code class="language-julia hljs">wind_values = [6.0, 7, 7, 6, 7, 9, 9, 9, 8, 8, 7, 6, 5, 5, 5, 5, 5, 6, 6, 6, 7, 6, 7, 7]
+wind_timearray = TimeArray(timestamps, wind_values)
+wind_time_series = SingleTimeSeries(;
+    name = &quot;max_active_power&quot;,
+    data = wind_timearray,
+)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">SingleTimeSeries(&quot;max_active_power&quot;, 24×1 TimeSeries.TimeArray{Float64, 1, Dates.DateTime, Vector{Float64}} 2020-01-01T08:00:00 to 2020-01-01T09:55:00, Dates.Millisecond(300000), nothing, InfrastructureSystems.InfrastructureSystemsInternal(Base.UUID(&quot;faaaa723-fe10-4e15-a699-5fd79547c817&quot;), nothing, nothing, nothing))</code></pre><p>Note that we&#39;ve chosen the name <code>max_active_power</code>, which is the default time series profile name when using <a href="https://sienna-platform.github.io/PowerSimulations.jl/stable/formulation_library/RenewableGen/">PowerSimulations.jl</a> for simulations. Attach to <code>wind1</code> with <a href="../../reference/public/#PowerSystems.add_time_series!-Tuple{System, Component, TimeSeriesData}"><code>add_time_series!</code></a>:</p><pre><code class="language-julia hljs">add_time_series!(system, wind1, wind_time_series)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">StaticTimeSeriesKey(SingleTimeSeries, &quot;max_active_power&quot;, Dates.DateTime(&quot;2020-01-01T08:00:00&quot;), Dates.Millisecond(300000), 24, Dict{String, Any}())</code></pre><p>Let&#39;s double-check this worked by calling <a href="../../reference/public/#InfrastructureSystems.show_time_series-Tuple{Union{InfrastructureSystems.InfrastructureSystemsComponent, SupplementalAttribute}}"><code>show_time_series</code></a>:</p><pre><code class="language-julia hljs">show_time_series(wind1)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">┌──────────────────┬──────────────────┬─────────────────────┬───────────────────
+│<span class="sgr1"> time_series_type </span>│<span class="sgr1">             name </span>│<span class="sgr1">   initial_timestamp </span>│<span class="sgr1">          resolut</span> ⋯
+│<span class="sgr90">           String </span>│<span class="sgr90">           String </span>│<span class="sgr90">      Dates.DateTime </span>│<span class="sgr90">   Dates.Millisec</span> ⋯
+├──────────────────┼──────────────────┼─────────────────────┼───────────────────
+│ SingleTimeSeries │ max_active_power │ 2020-01-01T08:00:00 │ 300000 milliseco ⋯
+└──────────────────┴──────────────────┴─────────────────────┴───────────────────
+<span class="sgr36">                                                               3 columns omitted</span></code></pre><p>Now <code>wind1</code> has its first time-series data set. Recall that you can also print <code>wind1</code> and check the <code>has_time_series</code> field like we did above. Finally, let&#39;s retrieve and inspect the new timeseries, using <a href="../../reference/public/#InfrastructureSystems.get_time_series_array-Tuple{Union{InfrastructureSystems.InfrastructureSystemsComponent, SupplementalAttribute}, Forecast}"><code>get_time_series_array</code></a>:</p><pre><code class="language-julia hljs">get_time_series_array(SingleTimeSeries, wind1, &quot;max_active_power&quot;)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">24×1 TimeSeries.TimeArray{Float64, 1, Dates.DateTime, Vector{Float64}} 2020-01-01T08:00:00 to 2020-01-01T09:55:00
+┌─────────────────────┬─────┐
+│<span class="sgr1">                     </span>│<span class="sgr1"> A   </span>│
+├─────────────────────┼─────┤
+│ 2020-01-01T08:00:00 │ 6.0 │
+│ 2020-01-01T08:05:00 │ 7.0 │
+│ 2020-01-01T08:10:00 │ 7.0 │
+│ 2020-01-01T08:15:00 │ 6.0 │
+│ 2020-01-01T08:20:00 │ 7.0 │
+│ 2020-01-01T08:25:00 │ 9.0 │
+│ 2020-01-01T08:30:00 │ 9.0 │
+│ 2020-01-01T08:35:00 │ 9.0 │
+│          ⋮          │  ⋮  │
+│ 2020-01-01T09:25:00 │ 6.0 │
+│ 2020-01-01T09:30:00 │ 6.0 │
+│ 2020-01-01T09:35:00 │ 6.0 │
+│ 2020-01-01T09:40:00 │ 7.0 │
+│ 2020-01-01T09:45:00 │ 6.0 │
+│ 2020-01-01T09:50:00 │ 7.0 │
+│ 2020-01-01T09:55:00 │ 7.0 │
+└─────────────────────┴─────┘
+<span class="sgr36">               9 rows omitted</span></code></pre><p>Verify this matches your expectation based on the input data.</p><h1 id="Add-and-Retrieve-a-Forecast"><a class="docs-heading-anchor" href="#Add-and-Retrieve-a-Forecast">Add and Retrieve a Forecast</a><a id="Add-and-Retrieve-a-Forecast-1"></a><a class="docs-heading-anchor-permalink" href="#Add-and-Retrieve-a-Forecast" title="Permalink"></a></h1><p>Next, let&#39;s add the wind power forecasts. We will use a <a href="../../reference/public/#InfrastructureSystems.Deterministic"><code>Deterministic</code></a> format for the point forecasts. Because we have forecasts with at different <a href="../../reference/glossary/#I">initial times</a>, the input data must be a dictionary where the keys are the initial times and the values are vectors or <code>TimeSeries.TimeArray</code>s of the forecast data. Set up the example input data:</p><pre><code class="language-julia hljs">wind_forecast_data = Dict(
+    DateTime(&quot;2020-01-01T08:00:00&quot;) =&gt; [5.0, 6, 7, 7, 7, 8, 9, 10, 10, 9, 7, 5],
+    DateTime(&quot;2020-01-01T08:30:00&quot;) =&gt; [9.0, 9, 9, 9, 8, 7, 6, 5, 4, 5, 4, 4],
+    DateTime(&quot;2020-01-01T09:00:00&quot;) =&gt; [6.0, 6, 5, 5, 4, 5, 6, 7, 7, 7, 6, 6],
+);</code></pre><p>Define the <a href="../../reference/public/#InfrastructureSystems.Deterministic"><code>Deterministic</code></a> forecast and attach it to <code>wind1</code>:</p><pre><code class="language-julia hljs">wind_forecast = Deterministic(&quot;max_active_power&quot;, wind_forecast_data, resolution);
+add_time_series!(system, wind1, wind_forecast);</code></pre><p>Let&#39;s call <code>show_time_series</code> once again:</p><pre><code class="language-julia hljs">show_time_series(wind1)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">┌──────────────────┬──────────────────┬─────────────────────┬───────────────────
+│<span class="sgr1"> time_series_type </span>│<span class="sgr1">             name </span>│<span class="sgr1">   initial_timestamp </span>│<span class="sgr1">          resolut</span> ⋯
+│<span class="sgr90">           String </span>│<span class="sgr90">           String </span>│<span class="sgr90">      Dates.DateTime </span>│<span class="sgr90">   Dates.Millisec</span> ⋯
+├──────────────────┼──────────────────┼─────────────────────┼───────────────────
+│ SingleTimeSeries │ max_active_power │ 2020-01-01T08:00:00 │ 300000 milliseco ⋯
+└──────────────────┴──────────────────┴─────────────────────┴───────────────────
+<span class="sgr36">                                                               3 columns omitted</span>
+┌──────────────────┬──────────────────┬─────────────────────┬──────────────┬────
+│<span class="sgr1"> time_series_type </span>│<span class="sgr1">             name </span>│<span class="sgr1">   initial_timestamp </span>│<span class="sgr1">   resolution </span>│<span class="sgr1">  </span> ⋯
+│<span class="sgr90">           String </span>│<span class="sgr90">           String </span>│<span class="sgr90">      Dates.DateTime </span>│<span class="sgr90"> Dates.Minute </span>│<span class="sgr90"> D</span> ⋯
+├──────────────────┼──────────────────┼─────────────────────┼──────────────┼────
+│    Deterministic │ max_active_power │ 2020-01-01T08:00:00 │    5 minutes │   ⋯
+└──────────────────┴──────────────────┴─────────────────────┴──────────────┴────
+<span class="sgr36">                                                               4 columns omitted</span></code></pre><p>Notice that we now have two types of time series listed – the single time series and the forecasts. Finally, let&#39;s retrieve the forecast data to double check it was added properly, specifying the initial time to get the 2nd forecast window starting at 8:30:</p><pre><code class="language-julia hljs">get_time_series_array(
+    Deterministic,
+    wind1,
+    &quot;max_active_power&quot;;
+    start_time = DateTime(&quot;2020-01-01T08:30:00&quot;),
+)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">12×1 TimeSeries.TimeArray{Float64, 1, Dates.DateTime, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}} 2020-01-01T08:30:00 to 2020-01-01T09:25:00
+┌─────────────────────┬─────┐
+│<span class="sgr1">                     </span>│<span class="sgr1"> A   </span>│
+├─────────────────────┼─────┤
+│ 2020-01-01T08:30:00 │ 9.0 │
+│ 2020-01-01T08:35:00 │ 9.0 │
+│ 2020-01-01T08:40:00 │ 9.0 │
+│ 2020-01-01T08:45:00 │ 9.0 │
+│ 2020-01-01T08:50:00 │ 8.0 │
+│ 2020-01-01T08:55:00 │ 7.0 │
+│ 2020-01-01T09:00:00 │ 6.0 │
+│ 2020-01-01T09:05:00 │ 5.0 │
+│ 2020-01-01T09:10:00 │ 4.0 │
+│ 2020-01-01T09:15:00 │ 5.0 │
+│ 2020-01-01T09:20:00 │ 4.0 │
+│ 2020-01-01T09:25:00 │ 4.0 │
+└─────────────────────┴─────┘</code></pre><h1 id="Add-A-Time-Series-Using-Scaling-Factors"><a class="docs-heading-anchor" href="#Add-A-Time-Series-Using-Scaling-Factors">Add A Time Series Using Scaling Factors</a><a id="Add-A-Time-Series-Using-Scaling-Factors-1"></a><a class="docs-heading-anchor-permalink" href="#Add-A-Time-Series-Using-Scaling-Factors" title="Permalink"></a></h1><p>Let&#39;s add the load time series. Recall that this data is normalized to the peak system power, so we&#39;ll use it to scale both of our loads. We call normalized time series data <em>scaling factors</em>. First, let&#39;s create our input data <code>TimeSeries.TimeArray</code> with the example data and the same time stamps we used in the wind time series:</p><pre><code class="language-julia hljs">load_values = [0.3, 0.3, 0.3, 0.3, 0.4, 0.4, 0.4, 0.4, 0.5, 0.5, 0.6, 0.6,
+    0.7, 0.8, 0.8, 0.8, 0.8, 0.8, 0.9, 0.8, 0.8, 0.8, 0.8, 0.8];
+load_timearray = TimeArray(timestamps, load_values);</code></pre><p>Again, define a <a href="../../reference/public/#InfrastructureSystems.SingleTimeSeries"><code>SingleTimeSeries</code></a>, but this time use the <code>scaling_factor_multiplier</code> parameter to scale this time series from normalized values to power values:</p><pre><code class="language-julia hljs">load_time_series = SingleTimeSeries(;
+    name = &quot;max_active_power&quot;,
+    data = load_timearray,
+    scaling_factor_multiplier = get_max_active_power,
+);</code></pre><p>Notice that we assigned the <a href="../../model_library/generated_PowerLoad/#PowerSystems.get_max_active_power-Tuple{PowerLoad}"><code>get_max_active_power</code></a> <em>function</em> to scale the time series, rather than a value, making the time series reusable for multiple components or multiple fields in a component. Note that the values are normalized using each device&#39;s <code>max_active_power</code> parameter, not the system-wide <code>base_power</code>. Now, add the scaling factor time series to both loads to save memory and avoid data duplication:</p><pre><code class="language-julia hljs">add_time_series!(system, [load1, load2], load_time_series);</code></pre><p>Let&#39;s take a look at <code>load1</code>, including printing its parameters...</p><pre><code class="language-julia hljs">load1</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">PowerLoad: load1:
+   name: load1
+   available: true
+   bus: ACBus: bus1
+   active_power: 0.0
+   reactive_power: 0.0
+   base_power: 10.0
+   max_active_power: 10.0
+   max_reactive_power: 0.0
+   conformity: LoadConformity.UNDEFINED = 2
+   services: 0-element Vector{Service}
+   dynamic_injector: nothing
+   ext: Dict{String, Any}()
+   InfrastructureSystems.SystemUnitsSettings:
+      base_value: 100.0
+      unit_system: UnitSystem.NATURAL_UNITS = 2
+   has_supplemental_attributes: false
+   has_time_series: true</code></pre><p>...as well as its time series:</p><pre><code class="language-julia hljs">show_time_series(load1)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">┌──────────────────┬──────────────────┬─────────────────────┬───────────────────
+│<span class="sgr1"> time_series_type </span>│<span class="sgr1">             name </span>│<span class="sgr1">   initial_timestamp </span>│<span class="sgr1">          resolut</span> ⋯
+│<span class="sgr90">           String </span>│<span class="sgr90">           String </span>│<span class="sgr90">      Dates.DateTime </span>│<span class="sgr90">   Dates.Millisec</span> ⋯
+├──────────────────┼──────────────────┼─────────────────────┼───────────────────
+│ SingleTimeSeries │ max_active_power │ 2020-01-01T08:00:00 │ 300000 milliseco ⋯
+└──────────────────┴──────────────────┴─────────────────────┴───────────────────
+<span class="sgr36">                                                               3 columns omitted</span></code></pre><div class="admonition is-success" id="Important-c84e6a7adb55491e"><header class="admonition-header">Important<a class="admonition-anchor" href="#Important-c84e6a7adb55491e" title="Permalink"></a></header><div class="admonition-body"><p>Notice that each load now has two references to <code>max_active_power</code>. This is intentional. There is the parameter, <code>max_active_power</code>, which is  the maximum demand of each load at any time (10 MW or 30 MW). There is also <code>max_active_power</code> the time series, which is the time varying demand over the 2-hour window, calculated using the scaling factors and the <code>max_active_power</code> parameter. This means that if we change the <code>max_active_power</code> parameter, the time series will also change when we retrieve it! This is also true when we apply the same scaling factors to multiple components or parameters.</p></div></div><p>Let&#39;s check the impact that these two <code>max_active_power</code> data sources have on the times series data when we retrieve it. Get the <code>max_active_power</code> time series for <code>load1</code>:</p><pre><code class="language-julia hljs">get_time_series_array(SingleTimeSeries, load1, &quot;max_active_power&quot;) # in MW</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">24×1 TimeSeries.TimeArray{Float64, 1, Dates.DateTime, Vector{Float64}} 2020-01-01T08:00:00 to 2020-01-01T09:55:00
+┌─────────────────────┬─────┐
+│<span class="sgr1">                     </span>│<span class="sgr1"> A   </span>│
+├─────────────────────┼─────┤
+│ 2020-01-01T08:00:00 │ 3.0 │
+│ 2020-01-01T08:05:00 │ 3.0 │
+│ 2020-01-01T08:10:00 │ 3.0 │
+│ 2020-01-01T08:15:00 │ 3.0 │
+│ 2020-01-01T08:20:00 │ 4.0 │
+│ 2020-01-01T08:25:00 │ 4.0 │
+│ 2020-01-01T08:30:00 │ 4.0 │
+│ 2020-01-01T08:35:00 │ 4.0 │
+│          ⋮          │  ⋮  │
+│ 2020-01-01T09:25:00 │ 8.0 │
+│ 2020-01-01T09:30:00 │ 9.0 │
+│ 2020-01-01T09:35:00 │ 8.0 │
+│ 2020-01-01T09:40:00 │ 8.0 │
+│ 2020-01-01T09:45:00 │ 8.0 │
+│ 2020-01-01T09:50:00 │ 8.0 │
+│ 2020-01-01T09:55:00 │ 8.0 │
+└─────────────────────┴─────┘
+<span class="sgr36">               9 rows omitted</span></code></pre><p>See that the normalized values have been scaled up by 10 MW. Now let&#39;s look at <code>load2</code>. First check its <code>max_active_power</code> parameter:</p><pre><code class="language-julia hljs">get_max_active_power(load2)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">30.0</code></pre><p>This has a higher peak maximum demand of 30 MW. Next, retrieve its <code>max_active_power</code> time series:</p><pre><code class="language-julia hljs">get_time_series_array(SingleTimeSeries, load2, &quot;max_active_power&quot;) # in MW</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">24×1 TimeSeries.TimeArray{Float64, 1, Dates.DateTime, Vector{Float64}} 2020-01-01T08:00:00 to 2020-01-01T09:55:00
+┌─────────────────────┬──────┐
+│<span class="sgr1">                     </span>│<span class="sgr1"> A    </span>│
+├─────────────────────┼──────┤
+│ 2020-01-01T08:00:00 │  9.0 │
+│ 2020-01-01T08:05:00 │  9.0 │
+│ 2020-01-01T08:10:00 │  9.0 │
+│ 2020-01-01T08:15:00 │  9.0 │
+│ 2020-01-01T08:20:00 │ 12.0 │
+│ 2020-01-01T08:25:00 │ 12.0 │
+│ 2020-01-01T08:30:00 │ 12.0 │
+│ 2020-01-01T08:35:00 │ 12.0 │
+│          ⋮          │  ⋮   │
+│ 2020-01-01T09:25:00 │ 24.0 │
+│ 2020-01-01T09:30:00 │ 27.0 │
+│ 2020-01-01T09:35:00 │ 24.0 │
+│ 2020-01-01T09:40:00 │ 24.0 │
+│ 2020-01-01T09:45:00 │ 24.0 │
+│ 2020-01-01T09:50:00 │ 24.0 │
+│ 2020-01-01T09:55:00 │ 24.0 │
+└─────────────────────┴──────┘
+<span class="sgr36">                9 rows omitted</span></code></pre><p>Observe the difference compared to <code>load1</code>&#39;s time series. Finally, retrieve the underlying time series data with no scaling factor multiplier applied:</p><pre><code class="language-julia hljs">get_time_series_array(SingleTimeSeries,
+    load2,
+    &quot;max_active_power&quot;;
+    ignore_scaling_factors = true,
+)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">24×1 TimeSeries.TimeArray{Float64, 1, Dates.DateTime, Vector{Float64}} 2020-01-01T08:00:00 to 2020-01-01T09:55:00
+┌─────────────────────┬─────┐
+│<span class="sgr1">                     </span>│<span class="sgr1"> A   </span>│
+├─────────────────────┼─────┤
+│ 2020-01-01T08:00:00 │ 0.3 │
+│ 2020-01-01T08:05:00 │ 0.3 │
+│ 2020-01-01T08:10:00 │ 0.3 │
+│ 2020-01-01T08:15:00 │ 0.3 │
+│ 2020-01-01T08:20:00 │ 0.4 │
+│ 2020-01-01T08:25:00 │ 0.4 │
+│ 2020-01-01T08:30:00 │ 0.4 │
+│ 2020-01-01T08:35:00 │ 0.4 │
+│          ⋮          │  ⋮  │
+│ 2020-01-01T09:25:00 │ 0.8 │
+│ 2020-01-01T09:30:00 │ 0.9 │
+│ 2020-01-01T09:35:00 │ 0.8 │
+│ 2020-01-01T09:40:00 │ 0.8 │
+│ 2020-01-01T09:45:00 │ 0.8 │
+│ 2020-01-01T09:50:00 │ 0.8 │
+│ 2020-01-01T09:55:00 │ 0.8 │
+└─────────────────────┴─────┘
+<span class="sgr36">               9 rows omitted</span></code></pre><p>Notice that this is the normalized input data, which is still being stored underneath. Each load is using a reference to that data when we call <code>get_time_series_array</code> to avoid unnecessary data duplication.</p><h1 id="Transform-a-[SingleTimeSeries](@ref)-into-a-Forecast"><a class="docs-heading-anchor" href="#Transform-a-[SingleTimeSeries](@ref)-into-a-Forecast">Transform a <a href="../../reference/public/#InfrastructureSystems.SingleTimeSeries"><code>SingleTimeSeries</code></a> into a Forecast</a><a id="Transform-a-[SingleTimeSeries](@ref)-into-a-Forecast-1"></a><a class="docs-heading-anchor-permalink" href="#Transform-a-[SingleTimeSeries](@ref)-into-a-Forecast" title="Permalink"></a></h1><p>Finally, let&#39;s use a workaround to handle the missing load forecast data. We will assume a perfect forecast where the forecast is based on the <a href="../../reference/public/#InfrastructureSystems.SingleTimeSeries"><code>SingleTimeSeries</code></a> we just added. Rather than unnecessarily duplicating and reformatting data, use PowerSystems.jl&#39;s dedicated <a href="../../reference/public/#PowerSystems.transform_single_time_series!-Tuple{System, Dates.Period, Dates.Period}"><code>transform_single_time_series!</code></a> function to generate a <a href="../../reference/public/#InfrastructureSystems.DeterministicSingleTimeSeries"><code>DeterministicSingleTimeSeries</code></a>, which saves memory while behaving just like a <a href="../../reference/public/#InfrastructureSystems.Deterministic"><code>Deterministic</code></a> forecast. Before we call <code>transform_single_time_series!</code>, we need to remove the <a href="../../reference/public/#InfrastructureSystems.SingleTimeSeries"><code>SingleTimeSeries</code></a> from the wind component. This is because the wind component already has a <a href="../../reference/public/#InfrastructureSystems.Deterministic"><code>Deterministic</code></a> forecast with the name <code>&quot;max_active_power&quot;</code>, and having both a <a href="../../reference/public/#InfrastructureSystems.Deterministic"><code>Deterministic</code></a> and a <a href="../../reference/public/#InfrastructureSystems.DeterministicSingleTimeSeries"><code>DeterministicSingleTimeSeries</code></a> with the same name is not allowed. If we tried to keep both, functions like <code>get_time_series</code> wouldn&#39;t know which forecast to retrieve when you request <code>&quot;max_active_power&quot;</code>. Let&#39;s remove the <a href="../../reference/public/#InfrastructureSystems.SingleTimeSeries"><code>SingleTimeSeries</code></a> to avoid this conflict:</p><pre><code class="language-julia hljs">remove_time_series!(system, SingleTimeSeries, wind1, &quot;max_active_power&quot;);</code></pre><p>Now we can transform the remaining <a href="../../reference/public/#InfrastructureSystems.SingleTimeSeries"><code>SingleTimeSeries</code></a> (the ones attached to the loads):</p><pre><code class="language-julia hljs">transform_single_time_series!(
+    system,
+    Dates.Hour(1), # horizon
+    Dates.Minute(30), # interval
+);</code></pre><p>Let&#39;s see the results for <code>load1</code>&#39;s time series summary:</p><pre><code class="language-julia hljs">show_time_series(load1)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">┌──────────────────┬──────────────────┬─────────────────────┬───────────────────
+│<span class="sgr1"> time_series_type </span>│<span class="sgr1">             name </span>│<span class="sgr1">   initial_timestamp </span>│<span class="sgr1">          resolut</span> ⋯
+│<span class="sgr90">           String </span>│<span class="sgr90">           String </span>│<span class="sgr90">      Dates.DateTime </span>│<span class="sgr90">   Dates.Millisec</span> ⋯
+├──────────────────┼──────────────────┼─────────────────────┼───────────────────
+│ SingleTimeSeries │ max_active_power │ 2020-01-01T08:00:00 │ 300000 milliseco ⋯
+└──────────────────┴──────────────────┴─────────────────────┴───────────────────
+<span class="sgr36">                                                               3 columns omitted</span>
+┌───────────────────────────────┬──────────────────┬─────────────────────┬──────
+│<span class="sgr1">              time_series_type </span>│<span class="sgr1">             name </span>│<span class="sgr1">   initial_timestamp </span>│<span class="sgr1">    </span> ⋯
+│<span class="sgr90">                        String </span>│<span class="sgr90">           String </span>│<span class="sgr90">      Dates.DateTime </span>│<span class="sgr90">   D</span> ⋯
+├───────────────────────────────┼──────────────────┼─────────────────────┼──────
+│ DeterministicSingleTimeSeries │ max_active_power │ 2020-01-01T08:00:00 │ 300 ⋯
+└───────────────────────────────┴──────────────────┴─────────────────────┴──────
+<span class="sgr36">                                                               5 columns omitted</span></code></pre><p>Notice we now have a load forecast data set with the resolution, horizon, and, interval matching our wind forecasts. Retrieve the first forecast window:</p><pre><code class="language-julia hljs">get_time_series_array(
+    DeterministicSingleTimeSeries,
+    load1,
+    &quot;max_active_power&quot;;
+    start_time = DateTime(&quot;2020-01-01T08:00:00&quot;),
+)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">12×1 TimeSeries.TimeArray{Float64, 1, Dates.DateTime, Vector{Float64}} 2020-01-01T08:00:00 to 2020-01-01T08:55:00
+┌─────────────────────┬─────┐
+│<span class="sgr1">                     </span>│<span class="sgr1"> A   </span>│
+├─────────────────────┼─────┤
+│ 2020-01-01T08:00:00 │ 3.0 │
+│ 2020-01-01T08:05:00 │ 3.0 │
+│ 2020-01-01T08:10:00 │ 3.0 │
+│ 2020-01-01T08:15:00 │ 3.0 │
+│ 2020-01-01T08:20:00 │ 4.0 │
+│ 2020-01-01T08:25:00 │ 4.0 │
+│ 2020-01-01T08:30:00 │ 4.0 │
+│ 2020-01-01T08:35:00 │ 4.0 │
+│ 2020-01-01T08:40:00 │ 5.0 │
+│ 2020-01-01T08:45:00 │ 5.0 │
+│ 2020-01-01T08:50:00 │ 6.0 │
+│ 2020-01-01T08:55:00 │ 6.0 │
+└─────────────────────┴─────┘</code></pre><p>See that <code>load1</code>&#39;s scaling factor multiplier is still being applied as expected.</p><h1 id="Transform-with-Multiple-Intervals"><a class="docs-heading-anchor" href="#Transform-with-Multiple-Intervals">Transform with Multiple Intervals</a><a id="Transform-with-Multiple-Intervals-1"></a><a class="docs-heading-anchor-permalink" href="#Transform-with-Multiple-Intervals" title="Permalink"></a></h1><p>PowerSystems supports creating multiple forecast transforms from the same <a href="../../reference/public/#InfrastructureSystems.SingleTimeSeries"><code>SingleTimeSeries</code></a>, each with a different <a href="../../reference/glossary/#I">interval</a>. This is useful when a component needs forecasts updated at different frequencies. Use <code>delete_existing = false</code> to preserve the existing transform and add a second one with a different interval:</p><pre><code class="language-julia hljs">transform_single_time_series!(
+    system,
+    Dates.Hour(1), # horizon
+    Dates.Hour(1); # a longer interval
+    delete_existing = false,
+);</code></pre><p>Now <code>load1</code> has two <a href="../../reference/public/#InfrastructureSystems.DeterministicSingleTimeSeries"><code>DeterministicSingleTimeSeries</code></a> forecasts with different intervals. Let&#39;s verify:</p><pre><code class="language-julia hljs">show_time_series(load1)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">┌──────────────────┬──────────────────┬─────────────────────┬───────────────────
+│<span class="sgr1"> time_series_type </span>│<span class="sgr1">             name </span>│<span class="sgr1">   initial_timestamp </span>│<span class="sgr1">          resolut</span> ⋯
+│<span class="sgr90">           String </span>│<span class="sgr90">           String </span>│<span class="sgr90">      Dates.DateTime </span>│<span class="sgr90">   Dates.Millisec</span> ⋯
+├──────────────────┼──────────────────┼─────────────────────┼───────────────────
+│ SingleTimeSeries │ max_active_power │ 2020-01-01T08:00:00 │ 300000 milliseco ⋯
+└──────────────────┴──────────────────┴─────────────────────┴───────────────────
+<span class="sgr36">                                                               3 columns omitted</span>
+┌───────────────────────────────┬──────────────────┬─────────────────────┬──────
+│<span class="sgr1">              time_series_type </span>│<span class="sgr1">             name </span>│<span class="sgr1">   initial_timestamp </span>│<span class="sgr1">    </span> ⋯
+│<span class="sgr90">                        String </span>│<span class="sgr90">           String </span>│<span class="sgr90">      Dates.DateTime </span>│<span class="sgr90">   D</span> ⋯
+├───────────────────────────────┼──────────────────┼─────────────────────┼──────
+│ DeterministicSingleTimeSeries │ max_active_power │ 2020-01-01T08:00:00 │ 300 ⋯
+│ DeterministicSingleTimeSeries │ max_active_power │ 2020-01-01T08:00:00 │ 300 ⋯
+└───────────────────────────────┴──────────────────┴─────────────────────┴──────
+<span class="sgr36">                                                               5 columns omitted</span></code></pre><p>When multiple intervals exist for the same name, you must specify <code>interval</code> to disambiguate retrieval:</p><pre><code class="language-julia hljs">get_time_series_array(
+    DeterministicSingleTimeSeries,
+    load1,
+    &quot;max_active_power&quot;;
+    start_time = DateTime(&quot;2020-01-01T08:00:00&quot;),
+    interval = Dates.Minute(30),
+)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">12×1 TimeSeries.TimeArray{Float64, 1, Dates.DateTime, Vector{Float64}} 2020-01-01T08:00:00 to 2020-01-01T08:55:00
+┌─────────────────────┬─────┐
+│<span class="sgr1">                     </span>│<span class="sgr1"> A   </span>│
+├─────────────────────┼─────┤
+│ 2020-01-01T08:00:00 │ 3.0 │
+│ 2020-01-01T08:05:00 │ 3.0 │
+│ 2020-01-01T08:10:00 │ 3.0 │
+│ 2020-01-01T08:15:00 │ 3.0 │
+│ 2020-01-01T08:20:00 │ 4.0 │
+│ 2020-01-01T08:25:00 │ 4.0 │
+│ 2020-01-01T08:30:00 │ 4.0 │
+│ 2020-01-01T08:35:00 │ 4.0 │
+│ 2020-01-01T08:40:00 │ 5.0 │
+│ 2020-01-01T08:45:00 │ 5.0 │
+│ 2020-01-01T08:50:00 │ 6.0 │
+│ 2020-01-01T08:55:00 │ 6.0 │
+└─────────────────────┴─────┘</code></pre><p>You can also query forecast parameters for a specific interval:</p><pre><code class="language-julia hljs">get_forecast_horizon(system; interval = Dates.Hour(1))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">3600000 milliseconds</code></pre><pre><code class="language-julia hljs">get_forecast_interval(system; interval = Dates.Minute(30))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">1800000 milliseconds</code></pre><p>To selectively remove one interval&#39;s forecasts while keeping the other:</p><pre><code class="language-julia hljs">remove_time_series!(
+    system,
+    DeterministicSingleTimeSeries,
+    load1,
+    &quot;max_active_power&quot;;
+    interval = Dates.Hour(1),
+)</code></pre><p>You can also query the system-wide forecast parameters:</p><pre><code class="language-julia hljs">get_forecast_horizon(system)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">3600000 milliseconds</code></pre><pre><code class="language-julia hljs">get_forecast_interval(system)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">1800000 milliseconds</code></pre><h1 id="Add-Time-Series-to-Supplemental-Attributes"><a class="docs-heading-anchor" href="#Add-Time-Series-to-Supplemental-Attributes">Add Time Series to Supplemental Attributes</a><a id="Add-Time-Series-to-Supplemental-Attributes-1"></a><a class="docs-heading-anchor-permalink" href="#Add-Time-Series-to-Supplemental-Attributes" title="Permalink"></a></h1><p>So far, we attached time series to <strong>component fields</strong> (<code>wind1</code>, loads) or <strong>cost data</strong>. Now we&#39;ll attach time series to a <a href="../../reference/public/#InfrastructureSystems.SupplementalAttribute"><code>SupplementalAttribute</code></a>, which is contextual metadata linked to components but stored outside their electrical definitions.</p><p>Here we add a <a href="../../reference/public/#PowerSystems.PlannedOutage"><code>PlannedOutage</code></a> schedule on <code>gas1</code>. Create the attribute and attach it to the generator with <a href="../../reference/public/#PowerSystems.add_supplemental_attribute!-Tuple{System, Component, SupplementalAttribute}"><code>add_supplemental_attribute!</code></a>:</p><pre><code class="language-julia hljs">planned = PlannedOutage(; outage_schedule = &quot;outage_schedule&quot;)
+add_supplemental_attribute!(system, gas1, planned)</code></pre><p>Now we can attach the time series to the <strong>outage attribute</strong> (not to <code>gas1</code>) with <a href="../../reference/public/#PowerSystems.add_time_series!-Tuple{System, Component, TimeSeriesData}"><code>add_time_series!</code></a>:</p><pre><code class="language-julia hljs">outage_values = vcat(zeros(12), ones(12))  # in service first hour, outaged second hour
+outage_timearray = TimeArray(timestamps, outage_values)
+outage_ts = SingleTimeSeries(; name = &quot;outage_schedule&quot;, data = outage_timearray)
+add_time_series!(system, planned, outage_ts)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">StaticTimeSeriesKey(SingleTimeSeries, &quot;outage_schedule&quot;, Dates.DateTime(&quot;2020-01-01T08:00:00&quot;), Dates.Millisecond(300000), 24, Dict{String, Any}())</code></pre><p>Retrieve from the outage attribute with <a href="../../reference/public/#InfrastructureSystems.get_time_series_array-Tuple{Union{InfrastructureSystems.InfrastructureSystemsComponent, SupplementalAttribute}, Forecast}"><code>get_time_series_array</code></a> – values are <code>0.0</code> (in service) or <code>1.0</code> (outaged):</p><pre><code class="language-julia hljs">get_time_series_array(SingleTimeSeries, planned, &quot;outage_schedule&quot;)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">24×1 TimeSeries.TimeArray{Float64, 1, Dates.DateTime, Vector{Float64}} 2020-01-01T08:00:00 to 2020-01-01T09:55:00
+┌─────────────────────┬─────┐
+│<span class="sgr1">                     </span>│<span class="sgr1"> A   </span>│
+├─────────────────────┼─────┤
+│ 2020-01-01T08:00:00 │ 0.0 │
+│ 2020-01-01T08:05:00 │ 0.0 │
+│ 2020-01-01T08:10:00 │ 0.0 │
+│ 2020-01-01T08:15:00 │ 0.0 │
+│ 2020-01-01T08:20:00 │ 0.0 │
+│ 2020-01-01T08:25:00 │ 0.0 │
+│ 2020-01-01T08:30:00 │ 0.0 │
+│ 2020-01-01T08:35:00 │ 0.0 │
+│          ⋮          │  ⋮  │
+│ 2020-01-01T09:25:00 │ 1.0 │
+│ 2020-01-01T09:30:00 │ 1.0 │
+│ 2020-01-01T09:35:00 │ 1.0 │
+│ 2020-01-01T09:40:00 │ 1.0 │
+│ 2020-01-01T09:45:00 │ 1.0 │
+│ 2020-01-01T09:50:00 │ 1.0 │
+│ 2020-01-01T09:55:00 │ 1.0 │
+└─────────────────────┴─────┘
+<span class="sgr36">               9 rows omitted</span></code></pre><p>See <a href="../../explanation/supplemental_attributes/#supplemental_attributes_explanation">Supplemental attributes</a> and <a href="../generated_manipulating_datasets/#Manipulating-Datasets">Manipulating Data Sets</a> for general attach and query patterns.</p><h1 id="Finding,-Retrieving,-and-Inspecting-Time-Series"><a class="docs-heading-anchor" href="#Finding,-Retrieving,-and-Inspecting-Time-Series">Finding, Retrieving, and Inspecting Time Series</a><a id="Finding,-Retrieving,-and-Inspecting-Time-Series-1"></a><a class="docs-heading-anchor-permalink" href="#Finding,-Retrieving,-and-Inspecting-Time-Series" title="Permalink"></a></h1><p>Now, let&#39;s complete this tutorial by doing a few sanity checks on the data that we&#39;ve added, where are we will also examine components with time series and retrieve the time series data in a few more ways. Recall we can print the <a href="../../reference/public/#System"><code>System</code></a> to summarize the data in our system:</p><pre><code class="language-julia hljs">system</code></pre><table>
+  <thead>
+    <tr class = "title">
+      <td colspan = "2" style = "font-size: x-large; font-weight: bold; text-align: center;">System</td>
+    </tr>
+    <tr class = "columnLabelRow">
+      <th style = "font-weight: bold; text-align: left;">Property</th>
+      <th style = "font-weight: bold; text-align: left;">Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr class = "dataRow">
+      <td style = "text-align: left;">Name</td>
+      <td style = "text-align: left;"></td>
+    </tr>
+    <tr class = "dataRow">
+      <td style = "text-align: left;">Description</td>
+      <td style = "text-align: left;"></td>
+    </tr>
+    <tr class = "dataRow">
+      <td style = "text-align: left;">System Units Base</td>
+      <td style = "text-align: left;">NATURAL_UNITS</td>
+    </tr>
+    <tr class = "dataRow">
+      <td style = "text-align: left;">Base Power</td>
+      <td style = "text-align: left;">100.0</td>
+    </tr>
+    <tr class = "dataRow">
+      <td style = "text-align: left;">Base Frequency</td>
+      <td style = "text-align: left;">60.0</td>
+    </tr>
+    <tr class = "dataRow">
+      <td style = "text-align: left;">Num Components</td>
+      <td style = "text-align: left;">5</td>
+    </tr>
+  </tbody>
+</table>
+
+<table>
+  <thead>
+    <tr class = "title">
+      <td colspan = "2" style = "font-size: x-large; font-weight: bold; text-align: center;">Static Components</td>
+    </tr>
+    <tr class = "columnLabelRow">
+      <th style = "font-weight: bold; text-align: left;">Type</th>
+      <th style = "font-weight: bold; text-align: left;">Count</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr class = "dataRow">
+      <td style = "text-align: left;">ACBus</td>
+      <td style = "text-align: left;">1</td>
+    </tr>
+    <tr class = "dataRow">
+      <td style = "text-align: left;">PowerLoad</td>
+      <td style = "text-align: left;">2</td>
+    </tr>
+    <tr class = "dataRow">
+      <td style = "text-align: left;">RenewableDispatch</td>
+      <td style = "text-align: left;">1</td>
+    </tr>
+    <tr class = "dataRow">
+      <td style = "text-align: left;">ThermalStandard</td>
+      <td style = "text-align: left;">1</td>
+    </tr>
+  </tbody>
+</table>
+
+<table>
+  <thead>
+    <tr class = "title">
+      <td colspan = "8" style = "font-size: x-large; font-weight: bold; text-align: center;">StaticTimeSeries Summary</td>
+    </tr>
+    <tr class = "columnLabelRow">
+      <th style = "font-weight: bold; text-align: left;">owner_type</th>
+      <th style = "font-weight: bold; text-align: left;">owner_category</th>
+      <th style = "font-weight: bold; text-align: left;">name</th>
+      <th style = "font-weight: bold; text-align: left;">time_series_type</th>
+      <th style = "font-weight: bold; text-align: left;">initial_timestamp</th>
+      <th style = "font-weight: bold; text-align: left;">resolution</th>
+      <th style = "font-weight: bold; text-align: left;">count</th>
+      <th style = "font-weight: bold; text-align: left;">time_step_count</th>
+    </tr>
+    <tr class = "columnLabelRow">
+      <th style = "text-align: left;">String</th>
+      <th style = "text-align: left;">String</th>
+      <th style = "text-align: left;">String</th>
+      <th style = "text-align: left;">String</th>
+      <th style = "text-align: left;">String</th>
+      <th style = "text-align: left;">Dates.CompoundPeriod</th>
+      <th style = "text-align: left;">Int64</th>
+      <th style = "text-align: left;">Int64</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr class = "dataRow">
+      <td style = "text-align: left;">PowerLoad</td>
+      <td style = "text-align: left;">Component</td>
+      <td style = "text-align: left;">max_active_power</td>
+      <td style = "text-align: left;">SingleTimeSeries</td>
+      <td style = "text-align: left;">2020-01-01T08:00:00</td>
+      <td style = "text-align: left;">5 minutes</td>
+      <td style = "text-align: left;">2</td>
+      <td style = "text-align: left;">24</td>
+    </tr>
+    <tr class = "dataRow">
+      <td style = "text-align: left;">ThermalStandard</td>
+      <td style = "text-align: left;">Component</td>
+      <td style = "text-align: left;">gas_price</td>
+      <td style = "text-align: left;">SingleTimeSeries</td>
+      <td style = "text-align: left;">2020-01-01T08:00:00</td>
+      <td style = "text-align: left;">5 minutes</td>
+      <td style = "text-align: left;">1</td>
+      <td style = "text-align: left;">24</td>
+    </tr>
+    <tr class = "dataRow">
+      <td style = "text-align: left;">PlannedOutage</td>
+      <td style = "text-align: left;">SupplementalAttribute</td>
+      <td style = "text-align: left;">outage_schedule</td>
+      <td style = "text-align: left;">SingleTimeSeries</td>
+      <td style = "text-align: left;">2020-01-01T08:00:00</td>
+      <td style = "text-align: left;">5 minutes</td>
+      <td style = "text-align: left;">1</td>
+      <td style = "text-align: left;">24</td>
+    </tr>
+  </tbody>
+</table>
+<table>
+  <thead>
+    <tr class = "title">
+      <td colspan = "10" style = "font-size: x-large; font-weight: bold; text-align: center;">Forecast Summary</td>
+    </tr>
+    <tr class = "columnLabelRow">
+      <th style = "font-weight: bold; text-align: left;">owner_type</th>
+      <th style = "font-weight: bold; text-align: left;">owner_category</th>
+      <th style = "font-weight: bold; text-align: left;">name</th>
+      <th style = "font-weight: bold; text-align: left;">time_series_type</th>
+      <th style = "font-weight: bold; text-align: left;">initial_timestamp</th>
+      <th style = "font-weight: bold; text-align: left;">resolution</th>
+      <th style = "font-weight: bold; text-align: left;">count</th>
+      <th style = "font-weight: bold; text-align: left;">horizon</th>
+      <th style = "font-weight: bold; text-align: left;">interval</th>
+      <th style = "font-weight: bold; text-align: left;">window_count</th>
+    </tr>
+    <tr class = "columnLabelRow">
+      <th style = "text-align: left;">String</th>
+      <th style = "text-align: left;">String</th>
+      <th style = "text-align: left;">String</th>
+      <th style = "text-align: left;">String</th>
+      <th style = "text-align: left;">String</th>
+      <th style = "text-align: left;">Dates.CompoundPeriod</th>
+      <th style = "text-align: left;">Int64</th>
+      <th style = "text-align: left;">Dates.CompoundPeriod</th>
+      <th style = "text-align: left;">Dates.CompoundPeriod</th>
+      <th style = "text-align: left;">Int64</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr class = "dataRow">
+      <td style = "text-align: left;">PowerLoad</td>
+      <td style = "text-align: left;">Component</td>
+      <td style = "text-align: left;">max_active_power</td>
+      <td style = "text-align: left;">DeterministicSingleTimeSeries</td>
+      <td style = "text-align: left;">2020-01-01T08:00:00</td>
+      <td style = "text-align: left;">5 minutes</td>
+      <td style = "text-align: left;">2</td>
+      <td style = "text-align: left;">1 hour</td>
+      <td style = "text-align: left;">30 minutes</td>
+      <td style = "text-align: left;">3</td>
+    </tr>
+    <tr class = "dataRow">
+      <td style = "text-align: left;">PowerLoad</td>
+      <td style = "text-align: left;">Component</td>
+      <td style = "text-align: left;">max_active_power</td>
+      <td style = "text-align: left;">DeterministicSingleTimeSeries</td>
+      <td style = "text-align: left;">2020-01-01T08:00:00</td>
+      <td style = "text-align: left;">5 minutes</td>
+      <td style = "text-align: left;">1</td>
+      <td style = "text-align: left;">1 hour</td>
+      <td style = "text-align: left;">1 hour</td>
+      <td style = "text-align: left;">2</td>
+    </tr>
+    <tr class = "dataRow">
+      <td style = "text-align: left;">RenewableDispatch</td>
+      <td style = "text-align: left;">Component</td>
+      <td style = "text-align: left;">max_active_power</td>
+      <td style = "text-align: left;">Deterministic</td>
+      <td style = "text-align: left;">2020-01-01T08:00:00</td>
+      <td style = "text-align: left;">5 minutes</td>
+      <td style = "text-align: left;">1</td>
+      <td style = "text-align: left;">1 hour</td>
+      <td style = "text-align: left;">30 minutes</td>
+      <td style = "text-align: left;">3</td>
+    </tr>
+    <tr class = "dataRow">
+      <td style = "text-align: left;">ThermalStandard</td>
+      <td style = "text-align: left;">Component</td>
+      <td style = "text-align: left;">gas_price</td>
+      <td style = "text-align: left;">DeterministicSingleTimeSeries</td>
+      <td style = "text-align: left;">2020-01-01T08:00:00</td>
+      <td style = "text-align: left;">5 minutes</td>
+      <td style = "text-align: left;">1</td>
+      <td style = "text-align: left;">1 hour</td>
+      <td style = "text-align: left;">30 minutes</td>
+      <td style = "text-align: left;">3</td>
+    </tr>
+    <tr class = "dataRow">
+      <td style = "text-align: left;">ThermalStandard</td>
+      <td style = "text-align: left;">Component</td>
+      <td style = "text-align: left;">gas_price</td>
+      <td style = "text-align: left;">DeterministicSingleTimeSeries</td>
+      <td style = "text-align: left;">2020-01-01T08:00:00</td>
+      <td style = "text-align: left;">5 minutes</td>
+      <td style = "text-align: left;">1</td>
+      <td style = "text-align: left;">1 hour</td>
+      <td style = "text-align: left;">1 hour</td>
+      <td style = "text-align: left;">2</td>
+    </tr>
+  </tbody>
+</table>
+<p>Notice that new tables have been added, showing the count of each Type of component that has a given time series type. As expected from the earlier removal, <code>wind1</code> has only its <a href="../../reference/public/#InfrastructureSystems.Deterministic"><code>Deterministic</code></a> forecast and no <a href="../../reference/public/#InfrastructureSystems.DeterministicSingleTimeSeries"><code>DeterministicSingleTimeSeries</code></a>. Finally, let&#39;s do a last data sanity check on the forecasts. Since we defined the wind time series in MW instead of scaling factors, let&#39;s make sure none of our forecasts exceeds the <code>max_active_power</code> parameter. Instead of using <code>get_time_series_array</code> where we need to remember some details of the time series we&#39;re looking up, let&#39;s use <a href="../../reference/public/#InfrastructureSystems.get_time_series_keys-Tuple{Union{InfrastructureSystems.InfrastructureSystemsComponent, SupplementalAttribute}}"><code>get_time_series_keys</code></a> to refresh our memories:</p><pre><code class="language-julia hljs">keys = get_time_series_keys(wind1)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">1-element Vector{ForecastKey}:
+ ForecastKey(Deterministic, &quot;max_active_power&quot;, Dates.DateTime(&quot;2020-01-01T08:00:00&quot;), Dates.Minute(5), Dates.Minute(60), Dates.Millisecond(1800000), 3, Dict{String, Any}())</code></pre><p>See the forecast key is first, so let&#39;s retrieve it using <a href="../../reference/public/#InfrastructureSystems.get_time_series-Tuple{Union{InfrastructureSystems.InfrastructureSystemsComponent, SupplementalAttribute}, TimeSeriesKey}"><code>get_time_series</code></a>:</p><pre><code class="language-julia hljs">forecast = get_time_series(wind1, keys[1])</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Deterministic(&quot;max_active_power&quot;, DataStructures.SortedDict(Dates.DateTime(&quot;2020-01-01T08:00:00&quot;) =&gt; [5.0, 6.0, 7.0, 7.0, 7.0, 8.0, 9.0, 10.0, 10.0, 9.0, 7.0, 5.0], Dates.DateTime(&quot;2020-01-01T08:30:00&quot;) =&gt; [9.0, 9.0, 9.0, 9.0, 8.0, 7.0, 6.0, 5.0, 4.0, 5.0, 4.0, 4.0], Dates.DateTime(&quot;2020-01-01T09:00:00&quot;) =&gt; [6.0, 6.0, 5.0, 5.0, 4.0, 5.0, 6.0, 7.0, 7.0, 7.0, 6.0, 6.0]), Dates.Minute(5), Dates.Millisecond(1800000), nothing, InfrastructureSystems.InfrastructureSystemsInternal(Base.UUID(&quot;2240967b-310d-447d-8673-96a91de44204&quot;), nothing, nothing, nothing))</code></pre><p>See that unlike when we used <code>get_time_series_array</code>, this returns an object we can manipulate. Use <a href="../../reference/public/#InfrastructureSystems.iterate_windows-Tuple{Deterministic}"><code>iterate_windows</code></a> to cycle through the 3 forecast windows and inspect the peak value:</p><pre><code class="language-julia hljs">for window in iterate_windows(forecast)
+    @show values(maximum(window))
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">values(maximum(window)) = [10.0]
+values(maximum(window)) = [9.0]
+values(maximum(window)) = [7.0]</code></pre><p>Finally, use <a href="../../reference/public/#PowerSystems.get_max_active_power-Tuple{T} where T&lt;:RenewableGen"><code>get_max_active_power</code></a> to check the expected maximum:</p><pre><code class="language-julia hljs">get_max_active_power(wind1)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">10.0</code></pre><p>See that the forecasts are not exceeding this maximum – sanity check complete.</p><div class="admonition is-success" id="Tip-f8a96d792d59d286"><header class="admonition-header">Tip<a class="admonition-anchor" href="#Tip-f8a96d792d59d286" title="Permalink"></a></header><div class="admonition-body"><p>Unlike <a href="../../model_library/generated_PowerLoad/#PowerLoad"><code>PowerLoad</code></a> components, <a href="../../model_library/generated_RenewableDispatch/#RenewableDispatch"><code>RenewableDispatch</code></a> components do not have a <code>max_active_power</code> field, so check <a href="../../reference/public/#PowerSystems.get_max_active_power-Tuple{T} where T&lt;:RenewableGen"><code>get_max_active_power</code></a> to see how its calculated.</p></div></div><h2 id="Getting-Timestamps-and-Values-Separately"><a class="docs-heading-anchor" href="#Getting-Timestamps-and-Values-Separately">Getting Timestamps and Values Separately</a><a id="Getting-Timestamps-and-Values-Separately-1"></a><a class="docs-heading-anchor-permalink" href="#Getting-Timestamps-and-Values-Separately" title="Permalink"></a></h2><p>When working with a retrieved time series object, you can extract the timestamps and values independently rather than always working with the combined <code>TimeArray</code>. Use <a href="../../reference/public/#InfrastructureSystems.get_time_series_timestamps-Tuple{Union{InfrastructureSystems.InfrastructureSystemsComponent, SupplementalAttribute}, Forecast}"><code>get_time_series_timestamps</code></a> to get just the timestamps for a time series:</p><pre><code class="language-julia hljs">get_time_series_timestamps(SingleTimeSeries, load1, &quot;max_active_power&quot;)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">24-element Vector{Dates.DateTime}:
+ 2020-01-01T08:00:00
+ 2020-01-01T08:05:00
+ 2020-01-01T08:10:00
+ 2020-01-01T08:15:00
+ 2020-01-01T08:20:00
+ 2020-01-01T08:25:00
+ 2020-01-01T08:30:00
+ 2020-01-01T08:35:00
+ 2020-01-01T08:40:00
+ 2020-01-01T08:45:00
+ ⋮
+ 2020-01-01T09:15:00
+ 2020-01-01T09:20:00
+ 2020-01-01T09:25:00
+ 2020-01-01T09:30:00
+ 2020-01-01T09:35:00
+ 2020-01-01T09:40:00
+ 2020-01-01T09:45:00
+ 2020-01-01T09:50:00
+ 2020-01-01T09:55:00</code></pre><p>Use <a href="../../reference/public/#InfrastructureSystems.get_time_series_values-Tuple{Union{InfrastructureSystems.InfrastructureSystemsComponent, SupplementalAttribute}, Forecast}"><code>get_time_series_values</code></a> to get just the numeric values. Note the scaling factor multiplier is still applied:</p><pre><code class="language-julia hljs">get_time_series_values(SingleTimeSeries, load1, &quot;max_active_power&quot;)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">24-element Vector{Float64}:
+ 3.0
+ 3.0
+ 3.0
+ 3.0
+ 4.0
+ 4.0
+ 4.0
+ 4.0
+ 5.0
+ 5.0
+ ⋮
+ 8.0
+ 8.0
+ 8.0
+ 9.0
+ 8.0
+ 8.0
+ 8.0
+ 8.0
+ 8.0</code></pre><p>The same functions work for forecasts – just pass a <code>start_time</code> to select the window:</p><pre><code class="language-julia hljs">get_time_series_timestamps(
+    Deterministic,
+    wind1,
+    &quot;max_active_power&quot;;
+    start_time = DateTime(&quot;2020-01-01T08:00:00&quot;),
+)
+
+get_time_series_values(
+    Deterministic,
+    wind1,
+    &quot;max_active_power&quot;;
+    start_time = DateTime(&quot;2020-01-01T08:00:00&quot;),
+)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">12-element view(::Vector{Float64}, 1:12) with eltype Float64:
+  5.0
+  6.0
+  7.0
+  7.0
+  7.0
+  8.0
+  9.0
+ 10.0
+ 10.0
+  9.0
+  7.0
+  5.0</code></pre><h2 id="Inspecting-Time-Series-Metadata"><a class="docs-heading-anchor" href="#Inspecting-Time-Series-Metadata">Inspecting Time Series Metadata</a><a id="Inspecting-Time-Series-Metadata-1"></a><a class="docs-heading-anchor-permalink" href="#Inspecting-Time-Series-Metadata" title="Permalink"></a></h2><p>Rather than retrieving the full data, you can inspect the structural metadata of a time series object returned by <a href="../../reference/public/#InfrastructureSystems.get_time_series-Tuple{Union{InfrastructureSystems.InfrastructureSystemsComponent, SupplementalAttribute}, TimeSeriesKey}"><code>get_time_series</code></a>. Let&#39;s retrieve the wind forecast object again and inspect its properties:</p><pre><code class="language-julia hljs">forecast = get_time_series(wind1, keys[1])</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Deterministic(&quot;max_active_power&quot;, DataStructures.SortedDict(Dates.DateTime(&quot;2020-01-01T08:00:00&quot;) =&gt; [5.0, 6.0, 7.0, 7.0, 7.0, 8.0, 9.0, 10.0, 10.0, 9.0, 7.0, 5.0], Dates.DateTime(&quot;2020-01-01T08:30:00&quot;) =&gt; [9.0, 9.0, 9.0, 9.0, 8.0, 7.0, 6.0, 5.0, 4.0, 5.0, 4.0, 4.0], Dates.DateTime(&quot;2020-01-01T09:00:00&quot;) =&gt; [6.0, 6.0, 5.0, 5.0, 4.0, 5.0, 6.0, 7.0, 7.0, 7.0, 6.0, 6.0]), Dates.Minute(5), Dates.Millisecond(1800000), nothing, InfrastructureSystems.InfrastructureSystemsInternal(Base.UUID(&quot;2240967b-310d-447d-8673-96a91de44204&quot;), nothing, nothing, nothing))</code></pre><p>Get the <a href="../../reference/glossary/#R">resolution</a> (time step between values):</p><pre><code class="language-julia hljs">get_resolution(forecast)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">5 minutes</code></pre><p>Get the <a href="../../reference/glossary/#H">horizon</a> (total duration of one forecast window):</p><pre><code class="language-julia hljs">get_horizon(forecast)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">60 minutes</code></pre><p>Similarly, for the load <a href="../../reference/public/#InfrastructureSystems.SingleTimeSeries"><code>SingleTimeSeries</code></a>:</p><pre><code class="language-julia hljs">sts = get_time_series(SingleTimeSeries, load1, &quot;max_active_power&quot;)
+get_resolution(sts)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">300000 milliseconds</code></pre><h1 id="Next-Steps"><a class="docs-heading-anchor" href="#Next-Steps">Next Steps</a><a id="Next-Steps-1"></a><a class="docs-heading-anchor-permalink" href="#Next-Steps" title="Permalink"></a></h1><p>In this tutorial, you defined, added, and retrieved time series on component fields, cost data, and supplemental attributes, including deterministic forecasts. Along the way, we reduced data duplication using normalized scaling factors and <a href="../../reference/public/#PowerSystems.transform_single_time_series!-Tuple{System, Dates.Period, Dates.Period}"><code>transform_single_time_series!</code></a> to address missing load forecast data. Next you might like to:</p><ul><li><a href="../../how_to/parse_ts_from_csvs/#parsing_time_series">Parse many timeseries data sets from CSV&#39;s</a></li><li><a href="../../how_to/improve_ts_performance/#improve_ts_performance">See how to improve performance efficiency with your own time series data</a></li><li><a href="../../explanation/time_series/#ts_data">Review the available time series data formats</a></li><li><a href="../../explanation/time_series/#Data-Storage">Learn more about how times series data is stored</a></li><li><a href="../../how_to/add_fuel_curve_timeseries/#fuel_curve_timeseries">Add Time Series Fuel Cost Data</a> — fuel curves in depth</li></ul><script type="module">import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+mermaid.initialize({
+    startOnLoad: true,
+    theme: "neutral"
+});
+</script></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../generated_manipulating_datasets/">« Manipulating Data Sets</a><a class="docs-footer-nextpage" href="../generated_add_dynamic_data/">Adding Data for Dynamic Simulations »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.15.0 on <span class="colophon-date" title="Tuesday 11 August 2026 04:34">Tuesday 11 August 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
