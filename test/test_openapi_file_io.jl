@@ -64,6 +64,32 @@ end
     end
 end
 
+@testset "to_file/from_file: FixedAdmittance survives a non-100 MVA system base" begin
+    sys = System(50.0)
+    bus = ACBus(;
+        number = 1, name = "b1", available = true, bustype = ACBusTypes.REF,
+        angle = 0.0, magnitude = 1.0, voltage_limits = (min = 0.9, max = 1.1),
+        base_voltage = 138.0,
+    )
+    add_component!(sys, bus)
+    add_component!(
+        sys,
+        FixedAdmittance(;
+            name = "shunt1", available = true, bus = bus, Y = 0.5im, base_power = 50.0,
+        ),
+    )
+    mktempdir() do dir
+        document = joinpath(dir, "case.json")
+        to_file(sys, document)
+        shunt =
+            get_component(FixedAdmittance, from_file(document; base_power = 50.0), "shunt1")
+        @test get_Y(shunt) ≈ 0.5im
+        @test get_base_power(shunt) == 50.0
+        # The document doesn't record the system base; the default 100 MVA keeps the MVAr.
+        @test get_Y(get_component(FixedAdmittance, from_file(document), "shunt1")) ≈ 0.25im
+    end
+end
+
 @testset "to_file: two .json documents share one directory" begin
     mktempdir() do dir
         # The whole point of the stem-named sidecar: the directory form could not do this,

@@ -14,6 +14,7 @@ function _test_circuit(; base_power = 20.0, system_base = 100.0)
         reactive_power_flow = 0.05,
         base_power = base_power,
         base_voltage_primary = 138.0,
+        input_basis = CU,
     )
     IS.set_base_value!(c, system_base)
     return c
@@ -174,6 +175,7 @@ end
         arc = Arc(ACBus(nothing), ACBus(nothing)),
         rating = 0.5,
         base_power = 100.0,
+        input_basis = CU,
     )
     @test isnothing(IS.get_base_value(fresh_2w))
     set_circuit!(t2, fresh_2w)
@@ -187,6 +189,7 @@ end
         arc = Arc(ACBus(nothing), ACBus(nothing)),
         rating = 0.5,
         base_power = 15.0,
+        input_basis = CU,
     )
     @test isnothing(IS.get_base_value(fresh_3w))
     set_primary_circuit!(t3, fresh_3w)

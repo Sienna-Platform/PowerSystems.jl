@@ -39,6 +39,7 @@ This line must be connected to a [`DCBus`](@ref) on each end. It uses a T-Model 
 - `services::Vector{Service}`: (default: `Device[]`) Services that this device contributes to
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
+- `input_basis`: (keyword constructor only, required) `CU` or `NU`, the units of bare numbers on unit-bearing fields. Tagged values (`50.0u"MW"`) keep their own units
 """
 mutable struct TModelHVDCLine <: DCBranch
     "Name of the component. Components of the same type (e.g., `PowerLoad`) must have unique names, but components of different types (e.g., `PowerLoad` and `ACBus`) can have the same name"
@@ -73,9 +74,14 @@ function TModelHVDCLine(name, available, active_power_flow, arc, r, l, c, active
     TModelHVDCLine(name, available, active_power_flow, arc, r, l, c, active_power_limits_from, active_power_limits_to, base_current, services, ext, InfrastructureSystemsInternal(), )
 end
 
-function TModelHVDCLine(; name, available, active_power_flow, arc, r, l, c, active_power_limits_from, active_power_limits_to, base_current, services=Device[], ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), )
-    TModelHVDCLine(name, available, active_power_flow, arc, r, l, c, active_power_limits_from, active_power_limits_to, base_current, services, ext, internal, )
+function TModelHVDCLine(; name, available, active_power_flow, arc, r, l, c, active_power_limits_from, active_power_limits_to, base_current, services=Device[], ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Union{ComponentBaseUnit, NaturalUnit}, )
+    value = TModelHVDCLine(name, available, _placeholder(active_power_flow), arc, r, l, c, _placeholder(active_power_limits_from), _placeholder(active_power_limits_to), base_current, services, ext, internal, )
+    set_active_power_flow!(value, _tag(active_power_flow, input_basis, Val(:mw)))
+    set_active_power_limits_from!(value, _tag(active_power_limits_from, input_basis, Val(:mw)))
+    set_active_power_limits_to!(value, _tag(active_power_limits_to, input_basis, Val(:mw)))
+    return value
 end
+_takes_input_basis(::Type{<:TModelHVDCLine}) = true
 
 # Constructor for demo purposes; non-functional.
 function TModelHVDCLine(::Nothing)
@@ -92,6 +98,7 @@ function TModelHVDCLine(::Nothing)
         base_current=100.0,
         services=Device[],
         ext=Dict{String, Any}(),
+        input_basis=CU,
     )
 end
 

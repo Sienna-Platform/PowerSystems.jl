@@ -103,12 +103,17 @@ Notes:
 
 ## Defining components
 
-When you define components that aren't attached to a `System`, field values are stored as
-given, in component base (`CU`), except for certain components that don't have their own
-`base_power` rating, such as [`Line`](@ref)s, where values are relative to the system base
-once attached. To define data in natural units, construct the component and then use the
-explicit-units setters (e.g. `set_active_power!(gen, 90.0 * u"MW")`); the accessor does the
-conversion to per-unit storage.
+Keyword constructors take a required `input_basis` (`CU` or `NU`) that says how to read the
+bare numbers passed to unit-bearing fields. A unit-tagged value (`90.0u"MW"`, `0.5CU`) is
+always read in its own units, so the two can be mixed. `SU` is rejected, since an unattached
+component has no system base. Either way the component stores component base (`CU`), and
+nothing records which basis it was built in. See
+[Add a Component in Natural Units](@ref).
+
+Some components, such as [`Line`](@ref)s, have no rating of their own: their `base_power`
+records the system base. Their per-unit values are converted against that `base_power`
+(100 MVA unless given), and `add_component!` throws if it differs from the system's base
+power, rather than silently giving the stored values a new meaning.
 
 By default, downstream optimization packages work in `SU` because many optimization
 problems won't converge when using natural units (for example in

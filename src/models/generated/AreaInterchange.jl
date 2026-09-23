@@ -31,6 +31,7 @@ Flow exchanged between Areas. This Interchange is agnostic to the lines connecti
 - `services::Vector{Service}`: (default: `Service[]`) Service interfaces that this device contributes to
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
+- `input_basis`: (keyword constructor only, required) `CU` or `NU`, the units of bare numbers on unit-bearing fields. Tagged values (`50.0u"MW"`) keep their own units
 """
 mutable struct AreaInterchange <: Branch
     "Name of the component. Components of the same type (e.g., `PowerLoad`) must have unique names, but components of different types (e.g., `PowerLoad` and `ACBus`) can have the same name"
@@ -59,9 +60,13 @@ function AreaInterchange(name, available, active_power_flow, from_area, to_area,
     AreaInterchange(name, available, active_power_flow, from_area, to_area, flow_limits, base_power, services, ext, InfrastructureSystemsInternal(), )
 end
 
-function AreaInterchange(; name, available, active_power_flow, from_area, to_area, flow_limits, base_power=100.0, services=Service[], ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), )
-    AreaInterchange(name, available, active_power_flow, from_area, to_area, flow_limits, base_power, services, ext, internal, )
+function AreaInterchange(; name, available, active_power_flow, from_area, to_area, flow_limits, base_power=100.0, services=Service[], ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Union{ComponentBaseUnit, NaturalUnit}, )
+    value = AreaInterchange(name, available, _placeholder(active_power_flow), from_area, to_area, _placeholder(flow_limits), base_power, services, ext, internal, )
+    set_active_power_flow!(value, _tag(active_power_flow, input_basis, Val(:mw)))
+    set_flow_limits!(value, _tag(flow_limits, input_basis, Val(:mw)))
+    return value
 end
+_takes_input_basis(::Type{<:AreaInterchange}) = true
 
 # Constructor for demo purposes; non-functional.
 function AreaInterchange(::Nothing)
@@ -75,6 +80,7 @@ function AreaInterchange(::Nothing)
         base_power=100.0,
         services=Service[],
         ext=Dict{String, Any}(),
+        input_basis=CU,
     )
 end
 
@@ -139,6 +145,7 @@ function from_openapi(po::PO.AreaInterchange, refs::OpenAPIRefs, ::ComponentBase
         to_area = resolve_ref(refs, po.to_area, Area),
         flow_limits = _fromto_tofrom_from_po(po.flow_limits),
         base_power = _or_default(po.base_power, 100.0),
+        input_basis = CU,
     )
 end
 
@@ -151,6 +158,7 @@ function from_openapi(po::PO.AreaInterchange, refs::OpenAPIRefs, ::NaturalUnit)
         to_area = resolve_ref(refs, po.to_area, Area),
         flow_limits = _fromto_tofrom_from_po(po.flow_limits, (/), po.base_power),
         base_power = _or_default(po.base_power, 100.0),
+        input_basis = CU,
     )
 end
 

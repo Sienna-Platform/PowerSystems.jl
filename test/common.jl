@@ -44,6 +44,7 @@ function _sys_with_thermal(; system_base = 100.0, component_base = 250.0)
         ramp_limits = nothing,
         operation_cost = ThermalGenerationCost(nothing),
         base_power = component_base,
+        input_basis = CU,
     )
     add_component!(sys, gen)
     return sys, gen

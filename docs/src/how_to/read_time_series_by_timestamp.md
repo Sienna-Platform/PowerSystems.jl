@@ -54,6 +54,7 @@ gens = [
         time_limits = nothing,
         prime_mover_type = PrimeMovers.CT,
         fuel = ThermalFuels.NATURAL_GAS,
+        input_basis = CU,
     ) for i in 1:3
 ]
 for g in gens

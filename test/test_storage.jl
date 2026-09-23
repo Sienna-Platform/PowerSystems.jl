@@ -34,6 +34,7 @@ function _sys_with_storage(;
         base_power = component_base,
         ramp_limits = ramp_limits,
         standing_loss = standing_loss,
+        input_basis = CU,
     )
     add_component!(sys, storage)
     return sys, storage
@@ -128,6 +129,7 @@ end
         reactive_power = 0.0, reactive_power_limits = (min = -1.0, max = 1.0),
         base_power = 100.0,
         ramp_limits = (up = -10.0, down = -3.0),
+        input_basis = CU,
     )
     @test_logs (:error, r"Invalid range") match_mode = :any @test_throws IS.InvalidValue PowerSystems.check_component(
         sys,
@@ -194,6 +196,7 @@ end
         reactive_power = 0.0, reactive_power_limits = (min = -1.0, max = 1.0),
         base_power = 100.0,
         standing_loss = -0.1,
+        input_basis = CU,
     )
     @test_logs (:warn, r"Invalid range") match_mode = :any PowerSystems.check_component(
         sys,

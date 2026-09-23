@@ -115,5 +115,5 @@ function IS.deserialize(
         fname === :base_value && continue
         vals[fname] = deserialize_id_handling(ftype, data[string(fname)], component_cache)
     end
-    return TransformerCircuit(; vals..., base_value = nothing)
+    return TransformerCircuit(; vals..., base_value = nothing, input_basis = CU)
 end

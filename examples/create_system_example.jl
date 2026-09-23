@@ -93,6 +93,7 @@ thermal_gen1 = ThermalStandard(;
     time_limits = (up = 4.0, down = 2.0),    # hours
     prime_mover_type = PrimeMovers.CT,   # Combustion Turbine
     fuel = ThermalFuels.NATURAL_GAS,
+    input_basis = CU,
 )
 
 # Cost function for coal plant (piecewise linear)
@@ -119,6 +120,7 @@ thermal_gen2 = ThermalStandard(;
     time_limits = (up = 8.0, down = 8.0),    # Longer min up/down times
     prime_mover_type = PrimeMovers.ST,   # Steam Turbine
     fuel = ThermalFuels.COAL,
+    input_basis = CU,
 )
 
 # Add generators to system
@@ -139,7 +141,8 @@ line1 = Line(;
     x = 0.1,    # per unit reactance
     b = (from = 0.02, to = 0.02),  # per unit susceptance
     rating = 200.0,  # MVA
-    angle_limits = (min = -0.7, max = 0.7),  # radians
+    angle_limits = (min = -0.7, max = 0.7),  # radians,
+    input_basis = CU,
 )
 
 line2 = Line(;
@@ -153,6 +156,7 @@ line2 = Line(;
     b = (from = 0.015, to = 0.015),
     rating = 150.0,
     angle_limits = (min = -0.7, max = 0.7),
+    input_basis = CU,
 )
 
 add_component!(sys, line1)
@@ -171,7 +175,8 @@ hvdc_line = TwoTerminalGenericHVDCLine(;
     active_power_limits_to = (min = -500.0, max = 500.0),
     reactive_power_limits_from = (min = -200.0, max = 200.0),
     reactive_power_limits_to = (min = -200.0, max = 200.0),
-    loss = LinearCurve(0.02),  # 2% loss coefficient
+    loss = LinearCurve(0.02),  # 2% loss coefficient,
+    input_basis = CU,
 )
 
 add_component!(sys, hvdc_line)
@@ -189,6 +194,7 @@ load1 = PowerLoad(;
     base_power = 100.0,
     max_active_power = 300.0,
     max_reactive_power = 100.0,
+    input_basis = CU,
 )
 
 load2 = PowerLoad(;
@@ -200,6 +206,7 @@ load2 = PowerLoad(;
     base_power = 100.0,
     max_active_power = 200.0,
     max_reactive_power = 80.0,
+    input_basis = CU,
 )
 
 add_component!(sys, load1)
@@ -226,6 +233,7 @@ wind_gen = RenewableDispatch(;
     power_factor = 1.0,
     operation_cost = renewable_cost,
     base_power = 100.0,
+    input_basis = CU,
 )
 
 add_component!(sys, wind_gen)
@@ -262,6 +270,7 @@ battery = EnergyReservoirStorage(;
     reactive_power_limits = (min = -50.0, max = 50.0),
     base_power = 100.0,
     operation_cost = storage_cost,
+    input_basis = CU,
 )
 
 add_component!(sys, battery)

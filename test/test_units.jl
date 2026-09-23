@@ -441,6 +441,7 @@ end
         renewable_unit = RenewableDispatch(nothing),
         base_power = 100.0,
         operation_cost = MarketBidCost(nothing),
+        input_basis = CU,
     )
     subcomponents = collect(get_subcomponents(h_sys))
     @test length(subcomponents) == 4
@@ -486,6 +487,7 @@ function _sys_with_line()
         rating = 1.0,
         angle_limits = (min = -0.7, max = 0.7),
         rating_b = 0.9,
+        input_basis = CU,
     )
     add_component!(sys, line)
     return sys, line
@@ -690,4 +692,48 @@ end
     for w in get_circuits(t3w)
         @test IS.get_base_value(w) === nothing
     end
+end
+
+@testset "kwarg constructors read bare numbers in input_basis" begin
+    bus = ACBus(nothing)
+    thermal(basis; kwargs...) = ThermalStandard(;
+        name = "g", available = true, status = PSY.OperationalStates.OFFLINE, bus = bus,
+        active_power = 50.0, reactive_power = 0.0, rating = 100.0,
+        active_power_limits = (min = 0.0, max = 100.0), reactive_power_limits = nothing,
+        ramp_limits = (up = 10.0, down = 10.0),
+        operation_cost = ThermalGenerationCost(nothing), base_power = 200.0,
+        input_basis = basis, kwargs...,
+    )
+
+    gen = thermal(NU)
+    @test get_active_power(gen, CU) == 0.25
+    @test get_active_power_limits(gen, CU) == (min = 0.0, max = 0.5)
+    @test get_ramp_limits(gen, CU / u"minute") == (up = 0.05, down = 0.05)
+
+    gen = thermal(CU)
+    @test get_active_power(gen, CU) == 50.0
+    @test get_ramp_limits(gen, CU / u"minute") == (up = 10.0, down = 10.0)
+
+    # A tagged value keeps its own units, whatever input_basis says.
+    gen = thermal(CU; active_power = 50.0u"MW",
+        ramp_limits = (up = 0.6 * CU / u"hr", down = 600.0u"MW/hr"))
+    @test get_active_power(gen, CU) == 0.25
+    @test get_ramp_limits(gen, CU / u"minute").up ≈ 0.01
+    @test get_ramp_limits(gen, CU / u"minute").down ≈ 0.05
+
+    @test_throws TypeError thermal(SU)
+    @test_throws ErrorException thermal(CU; active_power = 0.5 * SU)  # no system base yet
+    @inferred thermal(NU)
+
+    # Ω converts via the arc's base voltage.
+    b1 = ACBus(nothing)
+    set_base_voltage!(b1, 230.0)
+    line = Line(;
+        name = "l", available = true, active_power_flow = 0.0,
+        reactive_power_flow = 0.0,
+        arc = Arc(b1, b1), r = 5.29u"Ω", x = 0.1, b = (from = 0.0, to = 0.0),
+        rating = 1.0, angle_limits = (min = -1.0, max = 1.0), input_basis = CU,
+    )
+    @test get_r(line, CU) ≈ 0.01
+    @test get_x(line, CU) == 0.1
 end

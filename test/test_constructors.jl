@@ -50,6 +50,7 @@ end
         remote_bus_control_to = 9,
         rmpct_from = 75.0,
         rmpct_to = 50.0,
+        input_basis = CU,
     )
     @test get_rated_dc_voltage(vsc) == 320.0
     @test get_rated_ac_voltage_from(vsc) == 230.0
@@ -93,6 +94,7 @@ end
         rmpct = 75.0,
         power_factor_weighting_fraction = 0.25,
         voltage_limits = (min = 0.9, max = 1.1),
+        input_basis = CU,
     )
     @test get_remote_bus_control(ic) == 5
     @test get_rmpct(ic) == 75.0
@@ -120,6 +122,7 @@ end
         active_power_limits = (min = -1.0, max = 1.0),
         base_power = 100.0,
         remote_bus_control = 0,
+        input_basis = CU,
     )
     @test_logs (:error, "Invalid range") match_mode = :any @test_throws IS.InvalidValue PowerSystems.check_component(
         sys,

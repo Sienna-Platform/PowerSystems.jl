@@ -150,6 +150,7 @@ end
         ramp_limits = nothing,
         operation_cost = ThermalGenerationCost(nothing),
         base_power = 250.0,
+        input_basis = CU,
     )
     io = IOBuffer()
     @test_logs (:warn, r"not attached to a System") show(io, "text/plain", detached)
@@ -171,6 +172,7 @@ end
         ramp_limits = nothing,
         operation_cost = ThermalGenerationCost(nothing),
         base_power = 250.0,
+        input_basis = CU,
     )
 
     # Getters: SU errors, CU/NU work.
@@ -312,6 +314,7 @@ end
         ramp_limits = nothing,
         operation_cost = ThermalGenerationCost(nothing),
         base_power = 250.0,
+        input_basis = CU,
     )
     detached_out = sprint(show_component, detached)
     @test occursin("active_power: 125.0 MW", detached_out) # SU fails, falls back to NU

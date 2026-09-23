@@ -53,6 +53,7 @@ A [`TwoWindingTransformer`](@ref) has one circuit; a [`ThreeWindingTransformer`]
 - `base_voltage_primary::Union{Nothing, Float64}`: (default: `nothing`) Primary (from) terminal-side base voltage in kV; the reference voltage for this circuit's per-unit impedance, validation range: `(0, nothing)`
 - `base_voltage_secondary::Union{Nothing, Float64}`: (default: `nothing`) Secondary (to) terminal-side base voltage in kV. For a three-winding transformer this defaults to the primary base voltage at parse time, validation range: `(0, nothing)`
 - `base_value::Union{Nothing, Float64}`: (**Do not modify.**) System base power (MVA) anchor for explicit-units conversion; populated when the owning transformer is attached to a System
+- `input_basis`: (keyword constructor only, required) `CU` or `NU`, the units of bare numbers on unit-bearing fields. Tagged values (`50.0u"MW"`) keep their own units
 """
 mutable struct TransformerCircuit <: DeviceParameter
     "Indicator of whether this circuit is connected and online. Circuit availability is the single source of truth; the owning transformer derives its availability from its circuits"
@@ -101,9 +102,18 @@ function TransformerCircuit(available, arc, tap=1.0, α=0.0, r=0.0, x=0.0, contr
     TransformerCircuit(available, arc, tap, α, r, x, control_objective, regulated_bus_number, control_limits, controlled_quantity_limits, number_of_tap_positions, rating, rating_b, rating_c, active_power_flow, reactive_power_flow, base_power, base_voltage_primary, base_voltage_secondary, nothing, )
 end
 
-function TransformerCircuit(; available, arc, tap=1.0, α=0.0, r=0.0, x=0.0, control_objective=TransformerControlObjective.UNDEFINED, regulated_bus_number=0, control_limits=(min=0.9, max=1.1), controlled_quantity_limits=(min=0.9, max=1.1), number_of_tap_positions=33, rating=nothing, rating_b=nothing, rating_c=nothing, active_power_flow=0.0, reactive_power_flow=0.0, base_power=100.0, base_voltage_primary=nothing, base_voltage_secondary=nothing, base_value=nothing, )
-    TransformerCircuit(available, arc, tap, α, r, x, control_objective, regulated_bus_number, control_limits, controlled_quantity_limits, number_of_tap_positions, rating, rating_b, rating_c, active_power_flow, reactive_power_flow, base_power, base_voltage_primary, base_voltage_secondary, base_value, )
+function TransformerCircuit(; available, arc, tap=1.0, α=0.0, r=0.0, x=0.0, control_objective=TransformerControlObjective.UNDEFINED, regulated_bus_number=0, control_limits=(min=0.9, max=1.1), controlled_quantity_limits=(min=0.9, max=1.1), number_of_tap_positions=33, rating=nothing, rating_b=nothing, rating_c=nothing, active_power_flow=0.0, reactive_power_flow=0.0, base_power=100.0, base_voltage_primary=nothing, base_voltage_secondary=nothing, base_value=nothing, input_basis::Union{ComponentBaseUnit, NaturalUnit}, )
+    value = TransformerCircuit(available, arc, tap, α, _placeholder(r), _placeholder(x), control_objective, regulated_bus_number, control_limits, controlled_quantity_limits, number_of_tap_positions, _placeholder(rating), _placeholder(rating_b), _placeholder(rating_c), _placeholder(active_power_flow), _placeholder(reactive_power_flow), base_power, base_voltage_primary, base_voltage_secondary, base_value, )
+    set_r!(value, _tag(r, input_basis, Val(:ohm)))
+    set_x!(value, _tag(x, input_basis, Val(:ohm)))
+    set_rating!(value, _tag(rating, input_basis, Val(:mva)))
+    set_rating_b!(value, _tag(rating_b, input_basis, Val(:mva)))
+    set_rating_c!(value, _tag(rating_c, input_basis, Val(:mva)))
+    set_active_power_flow!(value, _tag(active_power_flow, input_basis, Val(:mw)))
+    set_reactive_power_flow!(value, _tag(reactive_power_flow, input_basis, Val(:mvar)))
+    return value
 end
+_takes_input_basis(::Type{<:TransformerCircuit}) = true
 
 # Constructor for demo purposes; non-functional.
 function TransformerCircuit(::Nothing)
@@ -127,6 +137,7 @@ function TransformerCircuit(::Nothing)
         base_power=100.0,
         base_voltage_primary=nothing,
         base_voltage_secondary=nothing,
+        input_basis=CU,
     )
 end
 

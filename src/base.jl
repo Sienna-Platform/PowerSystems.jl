@@ -477,8 +477,8 @@ function add_component!(
     skip_validation = false,
     kwargs...,
 ) where {T <: Component}
-    set_units_setting!(component, sys.base_power)
     _sync_base_power!(base_power_kind(component), component, sys.base_power)
+    set_units_setting!(component, sys.base_power)
 
     check_topology(sys, component)
     check_component_addition(sys, component; kwargs...)
@@ -2877,6 +2877,7 @@ function convert_component!(
         dynamic_injector = get_dynamic_injector(old_load),
         internal = _copy_internal_for_conversion(old_load),
         services = Device[],
+        input_basis = CU,
     )
     IS.assign_new_id!(sys, old_load)
     add_component!(sys, new_load)

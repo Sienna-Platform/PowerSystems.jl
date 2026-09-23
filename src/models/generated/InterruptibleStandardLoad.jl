@@ -59,6 +59,7 @@ For an alternative exponential formulation of the ZIP model, see [`ExponentialLo
 - `dynamic_injector::Union{Nothing, DynamicInjection}`: (default: `nothing`) corresponding dynamic injection device
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
+- `input_basis`: (keyword constructor only, required) `CU` or `NU`, the units of bare numbers on unit-bearing fields. Tagged values (`50.0u"MW"`) keep their own units
 """
 mutable struct InterruptibleStandardLoad <: ControllableLoad
     "Name of the component. Components of the same type (e.g., `PowerLoad`) must have unique names, but components of different types (e.g., `PowerLoad` and `ACBus`) can have the same name"
@@ -111,9 +112,23 @@ function InterruptibleStandardLoad(name, available, bus, base_power, operation_c
     InterruptibleStandardLoad(name, available, bus, base_power, operation_cost, conformity, constant_active_power, constant_reactive_power, impedance_active_power, impedance_reactive_power, current_active_power, current_reactive_power, max_constant_active_power, max_constant_reactive_power, max_impedance_active_power, max_impedance_reactive_power, max_current_active_power, max_current_reactive_power, services, dynamic_injector, ext, InfrastructureSystemsInternal(), )
 end
 
-function InterruptibleStandardLoad(; name, available, bus, base_power, operation_cost, conformity=LoadConformity.UNDEFINED, constant_active_power=0.0, constant_reactive_power=0.0, impedance_active_power=0.0, impedance_reactive_power=0.0, current_active_power=0.0, current_reactive_power=0.0, max_constant_active_power=0.0, max_constant_reactive_power=0.0, max_impedance_active_power=0.0, max_impedance_reactive_power=0.0, max_current_active_power=0.0, max_current_reactive_power=0.0, services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), )
-    InterruptibleStandardLoad(name, available, bus, base_power, operation_cost, conformity, constant_active_power, constant_reactive_power, impedance_active_power, impedance_reactive_power, current_active_power, current_reactive_power, max_constant_active_power, max_constant_reactive_power, max_impedance_active_power, max_impedance_reactive_power, max_current_active_power, max_current_reactive_power, services, dynamic_injector, ext, internal, )
+function InterruptibleStandardLoad(; name, available, bus, base_power, operation_cost, conformity=LoadConformity.UNDEFINED, constant_active_power=0.0, constant_reactive_power=0.0, impedance_active_power=0.0, impedance_reactive_power=0.0, current_active_power=0.0, current_reactive_power=0.0, max_constant_active_power=0.0, max_constant_reactive_power=0.0, max_impedance_active_power=0.0, max_impedance_reactive_power=0.0, max_current_active_power=0.0, max_current_reactive_power=0.0, services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Union{ComponentBaseUnit, NaturalUnit}, )
+    value = InterruptibleStandardLoad(name, available, bus, base_power, operation_cost, conformity, _placeholder(constant_active_power), _placeholder(constant_reactive_power), _placeholder(impedance_active_power), _placeholder(impedance_reactive_power), _placeholder(current_active_power), _placeholder(current_reactive_power), _placeholder(max_constant_active_power), _placeholder(max_constant_reactive_power), _placeholder(max_impedance_active_power), _placeholder(max_impedance_reactive_power), _placeholder(max_current_active_power), _placeholder(max_current_reactive_power), services, dynamic_injector, ext, internal, )
+    set_constant_active_power!(value, _tag(constant_active_power, input_basis, Val(:mw)))
+    set_constant_reactive_power!(value, _tag(constant_reactive_power, input_basis, Val(:mvar)))
+    set_impedance_active_power!(value, _tag(impedance_active_power, input_basis, Val(:mw)))
+    set_impedance_reactive_power!(value, _tag(impedance_reactive_power, input_basis, Val(:mvar)))
+    set_current_active_power!(value, _tag(current_active_power, input_basis, Val(:mw)))
+    set_current_reactive_power!(value, _tag(current_reactive_power, input_basis, Val(:mvar)))
+    set_max_constant_active_power!(value, _tag(max_constant_active_power, input_basis, Val(:mw)))
+    set_max_constant_reactive_power!(value, _tag(max_constant_reactive_power, input_basis, Val(:mvar)))
+    set_max_impedance_active_power!(value, _tag(max_impedance_active_power, input_basis, Val(:mw)))
+    set_max_impedance_reactive_power!(value, _tag(max_impedance_reactive_power, input_basis, Val(:mvar)))
+    set_max_current_active_power!(value, _tag(max_current_active_power, input_basis, Val(:mw)))
+    set_max_current_reactive_power!(value, _tag(max_current_reactive_power, input_basis, Val(:mvar)))
+    return value
 end
+_takes_input_basis(::Type{<:InterruptibleStandardLoad}) = true
 
 # Constructor for demo purposes; non-functional.
 function InterruptibleStandardLoad(::Nothing)
@@ -139,6 +154,7 @@ function InterruptibleStandardLoad(::Nothing)
         services=Device[],
         dynamic_injector=nothing,
         ext=Dict{String, Any}(),
+        input_basis=CU,
     )
 end
 
@@ -329,6 +345,7 @@ function from_openapi(po::PO.InterruptibleStandardLoad, refs::OpenAPIRefs, ::Com
         max_impedance_reactive_power = _or_default(po.max_impedance_reactive_power, 0.0),
         max_current_active_power = _or_default(po.max_current_active_power, 0.0),
         max_current_reactive_power = _or_default(po.max_current_reactive_power, 0.0),
+        input_basis = CU,
     )
 end
 
@@ -352,6 +369,7 @@ function from_openapi(po::PO.InterruptibleStandardLoad, refs::OpenAPIRefs, ::Nat
         max_impedance_reactive_power = _or_default(po.max_impedance_reactive_power, 0.0, (/), po.base_power),
         max_current_active_power = _or_default(po.max_current_active_power, 0.0, (/), po.base_power),
         max_current_reactive_power = _or_default(po.max_current_reactive_power, 0.0, (/), po.base_power),
+        input_basis = CU,
     )
 end
 
