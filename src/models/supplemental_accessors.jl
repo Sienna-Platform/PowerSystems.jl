@@ -197,6 +197,18 @@ function get_max_active_power_flow_limit(tx::TransmissionInterface, units::UnitA
     return get_active_power_flow_limits(tx, units).max
 end
 
+"""
+Get the [`TwoTerminalLCCLine`](@ref) `transfer_setpoint` in the specified `units`. In power mode
+(`power_mode = true`) it is converted from the component base like any power field (`SU`, `CU`,
+`NU` for MW); in current mode it is Amperes and is returned unchanged.
+"""
+function get_transfer_setpoint(lcc::TwoTerminalLCCLine, units::UnitArg)
+    if get_power_mode(lcc)
+        return IS._strip_units(get_value(lcc, Val(:transfer_setpoint), Val(:mw), units))
+    end
+    return get_transfer_setpoint(lcc)
+end
+
 function supports_services(::AreaInterchange)
     return true
 end

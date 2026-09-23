@@ -60,7 +60,7 @@ As implemented in PSS/E.
 - `arc::Arc`: An [`Arc`](@ref) defining this line `from` a rectifier bus `to` an inverter bus. The rectifier bus must be specified in the `from` bus and inverter bus in the `to` bus.
 - `active_power_flow::Float64`: Initial condition of active power flow on the line (MW)
 - `r::Float64`: Series resistance of the DC line in pu ([`SYSTEM_BASE`](@ref per_unit))
-- `transfer_setpoint::Float64`: Desired set-point of power. If `power_mode = true` this value is in MW units, and if `power_mode = false` is in Amperes units. This parameter must not be specified in per-unit. A positive value represents the desired consumed power at the rectifier bus, while a negative value represents the desired power at the inverter bus (i.e. the absolute value of `transfer_setpoint` is the generated power at the inverter bus).
+- `transfer_setpoint::Float64`: Desired set-point. If `power_mode = true` it is a power, stored per-unit on the component base like the other power fields; read it with `get_transfer_setpoint(lcc, units)` (e.g. `NU` for MW). If `power_mode = false` it is a current in Amperes, which no power base converts. A positive value represents the desired consumed power at the rectifier bus, while a negative value represents the desired power at the inverter bus (i.e. the absolute value of `transfer_setpoint` is the generated power at the inverter bus).
 - `scheduled_dc_voltage::Float64`: Scheduled compounded DC voltage in kV. By default this parameter is the scheduled DC voltage in the inverter bus This parameter must not be specified in per-unit.
 - `rectifier_bridges::Int`: Number of bridges in series in the rectifier side.
 - `rectifier_delay_angle_limits::MinMax`: Minimum and maximum rectifier firing delay angle (α) (radians)
@@ -72,7 +72,7 @@ As implemented in PSS/E.
 - `inverter_rc::Float64`: Inverter commutating transformer resistance per bridge in system p.u. ([`SYSTEM_BASE`](@ref per_unit))
 - `inverter_xc::Float64`: Inverter commutating transformer reactance per bridge in system p.u. ([`SYSTEM_BASE`](@ref per_unit))
 - `inverter_base_voltage::Float64`: Inverter primary base AC voltage in kV, entered in kV.
-- `power_mode::Bool`: (default: `true`) Boolean flag to identify if the LCC line is in power mode or current mode. If `power_mode = true`, setpoint values must be specified in MW, and if `power_mode = false` setpoint values must be specified in Amperes.
+- `power_mode::Bool`: (default: `true`) Boolean flag to identify if the LCC line is in power mode or current mode. If `power_mode = true`, `transfer_setpoint` is a power (per-unit on the component base), and if `power_mode = false` it is a current in Amperes.
 - `switch_mode_voltage::Float64`: (default: `0.0`) Mode switch DC voltage, in kV. This parameter must not be added in per-unit. If LCC line is in power mode control, and DC voltage falls below this value, the line switch to current mode control.
 - `compounding_resistance::Float64`: (default: `0.0`) Compounding Resistance, in ohms. This parameter is for control of the DC voltage in the rectifier or inverter end. For inverter DC voltage control, the paremeter is set to zero; for rectifier DC voltage control, the paremeter is set to the DC line resistance; otherwise, set to a fraction of the DC line resistance.
 - `min_compounding_voltage::Float64`: (default: `0.0`) Minimum compounded voltage, in kV. This parameter must not be added in per-unit. Only used in constant gamma operation (γ_min = γ_max), and the AC transformer is used to control the DC voltage.
@@ -109,7 +109,7 @@ mutable struct TwoTerminalLCCLine <: TwoTerminalHVDC
     active_power_flow::Float64
     "Series resistance of the DC line in pu ([`SYSTEM_BASE`](@ref per_unit))"
     r::Float64
-    "Desired set-point of power. If `power_mode = true` this value is in MW units, and if `power_mode = false` is in Amperes units. This parameter must not be specified in per-unit. A positive value represents the desired consumed power at the rectifier bus, while a negative value represents the desired power at the inverter bus (i.e. the absolute value of `transfer_setpoint` is the generated power at the inverter bus)."
+    "Desired set-point. If `power_mode = true` it is a power, stored per-unit on the component base like the other power fields; read it with `get_transfer_setpoint(lcc, units)` (e.g. `NU` for MW). If `power_mode = false` it is a current in Amperes, which no power base converts. A positive value represents the desired consumed power at the rectifier bus, while a negative value represents the desired power at the inverter bus (i.e. the absolute value of `transfer_setpoint` is the generated power at the inverter bus)."
     transfer_setpoint::Float64
     "Scheduled compounded DC voltage in kV. By default this parameter is the scheduled DC voltage in the inverter bus This parameter must not be specified in per-unit."
     scheduled_dc_voltage::Float64
@@ -133,7 +133,7 @@ mutable struct TwoTerminalLCCLine <: TwoTerminalHVDC
     inverter_xc::Float64
     "Inverter primary base AC voltage in kV, entered in kV."
     inverter_base_voltage::Float64
-    "Boolean flag to identify if the LCC line is in power mode or current mode. If `power_mode = true`, setpoint values must be specified in MW, and if `power_mode = false` setpoint values must be specified in Amperes."
+    "Boolean flag to identify if the LCC line is in power mode or current mode. If `power_mode = true`, `transfer_setpoint` is a power (per-unit on the component base), and if `power_mode = false` it is a current in Amperes."
     power_mode::Bool
     "Mode switch DC voltage, in kV. This parameter must not be added in per-unit. If LCC line is in power mode control, and DC voltage falls below this value, the line switch to current mode control."
     switch_mode_voltage::Float64

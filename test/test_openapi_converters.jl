@@ -1376,6 +1376,17 @@ end
     @test get_inverter_capacitor_reactance(lcc_natural_no_optional) == 0.0
     @test get_power_mode(lcc_natural_no_optional)
     @test get_transfer_setpoint(lcc_natural_no_optional) == 0.5
+    @test get_transfer_setpoint(lcc_natural_no_optional, NU) ≈ 50.0
+    @test get_transfer_setpoint(lcc_natural_no_optional, CU) ≈ 0.5
+    # Current mode stores Amperes, which no power base converts.
+    lcc_current = PSY.from_openapi(
+        _po_with(lcc_po_no_optional; id = 23, name = "lcc_current", power_mode = false),
+        refs,
+        NU,
+    )
+    @test get_transfer_setpoint(lcc_current) == 50.0
+    @test get_transfer_setpoint(lcc_current, NU) == 50.0
+    @test get_transfer_setpoint(lcc_current, SU) == 50.0
 
     lcc_po_no_units = _po_with(
         lcc_po_no_optional;
