@@ -30,6 +30,30 @@ fallbacks = ExternalFallbacks(
     "get_uuid" => "@extref InfrastructureSystems.get_uuid",
 )
 
+# Replace DocumenterMermaid's loader script (issue #1812). Mermaid's bundle contains UMD code
+# that registers with Documenter's RequireJS when it sees the global `define`, which breaks
+# Mermaid itself everywhere and, in Safari, KaTeX too. So wait until RequireJS has finished
+# loading (the `load` event), then hide `define` while Mermaid imports and renders.
+function Documenter.HTMLWriter.domify(
+    ::Documenter.HTMLWriter.DCtx,
+    ::DocumenterMermaid.MarkdownAST.Node,
+    ::DocumenterMermaid.MermaidScriptBlock,
+)
+    Documenter.DOM.@tags script
+    script[:type => "module"]("""
+    await new Promise(r => document.readyState === 'complete' ? r() : addEventListener('load', r));
+    const amdDefine = window.define;
+    window.define = undefined;
+    try {
+        const { default: mermaid } = await import('$(DocumenterMermaid.MERMAID)');
+        mermaid.initialize({ startOnLoad: false, theme: "neutral" });
+        await mermaid.run();
+    } finally {
+        window.define = amdDefine;
+    }
+    """)
+end
+
 # This is commented out because the output is not user-friendly. Deliberation on how to best
 # communicate this information to users is ongoing.
 #include(joinpath(@__DIR__, "src", "generate_validation_table.jl"))
