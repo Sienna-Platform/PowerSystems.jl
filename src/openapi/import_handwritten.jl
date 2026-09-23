@@ -791,6 +791,7 @@ function from_openapi(po::PO.FixedAdmittance, refs::OpenAPIRefs, ::ComponentBase
         available = po.available,
         bus = refs[po.bus],
         Y = _fixed_admittance_pu(po, refs),
+        base_power = get_base_power(refs),
     )
 end
 
