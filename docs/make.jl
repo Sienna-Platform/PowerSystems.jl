@@ -30,10 +30,10 @@ fallbacks = ExternalFallbacks(
     "get_uuid" => "@extref InfrastructureSystems.get_uuid",
 )
 
-# Replace DocumenterMermaid's loader script (issue #1812). Mermaid's bundle contains UMD code
-# that registers with Documenter's RequireJS when it sees the global `define`, which breaks
-# Mermaid itself everywhere and, in Safari, KaTeX too. So wait until RequireJS has finished
-# loading (the `load` event), then hide `define` while Mermaid imports and renders.
+# Pin Mermaid to 11.16.1 (issue #1812). Mermaid 11.17.0 started bundling fastdom, which
+# registers with Documenter's RequireJS instead of exporting itself: no diagram renders, and in
+# Safari KaTeX breaks too. DocumenterMermaid hard-codes `mermaid@11`, so override its script.
+# Remove this override once a Mermaid release includes the fix (mermaid-js/mermaid#8154).
 function Documenter.HTMLWriter.domify(
     ::Documenter.HTMLWriter.DCtx,
     ::DocumenterMermaid.MarkdownAST.Node,
@@ -41,16 +41,11 @@ function Documenter.HTMLWriter.domify(
 )
     Documenter.DOM.@tags script
     script[:type => "module"]("""
-    await new Promise(r => document.readyState === 'complete' ? r() : addEventListener('load', r));
-    const amdDefine = window.define;
-    window.define = undefined;
-    try {
-        const { default: mermaid } = await import('$(DocumenterMermaid.MERMAID)');
-        mermaid.initialize({ startOnLoad: false, theme: "neutral" });
-        await mermaid.run();
-    } finally {
-        window.define = amdDefine;
-    }
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11.16.1/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: "neutral"
+    });
     """)
 end
 
