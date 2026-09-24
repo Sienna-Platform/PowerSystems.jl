@@ -667,8 +667,10 @@ export get_lf
 export get_lg
 export get_linked_crr
 export get_load_balance_time_horizon
-export get_load_drop_compensation
-export get_load_drop_compensation_unitful
+export get_load_drop_compensation_r
+export get_load_drop_compensation_r_unitful
+export get_load_drop_compensation_x
+export get_load_drop_compensation_x_unitful
 export get_load_response
 export get_load_zone
 export get_loss
@@ -1403,7 +1405,8 @@ export set_lf!
 export set_lg!
 export set_linked_crr!
 export set_load_balance_time_horizon!
-export set_load_drop_compensation!
+export set_load_drop_compensation_r!
+export set_load_drop_compensation_x!
 export set_load_response!
 export set_load_zone!
 export set_loss!

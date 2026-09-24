@@ -126,7 +126,8 @@ _vc_droop(name, bus; kwargs...) = VoltageDroopControl(;
     circuit = TransformerCircuit(nothing)
     @test isnothing(get_regulated_bus(circuit))
     @test isnothing(get_regulated_bus_side(circuit))
-    @test get_load_drop_compensation(circuit, CU) == 0.0 + 0.0im
+    @test get_load_drop_compensation_r(circuit, CU) == 0.0
+    @test get_load_drop_compensation_x(circuit, CU) == 0.0
     @test !hasfield(TransformerCircuit, :regulated_bus_number)
 
     lcc = TwoTerminalLCCLine(nothing)
@@ -425,11 +426,11 @@ end
     )
 
     # R5: compensation without voltage control only warns
-    @test_logs (:warn, r"load_drop_compensation") match_mode = :any add_component!(
+    @test_logs (:warn, r"load drop compensation") match_mode = :any add_component!(
         sys,
         _vc_transformer(
             "t_ldc", arc; control_objective = TransformerControlObjective.FIXED,
-            load_drop_compensation = 0.01 + 0.02im,
+            load_drop_compensation_r = 0.01, load_drop_compensation_x = 0.02,
         ),
     )
 end
@@ -548,7 +549,7 @@ end
         "t_remote", tap_arc; control_objective = TransformerControlObjective.VOLTAGE,
         regulated_bus = b3,
         regulated_bus_side = TransformerRegulatedBusSide.CONTROLLING_WINDING,
-        load_drop_compensation = 0.01 + 0.02im,
+        load_drop_compensation_r = 0.01, load_drop_compensation_x = 0.02,
     )
     dc_tap = _vc_transformer(
         "dc_tap", tap_arc;
@@ -594,7 +595,8 @@ end
         @test get_regulated_bus(circuit2) === bus(3)
         @test get_regulated_bus_side(circuit2) ==
               TransformerRegulatedBusSide.CONTROLLING_WINDING
-        @test get_load_drop_compensation(circuit2, CU) ≈ 0.01 + 0.02im
+        @test get_load_drop_compensation_r(circuit2, CU) ≈ 0.01
+        @test get_load_drop_compensation_x(circuit2, CU) ≈ 0.02
         lcc2 = get_component(TwoTerminalLCCLine, sys2, "lcc")
         @test get_rectifier_commutating_bus(lcc2) === bus(2)
         @test isnothing(get_inverter_commutating_bus(lcc2))

@@ -74,7 +74,7 @@ _fromto(::Union{Nothing, IC.Absent}, default) = default
 _fromto(m, ::Any) = _fromto(m)
 
 """A field the PSY descriptor declares required-with-a-default (e.g. `Area.load_response`,
-`TransformerCircuit.α`/`load_drop_compensation`) but the wire declares optional-by-omission:
+`TransformerCircuit.α`/`load_drop_compensation_r`) but the wire declares optional-by-omission:
 `Absent`/`nothing` falls back to that same descriptor default rather than failing to build the
 component at all."""
 _or_default(::Union{Nothing, IC.Absent}, default) = default
@@ -629,7 +629,8 @@ function from_openapi(
             po.regulated_bus_side,
             TransformerRegulatedBusSide.Value,
         ),
-        load_drop_compensation = _complex_number(po.load_drop_compensation, 0.0 + 0.0im),
+        load_drop_compensation_r = _or_default(po.load_drop_compensation_r, 0.0),
+        load_drop_compensation_x = _or_default(po.load_drop_compensation_x, 0.0),
         control_limits = _minmax(po.control_limits, (min = 0.9, max = 1.1)),
         controlled_quantity_limits =
         _minmax(po.controlled_quantity_limits, (min = 0.9, max = 1.1)),
@@ -669,7 +670,8 @@ function from_openapi(
             po.regulated_bus_side,
             TransformerRegulatedBusSide.Value,
         ),
-        load_drop_compensation = _complex_number(po.load_drop_compensation, 0.0 + 0.0im),
+        load_drop_compensation_r = _or_default(po.load_drop_compensation_r, 0.0),
+        load_drop_compensation_x = _or_default(po.load_drop_compensation_x, 0.0),
         control_limits = _minmax(po.control_limits, (min = 0.9, max = 1.1)),
         controlled_quantity_limits =
         _minmax(po.controlled_quantity_limits, (min = 0.9, max = 1.1)),
