@@ -58,7 +58,7 @@ get_active_power(gen, u"SU")       # bare Float64, system-base per-unit
 get_active_power(gen, u"CU")       # bare Float64, component-base per-unit
 get_active_power(gen, u"NU")       # bare Float64, natural units (MW)
 get_active_power(gen, u"MW")       # bare Float64 in an explicit Unitful unit
-get_active_power_unitful(gen, u"SU")  # unit-bearing value: 0.9 SUp
+get_active_power_unitful(gen, u"SU")  # unit-bearing value: 0.9 SU
 
 set_active_power!(gen, 0.9 * u"SU")    # values must carry their units
 set_active_power!(gen, 90.0 * u"MW")
@@ -78,38 +78,19 @@ caller must say what units the number is in (`val * u"SU"`, `val * u"CU"`, `val 
 A rate names its time too: `get_ramp_limits(gen, u"SU/minute")`, `set_ramp_limits!(gen, (up = 6.0u"CU/hr", down = 6.0u"CU/hr"))`. A bare `u"CU"` on a rate is an error, since it
 does not say per what time.
 
-### What a per-unit value is per-unit of
+### Per-unit values
 
-`u"CU"`, `u"SU"` and `u"NU"` say which base a value is on, not what it measures; each field
-resolves them. A per-unit value then carries units that say both, one dimension per
-per-unitized base:
-
-| Quantity   | Component base     | System base        |
-|:---------- |:------------------ |:------------------ |
-| Power      | `CUp`              | `SUp`              |
-| Voltage    | `CUv`              | `CUv`              |
-| Impedance  | `CUz` (`CUv²/CUp`) | `SUz` (`CUv²/SUp`) |
-| Admittance | `CUy` (`CUp/CUv²`) | `SUy` (`SUp/CUv²`) |
-| Current    | `CUi` (`CUp/CUv`)  | `SUi` (`SUp/CUv`)  |
-
-There is no system voltage base — voltage is always referenced to a component — so system-base
-quantities use the component's `CUv`. Because the units differ by kind, per-unit values of
-different kinds do not add, just as `MW` and `Ω` do not:
+A per-unit value carries `u"CU"` or `u"SU"`, whatever quantity it measures:
 
 ```julia
-x = get_x_unitful(line, u"SU")            # 0.05 SUz
-p = get_active_power_unitful(gen, u"SU")  # 0.4 SUp
-x + p                                      # DimensionError
+get_x_unitful(line, u"SU")            # 0.05 SU
+get_active_power_unitful(gen, u"SU")  # 0.4 SU
 ```
 
-Per-unit physics still composes: `i^2 * x` of a per-unit current and impedance is a per-unit
-power. The units tell kinds of base apart, not instances: `CUp` values of two components with
-different `base_power`s still add, and so do system-base impedances at different voltage
-levels. Only system-base power is comparable system-wide.
-
-A value returned by a getter can be passed straight back to a setter of the same kind.
-A hand-typed `0.1u"CU"` works in a setter (the field says what it is per-unit of) but not in
-arithmetic with a getter's value, since on its own it does not say what it is per-unit of.
+`u"CU"` and `u"SU"` are separate units, so values on different bases do not mix, and neither
+converts to a natural unit except through an accessor. Values of different kinds on one base
+*do* mix: the unit does not say what a value is per-unit of, so per-unit resistance plus
+per-unit power adds. Products are not per-unit either (`i^2 * x` is in `SU^3`).
 
 ## Migration guide: stateful → explicit units
 
@@ -172,7 +153,7 @@ and falls back to natural units for display. The error is intentional — a per-
 meaningless without a known base.
 
 Verbose displays spell the per-unit units out — `active_power: 1.25 p.u. in system base`,
-`rating: 1.0 p.u. in component base` — since `SUp`/`CUp` are this package's shorthand rather
+`rating: 1.0 p.u. in component base` — since `SU`/`CU` are this package's shorthand rather
 than standard terminology. A compound field whose elements share one base states it once, after
 the tuple: `active_power_limits: (min = 0.0 p.u., max = 2.5 p.u.) in system base`. Terse
 contexts (the one-line `show`, table cells) keep the short tags.
@@ -194,8 +175,8 @@ could change what a getter returns.
 
 ```julia
 # gen.base_power = 50 MVA, system base = 100 MVA
-convert_units(gen, 30.0u"MW", ACTIVE_POWER, u"CU")   # → 0.6 CUp
-convert_units(gen, 0.6u"CU", ACTIVE_POWER, u"SU")    # → 0.3 SUp
+convert_units(gen, 30.0u"MW", ACTIVE_POWER, u"CU")   # → 0.6 CU
+convert_units(gen, 0.6u"CU", ACTIVE_POWER, u"SU")    # → 0.3 SU
 ```
 
 Two mistakes raise an `ArgumentError`: a per-unit target with the wrong residual for the

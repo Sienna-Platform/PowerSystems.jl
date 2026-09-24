@@ -2,12 +2,12 @@
 JSON serialization/deserialization for unit-bearing quantities.
 
 Format:
-  {"value": 0.6, "unit": "CUp"}
+  {"value": 0.6, "unit": "CU"}
   {"value": 30.0, "unit": "MW"}
   {"value": 529.0, "unit": "Ω"}
 
 For complex values:
-  {"value": {"re": 0.01, "im": 0.1}, "unit": "SUz"}
+  {"value": {"re": 0.01, "im": 0.1}, "unit": "SU"}
 =#
 
 import JSON
@@ -19,20 +19,13 @@ import JSON
 # All known unit strings → Unitful units.
 # Canonical names come from unit_to_string; aliases provide lenient parsing.
 const STRING_TO_UNIT = Dict{String, Any}(
-    # Per-unit units; `u"..."` can't reach PSY's own during its precompile.
-    "CUp" => CUp,
-    "SUp" => SUp,
-    "CUv" => CUv,
-    "CUz" => CUz,
-    "CUy" => CUy,
-    "CUi" => CUi,
-    "SUz" => SUz,
-    "SUy" => SUy,
-    "SUi" => SUi,
-    "CUp minute^-1" => CUp / u"minute",
-    "SUp minute^-1" => SUp / u"minute",
-    "CUp hr^-1" => CUp / u"hr",
-    "SUp hr^-1" => SUp / u"hr",
+    # Per-unit units.
+    "CU" => u"CU",
+    "SU" => u"SU",
+    "CU minute^-1" => u"CU/minute",
+    "SU minute^-1" => u"SU/minute",
+    "CU hr^-1" => u"CU/hr",
+    "SU hr^-1" => u"SU/hr",
     # Canonical Unitful (matches output of `string(unit)`)
     "MW" => u"MW",
     # PSY's own `@unit` definitions; `u"MVA"`/`u"MVAr"` resolve downstream but not

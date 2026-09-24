@@ -7,13 +7,13 @@
 # display unit system (e.g. `u"MW"`, `u"SU"`, `u"CU"`, `u"NU"`) instead of resolving the
 # trait; an explicit request that fails is an error, not a silent fallback.
 # `IS.unitful_variant` resolves the getter's `_unitful` companion (a quantity printing as
-# "0.3 SUp" or "30.0 MW") instead of a bare number.
+# "0.3 SU" or "30.0 MW") instead of a bare number.
 
-# Verbose display spells per-unit units out ("1.25 p.u. in system base"): `SUp`, `CUz`, …
-# are this package's shorthand, not standard terminology. IS's `display_string` factors a
+# Verbose display spells per-unit units out ("1.25 p.u. in system base"): `SU`/`CU` are
+# this package's shorthand, not standard terminology. IS's `display_string` factors a
 # shared base out of a compound field.
 IS.display_base_label(q::Quantity) = _base_label(_per_unit_basis(Unitful.unit(q)))
-IS.display_value(q::Quantity) = replace(string(q), r"\b[CS]U[pvzyi]\b" => "p.u."; count = 1)
+IS.display_value(q::Quantity) = replace(string(q), r"\b[CS]U\b" => "p.u."; count = 1)
 
 _base_label(::Val{:component}) = "component base"
 _base_label(::Val{:system}) = "system base"
@@ -25,9 +25,8 @@ _base_label(::Val{:natural}) = nothing
         d -> typeof(d).parameters[1],
         typeof(Unitful.dimension(u.instance)).parameters[1],
     )
-    :SystemBasePower in names && return :(Val(:system))
-    any(in((:ComponentBasePower, :ComponentBaseVoltage)), names) &&
-        return :(Val(:component))
+    :GenericSystemBase in names && return :(Val(:system))
+    :GenericComponentBase in names && return :(Val(:component))
     return :(Val(:natural))
 end
 
@@ -276,7 +275,7 @@ Show all components of the given type in a table.
   The Dict option is a mapping of column name to function. The function must accept
   a component.
   The Vector option is an array of field names for the `component_type`; unit-converted
-  fields are printed with an explicit unit suffix (e.g. `"30.0 MW"`, `"1.0 CUp"`).
+  fields are printed with an explicit unit suffix (e.g. `"30.0 MW"`, `"1.0 CU"`).
 
 # Keyword Arguments
 - `units`: When `additional_columns` is a `Vector`, force unit-converted columns to

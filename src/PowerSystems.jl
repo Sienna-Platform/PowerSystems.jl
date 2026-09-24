@@ -752,7 +752,7 @@ const PC = PowerCoreOpenAPIModels
 const PO = PowerOperationsOpenAPIModels
 const PTS = InfrastructureTimeSeriesOpenAPIModels
 const PD = PowerOpenAPIModels
-using Unitful: @u_str, @unit, @dimension, @refunit, Quantity, Units, uconvert, ustrip
+using Unitful: @u_str, @unit, Quantity, Units, uconvert, ustrip
 
 # Unit-system markers live in IS; PSY re-exports them for downstream packages.
 # `get_value`/`set_value` are IS's units-interface generics: PSY EXTENDS them
@@ -1133,7 +1133,6 @@ include("utils/enums_conversion.jl")
 include("models/serialization.jl")
 
 function __init__()
-    merge!(Unitful.promotion, _LOCAL_UNIT_PROMOTION)
     Unitful.register(PowerSystems)
     return
 end
