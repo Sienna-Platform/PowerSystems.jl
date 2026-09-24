@@ -9,7 +9,7 @@ end
     @test get_associated_buses(get_component(TradingHub, sys, "western_hub")) == [b1, b2]
 
     # a hub with a detached bus must be rejected loudly
-    b3 = ACBus(; input_basis = CU, number = 3, name = "b3", available = true,
+    b3 = ACBus(; input_basis = u"CU", number = 3, name = "b3", available = true,
         bustype = ACBusTypes.PQ,
         angle = 0.0, magnitude = 1.0, voltage_limits = (min = 0.9, max = 1.1),
         base_voltage = 230.0)
@@ -433,7 +433,7 @@ end
 @testset "VirtualParticipant detached settlement point rejected on add" begin
     sys = System(100.0)
     detached_bus =
-        ACBus(; input_basis = CU, number = 99, name = "detached", available = true,
+        ACBus(; input_basis = u"CU", number = 99, name = "detached", available = true,
             bustype = ACBusTypes.PQ, angle = 0.0, magnitude = 1.0,
             voltage_limits = (min = 0.9, max = 1.1), base_voltage = 230.0)
     vp = VirtualParticipant(; name = "vp_detached", available = true,
@@ -481,7 +481,7 @@ end
 
 @testset "Topology removal is refused while a VirtualParticipant settles there" begin
     sys, b1, b2, hub = _market_hub_fixture()
-    b3 = ACBus(; input_basis = CU, number = 3, name = "b3", available = true,
+    b3 = ACBus(; input_basis = u"CU", number = 3, name = "b3", available = true,
         bustype = ACBusTypes.PQ,
         angle = 0.0, magnitude = 1.0, voltage_limits = (min = 0.9, max = 1.1),
         base_voltage = 230.0)

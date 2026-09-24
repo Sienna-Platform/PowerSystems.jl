@@ -66,7 +66,7 @@ show_components(ThermalStandard, sys, [:fuel])
 # Accessors take an explicit `units` argument; here we read it in natural units (MW) with
 # [`get_active_power`](@ref get_active_power(value::ThermalStandard)):
 
-get_active_power(solitude, NU)
+get_active_power(solitude, u"NU")
 
 # We can then update it with [`set_active_power!`](@ref set_active_power!(value::ThermalStandard, val)),
 # passing a unit-tagged value (a bare number is rejected):
@@ -171,7 +171,7 @@ show_components(ThermalStandard, sys, [:active_power])
 # We can filter on any component field. Similarly, let's filter all of the thermal generators
 # that now have an `active_power` of 0.0, and also set their availability to false.
 
-for i in get_components(x -> get_active_power(x, NU) == 0.0, ThermalStandard, sys)
+for i in get_components(x -> get_active_power(x, u"NU") == 0.0, ThermalStandard, sys)
     set_available!(i, 0)
 end
 

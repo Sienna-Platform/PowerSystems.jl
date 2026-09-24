@@ -466,7 +466,7 @@ end
         from_area = area1,
         to_area = area2,
         flow_limits = (from_to = 100.0, to_from = 100.0),
-        input_basis = CU,
+        input_basis = u"CU",
     )
     area_interchange13 = AreaInterchange(;
         name = "interchange_a1_a3",
@@ -475,7 +475,7 @@ end
         from_area = area1,
         to_area = area3,
         flow_limits = (from_to = 100.0, to_from = 100.0),
-        input_basis = CU,
+        input_basis = u"CU",
     )
     line = first(get_components(Line, sys))
     add_component!(sys, area_interchange12)

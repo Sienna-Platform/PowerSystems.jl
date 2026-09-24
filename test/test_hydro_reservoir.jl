@@ -12,7 +12,7 @@
         powerhouse_elevation = 0.0,
         ramp_limits = nothing,
         time_limits = nothing,
-        input_basis = CU,
+        input_basis = u"CU",
     )
 
     set_powerhouse_elevation!(turbine, 10.0)

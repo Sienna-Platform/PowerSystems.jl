@@ -51,7 +51,7 @@ The model uses an equivalent star model with a star (hidden) bus. Each of the th
 - `services::Vector{Service}`: (default: `Device[]`) Services that this device contributes to
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
-- `input_basis`: (keyword constructor only, required) `CU` or `NU`, the units of bare numbers on unit-bearing fields. Tagged values (`50.0u"MW"`) keep their own units
+- `input_basis`: (keyword constructor only, required) `u"CU"` or `u"NU"`, the units of bare numbers on unit-bearing fields. Tagged values (`50.0u"MW"`) keep their own units
 """
 mutable struct ThreeWindingTransformer <: ACTransmission
     "Name of the component. Components of the same type (e.g., `PowerLoad`) must have unique names, but components of different types (e.g., `PowerLoad` and `ACBus`) can have the same name"
@@ -98,7 +98,7 @@ function ThreeWindingTransformer(name, primary_circuit, secondary_circuit, terti
     ThreeWindingTransformer(name, primary_circuit, secondary_circuit, tertiary_circuit, star_bus, r_12, x_12, r_23, x_23, r_31, x_31, base_power_12, base_power_23, base_power_31, magnetizing_shunt, shunt_location, services, ext, InfrastructureSystemsInternal(), )
 end
 
-function ThreeWindingTransformer(; name, primary_circuit, secondary_circuit, tertiary_circuit, star_bus, r_12=nothing, x_12=nothing, r_23=nothing, x_23=nothing, r_31=nothing, x_31=nothing, base_power_12=nothing, base_power_23=nothing, base_power_31=nothing, magnetizing_shunt=0.0, shunt_location=ThreeWindingTransformerShuntLocation.PRIMARY, services=Device[], ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Union{ComponentBaseUnit, NaturalUnit}, )
+function ThreeWindingTransformer(; name, primary_circuit, secondary_circuit, tertiary_circuit, star_bus, r_12=nothing, x_12=nothing, r_23=nothing, x_23=nothing, r_31=nothing, x_31=nothing, base_power_12=nothing, base_power_23=nothing, base_power_31=nothing, magnetizing_shunt=0.0, shunt_location=ThreeWindingTransformerShuntLocation.PRIMARY, services=Device[], ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Unitful.Units, )
     value = ThreeWindingTransformer(name, primary_circuit, secondary_circuit, tertiary_circuit, star_bus, _placeholder(r_12), _placeholder(x_12), _placeholder(r_23), _placeholder(x_23), _placeholder(r_31), _placeholder(x_31), base_power_12, base_power_23, base_power_31, _placeholder(magnetizing_shunt), shunt_location, services, ext, internal, )
     set_r_12!(value, _tag(r_12, input_basis, Val(:ohm)))
     set_x_12!(value, _tag(x_12, input_basis, Val(:ohm)))
@@ -132,7 +132,7 @@ function ThreeWindingTransformer(::Nothing)
         shunt_location=ThreeWindingTransformerShuntLocation.PRIMARY,
         services=Device[],
         ext=Dict{String, Any}(),
-        input_basis=CU,
+        input_basis=u"CU",
     )
 end
 
@@ -146,68 +146,68 @@ get_secondary_circuit(value::ThreeWindingTransformer) = value.secondary_circuit
 get_tertiary_circuit(value::ThreeWindingTransformer) = value.tertiary_circuit
 """Get [`ThreeWindingTransformer`](@ref) `star_bus`."""
 get_star_bus(value::ThreeWindingTransformer) = value.star_bus
-"""Get [`ThreeWindingTransformer`](@ref) `r_12` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_r_12_unitful`](@ref)."""
+"""Get [`ThreeWindingTransformer`](@ref) `r_12` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_r_12_unitful`](@ref)."""
 get_r_12(value::ThreeWindingTransformer, units) = InfrastructureSystems._strip_units(get_value(value, Val(:r_12), Val(:ohm), units))
-"""Get [`ThreeWindingTransformer`](@ref) `r_12` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_r_12`](@ref)."""
+"""Get [`ThreeWindingTransformer`](@ref) `r_12` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_r_12`](@ref)."""
 get_r_12_unitful(value::ThreeWindingTransformer, units) = get_value(value, Val(:r_12), Val(:ohm), units)
 get_r_12(value::ThreeWindingTransformer) = _units_arg_required(get_r_12, value, :r_12, Val(:ohm))
 get_r_12_unitful(value::ThreeWindingTransformer) = _units_arg_required(get_r_12_unitful, value, :r_12, Val(:ohm))
-InfrastructureSystems.display_units_arg(::typeof(get_r_12), ::Type{ThreeWindingTransformer}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_r_12_unitful), ::Type{ThreeWindingTransformer}) = InfrastructureSystems.SU
-"""Get [`ThreeWindingTransformer`](@ref) `x_12` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_x_12_unitful`](@ref)."""
+InfrastructureSystems.display_units_arg(::typeof(get_r_12), ::Type{ThreeWindingTransformer}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_r_12_unitful), ::Type{ThreeWindingTransformer}) = u"SU"
+"""Get [`ThreeWindingTransformer`](@ref) `x_12` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_x_12_unitful`](@ref)."""
 get_x_12(value::ThreeWindingTransformer, units) = InfrastructureSystems._strip_units(get_value(value, Val(:x_12), Val(:ohm), units))
-"""Get [`ThreeWindingTransformer`](@ref) `x_12` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_x_12`](@ref)."""
+"""Get [`ThreeWindingTransformer`](@ref) `x_12` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_x_12`](@ref)."""
 get_x_12_unitful(value::ThreeWindingTransformer, units) = get_value(value, Val(:x_12), Val(:ohm), units)
 get_x_12(value::ThreeWindingTransformer) = _units_arg_required(get_x_12, value, :x_12, Val(:ohm))
 get_x_12_unitful(value::ThreeWindingTransformer) = _units_arg_required(get_x_12_unitful, value, :x_12, Val(:ohm))
-InfrastructureSystems.display_units_arg(::typeof(get_x_12), ::Type{ThreeWindingTransformer}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_x_12_unitful), ::Type{ThreeWindingTransformer}) = InfrastructureSystems.SU
-"""Get [`ThreeWindingTransformer`](@ref) `r_23` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_r_23_unitful`](@ref)."""
+InfrastructureSystems.display_units_arg(::typeof(get_x_12), ::Type{ThreeWindingTransformer}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_x_12_unitful), ::Type{ThreeWindingTransformer}) = u"SU"
+"""Get [`ThreeWindingTransformer`](@ref) `r_23` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_r_23_unitful`](@ref)."""
 get_r_23(value::ThreeWindingTransformer, units) = InfrastructureSystems._strip_units(get_value(value, Val(:r_23), Val(:ohm), units))
-"""Get [`ThreeWindingTransformer`](@ref) `r_23` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_r_23`](@ref)."""
+"""Get [`ThreeWindingTransformer`](@ref) `r_23` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_r_23`](@ref)."""
 get_r_23_unitful(value::ThreeWindingTransformer, units) = get_value(value, Val(:r_23), Val(:ohm), units)
 get_r_23(value::ThreeWindingTransformer) = _units_arg_required(get_r_23, value, :r_23, Val(:ohm))
 get_r_23_unitful(value::ThreeWindingTransformer) = _units_arg_required(get_r_23_unitful, value, :r_23, Val(:ohm))
-InfrastructureSystems.display_units_arg(::typeof(get_r_23), ::Type{ThreeWindingTransformer}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_r_23_unitful), ::Type{ThreeWindingTransformer}) = InfrastructureSystems.SU
-"""Get [`ThreeWindingTransformer`](@ref) `x_23` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_x_23_unitful`](@ref)."""
+InfrastructureSystems.display_units_arg(::typeof(get_r_23), ::Type{ThreeWindingTransformer}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_r_23_unitful), ::Type{ThreeWindingTransformer}) = u"SU"
+"""Get [`ThreeWindingTransformer`](@ref) `x_23` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_x_23_unitful`](@ref)."""
 get_x_23(value::ThreeWindingTransformer, units) = InfrastructureSystems._strip_units(get_value(value, Val(:x_23), Val(:ohm), units))
-"""Get [`ThreeWindingTransformer`](@ref) `x_23` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_x_23`](@ref)."""
+"""Get [`ThreeWindingTransformer`](@ref) `x_23` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_x_23`](@ref)."""
 get_x_23_unitful(value::ThreeWindingTransformer, units) = get_value(value, Val(:x_23), Val(:ohm), units)
 get_x_23(value::ThreeWindingTransformer) = _units_arg_required(get_x_23, value, :x_23, Val(:ohm))
 get_x_23_unitful(value::ThreeWindingTransformer) = _units_arg_required(get_x_23_unitful, value, :x_23, Val(:ohm))
-InfrastructureSystems.display_units_arg(::typeof(get_x_23), ::Type{ThreeWindingTransformer}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_x_23_unitful), ::Type{ThreeWindingTransformer}) = InfrastructureSystems.SU
-"""Get [`ThreeWindingTransformer`](@ref) `r_31` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_r_31_unitful`](@ref)."""
+InfrastructureSystems.display_units_arg(::typeof(get_x_23), ::Type{ThreeWindingTransformer}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_x_23_unitful), ::Type{ThreeWindingTransformer}) = u"SU"
+"""Get [`ThreeWindingTransformer`](@ref) `r_31` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_r_31_unitful`](@ref)."""
 get_r_31(value::ThreeWindingTransformer, units) = InfrastructureSystems._strip_units(get_value(value, Val(:r_31), Val(:ohm), units))
-"""Get [`ThreeWindingTransformer`](@ref) `r_31` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_r_31`](@ref)."""
+"""Get [`ThreeWindingTransformer`](@ref) `r_31` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_r_31`](@ref)."""
 get_r_31_unitful(value::ThreeWindingTransformer, units) = get_value(value, Val(:r_31), Val(:ohm), units)
 get_r_31(value::ThreeWindingTransformer) = _units_arg_required(get_r_31, value, :r_31, Val(:ohm))
 get_r_31_unitful(value::ThreeWindingTransformer) = _units_arg_required(get_r_31_unitful, value, :r_31, Val(:ohm))
-InfrastructureSystems.display_units_arg(::typeof(get_r_31), ::Type{ThreeWindingTransformer}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_r_31_unitful), ::Type{ThreeWindingTransformer}) = InfrastructureSystems.SU
-"""Get [`ThreeWindingTransformer`](@ref) `x_31` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_x_31_unitful`](@ref)."""
+InfrastructureSystems.display_units_arg(::typeof(get_r_31), ::Type{ThreeWindingTransformer}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_r_31_unitful), ::Type{ThreeWindingTransformer}) = u"SU"
+"""Get [`ThreeWindingTransformer`](@ref) `x_31` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_x_31_unitful`](@ref)."""
 get_x_31(value::ThreeWindingTransformer, units) = InfrastructureSystems._strip_units(get_value(value, Val(:x_31), Val(:ohm), units))
-"""Get [`ThreeWindingTransformer`](@ref) `x_31` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_x_31`](@ref)."""
+"""Get [`ThreeWindingTransformer`](@ref) `x_31` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_x_31`](@ref)."""
 get_x_31_unitful(value::ThreeWindingTransformer, units) = get_value(value, Val(:x_31), Val(:ohm), units)
 get_x_31(value::ThreeWindingTransformer) = _units_arg_required(get_x_31, value, :x_31, Val(:ohm))
 get_x_31_unitful(value::ThreeWindingTransformer) = _units_arg_required(get_x_31_unitful, value, :x_31, Val(:ohm))
-InfrastructureSystems.display_units_arg(::typeof(get_x_31), ::Type{ThreeWindingTransformer}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_x_31_unitful), ::Type{ThreeWindingTransformer}) = InfrastructureSystems.SU
+InfrastructureSystems.display_units_arg(::typeof(get_x_31), ::Type{ThreeWindingTransformer}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_x_31_unitful), ::Type{ThreeWindingTransformer}) = u"SU"
 
 _get_base_power_12(value::ThreeWindingTransformer) = value.base_power_12
 
 _get_base_power_23(value::ThreeWindingTransformer) = value.base_power_23
 
 _get_base_power_31(value::ThreeWindingTransformer) = value.base_power_31
-"""Get [`ThreeWindingTransformer`](@ref) `magnetizing_shunt` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_magnetizing_shunt_unitful`](@ref)."""
+"""Get [`ThreeWindingTransformer`](@ref) `magnetizing_shunt` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_magnetizing_shunt_unitful`](@ref)."""
 get_magnetizing_shunt(value::ThreeWindingTransformer, units) = InfrastructureSystems._strip_units(get_value(value, Val(:magnetizing_shunt), Val(:siemens), units))
-"""Get [`ThreeWindingTransformer`](@ref) `magnetizing_shunt` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_magnetizing_shunt`](@ref)."""
+"""Get [`ThreeWindingTransformer`](@ref) `magnetizing_shunt` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_magnetizing_shunt`](@ref)."""
 get_magnetizing_shunt_unitful(value::ThreeWindingTransformer, units) = get_value(value, Val(:magnetizing_shunt), Val(:siemens), units)
 get_magnetizing_shunt(value::ThreeWindingTransformer) = _units_arg_required(get_magnetizing_shunt, value, :magnetizing_shunt, Val(:siemens))
 get_magnetizing_shunt_unitful(value::ThreeWindingTransformer) = _units_arg_required(get_magnetizing_shunt_unitful, value, :magnetizing_shunt, Val(:siemens))
-InfrastructureSystems.display_units_arg(::typeof(get_magnetizing_shunt), ::Type{ThreeWindingTransformer}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_magnetizing_shunt_unitful), ::Type{ThreeWindingTransformer}) = InfrastructureSystems.SU
+InfrastructureSystems.display_units_arg(::typeof(get_magnetizing_shunt), ::Type{ThreeWindingTransformer}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_magnetizing_shunt_unitful), ::Type{ThreeWindingTransformer}) = u"SU"
 """Get [`ThreeWindingTransformer`](@ref) `shunt_location`."""
 get_shunt_location(value::ThreeWindingTransformer) = value.shunt_location
 """Get [`ThreeWindingTransformer`](@ref) `services`."""

@@ -233,7 +233,7 @@ end
 end
 
 function _make_bus()
-    return ACBus(; input_basis = CU,
+    return ACBus(; input_basis = u"CU",
         number = 1,
         name = "bus1",
         available = true,

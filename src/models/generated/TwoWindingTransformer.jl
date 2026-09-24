@@ -27,7 +27,7 @@ All series electrical data — the modeled arc, tap, phase shift, series impedan
 - `services::Vector{Service}`: (default: `Device[]`) Services that this device contributes to
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
-- `input_basis`: (keyword constructor only, required) `CU` or `NU`, the units of bare numbers on unit-bearing fields. Tagged values (`50.0u"MW"`) keep their own units
+- `input_basis`: (keyword constructor only, required) `u"CU"` or `u"NU"`, the units of bare numbers on unit-bearing fields. Tagged values (`50.0u"MW"`) keep their own units
 """
 mutable struct TwoWindingTransformer <: ACTransmission
     "Name of the component. Components of the same type (e.g., `PowerLoad`) must have unique names, but components of different types (e.g., `PowerLoad` and `ACBus`) can have the same name"
@@ -50,7 +50,7 @@ function TwoWindingTransformer(name, circuit, magnetizing_shunt=0.0, shunt_locat
     TwoWindingTransformer(name, circuit, magnetizing_shunt, shunt_location, services, ext, InfrastructureSystemsInternal(), )
 end
 
-function TwoWindingTransformer(; name, circuit, magnetizing_shunt=0.0, shunt_location=TwoWindingTransformerShuntLocation.PRIMARY, services=Device[], ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Union{ComponentBaseUnit, NaturalUnit}, )
+function TwoWindingTransformer(; name, circuit, magnetizing_shunt=0.0, shunt_location=TwoWindingTransformerShuntLocation.PRIMARY, services=Device[], ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Unitful.Units, )
     value = TwoWindingTransformer(name, circuit, _placeholder(magnetizing_shunt), shunt_location, services, ext, internal, )
     set_magnetizing_shunt!(value, _tag(magnetizing_shunt, input_basis, Val(:siemens)))
     return value
@@ -66,7 +66,7 @@ function TwoWindingTransformer(::Nothing)
         shunt_location=TwoWindingTransformerShuntLocation.PRIMARY,
         services=Device[],
         ext=Dict{String, Any}(),
-        input_basis=CU,
+        input_basis=u"CU",
     )
 end
 
@@ -74,14 +74,14 @@ end
 get_name(value::TwoWindingTransformer) = value.name
 """Get [`TwoWindingTransformer`](@ref) `circuit`."""
 get_circuit(value::TwoWindingTransformer) = value.circuit
-"""Get [`TwoWindingTransformer`](@ref) `magnetizing_shunt` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_magnetizing_shunt_unitful`](@ref)."""
+"""Get [`TwoWindingTransformer`](@ref) `magnetizing_shunt` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_magnetizing_shunt_unitful`](@ref)."""
 get_magnetizing_shunt(value::TwoWindingTransformer, units) = InfrastructureSystems._strip_units(get_value(value, Val(:magnetizing_shunt), Val(:siemens), units))
-"""Get [`TwoWindingTransformer`](@ref) `magnetizing_shunt` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_magnetizing_shunt`](@ref)."""
+"""Get [`TwoWindingTransformer`](@ref) `magnetizing_shunt` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_magnetizing_shunt`](@ref)."""
 get_magnetizing_shunt_unitful(value::TwoWindingTransformer, units) = get_value(value, Val(:magnetizing_shunt), Val(:siemens), units)
 get_magnetizing_shunt(value::TwoWindingTransformer) = _units_arg_required(get_magnetizing_shunt, value, :magnetizing_shunt, Val(:siemens))
 get_magnetizing_shunt_unitful(value::TwoWindingTransformer) = _units_arg_required(get_magnetizing_shunt_unitful, value, :magnetizing_shunt, Val(:siemens))
-InfrastructureSystems.display_units_arg(::typeof(get_magnetizing_shunt), ::Type{TwoWindingTransformer}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_magnetizing_shunt_unitful), ::Type{TwoWindingTransformer}) = InfrastructureSystems.SU
+InfrastructureSystems.display_units_arg(::typeof(get_magnetizing_shunt), ::Type{TwoWindingTransformer}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_magnetizing_shunt_unitful), ::Type{TwoWindingTransformer}) = u"SU"
 """Get [`TwoWindingTransformer`](@ref) `shunt_location`."""
 get_shunt_location(value::TwoWindingTransformer) = value.shunt_location
 """Get [`TwoWindingTransformer`](@ref) `services`."""

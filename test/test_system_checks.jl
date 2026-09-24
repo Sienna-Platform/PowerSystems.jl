@@ -1,7 +1,7 @@
 
 @testset "total_load_rating: sums StaticLoad and admittance loads as Float64 MW" begin
     sys = System(100.0)
-    bus = ACBus(; input_basis = CU,
+    bus = ACBus(; input_basis = u"CU",
         number = 1, name = "b1", available = true,
         bustype = ACBusTypes.REF, angle = 0.0, magnitude = 1.0,
         voltage_limits = (min = 0.9, max = 1.1), base_voltage = 138.0,
@@ -16,7 +16,7 @@
         active_power = 0.5, reactive_power = 0.0,
         base_power = 100.0,
         max_active_power = 0.5, max_reactive_power = 0.0,
-        input_basis = CU,
+        input_basis = u"CU",
     )
     add_component!(sys, load)
 

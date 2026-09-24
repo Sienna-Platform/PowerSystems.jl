@@ -33,7 +33,7 @@ the process:
 ```@repl serialize_data
 using PowerSystems
 sys = System(100.0)
-bus = ACBus(; input_basis = CU,
+bus = ACBus(; input_basis = u"CU",
     number = 1, name = "bus1", available = true, bustype = ACBusTypes.REF,
     angle = 0.0, magnitude = 1.0, voltage_limits = (min = 0.9, max = 1.1),
     base_voltage = 230.0,
@@ -46,7 +46,7 @@ gen = ThermalStandard(;
     reactive_power_limits = (min = -1.0, max = 1.0),
     ramp_limits = nothing, operation_cost = ThermalGenerationCost(nothing),
     base_power = 100.0,
-    input_basis = CU,
+    input_basis = u"CU",
 )
 add_component!(sys, gen)
 ```

@@ -389,7 +389,7 @@ get_name(value::Union{OnlineReserve, OfflineReserve}) = value.name
 get_available(value::Union{OnlineReserve, OfflineReserve}) = value.available
 """Get [`OnlineReserve`](@ref)/[`OfflineReserve`](@ref) `time_frame`."""
 get_time_frame(value::Union{OnlineReserve, OfflineReserve}) = value.time_frame
-"""Get [`OnlineReserve`](@ref)/[`OfflineReserve`](@ref) `requirement` as a bare number in the requested `units` (e.g. `SU`, `CU`). For the unit-bearing value see [`get_requirement_unitful`](@ref)."""
+"""Get [`OnlineReserve`](@ref)/[`OfflineReserve`](@ref) `requirement` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`). For the unit-bearing value see [`get_requirement_unitful`](@ref)."""
 get_requirement(value::Union{OnlineReserve, OfflineReserve}, units) =
     IS._strip_units(get_value(value, Val(:requirement), Val(:mw), units))
 """Get [`OnlineReserve`](@ref)/[`OfflineReserve`](@ref) `requirement` as a unit-bearing quantity in the requested `units`. For a bare number see [`get_requirement`](@ref)."""
@@ -401,11 +401,11 @@ IS.display_units_arg(
     ::typeof(get_requirement),
     ::Type{<:Union{OnlineReserve, OfflineReserve}},
 ) =
-    IS.SU
+    u"SU"
 IS.display_units_arg(
     ::typeof(get_requirement_unitful),
     ::Type{<:Union{OnlineReserve, OfflineReserve}},
-) = IS.SU
+) = u"SU"
 """Get [`OnlineReserve`](@ref)/[`OfflineReserve`](@ref) `variable`."""
 get_variable(value::Union{OnlineReserve, OfflineReserve}) = value.variable
 """Get [`OnlineReserve`](@ref)/[`OfflineReserve`](@ref) `sustained_time`."""
@@ -451,14 +451,14 @@ set_ext!(value::Union{OnlineReserve, OfflineReserve}, val) = value.ext = val
 get_name(value::GroupReserve) = value.name
 """Get [`GroupReserve`](@ref) `available`."""
 get_available(value::GroupReserve) = value.available
-"""Get [`GroupReserve`](@ref) `requirement` as a bare number in the requested `units` (e.g. `SU`, `CU`). For the unit-bearing value see [`get_requirement_unitful`](@ref)."""
+"""Get [`GroupReserve`](@ref) `requirement` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`). For the unit-bearing value see [`get_requirement_unitful`](@ref)."""
 get_requirement(value::GroupReserve, units) =
     IS._strip_units(get_value(value, Val(:requirement), Val(:mw), units))
 """Get [`GroupReserve`](@ref) `requirement` as a unit-bearing quantity in the requested `units`. For a bare number see [`get_requirement`](@ref)."""
 get_requirement_unitful(value::GroupReserve, units) =
     get_value(value, Val(:requirement), Val(:mw), units)
-IS.display_units_arg(::typeof(get_requirement), ::Type{<:GroupReserve}) = IS.SU
-IS.display_units_arg(::typeof(get_requirement_unitful), ::Type{<:GroupReserve}) = IS.SU
+IS.display_units_arg(::typeof(get_requirement), ::Type{<:GroupReserve}) = u"SU"
+IS.display_units_arg(::typeof(get_requirement_unitful), ::Type{<:GroupReserve}) = u"SU"
 """Get [`GroupReserve`](@ref) `variable` (its operating reserve demand curve)."""
 get_variable(value::GroupReserve) = value.variable
 """Get [`GroupReserve`](@ref) `ext`."""

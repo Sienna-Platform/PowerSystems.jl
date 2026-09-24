@@ -159,11 +159,11 @@ end
     add_component!(sys_du, area_du)
     lz_du = PSY.from_openapi(lz_po_du, refs, CU)
     add_component!(sys_du, lz_du)
-    @test get_peak_active_power(area_du, SU) == 2.5
-    @test get_peak_reactive_power(area_du, SU) == 0.5
+    @test get_peak_active_power(area_du, u"SU") == 2.5
+    @test get_peak_reactive_power(area_du, u"SU") == 0.5
     @test get_load_response(area_du) == 12.5
-    @test get_peak_active_power(lz_du, SU) == 2.5
-    @test get_peak_reactive_power(lz_du, SU) == 0.5
+    @test get_peak_active_power(lz_du, u"SU") == 2.5
+    @test get_peak_reactive_power(lz_du, u"SU") == 0.5
     @test get_base_power(area_du) == 100.0
     @test get_base_power(lz_du) == 100.0
 
@@ -182,10 +182,10 @@ end
     add_component!(sys_nu, area_nu)
     lz_nu = PSY.from_openapi(lz_po_nu, refs, NU)
     add_component!(sys_nu, lz_nu)
-    @test get_peak_active_power(area_nu, SU) == 2.5
-    @test get_peak_reactive_power(area_nu, SU) == 0.5
-    @test get_peak_active_power(lz_nu, SU) == 2.5
-    @test get_peak_reactive_power(lz_nu, SU) == 0.5
+    @test get_peak_active_power(area_nu, u"SU") == 2.5
+    @test get_peak_reactive_power(area_nu, u"SU") == 0.5
+    @test get_peak_active_power(lz_nu, u"SU") == 2.5
+    @test get_peak_reactive_power(lz_nu, u"SU") == 0.5
 
     # A blob whose own `base_power` differs from the System's is honored exactly.
     area_po_explicit = PSY.PO.Area(;
@@ -223,7 +223,7 @@ end
     )
     tx_du = PSY.from_openapi(tx_po_du, refs, CU)
     add_component!(System(100.0), tx_du)
-    @test get_active_power_flow_limits(tx_du, SU) == (min = -10.0, max = 10.0)
+    @test get_active_power_flow_limits(tx_du, u"SU") == (min = -10.0, max = 10.0)
     @test get_violation_penalty(tx_du) == 5000.0
     @test get_direction_mapping(tx_du) == Dict("line1" => 1, "line2" => -1)
     @test get_base_power(tx_du) == 100.0
@@ -240,7 +240,7 @@ end
     )
     tx_nu = PSY.from_openapi(tx_po_nu, refs, NU)
     add_component!(System(100.0), tx_nu)
-    @test get_active_power_flow_limits(tx_nu, SU) == (min = -10.0, max = 10.0)
+    @test get_active_power_flow_limits(tx_nu, u"SU") == (min = -10.0, max = 10.0)
     @test get_base_power(tx_nu) == 100.0
 
     # `base_power`/`power_units` are non-defaulted fields on the wire type itself —
@@ -280,14 +280,14 @@ end
 
     line_natural = PSY.from_openapi(line_po, refs, NU)
     add_component!(sys, line_natural)
-    @test get_rating(line_natural, SU) == 1.75
-    @test get_active_power_flow(line_natural, SU) == 0.1
-    @test get_reactive_power_flow(line_natural, SU) == 0.02
-    @test get_rating_b(line_natural, SU) == 1.75
-    @test isnothing(get_rating_c(line_natural, SU))
-    @test get_r(line_natural, SU) == 0.01
-    @test get_x(line_natural, SU) == 0.1
-    @test get_b(line_natural, SU) == (from = 0.001, to = 0.002)
+    @test get_rating(line_natural, u"SU") == 1.75
+    @test get_active_power_flow(line_natural, u"SU") == 0.1
+    @test get_reactive_power_flow(line_natural, u"SU") == 0.02
+    @test get_rating_b(line_natural, u"SU") == 1.75
+    @test isnothing(get_rating_c(line_natural, u"SU"))
+    @test get_r(line_natural, u"SU") == 0.01
+    @test get_x(line_natural, u"SU") == 0.1
+    @test get_b(line_natural, u"SU") == (from = 0.001, to = 0.002)
     # Line's own `base_power` is now a real PSY field, not just
     # a document-only per-line value read through `sbp`.
     @test get_base_power(line_natural) == 100.0
@@ -304,12 +304,12 @@ end
     )
     line_device = PSY.from_openapi(line_po_device, refs, CU)
     add_component!(sys, line_device)
-    @test get_rating(line_device, SU) == 175.0
-    @test get_active_power_flow(line_device, SU) == 10.0
-    @test get_reactive_power_flow(line_device, SU) == 2.0
-    @test get_r(line_device, SU) == 0.01
-    @test get_x(line_device, SU) == 0.1
-    @test get_b(line_device, SU) == (from = 0.001, to = 0.002)
+    @test get_rating(line_device, u"SU") == 175.0
+    @test get_active_power_flow(line_device, u"SU") == 10.0
+    @test get_reactive_power_flow(line_device, u"SU") == 2.0
+    @test get_r(line_device, u"SU") == 0.01
+    @test get_x(line_device, u"SU") == 0.1
+    @test get_b(line_device, u"SU") == (from = 0.001, to = 0.002)
     @test get_base_power(line_device) == 100.0
 
     # `base_power`/`power_units` are non-defaulted fields on the wire type itself —
@@ -337,8 +337,8 @@ end
     )
     for val in (CU, NU)
         line_no_shunts = PSY.from_openapi(line_po_no_shunts, refs, val)
-        @test get_b(line_no_shunts, CU) == (from = 0.0, to = 0.0)
-        @test get_g(line_no_shunts, CU) == (from = 0.0, to = 0.0)
+        @test get_b(line_no_shunts, u"CU") == (from = 0.0, to = 0.0)
+        @test get_g(line_no_shunts, u"CU") == (from = 0.0, to = 0.0)
     end
 end
 
@@ -364,19 +364,19 @@ end
     circuit_natural =
         PSY.from_openapi(circuit_po, refs, NU)
     @test get_α(circuit_natural) == 0.05
-    @test get_r(circuit_natural, CU) == 0.01
-    @test get_x(circuit_natural, CU) == 0.1
-    @test get_rating(circuit_natural, CU) == 2.0
-    @test isnothing(get_rating_b(circuit_natural, CU))
-    @test get_active_power_flow(circuit_natural, CU) == 0.1
-    @test get_reactive_power_flow(circuit_natural, CU) == 0.02
+    @test get_r(circuit_natural, u"CU") == 0.01
+    @test get_x(circuit_natural, u"CU") == 0.1
+    @test get_rating(circuit_natural, u"CU") == 2.0
+    @test isnothing(get_rating_b(circuit_natural, u"CU"))
+    @test get_active_power_flow(circuit_natural, u"CU") == 0.1
+    @test get_reactive_power_flow(circuit_natural, u"CU") == 0.02
     @test get_control_objective(circuit_natural) == TransformerControlObjective.UNDEFINED
 
     circuit_device =
         PSY.from_openapi(circuit_po, refs, CU)
-    @test get_rating(circuit_device, CU) == 100.0
-    @test get_active_power_flow(circuit_device, CU) == 5.0
-    @test get_reactive_power_flow(circuit_device, CU) == 1.0
+    @test get_rating(circuit_device, u"CU") == 100.0
+    @test get_active_power_flow(circuit_device, u"CU") == 5.0
+    @test get_reactive_power_flow(circuit_device, u"CU") == 1.0
 
     bad_circuit_po = PSY.PO.TransformerCircuit(;
         id = 21, available = true, arc = 10, tap = 1.0, alpha = 0.0,
@@ -403,7 +403,7 @@ end
     )
     for val in (CU, NU)
         xfmr = PSY.from_openapi(xfmr_po, refs, val)
-        @test get_magnetizing_shunt(xfmr, CU) == Complex(0.01, 0.02)
+        @test get_magnetizing_shunt(xfmr, u"CU") == Complex(0.01, 0.02)
         @test get_shunt_location(xfmr) == TwoWindingTransformerShuntLocation.PRIMARY
         @test get_circuit(xfmr) === circuit_natural
     end
@@ -446,7 +446,7 @@ end
     )
     for val in (CU, NU)
         xfmr_no_shunt = PSY.from_openapi(xfmr_po_no_shunt, refs, val)
-        @test get_magnetizing_shunt(xfmr_no_shunt, CU) == Complex(0.0, 0.0)
+        @test get_magnetizing_shunt(xfmr_no_shunt, u"CU") == Complex(0.0, 0.0)
     end
 end
 
@@ -500,12 +500,12 @@ end
         @test get_secondary_circuit(t3w) === refs[21]
         @test get_tertiary_circuit(t3w) === refs[22]
         @test get_star_bus(t3w) === refs[5]
-        @test get_r_12(t3w, CU) == 0.01
-        @test get_x_12(t3w, CU) == 0.1
-        @test get_r_23(t3w, CU) == 0.015
-        @test get_r_31(t3w, CU) == 0.02
+        @test get_r_12(t3w, u"CU") == 0.01
+        @test get_x_12(t3w, u"CU") == 0.1
+        @test get_r_23(t3w, u"CU") == 0.015
+        @test get_r_31(t3w, u"CU") == 0.02
         @test get_base_power_12(t3w) == 100.0
-        @test get_magnetizing_shunt(t3w, CU) == Complex(0.03, 0.0)
+        @test get_magnetizing_shunt(t3w, u"CU") == Complex(0.03, 0.0)
         @test get_shunt_location(t3w) == ThreeWindingTransformerShuntLocation.STAR
     end
 
@@ -533,7 +533,7 @@ end
     )
     for val in (CU, NU)
         t3w_no_shunt = PSY.from_openapi(t3w_po_no_shunt, refs, val)
-        @test get_magnetizing_shunt(t3w_no_shunt, CU) == Complex(0.0, 0.0)
+        @test get_magnetizing_shunt(t3w_no_shunt, u"CU") == Complex(0.0, 0.0)
     end
 
     # `r_12`/`x_12`/`r_23`/`x_23`/`r_31`/`x_31`/`base_power_12`/`_23`/`_31` are all
@@ -551,12 +551,12 @@ end
     )
     for val in (CU, NU)
         t3w_no_pairwise = PSY.from_openapi(t3w_po_no_pairwise, refs, val)
-        @test isnothing(get_r_12(t3w_no_pairwise, CU))
-        @test isnothing(get_x_12(t3w_no_pairwise, CU))
-        @test isnothing(get_r_23(t3w_no_pairwise, CU))
-        @test isnothing(get_x_23(t3w_no_pairwise, CU))
-        @test isnothing(get_r_31(t3w_no_pairwise, CU))
-        @test isnothing(get_x_31(t3w_no_pairwise, CU))
+        @test isnothing(get_r_12(t3w_no_pairwise, u"CU"))
+        @test isnothing(get_x_12(t3w_no_pairwise, u"CU"))
+        @test isnothing(get_r_23(t3w_no_pairwise, u"CU"))
+        @test isnothing(get_x_23(t3w_no_pairwise, u"CU"))
+        @test isnothing(get_r_31(t3w_no_pairwise, u"CU"))
+        @test isnothing(get_x_31(t3w_no_pairwise, u"CU"))
         @test isnothing(get_base_power_12(t3w_no_pairwise))
         @test isnothing(get_base_power_23(t3w_no_pairwise))
         @test isnothing(get_base_power_31(t3w_no_pairwise))
@@ -608,12 +608,12 @@ end
     )
 
     gen_natural = PSY.from_openapi(thermal_po, refs, NU)
-    @test get_active_power(gen_natural, CU) == 0.25
-    @test get_reactive_power(gen_natural, CU) == 0.05
-    @test get_rating(gen_natural, CU) == 0.5
-    @test get_active_power_limits(gen_natural, CU) == (min = 0.05, max = 0.5)
-    @test get_reactive_power_limits(gen_natural, CU) == (min = -0.25, max = 0.25)
-    @test get_ramp_limits(gen_natural, CU / u"minute") == (up = 0.1, down = 0.1)
+    @test get_active_power(gen_natural, u"CU") == 0.25
+    @test get_reactive_power(gen_natural, u"CU") == 0.05
+    @test get_rating(gen_natural, u"CU") == 0.5
+    @test get_active_power_limits(gen_natural, u"CU") == (min = 0.05, max = 0.5)
+    @test get_reactive_power_limits(gen_natural, u"CU") == (min = -0.25, max = 0.25)
+    @test get_ramp_limits(gen_natural, u"CU/minute") == (up = 0.1, down = 0.1)
     @test get_prime_mover_type(gen_natural) == PrimeMovers.OT
     @test get_fuel(gen_natural) == ThermalFuels.NATURAL_GAS
     @test get_fixed(get_operation_cost(gen_natural)) == 100.0
@@ -622,9 +622,9 @@ end
     @test get_commitment_mode(gen_natural) == CommitmentModes.COMMITTED
 
     gen_device = PSY.from_openapi(thermal_po, refs, CU)
-    @test get_active_power(gen_device, CU) == 50.0
-    @test get_rating(gen_device, CU) == 100.0
-    @test get_active_power_limits(gen_device, CU) == (min = 10.0, max = 100.0)
+    @test get_active_power(gen_device, u"CU") == 50.0
+    @test get_rating(gen_device, u"CU") == 100.0
+    @test get_active_power_limits(gen_device, u"CU") == (min = 10.0, max = 100.0)
 end
 
 @testset "OpenAPI converters: PowerLoad" begin
@@ -637,16 +637,16 @@ end
         power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
     )
     load_natural = PSY.from_openapi(load_po, refs, NU)
-    @test get_active_power(load_natural, CU) == 0.3
-    @test get_reactive_power(load_natural, CU) == 0.05
-    @test get_max_active_power(load_natural, CU) == 0.5
-    @test get_max_reactive_power(load_natural, CU) == 0.1
+    @test get_active_power(load_natural, u"CU") == 0.3
+    @test get_reactive_power(load_natural, u"CU") == 0.05
+    @test get_max_active_power(load_natural, u"CU") == 0.5
+    @test get_max_reactive_power(load_natural, u"CU") == 0.1
     @test get_conformity(load_natural) == LoadConformity.CONFORMING
     @test get_bus(load_natural) === refs[4]
 
     load_device = PSY.from_openapi(load_po, refs, CU)
-    @test get_active_power(load_device, CU) == 30.0
-    @test get_max_active_power(load_device, CU) == 50.0
+    @test get_active_power(load_device, u"CU") == 30.0
+    @test get_max_active_power(load_device, u"CU") == 50.0
 end
 
 @testset "OpenAPI converters: InterruptiblePowerLoad / ShiftablePowerLoad" begin
@@ -685,15 +685,15 @@ end
     )
     iload_natural =
         PSY.from_openapi(iload_po, refs, NU)
-    @test get_active_power(iload_natural, CU) == 0.3
-    @test get_max_active_power(iload_natural, CU) == 0.3
+    @test get_active_power(iload_natural, u"CU") == 0.3
+    @test get_max_active_power(iload_natural, u"CU") == 0.3
     @test get_conformity(iload_natural) == LoadConformity.CONFORMING
     @test get_bus(iload_natural) === refs[4]
     @test get_fixed(get_operation_cost(iload_natural)) == 2400.0
 
     iload_device =
         PSY.from_openapi(iload_po, refs, CU)
-    @test get_active_power(iload_device, CU) == 30.0
+    @test get_active_power(iload_device, u"CU") == 30.0
 
     sload_po = PSY.PO.ShiftablePowerLoad(;
         id = 21, name = "sload1", available = true, bus = 4,
@@ -706,14 +706,14 @@ end
     )
     sload_natural =
         PSY.from_openapi(sload_po, refs, NU)
-    @test get_active_power(sload_natural, CU) == 0.3
-    @test get_active_power_limits(sload_natural, CU) == (min = 0.03, max = 0.3)
+    @test get_active_power(sload_natural, u"CU") == 0.3
+    @test get_active_power_limits(sload_natural, u"CU") == (min = 0.03, max = 0.3)
     @test get_load_balance_time_horizon(sload_natural) == 24
     @test get_bus(sload_natural) === refs[4]
 
     sload_device =
         PSY.from_openapi(sload_po, refs, CU)
-    @test get_active_power_limits(sload_device, CU) == (min = 3.0, max = 30.0)
+    @test get_active_power_limits(sload_device, u"CU") == (min = 3.0, max = 30.0)
 end
 
 @testset "OpenAPI converters: FixedAdmittance" begin
@@ -795,8 +795,8 @@ end
         power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
     )
     turbine = PSY.from_openapi(turbine_po, refs, NU)
-    @test get_active_power(turbine, CU) == 0.2
-    @test get_rating(turbine, CU) == 0.5
+    @test get_active_power(turbine, u"CU") == 0.2
+    @test get_rating(turbine, u"CU") == 0.5
     @test get_turbine_type(turbine) == HydroTurbineType.FRANCIS
     @test get_fixed(get_operation_cost(turbine)) == 1.0
     refs[20] = turbine
@@ -953,10 +953,10 @@ end
         power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
     )
     ror_natural = PSY.from_openapi(ror_po, refs, NU)
-    @test get_active_power(ror_natural, CU) == 0.15
-    @test get_rating(ror_natural, CU) == 0.4
+    @test get_active_power(ror_natural, u"CU") == 0.15
+    @test get_rating(ror_natural, u"CU") == 0.4
     ror_device = PSY.from_openapi(ror_po, refs, CU)
-    @test get_active_power(ror_device, CU) == 15.0
+    @test get_active_power(ror_device, u"CU") == 15.0
 end
 
 @testset "OpenAPI converters: RenewableDispatch / RenewableNonDispatch / SynchronousCondenser" begin
@@ -989,8 +989,8 @@ end
         power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
     )
     wind = PSY.from_openapi(wind_po, refs, NU)
-    @test get_active_power(wind, CU) == 0.25
-    @test get_rating(wind, CU) == 0.5
+    @test get_active_power(wind, u"CU") == 0.25
+    @test get_rating(wind, u"CU") == 0.5
     @test get_prime_mover_type(wind) == PrimeMovers.WT
     @test get_power_factor(wind) == 0.95
 
@@ -1002,8 +1002,8 @@ end
         power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
     )
     solar = PSY.from_openapi(solar_po, refs, NU)
-    @test get_active_power(solar, CU) == 0.15
-    @test get_rating(solar, CU) == 0.3
+    @test get_active_power(solar, u"CU") == 0.15
+    @test get_rating(solar, u"CU") == 0.3
 
     condenser_po = PSY.PO.SynchronousCondenser(;
         id = 22, name = "syncon1", available = true, bus = 3,
@@ -1014,9 +1014,9 @@ end
     )
     condenser =
         PSY.from_openapi(condenser_po, refs, NU)
-    @test get_reactive_power(condenser, CU) == 0.05
-    @test get_rating(condenser, CU) == 0.2
-    @test get_active_power_losses(condenser, CU) == 0.01
+    @test get_reactive_power(condenser, u"CU") == 0.05
+    @test get_rating(condenser, u"CU") == 0.2
+    @test get_active_power_losses(condenser, u"CU") == 0.01
 end
 
 @testset "OpenAPI converters: EnergyReservoirStorage" begin
@@ -1049,21 +1049,21 @@ end
     )
     storage_natural =
         PSY.from_openapi(storage_po, refs, NU)
-    @test get_storage_capacity(storage_natural, CU) == 2.0
-    @test get_rating(storage_natural, CU) == 0.5
-    @test get_active_power(storage_natural, CU) == 0.1
-    @test get_input_active_power_limits(storage_natural, CU) == (min = 0.0, max = 0.5)
-    @test get_output_active_power_limits(storage_natural, CU) == (min = 0.0, max = 0.5)
-    @test get_reactive_power_limits(storage_natural, CU) == (min = -0.25, max = 0.25)
-    @test get_ramp_limits(storage_natural, CU / u"minute") == (up = 0.5, down = 0.5)
-    @test get_standing_loss(storage_natural, CU) == 0.01
+    @test get_storage_capacity(storage_natural, u"CU") == 2.0
+    @test get_rating(storage_natural, u"CU") == 0.5
+    @test get_active_power(storage_natural, u"CU") == 0.1
+    @test get_input_active_power_limits(storage_natural, u"CU") == (min = 0.0, max = 0.5)
+    @test get_output_active_power_limits(storage_natural, u"CU") == (min = 0.0, max = 0.5)
+    @test get_reactive_power_limits(storage_natural, u"CU") == (min = -0.25, max = 0.25)
+    @test get_ramp_limits(storage_natural, u"CU/minute") == (up = 0.5, down = 0.5)
+    @test get_standing_loss(storage_natural, u"CU") == 0.01
     @test get_storage_technology_type(storage_natural) == StorageTech.LIB
     @test get_storage_level_limits(storage_natural) == (min = 0.0, max = 1.0)
 
     storage_device =
         PSY.from_openapi(storage_po, refs, CU)
-    @test get_storage_capacity(storage_device, CU) == 400.0
-    @test get_rating(storage_device, CU) == 100.0
+    @test get_storage_capacity(storage_device, u"CU") == 400.0
+    @test get_rating(storage_device, u"CU") == 100.0
 
     # An omitted basis selector takes the schema default.
     storage_po_no_units =
@@ -1134,9 +1134,9 @@ end
     hvdc_natural =
         PSY.from_openapi(hvdc_po, refs, NU)
     add_component!(sys, hvdc_natural)
-    @test get_active_power_flow(hvdc_natural, SU) == 0.5
-    @test get_active_power_limits_from(hvdc_natural, SU) == (min = -1.0, max = 1.0)
-    @test get_reactive_power_limits_to(hvdc_natural, SU) == (min = -0.5, max = 0.5)
+    @test get_active_power_flow(hvdc_natural, u"SU") == 0.5
+    @test get_active_power_limits_from(hvdc_natural, u"SU") == (min = -1.0, max = 1.0)
+    @test get_reactive_power_limits_to(hvdc_natural, u"SU") == (min = -0.5, max = 0.5)
     @test get_loss(hvdc_natural) == LossCurve(LinearCurve(0.01, 0.0), NaturalUnit())
     @test get_base_power(hvdc_natural) == 100.0
 
@@ -1196,8 +1196,8 @@ end
         CU,
     )
     add_component!(sys, hvdc_device)
-    @test get_active_power_flow(hvdc_device, SU) == 50.0
-    @test get_active_power_limits_from(hvdc_device, SU) == (min = -100.0, max = 100.0)
+    @test get_active_power_flow(hvdc_device, u"SU") == 50.0
+    @test get_active_power_limits_from(hvdc_device, u"SU") == (min = -100.0, max = 100.0)
     @test get_base_power(hvdc_device) == 100.0
 end
 
@@ -1335,10 +1335,10 @@ end
         lcc = PSY.from_openapi(lcc_po, refs, val)
         @test get_rectifier_tap_limits(lcc) == (min = 0.51, max = 1.5)
         @test get_inverter_tap_limits(lcc) == (min = 0.51, max = 1.5)
-        @test get_active_power_limits_from(lcc, CU) == (min = 0.0, max = 0.0)
-        @test get_active_power_limits_to(lcc, CU) == (min = 0.0, max = 0.0)
-        @test get_reactive_power_limits_from(lcc, CU) == (min = 0.0, max = 0.0)
-        @test get_reactive_power_limits_to(lcc, CU) == (min = 0.0, max = 0.0)
+        @test get_active_power_limits_from(lcc, u"CU") == (min = 0.0, max = 0.0)
+        @test get_active_power_limits_to(lcc, u"CU") == (min = 0.0, max = 0.0)
+        @test get_reactive_power_limits_from(lcc, u"CU") == (min = 0.0, max = 0.0)
+        @test get_reactive_power_limits_to(lcc, u"CU") == (min = 0.0, max = 0.0)
     end
 
     # `compounding_resistance`/`rectifier_capacitor_reactance`/`inverter_capacitor_reactance`
@@ -1376,8 +1376,8 @@ end
     @test get_inverter_capacitor_reactance(lcc_natural_no_optional) == 0.0
     @test get_power_mode(lcc_natural_no_optional)
     @test get_transfer_setpoint(lcc_natural_no_optional) == 0.5
-    @test get_transfer_setpoint(lcc_natural_no_optional, NU) ≈ 50.0
-    @test get_transfer_setpoint(lcc_natural_no_optional, CU) ≈ 0.5
+    @test get_transfer_setpoint(lcc_natural_no_optional, u"NU") ≈ 50.0
+    @test get_transfer_setpoint(lcc_natural_no_optional, u"CU") ≈ 0.5
     # Current mode stores Amperes, which no power base converts.
     lcc_current = PSY.from_openapi(
         _po_with(lcc_po_no_optional; id = 23, name = "lcc_current", power_mode = false),
@@ -1385,8 +1385,8 @@ end
         NU,
     )
     @test get_transfer_setpoint(lcc_current) == 50.0
-    @test get_transfer_setpoint(lcc_current, NU) == 50.0
-    @test get_transfer_setpoint(lcc_current, SU) == 50.0
+    @test get_transfer_setpoint(lcc_current, u"NU") == 50.0
+    @test get_transfer_setpoint(lcc_current, u"SU") == 50.0
 
     lcc_po_no_units = _po_with(
         lcc_po_no_optional;
@@ -1529,15 +1529,15 @@ end
         power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
     )
     device = PSY.from_openapi(interchange_po, refs, CU)
-    @test get_active_power_flow(device, PSY.CU) == 25.0
-    @test get_flow_limits(device, PSY.CU) == (from_to = 100.0, to_from = -100.0)
+    @test get_active_power_flow(device, u"CU") == 25.0
+    @test get_flow_limits(device, u"CU") == (from_to = 100.0, to_from = -100.0)
     @test get_from_area(device) === refs[1]
     @test get_to_area(device) === refs[20]
     @test get_base_power(device) == 100.0
 
     natural = PSY.from_openapi(interchange_po, refs, NU)
-    @test get_active_power_flow(natural, PSY.CU) == 0.25
-    @test get_flow_limits(natural, PSY.CU) == (from_to = 1.0, to_from = -1.0)
+    @test get_active_power_flow(natural, u"CU") == 0.25
+    @test get_flow_limits(natural, u"CU") == (from_to = 1.0, to_from = -1.0)
     @test get_base_power(natural) == 100.0
 
     @test_throws ErrorException PSY.from_openapi(
@@ -1581,7 +1581,7 @@ end
     online_natural = PSY.from_openapi(online_po, refs, NU)
     add_component!(sys, online_natural)
     @test online_natural isa OnlineReserve{ReserveUp}
-    @test get_requirement(online_natural, SU) == 1.0
+    @test get_requirement(online_natural, u"SU") == 1.0
     @test get_variable(online_natural) == PSY.ZERO_OFFER_CURVE
 
     online_po_device = PSY.PO.OnlineReserve(;
@@ -1593,7 +1593,7 @@ end
     online_device =
         PSY.from_openapi(online_po_device, refs, CU)
     add_component!(sys, online_device)
-    @test get_requirement(online_device, SU) == 1.0
+    @test get_requirement(online_device, u"SU") == 1.0
 
     down_po = PSY.PO.OnlineReserve(;
         id = 2, name = "spin_down", available = true, time_frame = 10.0,
@@ -1661,7 +1661,7 @@ end
     offline_natural =
         PSY.from_openapi(offline_po, refs, NU)
     add_component!(sys, offline_natural)
-    @test get_requirement(offline_natural, SU) == 0.5
+    @test get_requirement(offline_natural, u"SU") == 0.5
 
     offline_po_device = PSY.PO.OfflineReserve(;
         id = 6, name = "nonspin_device", available = true, time_frame = 10.0,
@@ -1672,7 +1672,7 @@ end
     offline_device =
         PSY.from_openapi(offline_po_device, refs, CU)
     add_component!(sys, offline_device)
-    @test get_requirement(offline_device, SU) == 0.5
+    @test get_requirement(offline_device, u"SU") == 0.5
 
     group_po = PSY.PO.GroupReserve(;
         id = 7, name = "group_up", available = true, requirement = 150.0,
@@ -1681,7 +1681,7 @@ end
     group_natural = PSY.from_openapi(group_po, refs, NU)
     add_component!(sys, group_natural)
     @test group_natural isa GroupReserve{ReserveUp}
-    @test get_requirement(group_natural, SU) == 1.5
+    @test get_requirement(group_natural, u"SU") == 1.5
 
     group_po_device = PSY.PO.GroupReserve(;
         id = 7, name = "group_up_device", available = true, requirement = 150.0,
@@ -1689,7 +1689,7 @@ end
     )
     group_device = PSY.from_openapi(group_po_device, refs, CU)
     add_component!(sys, group_device)
-    @test get_requirement(group_device, SU) == 1.5
+    @test get_requirement(group_device, u"SU") == 1.5
 end
 
 @testset "OpenAPI converters: TwoTerminalVSCLine" begin
@@ -1740,10 +1740,10 @@ end
 
     natural = PSY.from_openapi(vsc_po, refs, NU)
     add_component!(sys, natural)
-    @test get_active_power_flow(natural, SU) == 0.5
-    @test get_rating(natural, SU) == 2.0
-    @test get_active_power_limits_from(natural, SU) == (min = -2.0, max = 2.0)
-    @test get_reactive_power_limits_to(natural, SU) == (min = -1.0, max = 1.0)
+    @test get_active_power_flow(natural, u"SU") == 0.5
+    @test get_rating(natural, u"SU") == 2.0
+    @test get_active_power_limits_from(natural, u"SU") == (min = -2.0, max = 2.0)
+    @test get_reactive_power_limits_to(natural, u"SU") == (min = -1.0, max = 1.0)
     # DC_POWER setpoint is a power field: divides under NaturalUnit only.
     @test get_dc_setpoint_from(natural) == 0.4
     # DC_VOLTAGE setpoint is kV → pu of rated_dc_voltage, in both unit systems.
@@ -1763,8 +1763,8 @@ end
     vsc_po2 = _po_with(vsc_po; id = 21, name = "vsc2")
     device = PSY.from_openapi(vsc_po2, refs, CU)
     add_component!(sys, device)
-    @test get_active_power_flow(device, SU) == 50.0
-    @test get_active_power_limits_from(device, SU) == (min = -200.0, max = 200.0)
+    @test get_active_power_flow(device, u"SU") == 50.0
+    @test get_active_power_limits_from(device, u"SU") == (min = -200.0, max = 200.0)
     @test get_dc_setpoint_from(device) == 40.0
     @test get_dc_setpoint_to(device) == 1.02
     @test get_g(device) == 200.0
@@ -1782,8 +1782,8 @@ end
     )
     for val in (CU, NU)
         vsc_no_limits = PSY.from_openapi(vsc_po_no_limits, refs, val)
-        @test get_reactive_power_limits_from(vsc_no_limits, CU) == (min = 0.0, max = 0.0)
-        @test get_reactive_power_limits_to(vsc_no_limits, CU) == (min = 0.0, max = 0.0)
+        @test get_reactive_power_limits_from(vsc_no_limits, u"CU") == (min = 0.0, max = 0.0)
+        @test get_reactive_power_limits_to(vsc_no_limits, u"CU") == (min = 0.0, max = 0.0)
         @test get_voltage_limits_from(vsc_no_limits) == (min = 0.0, max = 999.9)
         @test get_voltage_limits_to(vsc_no_limits) == (min = 0.0, max = 999.9)
     end
@@ -1987,12 +1987,12 @@ end
 
     natural = PSY.from_openapi(load_po, refs, NU)
     @test get_bus(natural) === refs[3]
-    @test get_constant_active_power(natural, CU) == 0.5
-    @test get_impedance_reactive_power(natural, CU) == 0.05
-    @test get_max_current_active_power(natural, CU) == 0.35
+    @test get_constant_active_power(natural, u"CU") == 0.5
+    @test get_impedance_reactive_power(natural, u"CU") == 0.05
+    @test get_max_current_active_power(natural, u"CU") == 0.35
     @test get_conformity(natural) == LoadConformity.CONFORMING
 
     device = PSY.from_openapi(load_po, refs, CU)
-    @test get_constant_active_power(device, CU) == 50.0
-    @test get_max_current_active_power(device, CU) == 35.0
+    @test get_constant_active_power(device, u"CU") == 50.0
+    @test get_max_current_active_power(device, u"CU") == 35.0
 end

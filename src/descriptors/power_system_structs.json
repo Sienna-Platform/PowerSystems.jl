@@ -4762,7 +4762,7 @@
                     "validation_action": "error",
                     "needs_conversion": true,
                     "conversion_unit": ":mw_per_minute",
-                    "display_units": "SU / u\"minute\""
+                    "display_units": "SU/minute"
                 },
                 {
                     "name": "time_limits",
@@ -4985,7 +4985,7 @@
                     "needs_conversion": true,
                     "default": "nothing",
                     "conversion_unit": ":mw_per_minute",
-                    "display_units": "SU / u\"minute\""
+                    "display_units": "SU/minute"
                 },
                 {
                     "name": "time_limits",
@@ -5201,7 +5201,7 @@
                     "validation_action": "error",
                     "needs_conversion": true,
                     "conversion_unit": ":mw_per_minute",
-                    "display_units": "SU / u\"minute\""
+                    "display_units": "SU/minute"
                 },
                 {
                     "name": "time_limits",
@@ -5818,7 +5818,7 @@
                     "validation_action": "error",
                     "needs_conversion": true,
                     "conversion_unit": ":mw_per_minute",
-                    "display_units": "SU / u\"minute\""
+                    "display_units": "SU/minute"
                 },
                 {
                     "name": "operation_cost",
@@ -6130,7 +6130,7 @@
                     "validation_action": "error",
                     "needs_conversion": true,
                     "conversion_unit": ":mw_per_minute",
-                    "display_units": "SU / u\"minute\""
+                    "display_units": "SU/minute"
                 },
                 {
                     "name": "power_trajectory",
@@ -6433,7 +6433,7 @@
                     "validation_action": "error",
                     "needs_conversion": true,
                     "conversion_unit": ":mw_per_minute",
-                    "display_units": "SU / u\"minute\"",
+                    "display_units": "SU/minute",
                     "default": "nothing"
                 },
                 {

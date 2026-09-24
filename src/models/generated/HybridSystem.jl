@@ -57,7 +57,7 @@ The subcomponents (`thermal_unit`, `electric_load`, `storage`, `renewable_unit`)
 - `dynamic_injector::Union{Nothing, DynamicInjection}`: (default: `nothing`) corresponding dynamic injection device
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
-- `input_basis`: (keyword constructor only, required) `CU` or `NU`, the units of bare numbers on unit-bearing fields. Tagged values (`50.0u"MW"`) keep their own units
+- `input_basis`: (keyword constructor only, required) `u"CU"` or `u"NU"`, the units of bare numbers on unit-bearing fields. Tagged values (`50.0u"MW"`) keep their own units
 """
 mutable struct HybridSystem <: StaticInjectionSubsystem
     "Name of the component. Components of the same type (e.g., `PowerLoad`) must have unique names, but components of different types (e.g., `PowerLoad` and `ACBus`) can have the same name"
@@ -110,7 +110,7 @@ function HybridSystem(name, available, status, bus, active_power=0.0, reactive_p
     HybridSystem(name, available, status, bus, active_power, reactive_power, base_power, operation_cost, thermal_unit, electric_load, storage, renewable_unit, interconnection_impedance, interconnection_rating, input_active_power_limits, output_active_power_limits, reactive_power_limits, interconnection_efficiency, services, dynamic_injector, ext, InfrastructureSystemsInternal(), )
 end
 
-function HybridSystem(; name, available, status, bus, active_power=0.0, reactive_power=0.0, base_power=100.0, operation_cost=MarketBidCost(nothing), thermal_unit=nothing, electric_load=nothing, storage=nothing, renewable_unit=nothing, interconnection_impedance=0.0, interconnection_rating=nothing, input_active_power_limits=nothing, output_active_power_limits=nothing, reactive_power_limits=nothing, interconnection_efficiency=nothing, services=Service[], dynamic_injector=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Union{ComponentBaseUnit, NaturalUnit}, )
+function HybridSystem(; name, available, status, bus, active_power=0.0, reactive_power=0.0, base_power=100.0, operation_cost=MarketBidCost(nothing), thermal_unit=nothing, electric_load=nothing, storage=nothing, renewable_unit=nothing, interconnection_impedance=0.0, interconnection_rating=nothing, input_active_power_limits=nothing, output_active_power_limits=nothing, reactive_power_limits=nothing, interconnection_efficiency=nothing, services=Service[], dynamic_injector=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Unitful.Units, )
     value = HybridSystem(name, available, status, bus, _placeholder(active_power), _placeholder(reactive_power), base_power, operation_cost, thermal_unit, electric_load, storage, renewable_unit, interconnection_impedance, _placeholder(interconnection_rating), _placeholder(input_active_power_limits), _placeholder(output_active_power_limits), _placeholder(reactive_power_limits), interconnection_efficiency, services, dynamic_injector, ext, internal, )
     set_active_power!(value, _tag(active_power, input_basis, Val(:mw)))
     set_reactive_power!(value, _tag(reactive_power, input_basis, Val(:mvar)))
@@ -146,7 +146,7 @@ function HybridSystem(::Nothing)
         services=Service[],
         dynamic_injector=nothing,
         ext=Dict{String, Any}(),
-        input_basis=CU,
+        input_basis=u"CU",
     )
 end
 
@@ -158,22 +158,22 @@ get_available(value::HybridSystem) = value.available
 get_status(value::HybridSystem) = value.status
 """Get [`HybridSystem`](@ref) `bus`."""
 get_bus(value::HybridSystem) = value.bus
-"""Get [`HybridSystem`](@ref) `active_power` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_active_power_unitful`](@ref)."""
+"""Get [`HybridSystem`](@ref) `active_power` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_active_power_unitful`](@ref)."""
 get_active_power(value::HybridSystem, units) = InfrastructureSystems._strip_units(get_value(value, Val(:active_power), Val(:mw), units))
-"""Get [`HybridSystem`](@ref) `active_power` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_active_power`](@ref)."""
+"""Get [`HybridSystem`](@ref) `active_power` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_active_power`](@ref)."""
 get_active_power_unitful(value::HybridSystem, units) = get_value(value, Val(:active_power), Val(:mw), units)
 get_active_power(value::HybridSystem) = _units_arg_required(get_active_power, value, :active_power, Val(:mw))
 get_active_power_unitful(value::HybridSystem) = _units_arg_required(get_active_power_unitful, value, :active_power, Val(:mw))
-InfrastructureSystems.display_units_arg(::typeof(get_active_power), ::Type{HybridSystem}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_active_power_unitful), ::Type{HybridSystem}) = InfrastructureSystems.SU
-"""Get [`HybridSystem`](@ref) `reactive_power` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_reactive_power_unitful`](@ref)."""
+InfrastructureSystems.display_units_arg(::typeof(get_active_power), ::Type{HybridSystem}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_active_power_unitful), ::Type{HybridSystem}) = u"SU"
+"""Get [`HybridSystem`](@ref) `reactive_power` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_reactive_power_unitful`](@ref)."""
 get_reactive_power(value::HybridSystem, units) = InfrastructureSystems._strip_units(get_value(value, Val(:reactive_power), Val(:mvar), units))
-"""Get [`HybridSystem`](@ref) `reactive_power` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_reactive_power`](@ref)."""
+"""Get [`HybridSystem`](@ref) `reactive_power` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_reactive_power`](@ref)."""
 get_reactive_power_unitful(value::HybridSystem, units) = get_value(value, Val(:reactive_power), Val(:mvar), units)
 get_reactive_power(value::HybridSystem) = _units_arg_required(get_reactive_power, value, :reactive_power, Val(:mvar))
 get_reactive_power_unitful(value::HybridSystem) = _units_arg_required(get_reactive_power_unitful, value, :reactive_power, Val(:mvar))
-InfrastructureSystems.display_units_arg(::typeof(get_reactive_power), ::Type{HybridSystem}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_unitful), ::Type{HybridSystem}) = InfrastructureSystems.SU
+InfrastructureSystems.display_units_arg(::typeof(get_reactive_power), ::Type{HybridSystem}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_unitful), ::Type{HybridSystem}) = u"SU"
 
 _get_base_power(value::HybridSystem) = value.base_power
 """Get [`HybridSystem`](@ref) `operation_cost`."""
@@ -188,38 +188,38 @@ get_storage(value::HybridSystem) = value.storage
 get_renewable_unit(value::HybridSystem) = value.renewable_unit
 """Get [`HybridSystem`](@ref) `interconnection_impedance`."""
 get_interconnection_impedance(value::HybridSystem) = value.interconnection_impedance
-"""Get [`HybridSystem`](@ref) `interconnection_rating` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_interconnection_rating_unitful`](@ref)."""
+"""Get [`HybridSystem`](@ref) `interconnection_rating` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_interconnection_rating_unitful`](@ref)."""
 get_interconnection_rating(value::HybridSystem, units) = InfrastructureSystems._strip_units(get_value(value, Val(:interconnection_rating), Val(:mva), units))
-"""Get [`HybridSystem`](@ref) `interconnection_rating` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_interconnection_rating`](@ref)."""
+"""Get [`HybridSystem`](@ref) `interconnection_rating` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_interconnection_rating`](@ref)."""
 get_interconnection_rating_unitful(value::HybridSystem, units) = get_value(value, Val(:interconnection_rating), Val(:mva), units)
 get_interconnection_rating(value::HybridSystem) = _units_arg_required(get_interconnection_rating, value, :interconnection_rating, Val(:mva))
 get_interconnection_rating_unitful(value::HybridSystem) = _units_arg_required(get_interconnection_rating_unitful, value, :interconnection_rating, Val(:mva))
-InfrastructureSystems.display_units_arg(::typeof(get_interconnection_rating), ::Type{HybridSystem}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_interconnection_rating_unitful), ::Type{HybridSystem}) = InfrastructureSystems.SU
-"""Get [`HybridSystem`](@ref) `input_active_power_limits` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_input_active_power_limits_unitful`](@ref)."""
+InfrastructureSystems.display_units_arg(::typeof(get_interconnection_rating), ::Type{HybridSystem}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_interconnection_rating_unitful), ::Type{HybridSystem}) = u"SU"
+"""Get [`HybridSystem`](@ref) `input_active_power_limits` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_input_active_power_limits_unitful`](@ref)."""
 get_input_active_power_limits(value::HybridSystem, units) = InfrastructureSystems._strip_units(get_value(value, Val(:input_active_power_limits), Val(:mw), units))
-"""Get [`HybridSystem`](@ref) `input_active_power_limits` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_input_active_power_limits`](@ref)."""
+"""Get [`HybridSystem`](@ref) `input_active_power_limits` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_input_active_power_limits`](@ref)."""
 get_input_active_power_limits_unitful(value::HybridSystem, units) = get_value(value, Val(:input_active_power_limits), Val(:mw), units)
 get_input_active_power_limits(value::HybridSystem) = _units_arg_required(get_input_active_power_limits, value, :input_active_power_limits, Val(:mw))
 get_input_active_power_limits_unitful(value::HybridSystem) = _units_arg_required(get_input_active_power_limits_unitful, value, :input_active_power_limits, Val(:mw))
-InfrastructureSystems.display_units_arg(::typeof(get_input_active_power_limits), ::Type{HybridSystem}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_input_active_power_limits_unitful), ::Type{HybridSystem}) = InfrastructureSystems.SU
-"""Get [`HybridSystem`](@ref) `output_active_power_limits` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_output_active_power_limits_unitful`](@ref)."""
+InfrastructureSystems.display_units_arg(::typeof(get_input_active_power_limits), ::Type{HybridSystem}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_input_active_power_limits_unitful), ::Type{HybridSystem}) = u"SU"
+"""Get [`HybridSystem`](@ref) `output_active_power_limits` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_output_active_power_limits_unitful`](@ref)."""
 get_output_active_power_limits(value::HybridSystem, units) = InfrastructureSystems._strip_units(get_value(value, Val(:output_active_power_limits), Val(:mw), units))
-"""Get [`HybridSystem`](@ref) `output_active_power_limits` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_output_active_power_limits`](@ref)."""
+"""Get [`HybridSystem`](@ref) `output_active_power_limits` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_output_active_power_limits`](@ref)."""
 get_output_active_power_limits_unitful(value::HybridSystem, units) = get_value(value, Val(:output_active_power_limits), Val(:mw), units)
 get_output_active_power_limits(value::HybridSystem) = _units_arg_required(get_output_active_power_limits, value, :output_active_power_limits, Val(:mw))
 get_output_active_power_limits_unitful(value::HybridSystem) = _units_arg_required(get_output_active_power_limits_unitful, value, :output_active_power_limits, Val(:mw))
-InfrastructureSystems.display_units_arg(::typeof(get_output_active_power_limits), ::Type{HybridSystem}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_output_active_power_limits_unitful), ::Type{HybridSystem}) = InfrastructureSystems.SU
-"""Get [`HybridSystem`](@ref) `reactive_power_limits` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_reactive_power_limits_unitful`](@ref)."""
+InfrastructureSystems.display_units_arg(::typeof(get_output_active_power_limits), ::Type{HybridSystem}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_output_active_power_limits_unitful), ::Type{HybridSystem}) = u"SU"
+"""Get [`HybridSystem`](@ref) `reactive_power_limits` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_reactive_power_limits_unitful`](@ref)."""
 get_reactive_power_limits(value::HybridSystem, units) = InfrastructureSystems._strip_units(get_value(value, Val(:reactive_power_limits), Val(:mvar), units))
-"""Get [`HybridSystem`](@ref) `reactive_power_limits` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_reactive_power_limits`](@ref)."""
+"""Get [`HybridSystem`](@ref) `reactive_power_limits` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_reactive_power_limits`](@ref)."""
 get_reactive_power_limits_unitful(value::HybridSystem, units) = get_value(value, Val(:reactive_power_limits), Val(:mvar), units)
 get_reactive_power_limits(value::HybridSystem) = _units_arg_required(get_reactive_power_limits, value, :reactive_power_limits, Val(:mvar))
 get_reactive_power_limits_unitful(value::HybridSystem) = _units_arg_required(get_reactive_power_limits_unitful, value, :reactive_power_limits, Val(:mvar))
-InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_limits), ::Type{HybridSystem}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_limits_unitful), ::Type{HybridSystem}) = InfrastructureSystems.SU
+InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_limits), ::Type{HybridSystem}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_limits_unitful), ::Type{HybridSystem}) = u"SU"
 """Get [`HybridSystem`](@ref) `interconnection_efficiency`."""
 get_interconnection_efficiency(value::HybridSystem) = value.interconnection_efficiency
 """Get [`HybridSystem`](@ref) `services`."""

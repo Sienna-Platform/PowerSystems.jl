@@ -35,7 +35,7 @@ end
         () -> begin
             sys = PSB.build_system(PSB.MatpowerTestSystems, "matpower_case5_re_sys")
             number = 100
-            bus1 = ACBus(; input_basis = CU,
+            bus1 = ACBus(; input_basis = u"CU",
                 number = number,
                 name = "bus100",
                 available = true,
@@ -45,7 +45,7 @@ end
                 voltage_limits = (min = -1.0, max = 1.0),
                 base_voltage = 1.0,
             )
-            bus2 = ACBus(; input_basis = CU,
+            bus2 = ACBus(; input_basis = u"CU",
                 number = number,
                 name = "bus101",
                 available = true,
@@ -76,13 +76,13 @@ end
                 base_voltage = 1.0,
             )
             dcbus1 = DCBus(;
-                input_basis = CU,
+                input_basis = u"CU",
                 number = number,
                 name = "dcbus200",
                 dcbus_defaults...,
             )
             dcbus2 = DCBus(;
-                input_basis = CU,
+                input_basis = u"CU",
                 number = number,
                 name = "dcbus201",
                 dcbus_defaults...,
@@ -93,7 +93,7 @@ end
 
             # Also verify that a DCBus cannot share a number with an existing ACBus
             existing_ac_number = first(get_bus_numbers(sys))
-            dcbus3 = DCBus(; input_basis = CU,
+            dcbus3 = DCBus(; input_basis = u"CU",
                 number = existing_ac_number,
                 name = "dcbus_conflict",
                 dcbus_defaults...,
