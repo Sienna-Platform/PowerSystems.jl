@@ -60,7 +60,7 @@ turbine = HydroTurbine(;
     conversion_factor = 1.0,
     outflow_limits = (min = 0.0, max = 1000.0),  # m³/s
     travel_time = 0.5,  # hours,
-    input_basis = CU,
+    input_basis = u"CU",
 )
 add_component!(sys, turbine)
 
@@ -122,7 +122,7 @@ for i in 1:5
         reactive_power_limits = nothing,
         powerhouse_elevation = 500.0 + i * 10.0,  # Different elevations
         efficiency = 0.85 + i * 0.02,
-        input_basis = CU,
+        input_basis = u"CU",
     )
     add_component!(sys, turbine)
     push!(turbines, turbine)
@@ -178,7 +178,7 @@ pump_turbine = HydroPumpTurbine(;
     transition_time = (turbine = 0.25, pump = 0.25),  # hours
     minimum_time = (turbine = 1.0, pump = 1.0),  # hours
     conversion_factor = 1.0,
-    input_basis = CU,
+    input_basis = u"CU",
 )
 add_component!(sys, pump_turbine)
 

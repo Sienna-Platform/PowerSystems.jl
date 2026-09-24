@@ -27,7 +27,7 @@ The interface can be used to constrain the power flow across it
 - `direction_mapping::Dict{String, Int}`: (default: `Dict{String, Int}()`) Dictionary of the line `name`s in the interface and their direction of flow (1 or -1) relative to the flow of the interface
 - `base_power::Float64`: (default: `100.0`) System base power for per-unitization of this component's per-unit fields, recorded per component in lieu of a system-level table (MVA), validation range: `(0.0001, nothing)`
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
-- `input_basis`: (keyword constructor only, required) `CU` or `NU`, the units of bare numbers on unit-bearing fields. Tagged values (`50.0u"MW"`) keep their own units
+- `input_basis`: (keyword constructor only, required) `u"CU"` or `u"NU"`, the units of bare numbers on unit-bearing fields. Tagged values (`50.0u"MW"`) keep their own units
 """
 mutable struct TransmissionInterface <: Service
     "Name of the component. Components of the same type (e.g., `PowerLoad`) must have unique names, but components of different types (e.g., `PowerLoad` and `ACBus`) can have the same name"
@@ -50,7 +50,7 @@ function TransmissionInterface(name, available, active_power_flow_limits, violat
     TransmissionInterface(name, available, active_power_flow_limits, violation_penalty, direction_mapping, base_power, InfrastructureSystemsInternal(), )
 end
 
-function TransmissionInterface(; name, available, active_power_flow_limits, violation_penalty=INFINITE_COST, direction_mapping=Dict{String, Int}(), base_power=100.0, internal=InfrastructureSystemsInternal(), input_basis::Union{ComponentBaseUnit, NaturalUnit}, )
+function TransmissionInterface(; name, available, active_power_flow_limits, violation_penalty=INFINITE_COST, direction_mapping=Dict{String, Int}(), base_power=100.0, internal=InfrastructureSystemsInternal(), input_basis::Unitful.Units, )
     value = TransmissionInterface(name, available, _placeholder(active_power_flow_limits), violation_penalty, direction_mapping, base_power, internal, )
     set_active_power_flow_limits!(value, _tag(active_power_flow_limits, input_basis, Val(:mw)))
     return value
@@ -66,7 +66,7 @@ function TransmissionInterface(::Nothing)
         violation_penalty=0.0,
         direction_mapping=Dict{String, Int}(),
         base_power=100.0,
-        input_basis=CU,
+        input_basis=u"CU",
     )
 end
 
@@ -74,14 +74,14 @@ end
 get_name(value::TransmissionInterface) = value.name
 """Get [`TransmissionInterface`](@ref) `available`."""
 get_available(value::TransmissionInterface) = value.available
-"""Get [`TransmissionInterface`](@ref) `active_power_flow_limits` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_active_power_flow_limits_unitful`](@ref)."""
+"""Get [`TransmissionInterface`](@ref) `active_power_flow_limits` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_active_power_flow_limits_unitful`](@ref)."""
 get_active_power_flow_limits(value::TransmissionInterface, units) = InfrastructureSystems._strip_units(get_value(value, Val(:active_power_flow_limits), Val(:mw), units))
-"""Get [`TransmissionInterface`](@ref) `active_power_flow_limits` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_active_power_flow_limits`](@ref)."""
+"""Get [`TransmissionInterface`](@ref) `active_power_flow_limits` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_active_power_flow_limits`](@ref)."""
 get_active_power_flow_limits_unitful(value::TransmissionInterface, units) = get_value(value, Val(:active_power_flow_limits), Val(:mw), units)
 get_active_power_flow_limits(value::TransmissionInterface) = _units_arg_required(get_active_power_flow_limits, value, :active_power_flow_limits, Val(:mw))
 get_active_power_flow_limits_unitful(value::TransmissionInterface) = _units_arg_required(get_active_power_flow_limits_unitful, value, :active_power_flow_limits, Val(:mw))
-InfrastructureSystems.display_units_arg(::typeof(get_active_power_flow_limits), ::Type{TransmissionInterface}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_active_power_flow_limits_unitful), ::Type{TransmissionInterface}) = InfrastructureSystems.SU
+InfrastructureSystems.display_units_arg(::typeof(get_active_power_flow_limits), ::Type{TransmissionInterface}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_active_power_flow_limits_unitful), ::Type{TransmissionInterface}) = u"SU"
 """Get [`TransmissionInterface`](@ref) `violation_penalty`."""
 get_violation_penalty(value::TransmissionInterface) = value.violation_penalty
 """Get [`TransmissionInterface`](@ref) `direction_mapping`."""

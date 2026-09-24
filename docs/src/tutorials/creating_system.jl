@@ -88,10 +88,10 @@ show_components(sys, ACBus)
 # ## Adding a Transmission Line
 # Let's connect our buses. We'll add a transmission [`Line`](@ref) between `bus1` and `bus2`.
 # !!! note
-#     `input_basis = CU` says the bare numbers below are per-unit on the line's `base_power`.
+#     `input_basis = u"CU"` says the bare numbers below are per-unit on the line's `base_power`.
 #     A `Line` has no rating of its own, so its `base_power` (100 MVA unless given) must
 #     match the [`System`](@ref)'s: `add_component!` throws otherwise. Pass
-#     `input_basis = NU` to give the rating in MVA and the impedances in Ω and S instead.
+#     `input_basis = u"NU"` to give the rating in MVA and the impedances in Ω and S instead.
 
 line = Line(;
     name = "line1",
@@ -104,7 +104,7 @@ line = Line(;
     b = (from = 0.00356, to = 0.00356), # Per-unit
     rating = 2.0, # Line rating of 200 MVA / System base of 100 MVA
     angle_limits = (min = -0.7, max = 0.7),
-    input_basis = CU,
+    input_basis = u"CU",
 );
 
 # Note that we also had to define an [`Arc`](@ref) in the process to define the connection between
@@ -122,9 +122,9 @@ sys
 # Now that our network topology is complete, we'll start adding components that [inject](@ref I) or
 # withdraw power from the network.
 # !!! note
-#     `input_basis = CU` says the bare power values below (MW, MVA, MVAR, or MW/min) are
+#     `input_basis = u"CU"` says the bare power values below (MW, MVA, MVAR, or MW/min) are
 #     per-unit on the component's own `base_power`, which is itself always in MVA. Pass
-#     `input_basis = NU` to give them in natural units, or tag any single value, e.g.
+#     `input_basis = u"NU"` to give them in natural units, or tag any single value, e.g.
 #     `active_power = 5.0u"MW"`. See [Add a Component in Natural Units](@ref).
 # We'll start with defining a 10 MW [load](@ref PowerLoad) to `bus2`:
 
@@ -137,7 +137,7 @@ load = PowerLoad(;
     base_power = 10.0, # MVA
     max_active_power = 1.0, # 10 MW per-unitized by component base_power
     max_reactive_power = 0.0,
-    input_basis = CU,
+    input_basis = u"CU",
 );
 
 # Notice that we defined the `max_active_power`, which is 10 MW, as 1.0 in per-unit using the
@@ -162,7 +162,7 @@ solar = RenewableDispatch(;
     power_factor = 1.0,
     operation_cost = RenewableGenerationCost(nothing),
     base_power = 5.0, # MVA,
-    input_basis = CU,
+    input_basis = u"CU",
 );
 
 # Note that we've used a generic [renewable generator](@ref RenewableDispatch) to model
@@ -186,7 +186,7 @@ gas = ThermalStandard(;
     time_limits = (up = 8.0, down = 8.0), # Hours
     prime_mover_type = PrimeMovers.CC,
     fuel = ThermalFuels.NATURAL_GAS,
-    input_basis = CU,
+    input_basis = u"CU",
 );
 
 # This time, let's add these components to our [`System`](@ref) using [`add_components!`](@ref)
@@ -233,9 +233,9 @@ get_bus(retrieved_component)
 
 # ## Per-Unit Conversions with Explicit Units
 # Now, let's use a getter function to look up the solar generator's `rating`
-# Ask for the rating in **system base**, `SU` (see [Per-unit Conventions](@ref per_unit)).
+# Ask for the rating in **system base**, `u"SU"` (see [Per-unit Conventions](@ref per_unit)).
 
-get_rating(retrieved_component, SU)
+get_rating(retrieved_component, u"SU")
 
 # !!! tip "Important"
 #     We defined the solar generator with a rating of 1.0 per-unit on a device `base_power`
@@ -245,13 +245,13 @@ get_rating(retrieved_component, SU)
 
 get_base_power(sys)
 
-# View the same rating in **natural units** (`NU`, i.e. MW / MVA):
+# View the same rating in **natural units** (`u"NU"`, i.e. MW / MVA):
 
-get_rating(retrieved_component, NU)
+get_rating(retrieved_component, u"NU")
 
-# The value is now its "natural" value, 5.0 MVA. Finally, in **component base** (`CU`):
+# The value is now its "natural" value, 5.0 MVA. Finally, in **component base** (`u"CU"`):
 
-get_rating(retrieved_component, CU)
+get_rating(retrieved_component, u"CU")
 
 # This reads 1.0 — 5.0 MVA per-unitized by the device's own `base_power` of 5.0 MVA, which is
 # the format we used to originally define the device.

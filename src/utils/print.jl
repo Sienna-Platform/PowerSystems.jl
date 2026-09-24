@@ -2,19 +2,38 @@
 
 # Getters for unit-bearing fields declare their display-units choice via the
 # `IS.display_units_arg` trait (set by the struct-generator template, default
-# `SU` for converted fields unless overridden per field in the descriptor,
-# e.g. `rating` fields default to `CU`). Pass `units` to force a specific
-# display unit system (e.g. `u"MW"`, `SU`, `CU`, `NU`) instead of resolving the
+# `u"SU"` for converted fields unless overridden per field in the descriptor,
+# e.g. `rating` fields default to `u"CU"`). Pass `units` to force a specific
+# display unit system (e.g. `u"MW"`, `u"SU"`, `u"CU"`, `u"NU"`) instead of resolving the
 # trait; an explicit request that fails is an error, not a silent fallback.
-# `IS.unitful_variant` resolves the getter's `_unitful` companion (a
-# `RelativeQuantity` printing as "1.0 CU"/"0.3 SU", or a `Unitful.Quantity`
-# printing as "30.0 MW") instead of a bare number, so display can show the
-# unit system explicitly without any extra formatting code here.
-# The last-resort display target: component base, which the CU conversion returns
-# without touching any base. A rate field rejects a bare marker, so it falls back to
-# component base *per its own time unit* rather than to `CU`.
-_cu_fallback(::Any) = CU
-_cu_fallback(r::RateUnit) = CU / time_basis(r)
+# `IS.unitful_variant` resolves the getter's `_unitful` companion (a quantity printing as
+# "0.3 SUp" or "30.0 MW") instead of a bare number.
+
+# Verbose display spells per-unit units out ("1.25 p.u. in system base"): `SUp`, `CUz`, …
+# are this package's shorthand, not standard terminology. IS's `display_string` factors a
+# shared base out of a compound field.
+IS.display_base_label(q::Quantity) = _base_label(_per_unit_basis(Unitful.unit(q)))
+IS.display_value(q::Quantity) = replace(string(q), r"\b[CS]U[pvzyi]\b" => "p.u."; count = 1)
+
+_base_label(::Val{:component}) = "component base"
+_base_label(::Val{:system}) = "system base"
+_base_label(::Val{:natural}) = nothing
+
+# Which base a quantity's units are per-unit on, from their dimensions.
+@generated function _per_unit_basis(u::Unitful.Units)
+    names = map(
+        d -> typeof(d).parameters[1],
+        typeof(Unitful.dimension(u.instance)).parameters[1],
+    )
+    :SystemBasePower in names && return :(Val(:system))
+    any(in((:ComponentBasePower, :ComponentBaseVoltage)), names) &&
+        return :(Val(:component))
+    return :(Val(:natural))
+end
+
+# The trait's units with its generic unit swapped for `generic`, residual kept: a ramp's
+# `u"SU/minute"` falls back to `u"NU/minute"`, then `u"CU/minute"`.
+_with_generic(units, generic) = IS.resolve_per_unit(units, generic, generic, generic)
 
 # `getter_func` is deliberately not a type parameter: both callers resolve it through
 # `getproperty(PowerSystems, ::Symbol)`, so there is no concrete type to specialize on.
@@ -44,10 +63,10 @@ function _show_accessor_value(getter_func::Function, ist::Component; units = not
         # Only swallow the engine's own ErrorExceptions — a MethodError here
         # is a bug.
         try
-            return unitful_func(ist, NU)
+            return unitful_func(ist, _with_generic(trait_arg, u"NU"))
         catch err2
             err2 isa ErrorException || rethrow()
-            return unitful_func(ist, _cu_fallback(trait_arg))
+            return unitful_func(ist, _with_generic(trait_arg, u"CU"))
         end
     end
 end
@@ -130,7 +149,7 @@ end
 
 """
 Print `ist` to `io` in the same verbose form as the REPL's `text/plain` display of a
-`Component`. Pass `units` (e.g. `u"MW"`, `SU`, `CU`, `NU`) to force every unit-converted
+`Component`. Pass `units` (e.g. `u"MW"`, `u"SU"`, `u"CU"`, `u"NU"`) to force every unit-converted
 field to display in that unit system instead of resolving each field's own
 `display_units_arg` default (system base when attached, natural units otherwise, and
 component base for capacity/`rating`-style fields).
@@ -161,7 +180,7 @@ function show_component(io::IO, ist::Component; units = nothing)
         else
             val = getproperty(ist, name)
         end
-        # `display_string` spells `CU`/`SU` out as "p.u. in {device,system} base":
+        # `display_string` spells per-unit units out as "p.u. in {component,system} base":
         # the terse tags read as jargon in a component's verbose display, where
         # there is room to be explicit. Terse contexts (the compact one-line
         # `show`, table cells) keep the short tags.
@@ -257,11 +276,11 @@ Show all components of the given type in a table.
   The Dict option is a mapping of column name to function. The function must accept
   a component.
   The Vector option is an array of field names for the `component_type`; unit-converted
-  fields are printed with an explicit unit suffix (e.g. `"30.0 MW"`, `"1.0 CU"`).
+  fields are printed with an explicit unit suffix (e.g. `"30.0 MW"`, `"1.0 CUp"`).
 
 # Keyword Arguments
 - `units`: When `additional_columns` is a `Vector`, force unit-converted columns to
-  display in a given unit system (e.g. `u"MW"`, `SU`, `CU`, `NU`) instead of each field's
+  display in a given unit system (e.g. `u"MW"`, `u"SU"`, `u"CU"`, `u"NU"`) instead of each field's
   own `display_units_arg` default. Pass a single unit to apply it to every column, or a
   column-to-unit mapping (`Dict` or `NamedTuple`) to set units per field; columns absent
   from the mapping keep their own default. Ignored for `Dict`-form `additional_columns`,
@@ -275,7 +294,7 @@ show_components(sys, ThermalStandard, Dict("has_time_series" => x -> has_time_se
 show_components(sys, ThermalStandard, [:active_power, :reactive_power])
 show_components(sys, ThermalStandard, [:rating]; units = u"MW")
 show_components(sys, ThermalStandard, [:active_power, :rating];
-    units = Dict(:active_power => u"MW", :rating => CU))
+    units = Dict(:active_power => u"MW", :rating => u"CU"))
 ```
 """
 function show_components(

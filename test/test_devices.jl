@@ -3,13 +3,13 @@
     th = first(get_components(ThermalStandard, cdmsys))
     re = first(get_components(RenewableDispatch, cdmsys))
 
-    @test get_max_active_power(th, SU) == get_active_power_limits(th, SU).max
-    @test get_max_active_power(re, SU) <= get_rating(re, SU)
-    @test isa(get_max_reactive_power(re, SU), Float64)
+    @test get_max_active_power(th, u"SU") == get_active_power_limits(th, u"SU").max
+    @test get_max_active_power(re, u"SU") <= get_rating(re, u"SU")
+    @test isa(get_max_reactive_power(re, u"SU"), Float64)
 
-    @test_throws MethodError get_max_active_power(TestDevice("foo"), SU)
-    @test_throws ArgumentError get_max_active_power(TestInjector("foo"), SU)
-    @test_throws ArgumentError get_max_active_power(TestRenDevice("foo"), SU)
+    @test_throws MethodError get_max_active_power(TestDevice("foo"), u"SU")
+    @test_throws ArgumentError get_max_active_power(TestInjector("foo"), u"SU")
+    @test_throws ArgumentError get_max_active_power(TestRenDevice("foo"), u"SU")
 end
 
 @testset "Test Remove Area with Interchanges" begin
@@ -24,7 +24,7 @@ end
         from_area = area1,
         to_area = area2,
         flow_limits = (from_to = 100.0, to_from = 100.0),
-        input_basis = CU,
+        input_basis = u"CU",
     )
     area_interchange13 = AreaInterchange(;
         name = "interchange_a1_a3",
@@ -33,7 +33,7 @@ end
         from_area = area1,
         to_area = area3,
         flow_limits = (from_to = 100.0, to_from = 100.0),
-        input_basis = CU,
+        input_basis = u"CU",
     )
     add_component!(sys, area_interchange12)
     add_component!(sys, area_interchange13)
@@ -82,14 +82,14 @@ end
     # below survive unchanged.
     sys2 = roundtrip_system(sys)
     @test get_active_power(
-        get_component(ShiftablePowerLoad, sys2, "ShiftableLoadBus4"), CU) == 0.10
+        get_component(ShiftablePowerLoad, sys2, "ShiftableLoadBus4"), u"CU") == 0.10
     @test get_active_power(
-        get_component(InterruptiblePowerLoad, sys2, "IloadBus"), CU) == 0.10
+        get_component(InterruptiblePowerLoad, sys2, "IloadBus"), u"CU") == 0.10
     @test get_active_power_limits(
-        get_component(ShiftablePowerLoad, sys2, "ShiftableLoadBus4"), CU,
+        get_component(ShiftablePowerLoad, sys2, "ShiftableLoadBus4"), u"CU",
     ).min == 0.03
     @test get_active_power_limits(
-        get_component(ShiftablePowerLoad, sys2, "ShiftableLoadBus4"), CU,
+        get_component(ShiftablePowerLoad, sys2, "ShiftableLoadBus4"), u"CU",
     ).max == 0.10
 end
 
@@ -260,7 +260,7 @@ end
 @testset "Test FACTS/SwitchedShunt interop fields (psy5 sync)" begin
     # FACTSControlDevice: new shunt-control fields ported from main
     fd = FACTSControlDevice(nothing)
-    @test ustrip(get_max_reactive_power(fd, CU)) == 0.0  # demo constructor => 0.0
+    @test ustrip(get_max_reactive_power(fd, u"CU")) == 0.0  # demo constructor => 0.0
     @test get_shunt_control_type(fd) == FACTSShuntControlType.STATCOM
     @test get_regulated_bus_number(fd) == 0
     @test get_reactive_power_required(fd) == 0.0
@@ -268,25 +268,25 @@ end
     fd_kw = FACTSControlDevice(;
         name = "F1", available = true, bus = ACBus(nothing),
         control_mode = FACTSOperationModes.NML,
-        input_basis = CU,
+        input_basis = u"CU",
     )
-    @test ustrip(get_max_reactive_power(fd_kw, CU)) == 9999.0  # kwarg default
-    @test ustrip(get_max_shunt_current(fd_kw, CU)) == 9999.0
+    @test ustrip(get_max_reactive_power(fd_kw, u"CU")) == 9999.0  # kwarg default
+    @test ustrip(get_max_shunt_current(fd_kw, u"CU")) == 9999.0
     @test get_voltage_setpoint(fd_kw) == 1.0
     @test get_shunt_control_type(fd_kw) == FACTSShuntControlType.STATCOM
 
     set_shunt_control_type!(fd_kw, FACTSShuntControlType.SVC)
     set_regulated_bus_number!(fd_kw, 42)
-    set_max_reactive_power!(fd_kw, 150.0 * CU)
+    set_max_reactive_power!(fd_kw, 150.0 * u"CU")
     @test get_shunt_control_type(fd_kw) == FACTSShuntControlType.SVC
     @test get_regulated_bus_number(fd_kw) == 42
-    @test ustrip(get_max_reactive_power(fd_kw, CU)) == 150.0
+    @test ustrip(get_max_reactive_power(fd_kw, u"CU")) == 150.0
 
     # Positional constructor now threads the reworked scalar fields
     fd_pos = FACTSControlDevice("F2", true, ACBus(nothing), FACTSOperationModes.NML, 1.05)
     @test get_voltage_setpoint(fd_pos) == 1.05
-    @test ustrip(get_max_shunt_current(fd_pos, CU)) == 9999.0
-    @test ustrip(get_max_reactive_power(fd_pos, CU)) == 9999.0
+    @test ustrip(get_max_shunt_current(fd_pos, u"CU")) == 9999.0
+    @test ustrip(get_max_reactive_power(fd_pos, u"CU")) == 9999.0
 
     # SwitchedAdmittance: new control_mode + regulated_bus_number
     sa = SwitchedAdmittance(nothing)

@@ -43,7 +43,7 @@ This file is auto-generated. Do not edit.
 - `{{name}}::{{{data_type}}}`:{{#default}} (default: `{{{default}}}`){{/default}}{{#comment}} {{{comment}}}{{/comment}}{{#valid_range}}, validation range: `{{{valid_range}}}`{{/valid_range}}
 {{/parameters}}
 {{#has_conversion}}
-- `input_basis`: (keyword constructor only, required) `CU` or `NU`, the units of bare numbers on unit-bearing fields. Tagged values (`50.0u"MW"`) keep their own units
+- `input_basis`: (keyword constructor only, required) `u\"CU\"` or `u\"NU\"`, the units of bare numbers on unit-bearing fields. Tagged values (`50.0u"MW"`) keep their own units
 {{/has_conversion}}
 \"\"\"
 mutable struct {{struct_name}}{{#parametric}}{T <: {{parametric}}}{{/parametric}} <: {{supertype}}
@@ -75,7 +75,7 @@ function {{constructor_func}}(; {{#parameters}}{{name}}{{#kwarg_value}}{{{kwarg_
 end
 {{/has_conversion}}
 {{#has_conversion}}
-function {{constructor_func}}(; {{#parameters}}{{name}}{{#kwarg_value}}{{{kwarg_value}}}{{/kwarg_value}}, {{/parameters}}input_basis::Union{ComponentBaseUnit, NaturalUnit}, ){{{closing_constructor_text}}}
+function {{constructor_func}}(; {{#parameters}}{{name}}{{#kwarg_value}}{{{kwarg_value}}}{{/kwarg_value}}, {{/parameters}}input_basis::Unitful.Units, ){{{closing_constructor_text}}}
     value = {{constructor_func}}({{#parameters}}{{#converts}}_placeholder({{name}}){{/converts}}{{^converts}}{{name}}{{/converts}}, {{/parameters}})
     {{#conversion_setters}}
     {{setter}}(value, _tag({{name}}, input_basis, Val({{conversion_unit}})))
@@ -95,7 +95,7 @@ function {{constructor_func}}(::Nothing){{{closing_constructor_text}}}
         {{/internal_default}}
         {{/parameters}}
         {{#has_conversion}}
-        input_basis=CU,
+        input_basis=u"CU",
         {{/has_conversion}}
     )
 end
@@ -103,9 +103,9 @@ end
 {{/has_null_values}}
 {{#accessors}}
 {{#needs_conversion}}
-{{#create_docstring}}\"\"\"Get [`{{struct_name}}`](@ref) `{{name}}` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u\"MW\"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`{{accessor}}_unitful`](@ref).\"\"\"{{/create_docstring}}
+{{#create_docstring}}\"\"\"Get [`{{struct_name}}`](@ref) `{{name}}` as a bare number in the requested `units` (e.g. `u\"SU\"`, `u\"CU\"`, `u\"NU\"`, `u\"MW\"`). For the unit-bearing value see [`{{accessor}}_unitful`](@ref).\"\"\"{{/create_docstring}}
 {{accessor}}(value::{{struct_name}}, units) = InfrastructureSystems._strip_units(get_value(value, Val(:{{name}}), Val({{conversion_unit}}), units))
-{{#create_docstring}}\"\"\"Get [`{{struct_name}}`](@ref) `{{name}}` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u\"MW\"`). For a bare number see [`{{accessor}}`](@ref).\"\"\"{{/create_docstring}}
+{{#create_docstring}}\"\"\"Get [`{{struct_name}}`](@ref) `{{name}}` as a unit-bearing quantity in the requested `units` (e.g. `u\"SU\"`, `u\"CU\"`, `u\"MW\"`). For a bare number see [`{{accessor}}`](@ref).\"\"\"{{/create_docstring}}
 {{accessor}}_unitful(value::{{struct_name}}, units) = get_value(value, Val(:{{name}}), Val({{conversion_unit}}), units)
 {{accessor}}(value::{{struct_name}}) = _units_arg_required({{accessor}}, value, :{{name}}, Val({{conversion_unit}}))
 {{accessor}}_unitful(value::{{struct_name}}) = _units_arg_required({{accessor}}_unitful, value, :{{name}}, Val({{conversion_unit}}))
@@ -144,7 +144,7 @@ function from_openapi(po::{{{openapi_po_type}}}, refs::OpenAPIRefs, ::ComponentB
         {{name}} = {{{expr}}},
         {{/openapi_kwargs_device}}
         {{#has_conversion}}
-        input_basis = CU,
+        input_basis = u"CU",
         {{/has_conversion}}
     )
 end
@@ -155,7 +155,7 @@ function from_openapi(po::{{{openapi_po_type}}}, refs::OpenAPIRefs, ::NaturalUni
         {{name}} = {{{expr}}},
         {{/openapi_kwargs_natural}}
         {{#has_conversion}}
-        input_basis = CU,
+        input_basis = u"CU",
         {{/has_conversion}}
     )
 end
@@ -771,17 +771,11 @@ function openapi_export_base_source(item)
 end
 
 """
-The `display_units_arg` trait's right-hand side for one field, as an emitted expression.
-
-A bare marker (`SU`/`CU`/`NU`) is qualified into `InfrastructureSystems`, where it is
-defined. A rate field's default has to name a time as well (`SU / u"minute"`), which is
-a PSY-side expression, so anything containing a `/` is emitted verbatim.
+The `display_units_arg` trait's right-hand side for one field, as an emitted expression:
+the descriptor's `display_units` (default `SU`) as a `u"..."` unit. A rate field's names a
+time as well (`SU/minute`).
 """
-function display_units_expr(field)
-    value = get(field, "display_units", "SU")
-    occursin("/", value) && return value
-    return "InfrastructureSystems.$value"
-end
+display_units_expr(field) = "u\"$(get(field, "display_units", "SU"))\""
 
 """
 The unit argument the export-direction getter is called with for one field.
@@ -792,9 +786,9 @@ told the time its stored value is denominated in.
 """
 function openapi_export_field_unit_arg(field, base_source)
     if get(field, "conversion_unit", nothing) == ":mw_per_minute"
-        return "$(base_source.unit_arg) / u\"minute\""
+        return "u\"$(base_source.unit_arg)/minute\""
     end
-    return base_source.unit_arg
+    return "u\"$(base_source.unit_arg)\""
 end
 
 """The PSY-side accessor name for one field: the public `get_X`, unless the descriptor

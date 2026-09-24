@@ -57,7 +57,7 @@ For an alternative exponential formulation of the ZIP model, see [`ExponentialLo
 - `dynamic_injector::Union{Nothing, DynamicInjection}`: (default: `nothing`) corresponding dynamic injection device
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
-- `input_basis`: (keyword constructor only, required) `CU` or `NU`, the units of bare numbers on unit-bearing fields. Tagged values (`50.0u"MW"`) keep their own units
+- `input_basis`: (keyword constructor only, required) `u"CU"` or `u"NU"`, the units of bare numbers on unit-bearing fields. Tagged values (`50.0u"MW"`) keep their own units
 """
 mutable struct StandardLoad <: StaticLoad
     "Name of the component. Components of the same type (e.g., `PowerLoad`) must have unique names, but components of different types (e.g., `PowerLoad` and `ACBus`) can have the same name"
@@ -108,7 +108,7 @@ function StandardLoad(name, available, bus, base_power, constant_active_power=0.
     StandardLoad(name, available, bus, base_power, constant_active_power, constant_reactive_power, impedance_active_power, impedance_reactive_power, current_active_power, current_reactive_power, max_constant_active_power, max_constant_reactive_power, max_impedance_active_power, max_impedance_reactive_power, max_current_active_power, max_current_reactive_power, conformity, services, dynamic_injector, ext, InfrastructureSystemsInternal(), )
 end
 
-function StandardLoad(; name, available, bus, base_power, constant_active_power=0.0, constant_reactive_power=0.0, impedance_active_power=0.0, impedance_reactive_power=0.0, current_active_power=0.0, current_reactive_power=0.0, max_constant_active_power=0.0, max_constant_reactive_power=0.0, max_impedance_active_power=0.0, max_impedance_reactive_power=0.0, max_current_active_power=0.0, max_current_reactive_power=0.0, conformity=LoadConformity.UNDEFINED, services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Union{ComponentBaseUnit, NaturalUnit}, )
+function StandardLoad(; name, available, bus, base_power, constant_active_power=0.0, constant_reactive_power=0.0, impedance_active_power=0.0, impedance_reactive_power=0.0, current_active_power=0.0, current_reactive_power=0.0, max_constant_active_power=0.0, max_constant_reactive_power=0.0, max_impedance_active_power=0.0, max_impedance_reactive_power=0.0, max_current_active_power=0.0, max_current_reactive_power=0.0, conformity=LoadConformity.UNDEFINED, services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Unitful.Units, )
     value = StandardLoad(name, available, bus, base_power, _placeholder(constant_active_power), _placeholder(constant_reactive_power), _placeholder(impedance_active_power), _placeholder(impedance_reactive_power), _placeholder(current_active_power), _placeholder(current_reactive_power), _placeholder(max_constant_active_power), _placeholder(max_constant_reactive_power), _placeholder(max_impedance_active_power), _placeholder(max_impedance_reactive_power), _placeholder(max_current_active_power), _placeholder(max_current_reactive_power), conformity, services, dynamic_injector, ext, internal, )
     set_constant_active_power!(value, _tag(constant_active_power, input_basis, Val(:mw)))
     set_constant_reactive_power!(value, _tag(constant_reactive_power, input_basis, Val(:mvar)))
@@ -149,7 +149,7 @@ function StandardLoad(::Nothing)
         services=Device[],
         dynamic_injector=nothing,
         ext=Dict{String, Any}(),
-        input_basis=CU,
+        input_basis=u"CU",
     )
 end
 
@@ -161,102 +161,102 @@ get_available(value::StandardLoad) = value.available
 get_bus(value::StandardLoad) = value.bus
 
 _get_base_power(value::StandardLoad) = value.base_power
-"""Get [`StandardLoad`](@ref) `constant_active_power` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_constant_active_power_unitful`](@ref)."""
+"""Get [`StandardLoad`](@ref) `constant_active_power` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_constant_active_power_unitful`](@ref)."""
 get_constant_active_power(value::StandardLoad, units) = InfrastructureSystems._strip_units(get_value(value, Val(:constant_active_power), Val(:mw), units))
-"""Get [`StandardLoad`](@ref) `constant_active_power` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_constant_active_power`](@ref)."""
+"""Get [`StandardLoad`](@ref) `constant_active_power` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_constant_active_power`](@ref)."""
 get_constant_active_power_unitful(value::StandardLoad, units) = get_value(value, Val(:constant_active_power), Val(:mw), units)
 get_constant_active_power(value::StandardLoad) = _units_arg_required(get_constant_active_power, value, :constant_active_power, Val(:mw))
 get_constant_active_power_unitful(value::StandardLoad) = _units_arg_required(get_constant_active_power_unitful, value, :constant_active_power, Val(:mw))
-InfrastructureSystems.display_units_arg(::typeof(get_constant_active_power), ::Type{StandardLoad}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_constant_active_power_unitful), ::Type{StandardLoad}) = InfrastructureSystems.SU
-"""Get [`StandardLoad`](@ref) `constant_reactive_power` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_constant_reactive_power_unitful`](@ref)."""
+InfrastructureSystems.display_units_arg(::typeof(get_constant_active_power), ::Type{StandardLoad}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_constant_active_power_unitful), ::Type{StandardLoad}) = u"SU"
+"""Get [`StandardLoad`](@ref) `constant_reactive_power` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_constant_reactive_power_unitful`](@ref)."""
 get_constant_reactive_power(value::StandardLoad, units) = InfrastructureSystems._strip_units(get_value(value, Val(:constant_reactive_power), Val(:mvar), units))
-"""Get [`StandardLoad`](@ref) `constant_reactive_power` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_constant_reactive_power`](@ref)."""
+"""Get [`StandardLoad`](@ref) `constant_reactive_power` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_constant_reactive_power`](@ref)."""
 get_constant_reactive_power_unitful(value::StandardLoad, units) = get_value(value, Val(:constant_reactive_power), Val(:mvar), units)
 get_constant_reactive_power(value::StandardLoad) = _units_arg_required(get_constant_reactive_power, value, :constant_reactive_power, Val(:mvar))
 get_constant_reactive_power_unitful(value::StandardLoad) = _units_arg_required(get_constant_reactive_power_unitful, value, :constant_reactive_power, Val(:mvar))
-InfrastructureSystems.display_units_arg(::typeof(get_constant_reactive_power), ::Type{StandardLoad}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_constant_reactive_power_unitful), ::Type{StandardLoad}) = InfrastructureSystems.SU
-"""Get [`StandardLoad`](@ref) `impedance_active_power` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_impedance_active_power_unitful`](@ref)."""
+InfrastructureSystems.display_units_arg(::typeof(get_constant_reactive_power), ::Type{StandardLoad}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_constant_reactive_power_unitful), ::Type{StandardLoad}) = u"SU"
+"""Get [`StandardLoad`](@ref) `impedance_active_power` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_impedance_active_power_unitful`](@ref)."""
 get_impedance_active_power(value::StandardLoad, units) = InfrastructureSystems._strip_units(get_value(value, Val(:impedance_active_power), Val(:mw), units))
-"""Get [`StandardLoad`](@ref) `impedance_active_power` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_impedance_active_power`](@ref)."""
+"""Get [`StandardLoad`](@ref) `impedance_active_power` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_impedance_active_power`](@ref)."""
 get_impedance_active_power_unitful(value::StandardLoad, units) = get_value(value, Val(:impedance_active_power), Val(:mw), units)
 get_impedance_active_power(value::StandardLoad) = _units_arg_required(get_impedance_active_power, value, :impedance_active_power, Val(:mw))
 get_impedance_active_power_unitful(value::StandardLoad) = _units_arg_required(get_impedance_active_power_unitful, value, :impedance_active_power, Val(:mw))
-InfrastructureSystems.display_units_arg(::typeof(get_impedance_active_power), ::Type{StandardLoad}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_impedance_active_power_unitful), ::Type{StandardLoad}) = InfrastructureSystems.SU
-"""Get [`StandardLoad`](@ref) `impedance_reactive_power` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_impedance_reactive_power_unitful`](@ref)."""
+InfrastructureSystems.display_units_arg(::typeof(get_impedance_active_power), ::Type{StandardLoad}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_impedance_active_power_unitful), ::Type{StandardLoad}) = u"SU"
+"""Get [`StandardLoad`](@ref) `impedance_reactive_power` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_impedance_reactive_power_unitful`](@ref)."""
 get_impedance_reactive_power(value::StandardLoad, units) = InfrastructureSystems._strip_units(get_value(value, Val(:impedance_reactive_power), Val(:mvar), units))
-"""Get [`StandardLoad`](@ref) `impedance_reactive_power` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_impedance_reactive_power`](@ref)."""
+"""Get [`StandardLoad`](@ref) `impedance_reactive_power` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_impedance_reactive_power`](@ref)."""
 get_impedance_reactive_power_unitful(value::StandardLoad, units) = get_value(value, Val(:impedance_reactive_power), Val(:mvar), units)
 get_impedance_reactive_power(value::StandardLoad) = _units_arg_required(get_impedance_reactive_power, value, :impedance_reactive_power, Val(:mvar))
 get_impedance_reactive_power_unitful(value::StandardLoad) = _units_arg_required(get_impedance_reactive_power_unitful, value, :impedance_reactive_power, Val(:mvar))
-InfrastructureSystems.display_units_arg(::typeof(get_impedance_reactive_power), ::Type{StandardLoad}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_impedance_reactive_power_unitful), ::Type{StandardLoad}) = InfrastructureSystems.SU
-"""Get [`StandardLoad`](@ref) `current_active_power` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_current_active_power_unitful`](@ref)."""
+InfrastructureSystems.display_units_arg(::typeof(get_impedance_reactive_power), ::Type{StandardLoad}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_impedance_reactive_power_unitful), ::Type{StandardLoad}) = u"SU"
+"""Get [`StandardLoad`](@ref) `current_active_power` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_current_active_power_unitful`](@ref)."""
 get_current_active_power(value::StandardLoad, units) = InfrastructureSystems._strip_units(get_value(value, Val(:current_active_power), Val(:mw), units))
-"""Get [`StandardLoad`](@ref) `current_active_power` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_current_active_power`](@ref)."""
+"""Get [`StandardLoad`](@ref) `current_active_power` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_current_active_power`](@ref)."""
 get_current_active_power_unitful(value::StandardLoad, units) = get_value(value, Val(:current_active_power), Val(:mw), units)
 get_current_active_power(value::StandardLoad) = _units_arg_required(get_current_active_power, value, :current_active_power, Val(:mw))
 get_current_active_power_unitful(value::StandardLoad) = _units_arg_required(get_current_active_power_unitful, value, :current_active_power, Val(:mw))
-InfrastructureSystems.display_units_arg(::typeof(get_current_active_power), ::Type{StandardLoad}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_current_active_power_unitful), ::Type{StandardLoad}) = InfrastructureSystems.SU
-"""Get [`StandardLoad`](@ref) `current_reactive_power` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_current_reactive_power_unitful`](@ref)."""
+InfrastructureSystems.display_units_arg(::typeof(get_current_active_power), ::Type{StandardLoad}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_current_active_power_unitful), ::Type{StandardLoad}) = u"SU"
+"""Get [`StandardLoad`](@ref) `current_reactive_power` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_current_reactive_power_unitful`](@ref)."""
 get_current_reactive_power(value::StandardLoad, units) = InfrastructureSystems._strip_units(get_value(value, Val(:current_reactive_power), Val(:mvar), units))
-"""Get [`StandardLoad`](@ref) `current_reactive_power` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_current_reactive_power`](@ref)."""
+"""Get [`StandardLoad`](@ref) `current_reactive_power` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_current_reactive_power`](@ref)."""
 get_current_reactive_power_unitful(value::StandardLoad, units) = get_value(value, Val(:current_reactive_power), Val(:mvar), units)
 get_current_reactive_power(value::StandardLoad) = _units_arg_required(get_current_reactive_power, value, :current_reactive_power, Val(:mvar))
 get_current_reactive_power_unitful(value::StandardLoad) = _units_arg_required(get_current_reactive_power_unitful, value, :current_reactive_power, Val(:mvar))
-InfrastructureSystems.display_units_arg(::typeof(get_current_reactive_power), ::Type{StandardLoad}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_current_reactive_power_unitful), ::Type{StandardLoad}) = InfrastructureSystems.SU
-"""Get [`StandardLoad`](@ref) `max_constant_active_power` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_max_constant_active_power_unitful`](@ref)."""
+InfrastructureSystems.display_units_arg(::typeof(get_current_reactive_power), ::Type{StandardLoad}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_current_reactive_power_unitful), ::Type{StandardLoad}) = u"SU"
+"""Get [`StandardLoad`](@ref) `max_constant_active_power` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_max_constant_active_power_unitful`](@ref)."""
 get_max_constant_active_power(value::StandardLoad, units) = InfrastructureSystems._strip_units(get_value(value, Val(:max_constant_active_power), Val(:mw), units))
-"""Get [`StandardLoad`](@ref) `max_constant_active_power` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_max_constant_active_power`](@ref)."""
+"""Get [`StandardLoad`](@ref) `max_constant_active_power` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_max_constant_active_power`](@ref)."""
 get_max_constant_active_power_unitful(value::StandardLoad, units) = get_value(value, Val(:max_constant_active_power), Val(:mw), units)
 get_max_constant_active_power(value::StandardLoad) = _units_arg_required(get_max_constant_active_power, value, :max_constant_active_power, Val(:mw))
 get_max_constant_active_power_unitful(value::StandardLoad) = _units_arg_required(get_max_constant_active_power_unitful, value, :max_constant_active_power, Val(:mw))
-InfrastructureSystems.display_units_arg(::typeof(get_max_constant_active_power), ::Type{StandardLoad}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_max_constant_active_power_unitful), ::Type{StandardLoad}) = InfrastructureSystems.SU
-"""Get [`StandardLoad`](@ref) `max_constant_reactive_power` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_max_constant_reactive_power_unitful`](@ref)."""
+InfrastructureSystems.display_units_arg(::typeof(get_max_constant_active_power), ::Type{StandardLoad}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_max_constant_active_power_unitful), ::Type{StandardLoad}) = u"SU"
+"""Get [`StandardLoad`](@ref) `max_constant_reactive_power` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_max_constant_reactive_power_unitful`](@ref)."""
 get_max_constant_reactive_power(value::StandardLoad, units) = InfrastructureSystems._strip_units(get_value(value, Val(:max_constant_reactive_power), Val(:mvar), units))
-"""Get [`StandardLoad`](@ref) `max_constant_reactive_power` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_max_constant_reactive_power`](@ref)."""
+"""Get [`StandardLoad`](@ref) `max_constant_reactive_power` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_max_constant_reactive_power`](@ref)."""
 get_max_constant_reactive_power_unitful(value::StandardLoad, units) = get_value(value, Val(:max_constant_reactive_power), Val(:mvar), units)
 get_max_constant_reactive_power(value::StandardLoad) = _units_arg_required(get_max_constant_reactive_power, value, :max_constant_reactive_power, Val(:mvar))
 get_max_constant_reactive_power_unitful(value::StandardLoad) = _units_arg_required(get_max_constant_reactive_power_unitful, value, :max_constant_reactive_power, Val(:mvar))
-InfrastructureSystems.display_units_arg(::typeof(get_max_constant_reactive_power), ::Type{StandardLoad}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_max_constant_reactive_power_unitful), ::Type{StandardLoad}) = InfrastructureSystems.SU
-"""Get [`StandardLoad`](@ref) `max_impedance_active_power` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_max_impedance_active_power_unitful`](@ref)."""
+InfrastructureSystems.display_units_arg(::typeof(get_max_constant_reactive_power), ::Type{StandardLoad}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_max_constant_reactive_power_unitful), ::Type{StandardLoad}) = u"SU"
+"""Get [`StandardLoad`](@ref) `max_impedance_active_power` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_max_impedance_active_power_unitful`](@ref)."""
 get_max_impedance_active_power(value::StandardLoad, units) = InfrastructureSystems._strip_units(get_value(value, Val(:max_impedance_active_power), Val(:mw), units))
-"""Get [`StandardLoad`](@ref) `max_impedance_active_power` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_max_impedance_active_power`](@ref)."""
+"""Get [`StandardLoad`](@ref) `max_impedance_active_power` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_max_impedance_active_power`](@ref)."""
 get_max_impedance_active_power_unitful(value::StandardLoad, units) = get_value(value, Val(:max_impedance_active_power), Val(:mw), units)
 get_max_impedance_active_power(value::StandardLoad) = _units_arg_required(get_max_impedance_active_power, value, :max_impedance_active_power, Val(:mw))
 get_max_impedance_active_power_unitful(value::StandardLoad) = _units_arg_required(get_max_impedance_active_power_unitful, value, :max_impedance_active_power, Val(:mw))
-InfrastructureSystems.display_units_arg(::typeof(get_max_impedance_active_power), ::Type{StandardLoad}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_max_impedance_active_power_unitful), ::Type{StandardLoad}) = InfrastructureSystems.SU
-"""Get [`StandardLoad`](@ref) `max_impedance_reactive_power` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_max_impedance_reactive_power_unitful`](@ref)."""
+InfrastructureSystems.display_units_arg(::typeof(get_max_impedance_active_power), ::Type{StandardLoad}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_max_impedance_active_power_unitful), ::Type{StandardLoad}) = u"SU"
+"""Get [`StandardLoad`](@ref) `max_impedance_reactive_power` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_max_impedance_reactive_power_unitful`](@ref)."""
 get_max_impedance_reactive_power(value::StandardLoad, units) = InfrastructureSystems._strip_units(get_value(value, Val(:max_impedance_reactive_power), Val(:mvar), units))
-"""Get [`StandardLoad`](@ref) `max_impedance_reactive_power` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_max_impedance_reactive_power`](@ref)."""
+"""Get [`StandardLoad`](@ref) `max_impedance_reactive_power` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_max_impedance_reactive_power`](@ref)."""
 get_max_impedance_reactive_power_unitful(value::StandardLoad, units) = get_value(value, Val(:max_impedance_reactive_power), Val(:mvar), units)
 get_max_impedance_reactive_power(value::StandardLoad) = _units_arg_required(get_max_impedance_reactive_power, value, :max_impedance_reactive_power, Val(:mvar))
 get_max_impedance_reactive_power_unitful(value::StandardLoad) = _units_arg_required(get_max_impedance_reactive_power_unitful, value, :max_impedance_reactive_power, Val(:mvar))
-InfrastructureSystems.display_units_arg(::typeof(get_max_impedance_reactive_power), ::Type{StandardLoad}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_max_impedance_reactive_power_unitful), ::Type{StandardLoad}) = InfrastructureSystems.SU
-"""Get [`StandardLoad`](@ref) `max_current_active_power` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_max_current_active_power_unitful`](@ref)."""
+InfrastructureSystems.display_units_arg(::typeof(get_max_impedance_reactive_power), ::Type{StandardLoad}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_max_impedance_reactive_power_unitful), ::Type{StandardLoad}) = u"SU"
+"""Get [`StandardLoad`](@ref) `max_current_active_power` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_max_current_active_power_unitful`](@ref)."""
 get_max_current_active_power(value::StandardLoad, units) = InfrastructureSystems._strip_units(get_value(value, Val(:max_current_active_power), Val(:mw), units))
-"""Get [`StandardLoad`](@ref) `max_current_active_power` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_max_current_active_power`](@ref)."""
+"""Get [`StandardLoad`](@ref) `max_current_active_power` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_max_current_active_power`](@ref)."""
 get_max_current_active_power_unitful(value::StandardLoad, units) = get_value(value, Val(:max_current_active_power), Val(:mw), units)
 get_max_current_active_power(value::StandardLoad) = _units_arg_required(get_max_current_active_power, value, :max_current_active_power, Val(:mw))
 get_max_current_active_power_unitful(value::StandardLoad) = _units_arg_required(get_max_current_active_power_unitful, value, :max_current_active_power, Val(:mw))
-InfrastructureSystems.display_units_arg(::typeof(get_max_current_active_power), ::Type{StandardLoad}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_max_current_active_power_unitful), ::Type{StandardLoad}) = InfrastructureSystems.SU
-"""Get [`StandardLoad`](@ref) `max_current_reactive_power` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_max_current_reactive_power_unitful`](@ref)."""
+InfrastructureSystems.display_units_arg(::typeof(get_max_current_active_power), ::Type{StandardLoad}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_max_current_active_power_unitful), ::Type{StandardLoad}) = u"SU"
+"""Get [`StandardLoad`](@ref) `max_current_reactive_power` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_max_current_reactive_power_unitful`](@ref)."""
 get_max_current_reactive_power(value::StandardLoad, units) = InfrastructureSystems._strip_units(get_value(value, Val(:max_current_reactive_power), Val(:mvar), units))
-"""Get [`StandardLoad`](@ref) `max_current_reactive_power` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_max_current_reactive_power`](@ref)."""
+"""Get [`StandardLoad`](@ref) `max_current_reactive_power` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_max_current_reactive_power`](@ref)."""
 get_max_current_reactive_power_unitful(value::StandardLoad, units) = get_value(value, Val(:max_current_reactive_power), Val(:mvar), units)
 get_max_current_reactive_power(value::StandardLoad) = _units_arg_required(get_max_current_reactive_power, value, :max_current_reactive_power, Val(:mvar))
 get_max_current_reactive_power_unitful(value::StandardLoad) = _units_arg_required(get_max_current_reactive_power_unitful, value, :max_current_reactive_power, Val(:mvar))
-InfrastructureSystems.display_units_arg(::typeof(get_max_current_reactive_power), ::Type{StandardLoad}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_max_current_reactive_power_unitful), ::Type{StandardLoad}) = InfrastructureSystems.SU
+InfrastructureSystems.display_units_arg(::typeof(get_max_current_reactive_power), ::Type{StandardLoad}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_max_current_reactive_power_unitful), ::Type{StandardLoad}) = u"SU"
 """Get [`StandardLoad`](@ref) `conformity`."""
 get_conformity(value::StandardLoad) = value.conformity
 """Get [`StandardLoad`](@ref) `services`."""
@@ -335,7 +335,7 @@ function from_openapi(po::PO.StandardLoad, refs::OpenAPIRefs, ::ComponentBaseUni
         max_current_active_power = _or_default(po.max_current_active_power, 0.0),
         max_current_reactive_power = _or_default(po.max_current_reactive_power, 0.0),
         conformity = _or_default_enum(po.conformity, LoadConformity.UNDEFINED),
-        input_basis = CU,
+        input_basis = u"CU",
     )
 end
 
@@ -358,7 +358,7 @@ function from_openapi(po::PO.StandardLoad, refs::OpenAPIRefs, ::NaturalUnit)
         max_current_active_power = _or_default(po.max_current_active_power, 0.0, (/), po.base_power),
         max_current_reactive_power = _or_default(po.max_current_reactive_power, 0.0, (/), po.base_power),
         conformity = _or_default_enum(po.conformity, LoadConformity.UNDEFINED),
-        input_basis = CU,
+        input_basis = u"CU",
     )
 end
 
@@ -373,18 +373,18 @@ function to_openapi(value::StandardLoad, refs::OpenAPIRefs, ::ComponentBaseUnit)
         available = get_available(value),
         bus = component_id(refs, get_bus(value)),
         base_power = _get_base_power(value),
-        constant_active_power = get_constant_active_power(value, CU),
-        constant_reactive_power = get_constant_reactive_power(value, CU),
-        impedance_active_power = get_impedance_active_power(value, CU),
-        impedance_reactive_power = get_impedance_reactive_power(value, CU),
-        current_active_power = get_current_active_power(value, CU),
-        current_reactive_power = get_current_reactive_power(value, CU),
-        max_constant_active_power = get_max_constant_active_power(value, CU),
-        max_constant_reactive_power = get_max_constant_reactive_power(value, CU),
-        max_impedance_active_power = get_max_impedance_active_power(value, CU),
-        max_impedance_reactive_power = get_max_impedance_reactive_power(value, CU),
-        max_current_active_power = get_max_current_active_power(value, CU),
-        max_current_reactive_power = get_max_current_reactive_power(value, CU),
+        constant_active_power = get_constant_active_power(value, u"CU"),
+        constant_reactive_power = get_constant_reactive_power(value, u"CU"),
+        impedance_active_power = get_impedance_active_power(value, u"CU"),
+        impedance_reactive_power = get_impedance_reactive_power(value, u"CU"),
+        current_active_power = get_current_active_power(value, u"CU"),
+        current_reactive_power = get_current_reactive_power(value, u"CU"),
+        max_constant_active_power = get_max_constant_active_power(value, u"CU"),
+        max_constant_reactive_power = get_max_constant_reactive_power(value, u"CU"),
+        max_impedance_active_power = get_max_impedance_active_power(value, u"CU"),
+        max_impedance_reactive_power = get_max_impedance_reactive_power(value, u"CU"),
+        max_current_active_power = get_max_current_active_power(value, u"CU"),
+        max_current_reactive_power = get_max_current_reactive_power(value, u"CU"),
         conformity = PO.LoadConformity(string(get_conformity(value))),
         power_units = _power_units_string(CU),
     )
@@ -397,18 +397,18 @@ function to_openapi(value::StandardLoad, refs::OpenAPIRefs, ::NaturalUnit)
         available = get_available(value),
         bus = component_id(refs, get_bus(value)),
         base_power = _get_base_power(value),
-        constant_active_power = get_constant_active_power(value, CU) * _get_base_power(value),
-        constant_reactive_power = get_constant_reactive_power(value, CU) * _get_base_power(value),
-        impedance_active_power = get_impedance_active_power(value, CU) * _get_base_power(value),
-        impedance_reactive_power = get_impedance_reactive_power(value, CU) * _get_base_power(value),
-        current_active_power = get_current_active_power(value, CU) * _get_base_power(value),
-        current_reactive_power = get_current_reactive_power(value, CU) * _get_base_power(value),
-        max_constant_active_power = get_max_constant_active_power(value, CU) * _get_base_power(value),
-        max_constant_reactive_power = get_max_constant_reactive_power(value, CU) * _get_base_power(value),
-        max_impedance_active_power = get_max_impedance_active_power(value, CU) * _get_base_power(value),
-        max_impedance_reactive_power = get_max_impedance_reactive_power(value, CU) * _get_base_power(value),
-        max_current_active_power = get_max_current_active_power(value, CU) * _get_base_power(value),
-        max_current_reactive_power = get_max_current_reactive_power(value, CU) * _get_base_power(value),
+        constant_active_power = get_constant_active_power(value, u"CU") * _get_base_power(value),
+        constant_reactive_power = get_constant_reactive_power(value, u"CU") * _get_base_power(value),
+        impedance_active_power = get_impedance_active_power(value, u"CU") * _get_base_power(value),
+        impedance_reactive_power = get_impedance_reactive_power(value, u"CU") * _get_base_power(value),
+        current_active_power = get_current_active_power(value, u"CU") * _get_base_power(value),
+        current_reactive_power = get_current_reactive_power(value, u"CU") * _get_base_power(value),
+        max_constant_active_power = get_max_constant_active_power(value, u"CU") * _get_base_power(value),
+        max_constant_reactive_power = get_max_constant_reactive_power(value, u"CU") * _get_base_power(value),
+        max_impedance_active_power = get_max_impedance_active_power(value, u"CU") * _get_base_power(value),
+        max_impedance_reactive_power = get_max_impedance_reactive_power(value, u"CU") * _get_base_power(value),
+        max_current_active_power = get_max_current_active_power(value, u"CU") * _get_base_power(value),
+        max_current_reactive_power = get_max_current_reactive_power(value, u"CU") * _get_base_power(value),
         conformity = PO.LoadConformity(string(get_conformity(value))),
         power_units = _power_units_string(NU),
     )

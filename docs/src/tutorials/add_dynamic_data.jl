@@ -58,7 +58,7 @@ inf_source = Source(;
     bus = slack_bus, #bus
     R_th = 0.0, #Rth
     X_th = 5e-6, #Xth,
-    input_basis = CU,
+    input_basis = u"CU",
 );
 
 # And add it to the system:

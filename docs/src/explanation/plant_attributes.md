@@ -289,7 +289,7 @@ gen1 = ThermalStandard(;
     time_limits = nothing,
     prime_mover_type = PrimeMovers.ST,
     fuel = ThermalFuels.COAL,
-    input_basis = CU,
+    input_basis = u"CU",
 )
 
 gen2 = ThermalStandard(;
@@ -308,7 +308,7 @@ gen2 = ThermalStandard(;
     time_limits = nothing,
     prime_mover_type = PrimeMovers.ST,
     fuel = ThermalFuels.COAL,
-    input_basis = CU,
+    input_basis = u"CU",
 )
 
 gen3 = ThermalStandard(;
@@ -327,7 +327,7 @@ gen3 = ThermalStandard(;
     time_limits = nothing,
     prime_mover_type = PrimeMovers.ST,
     fuel = ThermalFuels.COAL,
-    input_basis = CU,
+    input_basis = u"CU",
 )
 
 add_component!(sys, gen1)

@@ -216,7 +216,7 @@ function from_openapi(po::PO.Area, refs::OpenAPIRefs, ::ComponentBaseUnit)
         peak_reactive_power = _or_default(po.peak_reactive_power, 0.0),
         load_response = _load_response(po.load_response),
         base_power = _require_base_power("Area", po.id, po.base_power),
-        input_basis = CU,
+        input_basis = u"CU",
     )
 end
 
@@ -228,7 +228,7 @@ function from_openapi(po::PO.Area, refs::OpenAPIRefs, ::NaturalUnit)
         peak_reactive_power = _or_default(po.peak_reactive_power, 0.0) / bp,
         load_response = _load_response(po.load_response),
         base_power = bp,
-        input_basis = CU,
+        input_basis = u"CU",
     )
 end
 
@@ -238,7 +238,7 @@ function from_openapi(po::PO.LoadZone, refs::OpenAPIRefs, ::ComponentBaseUnit)
         peak_active_power = po.peak_active_power,
         peak_reactive_power = po.peak_reactive_power,
         base_power = _require_base_power("LoadZone", po.id, po.base_power),
-        input_basis = CU,
+        input_basis = u"CU",
     )
 end
 
@@ -249,7 +249,7 @@ function from_openapi(po::PO.LoadZone, refs::OpenAPIRefs, ::NaturalUnit)
         peak_active_power = po.peak_active_power / bp,
         peak_reactive_power = po.peak_reactive_power / bp,
         base_power = bp,
-        input_basis = CU,
+        input_basis = u"CU",
     )
 end
 
@@ -272,7 +272,7 @@ function from_openapi(
         violation_penalty = _or_default(po.violation_penalty, INFINITE_COST),
         direction_mapping = po.direction_mapping.additional_properties,
         base_power = _require_base_power("TransmissionInterface", po.id, po.base_power),
-        input_basis = CU,
+        input_basis = u"CU",
     )
 end
 
@@ -289,7 +289,7 @@ function from_openapi(
         violation_penalty = _or_default(po.violation_penalty, INFINITE_COST),
         direction_mapping = po.direction_mapping.additional_properties,
         base_power = bp,
-        input_basis = CU,
+        input_basis = u"CU",
     )
 end
 
@@ -318,7 +318,7 @@ function from_openapi(po::PO.Line, refs::OpenAPIRefs, ::ComponentBaseUnit)
         rating_c = _scale_optional(po.rating_c, 1.0),
         g = _fromto(po.g, (from = 0.0, to = 0.0)),
         base_power = _require_base_power("Line", po.id, po.base_power),
-        input_basis = CU,
+        input_basis = u"CU",
     )
 end
 
@@ -339,7 +339,7 @@ function from_openapi(po::PO.Line, refs::OpenAPIRefs, ::NaturalUnit)
         rating_c = _scale_optional(po.rating_c, sbp),
         g = _fromto(po.g, (from = 0.0, to = 0.0)),
         base_power = sbp,
-        input_basis = CU,
+        input_basis = u"CU",
     )
 end
 
@@ -375,7 +375,7 @@ function from_openapi(po::PO.MonitoredLine, refs::OpenAPIRefs, ::ComponentBaseUn
         rating_c = _scale_optional(po.rating_c, 1.0),
         g = _fromto(po.g, (from = 0.0, to = 0.0)),
         base_power = _require_base_power("MonitoredLine", po.id, po.base_power),
-        input_basis = CU,
+        input_basis = u"CU",
     )
 end
 
@@ -397,7 +397,7 @@ function from_openapi(po::PO.MonitoredLine, refs::OpenAPIRefs, ::NaturalUnit)
         rating_c = _scale_optional(po.rating_c, sbp),
         g = _fromto(po.g, (from = 0.0, to = 0.0)),
         base_power = sbp,
-        input_basis = CU,
+        input_basis = u"CU",
     )
 end
 
@@ -431,7 +431,7 @@ function from_openapi(po::PO.GenericArcImpedance, refs::OpenAPIRefs, ::Component
         r = po.r,
         x = po.x,
         base_power = _require_base_power("GenericArcImpedance", po.id, po.base_power),
-        input_basis = CU,
+        input_basis = u"CU",
     )
 end
 
@@ -448,7 +448,7 @@ function from_openapi(po::PO.GenericArcImpedance, refs::OpenAPIRefs, ::NaturalUn
         r = po.r,
         x = po.x,
         base_power = sbp,
-        input_basis = CU,
+        input_basis = u"CU",
     )
 end
 
@@ -494,7 +494,7 @@ function from_openapi(
             po.id,
             po.base_power,
         ),
-        input_basis = CU,
+        input_basis = u"CU",
     )
 end
 
@@ -526,7 +526,7 @@ function from_openapi(
             DiscreteControlledBranchStatus.CLOSED,
         ),
         base_power = bp,
-        input_basis = CU,
+        input_basis = u"CU",
     )
 end
 
@@ -611,7 +611,7 @@ function from_openapi(
         base_power = po.base_power,
         base_voltage_primary = _or_default(po.base_voltage_primary, nothing),
         base_voltage_secondary = _or_default(po.base_voltage_secondary, nothing),
-        input_basis = CU,
+        input_basis = u"CU",
     )
 end
 
@@ -646,7 +646,7 @@ function from_openapi(
         base_power = dbp,
         base_voltage_primary = _or_default(po.base_voltage_primary, nothing),
         base_voltage_secondary = _or_default(po.base_voltage_secondary, nothing),
-        input_basis = CU,
+        input_basis = u"CU",
     )
 end
 
@@ -679,7 +679,7 @@ function from_openapi(
             po.shunt_location,
             TwoWindingTransformerShuntLocation.PRIMARY,
         ),
-        input_basis = CU,
+        input_basis = u"CU",
     )
 end
 
@@ -750,7 +750,7 @@ function from_openapi(
             po.shunt_location,
             ThreeWindingTransformerShuntLocation.PRIMARY,
         ),
-        input_basis = CU,
+        input_basis = u"CU",
     )
 end
 
@@ -902,7 +902,7 @@ function from_openapi(po::PO.FACTSControlDevice, refs::OpenAPIRefs, ::ComponentB
         regulated_bus_number = _or_default(po.regulated_bus_number, 0),
         reactive_power_required = po.reactive_power_required,
         base_power = _require_base_power("FACTSControlDevice", po.id, po.base_power),
-        input_basis = CU,
+        input_basis = u"CU",
     )
 end
 
@@ -928,7 +928,7 @@ function from_openapi(po::PO.FACTSControlDevice, refs::OpenAPIRefs, ::NaturalUni
         regulated_bus_number = _or_default(po.regulated_bus_number, 0),
         reactive_power_required = po.reactive_power_required,
         base_power = bp,
-        input_basis = CU,
+        input_basis = u"CU",
     )
 end
 
@@ -1045,7 +1045,7 @@ function from_openapi(
         ramp_limits = _opt_updown(po.ramp_limits),
         self_discharge = _or_default(po.self_discharge, 0.0),
         standing_loss = _or_default(po.standing_loss, 0.0),
-        input_basis = CU,
+        input_basis = u"CU",
     )
 end
 
@@ -1080,7 +1080,7 @@ function from_openapi(
         ramp_limits = _updown_cu(po.ramp_limits, dbp),
         self_discharge = _or_default(po.self_discharge, 0.0),
         standing_loss = _or_default(po.standing_loss, 0.0) / dbp,
-        input_basis = CU,
+        input_basis = u"CU",
     )
 end
 
@@ -1135,7 +1135,7 @@ function from_openapi(
             po.id,
             po.base_power,
         ),
-        input_basis = CU,
+        input_basis = u"CU",
     )
 end
 
@@ -1156,7 +1156,7 @@ function from_openapi(
         reactive_power_limits_to = _minmax_cu(po.reactive_power_limits_to, sbp),
         loss = _hvdc_loss(po.loss),
         base_power = sbp,
-        input_basis = CU,
+        input_basis = u"CU",
     )
 end
 
@@ -1282,7 +1282,7 @@ function from_openapi(po::PO.TwoTerminalLCCLine, refs::OpenAPIRefs, ::ComponentB
         _minmax(po.reactive_power_limits_to, (min = 0.0, max = 0.0)),
         loss = _hvdc_loss(po.loss),
         base_power = base_power,
-        input_basis = CU,
+        input_basis = u"CU",
     )
 end
 
@@ -1366,7 +1366,7 @@ function from_openapi(po::PO.TwoTerminalLCCLine, refs::OpenAPIRefs, ::NaturalUni
         ),
         loss = _hvdc_loss(po.loss),
         base_power = base_power,
-        input_basis = CU,
+        input_basis = u"CU",
     )
 end
 
@@ -1647,7 +1647,7 @@ function _two_terminal_vsc_line(po, refs::OpenAPIRefs, base_power, unit)
         rmpct_from = _or_default(po.rmpct_from, 100.0),
         rmpct_to = _or_default(po.rmpct_to, 100.0),
         base_power = base_power,
-        input_basis = CU,
+        input_basis = u"CU",
     )
 end
 
@@ -1713,7 +1713,7 @@ function from_openapi(po::PO.Source, refs::OpenAPIRefs, ::ComponentBaseUnit)
         operation_cost = _convert_source_operation_cost(
             po.operation_cost, get_store(refs), get_base_power(refs),
         )::OperationalCost,
-        input_basis = CU,
+        input_basis = u"CU",
     )
 end
 
@@ -1738,7 +1738,7 @@ function from_openapi(po::PO.Source, refs::OpenAPIRefs, ::NaturalUnit)
         operation_cost = _convert_source_operation_cost(
             po.operation_cost, get_store(refs), get_base_power(refs),
         )::OperationalCost,
-        input_basis = CU,
+        input_basis = u"CU",
     )
 end
 
@@ -1775,7 +1775,7 @@ function from_openapi(po::PO.TModelHVDCLine, refs::OpenAPIRefs, ::ComponentBaseU
         active_power_limits_from = _minmax_cu(po.active_power_limits_from, sbp),
         active_power_limits_to = _minmax_cu(po.active_power_limits_to, sbp),
         base_current = po.base_current,
-        input_basis = CU,
+        input_basis = u"CU",
     )
 end
 
@@ -1833,7 +1833,7 @@ function from_openapi(
             1.0,
         ),
         voltage_limits = _minmax(po.voltage_limits, (min = 0.0, max = 999.9)),
-        input_basis = CU,
+        input_basis = u"CU",
     )
 end
 
@@ -1865,7 +1865,7 @@ function from_openapi(po::PO.InterconnectingConverter, refs::OpenAPIRefs, ::Natu
             1.0,
         ),
         voltage_limits = _minmax(po.voltage_limits, (min = 0.0, max = 999.9)),
-        input_basis = CU,
+        input_basis = u"CU",
     )
 end
 
@@ -1920,7 +1920,7 @@ function from_openapi(po::PO.HybridSystem, refs::OpenAPIRefs, ::ComponentBaseUni
         output_active_power_limits = _opt_minmax(po.output_active_power_limits),
         reactive_power_limits = _opt_minmax(po.reactive_power_limits),
         interconnection_efficiency = _opt_inout(po.interconnection_efficiency),
-        input_basis = CU,
+        input_basis = u"CU",
     )
 end
 
@@ -1946,7 +1946,7 @@ function from_openapi(po::PO.HybridSystem, refs::OpenAPIRefs, ::NaturalUnit)
         output_active_power_limits = _minmax_cu(po.output_active_power_limits, dbp),
         reactive_power_limits = _minmax_cu(po.reactive_power_limits, dbp),
         interconnection_efficiency = _opt_inout(po.interconnection_efficiency),
-        input_basis = CU,
+        input_basis = u"CU",
     )
 end
 

@@ -112,14 +112,14 @@ get_base_voltage(c::ThreeWindingTransformer) = error(
 # expressing it in a per-unit base (`SU`/`CU`) is circular. Unlike every other
 # field accessor, `get_base_power`/`set_base_power!` therefore need *no* units
 # argument; an explicit one is accepted only when it denotes natural units —
-# `NU`, or a power-dimensioned `Unitful` unit such as `u"MW"`/`u"MVA"`.
+# `u"NU"`, or a power-dimensioned `Unitful` unit such as `u"MW"`/`u"MVA"`.
 
 """
 Get a component's `base_power` as a bare `Float64` in natural units (MVA).
 
 `get_base_power(c)` returns the stored MVA value. An optional units argument is
-accepted but must denote natural units: `NU`, or a power-dimensioned `Unitful`
-unit (e.g. `u"MW"`, `u"MVA"`). Per-unit bases (`SU`, `CU`) and non-power units error —
+accepted but must denote natural units: `u"NU"`, or a power-dimensioned `Unitful`
+unit (e.g. `u"MW"`, `u"MVA"`). Per-unit bases (`u"SU"`, `u"CU"`) and non-power units error —
 `base_power` is only meaningful in absolute power. See
 [`get_base_power_unitful`](@ref) for the unit-bearing value.
 """
@@ -130,28 +130,37 @@ get_base_power(c::Component, u) = IS._strip_units(get_base_power_unitful(c, u))
 `base_power` as a unit-bearing quantity (MVA). See [`get_base_power`](@ref).
 """
 get_base_power_unitful(c::Component) = _get_base_power(c) * MVA
-get_base_power_unitful(c::Component, ::NaturalUnit) = _get_base_power(c) * MVA
-# Any power-dimensioned Unitful unit: `uconvert` does the scaling and throws a
-# `Unitful.DimensionError` for non-power units, so wrong units error for free.
 get_base_power_unitful(c::Component, u::Unitful.Units) =
-    Unitful.uconvert(u, _get_base_power(c) * MVA)
-# Relative per-unit markers (`SU`, `CU`) are not natural units.
-get_base_power_unitful(::Component, u::AbstractRelativeUnit) =
-    _base_power_units_error(u)
+    _base_power_in(_get_base_power(c), u)
+
+# A base power in natural units `u` (`u"NU"` is MVA). `uconvert` throws a
+# `Unitful.DimensionError` for non-power units; per-unit ones are rejected by name.
+function _base_power_in(mva::Float64, u::Unitful.Units)
+    t = _resolve_target(APPARENT_POWER, u)
+    _require_natural(_target_basis(t, APPARENT_POWER), u)
+    return Unitful.uconvert(t, mva * MVA)
+end
 
 """
 Set a component's `base_power` (stored as a bare MVA `Float64`).
 
 Accepts a bare `Float64` (interpreted as MVA) or a power-dimensioned
-`Unitful.Quantity` (e.g. `80.0 * u"MW"`, `90.0 * u"MVA"`). Per-unit inputs (`SU`, `CU`)
+`Unitful.Quantity` (e.g. `80.0u"MW"`, `90.0u"MVA"`). Per-unit inputs (`u"SU"`, `u"CU"`)
 and non-power units error: `base_power` is only meaningful in absolute power.
 """
 set_base_power!(c::Component, val::Float64) = _set_base_power!(base_power_kind(c), c, val)
-# `ustrip(MVA, val)` converts power units and throws for non-power units.
 set_base_power!(c::Component, val::Unitful.Quantity) =
-    _set_base_power!(base_power_kind(c), c, Unitful.ustrip(MVA, val))
-set_base_power!(::Component, ::RelativeQuantity{<:Any, U}) where {U} =
-    _base_power_units_error(U())
+    _set_base_power!(base_power_kind(c), c, _base_power_mva(val))
+
+# `ustrip(MVA, …)` converts power units and throws for non-power units.
+function _base_power_mva(val::Unitful.Quantity)
+    t = _resolve_target(APPARENT_POWER, Unitful.unit(val))
+    _require_natural(_target_basis(t, APPARENT_POWER), Unitful.unit(val))
+    return Unitful.ustrip(MVA, Unitful.ustrip(val) * t)
+end
+
+_require_natural(::Val{:natural}, _) = nothing
+_require_natural(::Val, u) = _base_power_units_error(u)
 
 _set_base_power!(::ComponentBasePower, c, val::Float64) = (c.base_power = val)
 function _set_base_power!(::SystemBasePower, c, ::Float64)
@@ -168,28 +177,19 @@ Reject any attempt to read/write `base_power` in non-natural units.
 function _base_power_units_error(u)
     throw(
         ArgumentError(
-            "base_power is always in natural units (MVA). Pass no units, `NU`, " *
+            "base_power is always in natural units (MVA). Pass no units, `u\"NU\"`, " *
             "or a power-dimensioned Unitful unit such as `u\"MW\"` or `u\"MVA\"`; got `$u`. " *
-            "Per-unit bases (`SU`, `CU`) are not valid for base_power.",
+            "Per-unit bases (`u\"SU\"`, `u\"CU\"`) are not valid for base_power.",
         ),
     )
 end
 
-IS.display_units_arg(::typeof(get_base_power), ::Type{<:Component}) = NU
-IS.display_units_arg(::typeof(get_base_power_unitful), ::Type{<:Component}) = NU
-IS.display_units_arg(::typeof(set_base_power!), ::Type{<:Component}) = NU
-
-# Make `_strip_units` work for Unitful quantities; IS doesn't depend on Unitful.
-IS._strip_units(q::Unitful.Quantity) = Unitful.ustrip(q)
+IS.display_units_arg(::typeof(get_base_power), ::Type{<:Component}) = u"NU"
+IS.display_units_arg(::typeof(get_base_power_unitful), ::Type{<:Component}) = u"NU"
+IS.display_units_arg(::typeof(set_base_power!), ::Type{<:Component}) = u"NU"
 
 # IS's hook for a domain package to declare its default unit system.
 IS.default_units(::Component) = SU
-
-"""
-The `conversion_unit` tokens whose fields are rates. Used to narrow the setter and the
-error-message helpers below, which must offer `CU/u"minute"` rather than bare `CU`.
-"""
-const _RATE_TOKENS = Union{Val{:mw_per_minute}}
 
 #######################################################
 # Units-aware get_value / set_value
@@ -202,40 +202,18 @@ const _RATE_TOKENS = Union{Val{:mw_per_minute}}
     get_value(c::Component, field::Val, conversion_unit::Val, units) -> value
 
 Get `c`'s field value, converting from component-base storage to `units`.
-Returns a `RelativeQuantity` (for CU/SU targets) or a `Unitful.Quantity` (for
-natural units like `u"MW"`). Public getters wrap this in `_strip_units` for the
-bare-number form, with `_unitful` companions returning the wrapped value.
+Returns a `Unitful.Quantity`, per-unit (`u"CU"`, `u"SU/minute"`) or natural (`u"MW"`).
+Public getters wrap this in `_strip_units` for the bare-number form, with `_unitful`
+companions returning the quantity.
 """
 function get_value(c::UnitsBearer, field::Val{T}, conversion_unit, units::UnitArg) where {T}
     value = Base.getproperty(c, T)
+    isnothing(value) || _check_residual(c, field, conversion_unit, units)
     return _convert_from_component_base(
         _conversion_base(c, field),
         value,
         conversion_unit,
         units,
-    )
-end
-
-# ---- An untimed relative target on a rate field ----
-# The engine rejects this too, but only the category is in scope down there, so its
-# message can name the quantity and not the field. Intercepting here, where `c` and
-# `field` still are, lets the getter read like its setter twin.
-function get_value(
-    c::UnitsBearer,
-    field::Val{T},
-    conversion_unit::_RATE_TOKENS,
-    units::IS.AbstractRelativeUnit,
-) where {T}
-    # An unset field has no units to get wrong, and the conversion it would skip is
-    # the one this method exists to reject. Keep the `nothing` passthrough that the
-    # main path gives every other field, ahead of the rejection.
-    isnothing(Base.getproperty(c, T)) && return nothing
-    throw(
-        ArgumentError(
-            "Getting $(_field_description(c, field)) requires a time on the units " *
-            "argument: it is a rate, so a bare per-unit base does not say per what " *
-            "time. Pass $(_units_menu(conversion_unit)).",
-        ),
     )
 end
 
@@ -249,7 +227,7 @@ _conversion_base(c::UnitsBearer, ::Any) = c
 # field's conversion-unit token picks the physical category; the engine
 # resolves bases through the component interface above. ----
 _convert_from_component_base(base, value::Number, cu::Val, units::UnitArg) =
-    convert_units(base, value, _unit_category(cu), CU, units)
+    _from_stored(base, value, _unit_category(cu), units)
 
 # ---- Nothing passthrough ----
 _convert_from_component_base(base, ::Nothing, ::Val, ::Any) = nothing
@@ -281,54 +259,29 @@ _convert_from_component_base(base, v::StartUpShutDown, cu, u) = (
 )
 
 #######################################################
-# set_value: accept Unitful.Quantity or RelativeQuantity; return CU scalar
+# set_value: accept a Unitful.Quantity; return the CU scalar
 #######################################################
 
-# ---- From Unitful.Quantity (natural units): inverse engine conversion ----
-set_value(c::UnitsBearer, field, val::Quantity, cu::Val) = IS._strip_units(
-    convert_units(_conversion_base(c, field), val, _unit_category(cu), NU, CU),
-)
+# Natural (`u"MW"`) or per-unit (`u"SU"`, `u"CU/hr"`); the engine resolves which.
+function set_value(c::UnitsBearer, field, val::Quantity, cu::Val)
+    _check_residual(c, field, cu, Unitful.unit(val))
+    return _to_stored(_conversion_base(c, field), val, _unit_category(cu))
+end
 
-# ---- From RelativeQuantity in CU (trivial) ----
-set_value(::UnitsBearer, field, val::RelativeQuantity{<:Any, ComponentBaseUnit}, ::Val) =
-    ustrip(val)
-
-# ---- From RelativeQuantity in SU ----
-set_value(c::UnitsBearer, field, val::RelativeQuantity{<:Any, SystemBaseUnit}, cu::Val) =
-    IS._strip_units(
-        convert_units(_conversion_base(c, field), ustrip(val), _unit_category(cu), SU, CU),
+# A per-unit target whose residual is wrong for the field (a bare `u"CU"` on a rate). The
+# engine rejects it too, but only here is the field known for the message.
+function _check_residual(c, field, cu::Val, units)
+    cat = _unit_category(cu)
+    _target_basis(_resolve_target(cat, units), cat) === Val(:mismatch) || return nothing
+    throw(
+        ArgumentError(
+            "$(_field_description(c, field)) does not take `$units`: its per-unit " *
+            "values are per $(_residual_name(per_unit_table(cat)[4])). " *
+            "Pass $(_units_menu(cu)).",
+        ),
     )
-
-# ---- From a tagged rate (`0.1 * CU/u"hr"`) ----
-# More specific than the `Quantity` method above, which would otherwise try to `ustrip`
-# the category's natural unit off a value whose payload is a `RelativeQuantity`.
-set_value(c::UnitsBearer, field, val::RelativeRate{T, U}, cu::Val) where {T, U} =
-    IS._strip_units(
-        convert_units(_conversion_base(c, field), val, _unit_category(cu), U(), CU),
-    )
-
-# ---- An untimed relative tag on a rate field ----
-# The CU fast path below returns `ustrip(val)` without consulting the category, so
-# without these a `0.1 * CU` on a ramp field would be stored as if it were per minute.
-set_value(
-    c::UnitsBearer,
-    field,
-    ::RelativeQuantity{<:Any, ComponentBaseUnit},
-    cu::_RATE_TOKENS,
-) = _rate_tag_required(c, field, cu)
-set_value(
-    c::UnitsBearer,
-    field,
-    ::RelativeQuantity{<:Any, SystemBaseUnit},
-    cu::_RATE_TOKENS,
-) = _rate_tag_required(c, field, cu)
-
-_rate_tag_required(c, field, cu) = throw(
-    ArgumentError(
-        "Setting $(_field_description(c, field)) requires a time on the units tag: it " *
-        "is a rate, so a bare per-unit base does not say per what time. $(_tag_menu(cu)).",
-    ),
-)
+end
+_residual_name(r) = unit_to_string(inv(r))
 
 # ---- Bare numbers are rejected: callers must attach units explicitly ----
 # Generated setters intercept this one level up (`_units_tag_required`) so the
@@ -381,14 +334,20 @@ _placeholder(::Number) = NaN
 _placeholder(v::NamedTuple) = map(_placeholder, v)
 _placeholder(::Nothing) = nothing
 
-# A bare number takes `input_basis`; a tagged value keeps its own units.
+# A bare number takes `input_basis`, plus the field's residual (a ramp's per minute); a
+# tagged value keeps its own units.
 _tag(v::_UntaggedNumber, basis, cu::Val) = v * _basis_unit(basis, _unit_category(cu))
 _tag(v, basis, cu::Val) = v
 _tag(v::NamedTuple, basis, cu::Val) = map(x -> _tag(x, basis, cu), v)
 
-_basis_unit(::ComponentBaseUnit, ::UnitCategory) = CU
-_basis_unit(::ComponentBaseUnit, cat::RateCategory) = CU / time_basis(cat)
-_basis_unit(::NaturalUnit, cat::UnitCategory) = natural_unit(cat)
+_basis_unit(basis::Unitful.Units, cat::UnitCategory) =
+    _checked_input_basis(basis) * per_unit_table(cat)[4]
+
+# SU is rejected: a component under construction has no system base yet.
+function _checked_input_basis(basis)
+    (basis == u"CU" || basis == u"NU") && return basis
+    throw(ArgumentError("input_basis must be u\"CU\" or u\"NU\"; got $basis"))
+end
 
 # Generated `true` for types whose kwarg constructor requires `input_basis`.
 _takes_input_basis(::Type) = false
@@ -420,9 +379,7 @@ _get_base_power(t::TwoWindingTransformer) = get_base_power(get_circuit(t))
 set_base_power!(t::TwoWindingTransformer, val::Float64) =
     set_base_power!(get_circuit(t), val)
 set_base_power!(t::TwoWindingTransformer, val::Unitful.Quantity) =
-    set_base_power!(get_circuit(t), Unitful.ustrip(MVA, val))
-set_base_power!(::TwoWindingTransformer, ::RelativeQuantity{<:Any, U}) where {U} =
-    _base_power_units_error(U())
+    set_base_power!(get_circuit(t), _base_power_mva(val))
 
 # The series impedance r/x lives on the circuit. These forwarding accessors keep
 # dispatch on the parent working (e.g. PowerNetworkMatrices reads get_r/get_x on
@@ -479,26 +436,21 @@ _natural_unit_example(::Val{:mw_per_minute}) = "u\"MW/minute\""
 _field_description(c, ::Val{T}) where {T} = "`$(nameof(typeof(c)))`'s `$T`"
 _field_description(c, ::Any) = "this `$(nameof(typeof(c)))` field"
 
-# The units a getter accepts. Setters take the same units as tags on the value,
-# except `NU`, which exists only as a getter target (there is no `val * NU`).
+# The units a getter accepts; setters take the same units on the value.
 _units_menu(conversion_unit::Val) =
-    "`CU` (per unit on the component base), `SU` (per unit on the system base), `NU` " *
-    "or the natural unit `$(_natural_unit_example(conversion_unit))`"
-
-# A rate has no complete relative target without a time, so its menus must not offer
-# bare `CU`/`SU`.
-_units_menu(conversion_unit::_RATE_TOKENS) =
-    "a relative base per unit time (`CU/u\"minute\"`, `SU/u\"hr\"`), or the natural " *
-    "unit `$(_natural_unit_example(conversion_unit))`"
-
-_tag_menu(conversion_unit::_RATE_TOKENS) =
-    "pass `val * CU/u\"minute\"` (per unit on the component base, per minute), " *
-    "`val * SU/u\"hr\"`, or a natural unit such as " *
-    "`val * $(_natural_unit_example(conversion_unit))`"
+    "`u\"CU$(_residual_example(conversion_unit))\"` (per unit on the component base), " *
+    "`u\"SU$(_residual_example(conversion_unit))\"` (per unit on the system base), " *
+    "`u\"NU$(_residual_example(conversion_unit))\"` or the natural unit " *
+    "`$(_natural_unit_example(conversion_unit))`"
 
 _tag_menu(conversion_unit::Val) =
-    "pass `val * CU` (per unit on the component base), `val * SU` (per unit on the " *
-    "system base), or a natural unit such as `val * $(_natural_unit_example(conversion_unit))`"
+    "pass `val * u\"CU$(_residual_example(conversion_unit))\"` (per unit on the component " *
+    "base), `val * u\"SU$(_residual_example(conversion_unit))\"` (per unit on the system " *
+    "base), or a natural unit such as `val * $(_natural_unit_example(conversion_unit))`"
+
+# A rate's per-unit units must name a time.
+_residual_example(::Val) = ""
+_residual_example(::Val{:mw_per_minute}) = "/minute"
 
 # The bare and unit-bearing getters point at each other, so the message always
 # names the companion the caller did not use.
@@ -538,10 +490,8 @@ number. The getter counterpart is [`_units_arg_required`](@ref); both are reache
 from generated fallback methods, here one matching an untagged number — or, on a
 compound field only, a `NamedTuple` whose elements are all untagged.
 """
-# The tag to show in a compound field's example. A rate has no valid untimed tag, so the
-# example must carry a time or it would demonstrate the very thing that gets rejected.
-_example_tag(::Val) = "CU"
-_example_tag(::_RATE_TOKENS) = "CU/u\"minute\""
+# The tag to show in a compound field's example; a rate's must carry a time.
+_example_tag(conversion_unit::Val) = "u\"CU$(_residual_example(conversion_unit))\""
 
 function _units_tag_required(setter, value, field::Symbol, conversion_unit::Val, val)
     compound_hint = if val isa NamedTuple

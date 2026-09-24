@@ -358,8 +358,8 @@ _get_base_power(sys::System) = sys.base_power
 Return the system's base power as a bare `Float64` in natural units (MVA).
 
 Like the component accessor, `base_power` is always natural units: an optional
-units argument must be `NU` or a power-dimensioned `Unitful` unit (e.g. `u"MW"`,
-`u"MVA"`). Per-unit bases (`SU`, `CU`) and non-power units error. For the
+units argument must be `u"NU"` or a power-dimensioned `Unitful` unit (e.g. `u"MW"`,
+`u"MVA"`). Per-unit bases (`u"SU"`, `u"CU"`) and non-power units error. For the
 unit-bearing value see [`get_base_power_unitful`](@ref).
 """
 get_base_power(sys::System) = _get_base_power(sys)
@@ -370,11 +370,8 @@ Return the system's base power as a unit-bearing quantity. See
 [`get_base_power`](@ref) for a bare number.
 """
 get_base_power_unitful(sys::System) = _get_base_power(sys) * MVA
-get_base_power_unitful(sys::System, ::NaturalUnit) = _get_base_power(sys) * MVA
 get_base_power_unitful(sys::System, u::Unitful.Units) =
-    Unitful.uconvert(u, _get_base_power(sys) * MVA)
-get_base_power_unitful(sys::System, u::AbstractRelativeUnit) =
-    _base_power_units_error(u)
+    _base_power_in(_get_base_power(sys), u)
 
 """
 Return the system's frequency.
@@ -2877,7 +2874,7 @@ function convert_component!(
         dynamic_injector = get_dynamic_injector(old_load),
         internal = _copy_internal_for_conversion(old_load),
         services = Device[],
-        input_basis = CU,
+        input_basis = u"CU",
     )
     IS.assign_new_id!(sys, old_load)
     add_component!(sys, new_load)

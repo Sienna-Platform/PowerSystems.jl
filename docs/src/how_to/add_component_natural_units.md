@@ -12,9 +12,9 @@ data, selected explicitly at each call site by a units argument.
 Every keyword constructor for a component with unit-bearing fields takes a required
 `input_basis` keyword, which says how to read the **bare numbers** you pass it:
 
-  - `input_basis = NU`: each bare number is in its field's natural unit (MW, MVAr, MVA, Ω,
+  - `input_basis = u"NU"`: each bare number is in its field's natural unit (MW, MVAr, MVA, Ω,
     S, MW/min).
-  - `input_basis = CU`: each bare number is per-unit on the component's own `base_power`.
+  - `input_basis = u"CU"`: each bare number is per-unit on the component's own `base_power`.
 
 A value that carries its own units (`30.0u"MW"`, `0.5CU`) is always read in those units,
 whatever `input_basis` says, so you can mix the two. `input_basis` only affects construction:
@@ -40,19 +40,19 @@ gas1 = ThermalStandard(;
     time_limits = (up = 8.0, down = 8.0), # Hours, unaffected by per-unitization
     prime_mover_type = PrimeMovers.CC,
     fuel = ThermalFuels.NATURAL_GAS,
-    input_basis = NU,
+    input_basis = u"NU",
 );
 ```
 
-Reading the values back in component base (`get_rating(gas1, CU)`) shows them divided by the
+Reading the values back in component base (`get_rating(gas1, u"CU")`) shows them divided by the
 `base_power` of 30 MVA.
 
 `ramp_limits` is a **rate**, so its unit carries a time as well as a power. Under
-`input_basis = NU` a bare number is MW/min. To give another time, tag it:
+`input_basis = u"NU"` a bare number is MW/min. To give another time, tag it:
 `(up = 360.0u"MW/hr", down = 360.0u"MW/hr")`. Only the power axis is per-unitized (there is
 no time base), so a relative value names its time too: `0.2CU/u"minute"`.
 
-`input_basis = SU` is rejected: a component that is not yet attached to a `System` has no
+`input_basis = u"SU"` is rejected: a component that is not yet attached to a `System` has no
 system base to convert from.
 
 ### Step 2: Attach the Component
