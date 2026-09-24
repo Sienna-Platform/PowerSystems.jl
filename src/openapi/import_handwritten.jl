@@ -625,9 +625,9 @@ function from_openapi(
             TransformerControlObjective.UNDEFINED,
         ),
         regulated_bus = resolve_ref(refs, po.regulated_bus_id, ACBus),
-        regulated_bus_side = _optional_enum(
-            po.regulated_bus_side,
-            TransformerRegulatedBusSide.Value,
+        regulated_bus_side = something(
+            _optional_enum(po.regulated_bus_side, TransformerRegulatedBusSide.Value),
+            TransformerRegulatedBusSide.UNDEFINED,
         ),
         load_drop_compensation_r = _or_default(po.load_drop_compensation_r, 0.0),
         load_drop_compensation_x = _or_default(po.load_drop_compensation_x, 0.0),
@@ -666,9 +666,9 @@ function from_openapi(
             TransformerControlObjective.UNDEFINED,
         ),
         regulated_bus = resolve_ref(refs, po.regulated_bus_id, ACBus),
-        regulated_bus_side = _optional_enum(
-            po.regulated_bus_side,
-            TransformerRegulatedBusSide.Value,
+        regulated_bus_side = something(
+            _optional_enum(po.regulated_bus_side, TransformerRegulatedBusSide.Value),
+            TransformerRegulatedBusSide.UNDEFINED,
         ),
         load_drop_compensation_r = _or_default(po.load_drop_compensation_r, 0.0),
         load_drop_compensation_x = _or_default(po.load_drop_compensation_x, 0.0),

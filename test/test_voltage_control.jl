@@ -100,6 +100,8 @@ _vc_droop(name, bus; kwargs...) = VoltageDroopControl(;
     @test TransformerRegulatedBusSide.CONTROLLING_WINDING isa
           TransformerRegulatedBusSide.Value
     @test TransformerRegulatedBusSide.OPPOSITE_WINDING isa TransformerRegulatedBusSide.Value
+    @test TransformerRegulatedBusSide.UNDEFINED isa TransformerRegulatedBusSide.Value
+    @test VoltageControlTerminal.UNDEFINED isa VoltageControlTerminal.Value
     @test VoltageControlTerminal.FROM isa VoltageControlTerminal.Value
     @test VoltageControlTerminal.TO isa VoltageControlTerminal.Value
 
@@ -125,7 +127,7 @@ _vc_droop(name, bus; kwargs...) = VoltageDroopControl(;
 
     circuit = TransformerCircuit(nothing)
     @test isnothing(get_regulated_bus(circuit))
-    @test isnothing(get_regulated_bus_side(circuit))
+    @test get_regulated_bus_side(circuit) == TransformerRegulatedBusSide.UNDEFINED
     @test get_load_drop_compensation_r(circuit, CU) == 0.0
     @test get_load_drop_compensation_x(circuit, CU) == 0.0
     @test !hasfield(TransformerCircuit, :regulated_bus_number)
@@ -186,12 +188,12 @@ end
     set_regulated_bus!(circuit, b2)
     @test get_regulated_bus_side(circuit) == TransformerRegulatedBusSide.OPPOSITE_WINDING
     set_regulated_bus!(circuit, b3)
-    @test isnothing(get_regulated_bus_side(circuit))
+    @test get_regulated_bus_side(circuit) == TransformerRegulatedBusSide.UNDEFINED
     set_regulated_bus_side!(circuit, TransformerRegulatedBusSide.CONTROLLING_WINDING)
     @test get_regulated_bus_side(circuit) == TransformerRegulatedBusSide.CONTROLLING_WINDING
     set_regulated_bus!(circuit, nothing)
-    set_regulated_bus_side!(circuit, nothing)
-    @test isnothing(get_regulated_bus_side(circuit))
+    set_regulated_bus_side!(circuit, TransformerRegulatedBusSide.UNDEFINED)
+    @test get_regulated_bus_side(circuit) == TransformerRegulatedBusSide.UNDEFINED
 end
 
 @testset "VoltageDroopControl construction and curve ordering (R15)" begin
@@ -248,7 +250,7 @@ end
     @test get_weight(sharing, g1) == 0.4
     @test get_weight(sharing, g2) == 1.0
     @test get_weight(sharing, sc) == 2.0
-    @test isnothing(get_terminal(sharing, g1))
+    @test get_terminal(sharing, g1) == VoltageControlTerminal.UNDEFINED
     @test Set(get_name.(get_associated_components(sys, sharing))) == Set(["g1", "g2", "sc"])
     @test has_supplemental_attributes(g1, ReactivePowerSharing)
 
@@ -614,7 +616,7 @@ end
         @test get_weight(sharing2, facts2) == 1.0
         @test get_weight(sharing2, vsc2) == 0.25
         @test get_terminal(sharing2, vsc2) == VoltageControlTerminal.FROM
-        @test isnothing(get_terminal(sharing2, g1_2))
+        @test get_terminal(sharing2, g1_2) == VoltageControlTerminal.UNDEFINED
 
         droop2 = only(get_supplemental_attributes(VoltageDroopControl, sys2))
         @test !get_available(droop2)

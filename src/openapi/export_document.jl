@@ -455,10 +455,7 @@ function _group_association!(
             control_id = attr_id,
             entity_id = entity_id,
             weight = get_weight(attr, entity),
-            terminal = _optional_enum_po(
-                PO.VoltageControlTerminal,
-                get_terminal(attr, entity),
-            ),
+            terminal = PO.VoltageControlTerminal(string(get_terminal(attr, entity))),
         ),
     )
     return nothing

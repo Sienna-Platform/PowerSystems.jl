@@ -532,7 +532,10 @@ function _push_group_indices!(
 )
     id = IS.get_id(component)
     attribute.weights[id] = membership.weight
-    isnothing(membership.terminal) || (attribute.terminals[id] = membership.terminal)
+    terminal = membership.terminal
+    if !isnothing(terminal) && terminal != VoltageControlTerminal.UNDEFINED
+        attribute.terminals[id] = terminal
+    end
     return nothing
 end
 

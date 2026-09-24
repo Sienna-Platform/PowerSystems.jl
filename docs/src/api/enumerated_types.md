@@ -221,10 +221,11 @@ tap changer, which can be used to determine the tap position during power flow c
 its regulated bus lies when that bus is not one of the circuit's own buses.
 It is the sign of the PSS/E `CONT` field.
 For a regulated bus at either end of the circuit's arc the side follows from the arc and is
-left unset.
+stored as `UNDEFINED`.
 
 | Name                  | Description                                                                      |
 |:--------------------- |:-------------------------------------------------------------------------------- |
+| `UNDEFINED`           | No side is stored; the regulated bus is an arc end, or there is none             |
 | `CONTROLLING_WINDING` | The regulated bus lies beyond the tapped (controlling) winding, PSS/E `CONT < 0` |
 | `OPPOSITE_WINDING`    | The regulated bus lies beyond the other winding, PSS/E `CONT > 0`                |
 
@@ -237,10 +238,11 @@ PowerSystems.TransformerRegulatedBusSide
 `VoltageControlTerminal` names the converter of a [`TwoTerminalVSCLine`](@ref) that is a member
 of a [`ReactivePowerSharing`](@ref) group, since each converter regulates its own bus.
 
-| Name   | Description                          |
-|:------ |:------------------------------------ |
-| `FROM` | The converter at the line's from bus |
-| `TO`   | The converter at the line's to bus   |
+| Name        | Description                                     |
+|:----------- |:----------------------------------------------- |
+| `UNDEFINED` | The member is a single-bus device, no converter |
+| `FROM`      | The converter at the line's from bus            |
+| `TO`        | The converter at the line's to bus              |
 
 ```@docs
 PowerSystems.VoltageControlTerminal

@@ -549,10 +549,10 @@
                 },
                 {
                     "name": "regulated_bus_side",
-                    "comment": "Side of the controlling winding on which the regulated bus lies, replacing the sign of PSS/E `CONT`. Stored only when the regulated bus is neither end of this circuit's `arc`; when it is one of them the side follows from the arc and this is `nothing`. [`get_regulated_bus_side`](@ref) resolves it either way",
-                    "null_value": "nothing",
-                    "data_type": "Union{Nothing, TransformerRegulatedBusSide.Value}",
-                    "default": "nothing",
+                    "comment": "Side of the controlling winding on which the regulated bus lies, replacing the sign of PSS/E `CONT`. Stored only when the regulated bus is neither end of this circuit's `arc`; when it is one of them the side follows from the arc and this is `UNDEFINED`. [`get_regulated_bus_side`](@ref) resolves it either way",
+                    "null_value": "TransformerRegulatedBusSide.UNDEFINED",
+                    "data_type": "TransformerRegulatedBusSide.Value",
+                    "default": "TransformerRegulatedBusSide.UNDEFINED",
                     "exclude_getter": true
                 },
                 {
