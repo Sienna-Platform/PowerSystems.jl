@@ -122,8 +122,9 @@ end
     nodes = nodes5()
     bad_therm_gen_act_power = thermal_generators5(nodes)
     bad_therm_gen_act_power[1].active_power = 10
-    # This is an explicit check for one error message.
-    @test_logs (:warn, r"Invalid range") System(
+    # This is an explicit check for one error message; the two generators on nodeA also
+    # draw the sharing-group warning from check(sys), so the match is not exclusive.
+    @test_logs (:warn, r"Invalid range") match_mode = :any System(
         100.0,
         nodes,
         bad_therm_gen_act_power,
