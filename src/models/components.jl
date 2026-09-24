@@ -1,8 +1,11 @@
 @inline function _get_system_base_power(c::Component)
     base_value = IS.get_base_value(c)
-    isnothing(base_value) && error("Component $(get_name(c)) is not attached to a system.")
+    isnothing(base_value) && _not_attached_error(c)
     return base_value
 end
+# Out of line so the message isn't built inside every getter that reads the system base.
+@noinline _not_attached_error(c) =
+    error("Component $(get_name(c)) is not attached to a system.")
 
 """
 Unitless component-base power (MVA). Fallback for components with no `base_power`
@@ -136,8 +139,8 @@ get_base_power_unitful(c::Component, u::Unitful.Units) =
 # A base power in natural units `u` (`u"NU"` is MVA). `uconvert` throws a
 # `Unitful.DimensionError` for non-power units; per-unit ones are rejected by name.
 function _base_power_in(mva::Float64, u::Unitful.Units)
-    t = _resolve_target(APPARENT_POWER, u)
-    _require_natural(_target_basis(t, APPARENT_POWER), u)
+    basis, t = _conversion_plan(APPARENT_POWER, u)
+    _require_natural(basis, u)
     return Unitful.uconvert(t, mva * MVA)
 end
 
@@ -154,13 +157,13 @@ set_base_power!(c::Component, val::Unitful.Quantity) =
 
 # `ustrip(MVA, …)` converts power units and throws for non-power units.
 function _base_power_mva(val::Unitful.Quantity)
-    t = _resolve_target(APPARENT_POWER, Unitful.unit(val))
-    _require_natural(_target_basis(t, APPARENT_POWER), Unitful.unit(val))
+    basis, t = _conversion_plan(APPARENT_POWER, Unitful.unit(val))
+    _require_natural(basis, Unitful.unit(val))
     return Unitful.ustrip(MVA, Unitful.ustrip(val) * t)
 end
 
 _require_natural(::Val{:natural}, _) = nothing
-_require_natural(::Val, u) = _base_power_units_error(u)
+@noinline _require_natural(::Val, u) = _base_power_units_error(u)
 
 _set_base_power!(::ComponentBasePower, c, val::Float64) = (c.base_power = val)
 function _set_base_power!(::SystemBasePower, c, ::Float64)
@@ -269,10 +272,13 @@ function set_value(c::UnitsBearer, field, val::Quantity, cu::Val)
 end
 
 # A per-unit target whose residual is wrong for the field (a bare `u"CU"` on a rate). The
-# engine rejects it too, but only here is the field known for the message.
-function _check_residual(c, field, cu::Val, units)
+# engine rejects it too, but only here is the field known for the message. The plan is a
+# constant, so every other target dispatches to the empty method and compiles away.
+_check_residual(c, field, cu::Val, units) =
+    _check_residual(first(_conversion_plan(_unit_category(cu), units)), c, field, cu, units)
+_check_residual(::Val, _, _, _, _) = nothing
+@noinline function _check_residual(::Val{:mismatch}, c, field, cu, units)
     cat = _unit_category(cu)
-    _target_basis(_resolve_target(cat, units), cat) === Val(:mismatch) || return nothing
     throw(
         ArgumentError(
             "$(_field_description(c, field)) does not take `$units`: its per-unit " *
@@ -344,10 +350,10 @@ _basis_unit(basis::Unitful.Units, cat::UnitCategory) =
     _checked_input_basis(basis) * per_unit_table(cat)[4]
 
 # SU is rejected: a component under construction has no system base yet.
-function _checked_input_basis(basis)
-    (basis == u"CU" || basis == u"NU") && return basis
+_checked_input_basis(basis::typeof(u"CU")) = basis
+_checked_input_basis(basis::typeof(u"NU")) = basis
+@noinline _checked_input_basis(basis) =
     throw(ArgumentError("input_basis must be u\"CU\" or u\"NU\"; got $basis"))
-end
 
 # Generated `true` for types whose kwarg constructor requires `input_basis`.
 _takes_input_basis(::Type) = false

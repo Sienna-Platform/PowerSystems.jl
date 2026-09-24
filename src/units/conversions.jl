@@ -199,15 +199,13 @@ _cu_to_su_ratio(c, ::UnitCategory{NU, P, V}) where {NU, P, V} =
 # Per-unit units of a category
 # ============================================================
 
-# `CUp^P·CUv^V`, printed under its alias where one exists.
-_named_per_unit(::Val{:component}, u) = get(_COMPONENT_ALIASES, u, u)
-_named_per_unit(::Val{:system}, u) = get(_SYSTEM_ALIASES, u, u)
-const _COMPONENT_ALIASES = Dict{Any, Any}(
-    CUv^2 / CUp => CUz, CUp / CUv^2 => CUy, CUp / CUv => CUi,
-)
-const _SYSTEM_ALIASES = Dict{Any, Any}(
-    CUv^2 / SUp => SUz, SUp / CUv^2 => SUy, SUp / CUv => SUi,
-)
+# One per-unit of a category with base exponents `(P, V)`, on the component and the system
+# base: `CUp^P·CUv^V`, or its alias where one exists. Called only from `per_unit_table`'s
+# generator.
+_per_unit_units(::Val{P}, ::Val{V}) where {P, V} = (CUp^P * CUv^V, SUp^P * CUv^V)
+_per_unit_units(::Val{-1}, ::Val{2}) = (CUz, SUz)
+_per_unit_units(::Val{1}, ::Val{-2}) = (CUy, SUy)
+_per_unit_units(::Val{1}, ::Val{-1}) = (CUi, SUi)
 
 """
     per_unit_table(category) -> (component, system, natural, residual)
@@ -230,37 +228,36 @@ Computed from the category's type in the generator, so every use is a constant.
             error("inconsistent natural unit $natural for per-unit exponents ($P, $V)")
         residual = Unitful.NoUnits
     end
-    component = _named_per_unit(Val(:component), CUp^P * CUv^V)
-    system = _named_per_unit(Val(:system), SUp^P * CUv^V)
+    component, system = _per_unit_units(Val(P), Val(V))
     return :(($component, $system, $(natural / residual), $residual))
 end
 
-# Which basis a resolved target is on, from the units' type: `Val(:component)`,
-# `Val(:system)`, `Val(:natural)`, or `Val(:mismatch)` for a per-unit target whose
-# residual is wrong for the category (a bare `u"CU"` on a ramp).
-@generated function _target_basis(t::Unitful.Units, cat::UnitCategory)
-    component, system, _, residual = per_unit_table(cat.instance)
-    dims = Unitful.dimension(t.instance)
-    dims == Unitful.dimension(component * residual) && return :(Val(:component))
-    dims == Unitful.dimension(system * residual) && return :(Val(:system))
-    per_unit = any(
-        d ->
-            d isa Union{
-                Unitful.Dimension{:ComponentBasePower},
-                Unitful.Dimension{:SystemBasePower},
-                Unitful.Dimension{:ComponentBaseVoltage},
-            },
-        typeof(dims).parameters[1],
-    )
-    return per_unit ? :(Val(:mismatch)) : :(Val(:natural))
+# Which basis resolved units `t` are on: `:component`, `:system`, `:natural`, or
+# `:mismatch` for per-unit units whose residual is wrong for the category (a bare `u"CU"`
+# on a ramp). Called only from `_conversion_plan`'s generator.
+function _basis_of(t, component, system, residual)
+    dims = Unitful.dimension(t)
+    dims == Unitful.dimension(component * residual) && return :component
+    dims == Unitful.dimension(system * residual) && return :system
+    names = map(d -> typeof(d).parameters[1], typeof(dims).parameters[1])
+    per_unit =
+        any(in((:ComponentBasePower, :SystemBasePower, :ComponentBaseVoltage)), names)
+    return per_unit ? :mismatch : :natural
 end
 
-_resolve_target(cat::UnitCategory, units::Unitful.Units) =
-    IS.resolve_per_unit(units, per_unit_table(cat)[1:3]...)
+"""
+    _conversion_plan(category, units) -> (Val(basis), resolved_units)
 
-# ============================================================
-# convert_units: stored component-base numbers to and from quantities
-# ============================================================
+How to convert `category`'s values to or from `units`: `units` with any generic
+`u"CU"`/`u"SU"`/`u"NU"` resolved to the category's own, and which basis they are on. Both
+come from the argument types in the generator, once per (category, units) pair, so a getter
+compiles to the arithmetic alone.
+"""
+@generated function _conversion_plan(cat::UnitCategory, units::Unitful.Units)
+    component, system, natural, residual = per_unit_table(cat.instance)
+    t = IS.resolve_per_unit(units.instance, component, system, natural)
+    return :(($(Val(_basis_of(t, component, system, residual))), $t))
+end
 
 """
     convert_units(component, value::Quantity, category, to) -> Quantity
@@ -282,26 +279,23 @@ convert_units(::Any, ::Nothing, ::UnitCategory, ::Units) = nothing
 
 # Stored (a bare component-base number, in the category's residual) → `to`.
 function _from_stored(c, v::Number, cat::UnitCategory, to::Units)
-    t = _resolve_target(cat, to)
-    basis = _target_basis(t, cat)
-    basis === Val(:mismatch) && _residual_error(cat, to)
-    return _from_stored(basis, c, v, cat, t)
+    basis, t = _conversion_plan(cat, to)
+    return _from_stored(basis, c, v, cat, t, to)
 end
 _from_stored(::Any, ::Nothing, ::UnitCategory, ::Units) = nothing
 
-_from_stored(::Val{:component}, _, v, cat, t) =
+_from_stored(::Val{:component}, _, v, cat, t, _) =
     uconvert(t, v * _stored_unit(Val(:component), cat))
-_from_stored(::Val{:system}, c, v, cat, t) =
+_from_stored(::Val{:system}, c, v, cat, t, _) =
     uconvert(t, (v * _cu_to_su_ratio(c, cat)) * _stored_unit(Val(:system), cat))
-_from_stored(::Val{:natural}, c, v, cat, t) =
+_from_stored(::Val{:natural}, c, v, cat, t, _) =
     uconvert(t, (v * base_value(c, cat)) * natural_unit(cat))
+_from_stored(::Val{:mismatch}, _, _, cat, _, to) = _residual_error(cat, to)
 
 # A quantity → the bare stored number. A value tagged with the generic `u"CU"` is read
 # as this category's per-unit base.
 function _to_stored(c, q::Quantity, cat::UnitCategory)
-    t = _resolve_target(cat, Unitful.unit(q))
-    basis = _target_basis(t, cat)
-    basis === Val(:mismatch) && _residual_error(cat, Unitful.unit(q))
+    basis, t = _conversion_plan(cat, Unitful.unit(q))
     return _to_stored(basis, c, ustrip(q) * t, cat)
 end
 
@@ -310,11 +304,12 @@ _to_stored(::Val{:system}, c, q, cat) =
     ustrip(_stored_unit(Val(:system), cat), q) / _cu_to_su_ratio(c, cat)
 _to_stored(::Val{:natural}, c, q, cat) =
     ustrip(natural_unit(cat), q) / base_value(c, cat)
+_to_stored(::Val{:mismatch}, _, q, cat) = _residual_error(cat, Unitful.unit(q))
 
 _stored_unit(::Val{:component}, cat) = (t = per_unit_table(cat); t[1] * t[4])
 _stored_unit(::Val{:system}, cat) = (t = per_unit_table(cat); t[2] * t[4])
 
-_residual_error(cat, t) = throw(
+@noinline _residual_error(cat, t) = throw(
     ArgumentError(
         "$(cat) values per unit are in $(_stored_unit(Val(:component), cat)) on the " *
         "component base; `$t` does not match. Write the rest of the unit too, e.g. " *
