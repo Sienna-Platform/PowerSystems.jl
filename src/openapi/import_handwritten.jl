@@ -74,7 +74,7 @@ _fromto(::Union{Nothing, IC.Absent}, default) = default
 _fromto(m, ::Any) = _fromto(m)
 
 """A field the PSY descriptor declares required-with-a-default (e.g. `Area.load_response`,
-`TransformerCircuit.α`/`regulated_bus_number`) but the wire declares optional-by-omission:
+`TransformerCircuit.α`/`load_drop_compensation_r`) but the wire declares optional-by-omission:
 `Absent`/`nothing` falls back to that same descriptor default rather than failing to build the
 component at all."""
 _or_default(::Union{Nothing, IC.Absent}, default) = default
@@ -581,6 +581,32 @@ _check_circuit_param_units(po) = _check_unit_basis(
     "COMPONENT_BASE",
 )
 
+"""
+Guard for a field whose value is only meaningful on one wire basis: `basis` (the sibling
+unit-basis property, `nothing`/`Absent` meaning the schema default `implemented`) must name
+`implemented`, else error naming the field and the component id. The generated converters
+call this for every `openapi_unit_basis` field; the hand-written ones for their own.
+"""
+function _require_unit_basis(basis, implemented::AbstractString, field::AbstractString, id)
+    return _check_unit_basis(basis, Set([implemented]), field, " for id=$id", implemented)
+end
+
+"""A generator's `voltage_setpoint`, per-unit of its regulated bus base voltage: only the
+`COMPONENT_BASE` wire basis is implemented, matching the generated converters."""
+function _voltage_setpoint_pu(po, struct_name::AbstractString)
+    _require_unit_basis(
+        po.voltage_setpoint_units,
+        "COMPONENT_BASE",
+        "$struct_name.voltage_setpoint_units",
+        po.id,
+    )
+    return _or_default(po.voltage_setpoint, 1.0)
+end
+
+"""A nullable enum: `nothing`/`Absent` stays `nothing`, else the wire wrapper's value as `T`."""
+_optional_enum(::Union{Nothing, IC.Absent}, ::Type) = nothing
+_optional_enum(v, ::Type{T}) where {T} = T(v.value)
+
 function from_openapi(
     po::PO.TransformerCircuit,
     refs::OpenAPIRefs,
@@ -598,7 +624,13 @@ function from_openapi(
             po.control_objective,
             TransformerControlObjective.UNDEFINED,
         ),
-        regulated_bus_number = _or_default(po.regulated_bus_number, 0),
+        regulated_bus = resolve_ref(refs, po.regulated_bus_id, ACBus),
+        regulated_bus_side = something(
+            _optional_enum(po.regulated_bus_side, TransformerRegulatedBusSide.Value),
+            TransformerRegulatedBusSide.UNDEFINED,
+        ),
+        load_drop_compensation_r = _or_default(po.load_drop_compensation_r, 0.0),
+        load_drop_compensation_x = _or_default(po.load_drop_compensation_x, 0.0),
         control_limits = _minmax(po.control_limits, (min = 0.9, max = 1.1)),
         controlled_quantity_limits =
         _minmax(po.controlled_quantity_limits, (min = 0.9, max = 1.1)),
@@ -633,7 +665,13 @@ function from_openapi(
             po.control_objective,
             TransformerControlObjective.UNDEFINED,
         ),
-        regulated_bus_number = _or_default(po.regulated_bus_number, 0),
+        regulated_bus = resolve_ref(refs, po.regulated_bus_id, ACBus),
+        regulated_bus_side = something(
+            _optional_enum(po.regulated_bus_side, TransformerRegulatedBusSide.Value),
+            TransformerRegulatedBusSide.UNDEFINED,
+        ),
+        load_drop_compensation_r = _or_default(po.load_drop_compensation_r, 0.0),
+        load_drop_compensation_x = _or_default(po.load_drop_compensation_x, 0.0),
         control_limits = _minmax(po.control_limits, (min = 0.9, max = 1.1)),
         controlled_quantity_limits =
         _minmax(po.controlled_quantity_limits, (min = 0.9, max = 1.1)),
@@ -849,7 +887,7 @@ function from_openapi(po::PO.SwitchedAdmittance, refs::OpenAPIRefs, ::ComponentB
             po.control_mode,
             SwitchedAdmittanceControlMode.FIXED,
         ),
-        regulated_bus_number = _or_default(po.regulated_bus_number, 0),
+        remote_regulated_bus = resolve_ref(refs, po.remote_regulated_bus_id, ACBus),
     )
 end
 
@@ -899,8 +937,8 @@ function from_openapi(po::PO.FACTSControlDevice, refs::OpenAPIRefs, ::ComponentB
             po.shunt_control_type,
             FACTSShuntControlType.STATCOM,
         ),
-        regulated_bus_number = _or_default(po.regulated_bus_number, 0),
-        reactive_power_required = po.reactive_power_required,
+        remote_regulated_bus = resolve_ref(refs, po.remote_regulated_bus_id, ACBus),
+        reactive_power_required = _or_default(po.reactive_power_required, 0.0),
         base_power = _require_base_power("FACTSControlDevice", po.id, po.base_power),
         input_basis = CU,
     )
@@ -925,8 +963,8 @@ function from_openapi(po::PO.FACTSControlDevice, refs::OpenAPIRefs, ::NaturalUni
             po.shunt_control_type,
             FACTSShuntControlType.STATCOM,
         ),
-        regulated_bus_number = _or_default(po.regulated_bus_number, 0),
-        reactive_power_required = po.reactive_power_required,
+        remote_regulated_bus = resolve_ref(refs, po.remote_regulated_bus_id, ACBus),
+        reactive_power_required = _or_default(po.reactive_power_required, 0.0) / bp,
         base_power = bp,
         input_basis = CU,
     )
@@ -1025,6 +1063,8 @@ function from_openapi(
         name = po.name,
         available = po.available,
         bus = refs[po.bus],
+        remote_regulated_bus = resolve_ref(refs, po.remote_regulated_bus_id, ACBus),
+        voltage_setpoint = _voltage_setpoint_pu(po, "EnergyReservoirStorage"),
         prime_mover_type = PrimeMovers.Value(po.prime_mover_type.value),
         storage_technology_type = StorageTech.Value(po.storage_technology_type.value),
         storage_capacity = po.storage_capacity,
@@ -1060,6 +1100,8 @@ function from_openapi(
         name = po.name,
         available = po.available,
         bus = refs[po.bus],
+        remote_regulated_bus = resolve_ref(refs, po.remote_regulated_bus_id, ACBus),
+        voltage_setpoint = _voltage_setpoint_pu(po, "EnergyReservoirStorage"),
         prime_mover_type = PrimeMovers.Value(po.prime_mover_type.value),
         storage_technology_type = StorageTech.Value(po.storage_technology_type.value),
         storage_capacity = po.storage_capacity / dbp,
@@ -1210,6 +1252,16 @@ _check_lcc_dc_voltage_units(po) = _check_unit_basis(
 MVA)."""
 _lcc_ohm_to_pu(ohms, base_voltage, base_power) = ohms / (base_voltage^2 / base_power)
 
+"""
+The kV the DC circuit's ohms per-unitize on: the scheduled DC voltage, or the rectifier's AC
+base voltage when the line is scheduled at 0 kV (out of service), the same fallback the PSS/E
+reader applies so a zero schedule never divides by zero.
+"""
+function _lcc_dc_base_voltage(po)
+    iszero(po.scheduled_dc_voltage) && return po.rectifier_base_voltage
+    return po.scheduled_dc_voltage
+end
+
 """`transfer_setpoint` follows `power_mode`: MW (`ActivePower`, divides like every sibling
 power field) when `true`, Amperes (`CurrentFlow`, no power-base conversion exists) when
 `false`."""
@@ -1226,7 +1278,7 @@ function from_openapi(po::PO.TwoTerminalLCCLine, refs::OpenAPIRefs, ::ComponentB
         available = po.available,
         arc = refs[po.arc],
         active_power_flow = po.active_power_flow,
-        r = _lcc_ohm_to_pu(po.r, po.scheduled_dc_voltage, base_power),
+        r = _lcc_ohm_to_pu(po.r, _lcc_dc_base_voltage(po), base_power),
         transfer_setpoint = po.transfer_setpoint,
         scheduled_dc_voltage = po.scheduled_dc_voltage,
         rectifier_bridges = po.rectifier_bridges,
@@ -1250,7 +1302,8 @@ function from_openapi(po::PO.TwoTerminalLCCLine, refs::OpenAPIRefs, ::ComponentB
         power_mode = _or_default(po.power_mode, true),
         switch_mode_voltage = _or_default(po.switch_mode_voltage, 0.0),
         compounding_resistance = _lcc_ohm_to_pu(
-            _or_default(po.compounding_resistance, 0.0), po.scheduled_dc_voltage, base_power,
+            _or_default(po.compounding_resistance, 0.0), _lcc_dc_base_voltage(po),
+            base_power,
         ),
         min_compounding_voltage = _or_default(po.min_compounding_voltage, 0.0),
         rectifier_transformer_ratio = _or_default(po.rectifier_transformer_ratio, 1.0),
@@ -1272,6 +1325,18 @@ function from_openapi(po::PO.TwoTerminalLCCLine, refs::OpenAPIRefs, ::ComponentB
             _or_default(po.inverter_capacitor_reactance, 0.0),
             po.inverter_base_voltage,
             base_power,
+        ),
+        rectifier_commutating_bus = resolve_ref(
+            refs,
+            po.rectifier_commutating_bus_id,
+            ACBus,
+        ),
+        inverter_commutating_bus = resolve_ref(refs, po.inverter_commutating_bus_id, ACBus),
+        rectifier_tap_transformer = resolve_ref(
+            refs, po.rectifier_tap_transformer_id, TwoWindingTransformer,
+        ),
+        inverter_tap_transformer = resolve_ref(
+            refs, po.inverter_tap_transformer_id, TwoWindingTransformer,
         ),
         active_power_limits_from =
         _minmax(po.active_power_limits_from, (min = 0.0, max = 0.0)),
@@ -1295,7 +1360,7 @@ function from_openapi(po::PO.TwoTerminalLCCLine, refs::OpenAPIRefs, ::NaturalUni
         available = po.available,
         arc = refs[po.arc],
         active_power_flow = po.active_power_flow / base_power,
-        r = _lcc_ohm_to_pu(po.r, po.scheduled_dc_voltage, base_power),
+        r = _lcc_ohm_to_pu(po.r, _lcc_dc_base_voltage(po), base_power),
         transfer_setpoint = _lcc_transfer_setpoint(
             po.transfer_setpoint, Val(_or_default(po.power_mode, true)), base_power,
         ),
@@ -1321,7 +1386,8 @@ function from_openapi(po::PO.TwoTerminalLCCLine, refs::OpenAPIRefs, ::NaturalUni
         power_mode = _or_default(po.power_mode, true),
         switch_mode_voltage = _or_default(po.switch_mode_voltage, 0.0),
         compounding_resistance = _lcc_ohm_to_pu(
-            _or_default(po.compounding_resistance, 0.0), po.scheduled_dc_voltage, base_power,
+            _or_default(po.compounding_resistance, 0.0), _lcc_dc_base_voltage(po),
+            base_power,
         ),
         min_compounding_voltage = _or_default(po.min_compounding_voltage, 0.0),
         rectifier_transformer_ratio = _or_default(po.rectifier_transformer_ratio, 1.0),
@@ -1343,6 +1409,18 @@ function from_openapi(po::PO.TwoTerminalLCCLine, refs::OpenAPIRefs, ::NaturalUni
             _or_default(po.inverter_capacitor_reactance, 0.0),
             po.inverter_base_voltage,
             base_power,
+        ),
+        rectifier_commutating_bus = resolve_ref(
+            refs,
+            po.rectifier_commutating_bus_id,
+            ACBus,
+        ),
+        inverter_commutating_bus = resolve_ref(refs, po.inverter_commutating_bus_id, ACBus),
+        rectifier_tap_transformer = resolve_ref(
+            refs, po.rectifier_tap_transformer_id, TwoWindingTransformer,
+        ),
+        inverter_tap_transformer = resolve_ref(
+            refs, po.inverter_tap_transformer_id, TwoWindingTransformer,
         ),
         active_power_limits_from = _minmax_cu(
             po.active_power_limits_from,
@@ -1399,7 +1477,6 @@ end
 #   dc_voltage_droop_*    pu on both sides.
 #   dc_current,           amperes on both sides; no power base applies.
 #   max_dc_current_*
-#   rmpct_*,              dimensionless on both sides.
 #   power_factor_weighting_fraction_*
 #   rated_dc_voltage,     kV on both sides.
 #   rated_ac_voltage_*
@@ -1642,10 +1719,12 @@ function _two_terminal_vsc_line(po, refs::OpenAPIRefs, base_power, unit)
         voltage_limits_to = _minmax(po.voltage_limits_to, (min = 0.0, max = 999.9)),
         dc_voltage_droop_to = _or_default(po.dc_voltage_droop_to, 0.0),
         rated_dc_voltage = _or_default(po.rated_dc_voltage, 0.0),
-        remote_bus_control_from = po.remote_bus_control_from,
-        remote_bus_control_to = po.remote_bus_control_to,
-        rmpct_from = _or_default(po.rmpct_from, 100.0),
-        rmpct_to = _or_default(po.rmpct_to, 100.0),
+        remote_regulated_bus_from = resolve_ref(
+            refs,
+            po.remote_regulated_bus_id_from,
+            ACBus,
+        ),
+        remote_regulated_bus_to = resolve_ref(refs, po.remote_regulated_bus_id_to, ACBus),
         base_power = base_power,
         input_basis = CU,
     )
@@ -1700,6 +1779,8 @@ function from_openapi(po::PO.Source, refs::OpenAPIRefs, ::ComponentBaseUnit)
         name = po.name,
         available = po.available,
         bus = resolve_ref(refs, po.bus, ACBus),
+        remote_regulated_bus = resolve_ref(refs, po.remote_regulated_bus_id, ACBus),
+        voltage_setpoint = _voltage_setpoint_pu(po, "Source"),
         active_power = _or_default(po.active_power, 0.0),
         reactive_power = _or_default(po.reactive_power, 0.0),
         active_power_limits = _minmax(po.active_power_limits, (min = 0.0, max = 0.0)),
@@ -1724,6 +1805,8 @@ function from_openapi(po::PO.Source, refs::OpenAPIRefs, ::NaturalUnit)
         name = po.name,
         available = po.available,
         bus = resolve_ref(refs, po.bus, ACBus),
+        remote_regulated_bus = resolve_ref(refs, po.remote_regulated_bus_id, ACBus),
+        voltage_setpoint = _voltage_setpoint_pu(po, "Source"),
         active_power = _or_default(po.active_power, 0.0) / dbp,
         reactive_power = _or_default(po.reactive_power, 0.0) / dbp,
         active_power_limits =
@@ -1786,8 +1869,7 @@ end
 # ── InterconnectingConverter ────────────────────────────────────────────────────
 # Another genuine component base: every MVA/MW/A-rated field divides by the converter's own
 # `base_power`, including `dc_current`/`max_dc_current`, which the descriptor tags `:mva`
-# rather than a current unit. `remote_bus_control` is a bus *number*, not a component
-# reference — `Union{Nothing, Int}` in PSY — so it passes through rather than resolving.
+# rather than a current unit. `remote_regulated_bus_id` resolves to the bus component.
 # `loss_function` reuses the `TwoTerminalVSCLine` guard: the PSY field admits only the linear
 # and quadratic shapes, so a piecewise document curve is named here rather than surfacing as
 # a constructor `MethodError`.
@@ -1826,8 +1908,7 @@ function from_openapi(
         dc_setpoint = _or_default(po.dc_setpoint, 0.0),
         ac_setpoint = _or_default(po.ac_setpoint, 1.0),
         dc_voltage_droop = _or_default(po.dc_voltage_droop, 0.0),
-        remote_bus_control = _or_default(po.remote_bus_control, nothing),
-        rmpct = _or_default(po.rmpct, 100.0),
+        remote_regulated_bus = resolve_ref(refs, po.remote_regulated_bus_id, ACBus),
         power_factor_weighting_fraction = _or_default(
             po.power_factor_weighting_fraction,
             1.0,
@@ -1858,8 +1939,7 @@ function from_openapi(po::PO.InterconnectingConverter, refs::OpenAPIRefs, ::Natu
         dc_setpoint = _or_default(po.dc_setpoint, 0.0),
         ac_setpoint = _or_default(po.ac_setpoint, 1.0),
         dc_voltage_droop = _or_default(po.dc_voltage_droop, 0.0),
-        remote_bus_control = _or_default(po.remote_bus_control, nothing),
-        rmpct = _or_default(po.rmpct, 100.0),
+        remote_regulated_bus = resolve_ref(refs, po.remote_regulated_bus_id, ACBus),
         power_factor_weighting_fraction = _or_default(
             po.power_factor_weighting_fraction,
             1.0,

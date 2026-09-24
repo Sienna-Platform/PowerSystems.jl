@@ -38,6 +38,22 @@ export CombinedCycleBlock
 export CombinedCycleFractional
 export CombinedCycleConfiguration
 export Substation
+export VoltageControlGroup
+export VoltageDroopControl
+export ReactivePowerSharing
+export VoltageControlDevice
+export VoltageControlGenerator
+export get_regulated_bus
+export get_regulated_bus_from
+export get_regulated_bus_to
+export get_regulated_bus_side
+export get_weight
+export get_weights
+export get_terminal
+export get_terminals
+export get_deadband_reactive_power
+export get_deadband_voltage_limits
+export check_voltage_control
 export get_grounding_resistance
 export HydroPowerPlant
 export RenewablePowerPlant
@@ -710,6 +726,8 @@ export get_available_groups
 export MinMax
 export GeneratorCostModels
 export TransformerControlObjective
+export TransformerRegulatedBusSide
+export VoltageControlTerminal
 export TwoWindingTransformerShuntLocation
 export ThreeWindingTransformerShuntLocation
 export get_limits
@@ -1095,6 +1113,7 @@ include("emissions_data.jl")
 include("base.jl")
 
 include("plant_attribute.jl")
+include("voltage_control.jl")
 
 # OpenAPI import must follow the supplemental-attribute constructors it calls (outages.jl,
 # emissions_data.jl, plant_attribute.jl); export must follow every component type it reads.

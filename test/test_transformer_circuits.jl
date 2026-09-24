@@ -311,7 +311,7 @@ end
     set_arc!(c, arc12)
     set_tap!(c, 1.05)
     set_control_objective!(c, TransformerControlObjective.VOLTAGE)
-    set_regulated_bus_number!(c, 2)
+    set_regulated_bus!(c, b2)
     set_control_limits!(c, (min = 0.9, max = 1.1))
     set_controlled_quantity_limits!(c, (min = 0.95, max = 1.05))
     set_number_of_tap_positions!(c, 33)
@@ -359,7 +359,8 @@ end
     @test get_control_objective(c2) == TransformerControlObjective.VOLTAGE
     @test get_control_limits(c2) == (min = 0.9, max = 1.1)
     @test get_controlled_quantity_limits(c2) == (min = 0.95, max = 1.05)
-    @test get_regulated_bus_number(c2) == 2
+    @test get_number(get_regulated_bus(c2)) == 2
+    @test get_regulated_bus_side(c2) == TransformerRegulatedBusSide.OPPOSITE_WINDING
     @test get_number_of_tap_positions(c2) == 33
     # parent-level shunt fields round-trip
     @test get_shunt_location(t2w2) == TwoWindingTransformerShuntLocation.SPLIT

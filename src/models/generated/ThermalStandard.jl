@@ -18,6 +18,8 @@ This file is auto-generated. Do not edit.
         ramp_limits::Union{Nothing, UpDown}
         operation_cost::OperationalCost
         base_power::Float64
+        remote_regulated_bus::Union{Nothing, ACBus}
+        voltage_setpoint::Float64
         time_limits::Union{Nothing, UpDown}
         commitment_mode::CommitmentModes.Value
         prime_mover_type::PrimeMovers.Value
@@ -46,6 +48,8 @@ This is a standard representation with options to include a minimum up time, min
 - `ramp_limits::Union{Nothing, UpDown}`: Ramp up and ramp down limits (MW/min), validation range: `(0, nothing)`
 - `operation_cost::OperationalCost`: [`OperationalCost`](@ref) of generation
 - `base_power::Float64`: Base power of the unit (MVA) for [per unitization](@ref per_unit), validation range: `(0.0001, nothing)`
+- `remote_regulated_bus::Union{Nothing, ACBus}`: (default: `nothing`) Bus whose voltage this unit regulates when it is not its own `bus`; `nothing` means the unit regulates `bus`, and a value equal to `bus` is invalid. An available [`VoltageDroopControl`](@ref) the unit belongs to overrides this target; [`get_regulated_bus`](@ref) resolves it
+- `voltage_setpoint::Float64`: (default: `1.0`) Voltage magnitude the unit holds at the bus it regulates, in per-unit of that bus's `base_voltage`, while the type of its own bus marks it as voltage regulating. Ignored while the unit belongs to an available [`VoltageDroopControl`](@ref), validation range: `(0, nothing)`
 - `time_limits::Union{Nothing, UpDown}`: (default: `nothing`) Minimum up and Minimum down time limits in minutes, validation range: `(0, nothing)`
 - `commitment_mode::CommitmentModes.Value`: (default: `CommitmentModes.COMMITTED`) Commitment mode of the unit. Options are listed [here](@ref commit_list)
 - `prime_mover_type::PrimeMovers.Value`: (default: `PrimeMovers.OT`) Prime mover technology according to EIA 923. Options are listed [here](@ref pm_list)
@@ -82,6 +86,10 @@ mutable struct ThermalStandard <: ThermalGen
     operation_cost::OperationalCost
     "Base power of the unit (MVA) for [per unitization](@ref per_unit)"
     base_power::Float64
+    "Bus whose voltage this unit regulates when it is not its own `bus`; `nothing` means the unit regulates `bus`, and a value equal to `bus` is invalid. An available [`VoltageDroopControl`](@ref) the unit belongs to overrides this target; [`get_regulated_bus`](@ref) resolves it"
+    remote_regulated_bus::Union{Nothing, ACBus}
+    "Voltage magnitude the unit holds at the bus it regulates, in per-unit of that bus's `base_voltage`, while the type of its own bus marks it as voltage regulating. Ignored while the unit belongs to an available [`VoltageDroopControl`](@ref)"
+    voltage_setpoint::Float64
     "Minimum up and Minimum down time limits in minutes"
     time_limits::Union{Nothing, UpDown}
     "Commitment mode of the unit. Options are listed [here](@ref commit_list)"
@@ -102,12 +110,12 @@ mutable struct ThermalStandard <: ThermalGen
     internal::InfrastructureSystemsInternal
 end
 
-function ThermalStandard(name, available, status, bus, active_power, reactive_power, rating, active_power_limits, reactive_power_limits, ramp_limits, operation_cost, base_power, time_limits=nothing, commitment_mode=CommitmentModes.COMMITTED, prime_mover_type=PrimeMovers.OT, fuel=ThermalFuels.OTHER, services=Device[], time_at_status=INFINITE_TIME, dynamic_injector=nothing, ext=Dict{String, Any}(), )
-    ThermalStandard(name, available, status, bus, active_power, reactive_power, rating, active_power_limits, reactive_power_limits, ramp_limits, operation_cost, base_power, time_limits, commitment_mode, prime_mover_type, fuel, services, time_at_status, dynamic_injector, ext, InfrastructureSystemsInternal(), )
+function ThermalStandard(name, available, status, bus, active_power, reactive_power, rating, active_power_limits, reactive_power_limits, ramp_limits, operation_cost, base_power, remote_regulated_bus=nothing, voltage_setpoint=1.0, time_limits=nothing, commitment_mode=CommitmentModes.COMMITTED, prime_mover_type=PrimeMovers.OT, fuel=ThermalFuels.OTHER, services=Device[], time_at_status=INFINITE_TIME, dynamic_injector=nothing, ext=Dict{String, Any}(), )
+    ThermalStandard(name, available, status, bus, active_power, reactive_power, rating, active_power_limits, reactive_power_limits, ramp_limits, operation_cost, base_power, remote_regulated_bus, voltage_setpoint, time_limits, commitment_mode, prime_mover_type, fuel, services, time_at_status, dynamic_injector, ext, InfrastructureSystemsInternal(), )
 end
 
-function ThermalStandard(; name, available, status, bus, active_power, reactive_power, rating, active_power_limits, reactive_power_limits, ramp_limits, operation_cost, base_power, time_limits=nothing, commitment_mode=CommitmentModes.COMMITTED, prime_mover_type=PrimeMovers.OT, fuel=ThermalFuels.OTHER, services=Device[], time_at_status=INFINITE_TIME, dynamic_injector=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Union{ComponentBaseUnit, NaturalUnit}, )
-    value = ThermalStandard(name, available, status, bus, _placeholder(active_power), _placeholder(reactive_power), _placeholder(rating), _placeholder(active_power_limits), _placeholder(reactive_power_limits), _placeholder(ramp_limits), operation_cost, base_power, time_limits, commitment_mode, prime_mover_type, fuel, services, time_at_status, dynamic_injector, ext, internal, )
+function ThermalStandard(; name, available, status, bus, active_power, reactive_power, rating, active_power_limits, reactive_power_limits, ramp_limits, operation_cost, base_power, remote_regulated_bus=nothing, voltage_setpoint=1.0, time_limits=nothing, commitment_mode=CommitmentModes.COMMITTED, prime_mover_type=PrimeMovers.OT, fuel=ThermalFuels.OTHER, services=Device[], time_at_status=INFINITE_TIME, dynamic_injector=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Union{ComponentBaseUnit, NaturalUnit}, )
+    value = ThermalStandard(name, available, status, bus, _placeholder(active_power), _placeholder(reactive_power), _placeholder(rating), _placeholder(active_power_limits), _placeholder(reactive_power_limits), _placeholder(ramp_limits), operation_cost, base_power, remote_regulated_bus, voltage_setpoint, time_limits, commitment_mode, prime_mover_type, fuel, services, time_at_status, dynamic_injector, ext, internal, )
     set_active_power!(value, _tag(active_power, input_basis, Val(:mw)))
     set_reactive_power!(value, _tag(reactive_power, input_basis, Val(:mvar)))
     set_rating!(value, _tag(rating, input_basis, Val(:mva)))
@@ -133,6 +141,8 @@ function ThermalStandard(::Nothing)
         ramp_limits=nothing,
         operation_cost=ThermalGenerationCost(nothing),
         base_power=100.0,
+        remote_regulated_bus=nothing,
+        voltage_setpoint=1.0,
         time_limits=nothing,
         commitment_mode=CommitmentModes.UNCOMMITTED,
         prime_mover_type=PrimeMovers.OT,
@@ -205,6 +215,10 @@ InfrastructureSystems.display_units_arg(::typeof(get_ramp_limits_unitful), ::Typ
 get_operation_cost(value::ThermalStandard) = value.operation_cost
 
 _get_base_power(value::ThermalStandard) = value.base_power
+"""Get [`ThermalStandard`](@ref) `remote_regulated_bus`."""
+get_remote_regulated_bus(value::ThermalStandard) = value.remote_regulated_bus
+"""Get [`ThermalStandard`](@ref) `voltage_setpoint`."""
+get_voltage_setpoint(value::ThermalStandard) = value.voltage_setpoint
 """Get [`ThermalStandard`](@ref) `time_limits`."""
 get_time_limits(value::ThermalStandard) = value.time_limits
 """Get [`ThermalStandard`](@ref) `commitment_mode`."""
@@ -253,6 +267,10 @@ set_ramp_limits!(value::ThermalStandard, val::_UntaggedNumber) = _units_tag_requ
 set_ramp_limits!(value::ThermalStandard, val::NamedTuple{(:up, :down), <:Tuple{Vararg{_UntaggedNumber}}}) = _units_tag_required(set_ramp_limits!, value, :ramp_limits, Val(:mw_per_minute), val)
 """Set [`ThermalStandard`](@ref) `operation_cost`."""
 set_operation_cost!(value::ThermalStandard, val) = value.operation_cost = val
+"""Set [`ThermalStandard`](@ref) `remote_regulated_bus`."""
+set_remote_regulated_bus!(value::ThermalStandard, val) = value.remote_regulated_bus = val
+"""Set [`ThermalStandard`](@ref) `voltage_setpoint`."""
+set_voltage_setpoint!(value::ThermalStandard, val) = value.voltage_setpoint = val
 """Set [`ThermalStandard`](@ref) `time_limits`."""
 set_time_limits!(value::ThermalStandard, val) = value.time_limits = val
 """Set [`ThermalStandard`](@ref) `commitment_mode`."""
@@ -283,6 +301,8 @@ function from_openapi(po::PO.ThermalStandard, refs::OpenAPIRefs, ::ComponentBase
         ramp_limits = _updown_from_po(po.ramp_limits),
         operation_cost = convert_cost(po.operation_cost.value)::OperationalCost,
         base_power = po.base_power,
+        remote_regulated_bus = resolve_ref(refs, po.remote_regulated_bus_id, ACBus),
+        voltage_setpoint = (_require_unit_basis(po.voltage_setpoint_units, "COMPONENT_BASE", "ThermalStandard.voltage_setpoint_units", po.id); _or_default(po.voltage_setpoint, 1.0)),
         time_limits = _updown_from_po(po.time_limits),
         commitment_mode = _or_default_enum(po.commitment_mode, CommitmentModes.COMMITTED),
         prime_mover_type = _or_default_enum(po.prime_mover_type, PrimeMovers.OT),
@@ -306,6 +326,8 @@ function from_openapi(po::PO.ThermalStandard, refs::OpenAPIRefs, ::NaturalUnit)
         ramp_limits = _updown_from_po(po.ramp_limits, (/), po.base_power),
         operation_cost = convert_cost(po.operation_cost.value)::OperationalCost,
         base_power = po.base_power,
+        remote_regulated_bus = resolve_ref(refs, po.remote_regulated_bus_id, ACBus),
+        voltage_setpoint = (_require_unit_basis(po.voltage_setpoint_units, "COMPONENT_BASE", "ThermalStandard.voltage_setpoint_units", po.id); _or_default(po.voltage_setpoint, 1.0)),
         time_limits = _updown_from_po(po.time_limits),
         commitment_mode = _or_default_enum(po.commitment_mode, CommitmentModes.COMMITTED),
         prime_mover_type = _or_default_enum(po.prime_mover_type, PrimeMovers.OT),
@@ -334,6 +356,9 @@ function to_openapi(value::ThermalStandard, refs::OpenAPIRefs, ::ComponentBaseUn
         ramp_limits = _updown_po_optional(get_ramp_limits(value, CU / u"minute")),
         operation_cost = PO.ThermalStandardOperationCost(convert_cost_to_openapi(get_operation_cost(value))),
         base_power = _get_base_power(value),
+        remote_regulated_bus_id = _component_id_optional(refs, get_remote_regulated_bus(value)),
+        voltage_setpoint_units = PO.VoltageUnitBasis("COMPONENT_BASE"),
+        voltage_setpoint = get_voltage_setpoint(value),
         time_limits = _updown_po_optional(get_time_limits(value)),
         commitment_mode = PO.CommitmentModes(string(get_commitment_mode(value))),
         prime_mover_type = PO.PrimeMovers(string(get_prime_mover_type(value))),
@@ -358,6 +383,9 @@ function to_openapi(value::ThermalStandard, refs::OpenAPIRefs, ::NaturalUnit)
         ramp_limits = _updown_po_scaled_optional(get_ramp_limits(value, CU / u"minute"), _get_base_power(value)),
         operation_cost = PO.ThermalStandardOperationCost(convert_cost_to_openapi(get_operation_cost(value))),
         base_power = _get_base_power(value),
+        remote_regulated_bus_id = _component_id_optional(refs, get_remote_regulated_bus(value)),
+        voltage_setpoint_units = PO.VoltageUnitBasis("COMPONENT_BASE"),
+        voltage_setpoint = get_voltage_setpoint(value),
         time_limits = _updown_po_optional(get_time_limits(value)),
         commitment_mode = PO.CommitmentModes(string(get_commitment_mode(value))),
         prime_mover_type = PO.PrimeMovers(string(get_prime_mover_type(value))),

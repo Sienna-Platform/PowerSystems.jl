@@ -24,6 +24,8 @@ This file is auto-generated. Do not edit.
         start_types::Int
         operation_cost::OperationalCost
         base_power::Float64
+        remote_regulated_bus::Union{Nothing, ACBus}
+        voltage_setpoint::Float64
         services::Vector{Service}
         time_at_status::Float64
         commitment_mode::CommitmentModes.Value
@@ -55,6 +57,8 @@ A thermal generator, such as a fossil fuel or nuclear generator, that can start-
 - `start_types::Int`: Number of start-up based on turbine temperature, where `1` = *hot*, `2` = *warm*, and `3` = *cold*, validation range: `(1, 3)`
 - `operation_cost::OperationalCost`: [`OperationalCost`](@ref) of generation
 - `base_power::Float64`: Base power of the unit (MVA) for [per unitization](@ref per_unit), validation range: `(0.0001, nothing)`
+- `remote_regulated_bus::Union{Nothing, ACBus}`: (default: `nothing`) Bus whose voltage this unit regulates when it is not its own `bus`; `nothing` means the unit regulates `bus`, and a value equal to `bus` is invalid. An available [`VoltageDroopControl`](@ref) the unit belongs to overrides this target; [`get_regulated_bus`](@ref) resolves it
+- `voltage_setpoint::Float64`: (default: `1.0`) Voltage magnitude the unit holds at the bus it regulates, in per-unit of that bus's `base_voltage`, while the type of its own bus marks it as voltage regulating. Ignored while the unit belongs to an available [`VoltageDroopControl`](@ref), validation range: `(0, nothing)`
 - `services::Vector{Service}`: (default: `Device[]`) Services that this device contributes to
 - `time_at_status::Float64`: (default: `INFINITE_TIME`) Time (e.g., `Minutes(360)`) the generator has been in its current `status`
 - `commitment_mode::CommitmentModes.Value`: (default: `CommitmentModes.COMMITTED`) Commitment mode of the unit. Options are listed [here](@ref commit_list)
@@ -100,6 +104,10 @@ mutable struct ThermalMultiStart <: ThermalGen
     operation_cost::OperationalCost
     "Base power of the unit (MVA) for [per unitization](@ref per_unit)"
     base_power::Float64
+    "Bus whose voltage this unit regulates when it is not its own `bus`; `nothing` means the unit regulates `bus`, and a value equal to `bus` is invalid. An available [`VoltageDroopControl`](@ref) the unit belongs to overrides this target; [`get_regulated_bus`](@ref) resolves it"
+    remote_regulated_bus::Union{Nothing, ACBus}
+    "Voltage magnitude the unit holds at the bus it regulates, in per-unit of that bus's `base_voltage`, while the type of its own bus marks it as voltage regulating. Ignored while the unit belongs to an available [`VoltageDroopControl`](@ref)"
+    voltage_setpoint::Float64
     "Services that this device contributes to"
     services::Vector{Service}
     "Time (e.g., `Minutes(360)`) the generator has been in its current `status`"
@@ -114,12 +122,12 @@ mutable struct ThermalMultiStart <: ThermalGen
     internal::InfrastructureSystemsInternal
 end
 
-function ThermalMultiStart(name, available, status, bus, active_power, reactive_power, rating, prime_mover_type, fuel, active_power_limits, reactive_power_limits, ramp_limits, power_trajectory, time_limits, start_time_limits, start_types, operation_cost, base_power, services=Device[], time_at_status=INFINITE_TIME, commitment_mode=CommitmentModes.COMMITTED, dynamic_injector=nothing, ext=Dict{String, Any}(), )
-    ThermalMultiStart(name, available, status, bus, active_power, reactive_power, rating, prime_mover_type, fuel, active_power_limits, reactive_power_limits, ramp_limits, power_trajectory, time_limits, start_time_limits, start_types, operation_cost, base_power, services, time_at_status, commitment_mode, dynamic_injector, ext, InfrastructureSystemsInternal(), )
+function ThermalMultiStart(name, available, status, bus, active_power, reactive_power, rating, prime_mover_type, fuel, active_power_limits, reactive_power_limits, ramp_limits, power_trajectory, time_limits, start_time_limits, start_types, operation_cost, base_power, remote_regulated_bus=nothing, voltage_setpoint=1.0, services=Device[], time_at_status=INFINITE_TIME, commitment_mode=CommitmentModes.COMMITTED, dynamic_injector=nothing, ext=Dict{String, Any}(), )
+    ThermalMultiStart(name, available, status, bus, active_power, reactive_power, rating, prime_mover_type, fuel, active_power_limits, reactive_power_limits, ramp_limits, power_trajectory, time_limits, start_time_limits, start_types, operation_cost, base_power, remote_regulated_bus, voltage_setpoint, services, time_at_status, commitment_mode, dynamic_injector, ext, InfrastructureSystemsInternal(), )
 end
 
-function ThermalMultiStart(; name, available, status, bus, active_power, reactive_power, rating, prime_mover_type, fuel, active_power_limits, reactive_power_limits, ramp_limits, power_trajectory, time_limits, start_time_limits, start_types, operation_cost, base_power, services=Device[], time_at_status=INFINITE_TIME, commitment_mode=CommitmentModes.COMMITTED, dynamic_injector=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Union{ComponentBaseUnit, NaturalUnit}, )
-    value = ThermalMultiStart(name, available, status, bus, _placeholder(active_power), _placeholder(reactive_power), _placeholder(rating), prime_mover_type, fuel, _placeholder(active_power_limits), _placeholder(reactive_power_limits), _placeholder(ramp_limits), _placeholder(power_trajectory), time_limits, start_time_limits, start_types, operation_cost, base_power, services, time_at_status, commitment_mode, dynamic_injector, ext, internal, )
+function ThermalMultiStart(; name, available, status, bus, active_power, reactive_power, rating, prime_mover_type, fuel, active_power_limits, reactive_power_limits, ramp_limits, power_trajectory, time_limits, start_time_limits, start_types, operation_cost, base_power, remote_regulated_bus=nothing, voltage_setpoint=1.0, services=Device[], time_at_status=INFINITE_TIME, commitment_mode=CommitmentModes.COMMITTED, dynamic_injector=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Union{ComponentBaseUnit, NaturalUnit}, )
+    value = ThermalMultiStart(name, available, status, bus, _placeholder(active_power), _placeholder(reactive_power), _placeholder(rating), prime_mover_type, fuel, _placeholder(active_power_limits), _placeholder(reactive_power_limits), _placeholder(ramp_limits), _placeholder(power_trajectory), time_limits, start_time_limits, start_types, operation_cost, base_power, remote_regulated_bus, voltage_setpoint, services, time_at_status, commitment_mode, dynamic_injector, ext, internal, )
     set_active_power!(value, _tag(active_power, input_basis, Val(:mw)))
     set_reactive_power!(value, _tag(reactive_power, input_basis, Val(:mvar)))
     set_rating!(value, _tag(rating, input_basis, Val(:mva)))
@@ -152,6 +160,8 @@ function ThermalMultiStart(::Nothing)
         start_types=1,
         operation_cost=ThermalGenerationCost(nothing),
         base_power=100.0,
+        remote_regulated_bus=nothing,
+        voltage_setpoint=1.0,
         services=Device[],
         time_at_status=INFINITE_TIME,
         commitment_mode=CommitmentModes.UNCOMMITTED,
@@ -239,6 +249,10 @@ get_start_types(value::ThermalMultiStart) = value.start_types
 get_operation_cost(value::ThermalMultiStart) = value.operation_cost
 
 _get_base_power(value::ThermalMultiStart) = value.base_power
+"""Get [`ThermalMultiStart`](@ref) `remote_regulated_bus`."""
+get_remote_regulated_bus(value::ThermalMultiStart) = value.remote_regulated_bus
+"""Get [`ThermalMultiStart`](@ref) `voltage_setpoint`."""
+get_voltage_setpoint(value::ThermalMultiStart) = value.voltage_setpoint
 """Get [`ThermalMultiStart`](@ref) `services`."""
 get_services(value::ThermalMultiStart) = value.services
 """Get [`ThermalMultiStart`](@ref) `time_at_status`."""
@@ -295,6 +309,10 @@ set_start_time_limits!(value::ThermalMultiStart, val) = value.start_time_limits 
 set_start_types!(value::ThermalMultiStart, val) = value.start_types = val
 """Set [`ThermalMultiStart`](@ref) `operation_cost`."""
 set_operation_cost!(value::ThermalMultiStart, val) = value.operation_cost = val
+"""Set [`ThermalMultiStart`](@ref) `remote_regulated_bus`."""
+set_remote_regulated_bus!(value::ThermalMultiStart, val) = value.remote_regulated_bus = val
+"""Set [`ThermalMultiStart`](@ref) `voltage_setpoint`."""
+set_voltage_setpoint!(value::ThermalMultiStart, val) = value.voltage_setpoint = val
 """Set [`ThermalMultiStart`](@ref) `services`."""
 set_services!(value::ThermalMultiStart, val) = value.services = val
 """Set [`ThermalMultiStart`](@ref) `time_at_status`."""
@@ -325,6 +343,8 @@ function from_openapi(po::PO.ThermalMultiStart, refs::OpenAPIRefs, ::ComponentBa
         start_types = po.start_types,
         operation_cost = convert_cost(po.operation_cost.value)::OperationalCost,
         base_power = po.base_power,
+        remote_regulated_bus = resolve_ref(refs, po.remote_regulated_bus_id, ACBus),
+        voltage_setpoint = (_require_unit_basis(po.voltage_setpoint_units, "COMPONENT_BASE", "ThermalMultiStart.voltage_setpoint_units", po.id); _or_default(po.voltage_setpoint, 1.0)),
         time_at_status = _or_default(po.time_at_status, INFINITE_TIME),
         commitment_mode = _or_default_enum(po.commitment_mode, CommitmentModes.COMMITTED),
         input_basis = CU,
@@ -351,6 +371,8 @@ function from_openapi(po::PO.ThermalMultiStart, refs::OpenAPIRefs, ::NaturalUnit
         start_types = po.start_types,
         operation_cost = convert_cost(po.operation_cost.value)::OperationalCost,
         base_power = po.base_power,
+        remote_regulated_bus = resolve_ref(refs, po.remote_regulated_bus_id, ACBus),
+        voltage_setpoint = (_require_unit_basis(po.voltage_setpoint_units, "COMPONENT_BASE", "ThermalMultiStart.voltage_setpoint_units", po.id); _or_default(po.voltage_setpoint, 1.0)),
         time_at_status = _or_default(po.time_at_status, INFINITE_TIME),
         commitment_mode = _or_default_enum(po.commitment_mode, CommitmentModes.COMMITTED),
         input_basis = CU,
@@ -382,6 +404,9 @@ function to_openapi(value::ThermalMultiStart, refs::OpenAPIRefs, ::ComponentBase
         start_types = get_start_types(value),
         operation_cost = PO.ThermalMultiStartOperationCost(convert_cost_to_openapi(get_operation_cost(value))),
         base_power = _get_base_power(value),
+        remote_regulated_bus_id = _component_id_optional(refs, get_remote_regulated_bus(value)),
+        voltage_setpoint_units = PO.VoltageUnitBasis("COMPONENT_BASE"),
+        voltage_setpoint = get_voltage_setpoint(value),
         time_at_status = get_time_at_status(value),
         commitment_mode = PO.CommitmentModes(string(get_commitment_mode(value))),
         power_units = _power_units_string(CU),
@@ -409,6 +434,9 @@ function to_openapi(value::ThermalMultiStart, refs::OpenAPIRefs, ::NaturalUnit)
         start_types = get_start_types(value),
         operation_cost = PO.ThermalMultiStartOperationCost(convert_cost_to_openapi(get_operation_cost(value))),
         base_power = _get_base_power(value),
+        remote_regulated_bus_id = _component_id_optional(refs, get_remote_regulated_bus(value)),
+        voltage_setpoint_units = PO.VoltageUnitBasis("COMPONENT_BASE"),
+        voltage_setpoint = get_voltage_setpoint(value),
         time_at_status = get_time_at_status(value),
         commitment_mode = PO.CommitmentModes(string(get_commitment_mode(value))),
         power_units = _power_units_string(NU),

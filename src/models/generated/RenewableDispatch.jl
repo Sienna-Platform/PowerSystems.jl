@@ -17,6 +17,8 @@ This file is auto-generated. Do not edit.
         power_factor::Float64
         operation_cost::OperationalCost
         base_power::Float64
+        remote_regulated_bus::Union{Nothing, ACBus}
+        voltage_setpoint::Float64
         services::Vector{Service}
         dynamic_injector::Union{Nothing, DynamicInjection}
         ext::Dict{String, Any}
@@ -41,6 +43,8 @@ Renewable generators do not have a `max_active_power` parameter, which is instea
 - `power_factor::Float64`: Power factor [0, 1] set-point, used in some production cost modeling and in load flow if the unit is connected to a [`PQ`](@ref acbustypes_list) bus, validation range: `(0, 1)`
 - `operation_cost::OperationalCost`: [`OperationalCost`](@ref) of generation
 - `base_power::Float64`: Base power of the unit (MVA) for [per unitization](@ref per_unit), validation range: `(0.0001, nothing)`
+- `remote_regulated_bus::Union{Nothing, ACBus}`: (default: `nothing`) Bus whose voltage this unit regulates when it is not its own `bus`; `nothing` means the unit regulates `bus`, and a value equal to `bus` is invalid. An available [`VoltageDroopControl`](@ref) the unit belongs to overrides this target; [`get_regulated_bus`](@ref) resolves it
+- `voltage_setpoint::Float64`: (default: `1.0`) Voltage magnitude the unit holds at the bus it regulates, in per-unit of that bus's `base_voltage`, while the type of its own bus marks it as voltage regulating. Ignored while the unit belongs to an available [`VoltageDroopControl`](@ref), validation range: `(0, nothing)`
 - `services::Vector{Service}`: (default: `Device[]`) Services that this device contributes to
 - `dynamic_injector::Union{Nothing, DynamicInjection}`: (default: `nothing`) corresponding dynamic injection device
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
@@ -70,6 +74,10 @@ mutable struct RenewableDispatch <: RenewableGen
     operation_cost::OperationalCost
     "Base power of the unit (MVA) for [per unitization](@ref per_unit)"
     base_power::Float64
+    "Bus whose voltage this unit regulates when it is not its own `bus`; `nothing` means the unit regulates `bus`, and a value equal to `bus` is invalid. An available [`VoltageDroopControl`](@ref) the unit belongs to overrides this target; [`get_regulated_bus`](@ref) resolves it"
+    remote_regulated_bus::Union{Nothing, ACBus}
+    "Voltage magnitude the unit holds at the bus it regulates, in per-unit of that bus's `base_voltage`, while the type of its own bus marks it as voltage regulating. Ignored while the unit belongs to an available [`VoltageDroopControl`](@ref)"
+    voltage_setpoint::Float64
     "Services that this device contributes to"
     services::Vector{Service}
     "corresponding dynamic injection device"
@@ -80,12 +88,12 @@ mutable struct RenewableDispatch <: RenewableGen
     internal::InfrastructureSystemsInternal
 end
 
-function RenewableDispatch(name, available, bus, active_power, reactive_power, rating, prime_mover_type, reactive_power_limits, power_factor, operation_cost, base_power, services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), )
-    RenewableDispatch(name, available, bus, active_power, reactive_power, rating, prime_mover_type, reactive_power_limits, power_factor, operation_cost, base_power, services, dynamic_injector, ext, InfrastructureSystemsInternal(), )
+function RenewableDispatch(name, available, bus, active_power, reactive_power, rating, prime_mover_type, reactive_power_limits, power_factor, operation_cost, base_power, remote_regulated_bus=nothing, voltage_setpoint=1.0, services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), )
+    RenewableDispatch(name, available, bus, active_power, reactive_power, rating, prime_mover_type, reactive_power_limits, power_factor, operation_cost, base_power, remote_regulated_bus, voltage_setpoint, services, dynamic_injector, ext, InfrastructureSystemsInternal(), )
 end
 
-function RenewableDispatch(; name, available, bus, active_power, reactive_power, rating, prime_mover_type, reactive_power_limits, power_factor, operation_cost, base_power, services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Union{ComponentBaseUnit, NaturalUnit}, )
-    value = RenewableDispatch(name, available, bus, _placeholder(active_power), _placeholder(reactive_power), _placeholder(rating), prime_mover_type, _placeholder(reactive_power_limits), power_factor, operation_cost, base_power, services, dynamic_injector, ext, internal, )
+function RenewableDispatch(; name, available, bus, active_power, reactive_power, rating, prime_mover_type, reactive_power_limits, power_factor, operation_cost, base_power, remote_regulated_bus=nothing, voltage_setpoint=1.0, services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Union{ComponentBaseUnit, NaturalUnit}, )
+    value = RenewableDispatch(name, available, bus, _placeholder(active_power), _placeholder(reactive_power), _placeholder(rating), prime_mover_type, _placeholder(reactive_power_limits), power_factor, operation_cost, base_power, remote_regulated_bus, voltage_setpoint, services, dynamic_injector, ext, internal, )
     set_active_power!(value, _tag(active_power, input_basis, Val(:mw)))
     set_reactive_power!(value, _tag(reactive_power, input_basis, Val(:mvar)))
     set_rating!(value, _tag(rating, input_basis, Val(:mva)))
@@ -108,6 +116,8 @@ function RenewableDispatch(::Nothing)
         power_factor=1.0,
         operation_cost=RenewableGenerationCost(nothing),
         base_power=100.0,
+        remote_regulated_bus=nothing,
+        voltage_setpoint=1.0,
         services=Device[],
         dynamic_injector=nothing,
         ext=Dict{String, Any}(),
@@ -161,6 +171,10 @@ get_power_factor(value::RenewableDispatch) = value.power_factor
 get_operation_cost(value::RenewableDispatch) = value.operation_cost
 
 _get_base_power(value::RenewableDispatch) = value.base_power
+"""Get [`RenewableDispatch`](@ref) `remote_regulated_bus`."""
+get_remote_regulated_bus(value::RenewableDispatch) = value.remote_regulated_bus
+"""Get [`RenewableDispatch`](@ref) `voltage_setpoint`."""
+get_voltage_setpoint(value::RenewableDispatch) = value.voltage_setpoint
 """Get [`RenewableDispatch`](@ref) `services`."""
 get_services(value::RenewableDispatch) = value.services
 """Get [`RenewableDispatch`](@ref) `dynamic_injector`."""
@@ -193,6 +207,10 @@ set_reactive_power_limits!(value::RenewableDispatch, val::NamedTuple{(:min, :max
 set_power_factor!(value::RenewableDispatch, val) = value.power_factor = val
 """Set [`RenewableDispatch`](@ref) `operation_cost`."""
 set_operation_cost!(value::RenewableDispatch, val) = value.operation_cost = val
+"""Set [`RenewableDispatch`](@ref) `remote_regulated_bus`."""
+set_remote_regulated_bus!(value::RenewableDispatch, val) = value.remote_regulated_bus = val
+"""Set [`RenewableDispatch`](@ref) `voltage_setpoint`."""
+set_voltage_setpoint!(value::RenewableDispatch, val) = value.voltage_setpoint = val
 """Set [`RenewableDispatch`](@ref) `services`."""
 set_services!(value::RenewableDispatch, val) = value.services = val
 """Set [`RenewableDispatch`](@ref) `ext`."""
@@ -212,6 +230,8 @@ function from_openapi(po::PO.RenewableDispatch, refs::OpenAPIRefs, ::ComponentBa
         power_factor = po.power_factor,
         operation_cost = convert_cost(po.operation_cost.value)::OperationalCost,
         base_power = po.base_power,
+        remote_regulated_bus = resolve_ref(refs, po.remote_regulated_bus_id, ACBus),
+        voltage_setpoint = (_require_unit_basis(po.voltage_setpoint_units, "COMPONENT_BASE", "RenewableDispatch.voltage_setpoint_units", po.id); _or_default(po.voltage_setpoint, 1.0)),
         input_basis = CU,
     )
 end
@@ -229,6 +249,8 @@ function from_openapi(po::PO.RenewableDispatch, refs::OpenAPIRefs, ::NaturalUnit
         power_factor = po.power_factor,
         operation_cost = convert_cost(po.operation_cost.value)::OperationalCost,
         base_power = po.base_power,
+        remote_regulated_bus = resolve_ref(refs, po.remote_regulated_bus_id, ACBus),
+        voltage_setpoint = (_require_unit_basis(po.voltage_setpoint_units, "COMPONENT_BASE", "RenewableDispatch.voltage_setpoint_units", po.id); _or_default(po.voltage_setpoint, 1.0)),
         input_basis = CU,
     )
 end
@@ -251,6 +273,9 @@ function to_openapi(value::RenewableDispatch, refs::OpenAPIRefs, ::ComponentBase
         power_factor = get_power_factor(value),
         operation_cost = PO.RenewableDispatchOperationCost(convert_cost_to_openapi(get_operation_cost(value))),
         base_power = _get_base_power(value),
+        remote_regulated_bus_id = _component_id_optional(refs, get_remote_regulated_bus(value)),
+        voltage_setpoint_units = PO.VoltageUnitBasis("COMPONENT_BASE"),
+        voltage_setpoint = get_voltage_setpoint(value),
         power_units = _power_units_string(CU),
     )
 end
@@ -269,6 +294,9 @@ function to_openapi(value::RenewableDispatch, refs::OpenAPIRefs, ::NaturalUnit)
         power_factor = get_power_factor(value),
         operation_cost = PO.RenewableDispatchOperationCost(convert_cost_to_openapi(get_operation_cost(value))),
         base_power = _get_base_power(value),
+        remote_regulated_bus_id = _component_id_optional(refs, get_remote_regulated_bus(value)),
+        voltage_setpoint_units = PO.VoltageUnitBasis("COMPONENT_BASE"),
+        voltage_setpoint = get_voltage_setpoint(value),
         power_units = _power_units_string(NU),
     )
 end

@@ -70,8 +70,8 @@ function _vsc_po_minimal(; overrides...)
         power_factor_weighting_fraction_to = 0.5,
         voltage_limits_to = PSY.IC.MinMax(; min = 0.9, max = 1.1),
         dc_voltage_droop_to = 0.0, rated_dc_voltage = 200.0,
-        remote_bus_control_from = nothing, remote_bus_control_to = 4,
-        rmpct_from = 100.0, rmpct_to = 100.0, base_power = 100.0,
+        remote_regulated_bus_id_from = nothing, remote_regulated_bus_id_to = nothing,
+        base_power = 100.0,
         power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
     )
     merged = merge(defaults, NamedTuple(overrides))
@@ -352,7 +352,7 @@ end
         parameter_units = PSY.PO.ImpedanceUnitBasis("COMPONENT_BASE"), r = 0.01,
         x = 0.1,
         control_objective = PSY.PO.TransformerControlObjective("UNDEFINED"),
-        regulated_bus_number = 0,
+        regulated_bus_id = nothing,
         control_limits = PSY.IC.MinMax(; min = 0.9, max = 1.1),
         controlled_quantity_limits = PSY.IC.MinMax(; min = 0.9, max = 1.1),
         number_of_tap_positions = 33,
@@ -382,7 +382,7 @@ end
         id = 21, available = true, arc = 10, tap = 1.0, alpha = 0.0,
         parameter_units = PSY.PO.ImpedanceUnitBasis("NATURAL_UNITS"), r = 0.01, x = 0.1,
         control_objective = PSY.PO.TransformerControlObjective("UNDEFINED"),
-        regulated_bus_number = 0,
+        regulated_bus_id = nothing,
         control_limits = PSY.IC.MinMax(; min = 0.9, max = 1.1),
         controlled_quantity_limits = PSY.IC.MinMax(; min = 0.9, max = 1.1),
         number_of_tap_positions = 33,
@@ -426,7 +426,7 @@ end
         parameter_units = PSY.PO.ImpedanceUnitBasis("COMPONENT_BASE"), r = 0.01,
         x = 0.1,
         control_objective = PSY.PO.TransformerControlObjective("UNDEFINED"),
-        regulated_bus_number = 0,
+        regulated_bus_id = nothing,
         number_of_tap_positions = 33,
         rating = 100.0, rating_b = nothing, rating_c = nothing,
         active_power_flow = 5.0, reactive_power_flow = 1.0,
@@ -467,7 +467,7 @@ end
         parameter_units = PSY.PO.ImpedanceUnitBasis("COMPONENT_BASE"), r = 0.001,
         x = 0.01,
         control_objective = PSY.PO.TransformerControlObjective("UNDEFINED"),
-        regulated_bus_number = 0,
+        regulated_bus_id = nothing,
         control_limits = PSY.IC.MinMax(; min = 0.9, max = 1.1),
         controlled_quantity_limits = PSY.IC.MinMax(; min = 0.9, max = 1.1),
         number_of_tap_positions = 33,
@@ -1331,6 +1331,33 @@ end
         base_power = 100.0,
         power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
     )
+    # The DC-circuit ohms per-unitize on the scheduled DC voltage; an out-of-service line
+    # scheduled at 0 kV falls back to the rectifier's AC base rather than dividing by zero,
+    # the same fallback the PSS/E reader applies.
+    lcc = PSY.from_openapi(lcc_po, refs, CU)
+    @test get_r(lcc) ≈ 0.01 / (200.0^2 / 100.0)
+    lcc_po_unscheduled = PSY.PO.TwoTerminalLCCLine(;
+        id = 20, name = "lcc1", available = false, arc = 10,
+        active_power_flow = 0.0, r = 0.01, transfer_setpoint = 0.0, power_mode = true,
+        scheduled_dc_voltage = 0.0,
+        rectifier_bridges = 2, rectifier_rc = 0.001, rectifier_xc = 0.01,
+        rectifier_base_voltage = 138.0, rectifier_capacitor_reactance = 0.0,
+        rectifier_delay_angle_limits = PSY.IC.MinMax(; min = 0.0, max = 1.0),
+        inverter_bridges = 2, inverter_rc = 0.001, inverter_xc = 0.01,
+        inverter_base_voltage = 138.0, inverter_capacitor_reactance = 0.0,
+        inverter_extinction_angle_limits = PSY.IC.MinMax(; min = 0.0, max = 1.0),
+        compounding_resistance = 0.5,
+        parameter_units = PSY.PO.ImpedanceUnitBasis("NATURAL_UNITS"),
+        dc_voltage_units = PSY.PO.VoltageUnitBasis("NATURAL_UNITS"),
+        loss = _loss_curve_po(0.01, 0.0),
+        base_power = 100.0,
+        power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
+    )
+    for val in (CU, NU)
+        unscheduled = PSY.from_openapi(lcc_po_unscheduled, refs, val)
+        @test get_r(unscheduled) ≈ 0.01 / (138.0^2 / 100.0)
+        @test get_compounding_resistance(unscheduled) ≈ 0.5 / (138.0^2 / 100.0)
+    end
     for val in (CU, NU)
         lcc = PSY.from_openapi(lcc_po, refs, val)
         @test get_rectifier_tap_limits(lcc) == (min = 0.51, max = 1.5)
@@ -1465,7 +1492,7 @@ end
     for val in (CU, NU)
         ic = PSY.from_openapi(ic_po, refs, val)
         @test get_loss_function(ic) == LossCurve(LinearCurve(0.0), NaturalUnit())
-        @test isnothing(get_remote_bus_control(ic))
+        @test isnothing(get_remote_regulated_bus(ic))
         @test get_voltage_limits(ic) == (min = 0.0, max = 999.9)
     end
 
@@ -1727,8 +1754,8 @@ end
         power_factor_weighting_fraction_to = 0.5,
         voltage_limits_to = PSY.IC.MinMax(; min = 0.9, max = 1.1),
         dc_voltage_droop_to = 0.0, rated_dc_voltage = 200.0,
-        remote_bus_control_from = nothing, remote_bus_control_to = 4,
-        rmpct_from = 100.0, rmpct_to = 100.0, base_power = 100.0,
+        remote_regulated_bus_id_from = nothing, remote_regulated_bus_id_to = nothing,
+        base_power = 100.0,
         power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
     )
 
@@ -1755,8 +1782,8 @@ end
     @test get_ac_setpoint_from(natural) == 0.95
     @test get_voltage_limits_from(natural) == (min = 0.9, max = 1.1)
     @test get_rated_dc_voltage(natural) == 200.0
-    @test isnothing(get_remote_bus_control_from(natural))
-    @test get_remote_bus_control_to(natural) == 4
+    @test isnothing(get_remote_regulated_bus_from(natural))
+    @test isnothing(get_remote_regulated_bus_to(natural))
     @test get_converter_loss_from(natural) ==
           LossCurve(LinearCurve(1.2, 0.5), NaturalUnit())
 
