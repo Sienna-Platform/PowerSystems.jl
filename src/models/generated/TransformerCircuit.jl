@@ -13,7 +13,9 @@ This file is auto-generated. Do not edit.
         r::Float64
         x::Float64
         control_objective::TransformerControlObjective.Value
-        regulated_bus_number::Int
+        regulated_bus::Union{Nothing, ACBus}
+        regulated_bus_side::Union{Nothing, TransformerRegulatedBusSide.Value}
+        load_drop_compensation::Complex{Float64}
         control_limits::MinMax
         controlled_quantity_limits::MinMax
         number_of_tap_positions::Int
@@ -40,7 +42,9 @@ A [`TwoWindingTransformer`](@ref) has one circuit; a [`ThreeWindingTransformer`]
 - `r::Float64`: (default: `0.0`) Circuit resistance in pu (component base on `base_power`) referenced to `base_voltage_primary`. For a two-winding transformer this is the series impedance; for a three-winding transformer it is the star-leg equivalent, validation range: `(-2, 4)`
 - `x::Float64`: (default: `0.0`) Circuit reactance in pu (component base on `base_power`) referenced to `base_voltage_primary`. For a two-winding transformer this is the series impedance; for a three-winding transformer it is the star-leg equivalent, validation range: `(-2, 4)`
 - `control_objective::TransformerControlObjective.Value`: (default: `TransformerControlObjective.UNDEFINED`) Tap-changer / phase-shifter control objective. `UNDEFINED` means this circuit has no control block. See [`TransformerControlObjective`](@ref)
-- `regulated_bus_number::Int`: (default: `0`) Controlled bus number; the sign indicates the regulation side
+- `regulated_bus::Union{Nothing, ACBus}`: (default: `nothing`) Bus whose voltage this circuit's tap changer regulates (PSS/E `CONT`). Set exactly when `control_objective` is `VOLTAGE` or `VOLTAGE_DISABLED`, `nothing` otherwise
+- `regulated_bus_side::Union{Nothing, TransformerRegulatedBusSide.Value}`: (default: `nothing`) Side of the controlling winding on which the regulated bus lies, replacing the sign of PSS/E `CONT`. Stored only when the regulated bus is neither end of this circuit's `arc`; when it is one of them the side follows from the arc and this is `nothing`. [`get_regulated_bus_side`](@ref) resolves it either way
+- `load_drop_compensation::Complex{Float64}`: (default: `0.0`) Load drop compensation impedance for voltage control (PSS/E `CR + jCX`) in pu (component base on `base_power`) referenced to `base_voltage_primary`: the regulated voltage is compensated by this impedance times the circuit current. Zero means no compensation
 - `control_limits::MinMax`: (default: `(min=0.9, max=1.1)`) Control band: tap-ratio bounds for voltage/reactive-power control or phase-angle bounds (rad) for active-power control
 - `controlled_quantity_limits::MinMax`: (default: `(min=0.9, max=1.1)`) Controlled-quantity band: pu voltage / MVAr / MW bounds depending on `control_objective`
 - `number_of_tap_positions::Int`: (default: `33`) Number of tap positions
@@ -70,8 +74,12 @@ mutable struct TransformerCircuit <: DeviceParameter
     x::Float64
     "Tap-changer / phase-shifter control objective. `UNDEFINED` means this circuit has no control block. See [`TransformerControlObjective`](@ref)"
     control_objective::TransformerControlObjective.Value
-    "Controlled bus number; the sign indicates the regulation side"
-    regulated_bus_number::Int
+    "Bus whose voltage this circuit's tap changer regulates (PSS/E `CONT`). Set exactly when `control_objective` is `VOLTAGE` or `VOLTAGE_DISABLED`, `nothing` otherwise"
+    regulated_bus::Union{Nothing, ACBus}
+    "Side of the controlling winding on which the regulated bus lies, replacing the sign of PSS/E `CONT`. Stored only when the regulated bus is neither end of this circuit's `arc`; when it is one of them the side follows from the arc and this is `nothing`. [`get_regulated_bus_side`](@ref) resolves it either way"
+    regulated_bus_side::Union{Nothing, TransformerRegulatedBusSide.Value}
+    "Load drop compensation impedance for voltage control (PSS/E `CR + jCX`) in pu (component base on `base_power`) referenced to `base_voltage_primary`: the regulated voltage is compensated by this impedance times the circuit current. Zero means no compensation"
+    load_drop_compensation::Complex{Float64}
     "Control band: tap-ratio bounds for voltage/reactive-power control or phase-angle bounds (rad) for active-power control"
     control_limits::MinMax
     "Controlled-quantity band: pu voltage / MVAr / MW bounds depending on `control_objective`"
@@ -98,14 +106,15 @@ mutable struct TransformerCircuit <: DeviceParameter
     base_value::Union{Nothing, Float64}
 end
 
-function TransformerCircuit(available, arc, tap=1.0, α=0.0, r=0.0, x=0.0, control_objective=TransformerControlObjective.UNDEFINED, regulated_bus_number=0, control_limits=(min=0.9, max=1.1), controlled_quantity_limits=(min=0.9, max=1.1), number_of_tap_positions=33, rating=nothing, rating_b=nothing, rating_c=nothing, active_power_flow=0.0, reactive_power_flow=0.0, base_power=100.0, base_voltage_primary=nothing, base_voltage_secondary=nothing, )
-    TransformerCircuit(available, arc, tap, α, r, x, control_objective, regulated_bus_number, control_limits, controlled_quantity_limits, number_of_tap_positions, rating, rating_b, rating_c, active_power_flow, reactive_power_flow, base_power, base_voltage_primary, base_voltage_secondary, nothing, )
+function TransformerCircuit(available, arc, tap=1.0, α=0.0, r=0.0, x=0.0, control_objective=TransformerControlObjective.UNDEFINED, regulated_bus=nothing, regulated_bus_side=nothing, load_drop_compensation=0.0, control_limits=(min=0.9, max=1.1), controlled_quantity_limits=(min=0.9, max=1.1), number_of_tap_positions=33, rating=nothing, rating_b=nothing, rating_c=nothing, active_power_flow=0.0, reactive_power_flow=0.0, base_power=100.0, base_voltage_primary=nothing, base_voltage_secondary=nothing, )
+    TransformerCircuit(available, arc, tap, α, r, x, control_objective, regulated_bus, regulated_bus_side, load_drop_compensation, control_limits, controlled_quantity_limits, number_of_tap_positions, rating, rating_b, rating_c, active_power_flow, reactive_power_flow, base_power, base_voltage_primary, base_voltage_secondary, nothing, )
 end
 
-function TransformerCircuit(; available, arc, tap=1.0, α=0.0, r=0.0, x=0.0, control_objective=TransformerControlObjective.UNDEFINED, regulated_bus_number=0, control_limits=(min=0.9, max=1.1), controlled_quantity_limits=(min=0.9, max=1.1), number_of_tap_positions=33, rating=nothing, rating_b=nothing, rating_c=nothing, active_power_flow=0.0, reactive_power_flow=0.0, base_power=100.0, base_voltage_primary=nothing, base_voltage_secondary=nothing, base_value=nothing, input_basis::Union{ComponentBaseUnit, NaturalUnit}, )
-    value = TransformerCircuit(available, arc, tap, α, _placeholder(r), _placeholder(x), control_objective, regulated_bus_number, control_limits, controlled_quantity_limits, number_of_tap_positions, _placeholder(rating), _placeholder(rating_b), _placeholder(rating_c), _placeholder(active_power_flow), _placeholder(reactive_power_flow), base_power, base_voltage_primary, base_voltage_secondary, base_value, )
+function TransformerCircuit(; available, arc, tap=1.0, α=0.0, r=0.0, x=0.0, control_objective=TransformerControlObjective.UNDEFINED, regulated_bus=nothing, regulated_bus_side=nothing, load_drop_compensation=0.0, control_limits=(min=0.9, max=1.1), controlled_quantity_limits=(min=0.9, max=1.1), number_of_tap_positions=33, rating=nothing, rating_b=nothing, rating_c=nothing, active_power_flow=0.0, reactive_power_flow=0.0, base_power=100.0, base_voltage_primary=nothing, base_voltage_secondary=nothing, base_value=nothing, input_basis::Union{ComponentBaseUnit, NaturalUnit}, )
+    value = TransformerCircuit(available, arc, tap, α, _placeholder(r), _placeholder(x), control_objective, regulated_bus, regulated_bus_side, _placeholder(load_drop_compensation), control_limits, controlled_quantity_limits, number_of_tap_positions, _placeholder(rating), _placeholder(rating_b), _placeholder(rating_c), _placeholder(active_power_flow), _placeholder(reactive_power_flow), base_power, base_voltage_primary, base_voltage_secondary, base_value, )
     set_r!(value, _tag(r, input_basis, Val(:ohm)))
     set_x!(value, _tag(x, input_basis, Val(:ohm)))
+    set_load_drop_compensation!(value, _tag(load_drop_compensation, input_basis, Val(:ohm)))
     set_rating!(value, _tag(rating, input_basis, Val(:mva)))
     set_rating_b!(value, _tag(rating_b, input_basis, Val(:mva)))
     set_rating_c!(value, _tag(rating_c, input_basis, Val(:mva)))
@@ -125,7 +134,9 @@ function TransformerCircuit(::Nothing)
         r=0.0,
         x=0.0,
         control_objective=TransformerControlObjective.UNDEFINED,
-        regulated_bus_number=0,
+        regulated_bus=nothing,
+        regulated_bus_side=nothing,
+        load_drop_compensation=0.0,
         control_limits=(min=0.9, max=1.1),
         controlled_quantity_limits=(min=0.9, max=1.1),
         number_of_tap_positions=33,
@@ -167,8 +178,18 @@ InfrastructureSystems.display_units_arg(::typeof(get_x), ::Type{TransformerCircu
 InfrastructureSystems.display_units_arg(::typeof(get_x_unitful), ::Type{TransformerCircuit}) = InfrastructureSystems.SU
 """Get [`TransformerCircuit`](@ref) `control_objective`."""
 get_control_objective(value::TransformerCircuit) = value.control_objective
-"""Get [`TransformerCircuit`](@ref) `regulated_bus_number`."""
-get_regulated_bus_number(value::TransformerCircuit) = value.regulated_bus_number
+"""Get [`TransformerCircuit`](@ref) `regulated_bus`."""
+get_regulated_bus(value::TransformerCircuit) = value.regulated_bus
+
+_get_regulated_bus_side(value::TransformerCircuit) = value.regulated_bus_side
+"""Get [`TransformerCircuit`](@ref) `load_drop_compensation` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_load_drop_compensation_unitful`](@ref)."""
+get_load_drop_compensation(value::TransformerCircuit, units) = InfrastructureSystems._strip_units(get_value(value, Val(:load_drop_compensation), Val(:ohm), units))
+"""Get [`TransformerCircuit`](@ref) `load_drop_compensation` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_load_drop_compensation`](@ref)."""
+get_load_drop_compensation_unitful(value::TransformerCircuit, units) = get_value(value, Val(:load_drop_compensation), Val(:ohm), units)
+get_load_drop_compensation(value::TransformerCircuit) = _units_arg_required(get_load_drop_compensation, value, :load_drop_compensation, Val(:ohm))
+get_load_drop_compensation_unitful(value::TransformerCircuit) = _units_arg_required(get_load_drop_compensation_unitful, value, :load_drop_compensation, Val(:ohm))
+InfrastructureSystems.display_units_arg(::typeof(get_load_drop_compensation), ::Type{TransformerCircuit}) = InfrastructureSystems.SU
+InfrastructureSystems.display_units_arg(::typeof(get_load_drop_compensation_unitful), ::Type{TransformerCircuit}) = InfrastructureSystems.SU
 """Get [`TransformerCircuit`](@ref) `control_limits`."""
 get_control_limits(value::TransformerCircuit) = value.control_limits
 """Get [`TransformerCircuit`](@ref) `controlled_quantity_limits`."""
@@ -240,8 +261,13 @@ set_x!(value::TransformerCircuit, val) = value.x = set_value(value, Val(:x), val
 set_x!(value::TransformerCircuit, val::_UntaggedNumber) = _units_tag_required(set_x!, value, :x, Val(:ohm), val)
 """Set [`TransformerCircuit`](@ref) `control_objective`."""
 set_control_objective!(value::TransformerCircuit, val) = value.control_objective = val
-"""Set [`TransformerCircuit`](@ref) `regulated_bus_number`."""
-set_regulated_bus_number!(value::TransformerCircuit, val) = value.regulated_bus_number = val
+"""Set [`TransformerCircuit`](@ref) `regulated_bus`."""
+set_regulated_bus!(value::TransformerCircuit, val) = value.regulated_bus = val
+"""Set [`TransformerCircuit`](@ref) `regulated_bus_side`."""
+set_regulated_bus_side!(value::TransformerCircuit, val) = value.regulated_bus_side = val
+"""Set [`TransformerCircuit`](@ref) `load_drop_compensation`."""
+set_load_drop_compensation!(value::TransformerCircuit, val) = value.load_drop_compensation = set_value(value, Val(:load_drop_compensation), val, Val(:ohm))
+set_load_drop_compensation!(value::TransformerCircuit, val::_UntaggedNumber) = _units_tag_required(set_load_drop_compensation!, value, :load_drop_compensation, Val(:ohm), val)
 """Set [`TransformerCircuit`](@ref) `control_limits`."""
 set_control_limits!(value::TransformerCircuit, val) = value.control_limits = val
 """Set [`TransformerCircuit`](@ref) `controlled_quantity_limits`."""

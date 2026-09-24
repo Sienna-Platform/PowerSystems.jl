@@ -247,6 +247,12 @@ function to_openapi(src::Source, refs::OpenAPIRefs, ::ComponentBaseUnit)
         name = get_name(src),
         available = get_available(src),
         bus = component_id(refs, get_bus(src)),
+        remote_regulated_bus_id = _component_id_optional(
+            refs,
+            get_remote_regulated_bus(src),
+        ),
+        voltage_setpoint_units = PO.VoltageUnitBasis("COMPONENT_BASE"),
+        voltage_setpoint = get_voltage_setpoint(src),
         active_power = get_active_power(src, CU),
         reactive_power = get_reactive_power(src, CU),
         active_power_limits = _minmax_po(get_active_power_limits(src, CU)),
@@ -272,6 +278,12 @@ function to_openapi(src::Source, refs::OpenAPIRefs, ::NaturalUnit)
         name = get_name(src),
         available = get_available(src),
         bus = component_id(refs, get_bus(src)),
+        remote_regulated_bus_id = _component_id_optional(
+            refs,
+            get_remote_regulated_bus(src),
+        ),
+        voltage_setpoint_units = PO.VoltageUnitBasis("COMPONENT_BASE"),
+        voltage_setpoint = get_voltage_setpoint(src),
         active_power = get_active_power(src, CU) * dbp,
         reactive_power = get_reactive_power(src, CU) * dbp,
         active_power_limits = _minmax_po_scaled(get_active_power_limits(src, CU), dbp),
@@ -351,8 +363,10 @@ function to_openapi(conv::InterconnectingConverter, refs::OpenAPIRefs, ::Compone
         dc_setpoint = get_dc_setpoint(conv),
         ac_setpoint = get_ac_setpoint(conv),
         dc_voltage_droop = get_dc_voltage_droop(conv),
-        remote_bus_control = get_remote_bus_control(conv),
-        rmpct = get_rmpct(conv),
+        remote_regulated_bus_id = _component_id_optional(
+            refs,
+            get_remote_regulated_bus(conv),
+        ),
         power_factor_weighting_fraction = get_power_factor_weighting_fraction(conv),
         voltage_limits = _minmax_po(get_voltage_limits(conv)),
         power_units = _power_units_string(CU),
@@ -383,8 +397,10 @@ function to_openapi(conv::InterconnectingConverter, refs::OpenAPIRefs, ::Natural
         dc_setpoint = get_dc_setpoint(conv),
         ac_setpoint = get_ac_setpoint(conv),
         dc_voltage_droop = get_dc_voltage_droop(conv),
-        remote_bus_control = get_remote_bus_control(conv),
-        rmpct = get_rmpct(conv),
+        remote_regulated_bus_id = _component_id_optional(
+            refs,
+            get_remote_regulated_bus(conv),
+        ),
         power_factor_weighting_fraction = get_power_factor_weighting_fraction(conv),
         voltage_limits = _minmax_po(get_voltage_limits(conv)),
         power_units = _power_units_string(NU),
@@ -556,6 +572,10 @@ end
 # System component (no `addable` entry of its own), so this method is called directly on the
 # `TransformerCircuit` object the document walk already resolved to an id.
 
+"""A nullable enum on the wire: `nothing` stays `Absent`, else the PO wrapper of its name."""
+_optional_enum_po(::Type, ::Nothing) = IC.ABSENT
+_optional_enum_po(::Type{T}, value) where {T} = T(string(value))
+
 function to_openapi(circuit::TransformerCircuit, refs::OpenAPIRefs, ::ComponentBaseUnit)
     return PO.TransformerCircuit(;
         id = component_id(refs, circuit),
@@ -571,7 +591,14 @@ function to_openapi(circuit::TransformerCircuit, refs::OpenAPIRefs, ::ComponentB
                 circuit,
             )),
         ),
-        regulated_bus_number = get_regulated_bus_number(circuit),
+        regulated_bus_id = _component_id_optional(refs, get_regulated_bus(circuit)),
+        regulated_bus_side = _optional_enum_po(
+            PO.TransformerRegulatedBusSide,
+            _get_regulated_bus_side(circuit),
+        ),
+        load_drop_compensation = _complex_number_po(
+            get_load_drop_compensation(circuit, CU),
+        ),
         control_limits = _minmax_po(get_control_limits(circuit)),
         controlled_quantity_limits = _minmax_po(get_controlled_quantity_limits(circuit)),
         number_of_tap_positions = get_number_of_tap_positions(circuit),
@@ -603,7 +630,14 @@ function to_openapi(circuit::TransformerCircuit, refs::OpenAPIRefs, ::NaturalUni
                 circuit,
             )),
         ),
-        regulated_bus_number = get_regulated_bus_number(circuit),
+        regulated_bus_id = _component_id_optional(refs, get_regulated_bus(circuit)),
+        regulated_bus_side = _optional_enum_po(
+            PO.TransformerRegulatedBusSide,
+            _get_regulated_bus_side(circuit),
+        ),
+        load_drop_compensation = _complex_number_po(
+            get_load_drop_compensation(circuit, CU),
+        ),
         control_limits = _minmax_po(get_control_limits(circuit)),
         controlled_quantity_limits = _minmax_po(get_controlled_quantity_limits(circuit)),
         number_of_tap_positions = get_number_of_tap_positions(circuit),
@@ -740,7 +774,9 @@ function to_openapi(shunt::SwitchedAdmittance, refs::OpenAPIRefs, ::ComponentBas
         ),
         admittance_limits = _minmax_po(get_admittance_limits(shunt)),
         control_mode = PO.SwitchedAdmittanceControlMode(string(get_control_mode(shunt))),
-        regulated_bus_number = get_regulated_bus_number(shunt),
+        remote_regulated_bus_id = _component_id_optional(
+            refs, get_remote_regulated_bus(shunt),
+        ),
     )
 end
 
@@ -769,14 +805,16 @@ function to_openapi(device::FACTSControlDevice, refs::OpenAPIRefs, ::ComponentBa
         voltage_setpoint_units = PO.VoltageUnitBasis("COMPONENT_BASE"),
         voltage_setpoint = get_voltage_setpoint(device),
         max_shunt_current = get_max_shunt_current(device, SU),
-        reactive_power_required = get_reactive_power_required(device),
+        reactive_power_required = get_reactive_power_required(device, SU),
         max_reactive_power = get_max_reactive_power(device, SU),
         shunt_control_type = PO.FACTSControlDeviceShuntControlType(
             string(get_shunt_control_type(
                 device,
             )),
         ),
-        regulated_bus_number = get_regulated_bus_number(device),
+        remote_regulated_bus_id = _component_id_optional(
+            refs, get_remote_regulated_bus(device),
+        ),
         base_power = _get_base_power(device),
         power_units = _power_units_string(CU),
     )
@@ -798,14 +836,16 @@ function to_openapi(device::FACTSControlDevice, refs::OpenAPIRefs, ::NaturalUnit
         voltage_setpoint_units = PO.VoltageUnitBasis("COMPONENT_BASE"),
         voltage_setpoint = get_voltage_setpoint(device),
         max_shunt_current = get_max_shunt_current(device, SU) * base_power,
-        reactive_power_required = get_reactive_power_required(device),
+        reactive_power_required = get_reactive_power_required(device, SU) * base_power,
         max_reactive_power = get_max_reactive_power(device, SU) * base_power,
         shunt_control_type = PO.FACTSControlDeviceShuntControlType(
             string(get_shunt_control_type(
                 device,
             )),
         ),
-        regulated_bus_number = get_regulated_bus_number(device),
+        remote_regulated_bus_id = _component_id_optional(
+            refs, get_remote_regulated_bus(device),
+        ),
         base_power = base_power,
         power_units = _power_units_string(NU),
     )
@@ -953,6 +993,18 @@ function to_openapi(lcc::TwoTerminalLCCLine, refs::OpenAPIRefs, ::ComponentBaseU
         inverter_capacitor_reactance = _lcc_pu_to_ohm(
             get_inverter_capacitor_reactance(lcc), ibv, base_power,
         ),
+        rectifier_commutating_bus_id = _component_id_optional(
+            refs, get_rectifier_commutating_bus(lcc),
+        ),
+        inverter_commutating_bus_id = _component_id_optional(
+            refs, get_inverter_commutating_bus(lcc),
+        ),
+        rectifier_tap_transformer_id = _component_id_optional(
+            refs, get_rectifier_tap_transformer(lcc),
+        ),
+        inverter_tap_transformer_id = _component_id_optional(
+            refs, get_inverter_tap_transformer(lcc),
+        ),
         active_power_limits_from = _minmax_po(get_active_power_limits_from(lcc, SU)),
         active_power_limits_to = _minmax_po(get_active_power_limits_to(lcc, SU)),
         reactive_power_limits_from = _minmax_po(get_reactive_power_limits_from(lcc, SU)),
@@ -1017,6 +1069,18 @@ function to_openapi(lcc::TwoTerminalLCCLine, refs::OpenAPIRefs, ::NaturalUnit)
         inverter_capacitor_reactance = _lcc_pu_to_ohm(
             get_inverter_capacitor_reactance(lcc), ibv, base_power,
         ),
+        rectifier_commutating_bus_id = _component_id_optional(
+            refs, get_rectifier_commutating_bus(lcc),
+        ),
+        inverter_commutating_bus_id = _component_id_optional(
+            refs, get_inverter_commutating_bus(lcc),
+        ),
+        rectifier_tap_transformer_id = _component_id_optional(
+            refs, get_rectifier_tap_transformer(lcc),
+        ),
+        inverter_tap_transformer_id = _component_id_optional(
+            refs, get_inverter_tap_transformer(lcc),
+        ),
         active_power_limits_from = _minmax_po_scaled(
             get_active_power_limits_from(lcc, SU),
             base_power,
@@ -1044,7 +1108,7 @@ end
 # implemented), so `g` converts pu → siemens in BOTH methods. Only the power-family fields and
 # `dc_setpoint_*`'s `DC_POWER` branch are discriminated by `power_units`, multiplying by
 # `base_power` under `NaturalUnit`.
-# `voltage_limits_*`, `dc_voltage_droop_*`, the current fields, `rmpct_*`, the weighting
+# `voltage_limits_*`, `dc_voltage_droop_*`, the current fields, the weighting
 # fractions, and `rated_dc_voltage`/`rated_ac_voltage_from`/`rated_ac_voltage_to` pass through —
 # see import_handwritten.jl's header for why each one is left alone. The voltage-regulating
 # `dc_setpoint_*`/`ac_setpoint_*` branches also pass through unconverted (PSY stores them
@@ -1164,10 +1228,12 @@ function _two_terminal_vsc_line_to_openapi(vsc::TwoTerminalVSCLine, refs::OpenAP
         voltage_limits_to = _minmax_po(get_voltage_limits_to(vsc)),
         dc_voltage_droop_to = get_dc_voltage_droop_to(vsc),
         rated_dc_voltage = get_rated_dc_voltage(vsc),
-        remote_bus_control_from = get_remote_bus_control_from(vsc),
-        remote_bus_control_to = get_remote_bus_control_to(vsc),
-        rmpct_from = get_rmpct_from(vsc),
-        rmpct_to = get_rmpct_to(vsc),
+        remote_regulated_bus_id_from = _component_id_optional(
+            refs, get_remote_regulated_bus_from(vsc),
+        ),
+        remote_regulated_bus_id_to = _component_id_optional(
+            refs, get_remote_regulated_bus_to(vsc),
+        ),
         base_power = base_power,
         power_units = _power_units_string(unit),
     )
@@ -1253,6 +1319,11 @@ function to_openapi(storage::EnergyReservoirStorage, refs::OpenAPIRefs, ::Compon
         name = get_name(storage),
         available = get_available(storage),
         bus = component_id(refs, get_bus(storage)),
+        remote_regulated_bus_id = _component_id_optional(
+            refs, get_remote_regulated_bus(storage),
+        ),
+        voltage_setpoint_units = PO.VoltageUnitBasis("COMPONENT_BASE"),
+        voltage_setpoint = get_voltage_setpoint(storage),
         prime_mover_type = PO.PrimeMovers(string(get_prime_mover_type(storage))),
         storage_technology_type = PO.StorageTech(
             string(get_storage_technology_type(
@@ -1297,6 +1368,11 @@ function to_openapi(
         name = get_name(storage),
         available = get_available(storage),
         bus = component_id(refs, get_bus(storage)),
+        remote_regulated_bus_id = _component_id_optional(
+            refs, get_remote_regulated_bus(storage),
+        ),
+        voltage_setpoint_units = PO.VoltageUnitBasis("COMPONENT_BASE"),
+        voltage_setpoint = get_voltage_setpoint(storage),
         prime_mover_type = PO.PrimeMovers(string(get_prime_mover_type(storage))),
         storage_technology_type = PO.StorageTech(
             string(get_storage_technology_type(

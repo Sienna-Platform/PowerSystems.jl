@@ -2073,6 +2073,7 @@ function check(sys::System)
     critical_components_check(sys)
     adequacy_check(sys)
     check_subsystems(sys)
+    check_voltage_control(sys)
     return
 end
 

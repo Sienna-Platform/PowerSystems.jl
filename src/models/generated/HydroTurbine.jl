@@ -15,6 +15,8 @@ This file is auto-generated. Do not edit.
         active_power_limits::MinMax
         reactive_power_limits::Union{Nothing, MinMax}
         base_power::Float64
+        remote_regulated_bus::Union{Nothing, ACBus}
+        voltage_setpoint::Float64
         status::OperationalStates.Value
         time_at_status::Float64
         commitment_mode::CommitmentModes.Value
@@ -46,6 +48,8 @@ A hydropower generator that must have a [`HydroReservoir`](@ref) attached, suita
 - `active_power_limits::MinMax`: Minimum and maximum stable active power levels (MW), validation range: `(0, nothing)`
 - `reactive_power_limits::Union{Nothing, MinMax}`: Minimum and maximum reactive power limits. Set to `Nothing` if not applicable
 - `base_power::Float64`: Base power of the unit (MVA) for [per unitization](@ref per_unit), validation range: `(0.0001, nothing)`
+- `remote_regulated_bus::Union{Nothing, ACBus}`: (default: `nothing`) Bus whose voltage this unit regulates when it is not its own `bus`; `nothing` means the unit regulates `bus`, and a value equal to `bus` is invalid. An available [`VoltageDroopControl`](@ref) the unit belongs to overrides this target; [`get_regulated_bus`](@ref) resolves it
+- `voltage_setpoint::Float64`: (default: `1.0`) Voltage magnitude the unit holds at the bus it regulates, in per-unit of that bus's `base_voltage`, while the type of its own bus marks it as voltage regulating. Ignored while the unit belongs to an available [`VoltageDroopControl`](@ref), validation range: `(0, nothing)`
 - `status::OperationalStates.Value`: (default: `OperationalStates.OFFLINE`) Operating state of the unit at the start of a simulation. Options are listed [here](@ref opstate_list)
 - `time_at_status::Float64`: (default: `INFINITE_TIME`) Time (e.g., `Minutes(360)`) the generator has been in its current `status`
 - `commitment_mode::CommitmentModes.Value`: (default: `CommitmentModes.COMMITTED`) Commitment mode of the unit. Options are listed [here](@ref commit_list)
@@ -84,6 +88,10 @@ mutable struct HydroTurbine <: HydroUnit
     reactive_power_limits::Union{Nothing, MinMax}
     "Base power of the unit (MVA) for [per unitization](@ref per_unit)"
     base_power::Float64
+    "Bus whose voltage this unit regulates when it is not its own `bus`; `nothing` means the unit regulates `bus`, and a value equal to `bus` is invalid. An available [`VoltageDroopControl`](@ref) the unit belongs to overrides this target; [`get_regulated_bus`](@ref) resolves it"
+    remote_regulated_bus::Union{Nothing, ACBus}
+    "Voltage magnitude the unit holds at the bus it regulates, in per-unit of that bus's `base_voltage`, while the type of its own bus marks it as voltage regulating. Ignored while the unit belongs to an available [`VoltageDroopControl`](@ref)"
+    voltage_setpoint::Float64
     "Operating state of the unit at the start of a simulation. Options are listed [here](@ref opstate_list)"
     status::OperationalStates.Value
     "Time (e.g., `Minutes(360)`) the generator has been in its current `status`"
@@ -120,12 +128,12 @@ mutable struct HydroTurbine <: HydroUnit
     internal::InfrastructureSystemsInternal
 end
 
-function HydroTurbine(name, available, bus, active_power, reactive_power, rating, active_power_limits, reactive_power_limits, base_power, status=OperationalStates.OFFLINE, time_at_status=INFINITE_TIME, commitment_mode=CommitmentModes.COMMITTED, operation_cost=HydroGenerationCost(nothing), powerhouse_elevation=0.0, ramp_limits=nothing, time_limits=nothing, outflow_limits=nothing, efficiency=1.0, turbine_type=HydroTurbineType.UNKNOWN, conversion_factor=1.0, prime_mover_type=PrimeMovers.HY, travel_time=nothing, services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), )
-    HydroTurbine(name, available, bus, active_power, reactive_power, rating, active_power_limits, reactive_power_limits, base_power, status, time_at_status, commitment_mode, operation_cost, powerhouse_elevation, ramp_limits, time_limits, outflow_limits, efficiency, turbine_type, conversion_factor, prime_mover_type, travel_time, services, dynamic_injector, ext, InfrastructureSystemsInternal(), )
+function HydroTurbine(name, available, bus, active_power, reactive_power, rating, active_power_limits, reactive_power_limits, base_power, remote_regulated_bus=nothing, voltage_setpoint=1.0, status=OperationalStates.OFFLINE, time_at_status=INFINITE_TIME, commitment_mode=CommitmentModes.COMMITTED, operation_cost=HydroGenerationCost(nothing), powerhouse_elevation=0.0, ramp_limits=nothing, time_limits=nothing, outflow_limits=nothing, efficiency=1.0, turbine_type=HydroTurbineType.UNKNOWN, conversion_factor=1.0, prime_mover_type=PrimeMovers.HY, travel_time=nothing, services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), )
+    HydroTurbine(name, available, bus, active_power, reactive_power, rating, active_power_limits, reactive_power_limits, base_power, remote_regulated_bus, voltage_setpoint, status, time_at_status, commitment_mode, operation_cost, powerhouse_elevation, ramp_limits, time_limits, outflow_limits, efficiency, turbine_type, conversion_factor, prime_mover_type, travel_time, services, dynamic_injector, ext, InfrastructureSystemsInternal(), )
 end
 
-function HydroTurbine(; name, available, bus, active_power, reactive_power, rating, active_power_limits, reactive_power_limits, base_power, status=OperationalStates.OFFLINE, time_at_status=INFINITE_TIME, commitment_mode=CommitmentModes.COMMITTED, operation_cost=HydroGenerationCost(nothing), powerhouse_elevation=0.0, ramp_limits=nothing, time_limits=nothing, outflow_limits=nothing, efficiency=1.0, turbine_type=HydroTurbineType.UNKNOWN, conversion_factor=1.0, prime_mover_type=PrimeMovers.HY, travel_time=nothing, services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Union{ComponentBaseUnit, NaturalUnit}, )
-    value = HydroTurbine(name, available, bus, _placeholder(active_power), _placeholder(reactive_power), _placeholder(rating), _placeholder(active_power_limits), _placeholder(reactive_power_limits), base_power, status, time_at_status, commitment_mode, operation_cost, powerhouse_elevation, _placeholder(ramp_limits), time_limits, outflow_limits, efficiency, turbine_type, conversion_factor, prime_mover_type, travel_time, services, dynamic_injector, ext, internal, )
+function HydroTurbine(; name, available, bus, active_power, reactive_power, rating, active_power_limits, reactive_power_limits, base_power, remote_regulated_bus=nothing, voltage_setpoint=1.0, status=OperationalStates.OFFLINE, time_at_status=INFINITE_TIME, commitment_mode=CommitmentModes.COMMITTED, operation_cost=HydroGenerationCost(nothing), powerhouse_elevation=0.0, ramp_limits=nothing, time_limits=nothing, outflow_limits=nothing, efficiency=1.0, turbine_type=HydroTurbineType.UNKNOWN, conversion_factor=1.0, prime_mover_type=PrimeMovers.HY, travel_time=nothing, services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Union{ComponentBaseUnit, NaturalUnit}, )
+    value = HydroTurbine(name, available, bus, _placeholder(active_power), _placeholder(reactive_power), _placeholder(rating), _placeholder(active_power_limits), _placeholder(reactive_power_limits), base_power, remote_regulated_bus, voltage_setpoint, status, time_at_status, commitment_mode, operation_cost, powerhouse_elevation, _placeholder(ramp_limits), time_limits, outflow_limits, efficiency, turbine_type, conversion_factor, prime_mover_type, travel_time, services, dynamic_injector, ext, internal, )
     set_active_power!(value, _tag(active_power, input_basis, Val(:mw)))
     set_reactive_power!(value, _tag(reactive_power, input_basis, Val(:mvar)))
     set_rating!(value, _tag(rating, input_basis, Val(:mva)))
@@ -148,6 +156,8 @@ function HydroTurbine(::Nothing)
         active_power_limits=(min=0.0, max=0.0),
         reactive_power_limits=nothing,
         base_power=100.0,
+        remote_regulated_bus=nothing,
+        voltage_setpoint=1.0,
         status=OperationalStates.OFFLINE,
         time_at_status=INFINITE_TIME,
         commitment_mode=CommitmentModes.UNCOMMITTED,
@@ -216,6 +226,10 @@ InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_limits), ::T
 InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_limits_unitful), ::Type{HydroTurbine}) = InfrastructureSystems.SU
 
 _get_base_power(value::HydroTurbine) = value.base_power
+"""Get [`HydroTurbine`](@ref) `remote_regulated_bus`."""
+get_remote_regulated_bus(value::HydroTurbine) = value.remote_regulated_bus
+"""Get [`HydroTurbine`](@ref) `voltage_setpoint`."""
+get_voltage_setpoint(value::HydroTurbine) = value.voltage_setpoint
 """Get [`HydroTurbine`](@ref) `status`."""
 get_status(value::HydroTurbine) = value.status
 """Get [`HydroTurbine`](@ref) `time_at_status`."""
@@ -278,6 +292,10 @@ set_active_power_limits!(value::HydroTurbine, val::NamedTuple{(:min, :max), <:Tu
 set_reactive_power_limits!(value::HydroTurbine, val) = value.reactive_power_limits = set_value(value, Val(:reactive_power_limits), val, Val(:mvar))
 set_reactive_power_limits!(value::HydroTurbine, val::_UntaggedNumber) = _units_tag_required(set_reactive_power_limits!, value, :reactive_power_limits, Val(:mvar), val)
 set_reactive_power_limits!(value::HydroTurbine, val::NamedTuple{(:min, :max), <:Tuple{Vararg{_UntaggedNumber}}}) = _units_tag_required(set_reactive_power_limits!, value, :reactive_power_limits, Val(:mvar), val)
+"""Set [`HydroTurbine`](@ref) `remote_regulated_bus`."""
+set_remote_regulated_bus!(value::HydroTurbine, val) = value.remote_regulated_bus = val
+"""Set [`HydroTurbine`](@ref) `voltage_setpoint`."""
+set_voltage_setpoint!(value::HydroTurbine, val) = value.voltage_setpoint = val
 """Set [`HydroTurbine`](@ref) `status`."""
 set_status!(value::HydroTurbine, val) = value.status = val
 """Set [`HydroTurbine`](@ref) `time_at_status`."""
@@ -323,6 +341,8 @@ function from_openapi(po::PO.HydroTurbine, refs::OpenAPIRefs, ::ComponentBaseUni
         active_power_limits = _minmax_from_po(po.active_power_limits),
         reactive_power_limits = _minmax_from_po(po.reactive_power_limits),
         base_power = po.base_power,
+        remote_regulated_bus = resolve_ref(refs, po.remote_regulated_bus_id, ACBus),
+        voltage_setpoint = (_require_unit_basis(po.voltage_setpoint_units, "COMPONENT_BASE", "HydroTurbine.voltage_setpoint_units", po.id); _or_default(po.voltage_setpoint, 1.0)),
         status = _or_default_enum(po.status, OperationalStates.OFFLINE),
         time_at_status = _or_default(po.time_at_status, INFINITE_TIME),
         commitment_mode = _or_default_enum(po.commitment_mode, CommitmentModes.COMMITTED),
@@ -351,6 +371,8 @@ function from_openapi(po::PO.HydroTurbine, refs::OpenAPIRefs, ::NaturalUnit)
         active_power_limits = _minmax_from_po(po.active_power_limits, (/), po.base_power),
         reactive_power_limits = _minmax_from_po(po.reactive_power_limits, (/), po.base_power),
         base_power = po.base_power,
+        remote_regulated_bus = resolve_ref(refs, po.remote_regulated_bus_id, ACBus),
+        voltage_setpoint = (_require_unit_basis(po.voltage_setpoint_units, "COMPONENT_BASE", "HydroTurbine.voltage_setpoint_units", po.id); _or_default(po.voltage_setpoint, 1.0)),
         status = _or_default_enum(po.status, OperationalStates.OFFLINE),
         time_at_status = _or_default(po.time_at_status, INFINITE_TIME),
         commitment_mode = _or_default_enum(po.commitment_mode, CommitmentModes.COMMITTED),
@@ -384,6 +406,9 @@ function to_openapi(value::HydroTurbine, refs::OpenAPIRefs, ::ComponentBaseUnit)
         active_power_limits = _minmax_po(get_active_power_limits(value, CU)),
         reactive_power_limits = _minmax_po_optional(get_reactive_power_limits(value, CU)),
         base_power = _get_base_power(value),
+        remote_regulated_bus_id = _component_id_optional(refs, get_remote_regulated_bus(value)),
+        voltage_setpoint_units = PO.VoltageUnitBasis("COMPONENT_BASE"),
+        voltage_setpoint = get_voltage_setpoint(value),
         status = PO.OperationalStates(string(get_status(value))),
         time_at_status = get_time_at_status(value),
         commitment_mode = PO.CommitmentModes(string(get_commitment_mode(value))),
@@ -413,6 +438,9 @@ function to_openapi(value::HydroTurbine, refs::OpenAPIRefs, ::NaturalUnit)
         active_power_limits = _minmax_po_scaled(get_active_power_limits(value, CU), _get_base_power(value)),
         reactive_power_limits = _minmax_po_scaled_optional(get_reactive_power_limits(value, CU), _get_base_power(value)),
         base_power = _get_base_power(value),
+        remote_regulated_bus_id = _component_id_optional(refs, get_remote_regulated_bus(value)),
+        voltage_setpoint_units = PO.VoltageUnitBasis("COMPONENT_BASE"),
+        voltage_setpoint = get_voltage_setpoint(value),
         status = PO.OperationalStates(string(get_status(value))),
         time_at_status = get_time_at_status(value),
         commitment_mode = PO.CommitmentModes(string(get_commitment_mode(value))),

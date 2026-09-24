@@ -50,8 +50,7 @@ _export_vsc(
     power_factor_weighting_fraction_to = 0.5,
     voltage_limits_to = (min = 0.9, max = 1.1),
     dc_voltage_droop_to = 0.0, rated_dc_voltage = rated_dc_voltage,
-    remote_bus_control_from = nothing, remote_bus_control_to = 2,
-    rmpct_from = 100.0, rmpct_to = 100.0, base_power = 100.0,
+    base_power = 100.0,
     input_basis = CU,
 )
 
@@ -164,7 +163,7 @@ end
     circuit = TransformerCircuit(;
         available = true, arc = arc, tap = 1.0, α = 0.05, r = 0.01, x = 0.1,
         control_objective = TransformerControlObjective.UNDEFINED,
-        regulated_bus_number = 0,
+        regulated_bus = nothing,
         control_limits = (min = 0.9, max = 1.1),
         controlled_quantity_limits = (min = 0.9, max = 1.1),
         number_of_tap_positions = 33, rating = 2.0, rating_b = nothing,

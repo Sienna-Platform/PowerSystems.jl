@@ -39,6 +39,10 @@ This file is auto-generated. Do not edit.
         inverter_tap_step::Float64
         inverter_extinction_angle::Float64
         inverter_capacitor_reactance::Float64
+        rectifier_commutating_bus::Union{Nothing, ACBus}
+        inverter_commutating_bus::Union{Nothing, ACBus}
+        rectifier_tap_transformer::Union{Nothing, TwoWindingTransformer}
+        inverter_tap_transformer::Union{Nothing, TwoWindingTransformer}
         active_power_limits_from::MinMax
         active_power_limits_to::MinMax
         reactive_power_limits_from::MinMax
@@ -88,6 +92,10 @@ As implemented in PSS/E.
 - `inverter_tap_step::Float64`: (default: `0.00625`) Inverter transformer tap step value.
 - `inverter_extinction_angle::Float64`: (default: `0.0`) Inverter extinction angle (γ).
 - `inverter_capacitor_reactance::Float64`: (default: `0.0`) Commutating inverter capacitor reactance magnitude per bridge, in system p.u. ([`SYSTEM_BASE`](@ref per_unit)).
+- `rectifier_commutating_bus::Union{Nothing, ACBus}`: (default: `nothing`) Bus whose voltage angle the rectifier firing angle is measured against (PSS/E `ICR`); `nothing` means the rectifier's own bus. Must be `nothing` for a capacitor-commutated line
+- `inverter_commutating_bus::Union{Nothing, ACBus}`: (default: `nothing`) Bus whose voltage angle the inverter extinction angle is measured against (PSS/E `ICI`); `nothing` means the inverter's own bus. Must be `nothing` for a capacitor-commutated line
+- `rectifier_tap_transformer::Union{Nothing, TwoWindingTransformer}`: (default: `nothing`) [`TwoWindingTransformer`](@ref) whose tap this line adjusts on the rectifier side (PSS/E `IFR`, `ITR`, `IDR`); `nothing` means the line's own rectifier tap fields describe the tap. The referenced circuit's `control_objective` must be `CONTROL_OF_DC_LINE`. Must be `nothing` for a capacitor-commutated line
+- `inverter_tap_transformer::Union{Nothing, TwoWindingTransformer}`: (default: `nothing`) [`TwoWindingTransformer`](@ref) whose tap this line adjusts on the inverter side (PSS/E `IFI`, `ITI`, `IDI`); `nothing` means the line's own inverter tap fields describe the tap. The referenced circuit's `control_objective` must be `CONTROL_OF_DC_LINE`. Must be `nothing` for a capacitor-commutated line
 - `active_power_limits_from::MinMax`: (default: `(min=0.0, max=0.0)`) Minimum and maximum active power flows to the FROM node (MW)
 - `active_power_limits_to::MinMax`: (default: `(min=0.0, max=0.0)`) Minimum and maximum active power flows to the TO node (MW)
 - `reactive_power_limits_from::MinMax`: (default: `(min=0.0, max=0.0)`) Minimum and maximum reactive power limits to the FROM node (MVAR)
@@ -166,6 +174,14 @@ mutable struct TwoTerminalLCCLine <: TwoTerminalHVDC
     inverter_extinction_angle::Float64
     "Commutating inverter capacitor reactance magnitude per bridge, in system p.u. ([`SYSTEM_BASE`](@ref per_unit))."
     inverter_capacitor_reactance::Float64
+    "Bus whose voltage angle the rectifier firing angle is measured against (PSS/E `ICR`); `nothing` means the rectifier's own bus. Must be `nothing` for a capacitor-commutated line"
+    rectifier_commutating_bus::Union{Nothing, ACBus}
+    "Bus whose voltage angle the inverter extinction angle is measured against (PSS/E `ICI`); `nothing` means the inverter's own bus. Must be `nothing` for a capacitor-commutated line"
+    inverter_commutating_bus::Union{Nothing, ACBus}
+    "[`TwoWindingTransformer`](@ref) whose tap this line adjusts on the rectifier side (PSS/E `IFR`, `ITR`, `IDR`); `nothing` means the line's own rectifier tap fields describe the tap. The referenced circuit's `control_objective` must be `CONTROL_OF_DC_LINE`. Must be `nothing` for a capacitor-commutated line"
+    rectifier_tap_transformer::Union{Nothing, TwoWindingTransformer}
+    "[`TwoWindingTransformer`](@ref) whose tap this line adjusts on the inverter side (PSS/E `IFI`, `ITI`, `IDI`); `nothing` means the line's own inverter tap fields describe the tap. The referenced circuit's `control_objective` must be `CONTROL_OF_DC_LINE`. Must be `nothing` for a capacitor-commutated line"
+    inverter_tap_transformer::Union{Nothing, TwoWindingTransformer}
     "Minimum and maximum active power flows to the FROM node (MW)"
     active_power_limits_from::MinMax
     "Minimum and maximum active power flows to the TO node (MW)"
@@ -186,12 +202,12 @@ mutable struct TwoTerminalLCCLine <: TwoTerminalHVDC
     internal::InfrastructureSystemsInternal
 end
 
-function TwoTerminalLCCLine(name, available, arc, active_power_flow, r, transfer_setpoint, scheduled_dc_voltage, rectifier_bridges, rectifier_delay_angle_limits, rectifier_rc, rectifier_xc, rectifier_base_voltage, inverter_bridges, inverter_extinction_angle_limits, inverter_rc, inverter_xc, inverter_base_voltage, power_mode=true, switch_mode_voltage=0.0, compounding_resistance=0.0, min_compounding_voltage=0.0, rectifier_transformer_ratio=1.0, rectifier_tap_setting=1.0, rectifier_tap_limits=(min=0.51, max=1.5), rectifier_tap_step=0.00625, rectifier_delay_angle=0.0, rectifier_capacitor_reactance=0.0, inverter_transformer_ratio=1.0, inverter_tap_setting=1.0, inverter_tap_limits=(min=0.51, max=1.5), inverter_tap_step=0.00625, inverter_extinction_angle=0.0, inverter_capacitor_reactance=0.0, active_power_limits_from=(min=0.0, max=0.0), active_power_limits_to=(min=0.0, max=0.0), reactive_power_limits_from=(min=0.0, max=0.0), reactive_power_limits_to=(min=0.0, max=0.0), loss=LossCurve(LinearCurve(0.0), NaturalUnit()), services=Device[], base_power=100.0, ext=Dict{String, Any}(), )
-    TwoTerminalLCCLine(name, available, arc, active_power_flow, r, transfer_setpoint, scheduled_dc_voltage, rectifier_bridges, rectifier_delay_angle_limits, rectifier_rc, rectifier_xc, rectifier_base_voltage, inverter_bridges, inverter_extinction_angle_limits, inverter_rc, inverter_xc, inverter_base_voltage, power_mode, switch_mode_voltage, compounding_resistance, min_compounding_voltage, rectifier_transformer_ratio, rectifier_tap_setting, rectifier_tap_limits, rectifier_tap_step, rectifier_delay_angle, rectifier_capacitor_reactance, inverter_transformer_ratio, inverter_tap_setting, inverter_tap_limits, inverter_tap_step, inverter_extinction_angle, inverter_capacitor_reactance, active_power_limits_from, active_power_limits_to, reactive_power_limits_from, reactive_power_limits_to, loss, services, base_power, ext, InfrastructureSystemsInternal(), )
+function TwoTerminalLCCLine(name, available, arc, active_power_flow, r, transfer_setpoint, scheduled_dc_voltage, rectifier_bridges, rectifier_delay_angle_limits, rectifier_rc, rectifier_xc, rectifier_base_voltage, inverter_bridges, inverter_extinction_angle_limits, inverter_rc, inverter_xc, inverter_base_voltage, power_mode=true, switch_mode_voltage=0.0, compounding_resistance=0.0, min_compounding_voltage=0.0, rectifier_transformer_ratio=1.0, rectifier_tap_setting=1.0, rectifier_tap_limits=(min=0.51, max=1.5), rectifier_tap_step=0.00625, rectifier_delay_angle=0.0, rectifier_capacitor_reactance=0.0, inverter_transformer_ratio=1.0, inverter_tap_setting=1.0, inverter_tap_limits=(min=0.51, max=1.5), inverter_tap_step=0.00625, inverter_extinction_angle=0.0, inverter_capacitor_reactance=0.0, rectifier_commutating_bus=nothing, inverter_commutating_bus=nothing, rectifier_tap_transformer=nothing, inverter_tap_transformer=nothing, active_power_limits_from=(min=0.0, max=0.0), active_power_limits_to=(min=0.0, max=0.0), reactive_power_limits_from=(min=0.0, max=0.0), reactive_power_limits_to=(min=0.0, max=0.0), loss=LossCurve(LinearCurve(0.0), NaturalUnit()), services=Device[], base_power=100.0, ext=Dict{String, Any}(), )
+    TwoTerminalLCCLine(name, available, arc, active_power_flow, r, transfer_setpoint, scheduled_dc_voltage, rectifier_bridges, rectifier_delay_angle_limits, rectifier_rc, rectifier_xc, rectifier_base_voltage, inverter_bridges, inverter_extinction_angle_limits, inverter_rc, inverter_xc, inverter_base_voltage, power_mode, switch_mode_voltage, compounding_resistance, min_compounding_voltage, rectifier_transformer_ratio, rectifier_tap_setting, rectifier_tap_limits, rectifier_tap_step, rectifier_delay_angle, rectifier_capacitor_reactance, inverter_transformer_ratio, inverter_tap_setting, inverter_tap_limits, inverter_tap_step, inverter_extinction_angle, inverter_capacitor_reactance, rectifier_commutating_bus, inverter_commutating_bus, rectifier_tap_transformer, inverter_tap_transformer, active_power_limits_from, active_power_limits_to, reactive_power_limits_from, reactive_power_limits_to, loss, services, base_power, ext, InfrastructureSystemsInternal(), )
 end
 
-function TwoTerminalLCCLine(; name, available, arc, active_power_flow, r, transfer_setpoint, scheduled_dc_voltage, rectifier_bridges, rectifier_delay_angle_limits, rectifier_rc, rectifier_xc, rectifier_base_voltage, inverter_bridges, inverter_extinction_angle_limits, inverter_rc, inverter_xc, inverter_base_voltage, power_mode=true, switch_mode_voltage=0.0, compounding_resistance=0.0, min_compounding_voltage=0.0, rectifier_transformer_ratio=1.0, rectifier_tap_setting=1.0, rectifier_tap_limits=(min=0.51, max=1.5), rectifier_tap_step=0.00625, rectifier_delay_angle=0.0, rectifier_capacitor_reactance=0.0, inverter_transformer_ratio=1.0, inverter_tap_setting=1.0, inverter_tap_limits=(min=0.51, max=1.5), inverter_tap_step=0.00625, inverter_extinction_angle=0.0, inverter_capacitor_reactance=0.0, active_power_limits_from=(min=0.0, max=0.0), active_power_limits_to=(min=0.0, max=0.0), reactive_power_limits_from=(min=0.0, max=0.0), reactive_power_limits_to=(min=0.0, max=0.0), loss=LossCurve(LinearCurve(0.0), NaturalUnit()), services=Device[], base_power=100.0, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Union{ComponentBaseUnit, NaturalUnit}, )
-    value = TwoTerminalLCCLine(name, available, arc, _placeholder(active_power_flow), r, transfer_setpoint, scheduled_dc_voltage, rectifier_bridges, rectifier_delay_angle_limits, rectifier_rc, rectifier_xc, rectifier_base_voltage, inverter_bridges, inverter_extinction_angle_limits, inverter_rc, inverter_xc, inverter_base_voltage, power_mode, switch_mode_voltage, compounding_resistance, min_compounding_voltage, rectifier_transformer_ratio, rectifier_tap_setting, rectifier_tap_limits, rectifier_tap_step, rectifier_delay_angle, rectifier_capacitor_reactance, inverter_transformer_ratio, inverter_tap_setting, inverter_tap_limits, inverter_tap_step, inverter_extinction_angle, inverter_capacitor_reactance, _placeholder(active_power_limits_from), _placeholder(active_power_limits_to), _placeholder(reactive_power_limits_from), _placeholder(reactive_power_limits_to), loss, services, base_power, ext, internal, )
+function TwoTerminalLCCLine(; name, available, arc, active_power_flow, r, transfer_setpoint, scheduled_dc_voltage, rectifier_bridges, rectifier_delay_angle_limits, rectifier_rc, rectifier_xc, rectifier_base_voltage, inverter_bridges, inverter_extinction_angle_limits, inverter_rc, inverter_xc, inverter_base_voltage, power_mode=true, switch_mode_voltage=0.0, compounding_resistance=0.0, min_compounding_voltage=0.0, rectifier_transformer_ratio=1.0, rectifier_tap_setting=1.0, rectifier_tap_limits=(min=0.51, max=1.5), rectifier_tap_step=0.00625, rectifier_delay_angle=0.0, rectifier_capacitor_reactance=0.0, inverter_transformer_ratio=1.0, inverter_tap_setting=1.0, inverter_tap_limits=(min=0.51, max=1.5), inverter_tap_step=0.00625, inverter_extinction_angle=0.0, inverter_capacitor_reactance=0.0, rectifier_commutating_bus=nothing, inverter_commutating_bus=nothing, rectifier_tap_transformer=nothing, inverter_tap_transformer=nothing, active_power_limits_from=(min=0.0, max=0.0), active_power_limits_to=(min=0.0, max=0.0), reactive_power_limits_from=(min=0.0, max=0.0), reactive_power_limits_to=(min=0.0, max=0.0), loss=LossCurve(LinearCurve(0.0), NaturalUnit()), services=Device[], base_power=100.0, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Union{ComponentBaseUnit, NaturalUnit}, )
+    value = TwoTerminalLCCLine(name, available, arc, _placeholder(active_power_flow), r, transfer_setpoint, scheduled_dc_voltage, rectifier_bridges, rectifier_delay_angle_limits, rectifier_rc, rectifier_xc, rectifier_base_voltage, inverter_bridges, inverter_extinction_angle_limits, inverter_rc, inverter_xc, inverter_base_voltage, power_mode, switch_mode_voltage, compounding_resistance, min_compounding_voltage, rectifier_transformer_ratio, rectifier_tap_setting, rectifier_tap_limits, rectifier_tap_step, rectifier_delay_angle, rectifier_capacitor_reactance, inverter_transformer_ratio, inverter_tap_setting, inverter_tap_limits, inverter_tap_step, inverter_extinction_angle, inverter_capacitor_reactance, rectifier_commutating_bus, inverter_commutating_bus, rectifier_tap_transformer, inverter_tap_transformer, _placeholder(active_power_limits_from), _placeholder(active_power_limits_to), _placeholder(reactive_power_limits_from), _placeholder(reactive_power_limits_to), loss, services, base_power, ext, internal, )
     set_active_power_flow!(value, _tag(active_power_flow, input_basis, Val(:mw)))
     set_active_power_limits_from!(value, _tag(active_power_limits_from, input_basis, Val(:mw)))
     set_active_power_limits_to!(value, _tag(active_power_limits_to, input_basis, Val(:mw)))
@@ -237,6 +253,10 @@ function TwoTerminalLCCLine(::Nothing)
         inverter_tap_step=0.0,
         inverter_extinction_angle=0.0,
         inverter_capacitor_reactance=0.0,
+        rectifier_commutating_bus=nothing,
+        inverter_commutating_bus=nothing,
+        rectifier_tap_transformer=nothing,
+        inverter_tap_transformer=nothing,
         active_power_limits_from=(min=0.0, max=0.0),
         active_power_limits_to=(min=0.0, max=0.0),
         reactive_power_limits_from=(min=0.0, max=0.0),
@@ -321,6 +341,14 @@ get_inverter_tap_step(value::TwoTerminalLCCLine) = value.inverter_tap_step
 get_inverter_extinction_angle(value::TwoTerminalLCCLine) = value.inverter_extinction_angle
 """Get [`TwoTerminalLCCLine`](@ref) `inverter_capacitor_reactance`."""
 get_inverter_capacitor_reactance(value::TwoTerminalLCCLine) = value.inverter_capacitor_reactance
+"""Get [`TwoTerminalLCCLine`](@ref) `rectifier_commutating_bus`."""
+get_rectifier_commutating_bus(value::TwoTerminalLCCLine) = value.rectifier_commutating_bus
+"""Get [`TwoTerminalLCCLine`](@ref) `inverter_commutating_bus`."""
+get_inverter_commutating_bus(value::TwoTerminalLCCLine) = value.inverter_commutating_bus
+"""Get [`TwoTerminalLCCLine`](@ref) `rectifier_tap_transformer`."""
+get_rectifier_tap_transformer(value::TwoTerminalLCCLine) = value.rectifier_tap_transformer
+"""Get [`TwoTerminalLCCLine`](@ref) `inverter_tap_transformer`."""
+get_inverter_tap_transformer(value::TwoTerminalLCCLine) = value.inverter_tap_transformer
 """Get [`TwoTerminalLCCLine`](@ref) `active_power_limits_from` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_active_power_limits_from_unitful`](@ref)."""
 get_active_power_limits_from(value::TwoTerminalLCCLine, units) = InfrastructureSystems._strip_units(get_value(value, Val(:active_power_limits_from), Val(:mw), units))
 """Get [`TwoTerminalLCCLine`](@ref) `active_power_limits_from` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_active_power_limits_from`](@ref)."""
@@ -429,6 +457,14 @@ set_inverter_tap_step!(value::TwoTerminalLCCLine, val) = value.inverter_tap_step
 set_inverter_extinction_angle!(value::TwoTerminalLCCLine, val) = value.inverter_extinction_angle = val
 """Set [`TwoTerminalLCCLine`](@ref) `inverter_capacitor_reactance`."""
 set_inverter_capacitor_reactance!(value::TwoTerminalLCCLine, val) = value.inverter_capacitor_reactance = val
+"""Set [`TwoTerminalLCCLine`](@ref) `rectifier_commutating_bus`."""
+set_rectifier_commutating_bus!(value::TwoTerminalLCCLine, val) = value.rectifier_commutating_bus = val
+"""Set [`TwoTerminalLCCLine`](@ref) `inverter_commutating_bus`."""
+set_inverter_commutating_bus!(value::TwoTerminalLCCLine, val) = value.inverter_commutating_bus = val
+"""Set [`TwoTerminalLCCLine`](@ref) `rectifier_tap_transformer`."""
+set_rectifier_tap_transformer!(value::TwoTerminalLCCLine, val) = value.rectifier_tap_transformer = val
+"""Set [`TwoTerminalLCCLine`](@ref) `inverter_tap_transformer`."""
+set_inverter_tap_transformer!(value::TwoTerminalLCCLine, val) = value.inverter_tap_transformer = val
 """Set [`TwoTerminalLCCLine`](@ref) `active_power_limits_from`."""
 set_active_power_limits_from!(value::TwoTerminalLCCLine, val) = value.active_power_limits_from = set_value(value, Val(:active_power_limits_from), val, Val(:mw))
 set_active_power_limits_from!(value::TwoTerminalLCCLine, val::_UntaggedNumber) = _units_tag_required(set_active_power_limits_from!, value, :active_power_limits_from, Val(:mw), val)

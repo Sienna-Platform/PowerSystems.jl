@@ -15,7 +15,7 @@ This file is auto-generated. Do not edit.
         solved_admittance::Union{Nothing, Float64}
         admittance_limits::MinMax
         control_mode::SwitchedAdmittanceControlMode.Value
-        regulated_bus_number::Int
+        remote_regulated_bus::Union{Nothing, ACBus}
         dynamic_injector::Union{Nothing, DynamicInjection}
         services::Vector{Service}
         ext::Dict{String, Any}
@@ -36,7 +36,7 @@ Most often used in power flow studies, iterating over the steps to see impacts o
 - `solved_admittance::Union{Nothing, Float64}`: (default: `nothing`) Solved-case switched shunt admittance (PSS/E `BINIT`), or `nothing` when unset. When non-`nothing`, this value is the shunt's effective admittance, used in place of `number_engaged` ⋅ `Y_increase`; power flow writes the solved-for admittance back to this field. Set it only when the case is to be treated as solved as read in, or when the device is locked (`control_mode == SwitchedAdmittanceControlMode.FIXED`).
 - `admittance_limits::MinMax`: (default: `(min=1.0, max=1.0)`) Shunt admittance limits for switched shunt model
 - `control_mode::SwitchedAdmittanceControlMode.Value`: (default: `SwitchedAdmittanceControlMode.FIXED`) Switched-shunt control mode.
-- `regulated_bus_number::Int`: (default: `0`) Bus number whose voltage/quantity this shunt regulates; 0 ⇒ local bus.
+- `remote_regulated_bus::Union{Nothing, ACBus}`: (default: `nothing`) Bus this shunt regulates in every control mode (PSS/E `SWREG`): the bus whose voltage it holds in the voltage modes, or the bus of the device whose reactive power it tracks in the other modes, which downstream modeling interprets per mode. `nothing` means the shunt's own `bus`; a value equal to `bus` is invalid
 - `dynamic_injector::Union{Nothing, DynamicInjection}`: (default: `nothing`) corresponding dynamic injection model for admittance
 - `services::Vector{Service}`: (default: `Device[]`) Services that this device contributes to
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
@@ -61,8 +61,8 @@ mutable struct SwitchedAdmittance <: ElectricLoad
     admittance_limits::MinMax
     "Switched-shunt control mode."
     control_mode::SwitchedAdmittanceControlMode.Value
-    "Bus number whose voltage/quantity this shunt regulates; 0 ⇒ local bus."
-    regulated_bus_number::Int
+    "Bus this shunt regulates in every control mode (PSS/E `SWREG`): the bus whose voltage it holds in the voltage modes, or the bus of the device whose reactive power it tracks in the other modes, which downstream modeling interprets per mode. `nothing` means the shunt's own `bus`; a value equal to `bus` is invalid"
+    remote_regulated_bus::Union{Nothing, ACBus}
     "corresponding dynamic injection model for admittance"
     dynamic_injector::Union{Nothing, DynamicInjection}
     "Services that this device contributes to"
@@ -73,12 +73,12 @@ mutable struct SwitchedAdmittance <: ElectricLoad
     internal::InfrastructureSystemsInternal
 end
 
-function SwitchedAdmittance(name, available, bus, number_engaged=Int[], number_of_steps=Int[], Y_increase=Complex{Float64}[], solved_admittance=nothing, admittance_limits=(min=1.0, max=1.0), control_mode=SwitchedAdmittanceControlMode.FIXED, regulated_bus_number=0, dynamic_injector=nothing, services=Device[], ext=Dict{String, Any}(), )
-    SwitchedAdmittance(name, available, bus, number_engaged, number_of_steps, Y_increase, solved_admittance, admittance_limits, control_mode, regulated_bus_number, dynamic_injector, services, ext, InfrastructureSystemsInternal(), )
+function SwitchedAdmittance(name, available, bus, number_engaged=Int[], number_of_steps=Int[], Y_increase=Complex{Float64}[], solved_admittance=nothing, admittance_limits=(min=1.0, max=1.0), control_mode=SwitchedAdmittanceControlMode.FIXED, remote_regulated_bus=nothing, dynamic_injector=nothing, services=Device[], ext=Dict{String, Any}(), )
+    SwitchedAdmittance(name, available, bus, number_engaged, number_of_steps, Y_increase, solved_admittance, admittance_limits, control_mode, remote_regulated_bus, dynamic_injector, services, ext, InfrastructureSystemsInternal(), )
 end
 
-function SwitchedAdmittance(; name, available, bus, number_engaged=Int[], number_of_steps=Int[], Y_increase=Complex{Float64}[], solved_admittance=nothing, admittance_limits=(min=1.0, max=1.0), control_mode=SwitchedAdmittanceControlMode.FIXED, regulated_bus_number=0, dynamic_injector=nothing, services=Device[], ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), )
-    SwitchedAdmittance(name, available, bus, number_engaged, number_of_steps, Y_increase, solved_admittance, admittance_limits, control_mode, regulated_bus_number, dynamic_injector, services, ext, internal, )
+function SwitchedAdmittance(; name, available, bus, number_engaged=Int[], number_of_steps=Int[], Y_increase=Complex{Float64}[], solved_admittance=nothing, admittance_limits=(min=1.0, max=1.0), control_mode=SwitchedAdmittanceControlMode.FIXED, remote_regulated_bus=nothing, dynamic_injector=nothing, services=Device[], ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), )
+    SwitchedAdmittance(name, available, bus, number_engaged, number_of_steps, Y_increase, solved_admittance, admittance_limits, control_mode, remote_regulated_bus, dynamic_injector, services, ext, internal, )
 end
 
 # Constructor for demo purposes; non-functional.
@@ -93,7 +93,7 @@ function SwitchedAdmittance(::Nothing)
         solved_admittance=nothing,
         admittance_limits=(min=0.0, max=0.0),
         control_mode=SwitchedAdmittanceControlMode.FIXED,
-        regulated_bus_number=0,
+        remote_regulated_bus=nothing,
         dynamic_injector=nothing,
         services=Device[],
         ext=Dict{String, Any}(),
@@ -118,8 +118,8 @@ get_solved_admittance(value::SwitchedAdmittance) = value.solved_admittance
 get_admittance_limits(value::SwitchedAdmittance) = value.admittance_limits
 """Get [`SwitchedAdmittance`](@ref) `control_mode`."""
 get_control_mode(value::SwitchedAdmittance) = value.control_mode
-"""Get [`SwitchedAdmittance`](@ref) `regulated_bus_number`."""
-get_regulated_bus_number(value::SwitchedAdmittance) = value.regulated_bus_number
+"""Get [`SwitchedAdmittance`](@ref) `remote_regulated_bus`."""
+get_remote_regulated_bus(value::SwitchedAdmittance) = value.remote_regulated_bus
 """Get [`SwitchedAdmittance`](@ref) `dynamic_injector`."""
 get_dynamic_injector(value::SwitchedAdmittance) = value.dynamic_injector
 """Get [`SwitchedAdmittance`](@ref) `services`."""
@@ -145,8 +145,8 @@ set_solved_admittance!(value::SwitchedAdmittance, val) = value.solved_admittance
 set_admittance_limits!(value::SwitchedAdmittance, val) = value.admittance_limits = val
 """Set [`SwitchedAdmittance`](@ref) `control_mode`."""
 set_control_mode!(value::SwitchedAdmittance, val) = value.control_mode = val
-"""Set [`SwitchedAdmittance`](@ref) `regulated_bus_number`."""
-set_regulated_bus_number!(value::SwitchedAdmittance, val) = value.regulated_bus_number = val
+"""Set [`SwitchedAdmittance`](@ref) `remote_regulated_bus`."""
+set_remote_regulated_bus!(value::SwitchedAdmittance, val) = value.remote_regulated_bus = val
 """Set [`SwitchedAdmittance`](@ref) `services`."""
 set_services!(value::SwitchedAdmittance, val) = value.services = val
 """Set [`SwitchedAdmittance`](@ref) `ext`."""

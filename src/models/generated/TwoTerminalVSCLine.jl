@@ -42,10 +42,8 @@ This file is auto-generated. Do not edit.
         voltage_limits_to::MinMax
         dc_voltage_droop_to::Float64
         rated_dc_voltage::Float64
-        remote_bus_control_from::Union{Nothing, Int}
-        remote_bus_control_to::Union{Nothing, Int}
-        rmpct_from::Float64
-        rmpct_to::Float64
+        remote_regulated_bus_from::Union{Nothing, ACBus}
+        remote_regulated_bus_to::Union{Nothing, ACBus}
         services::Vector{Service}
         base_power::Float64
         ext::Dict{String, Any}
@@ -93,10 +91,8 @@ This model is appropriate for operational simulations with a linearized DC power
 - `voltage_limits_to::MinMax`: (default: `(min=0.0, max=999.9)`) Limits on the Voltage at the DC `to` Bus.
 - `dc_voltage_droop_to::Float64`: (default: `0.0`) DC-voltage droop gain on the `to` converter, used when `dc_control_to` is `DC_VOLTAGE_DROOP`: `V_dc = dc_setpoint_to + dc_voltage_droop_to * P_c` (with `P_c` the converter's AC-side active-power injection).
 - `rated_dc_voltage::Float64`: (default: `0.0`) Rated (base) DC voltage of the link in kV. Used as the DC voltage base for interpreting DC-voltage setpoints; `0.0` means unspecified (DC-voltage setpoints are taken as per-unit directly).
-- `remote_bus_control_from::Union{Nothing, Int}`: (default: `nothing`) Number of the AC bus whose voltage the `from` converter regulates when `ac_control_from` is `AC_VOLTAGE`; `nothing` regulates its own terminal bus., validation range: `(1, nothing)`
-- `remote_bus_control_to::Union{Nothing, Int}`: (default: `nothing`) Number of the AC bus whose voltage the `to` converter regulates when `ac_control_to` is `AC_VOLTAGE`; `nothing` regulates its own terminal bus., validation range: `(1, nothing)`
-- `rmpct_from::Float64`: (default: `100.0`) Percent of the total MVAr required to hold the voltage at the bus regulated by the `from` converter that is contributed by this converter.
-- `rmpct_to::Float64`: (default: `100.0`) Percent of the total MVAr required to hold the voltage at the bus regulated by the `to` converter that is contributed by this converter.
+- `remote_regulated_bus_from::Union{Nothing, ACBus}`: (default: `nothing`) AC bus whose voltage the `from` converter regulates when `ac_control_from` is `AC_VOLTAGE` and that bus is not its own terminal bus; `nothing` means the `from` terminal bus, and a value equal to it is invalid. [`get_regulated_bus_from`](@ref) resolves it
+- `remote_regulated_bus_to::Union{Nothing, ACBus}`: (default: `nothing`) AC bus whose voltage the `to` converter regulates when `ac_control_to` is `AC_VOLTAGE` and that bus is not its own terminal bus; `nothing` means the `to` terminal bus, and a value equal to it is invalid. [`get_regulated_bus_to`](@ref) resolves it
 - `services::Vector{Service}`: (default: `Device[]`) Services that this device contributes to
 - `base_power::Float64`: (default: `100.0`) System base power for per-unitization of this component's per-unit fields, recorded per component in lieu of a system-level table (MVA), validation range: `(0.0001, nothing)`
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
@@ -176,14 +172,10 @@ mutable struct TwoTerminalVSCLine <: TwoTerminalHVDC
     dc_voltage_droop_to::Float64
     "Rated (base) DC voltage of the link in kV. Used as the DC voltage base for interpreting DC-voltage setpoints; `0.0` means unspecified (DC-voltage setpoints are taken as per-unit directly)."
     rated_dc_voltage::Float64
-    "Number of the AC bus whose voltage the `from` converter regulates when `ac_control_from` is `AC_VOLTAGE`; `nothing` regulates its own terminal bus."
-    remote_bus_control_from::Union{Nothing, Int}
-    "Number of the AC bus whose voltage the `to` converter regulates when `ac_control_to` is `AC_VOLTAGE`; `nothing` regulates its own terminal bus."
-    remote_bus_control_to::Union{Nothing, Int}
-    "Percent of the total MVAr required to hold the voltage at the bus regulated by the `from` converter that is contributed by this converter."
-    rmpct_from::Float64
-    "Percent of the total MVAr required to hold the voltage at the bus regulated by the `to` converter that is contributed by this converter."
-    rmpct_to::Float64
+    "AC bus whose voltage the `from` converter regulates when `ac_control_from` is `AC_VOLTAGE` and that bus is not its own terminal bus; `nothing` means the `from` terminal bus, and a value equal to it is invalid. [`get_regulated_bus_from`](@ref) resolves it"
+    remote_regulated_bus_from::Union{Nothing, ACBus}
+    "AC bus whose voltage the `to` converter regulates when `ac_control_to` is `AC_VOLTAGE` and that bus is not its own terminal bus; `nothing` means the `to` terminal bus, and a value equal to it is invalid. [`get_regulated_bus_to`](@ref) resolves it"
+    remote_regulated_bus_to::Union{Nothing, ACBus}
     "Services that this device contributes to"
     services::Vector{Service}
     "System base power for per-unitization of this component's per-unit fields, recorded per component in lieu of a system-level table (MVA)"
@@ -194,12 +186,12 @@ mutable struct TwoTerminalVSCLine <: TwoTerminalHVDC
     internal::InfrastructureSystemsInternal
 end
 
-function TwoTerminalVSCLine(name, available, arc, active_power_flow, rating, active_power_limits_from, active_power_limits_to, g=0.0, dc_current=0.0, reactive_power_from=0.0, dc_control_from=VSCDCControlModes.DC_VOLTAGE, ac_control_from=VSCACControlModes.AC_VOLTAGE, dc_setpoint_from=0.0, ac_setpoint_from=1.0, rated_ac_voltage_from=0.0, converter_loss_from=LossCurve(LinearCurve(0.0), NaturalUnit()), max_dc_current_from=1e8, rating_from=1e8, reactive_power_limits_from=(min=0.0, max=0.0), power_factor_weighting_fraction_from=1.0, voltage_limits_from=(min=0.0, max=999.9), dc_voltage_droop_from=0.0, reactive_power_to=0.0, dc_control_to=VSCDCControlModes.DC_VOLTAGE, ac_control_to=VSCACControlModes.AC_VOLTAGE, dc_setpoint_to=0.0, ac_setpoint_to=1.0, rated_ac_voltage_to=0.0, converter_loss_to=LossCurve(LinearCurve(0.0), NaturalUnit()), max_dc_current_to=1e8, rating_to=1e8, reactive_power_limits_to=(min=0.0, max=0.0), power_factor_weighting_fraction_to=1.0, voltage_limits_to=(min=0.0, max=999.9), dc_voltage_droop_to=0.0, rated_dc_voltage=0.0, remote_bus_control_from=nothing, remote_bus_control_to=nothing, rmpct_from=100.0, rmpct_to=100.0, services=Device[], base_power=100.0, ext=Dict{String, Any}(), )
-    TwoTerminalVSCLine(name, available, arc, active_power_flow, rating, active_power_limits_from, active_power_limits_to, g, dc_current, reactive_power_from, dc_control_from, ac_control_from, dc_setpoint_from, ac_setpoint_from, rated_ac_voltage_from, converter_loss_from, max_dc_current_from, rating_from, reactive_power_limits_from, power_factor_weighting_fraction_from, voltage_limits_from, dc_voltage_droop_from, reactive_power_to, dc_control_to, ac_control_to, dc_setpoint_to, ac_setpoint_to, rated_ac_voltage_to, converter_loss_to, max_dc_current_to, rating_to, reactive_power_limits_to, power_factor_weighting_fraction_to, voltage_limits_to, dc_voltage_droop_to, rated_dc_voltage, remote_bus_control_from, remote_bus_control_to, rmpct_from, rmpct_to, services, base_power, ext, InfrastructureSystemsInternal(), )
+function TwoTerminalVSCLine(name, available, arc, active_power_flow, rating, active_power_limits_from, active_power_limits_to, g=0.0, dc_current=0.0, reactive_power_from=0.0, dc_control_from=VSCDCControlModes.DC_VOLTAGE, ac_control_from=VSCACControlModes.AC_VOLTAGE, dc_setpoint_from=0.0, ac_setpoint_from=1.0, rated_ac_voltage_from=0.0, converter_loss_from=LossCurve(LinearCurve(0.0), NaturalUnit()), max_dc_current_from=1e8, rating_from=1e8, reactive_power_limits_from=(min=0.0, max=0.0), power_factor_weighting_fraction_from=1.0, voltage_limits_from=(min=0.0, max=999.9), dc_voltage_droop_from=0.0, reactive_power_to=0.0, dc_control_to=VSCDCControlModes.DC_VOLTAGE, ac_control_to=VSCACControlModes.AC_VOLTAGE, dc_setpoint_to=0.0, ac_setpoint_to=1.0, rated_ac_voltage_to=0.0, converter_loss_to=LossCurve(LinearCurve(0.0), NaturalUnit()), max_dc_current_to=1e8, rating_to=1e8, reactive_power_limits_to=(min=0.0, max=0.0), power_factor_weighting_fraction_to=1.0, voltage_limits_to=(min=0.0, max=999.9), dc_voltage_droop_to=0.0, rated_dc_voltage=0.0, remote_regulated_bus_from=nothing, remote_regulated_bus_to=nothing, services=Device[], base_power=100.0, ext=Dict{String, Any}(), )
+    TwoTerminalVSCLine(name, available, arc, active_power_flow, rating, active_power_limits_from, active_power_limits_to, g, dc_current, reactive_power_from, dc_control_from, ac_control_from, dc_setpoint_from, ac_setpoint_from, rated_ac_voltage_from, converter_loss_from, max_dc_current_from, rating_from, reactive_power_limits_from, power_factor_weighting_fraction_from, voltage_limits_from, dc_voltage_droop_from, reactive_power_to, dc_control_to, ac_control_to, dc_setpoint_to, ac_setpoint_to, rated_ac_voltage_to, converter_loss_to, max_dc_current_to, rating_to, reactive_power_limits_to, power_factor_weighting_fraction_to, voltage_limits_to, dc_voltage_droop_to, rated_dc_voltage, remote_regulated_bus_from, remote_regulated_bus_to, services, base_power, ext, InfrastructureSystemsInternal(), )
 end
 
-function TwoTerminalVSCLine(; name, available, arc, active_power_flow, rating, active_power_limits_from, active_power_limits_to, g=0.0, dc_current=0.0, reactive_power_from=0.0, dc_control_from=VSCDCControlModes.DC_VOLTAGE, ac_control_from=VSCACControlModes.AC_VOLTAGE, dc_setpoint_from=0.0, ac_setpoint_from=1.0, rated_ac_voltage_from=0.0, converter_loss_from=LossCurve(LinearCurve(0.0), NaturalUnit()), max_dc_current_from=1e8, rating_from=1e8, reactive_power_limits_from=(min=0.0, max=0.0), power_factor_weighting_fraction_from=1.0, voltage_limits_from=(min=0.0, max=999.9), dc_voltage_droop_from=0.0, reactive_power_to=0.0, dc_control_to=VSCDCControlModes.DC_VOLTAGE, ac_control_to=VSCACControlModes.AC_VOLTAGE, dc_setpoint_to=0.0, ac_setpoint_to=1.0, rated_ac_voltage_to=0.0, converter_loss_to=LossCurve(LinearCurve(0.0), NaturalUnit()), max_dc_current_to=1e8, rating_to=1e8, reactive_power_limits_to=(min=0.0, max=0.0), power_factor_weighting_fraction_to=1.0, voltage_limits_to=(min=0.0, max=999.9), dc_voltage_droop_to=0.0, rated_dc_voltage=0.0, remote_bus_control_from=nothing, remote_bus_control_to=nothing, rmpct_from=100.0, rmpct_to=100.0, services=Device[], base_power=100.0, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Union{ComponentBaseUnit, NaturalUnit}, )
-    value = TwoTerminalVSCLine(name, available, arc, _placeholder(active_power_flow), _placeholder(rating), _placeholder(active_power_limits_from), _placeholder(active_power_limits_to), g, dc_current, _placeholder(reactive_power_from), dc_control_from, ac_control_from, dc_setpoint_from, ac_setpoint_from, rated_ac_voltage_from, converter_loss_from, max_dc_current_from, _placeholder(rating_from), _placeholder(reactive_power_limits_from), power_factor_weighting_fraction_from, voltage_limits_from, dc_voltage_droop_from, _placeholder(reactive_power_to), dc_control_to, ac_control_to, dc_setpoint_to, ac_setpoint_to, rated_ac_voltage_to, converter_loss_to, max_dc_current_to, _placeholder(rating_to), _placeholder(reactive_power_limits_to), power_factor_weighting_fraction_to, voltage_limits_to, dc_voltage_droop_to, rated_dc_voltage, remote_bus_control_from, remote_bus_control_to, rmpct_from, rmpct_to, services, base_power, ext, internal, )
+function TwoTerminalVSCLine(; name, available, arc, active_power_flow, rating, active_power_limits_from, active_power_limits_to, g=0.0, dc_current=0.0, reactive_power_from=0.0, dc_control_from=VSCDCControlModes.DC_VOLTAGE, ac_control_from=VSCACControlModes.AC_VOLTAGE, dc_setpoint_from=0.0, ac_setpoint_from=1.0, rated_ac_voltage_from=0.0, converter_loss_from=LossCurve(LinearCurve(0.0), NaturalUnit()), max_dc_current_from=1e8, rating_from=1e8, reactive_power_limits_from=(min=0.0, max=0.0), power_factor_weighting_fraction_from=1.0, voltage_limits_from=(min=0.0, max=999.9), dc_voltage_droop_from=0.0, reactive_power_to=0.0, dc_control_to=VSCDCControlModes.DC_VOLTAGE, ac_control_to=VSCACControlModes.AC_VOLTAGE, dc_setpoint_to=0.0, ac_setpoint_to=1.0, rated_ac_voltage_to=0.0, converter_loss_to=LossCurve(LinearCurve(0.0), NaturalUnit()), max_dc_current_to=1e8, rating_to=1e8, reactive_power_limits_to=(min=0.0, max=0.0), power_factor_weighting_fraction_to=1.0, voltage_limits_to=(min=0.0, max=999.9), dc_voltage_droop_to=0.0, rated_dc_voltage=0.0, remote_regulated_bus_from=nothing, remote_regulated_bus_to=nothing, services=Device[], base_power=100.0, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Union{ComponentBaseUnit, NaturalUnit}, )
+    value = TwoTerminalVSCLine(name, available, arc, _placeholder(active_power_flow), _placeholder(rating), _placeholder(active_power_limits_from), _placeholder(active_power_limits_to), g, dc_current, _placeholder(reactive_power_from), dc_control_from, ac_control_from, dc_setpoint_from, ac_setpoint_from, rated_ac_voltage_from, converter_loss_from, max_dc_current_from, _placeholder(rating_from), _placeholder(reactive_power_limits_from), power_factor_weighting_fraction_from, voltage_limits_from, dc_voltage_droop_from, _placeholder(reactive_power_to), dc_control_to, ac_control_to, dc_setpoint_to, ac_setpoint_to, rated_ac_voltage_to, converter_loss_to, max_dc_current_to, _placeholder(rating_to), _placeholder(reactive_power_limits_to), power_factor_weighting_fraction_to, voltage_limits_to, dc_voltage_droop_to, rated_dc_voltage, remote_regulated_bus_from, remote_regulated_bus_to, services, base_power, ext, internal, )
     set_active_power_flow!(value, _tag(active_power_flow, input_basis, Val(:mw)))
     set_rating!(value, _tag(rating, input_basis, Val(:mva)))
     set_active_power_limits_from!(value, _tag(active_power_limits_from, input_basis, Val(:mw)))
@@ -253,10 +245,8 @@ function TwoTerminalVSCLine(::Nothing)
         voltage_limits_to=(min=0.0, max=0.0),
         dc_voltage_droop_to=0.0,
         rated_dc_voltage=0.0,
-        remote_bus_control_from=nothing,
-        remote_bus_control_to=nothing,
-        rmpct_from=100.0,
-        rmpct_to=100.0,
+        remote_regulated_bus_from=nothing,
+        remote_regulated_bus_to=nothing,
         services=Device[],
         base_power=100.0,
         ext=Dict{String, Any}(),
@@ -396,14 +386,10 @@ get_voltage_limits_to(value::TwoTerminalVSCLine) = value.voltage_limits_to
 get_dc_voltage_droop_to(value::TwoTerminalVSCLine) = value.dc_voltage_droop_to
 """Get [`TwoTerminalVSCLine`](@ref) `rated_dc_voltage`."""
 get_rated_dc_voltage(value::TwoTerminalVSCLine) = value.rated_dc_voltage
-"""Get [`TwoTerminalVSCLine`](@ref) `remote_bus_control_from`."""
-get_remote_bus_control_from(value::TwoTerminalVSCLine) = value.remote_bus_control_from
-"""Get [`TwoTerminalVSCLine`](@ref) `remote_bus_control_to`."""
-get_remote_bus_control_to(value::TwoTerminalVSCLine) = value.remote_bus_control_to
-"""Get [`TwoTerminalVSCLine`](@ref) `rmpct_from`."""
-get_rmpct_from(value::TwoTerminalVSCLine) = value.rmpct_from
-"""Get [`TwoTerminalVSCLine`](@ref) `rmpct_to`."""
-get_rmpct_to(value::TwoTerminalVSCLine) = value.rmpct_to
+"""Get [`TwoTerminalVSCLine`](@ref) `remote_regulated_bus_from`."""
+get_remote_regulated_bus_from(value::TwoTerminalVSCLine) = value.remote_regulated_bus_from
+"""Get [`TwoTerminalVSCLine`](@ref) `remote_regulated_bus_to`."""
+get_remote_regulated_bus_to(value::TwoTerminalVSCLine) = value.remote_regulated_bus_to
 """Get [`TwoTerminalVSCLine`](@ref) `services`."""
 get_services(value::TwoTerminalVSCLine) = value.services
 
@@ -497,14 +483,10 @@ set_voltage_limits_to!(value::TwoTerminalVSCLine, val) = value.voltage_limits_to
 set_dc_voltage_droop_to!(value::TwoTerminalVSCLine, val) = value.dc_voltage_droop_to = val
 """Set [`TwoTerminalVSCLine`](@ref) `rated_dc_voltage`."""
 set_rated_dc_voltage!(value::TwoTerminalVSCLine, val) = value.rated_dc_voltage = val
-"""Set [`TwoTerminalVSCLine`](@ref) `remote_bus_control_from`."""
-set_remote_bus_control_from!(value::TwoTerminalVSCLine, val) = value.remote_bus_control_from = val
-"""Set [`TwoTerminalVSCLine`](@ref) `remote_bus_control_to`."""
-set_remote_bus_control_to!(value::TwoTerminalVSCLine, val) = value.remote_bus_control_to = val
-"""Set [`TwoTerminalVSCLine`](@ref) `rmpct_from`."""
-set_rmpct_from!(value::TwoTerminalVSCLine, val) = value.rmpct_from = val
-"""Set [`TwoTerminalVSCLine`](@ref) `rmpct_to`."""
-set_rmpct_to!(value::TwoTerminalVSCLine, val) = value.rmpct_to = val
+"""Set [`TwoTerminalVSCLine`](@ref) `remote_regulated_bus_from`."""
+set_remote_regulated_bus_from!(value::TwoTerminalVSCLine, val) = value.remote_regulated_bus_from = val
+"""Set [`TwoTerminalVSCLine`](@ref) `remote_regulated_bus_to`."""
+set_remote_regulated_bus_to!(value::TwoTerminalVSCLine, val) = value.remote_regulated_bus_to = val
 """Set [`TwoTerminalVSCLine`](@ref) `services`."""
 set_services!(value::TwoTerminalVSCLine, val) = value.services = val
 """Set [`TwoTerminalVSCLine`](@ref) `ext`."""
