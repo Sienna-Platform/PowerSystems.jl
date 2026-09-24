@@ -9,6 +9,8 @@ This file is auto-generated. Do not edit.
         name::String
         available::Bool
         bus::ACBus
+        remote_regulated_bus::Union{Nothing, ACBus}
+        voltage_setpoint::Float64
         active_power::Float64
         reactive_power::Float64
         active_power_limits::MinMax
@@ -34,6 +36,8 @@ Commonly used in dynamics simulations to represent a very large machine on a sin
 - `name::String`: Name of the component. Components of the same type (e.g., `PowerLoad`) must have unique names, but components of different types (e.g., `PowerLoad` and `ACBus`) can have the same name
 - `available::Bool`: Indicator of whether the component is connected and online (`true`) or disconnected, offline, or down (`false`). Unavailable components are excluded during simulations
 - `bus::ACBus`: Bus that this component is connected to
+- `remote_regulated_bus::Union{Nothing, ACBus}`: (default: `nothing`) Bus whose voltage this unit regulates when it is not its own `bus`; `nothing` means the unit regulates `bus`, and a value equal to `bus` is invalid. An available [`VoltageDroopControl`](@ref) the unit belongs to overrides this target; [`get_regulated_bus`](@ref) resolves it
+- `voltage_setpoint::Float64`: (default: `1.0`) Voltage magnitude the unit holds at the bus it regulates, in per-unit of that bus's `base_voltage`, while the type of its own bus marks it as voltage regulating. Ignored while the unit belongs to an available [`VoltageDroopControl`](@ref), validation range: `(0, nothing)`
 - `active_power::Float64`: (default: `0.0`) Initial active power set point of the unit in MW. For power flow, this is the steady state operating point of the system. For production cost modeling, this may or may not be used as the initial starting point for the solver, depending on the solver used
 - `reactive_power::Float64`: (default: `0.0`) Initial reactive power set point of the unit (MVAR)
 - `active_power_limits::MinMax`: (default: `(min=0.0, max=0.0)`) Minimum and maximum stable active power levels (MW)
@@ -58,6 +62,10 @@ mutable struct Source <: StaticInjection
     available::Bool
     "Bus that this component is connected to"
     bus::ACBus
+    "Bus whose voltage this unit regulates when it is not its own `bus`; `nothing` means the unit regulates `bus`, and a value equal to `bus` is invalid. An available [`VoltageDroopControl`](@ref) the unit belongs to overrides this target; [`get_regulated_bus`](@ref) resolves it"
+    remote_regulated_bus::Union{Nothing, ACBus}
+    "Voltage magnitude the unit holds at the bus it regulates, in per-unit of that bus's `base_voltage`, while the type of its own bus marks it as voltage regulating. Ignored while the unit belongs to an available [`VoltageDroopControl`](@ref)"
+    voltage_setpoint::Float64
     "Initial active power set point of the unit in MW. For power flow, this is the steady state operating point of the system. For production cost modeling, this may or may not be used as the initial starting point for the solver, depending on the solver used"
     active_power::Float64
     "Initial reactive power set point of the unit (MVAR)"
@@ -90,12 +98,12 @@ mutable struct Source <: StaticInjection
     internal::InfrastructureSystemsInternal
 end
 
-function Source(name, available, bus, active_power=0.0, reactive_power=0.0, active_power_limits=(min=0.0, max=0.0), reactive_power_limits=(min=0.0, max=0.0), R_th=0.0, X_th=0.0, internal_voltage=1.0, internal_angle=0.0, base_power=100.0, base_voltage=nothing, operation_cost=ImportExportCost(nothing), dynamic_injector=nothing, services=Device[], ext=Dict{String, Any}(), )
-    Source(name, available, bus, active_power, reactive_power, active_power_limits, reactive_power_limits, R_th, X_th, internal_voltage, internal_angle, base_power, base_voltage, operation_cost, dynamic_injector, services, ext, InfrastructureSystemsInternal(), )
+function Source(name, available, bus, remote_regulated_bus=nothing, voltage_setpoint=1.0, active_power=0.0, reactive_power=0.0, active_power_limits=(min=0.0, max=0.0), reactive_power_limits=(min=0.0, max=0.0), R_th=0.0, X_th=0.0, internal_voltage=1.0, internal_angle=0.0, base_power=100.0, base_voltage=nothing, operation_cost=ImportExportCost(nothing), dynamic_injector=nothing, services=Device[], ext=Dict{String, Any}(), )
+    Source(name, available, bus, remote_regulated_bus, voltage_setpoint, active_power, reactive_power, active_power_limits, reactive_power_limits, R_th, X_th, internal_voltage, internal_angle, base_power, base_voltage, operation_cost, dynamic_injector, services, ext, InfrastructureSystemsInternal(), )
 end
 
-function Source(; name, available, bus, active_power=0.0, reactive_power=0.0, active_power_limits=(min=0.0, max=0.0), reactive_power_limits=(min=0.0, max=0.0), R_th=0.0, X_th=0.0, internal_voltage=1.0, internal_angle=0.0, base_power=100.0, base_voltage=nothing, operation_cost=ImportExportCost(nothing), dynamic_injector=nothing, services=Device[], ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Union{ComponentBaseUnit, NaturalUnit}, )
-    value = Source(name, available, bus, _placeholder(active_power), _placeholder(reactive_power), _placeholder(active_power_limits), _placeholder(reactive_power_limits), R_th, X_th, internal_voltage, internal_angle, base_power, base_voltage, operation_cost, dynamic_injector, services, ext, internal, )
+function Source(; name, available, bus, remote_regulated_bus=nothing, voltage_setpoint=1.0, active_power=0.0, reactive_power=0.0, active_power_limits=(min=0.0, max=0.0), reactive_power_limits=(min=0.0, max=0.0), R_th=0.0, X_th=0.0, internal_voltage=1.0, internal_angle=0.0, base_power=100.0, base_voltage=nothing, operation_cost=ImportExportCost(nothing), dynamic_injector=nothing, services=Device[], ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Union{ComponentBaseUnit, NaturalUnit}, )
+    value = Source(name, available, bus, remote_regulated_bus, voltage_setpoint, _placeholder(active_power), _placeholder(reactive_power), _placeholder(active_power_limits), _placeholder(reactive_power_limits), R_th, X_th, internal_voltage, internal_angle, base_power, base_voltage, operation_cost, dynamic_injector, services, ext, internal, )
     set_active_power!(value, _tag(active_power, input_basis, Val(:mw)))
     set_reactive_power!(value, _tag(reactive_power, input_basis, Val(:mvar)))
     set_active_power_limits!(value, _tag(active_power_limits, input_basis, Val(:mw)))
@@ -110,6 +118,8 @@ function Source(::Nothing)
         name="init",
         available=false,
         bus=ACBus(nothing),
+        remote_regulated_bus=nothing,
+        voltage_setpoint=1.0,
         active_power=0.0,
         reactive_power=0.0,
         active_power_limits=(min=0.0, max=0.0),
@@ -134,6 +144,10 @@ get_name(value::Source) = value.name
 get_available(value::Source) = value.available
 """Get [`Source`](@ref) `bus`."""
 get_bus(value::Source) = value.bus
+"""Get [`Source`](@ref) `remote_regulated_bus`."""
+get_remote_regulated_bus(value::Source) = value.remote_regulated_bus
+"""Get [`Source`](@ref) `voltage_setpoint`."""
+get_voltage_setpoint(value::Source) = value.voltage_setpoint
 """Get [`Source`](@ref) `active_power` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_active_power_unitful`](@ref)."""
 get_active_power(value::Source, units) = InfrastructureSystems._strip_units(get_value(value, Val(:active_power), Val(:mw), units))
 """Get [`Source`](@ref) `active_power` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_active_power`](@ref)."""
@@ -193,6 +207,10 @@ get_internal(value::Source) = value.internal
 set_available!(value::Source, val) = value.available = val
 """Set [`Source`](@ref) `bus`."""
 set_bus!(value::Source, val) = value.bus = val
+"""Set [`Source`](@ref) `remote_regulated_bus`."""
+set_remote_regulated_bus!(value::Source, val) = value.remote_regulated_bus = val
+"""Set [`Source`](@ref) `voltage_setpoint`."""
+set_voltage_setpoint!(value::Source, val) = value.voltage_setpoint = val
 """Set [`Source`](@ref) `active_power`."""
 set_active_power!(value::Source, val) = value.active_power = set_value(value, Val(:active_power), val, Val(:mw))
 set_active_power!(value::Source, val::_UntaggedNumber) = _units_tag_required(set_active_power!, value, :active_power, Val(:mw), val)

@@ -424,6 +424,41 @@ from_openapi(po::PO.HydroPowerPlant, ::OpenAPIRefs) =
 from_openapi(po::PO.RenewablePowerPlant, ::OpenAPIRefs) =
     RenewablePowerPlant(; name = po.name)
 
+from_openapi(po::PO.ReactivePowerSharing, ::OpenAPIRefs) =
+    ReactivePowerSharing(; name = po.name)
+
+"""A droop voltage band, per-unit of the regulated bus: read as-is under `COMPONENT_BASE`,
+divided by the bus `base_voltage` under `NATURAL_UNITS` (kV)."""
+function _droop_voltage_pu(po, band::MinMax, bus::ACBus)
+    basis = _unit_basis_string(po.voltage_units, "COMPONENT_BASE")
+    basis == "COMPONENT_BASE" && return band
+    basis == "NATURAL_UNITS" || error(
+        "unmapped VoltageDroopControl.voltage_units=$basis for $(po.name) — only " *
+        "COMPONENT_BASE and NATURAL_UNITS implemented",
+    )
+    base_voltage = get_base_voltage(bus)
+    isnothing(base_voltage) && error(
+        "VoltageDroopControl $(po.name) states its voltages in kV but its regulated bus " *
+        "$(get_name(bus)) has no base_voltage to convert against",
+    )
+    return (min = band.min / base_voltage, max = band.max / base_voltage)
+end
+
+function from_openapi(po::PO.VoltageDroopControl, refs::OpenAPIRefs)
+    bus = resolve_ref(refs, po.regulated_bus_id, ACBus)
+    return VoltageDroopControl(;
+        name = po.name,
+        available = _or_default(po.available, true),
+        regulated_bus = bus,
+        reactive_power_limits = _minmax_from_po(po.reactive_power_limits),
+        deadband_reactive_power = po.deadband_reactive_power,
+        deadband_voltage_limits = _droop_voltage_pu(
+            po, _minmax_from_po(po.deadband_voltage_limits), bus,
+        ),
+        voltage_limits = _droop_voltage_pu(po, _minmax_from_po(po.voltage_limits), bus),
+    )
+end
+
 function from_openapi(po::PO.CombinedCycleBlock, ::OpenAPIRefs)
     return CombinedCycleBlock(;
         name = po.name,
@@ -486,6 +521,29 @@ function _push_group_indices!(component, attribute, group_indices::Vector{Int})
         _push_group_index!(component, attribute, group_index)
     end
     return nothing
+end
+
+"""A voltage control membership carries the member's weight and terminal, from its
+`voltage_control_associations` row."""
+function _push_group_indices!(
+    component,
+    attribute::VoltageControlGroup,
+    membership::NamedTuple{(:weight, :terminal)},
+)
+    id = IS.get_id(component)
+    attribute.weights[id] = membership.weight
+    isnothing(membership.terminal) || (attribute.terminals[id] = membership.terminal)
+    return nothing
+end
+
+"""A voltage control attribute attached without a `voltage_control_associations` row has no
+weight, which the document must state."""
+function _push_group_indices!(component, attribute::VoltageControlGroup, ::Nothing)
+    error(
+        "from_openapi(System, doc): $(nameof(typeof(attribute))) $(get_name(attribute)) is " *
+        "associated with $(summary(component)) but voltage_control_associations has no " *
+        "row for the pair",
+    )
 end
 
 """

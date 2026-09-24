@@ -541,11 +541,28 @@
                     "default": "TransformerControlObjective.UNDEFINED"
                 },
                 {
-                    "name": "regulated_bus_number",
-                    "comment": "Controlled bus number; the sign indicates the regulation side",
-                    "null_value": "0",
-                    "data_type": "Int",
-                    "default": "0"
+                    "name": "regulated_bus",
+                    "comment": "Bus whose voltage this circuit's tap changer regulates (PSS/E `CONT`). Set exactly when `control_objective` is `VOLTAGE` or `VOLTAGE_DISABLED`, `nothing` otherwise",
+                    "null_value": "nothing",
+                    "data_type": "Union{Nothing, ACBus}",
+                    "default": "nothing"
+                },
+                {
+                    "name": "regulated_bus_side",
+                    "comment": "Side of the controlling winding on which the regulated bus lies, replacing the sign of PSS/E `CONT`. Stored only when the regulated bus is neither end of this circuit's `arc`; when it is one of them the side follows from the arc and this is `nothing`. [`get_regulated_bus_side`](@ref) resolves it either way",
+                    "null_value": "nothing",
+                    "data_type": "Union{Nothing, TransformerRegulatedBusSide.Value}",
+                    "default": "nothing",
+                    "exclude_getter": true
+                },
+                {
+                    "name": "load_drop_compensation",
+                    "comment": "Load drop compensation impedance for voltage control (PSS/E `CR + jCX`) in pu (component base on `base_power`) referenced to `base_voltage_primary`: the regulated voltage is compensated by this impedance times the circuit current. Zero means no compensation",
+                    "null_value": "0.0",
+                    "data_type": "Complex{Float64}",
+                    "default": "0.0",
+                    "needs_conversion": true,
+                    "conversion_unit": ":ohm"
                 },
                 {
                     "name": "control_limits",
@@ -1872,42 +1889,18 @@
                     "default": "0.0"
                 },
                 {
-                    "name": "remote_bus_control_from",
-                    "comment": "Number of the AC bus whose voltage the `from` converter regulates when `ac_control_from` is `AC_VOLTAGE`; `nothing` regulates its own terminal bus.",
+                    "name": "remote_regulated_bus_from",
+                    "comment": "AC bus whose voltage the `from` converter regulates when `ac_control_from` is `AC_VOLTAGE` and that bus is not its own terminal bus; `nothing` means the `from` terminal bus, and a value equal to it is invalid. [`get_regulated_bus_from`](@ref) resolves it",
                     "null_value": "nothing",
-                    "data_type": "Union{Nothing, Int}",
-                    "default": "nothing",
-                    "valid_range": {
-                        "min": 1,
-                        "max": null
-                    },
-                    "validation_action": "error"
+                    "data_type": "Union{Nothing, ACBus}",
+                    "default": "nothing"
                 },
                 {
-                    "name": "remote_bus_control_to",
-                    "comment": "Number of the AC bus whose voltage the `to` converter regulates when `ac_control_to` is `AC_VOLTAGE`; `nothing` regulates its own terminal bus.",
+                    "name": "remote_regulated_bus_to",
+                    "comment": "AC bus whose voltage the `to` converter regulates when `ac_control_to` is `AC_VOLTAGE` and that bus is not its own terminal bus; `nothing` means the `to` terminal bus, and a value equal to it is invalid. [`get_regulated_bus_to`](@ref) resolves it",
                     "null_value": "nothing",
-                    "data_type": "Union{Nothing, Int}",
-                    "default": "nothing",
-                    "valid_range": {
-                        "min": 1,
-                        "max": null
-                    },
-                    "validation_action": "error"
-                },
-                {
-                    "name": "rmpct_from",
-                    "comment": "Percent of the total MVAr required to hold the voltage at the bus regulated by the `from` converter that is contributed by this converter.",
-                    "null_value": "100.0",
-                    "data_type": "Float64",
-                    "default": "100.0"
-                },
-                {
-                    "name": "rmpct_to",
-                    "comment": "Percent of the total MVAr required to hold the voltage at the bus regulated by the `to` converter that is contributed by this converter.",
-                    "null_value": "100.0",
-                    "data_type": "Float64",
-                    "default": "100.0"
+                    "data_type": "Union{Nothing, ACBus}",
+                    "default": "nothing"
                 },
                 {
                     "name": "services",
@@ -2167,6 +2160,34 @@
                     "null_value": "0.0",
                     "data_type": "Float64",
                     "default": "0.0"
+                },
+                {
+                    "name": "rectifier_commutating_bus",
+                    "comment": "Bus whose voltage angle the rectifier firing angle is measured against (PSS/E `ICR`); `nothing` means the rectifier's own bus. Must be `nothing` for a capacitor-commutated line",
+                    "null_value": "nothing",
+                    "data_type": "Union{Nothing, ACBus}",
+                    "default": "nothing"
+                },
+                {
+                    "name": "inverter_commutating_bus",
+                    "comment": "Bus whose voltage angle the inverter extinction angle is measured against (PSS/E `ICI`); `nothing` means the inverter's own bus. Must be `nothing` for a capacitor-commutated line",
+                    "null_value": "nothing",
+                    "data_type": "Union{Nothing, ACBus}",
+                    "default": "nothing"
+                },
+                {
+                    "name": "rectifier_tap_transformer",
+                    "comment": "[`TwoWindingTransformer`](@ref) whose tap this line adjusts on the rectifier side (PSS/E `IFR`, `ITR`, `IDR`); `nothing` means the line's own rectifier tap fields describe the tap. The referenced circuit's `control_objective` must be `CONTROL_OF_DC_LINE`. Must be `nothing` for a capacitor-commutated line",
+                    "null_value": "nothing",
+                    "data_type": "Union{Nothing, TwoWindingTransformer}",
+                    "default": "nothing"
+                },
+                {
+                    "name": "inverter_tap_transformer",
+                    "comment": "[`TwoWindingTransformer`](@ref) whose tap this line adjusts on the inverter side (PSS/E `IFI`, `ITI`, `IDI`); `nothing` means the line's own inverter tap fields describe the tap. The referenced circuit's `control_objective` must be `CONTROL_OF_DC_LINE`. Must be `nothing` for a capacitor-commutated line",
+                    "null_value": "nothing",
+                    "data_type": "Union{Nothing, TwoWindingTransformer}",
+                    "default": "nothing"
                 },
                 {
                     "name": "active_power_limits_from",
@@ -2808,7 +2829,7 @@
                 },
                 {
                     "name": "voltage_setpoint",
-                    "comment": "Voltage setpoint at the sending end bus, it has to be a [`PV`](@ref ACBusTypes) bus, in p.u. ([`SYSTEM_BASE`](@ref per_unit)).",
+                    "comment": "Voltage setpoint at the regulated bus (the remote regulated bus when one is set, otherwise the sending end bus), in per-unit of that bus's `base_voltage`. The bus has to be a [`PV`](@ref ACBusTypes) bus",
                     "null_value": "1.0",
                     "default": "1.0",
                     "data_type": "Float64"
@@ -2837,17 +2858,19 @@
                     "data_type": "FACTSShuntControlType.Value"
                 },
                 {
-                    "name": "regulated_bus_number",
-                    "comment": "Bus whose voltage this device regulates; 0 ⇒ local (sending) bus",
-                    "null_value": "0",
-                    "default": "0",
-                    "data_type": "Int"
+                    "name": "remote_regulated_bus",
+                    "comment": "Bus whose voltage this device regulates when it is not its sending end `bus` (PSS/E `FCREG`); `nothing` means the sending end bus, and a value equal to `bus` is invalid. [`get_regulated_bus`](@ref) resolves it",
+                    "null_value": "nothing",
+                    "data_type": "Union{Nothing, ACBus}",
+                    "default": "nothing"
                 },
                 {
                     "name": "reactive_power_required",
-                    "comment": "Solver-populated: delivered reactive power after solve (output; not parsed from input)",
+                    "comment": "Solver-populated: delivered reactive power (MVAr) after solve (output; not parsed from input)",
                     "default": "0.0",
-                    "data_type": "Float64"
+                    "data_type": "Float64",
+                    "needs_conversion": true,
+                    "conversion_unit": ":mvar"
                 },
                 {
                     "name": "base_power",
@@ -3036,11 +3059,11 @@
                     "default": "SwitchedAdmittanceControlMode.FIXED"
                 },
                 {
-                    "name": "regulated_bus_number",
-                    "comment": "Bus number whose voltage/quantity this shunt regulates; 0 ⇒ local bus.",
-                    "data_type": "Int",
-                    "null_value": "0",
-                    "default": "0"
+                    "name": "remote_regulated_bus",
+                    "comment": "Bus this shunt regulates in every control mode (PSS/E `SWREG`): the bus whose voltage it holds in the voltage modes, or the bus of the device whose reactive power it tracks in the other modes, which downstream modeling interprets per mode. `nothing` means the shunt's own `bus`; a value equal to `bus` is invalid",
+                    "null_value": "nothing",
+                    "data_type": "Union{Nothing, ACBus}",
+                    "default": "nothing"
                 },
                 {
                     "name": "dynamic_injector",
@@ -4421,23 +4444,11 @@
                     "default": "0.0"
                 },
                 {
-                    "name": "remote_bus_control",
-                    "comment": "Number of the AC bus whose voltage the converter regulates when `ac_control` is `AC_VOLTAGE`; `nothing` regulates its own terminal bus.",
+                    "name": "remote_regulated_bus",
+                    "comment": "AC bus whose voltage the converter regulates when `ac_control` is `AC_VOLTAGE` and that bus is not its own terminal `bus`; `nothing` means the converter's own AC bus, and a value equal to `bus` is invalid. [`get_regulated_bus`](@ref) resolves it",
                     "null_value": "nothing",
-                    "data_type": "Union{Nothing, Int}",
-                    "default": "nothing",
-                    "valid_range": {
-                        "min": 1,
-                        "max": null
-                    },
-                    "validation_action": "error"
-                },
-                {
-                    "name": "rmpct",
-                    "comment": "Percent of the total MVAr required to hold the voltage at the bus regulated by this converter that is contributed by this converter.",
-                    "null_value": "100.0",
-                    "data_type": "Float64",
-                    "default": "100.0"
+                    "data_type": "Union{Nothing, ACBus}",
+                    "default": "nothing"
                 },
                 {
                     "name": "power_factor_weighting_fraction",
@@ -4779,6 +4790,31 @@
                     "validation_action": "warn"
                 },
                 {
+                    "name": "remote_regulated_bus",
+                    "comment": "Bus whose voltage this unit regulates when it is not its own `bus`; `nothing` means the unit regulates `bus`, and a value equal to `bus` is invalid. An available [`VoltageDroopControl`](@ref) the unit belongs to overrides this target; [`get_regulated_bus`](@ref) resolves it",
+                    "null_value": "nothing",
+                    "data_type": "Union{Nothing, ACBus}",
+                    "default": "nothing",
+                    "openapi_name": "remote_regulated_bus_id"
+                },
+                {
+                    "name": "voltage_setpoint",
+                    "comment": "Voltage magnitude the unit holds at the bus it regulates, in per-unit of that bus's `base_voltage`, while the type of its own bus marks it as voltage regulating. Ignored while the unit belongs to an available [`VoltageDroopControl`](@ref)",
+                    "null_value": "1.0",
+                    "data_type": "Float64",
+                    "default": "1.0",
+                    "valid_range": {
+                        "min": 0,
+                        "max": null
+                    },
+                    "validation_action": "error",
+                    "openapi_unit_basis": {
+                        "field": "voltage_setpoint_units",
+                        "type": "VoltageUnitBasis",
+                        "value": "COMPONENT_BASE"
+                    }
+                },
+                {
                     "null_value": "OperationalStates.OFFLINE",
                     "default": "OperationalStates.OFFLINE",
                     "name": "status",
@@ -4921,6 +4957,31 @@
                         "max": null
                     },
                     "validation_action": "warn"
+                },
+                {
+                    "name": "remote_regulated_bus",
+                    "comment": "Bus whose voltage this unit regulates when it is not its own `bus`; `nothing` means the unit regulates `bus`, and a value equal to `bus` is invalid. An available [`VoltageDroopControl`](@ref) the unit belongs to overrides this target; [`get_regulated_bus`](@ref) resolves it",
+                    "null_value": "nothing",
+                    "data_type": "Union{Nothing, ACBus}",
+                    "default": "nothing",
+                    "openapi_name": "remote_regulated_bus_id"
+                },
+                {
+                    "name": "voltage_setpoint",
+                    "comment": "Voltage magnitude the unit holds at the bus it regulates, in per-unit of that bus's `base_voltage`, while the type of its own bus marks it as voltage regulating. Ignored while the unit belongs to an available [`VoltageDroopControl`](@ref)",
+                    "null_value": "1.0",
+                    "data_type": "Float64",
+                    "default": "1.0",
+                    "valid_range": {
+                        "min": 0,
+                        "max": null
+                    },
+                    "validation_action": "error",
+                    "openapi_unit_basis": {
+                        "field": "voltage_setpoint_units",
+                        "type": "VoltageUnitBasis",
+                        "value": "COMPONENT_BASE"
+                    }
                 },
                 {
                     "null_value": "OperationalStates.OFFLINE",
@@ -5216,6 +5277,31 @@
                         "max": null
                     },
                     "validation_action": "warn"
+                },
+                {
+                    "name": "remote_regulated_bus",
+                    "comment": "Bus whose voltage this unit regulates when it is not its own `bus`; `nothing` means the unit regulates `bus`, and a value equal to `bus` is invalid. An available [`VoltageDroopControl`](@ref) the unit belongs to overrides this target; [`get_regulated_bus`](@ref) resolves it",
+                    "null_value": "nothing",
+                    "data_type": "Union{Nothing, ACBus}",
+                    "default": "nothing",
+                    "openapi_name": "remote_regulated_bus_id"
+                },
+                {
+                    "name": "voltage_setpoint",
+                    "comment": "Voltage magnitude the unit holds at the bus it regulates, in per-unit of that bus's `base_voltage`, while the type of its own bus marks it as voltage regulating. Ignored while the unit belongs to an available [`VoltageDroopControl`](@ref)",
+                    "null_value": "1.0",
+                    "data_type": "Float64",
+                    "default": "1.0",
+                    "valid_range": {
+                        "min": 0,
+                        "max": null
+                    },
+                    "validation_action": "error",
+                    "openapi_unit_basis": {
+                        "field": "voltage_setpoint_units",
+                        "type": "VoltageUnitBasis",
+                        "value": "COMPONENT_BASE"
+                    }
                 },
                 {
                     "null_value": "HydroPumpTurbineStatus.OFF",
@@ -5564,6 +5650,31 @@
                     "validation_action": "warn"
                 },
                 {
+                    "name": "remote_regulated_bus",
+                    "comment": "Bus whose voltage this unit regulates when it is not its own `bus`; `nothing` means the unit regulates `bus`, and a value equal to `bus` is invalid. An available [`VoltageDroopControl`](@ref) the unit belongs to overrides this target; [`get_regulated_bus`](@ref) resolves it",
+                    "null_value": "nothing",
+                    "data_type": "Union{Nothing, ACBus}",
+                    "default": "nothing",
+                    "openapi_name": "remote_regulated_bus_id"
+                },
+                {
+                    "name": "voltage_setpoint",
+                    "comment": "Voltage magnitude the unit holds at the bus it regulates, in per-unit of that bus's `base_voltage`, while the type of its own bus marks it as voltage regulating. Ignored while the unit belongs to an available [`VoltageDroopControl`](@ref)",
+                    "null_value": "1.0",
+                    "data_type": "Float64",
+                    "default": "1.0",
+                    "valid_range": {
+                        "min": 0,
+                        "max": null
+                    },
+                    "validation_action": "error",
+                    "openapi_unit_basis": {
+                        "field": "voltage_setpoint_units",
+                        "type": "VoltageUnitBasis",
+                        "value": "COMPONENT_BASE"
+                    }
+                },
+                {
                     "name": "services",
                     "data_type": "Vector{Service}",
                     "comment": "Services that this device contributes to",
@@ -5830,6 +5941,31 @@
                     "validation_action": "warn"
                 },
                 {
+                    "name": "remote_regulated_bus",
+                    "comment": "Bus whose voltage this unit regulates when it is not its own `bus`; `nothing` means the unit regulates `bus`, and a value equal to `bus` is invalid. An available [`VoltageDroopControl`](@ref) the unit belongs to overrides this target; [`get_regulated_bus`](@ref) resolves it",
+                    "null_value": "nothing",
+                    "data_type": "Union{Nothing, ACBus}",
+                    "default": "nothing",
+                    "openapi_name": "remote_regulated_bus_id"
+                },
+                {
+                    "name": "voltage_setpoint",
+                    "comment": "Voltage magnitude the unit holds at the bus it regulates, in per-unit of that bus's `base_voltage`, while the type of its own bus marks it as voltage regulating. Ignored while the unit belongs to an available [`VoltageDroopControl`](@ref)",
+                    "null_value": "1.0",
+                    "data_type": "Float64",
+                    "default": "1.0",
+                    "valid_range": {
+                        "min": 0,
+                        "max": null
+                    },
+                    "validation_action": "error",
+                    "openapi_unit_basis": {
+                        "field": "voltage_setpoint_units",
+                        "type": "VoltageUnitBasis",
+                        "value": "COMPONENT_BASE"
+                    }
+                },
+                {
                     "name": "time_limits",
                     "comment": "Minimum up and Minimum down time limits in minutes",
                     "null_value": "nothing",
@@ -5969,6 +6105,31 @@
                         "max": null
                     },
                     "validation_action": "warn"
+                },
+                {
+                    "name": "remote_regulated_bus",
+                    "comment": "Bus whose voltage this unit regulates when it is not its own `bus`; `nothing` means the unit regulates `bus`, and a value equal to `bus` is invalid. An available [`VoltageDroopControl`](@ref) the unit belongs to overrides this target; [`get_regulated_bus`](@ref) resolves it",
+                    "null_value": "nothing",
+                    "data_type": "Union{Nothing, ACBus}",
+                    "default": "nothing",
+                    "openapi_name": "remote_regulated_bus_id"
+                },
+                {
+                    "name": "voltage_setpoint",
+                    "comment": "Voltage magnitude the unit holds at the bus it regulates, in per-unit of that bus's `base_voltage`, while the type of its own bus marks it as voltage regulating. Ignored while the unit belongs to an available [`VoltageDroopControl`](@ref)",
+                    "null_value": "1.0",
+                    "data_type": "Float64",
+                    "default": "1.0",
+                    "valid_range": {
+                        "min": 0,
+                        "max": null
+                    },
+                    "validation_action": "error",
+                    "openapi_unit_basis": {
+                        "field": "voltage_setpoint_units",
+                        "type": "VoltageUnitBasis",
+                        "value": "COMPONENT_BASE"
+                    }
                 },
                 {
                     "name": "active_power_losses",
@@ -6183,6 +6344,31 @@
                     "validation_action": "warn"
                 },
                 {
+                    "name": "remote_regulated_bus",
+                    "comment": "Bus whose voltage this unit regulates when it is not its own `bus`; `nothing` means the unit regulates `bus`, and a value equal to `bus` is invalid. An available [`VoltageDroopControl`](@ref) the unit belongs to overrides this target; [`get_regulated_bus`](@ref) resolves it",
+                    "null_value": "nothing",
+                    "data_type": "Union{Nothing, ACBus}",
+                    "default": "nothing",
+                    "openapi_name": "remote_regulated_bus_id"
+                },
+                {
+                    "name": "voltage_setpoint",
+                    "comment": "Voltage magnitude the unit holds at the bus it regulates, in per-unit of that bus's `base_voltage`, while the type of its own bus marks it as voltage regulating. Ignored while the unit belongs to an available [`VoltageDroopControl`](@ref)",
+                    "null_value": "1.0",
+                    "data_type": "Float64",
+                    "default": "1.0",
+                    "valid_range": {
+                        "min": 0,
+                        "max": null
+                    },
+                    "validation_action": "error",
+                    "openapi_unit_basis": {
+                        "field": "voltage_setpoint_units",
+                        "type": "VoltageUnitBasis",
+                        "value": "COMPONENT_BASE"
+                    }
+                },
+                {
                     "name": "services",
                     "data_type": "Vector{Service}",
                     "comment": "Services that this device contributes to",
@@ -6382,6 +6568,25 @@
                         "max": null
                     },
                     "validation_action": "warn"
+                },
+                {
+                    "name": "remote_regulated_bus",
+                    "comment": "Bus whose voltage this unit regulates when it is not its own `bus`; `nothing` means the unit regulates `bus`, and a value equal to `bus` is invalid. An available [`VoltageDroopControl`](@ref) the unit belongs to overrides this target; [`get_regulated_bus`](@ref) resolves it",
+                    "null_value": "nothing",
+                    "data_type": "Union{Nothing, ACBus}",
+                    "default": "nothing"
+                },
+                {
+                    "name": "voltage_setpoint",
+                    "comment": "Voltage magnitude the unit holds at the bus it regulates, in per-unit of that bus's `base_voltage`, while the type of its own bus marks it as voltage regulating. Ignored while the unit belongs to an available [`VoltageDroopControl`](@ref)",
+                    "null_value": "1.0",
+                    "data_type": "Float64",
+                    "default": "1.0",
+                    "valid_range": {
+                        "min": 0,
+                        "max": null
+                    },
+                    "validation_action": "error"
                 },
                 {
                     "name": "operation_cost",
@@ -18836,6 +19041,25 @@
                     "comment": "Bus that this component is connected to",
                     "null_value": "ACBus(nothing)",
                     "data_type": "ACBus"
+                },
+                {
+                    "name": "remote_regulated_bus",
+                    "comment": "Bus whose voltage this unit regulates when it is not its own `bus`; `nothing` means the unit regulates `bus`, and a value equal to `bus` is invalid. An available [`VoltageDroopControl`](@ref) the unit belongs to overrides this target; [`get_regulated_bus`](@ref) resolves it",
+                    "null_value": "nothing",
+                    "data_type": "Union{Nothing, ACBus}",
+                    "default": "nothing"
+                },
+                {
+                    "name": "voltage_setpoint",
+                    "comment": "Voltage magnitude the unit holds at the bus it regulates, in per-unit of that bus's `base_voltage`, while the type of its own bus marks it as voltage regulating. Ignored while the unit belongs to an available [`VoltageDroopControl`](@ref)",
+                    "null_value": "1.0",
+                    "data_type": "Float64",
+                    "default": "1.0",
+                    "valid_range": {
+                        "min": 0,
+                        "max": null
+                    },
+                    "validation_action": "error"
                 },
                 {
                     "name": "active_power",

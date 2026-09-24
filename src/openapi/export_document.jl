@@ -87,6 +87,25 @@ to_openapi(plant::HydroPowerPlant, refs::OpenAPIRefs) =
 to_openapi(plant::RenewablePowerPlant, refs::OpenAPIRefs) =
     PO.RenewablePowerPlant(; id = component_id(refs, plant), name = get_name(plant))
 
+to_openapi(group::ReactivePowerSharing, refs::OpenAPIRefs) =
+    PO.ReactivePowerSharing(; id = component_id(refs, group), name = get_name(group))
+
+# Voltages are written per-unit of the regulated bus base voltage (the only basis import
+# implements); reactive powers are MVAr on both sides.
+function to_openapi(droop::VoltageDroopControl, refs::OpenAPIRefs)
+    return PO.VoltageDroopControl(;
+        id = component_id(refs, droop),
+        name = get_name(droop),
+        available = get_available(droop),
+        regulated_bus_id = component_id(refs, get_regulated_bus(droop)),
+        reactive_power_limits = _minmax_po(get_reactive_power_limits(droop)),
+        deadband_reactive_power = get_deadband_reactive_power(droop),
+        voltage_units = PO.VoltageUnitBasis("COMPONENT_BASE"),
+        deadband_voltage_limits = _minmax_po(get_deadband_voltage_limits(droop)),
+        voltage_limits = _minmax_po(get_voltage_limits(droop)),
+    )
+end
+
 function to_openapi(block::CombinedCycleBlock, refs::OpenAPIRefs)
     return PO.CombinedCycleBlock(;
         id = component_id(refs, block),
@@ -361,10 +380,12 @@ end
 # why this dispatches on the attribute type rather than on some separate "has a group" flag.
 # `_group_indices` is used rather than the public reverse-map getters, which build a whole
 # dict per call and would make this walk quadratic.
-_group_association!(::Vector, ::Vector, ::SupplementalAttribute, ::Any, ::Int, ::Int) =
-    nothing
+_group_association!(
+    ::Vector, ::Vector, ::Vector, ::SupplementalAttribute, ::Any, ::Int, ::Int,
+) = nothing
 function _group_association!(
     plant_rows::Vector{PO.PlantAssociation},
+    ::Vector,
     ::Vector,
     attr::ThermalPowerPlant,
     entity,
@@ -377,6 +398,7 @@ end
 function _group_association!(
     plant_rows::Vector{PO.PlantAssociation},
     ::Vector,
+    ::Vector,
     attr::HydroPowerPlant,
     entity,
     attr_id::Int,
@@ -387,6 +409,7 @@ function _group_association!(
 end
 function _group_association!(
     plant_rows::Vector{PO.PlantAssociation},
+    ::Vector,
     ::Vector,
     attr::RenewablePowerPlant,
     entity,
@@ -399,6 +422,7 @@ end
 function _group_association!(
     plant_rows::Vector{PO.PlantAssociation},
     ::Vector,
+    ::Vector,
     attr::CombinedCycleFractional,
     entity,
     attr_id::Int,
@@ -410,6 +434,32 @@ function _group_association!(
         entity,
         attr_id,
         entity_id,
+    )
+    return nothing
+end
+
+"""A voltage control group records each member's weight and, for a two-terminal member, its
+converter terminal: one `VoltageControlAssociation` row per membership."""
+function _group_association!(
+    ::Vector,
+    ::Vector,
+    voltage_rows::Vector{PO.VoltageControlAssociation},
+    attr::VoltageControlGroup,
+    entity,
+    attr_id::Int,
+    entity_id::Int,
+)
+    push!(
+        voltage_rows,
+        PO.VoltageControlAssociation(;
+            control_id = attr_id,
+            entity_id = entity_id,
+            weight = get_weight(attr, entity),
+            terminal = _optional_enum_po(
+                PO.VoltageControlTerminal,
+                get_terminal(attr, entity),
+            ),
+        ),
     )
     return nothing
 end
@@ -464,6 +514,7 @@ even though IS attaches the `CombinedCycleBlock` to the component only once."""
 function _group_association!(
     ::Vector,
     cc_rows::Vector{PO.CombinedCycleAssociation},
+    ::Vector,
     attr::CombinedCycleBlock,
     entity,
     attr_id::Int,
@@ -502,6 +553,7 @@ function _export_supplemental_attributes(refs::OpenAPIRefs, sys::System)
     association_rows = IC.SupplementalAttributeAssociation[]
     plant_association_rows = PO.PlantAssociation[]
     combined_cycle_association_rows = PO.CombinedCycleAssociation[]
+    voltage_control_association_rows = PO.VoltageControlAssociation[]
     attributes_by_id = Dict{Int, SupplementalAttribute}(
         IS.get_id(attr) => attr for attr in IS.iterate_supplemental_attributes(sys.data)
     )
@@ -523,6 +575,7 @@ function _export_supplemental_attributes(refs::OpenAPIRefs, sys::System)
         _group_association!(
             plant_association_rows,
             combined_cycle_association_rows,
+            voltage_control_association_rows,
             attr,
             refs[entity_id],
             attr_id,
@@ -532,7 +585,8 @@ function _export_supplemental_attributes(refs::OpenAPIRefs, sys::System)
     return attribute_rows,
     association_rows,
     plant_association_rows,
-    combined_cycle_association_rows
+    combined_cycle_association_rows,
+    voltage_control_association_rows
 end
 
 # ── time series ────────────────────────────────────────────────────────────────
@@ -700,7 +754,8 @@ function to_openapi(
         supplemental_attributes,
         supplemental_attribute_associations,
         plant_associations,
-        combined_cycle_associations =
+        combined_cycle_associations,
+        voltage_control_associations =
             _export_supplemental_attributes(refs, sys)
         append!(doc.supplemental_attributes, supplemental_attributes)
         append!(
@@ -709,6 +764,7 @@ function to_openapi(
         )
         append!(doc.plant_associations, plant_associations)
         append!(doc.combined_cycle_associations, combined_cycle_associations)
+        append!(doc.voltage_control_associations, voltage_control_associations)
         append!(doc.service_associations, _export_service_associations(refs, sys))
         append!(
             doc.trading_hub_associations,

@@ -23,8 +23,7 @@ This file is auto-generated. Do not edit.
         dc_setpoint::Float64
         ac_setpoint::Float64
         dc_voltage_droop::Float64
-        remote_bus_control::Union{Nothing, Int}
-        rmpct::Float64
+        remote_regulated_bus::Union{Nothing, ACBus}
         power_factor_weighting_fraction::Float64
         voltage_limits::MinMax
         services::Vector{Service}
@@ -53,8 +52,7 @@ Interconnecting Power Converter (IPC) for transforming power from an ACBus to a 
 - `dc_setpoint::Float64`: (default: `0.0`) DC-voltage target (when dc_voltage_control is true) or active-power order (when false), in per unit.
 - `ac_setpoint::Float64`: (default: `1.0`) AC-voltage magnitude target (when ac_voltage_control is true), in per unit.
 - `dc_voltage_droop::Float64`: (default: `0.0`) DC-voltage droop gain relating DC voltage to converter active power as V_dc = dc_setpoint - dc_voltage_droop * P_c. A value of 0.0 disables droop.
-- `remote_bus_control::Union{Nothing, Int}`: (default: `nothing`) Number of the AC bus whose voltage the converter regulates when `ac_control` is `AC_VOLTAGE`; `nothing` regulates its own terminal bus., validation range: `(1, nothing)`
-- `rmpct::Float64`: (default: `100.0`) Percent of the total MVAr required to hold the voltage at the bus regulated by this converter that is contributed by this converter.
+- `remote_regulated_bus::Union{Nothing, ACBus}`: (default: `nothing`) AC bus whose voltage the converter regulates when `ac_control` is `AC_VOLTAGE` and that bus is not its own terminal `bus`; `nothing` means the converter's own AC bus, and a value equal to `bus` is invalid. [`get_regulated_bus`](@ref) resolves it
 - `power_factor_weighting_fraction::Float64`: (default: `1.0`) Power weighting factor fraction used in reducing the active power order and either the reactive power order when the converter rating is violated. When is 0.0, only the active power is reduced; when is 1.0, only the reactive power is reduced; otherwise, a weighted reduction of both active and reactive power is applied., validation range: `(0, 1)`
 - `voltage_limits::MinMax`: (default: `(min=0.0, max=999.9)`) Limits on the voltage at the DC bus in [per unit](@ref per_unit).
 - `services::Vector{Service}`: (default: `Device[]`) Services that this device contributes to
@@ -98,10 +96,8 @@ mutable struct InterconnectingConverter <: StaticInjection
     ac_setpoint::Float64
     "DC-voltage droop gain relating DC voltage to converter active power as V_dc = dc_setpoint - dc_voltage_droop * P_c. A value of 0.0 disables droop."
     dc_voltage_droop::Float64
-    "Number of the AC bus whose voltage the converter regulates when `ac_control` is `AC_VOLTAGE`; `nothing` regulates its own terminal bus."
-    remote_bus_control::Union{Nothing, Int}
-    "Percent of the total MVAr required to hold the voltage at the bus regulated by this converter that is contributed by this converter."
-    rmpct::Float64
+    "AC bus whose voltage the converter regulates when `ac_control` is `AC_VOLTAGE` and that bus is not its own terminal `bus`; `nothing` means the converter's own AC bus, and a value equal to `bus` is invalid. [`get_regulated_bus`](@ref) resolves it"
+    remote_regulated_bus::Union{Nothing, ACBus}
     "Power weighting factor fraction used in reducing the active power order and either the reactive power order when the converter rating is violated. When is 0.0, only the active power is reduced; when is 1.0, only the reactive power is reduced; otherwise, a weighted reduction of both active and reactive power is applied."
     power_factor_weighting_fraction::Float64
     "Limits on the voltage at the DC bus in [per unit](@ref per_unit)."
@@ -116,12 +112,12 @@ mutable struct InterconnectingConverter <: StaticInjection
     internal::InfrastructureSystemsInternal
 end
 
-function InterconnectingConverter(name, available, bus, dc_bus, active_power, rating, active_power_limits, base_power, reactive_power_limits=nothing, dc_current=0.0, max_dc_current=1e8, loss_function=LossCurve(LinearCurve(0.0), NaturalUnit()), dc_control=VSCDCControlModes.DC_VOLTAGE, ac_control=VSCACControlModes.AC_REACTIVE_POWER, dc_setpoint=0.0, ac_setpoint=1.0, dc_voltage_droop=0.0, remote_bus_control=nothing, rmpct=100.0, power_factor_weighting_fraction=1.0, voltage_limits=(min=0.0, max=999.9), services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), )
-    InterconnectingConverter(name, available, bus, dc_bus, active_power, rating, active_power_limits, base_power, reactive_power_limits, dc_current, max_dc_current, loss_function, dc_control, ac_control, dc_setpoint, ac_setpoint, dc_voltage_droop, remote_bus_control, rmpct, power_factor_weighting_fraction, voltage_limits, services, dynamic_injector, ext, InfrastructureSystemsInternal(), )
+function InterconnectingConverter(name, available, bus, dc_bus, active_power, rating, active_power_limits, base_power, reactive_power_limits=nothing, dc_current=0.0, max_dc_current=1e8, loss_function=LossCurve(LinearCurve(0.0), NaturalUnit()), dc_control=VSCDCControlModes.DC_VOLTAGE, ac_control=VSCACControlModes.AC_REACTIVE_POWER, dc_setpoint=0.0, ac_setpoint=1.0, dc_voltage_droop=0.0, remote_regulated_bus=nothing, power_factor_weighting_fraction=1.0, voltage_limits=(min=0.0, max=999.9), services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), )
+    InterconnectingConverter(name, available, bus, dc_bus, active_power, rating, active_power_limits, base_power, reactive_power_limits, dc_current, max_dc_current, loss_function, dc_control, ac_control, dc_setpoint, ac_setpoint, dc_voltage_droop, remote_regulated_bus, power_factor_weighting_fraction, voltage_limits, services, dynamic_injector, ext, InfrastructureSystemsInternal(), )
 end
 
-function InterconnectingConverter(; name, available, bus, dc_bus, active_power, rating, active_power_limits, base_power, reactive_power_limits=nothing, dc_current=0.0, max_dc_current=1e8, loss_function=LossCurve(LinearCurve(0.0), NaturalUnit()), dc_control=VSCDCControlModes.DC_VOLTAGE, ac_control=VSCACControlModes.AC_REACTIVE_POWER, dc_setpoint=0.0, ac_setpoint=1.0, dc_voltage_droop=0.0, remote_bus_control=nothing, rmpct=100.0, power_factor_weighting_fraction=1.0, voltage_limits=(min=0.0, max=999.9), services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Union{ComponentBaseUnit, NaturalUnit}, )
-    value = InterconnectingConverter(name, available, bus, dc_bus, _placeholder(active_power), _placeholder(rating), _placeholder(active_power_limits), base_power, _placeholder(reactive_power_limits), _placeholder(dc_current), _placeholder(max_dc_current), loss_function, dc_control, ac_control, dc_setpoint, ac_setpoint, dc_voltage_droop, remote_bus_control, rmpct, power_factor_weighting_fraction, voltage_limits, services, dynamic_injector, ext, internal, )
+function InterconnectingConverter(; name, available, bus, dc_bus, active_power, rating, active_power_limits, base_power, reactive_power_limits=nothing, dc_current=0.0, max_dc_current=1e8, loss_function=LossCurve(LinearCurve(0.0), NaturalUnit()), dc_control=VSCDCControlModes.DC_VOLTAGE, ac_control=VSCACControlModes.AC_REACTIVE_POWER, dc_setpoint=0.0, ac_setpoint=1.0, dc_voltage_droop=0.0, remote_regulated_bus=nothing, power_factor_weighting_fraction=1.0, voltage_limits=(min=0.0, max=999.9), services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Union{ComponentBaseUnit, NaturalUnit}, )
+    value = InterconnectingConverter(name, available, bus, dc_bus, _placeholder(active_power), _placeholder(rating), _placeholder(active_power_limits), base_power, _placeholder(reactive_power_limits), _placeholder(dc_current), _placeholder(max_dc_current), loss_function, dc_control, ac_control, dc_setpoint, ac_setpoint, dc_voltage_droop, remote_regulated_bus, power_factor_weighting_fraction, voltage_limits, services, dynamic_injector, ext, internal, )
     set_active_power!(value, _tag(active_power, input_basis, Val(:mw)))
     set_rating!(value, _tag(rating, input_basis, Val(:mva)))
     set_active_power_limits!(value, _tag(active_power_limits, input_basis, Val(:mw)))
@@ -152,8 +148,7 @@ function InterconnectingConverter(::Nothing)
         dc_setpoint=0.0,
         ac_setpoint=0.0,
         dc_voltage_droop=0.0,
-        remote_bus_control=nothing,
-        rmpct=100.0,
+        remote_regulated_bus=nothing,
         power_factor_weighting_fraction=0.0,
         voltage_limits=(min=0.0, max=0.0),
         services=Device[],
@@ -233,10 +228,8 @@ get_dc_setpoint(value::InterconnectingConverter) = value.dc_setpoint
 get_ac_setpoint(value::InterconnectingConverter) = value.ac_setpoint
 """Get [`InterconnectingConverter`](@ref) `dc_voltage_droop`."""
 get_dc_voltage_droop(value::InterconnectingConverter) = value.dc_voltage_droop
-"""Get [`InterconnectingConverter`](@ref) `remote_bus_control`."""
-get_remote_bus_control(value::InterconnectingConverter) = value.remote_bus_control
-"""Get [`InterconnectingConverter`](@ref) `rmpct`."""
-get_rmpct(value::InterconnectingConverter) = value.rmpct
+"""Get [`InterconnectingConverter`](@ref) `remote_regulated_bus`."""
+get_remote_regulated_bus(value::InterconnectingConverter) = value.remote_regulated_bus
 """Get [`InterconnectingConverter`](@ref) `power_factor_weighting_fraction`."""
 get_power_factor_weighting_fraction(value::InterconnectingConverter) = value.power_factor_weighting_fraction
 """Get [`InterconnectingConverter`](@ref) `voltage_limits`."""
@@ -288,10 +281,8 @@ set_dc_setpoint!(value::InterconnectingConverter, val) = value.dc_setpoint = val
 set_ac_setpoint!(value::InterconnectingConverter, val) = value.ac_setpoint = val
 """Set [`InterconnectingConverter`](@ref) `dc_voltage_droop`."""
 set_dc_voltage_droop!(value::InterconnectingConverter, val) = value.dc_voltage_droop = val
-"""Set [`InterconnectingConverter`](@ref) `remote_bus_control`."""
-set_remote_bus_control!(value::InterconnectingConverter, val) = value.remote_bus_control = val
-"""Set [`InterconnectingConverter`](@ref) `rmpct`."""
-set_rmpct!(value::InterconnectingConverter, val) = value.rmpct = val
+"""Set [`InterconnectingConverter`](@ref) `remote_regulated_bus`."""
+set_remote_regulated_bus!(value::InterconnectingConverter, val) = value.remote_regulated_bus = val
 """Set [`InterconnectingConverter`](@ref) `power_factor_weighting_fraction`."""
 set_power_factor_weighting_fraction!(value::InterconnectingConverter, val) = value.power_factor_weighting_fraction = val
 """Set [`InterconnectingConverter`](@ref) `voltage_limits`."""

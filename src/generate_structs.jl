@@ -425,11 +425,38 @@ function openapi_validate_unit_override(struct_name, field)
 end
 
 """
-`openapi_unit` and `openapi_export_base_kind` are only meaningful on a struct carrying
-`openapi_type` — nothing reads them otherwise, so either is stray descriptor noise rather
-than a silent no-op. Runs for every item, regardless of annotation; only raises when one of
-these (brand new, opt-in) keys is actually present, so an unannotated entry without them is
-untouched.
+Validate a field's optional `openapi_unit_basis` override: `{"field", "type", "value"}` naming
+the sibling unit-basis property on the wire, its generated enum wrapper, and the one basis
+value this converter implements. The field itself passes through unscaled in both unit-system
+methods — the value is already on the fixed basis (e.g. a voltage setpoint in per-unit of its
+bus base voltage, which no `base_power` converts). Export always writes that basis; import
+requires it and errors on any other, the same contract the hand-written voltage-setpoint
+converters apply. Returns the override, or `nothing` when the key is absent.
+"""
+function openapi_unit_basis_override(struct_name, field)
+    if !haskey(field, "openapi_unit_basis")
+        return nothing
+    end
+    override = field["openapi_unit_basis"]
+    for key in ("field", "type", "value")
+        if !haskey(override, key)
+            throw(
+                DataFormatError(
+                    "struct=$struct_name field=$(field["name"]) openapi_unit_basis is " *
+                    "missing \"$key\" (needs field, type and value)",
+                ),
+            )
+        end
+    end
+    return override
+end
+
+"""
+`openapi_unit`, `openapi_unit_basis` and `openapi_export_base_kind` are only meaningful on a
+struct carrying `openapi_type` — nothing reads them otherwise, so either is stray descriptor
+noise rather than a silent no-op. Runs for every item, regardless of annotation; only raises
+when one of these (brand new, opt-in) keys is actually present, so an unannotated entry
+without them is untouched.
 """
 function openapi_check_no_orphan_unit!(item)
     if haskey(item, "openapi_type")
@@ -446,14 +473,16 @@ function openapi_check_no_orphan_unit!(item)
         )
     end
     for field in item["fields"]
-        if haskey(field, "openapi_unit")
-            throw(
-                DataFormatError(
-                    "struct=$struct_name field=$(field["name"]) has openapi_unit=" *
-                    "$(field["openapi_unit"]) but the struct has no openapi_type; " *
-                    "openapi_unit is only meaningful on an annotated struct",
-                ),
-            )
+        for key in ("openapi_unit", "openapi_unit_basis")
+            if haskey(field, key)
+                throw(
+                    DataFormatError(
+                        "struct=$struct_name field=$(field["name"]) has $key=" *
+                        "$(field[key]) but the struct has no openapi_type; " *
+                        "$key is only meaningful on an annotated struct",
+                    ),
+                )
+            end
         end
     end
     return nothing
@@ -708,7 +737,8 @@ function compute_openapi_converter!(item, struct_names)
             push!(kwargs_natural, Dict("name" => name, "expr" => expr))
             continue
         end
-        conversion = if pu_override
+        basis_override = openapi_unit_basis_override(struct_name, field)
+        conversion = if pu_override || !isnothing(basis_override)
             :none
         else
             openapi_natural_conversion(struct_name, field)
@@ -722,6 +752,16 @@ function compute_openapi_converter!(item, struct_names)
             members = OPENAPI_COMPOUND_MEMBERS[bare]
             device, natural =
                 openapi_compound_exprs(po_name, bare, members, conversion, nullable, bases)
+        end
+        if !isnothing(basis_override)
+            # The value is only meaningful on the one basis this converter implements, so
+            # the read is gated on the sibling basis property naming exactly that.
+            guard =
+                "_require_unit_basis(po.$(basis_override["field"]), " *
+                "\"$(basis_override["value"])\", " *
+                "\"$struct_name.$(basis_override["field"])\", po.id)"
+            device = "($guard; $device)"
+            natural = "($guard; $natural)"
         end
         push!(kwargs_device, Dict("name" => name, "expr" => device))
         push!(kwargs_natural, Dict("name" => name, "expr" => natural))
@@ -1063,10 +1103,22 @@ function compute_openapi_export_converter!(item, struct_names)
             push!(kwargs_natural, Dict("name" => name, "expr" => base_source.base_expr))
             continue
         end
-        conversion = if pu_override
+        basis_override = openapi_unit_basis_override(struct_name, field)
+        conversion = if pu_override || !isnothing(basis_override)
             :none
         else
             openapi_natural_conversion(struct_name, field)
+        end
+        if !isnothing(basis_override)
+            basis_expr = "PO.$(basis_override["type"])(\"$(basis_override["value"])\")"
+            push!(
+                kwargs_device,
+                Dict("name" => basis_override["field"], "expr" => basis_expr),
+            )
+            push!(
+                kwargs_natural,
+                Dict("name" => basis_override["field"], "expr" => basis_expr),
+            )
         end
         bases = (s_base = nothing, z_base = nothing)
         unit_arg = nothing
