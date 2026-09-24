@@ -27,9 +27,11 @@
 # `CUp` values of two components with different `base_power` still add.
 ###############################
 
-@dimension 𝐂𝐩 "𝐂𝐩" ComponentBasePower
-@dimension 𝐒𝐩 "𝐒𝐩" SystemBasePower
-@dimension 𝐂𝐯 "𝐂𝐯" ComponentBaseVoltage
+# Not `ComponentBasePower`/`SystemBasePower`: those name the base-power trait in
+# `components.jl`, and `@dimension` defines a type alias under its name.
+@dimension 𝐂𝐩 "𝐂𝐩" PerUnitComponentPower
+@dimension 𝐒𝐩 "𝐒𝐩" PerUnitSystemPower
+@dimension 𝐂𝐯 "𝐂𝐯" PerUnitComponentVoltage
 @refunit CUp "CUp" CUp 𝐂𝐩 false
 @refunit SUp "SUp" SUp 𝐒𝐩 false
 @refunit CUv "CUv" CUv 𝐂𝐯 false

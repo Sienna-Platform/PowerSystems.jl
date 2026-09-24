@@ -241,7 +241,10 @@ function _basis_of(t, component, system, residual)
     dims == Unitful.dimension(system * residual) && return :system
     names = map(d -> typeof(d).parameters[1], typeof(dims).parameters[1])
     per_unit =
-        any(in((:ComponentBasePower, :SystemBasePower, :ComponentBaseVoltage)), names)
+        any(
+            in((:PerUnitComponentPower, :PerUnitSystemPower, :PerUnitComponentVoltage)),
+            names,
+        )
     return per_unit ? :mismatch : :natural
 end
 

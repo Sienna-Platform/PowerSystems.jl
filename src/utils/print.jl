@@ -25,8 +25,8 @@ _base_label(::Val{:natural}) = nothing
         d -> typeof(d).parameters[1],
         typeof(Unitful.dimension(u.instance)).parameters[1],
     )
-    :SystemBasePower in names && return :(Val(:system))
-    any(in((:ComponentBasePower, :ComponentBaseVoltage)), names) &&
+    :PerUnitSystemPower in names && return :(Val(:system))
+    any(in((:PerUnitComponentPower, :PerUnitComponentVoltage)), names) &&
         return :(Val(:component))
     return :(Val(:natural))
 end
