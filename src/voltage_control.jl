@@ -302,9 +302,9 @@ end
 
 """
 Side of the controlling winding on which the regulated bus of `circuit` lies: the stored value
-when the regulated bus is neither end of the arc, [`CONTROLLING_WINDING`](@ref
-TransformerRegulatedBusSide) when it is the arc's `from` bus and [`OPPOSITE_WINDING`](@ref
-TransformerRegulatedBusSide) when it is the `to` bus. `nothing` without a regulated bus, or
+when the regulated bus is neither end of the arc, `CONTROLLING_WINDING` when it is the arc's
+`from` bus and `OPPOSITE_WINDING` when it is the `to` bus (see
+[Transformer Regulated Bus Sides](@ref xfmr_regulated_side)). `nothing` without a regulated bus, or
 when a regulated bus off the arc has no stored side.
 """
 function get_regulated_bus_side(circuit::TransformerCircuit)
