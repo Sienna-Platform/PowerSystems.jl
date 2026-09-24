@@ -43,7 +43,7 @@ PowerOpenAPIModels = {rev = "main", subdir = "PowerOpenAPIModels.jl", url = "htt
 PowerOperationsOpenAPIModels = {rev = "main", subdir = "PowerOperationsOpenAPIModels.jl", url = "https://github.com/Sienna-Platform/PowerOpenAPIModels.git"}
 PowerSystemCaseBuilder = {rev = "lk/unitful-per-unit", url = "https://github.com/Sienna-Platform/PowerSystemCaseBuilder.jl.git"}
 PowerSystems = {path = ".."}
-PowerTableDataParser = {url = "https://github.com/luke-kiernan/PowerTableDataParser.jl.git", rev = "psy6"}
+PowerTableDataParser = {url = "https://github.com/NLR-Sienna/PowerTableDataParser.jl.git", rev = "psy6"}
 
 [compat]
 InfrastructureSystems = "3"
