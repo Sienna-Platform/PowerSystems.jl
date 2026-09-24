@@ -199,19 +199,11 @@ _cu_to_su_ratio(c, ::UnitCategory{NU, P, V}) where {NU, P, V} =
 # Per-unit units of a category
 # ============================================================
 
-# One per-unit of a category with base exponents `(P, V)`, on the component and the system
-# base: `CUp^P·CUv^V`, or its alias where one exists. Called only from `per_unit_table`'s
-# generator.
-_per_unit_units(::Val{P}, ::Val{V}) where {P, V} = (CUp^P * CUv^V, SUp^P * CUv^V)
-_per_unit_units(::Val{-1}, ::Val{2}) = (CUz, SUz)
-_per_unit_units(::Val{1}, ::Val{-2}) = (CUy, SUy)
-_per_unit_units(::Val{1}, ::Val{-1}) = (CUi, SUi)
-
 """
     per_unit_table(category) -> (component, system, natural, residual)
 
-The units `category`'s values take on each basis: one per-unit on the component base
-(`CUp`, `CUz`, …), one on the system base (`SUp`, `SUz`, …), and the natural unit without
+The units `category`'s values take on each basis: `u"CU"` on the component base, `u"SU"`
+on the system base (the same for every category), and the natural unit without
 the residual (`u"MW"`, `u"Ω"`), plus the residual itself: what is left of the natural
 unit once the per-unitized base is divided out (`u"minute^-1"` for a ramp, `NoUnits` for
 a plain quantity). A stored value is `component * residual`.
@@ -228,7 +220,7 @@ Computed from the category's type in the generator, so every use is a constant.
             error("inconsistent natural unit $natural for per-unit exponents ($P, $V)")
         residual = Unitful.NoUnits
     end
-    component, system = _per_unit_units(Val(P), Val(V))
+    component, system = PerUnit.CU, PerUnit.SU
     return :(($component, $system, $(natural / residual), $residual))
 end
 
@@ -241,7 +233,7 @@ function _basis_of(t, component, system, residual)
     dims == Unitful.dimension(system * residual) && return :system
     names = map(d -> typeof(d).parameters[1], typeof(dims).parameters[1])
     per_unit =
-        any(in((:ComponentBasePower, :SystemBasePower, :ComponentBaseVoltage)), names)
+        any(in((:GenericComponentBase, :GenericSystemBase)), names)
     return per_unit ? :mismatch : :natural
 end
 
@@ -264,13 +256,13 @@ end
 
 Convert `value` to the units `to`, resolving per-unit bases against `component`. Either
 side may be natural (`u"MW"`) or per-unit, written with the generic `u"CU"`/`u"SU"`/`u"NU"`
-or the resolved units (`CUp`, `SUz`, …).
+(`u"CU"`, `u"SU/hr"`).
 
 # Examples
 ```julia
 convert_units(gen, 0.6u"CU", ACTIVE_POWER, u"MW")   # → 30.0 MW
-convert_units(gen, 30.0u"MW", ACTIVE_POWER, u"CU")  # → 0.6 CUp
-convert_units(gen, 0.6u"CU", ACTIVE_POWER, u"SU")   # → 0.3 SUp
+convert_units(gen, 30.0u"MW", ACTIVE_POWER, u"CU")  # → 0.6 CU
+convert_units(gen, 0.6u"CU", ACTIVE_POWER, u"SU")   # → 0.3 SU
 ```
 """
 convert_units(c, value::Quantity, cat::UnitCategory, to::Units) =

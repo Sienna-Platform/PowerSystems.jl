@@ -78,34 +78,36 @@ end
 end
 
 @testset "per_unit_table: per-unit units, natural base and residual per category" begin
-    for (cat, cu, su, natural, residual) in (
-        (ACTIVE_POWER, PSY.CUp, PSY.SUp, u"MW", Unitful.NoUnits),
-        (REACTIVE_POWER, PSY.CUp, PSY.SUp, u"MVAr", Unitful.NoUnits),
-        (VOLTAGE, PSY.CUv, PSY.CUv, u"kV", Unitful.NoUnits),
-        (IMPEDANCE, PSY.CUz, PSY.SUz, u"Ω", Unitful.NoUnits),
-        (ADMITTANCE, PSY.CUy, PSY.SUy, u"S", Unitful.NoUnits),
-        (CURRENT, PSY.CUi, PSY.SUi, u"kA", Unitful.NoUnits),
-        (PSY.ACTIVE_POWER_CHANGE_RATE, PSY.CUp, PSY.SUp, u"MW", u"minute^-1"),
+    # Every category shares the one `u"CU"`/`u"SU"`; only the natural unit and residual differ.
+    for (cat, natural, residual) in (
+        (ACTIVE_POWER, u"MW", Unitful.NoUnits),
+        (REACTIVE_POWER, u"MVAr", Unitful.NoUnits),
+        (VOLTAGE, u"kV", Unitful.NoUnits),
+        (IMPEDANCE, u"Ω", Unitful.NoUnits),
+        (ADMITTANCE, u"S", Unitful.NoUnits),
+        (CURRENT, u"kA", Unitful.NoUnits),
+        (PSY.ACTIVE_POWER_CHANGE_RATE, u"MW", u"minute^-1"),
     )
-        @test PSY.per_unit_table(cat) == (cu, su, natural, residual)
+        @test PSY.per_unit_table(cat) == (u"CU", u"SU", natural, residual)
     end
-    # A composed category finds its alias too: voltage² / power is impedance.
-    @test PSY.per_unit_table(VOLTAGE^Val(2) / ACTIVE_POWER)[1] == PSY.CUz
 end
 
-@testset "Per-unit values of different kinds do not add" begin
+@testset "Per-unit values share one unit per base" begin
     gen = MockGen(0.6, 50.0)
     p = convert_units(gen, 0.5u"CU", ACTIVE_POWER, u"SU")
     x = convert_units(gen, 0.01u"CU", IMPEDANCE, u"SU")
-    @test Unitful.unit(p) == PSY.SUp
-    @test Unitful.unit(x) == PSY.SUz
-    @test_throws Unitful.DimensionError x + p
-    # Nor do the same kind on different bases.
+    @test Unitful.unit(p) == u"SU"
+    @test Unitful.unit(x) == u"SU"
+    # Different kinds on one base add: the units do not say what a value is per-unit of.
+    @test x + p ≈ (Unitful.ustrip(x) + Unitful.ustrip(p)) * u"SU"
+    # Different bases still do not.
     @test_throws Unitful.DimensionError p +
                                         convert_units(gen, 0.5u"CU", ACTIVE_POWER, u"CU")
-    # Per-unit physics still composes: I² · Z is a per-unit power.
+    # A getter's value and a hand-typed one mix freely.
+    @test p + 0.1u"SU" ≈ 0.35u"SU"
+    # Products of per-unit values are not per-unit: I² · Z is `SU³`, not `SU`.
     i = convert_units(gen, 1.2u"CU", CURRENT, u"SU")
-    @test Unitful.dimension(i^2 * x) == Unitful.dimension(p)
+    @test Unitful.unit(i^2 * x) == u"SU^3"
 end
 
 @testset "Rate categories: a per-unit target must name a time" begin
@@ -124,14 +126,14 @@ end
     @test convert_units(gen, v, cat, u"NU/minute") ≈ 5.0u"MW/minute"
 
     # Per-unit bases per unit time: both axes move independently.
-    @test convert_units(gen, v, cat, u"CU/minute") ≈ 0.1 * PSY.CUp / u"minute"
-    @test convert_units(gen, v, cat, u"CU/hr") ≈ 6.0 * PSY.CUp / u"hr"
-    @test convert_units(gen, v, cat, u"SU/minute") ≈ 0.05 * PSY.SUp / u"minute"
-    @test convert_units(gen, v, cat, u"SU/hr") ≈ 3.0 * PSY.SUp / u"hr"
+    @test convert_units(gen, v, cat, u"CU/minute") ≈ 0.1 * u"CU" / u"minute"
+    @test convert_units(gen, v, cat, u"CU/hr") ≈ 6.0 * u"CU" / u"hr"
+    @test convert_units(gen, v, cat, u"SU/minute") ≈ 0.05 * u"SU" / u"minute"
+    @test convert_units(gen, v, cat, u"SU/hr") ≈ 3.0 * u"SU" / u"hr"
 
     # Every spelling of the same rate stores the same number.
     for q in (5.0u"MW/minute", 300.0u"MW/hr", 0.1u"CU/minute", 6.0u"CU/hr",
-        0.05u"SU/minute", 6.0 * PSY.CUp / u"hr")
+        0.05u"SU/minute", 6.0 * u"CU" / u"hr")
         @test PSY._to_stored(gen, q, cat) ≈ 0.1
     end
 
@@ -174,8 +176,8 @@ end
     gen = MockGen(0.6, 50.0)   # 50 MVA component, 100 MVA system
 
     @test convert_units(gen, 0.6u"CU", ACTIVE_POWER, u"MW") ≈ 30.0u"MW"
-    @test convert_units(gen, 0.6u"CU", ACTIVE_POWER, u"SU") ≈ 0.3 * PSY.SUp
-    @test convert_units(gen, 0.6u"CU", ACTIVE_POWER, u"CU") ≈ 0.6 * PSY.CUp
+    @test convert_units(gen, 0.6u"CU", ACTIVE_POWER, u"SU") ≈ 0.3 * u"SU"
+    @test convert_units(gen, 0.6u"CU", ACTIVE_POWER, u"CU") ≈ 0.6 * u"CU"
     @test convert_units(gen, 0.6u"CU", ACTIVE_POWER, u"NU") ≈ 30.0u"MW"
 end
 
@@ -183,24 +185,24 @@ end
     gen = MockGen(0.6, 50.0)
 
     @test convert_units(gen, 0.3u"SU", ACTIVE_POWER, u"MW") ≈ 30.0u"MW"
-    @test convert_units(gen, 0.3u"SU", ACTIVE_POWER, u"CU") ≈ 0.6 * PSY.CUp
-    @test convert_units(gen, 0.3u"SU", ACTIVE_POWER, u"SU") ≈ 0.3 * PSY.SUp
+    @test convert_units(gen, 0.3u"SU", ACTIVE_POWER, u"CU") ≈ 0.6 * u"CU"
+    @test convert_units(gen, 0.3u"SU", ACTIVE_POWER, u"SU") ≈ 0.3 * u"SU"
 end
 
 @testset "convert_units: natural → per-unit" begin
     gen = MockGen(0.6, 50.0)
 
-    @test convert_units(gen, 30.0u"MW", ACTIVE_POWER, u"CU") ≈ 0.6 * PSY.CUp
-    @test convert_units(gen, 30.0u"MW", ACTIVE_POWER, u"SU") ≈ 0.3 * PSY.SUp
-    @test convert_units(gen, 30000.0u"kW", ACTIVE_POWER, u"CU") ≈ 0.6 * PSY.CUp
+    @test convert_units(gen, 30.0u"MW", ACTIVE_POWER, u"CU") ≈ 0.6 * u"CU"
+    @test convert_units(gen, 30.0u"MW", ACTIVE_POWER, u"SU") ≈ 0.3 * u"SU"
+    @test convert_units(gen, 30000.0u"kW", ACTIVE_POWER, u"CU") ≈ 0.6 * u"CU"
 end
 
 @testset "convert_units: resolved per-unit units in and out" begin
     gen = MockGen(0.6, 50.0)
     # A value carrying the resolved units (what a getter returns) converts like the
     # generic spelling.
-    @test convert_units(gen, 0.6 * PSY.CUp, ACTIVE_POWER, u"MW") ≈ 30.0u"MW"
-    @test convert_units(gen, 0.6 * PSY.CUp, ACTIVE_POWER, PSY.SUp) ≈ 0.3 * PSY.SUp
+    @test convert_units(gen, 0.6 * u"CU", ACTIVE_POWER, u"MW") ≈ 30.0u"MW"
+    @test convert_units(gen, 0.6 * u"CU", ACTIVE_POWER, u"SU") ≈ 0.3 * u"SU"
 end
 
 @testset "convert_units: impedance" begin
@@ -209,7 +211,7 @@ end
 
     @test convert_units(line, 0.01u"CU", IMPEDANCE, u"Ω") ≈ (0.01 * z_base) * u"Ω"
     # component base == system base, so the CU → SU ratio is 1.0
-    @test convert_units(line, 0.01u"CU", IMPEDANCE, u"SU") ≈ 0.01 * PSY.SUz
+    @test convert_units(line, 0.01u"CU", IMPEDANCE, u"SU") ≈ 0.01 * u"SU"
     @test Unitful.unit(convert_units(line, 0.01u"CU", IMPEDANCE, u"NU")) == u"Ω"
 end
 
@@ -222,7 +224,7 @@ end
     gen = MockGen(0.6, 50.0)
     for to in (u"MW", u"SU", u"NU")
         there = convert_units(gen, 0.6u"CU", ACTIVE_POWER, to)
-        @test convert_units(gen, there, ACTIVE_POWER, u"CU") ≈ 0.6 * PSY.CUp
+        @test convert_units(gen, there, ACTIVE_POWER, u"CU") ≈ 0.6 * u"CU"
     end
 end
 
@@ -237,9 +239,9 @@ end
 
 @testset "Serialization: per-unit quantities" begin
     for (q, unit) in (
-        (0.6 * PSY.CUp, "CUp"),
-        (0.3 * PSY.SUp, "SUp"),
-        (0.01 * PSY.CUz, "CUz"),
+        (0.6 * u"CU", "CU"),
+        (0.3 * u"SU", "SU"),
+        (0.01 * u"CU", "CU"),
     )
         d = PSY.serialize_quantity(q)
         @test d["value"] == Unitful.ustrip(q)
@@ -247,11 +249,11 @@ end
         @test PSY.deserialize_quantity(d) == q
     end
 
-    q = (0.01 + 0.1im) * PSY.SUz
+    q = (0.01 + 0.1im) * u"SU"
     d = PSY.serialize_quantity(q)
     @test d["value"]["re"] == 0.01
     @test d["value"]["im"] == 0.1
-    @test d["unit"] == "SUz"
+    @test d["unit"] == "SU"
     @test PSY.deserialize_quantity(d) == q
 end
 
@@ -296,13 +298,13 @@ end
     end
 
     # A per-unit rate pins its spelling the same way.
-    d = PSY.serialize_quantity(6.0 * PSY.CUp / u"hr")
-    @test d == Dict("value" => 6.0, "unit" => "CUp hr^-1")
-    @test PSY.deserialize_quantity(d) == 6.0 * PSY.CUp / u"hr"
+    d = PSY.serialize_quantity(6.0 * u"CU" / u"hr")
+    @test d == Dict("value" => 6.0, "unit" => "CU hr^-1")
+    @test PSY.deserialize_quantity(d) == 6.0 * u"CU" / u"hr"
 end
 
 @testset "Serialization: JSON string round-trip" begin
-    q = 0.3 * PSY.SUp
+    q = 0.3 * u"SU"
     json = JSON.json(PSY.serialize_quantity(q))
     @test PSY.deserialize_quantity(json) == q
 
@@ -500,7 +502,7 @@ end
     @inferred get_active_power(gen, u"CU")
     @inferred get_active_power(gen, u"NU")
     @inferred get_active_power_unitful(gen, u"SU")
-    @test Unitful.unit(get_active_power_unitful(gen, u"SU")) == PSY.SUp
+    @test Unitful.unit(get_active_power_unitful(gen, u"SU")) == u"SU"
 
     # impedance / admittance categories (Val{:ohm} / Val{:siemens})
     @inferred get_r(line, u"SU")

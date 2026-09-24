@@ -268,12 +268,12 @@ end
     # rating: always CU, regardless of System attachment.
     rating_val = PowerSystems._show_accessor_value(get_rating, gen)
     @test rating_val isa Unitful.Quantity
-    @test rating_val == 1.0 * PSY.CUp
+    @test rating_val == 1.0 * u"CU"
 
     # active_power: attached defaults to SU.
     active_power_val = PowerSystems._show_accessor_value(get_active_power, gen)
     @test active_power_val isa Unitful.Quantity
-    @test active_power_val == 1.25 * PSY.SUp
+    @test active_power_val == 1.25 * u"SU"
 
     # An explicit `units` override takes precedence over the trait default.
     forced_val = PowerSystems._show_accessor_value(get_active_power, gen; units = u"MW")
@@ -372,7 +372,7 @@ end
     )
     text = String(take!(io))
     @test occursin("125.0 MW", text)
-    @test occursin("1.0 CUp", text)
+    @test occursin("1.0 CU", text)
 
     # A column absent from the mapping keeps its own `display_units_arg` default
     # (SU for active_power) rather than inheriting a neighbour's unit.
@@ -380,7 +380,7 @@ end
     show_components(io2, sys, ThermalStandard, [:active_power, :rating];
         units = Dict(:rating => u"MW"))
     text2 = String(take!(io2))
-    @test occursin("1.25 SUp", text2)
+    @test occursin("1.25 SU", text2)
     @test occursin("250.0 MW", text2)
 
     # NamedTuple mappings work the same way.
@@ -388,7 +388,7 @@ end
     show_components(io3, sys, ThermalStandard, [:active_power, :rating];
         units = (active_power = u"CU", rating = u"MW"))
     text3 = String(take!(io3))
-    @test occursin("0.5 CUp", text3)
+    @test occursin("0.5 CU", text3)
     @test occursin("250.0 MW", text3)
 end
 
