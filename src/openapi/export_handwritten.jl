@@ -596,9 +596,8 @@ function to_openapi(circuit::TransformerCircuit, refs::OpenAPIRefs, ::ComponentB
             PO.TransformerRegulatedBusSide,
             _get_regulated_bus_side(circuit),
         ),
-        load_drop_compensation = _complex_number_po(
-            get_load_drop_compensation(circuit, CU),
-        ),
+        load_drop_compensation_r = get_load_drop_compensation_r(circuit, CU),
+        load_drop_compensation_x = get_load_drop_compensation_x(circuit, CU),
         control_limits = _minmax_po(get_control_limits(circuit)),
         controlled_quantity_limits = _minmax_po(get_controlled_quantity_limits(circuit)),
         number_of_tap_positions = get_number_of_tap_positions(circuit),
@@ -635,9 +634,8 @@ function to_openapi(circuit::TransformerCircuit, refs::OpenAPIRefs, ::NaturalUni
             PO.TransformerRegulatedBusSide,
             _get_regulated_bus_side(circuit),
         ),
-        load_drop_compensation = _complex_number_po(
-            get_load_drop_compensation(circuit, CU),
-        ),
+        load_drop_compensation_r = get_load_drop_compensation_r(circuit, CU),
+        load_drop_compensation_x = get_load_drop_compensation_x(circuit, CU),
         control_limits = _minmax_po(get_control_limits(circuit)),
         controlled_quantity_limits = _minmax_po(get_controlled_quantity_limits(circuit)),
         number_of_tap_positions = get_number_of_tap_positions(circuit),

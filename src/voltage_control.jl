@@ -637,8 +637,11 @@ function _validate_circuit_control(circuit::TransformerCircuit, owner::AbstractS
             IS.LOG_GROUP_SYSTEM_CHECKS
         return false
     end
-    if !regulates_voltage && !iszero(get_load_drop_compensation(circuit, CU))
-        @warn "$owner circuit has a non-zero load_drop_compensation but control_objective " *
+    has_compensation =
+        !iszero(get_load_drop_compensation_r(circuit, CU)) ||
+        !iszero(get_load_drop_compensation_x(circuit, CU))
+    if !regulates_voltage && has_compensation
+        @warn "$owner circuit has a non-zero load drop compensation but control_objective " *
               "$objective regulates no voltage; the compensation is ignored" _group =
             IS.LOG_GROUP_SYSTEM_CHECKS
     end

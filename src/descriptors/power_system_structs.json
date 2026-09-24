@@ -556,10 +556,19 @@
                     "exclude_getter": true
                 },
                 {
-                    "name": "load_drop_compensation",
-                    "comment": "Load drop compensation impedance for voltage control (PSS/E `CR + jCX`) in pu (component base on `base_power`) referenced to `base_voltage_primary`: the regulated voltage is compensated by this impedance times the circuit current. Zero means no compensation",
+                    "name": "load_drop_compensation_r",
+                    "comment": "Resistive part of the load drop compensation impedance for voltage control (PSS/E `CR`) in pu (component base on `base_power`) referenced to `base_voltage_primary`: the regulated voltage is compensated by `load_drop_compensation_r + j load_drop_compensation_x` times the circuit current. Zero means no compensation",
                     "null_value": "0.0",
-                    "data_type": "Complex{Float64}",
+                    "data_type": "Float64",
+                    "default": "0.0",
+                    "needs_conversion": true,
+                    "conversion_unit": ":ohm"
+                },
+                {
+                    "name": "load_drop_compensation_x",
+                    "comment": "Reactive part of the load drop compensation impedance for voltage control (PSS/E `CX`) in pu (component base on `base_power`) referenced to `base_voltage_primary`. Zero means no compensation",
+                    "null_value": "0.0",
+                    "data_type": "Float64",
                     "default": "0.0",
                     "needs_conversion": true,
                     "conversion_unit": ":ohm"
