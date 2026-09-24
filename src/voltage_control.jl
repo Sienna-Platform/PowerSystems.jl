@@ -264,10 +264,10 @@ function get_weight(group::VoltageControlGroup, component::Component)
 end
 
 """
-Converter terminal of `component`'s membership in `group`: `nothing` for a single-bus member.
+Converter terminal of `component`'s membership in `group`: `UNDEFINED` for a single-bus member.
 """
 get_terminal(group::VoltageControlGroup, component::Component) =
-    get(group.terminals, IS.get_id(component), nothing)
+    get(group.terminals, IS.get_id(component), VoltageControlTerminal.UNDEFINED)
 
 # ── regulated-bus resolution ──────────────────────────────────────────────────────
 
@@ -304,18 +304,18 @@ end
 Side of the controlling winding on which the regulated bus of `circuit` lies: the stored value
 when the regulated bus is neither end of the arc, `CONTROLLING_WINDING` when it is the arc's
 `from` bus and `OPPOSITE_WINDING` when it is the `to` bus (see
-[Transformer Regulated Bus Sides](@ref xfmr_regulated_side)). `nothing` without a regulated bus, or
-when a regulated bus off the arc has no stored side.
+[Transformer Regulated Bus Sides](@ref xfmr_regulated_side)). `UNDEFINED` without a regulated
+bus, or when a regulated bus off the arc has no stored side.
 """
 function get_regulated_bus_side(circuit::TransformerCircuit)
     side = _get_regulated_bus_side(circuit)
-    isnothing(side) || return side
+    side == TransformerRegulatedBusSide.UNDEFINED || return side
     bus = get_regulated_bus(circuit)
-    isnothing(bus) && return nothing
+    isnothing(bus) && return TransformerRegulatedBusSide.UNDEFINED
     arc = get_arc(circuit)
     bus === get_from(arc) && return TransformerRegulatedBusSide.CONTROLLING_WINDING
     bus === get_to(arc) && return TransformerRegulatedBusSide.OPPOSITE_WINDING
-    return nothing
+    return TransformerRegulatedBusSide.UNDEFINED
 end
 
 # ── membership ────────────────────────────────────────────────────────────────────
@@ -394,12 +394,12 @@ function _attach_to_group!(
     component::Component,
     group::VoltageControlGroup,
     weight::Float64,
-    terminal::Union{Nothing, VoltageControlTerminal.Value},
+    terminal::VoltageControlTerminal.Value,
 )
     id = IS.get_id(component)
     IS.add_supplemental_attribute!(sys.data, component, group)
     group.weights[id] = weight
-    isnothing(terminal) || (group.terminals[id] = terminal)
+    terminal == VoltageControlTerminal.UNDEFINED || (group.terminals[id] = terminal)
     return
 end
 
@@ -418,7 +418,7 @@ function add_supplemental_attribute!(
 )
     _check_weight(group, component, weight)
     _check_single_group(component, group)
-    _attach_to_group!(sys, component, group, weight, nothing)
+    _attach_to_group!(sys, component, group, weight, VoltageControlTerminal.UNDEFINED)
     return
 end
 
@@ -437,7 +437,7 @@ function add_supplemental_attribute!(
 )
     _check_weight(group, component, weight)
     _check_single_group(component, group)
-    _attach_to_group!(sys, component, group, weight, nothing)
+    _attach_to_group!(sys, component, group, weight, VoltageControlTerminal.UNDEFINED)
     return
 end
 
@@ -467,10 +467,10 @@ function add_supplemental_attribute!(
     sys::System,
     line::TwoTerminalVSCLine,
     group::ReactivePowerSharing;
-    terminal::Union{Nothing, VoltageControlTerminal.Value} = nothing,
+    terminal::VoltageControlTerminal.Value = VoltageControlTerminal.UNDEFINED,
     weight::Float64 = 1.0,
 )
-    isnothing(terminal) && throw(
+    terminal == VoltageControlTerminal.UNDEFINED && throw(
         ArgumentError(
             "$(summary(line)) joins $(nameof(typeof(group))) $(get_name(group)) through " *
             "one converter; pass terminal = VoltageControlTerminal.FROM or .TO",
@@ -620,19 +620,19 @@ function _validate_circuit_control(circuit::TransformerCircuit, owner::AbstractS
     if !isnothing(bus)
         arc = get_arc(circuit)
         on_arc = bus === get_from(arc) || bus === get_to(arc)
-        if on_arc && !isnothing(side)
+        if on_arc && side != TransformerRegulatedBusSide.UNDEFINED
             @error "$owner circuit regulates its own bus $(get_name(bus)); " *
-                   "regulated_bus_side follows from the arc and must be `nothing`" _group =
+                   "regulated_bus_side follows from the arc and must be `UNDEFINED`" _group =
                 IS.LOG_GROUP_SYSTEM_CHECKS
             return false
         end
-        if !on_arc && isnothing(side)
+        if !on_arc && side == TransformerRegulatedBusSide.UNDEFINED
             @error "$owner circuit regulates bus $(get_name(bus)), which is neither end " *
                    "of its arc; regulated_bus_side must say which winding it lies beyond" _group =
                 IS.LOG_GROUP_SYSTEM_CHECKS
             return false
         end
-    elseif !isnothing(side)
+    elseif side != TransformerRegulatedBusSide.UNDEFINED
         @error "$owner circuit has regulated_bus_side $side but no regulated_bus" _group =
             IS.LOG_GROUP_SYSTEM_CHECKS
         return false

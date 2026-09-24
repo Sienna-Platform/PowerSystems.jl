@@ -592,9 +592,8 @@ function to_openapi(circuit::TransformerCircuit, refs::OpenAPIRefs, ::ComponentB
             )),
         ),
         regulated_bus_id = _component_id_optional(refs, get_regulated_bus(circuit)),
-        regulated_bus_side = _optional_enum_po(
-            PO.TransformerRegulatedBusSide,
-            _get_regulated_bus_side(circuit),
+        regulated_bus_side = PO.TransformerRegulatedBusSide(
+            string(_get_regulated_bus_side(circuit)),
         ),
         load_drop_compensation_r = get_load_drop_compensation_r(circuit, CU),
         load_drop_compensation_x = get_load_drop_compensation_x(circuit, CU),
@@ -630,9 +629,8 @@ function to_openapi(circuit::TransformerCircuit, refs::OpenAPIRefs, ::NaturalUni
             )),
         ),
         regulated_bus_id = _component_id_optional(refs, get_regulated_bus(circuit)),
-        regulated_bus_side = _optional_enum_po(
-            PO.TransformerRegulatedBusSide,
-            _get_regulated_bus_side(circuit),
+        regulated_bus_side = PO.TransformerRegulatedBusSide(
+            string(_get_regulated_bus_side(circuit)),
         ),
         load_drop_compensation_r = get_load_drop_compensation_r(circuit, CU),
         load_drop_compensation_x = get_load_drop_compensation_x(circuit, CU),
