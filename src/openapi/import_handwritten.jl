@@ -1250,6 +1250,16 @@ _check_lcc_dc_voltage_units(po) = _check_unit_basis(
 MVA)."""
 _lcc_ohm_to_pu(ohms, base_voltage, base_power) = ohms / (base_voltage^2 / base_power)
 
+"""
+The kV the DC circuit's ohms per-unitize on: the scheduled DC voltage, or the rectifier's AC
+base voltage when the line is scheduled at 0 kV (out of service), the same fallback the PSS/E
+reader applies so a zero schedule never divides by zero.
+"""
+function _lcc_dc_base_voltage(po)
+    iszero(po.scheduled_dc_voltage) && return po.rectifier_base_voltage
+    return po.scheduled_dc_voltage
+end
+
 """`transfer_setpoint` follows `power_mode`: MW (`ActivePower`, divides like every sibling
 power field) when `true`, Amperes (`CurrentFlow`, no power-base conversion exists) when
 `false`."""
@@ -1266,7 +1276,7 @@ function from_openapi(po::PO.TwoTerminalLCCLine, refs::OpenAPIRefs, ::ComponentB
         available = po.available,
         arc = refs[po.arc],
         active_power_flow = po.active_power_flow,
-        r = _lcc_ohm_to_pu(po.r, po.scheduled_dc_voltage, base_power),
+        r = _lcc_ohm_to_pu(po.r, _lcc_dc_base_voltage(po), base_power),
         transfer_setpoint = po.transfer_setpoint,
         scheduled_dc_voltage = po.scheduled_dc_voltage,
         rectifier_bridges = po.rectifier_bridges,
@@ -1290,7 +1300,8 @@ function from_openapi(po::PO.TwoTerminalLCCLine, refs::OpenAPIRefs, ::ComponentB
         power_mode = _or_default(po.power_mode, true),
         switch_mode_voltage = _or_default(po.switch_mode_voltage, 0.0),
         compounding_resistance = _lcc_ohm_to_pu(
-            _or_default(po.compounding_resistance, 0.0), po.scheduled_dc_voltage, base_power,
+            _or_default(po.compounding_resistance, 0.0), _lcc_dc_base_voltage(po),
+            base_power,
         ),
         min_compounding_voltage = _or_default(po.min_compounding_voltage, 0.0),
         rectifier_transformer_ratio = _or_default(po.rectifier_transformer_ratio, 1.0),
@@ -1347,7 +1358,7 @@ function from_openapi(po::PO.TwoTerminalLCCLine, refs::OpenAPIRefs, ::NaturalUni
         available = po.available,
         arc = refs[po.arc],
         active_power_flow = po.active_power_flow / base_power,
-        r = _lcc_ohm_to_pu(po.r, po.scheduled_dc_voltage, base_power),
+        r = _lcc_ohm_to_pu(po.r, _lcc_dc_base_voltage(po), base_power),
         transfer_setpoint = _lcc_transfer_setpoint(
             po.transfer_setpoint, Val(_or_default(po.power_mode, true)), base_power,
         ),
@@ -1373,7 +1384,8 @@ function from_openapi(po::PO.TwoTerminalLCCLine, refs::OpenAPIRefs, ::NaturalUni
         power_mode = _or_default(po.power_mode, true),
         switch_mode_voltage = _or_default(po.switch_mode_voltage, 0.0),
         compounding_resistance = _lcc_ohm_to_pu(
-            _or_default(po.compounding_resistance, 0.0), po.scheduled_dc_voltage, base_power,
+            _or_default(po.compounding_resistance, 0.0), _lcc_dc_base_voltage(po),
+            base_power,
         ),
         min_compounding_voltage = _or_default(po.min_compounding_voltage, 0.0),
         rectifier_transformer_ratio = _or_default(po.rectifier_transformer_ratio, 1.0),

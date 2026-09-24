@@ -1331,6 +1331,33 @@ end
         base_power = 100.0,
         power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
     )
+    # The DC-circuit ohms per-unitize on the scheduled DC voltage; an out-of-service line
+    # scheduled at 0 kV falls back to the rectifier's AC base rather than dividing by zero,
+    # the same fallback the PSS/E reader applies.
+    lcc = PSY.from_openapi(lcc_po, refs, CU)
+    @test get_r(lcc) ≈ 0.01 / (200.0^2 / 100.0)
+    lcc_po_unscheduled = PSY.PO.TwoTerminalLCCLine(;
+        id = 20, name = "lcc1", available = false, arc = 10,
+        active_power_flow = 0.0, r = 0.01, transfer_setpoint = 0.0, power_mode = true,
+        scheduled_dc_voltage = 0.0,
+        rectifier_bridges = 2, rectifier_rc = 0.001, rectifier_xc = 0.01,
+        rectifier_base_voltage = 138.0, rectifier_capacitor_reactance = 0.0,
+        rectifier_delay_angle_limits = PSY.IC.MinMax(; min = 0.0, max = 1.0),
+        inverter_bridges = 2, inverter_rc = 0.001, inverter_xc = 0.01,
+        inverter_base_voltage = 138.0, inverter_capacitor_reactance = 0.0,
+        inverter_extinction_angle_limits = PSY.IC.MinMax(; min = 0.0, max = 1.0),
+        compounding_resistance = 0.5,
+        parameter_units = PSY.PO.ImpedanceUnitBasis("NATURAL_UNITS"),
+        dc_voltage_units = PSY.PO.VoltageUnitBasis("NATURAL_UNITS"),
+        loss = _loss_curve_po(0.01, 0.0),
+        base_power = 100.0,
+        power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
+    )
+    for val in (CU, NU)
+        unscheduled = PSY.from_openapi(lcc_po_unscheduled, refs, val)
+        @test get_r(unscheduled) ≈ 0.01 / (138.0^2 / 100.0)
+        @test get_compounding_resistance(unscheduled) ≈ 0.5 / (138.0^2 / 100.0)
+    end
     for val in (CU, NU)
         lcc = PSY.from_openapi(lcc_po, refs, val)
         @test get_rectifier_tap_limits(lcc) == (min = 0.51, max = 1.5)
