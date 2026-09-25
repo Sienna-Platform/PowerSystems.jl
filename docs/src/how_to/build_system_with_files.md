@@ -168,7 +168,7 @@ for row in eachrow(branch_params)
             rating = row[max_flow] * u"MVA",
             angle_limits = (min = 0.0, max = 0.0),
             base_power = system_base_power,
-            input_basis = CU,
+            input_basis = u"CU",
         )
     else
         branch = TwoWindingTransformer(;
@@ -182,10 +182,10 @@ for row in eachrow(branch_params)
                 x = row[reactance],
                 rating = row[max_flow] * u"MVA",
                 base_power = system_base_power,
-                input_basis = CU,
+                input_basis = u"CU",
             ),
             magnetizing_shunt = 0.0,
-            input_basis = CU,
+            input_basis = u"CU",
         )
     end
     add_component!(sys, branch)
@@ -194,7 +194,7 @@ end
 
 !!! note
 
-    `r` and `x` are bare numbers read as per-unit (`input_basis = CU`), while the tagged
+    `r` and `x` are bare numbers read as per-unit (`input_basis = u"CU"`), while the tagged
     `rating` is converted from MVA. A `Line` has no rating of its own, so its `base_power`
     must match the `System`'s ([see Per-unit Conventions](@ref per_unit)): `add_component!`
     throws otherwise.
@@ -274,7 +274,7 @@ for row in eachrow(thermal_gens)
         time_limits = (up = row[min_up], down = row[min_down]),
         prime_mover_type = row[prime_move],
         fuel = row[fuel],
-        input_basis = CU,
+        input_basis = u"CU",
     )
     add_component!(sys, thermal)
 end
@@ -457,7 +457,7 @@ for row in eachrow(solar_gens)
         power_factor = 1.0,
         operation_cost = RenewableGenerationCost(zero(CostCurve)),
         base_power = base,
-        input_basis = CU,
+        input_basis = u"CU",
     )
     add_component!(sys, solar)
     add_time_series!(sys, solar, solar_TS)
@@ -567,7 +567,7 @@ for row in eachrow(hydro_gens)
         time_limits = (up = row[min_up], down = row[min_down]),
         base_power = base,
         operation_cost = HydroGenerationCost(zero(LinearCurve), 0.0),
-        input_basis = CU,
+        input_basis = u"CU",
     )
     add_component!(sys, hydro)
     add_time_series!(sys, hydro, hydro_TS)
@@ -650,7 +650,7 @@ for row in eachrow(load_params)
         base_power = system_base_power,
         max_active_power = (max) * (row[factor]) / system_base_power,
         max_reactive_power = 0.0,
-        input_basis = CU,
+        input_basis = u"CU",
     )
     add_component!(sys, load)
 end

@@ -53,7 +53,7 @@ A [`TwoWindingTransformer`](@ref) has one circuit; a [`ThreeWindingTransformer`]
 - `base_voltage_primary::Union{Nothing, Float64}`: (default: `nothing`) Primary (from) terminal-side base voltage in kV; the reference voltage for this circuit's per-unit impedance, validation range: `(0, nothing)`
 - `base_voltage_secondary::Union{Nothing, Float64}`: (default: `nothing`) Secondary (to) terminal-side base voltage in kV. For a three-winding transformer this defaults to the primary base voltage at parse time, validation range: `(0, nothing)`
 - `base_value::Union{Nothing, Float64}`: (**Do not modify.**) System base power (MVA) anchor for explicit-units conversion; populated when the owning transformer is attached to a System
-- `input_basis`: (keyword constructor only, required) `CU` or `NU`, the units of bare numbers on unit-bearing fields. Tagged values (`50.0u"MW"`) keep their own units
+- `input_basis`: (keyword constructor only, required) `u"CU"` or `u"NU"`, the units of bare numbers on unit-bearing fields. Tagged values (`50.0u"MW"`) keep their own units
 """
 mutable struct TransformerCircuit <: DeviceParameter
     "Indicator of whether this circuit is connected and online. Circuit availability is the single source of truth; the owning transformer derives its availability from its circuits"
@@ -102,7 +102,7 @@ function TransformerCircuit(available, arc, tap=1.0, α=0.0, r=0.0, x=0.0, contr
     TransformerCircuit(available, arc, tap, α, r, x, control_objective, regulated_bus_number, control_limits, controlled_quantity_limits, number_of_tap_positions, rating, rating_b, rating_c, active_power_flow, reactive_power_flow, base_power, base_voltage_primary, base_voltage_secondary, nothing, )
 end
 
-function TransformerCircuit(; available, arc, tap=1.0, α=0.0, r=0.0, x=0.0, control_objective=TransformerControlObjective.UNDEFINED, regulated_bus_number=0, control_limits=(min=0.9, max=1.1), controlled_quantity_limits=(min=0.9, max=1.1), number_of_tap_positions=33, rating=nothing, rating_b=nothing, rating_c=nothing, active_power_flow=0.0, reactive_power_flow=0.0, base_power=100.0, base_voltage_primary=nothing, base_voltage_secondary=nothing, base_value=nothing, input_basis::Union{ComponentBaseUnit, NaturalUnit}, )
+function TransformerCircuit(; available, arc, tap=1.0, α=0.0, r=0.0, x=0.0, control_objective=TransformerControlObjective.UNDEFINED, regulated_bus_number=0, control_limits=(min=0.9, max=1.1), controlled_quantity_limits=(min=0.9, max=1.1), number_of_tap_positions=33, rating=nothing, rating_b=nothing, rating_c=nothing, active_power_flow=0.0, reactive_power_flow=0.0, base_power=100.0, base_voltage_primary=nothing, base_voltage_secondary=nothing, base_value=nothing, input_basis::Unitful.Units, )
     value = TransformerCircuit(available, arc, tap, α, _placeholder(r), _placeholder(x), control_objective, regulated_bus_number, control_limits, controlled_quantity_limits, number_of_tap_positions, _placeholder(rating), _placeholder(rating_b), _placeholder(rating_c), _placeholder(active_power_flow), _placeholder(reactive_power_flow), base_power, base_voltage_primary, base_voltage_secondary, base_value, )
     set_r!(value, _tag(r, input_basis, Val(:ohm)))
     set_x!(value, _tag(x, input_basis, Val(:ohm)))
@@ -137,7 +137,7 @@ function TransformerCircuit(::Nothing)
         base_power=100.0,
         base_voltage_primary=nothing,
         base_voltage_secondary=nothing,
-        input_basis=CU,
+        input_basis=u"CU",
     )
 end
 
@@ -149,22 +149,22 @@ get_arc(value::TransformerCircuit) = value.arc
 get_tap(value::TransformerCircuit) = value.tap
 """Get [`TransformerCircuit`](@ref) `α`."""
 get_α(value::TransformerCircuit) = value.α
-"""Get [`TransformerCircuit`](@ref) `r` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_r_unitful`](@ref)."""
+"""Get [`TransformerCircuit`](@ref) `r` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_r_unitful`](@ref)."""
 get_r(value::TransformerCircuit, units) = InfrastructureSystems._strip_units(get_value(value, Val(:r), Val(:ohm), units))
-"""Get [`TransformerCircuit`](@ref) `r` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_r`](@ref)."""
+"""Get [`TransformerCircuit`](@ref) `r` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_r`](@ref)."""
 get_r_unitful(value::TransformerCircuit, units) = get_value(value, Val(:r), Val(:ohm), units)
 get_r(value::TransformerCircuit) = _units_arg_required(get_r, value, :r, Val(:ohm))
 get_r_unitful(value::TransformerCircuit) = _units_arg_required(get_r_unitful, value, :r, Val(:ohm))
-InfrastructureSystems.display_units_arg(::typeof(get_r), ::Type{TransformerCircuit}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_r_unitful), ::Type{TransformerCircuit}) = InfrastructureSystems.SU
-"""Get [`TransformerCircuit`](@ref) `x` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_x_unitful`](@ref)."""
+InfrastructureSystems.display_units_arg(::typeof(get_r), ::Type{TransformerCircuit}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_r_unitful), ::Type{TransformerCircuit}) = u"SU"
+"""Get [`TransformerCircuit`](@ref) `x` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_x_unitful`](@ref)."""
 get_x(value::TransformerCircuit, units) = InfrastructureSystems._strip_units(get_value(value, Val(:x), Val(:ohm), units))
-"""Get [`TransformerCircuit`](@ref) `x` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_x`](@ref)."""
+"""Get [`TransformerCircuit`](@ref) `x` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_x`](@ref)."""
 get_x_unitful(value::TransformerCircuit, units) = get_value(value, Val(:x), Val(:ohm), units)
 get_x(value::TransformerCircuit) = _units_arg_required(get_x, value, :x, Val(:ohm))
 get_x_unitful(value::TransformerCircuit) = _units_arg_required(get_x_unitful, value, :x, Val(:ohm))
-InfrastructureSystems.display_units_arg(::typeof(get_x), ::Type{TransformerCircuit}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_x_unitful), ::Type{TransformerCircuit}) = InfrastructureSystems.SU
+InfrastructureSystems.display_units_arg(::typeof(get_x), ::Type{TransformerCircuit}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_x_unitful), ::Type{TransformerCircuit}) = u"SU"
 """Get [`TransformerCircuit`](@ref) `control_objective`."""
 get_control_objective(value::TransformerCircuit) = value.control_objective
 """Get [`TransformerCircuit`](@ref) `regulated_bus_number`."""
@@ -175,46 +175,46 @@ get_control_limits(value::TransformerCircuit) = value.control_limits
 get_controlled_quantity_limits(value::TransformerCircuit) = value.controlled_quantity_limits
 """Get [`TransformerCircuit`](@ref) `number_of_tap_positions`."""
 get_number_of_tap_positions(value::TransformerCircuit) = value.number_of_tap_positions
-"""Get [`TransformerCircuit`](@ref) `rating` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_rating_unitful`](@ref)."""
+"""Get [`TransformerCircuit`](@ref) `rating` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_rating_unitful`](@ref)."""
 get_rating(value::TransformerCircuit, units) = InfrastructureSystems._strip_units(get_value(value, Val(:rating), Val(:mva), units))
-"""Get [`TransformerCircuit`](@ref) `rating` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_rating`](@ref)."""
+"""Get [`TransformerCircuit`](@ref) `rating` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_rating`](@ref)."""
 get_rating_unitful(value::TransformerCircuit, units) = get_value(value, Val(:rating), Val(:mva), units)
 get_rating(value::TransformerCircuit) = _units_arg_required(get_rating, value, :rating, Val(:mva))
 get_rating_unitful(value::TransformerCircuit) = _units_arg_required(get_rating_unitful, value, :rating, Val(:mva))
-InfrastructureSystems.display_units_arg(::typeof(get_rating), ::Type{TransformerCircuit}) = InfrastructureSystems.CU
-InfrastructureSystems.display_units_arg(::typeof(get_rating_unitful), ::Type{TransformerCircuit}) = InfrastructureSystems.CU
-"""Get [`TransformerCircuit`](@ref) `rating_b` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_rating_b_unitful`](@ref)."""
+InfrastructureSystems.display_units_arg(::typeof(get_rating), ::Type{TransformerCircuit}) = u"CU"
+InfrastructureSystems.display_units_arg(::typeof(get_rating_unitful), ::Type{TransformerCircuit}) = u"CU"
+"""Get [`TransformerCircuit`](@ref) `rating_b` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_rating_b_unitful`](@ref)."""
 get_rating_b(value::TransformerCircuit, units) = InfrastructureSystems._strip_units(get_value(value, Val(:rating_b), Val(:mva), units))
-"""Get [`TransformerCircuit`](@ref) `rating_b` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_rating_b`](@ref)."""
+"""Get [`TransformerCircuit`](@ref) `rating_b` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_rating_b`](@ref)."""
 get_rating_b_unitful(value::TransformerCircuit, units) = get_value(value, Val(:rating_b), Val(:mva), units)
 get_rating_b(value::TransformerCircuit) = _units_arg_required(get_rating_b, value, :rating_b, Val(:mva))
 get_rating_b_unitful(value::TransformerCircuit) = _units_arg_required(get_rating_b_unitful, value, :rating_b, Val(:mva))
-InfrastructureSystems.display_units_arg(::typeof(get_rating_b), ::Type{TransformerCircuit}) = InfrastructureSystems.CU
-InfrastructureSystems.display_units_arg(::typeof(get_rating_b_unitful), ::Type{TransformerCircuit}) = InfrastructureSystems.CU
-"""Get [`TransformerCircuit`](@ref) `rating_c` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_rating_c_unitful`](@ref)."""
+InfrastructureSystems.display_units_arg(::typeof(get_rating_b), ::Type{TransformerCircuit}) = u"CU"
+InfrastructureSystems.display_units_arg(::typeof(get_rating_b_unitful), ::Type{TransformerCircuit}) = u"CU"
+"""Get [`TransformerCircuit`](@ref) `rating_c` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_rating_c_unitful`](@ref)."""
 get_rating_c(value::TransformerCircuit, units) = InfrastructureSystems._strip_units(get_value(value, Val(:rating_c), Val(:mva), units))
-"""Get [`TransformerCircuit`](@ref) `rating_c` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_rating_c`](@ref)."""
+"""Get [`TransformerCircuit`](@ref) `rating_c` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_rating_c`](@ref)."""
 get_rating_c_unitful(value::TransformerCircuit, units) = get_value(value, Val(:rating_c), Val(:mva), units)
 get_rating_c(value::TransformerCircuit) = _units_arg_required(get_rating_c, value, :rating_c, Val(:mva))
 get_rating_c_unitful(value::TransformerCircuit) = _units_arg_required(get_rating_c_unitful, value, :rating_c, Val(:mva))
-InfrastructureSystems.display_units_arg(::typeof(get_rating_c), ::Type{TransformerCircuit}) = InfrastructureSystems.CU
-InfrastructureSystems.display_units_arg(::typeof(get_rating_c_unitful), ::Type{TransformerCircuit}) = InfrastructureSystems.CU
-"""Get [`TransformerCircuit`](@ref) `active_power_flow` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_active_power_flow_unitful`](@ref)."""
+InfrastructureSystems.display_units_arg(::typeof(get_rating_c), ::Type{TransformerCircuit}) = u"CU"
+InfrastructureSystems.display_units_arg(::typeof(get_rating_c_unitful), ::Type{TransformerCircuit}) = u"CU"
+"""Get [`TransformerCircuit`](@ref) `active_power_flow` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_active_power_flow_unitful`](@ref)."""
 get_active_power_flow(value::TransformerCircuit, units) = InfrastructureSystems._strip_units(get_value(value, Val(:active_power_flow), Val(:mw), units))
-"""Get [`TransformerCircuit`](@ref) `active_power_flow` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_active_power_flow`](@ref)."""
+"""Get [`TransformerCircuit`](@ref) `active_power_flow` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_active_power_flow`](@ref)."""
 get_active_power_flow_unitful(value::TransformerCircuit, units) = get_value(value, Val(:active_power_flow), Val(:mw), units)
 get_active_power_flow(value::TransformerCircuit) = _units_arg_required(get_active_power_flow, value, :active_power_flow, Val(:mw))
 get_active_power_flow_unitful(value::TransformerCircuit) = _units_arg_required(get_active_power_flow_unitful, value, :active_power_flow, Val(:mw))
-InfrastructureSystems.display_units_arg(::typeof(get_active_power_flow), ::Type{TransformerCircuit}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_active_power_flow_unitful), ::Type{TransformerCircuit}) = InfrastructureSystems.SU
-"""Get [`TransformerCircuit`](@ref) `reactive_power_flow` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_reactive_power_flow_unitful`](@ref)."""
+InfrastructureSystems.display_units_arg(::typeof(get_active_power_flow), ::Type{TransformerCircuit}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_active_power_flow_unitful), ::Type{TransformerCircuit}) = u"SU"
+"""Get [`TransformerCircuit`](@ref) `reactive_power_flow` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_reactive_power_flow_unitful`](@ref)."""
 get_reactive_power_flow(value::TransformerCircuit, units) = InfrastructureSystems._strip_units(get_value(value, Val(:reactive_power_flow), Val(:mvar), units))
-"""Get [`TransformerCircuit`](@ref) `reactive_power_flow` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_reactive_power_flow`](@ref)."""
+"""Get [`TransformerCircuit`](@ref) `reactive_power_flow` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_reactive_power_flow`](@ref)."""
 get_reactive_power_flow_unitful(value::TransformerCircuit, units) = get_value(value, Val(:reactive_power_flow), Val(:mvar), units)
 get_reactive_power_flow(value::TransformerCircuit) = _units_arg_required(get_reactive_power_flow, value, :reactive_power_flow, Val(:mvar))
 get_reactive_power_flow_unitful(value::TransformerCircuit) = _units_arg_required(get_reactive_power_flow_unitful, value, :reactive_power_flow, Val(:mvar))
-InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_flow), ::Type{TransformerCircuit}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_flow_unitful), ::Type{TransformerCircuit}) = InfrastructureSystems.SU
+InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_flow), ::Type{TransformerCircuit}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_flow_unitful), ::Type{TransformerCircuit}) = u"SU"
 """Get [`TransformerCircuit`](@ref) `base_power`."""
 get_base_power(value::TransformerCircuit) = value.base_power
 """Get [`TransformerCircuit`](@ref) `base_voltage_primary`."""

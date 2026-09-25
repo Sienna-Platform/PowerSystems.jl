@@ -14,7 +14,7 @@
         renewable_unit = RenewableDispatch(nothing),
         base_power = 100.0,
         operation_cost = MarketBidCost(nothing),
-        input_basis = CU,
+        input_basis = u"CU",
     )
     add_component!(test_sys, h_sys)
 
@@ -127,7 +127,7 @@ end
         renewable_unit = renewable_unit,
         base_power = 100.0,
         operation_cost = MarketBidCost(nothing),
-        input_basis = CU,
+        input_basis = u"CU",
     )
     add_component!(sys, h_sys)
 
@@ -182,7 +182,7 @@ end
         renewable_unit = nothing,
         base_power = 100.0,
         operation_cost = MarketBidCost(nothing),
-        input_basis = CU,
+        input_basis = u"CU",
     )
     add_component!(sys, h_sys)
     @test get_fuel_cost(h_sys) == expected_fuel_cost
@@ -204,7 +204,7 @@ end
         renewable_unit = nothing,
         base_power = 100.0,
         operation_cost = MarketBidCost(nothing),
-        input_basis = CU,
+        input_basis = u"CU",
     )
     add_component!(sys, h_sys)
     @test_throws ArgumentError get_fuel_cost(h_sys)

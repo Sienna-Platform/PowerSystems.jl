@@ -678,9 +678,13 @@ export UnitSystem # internal.jl
 # Natural units are Unitful's `u"..."` string macro (`u"MW"`, `u"kV"`, `u"Ω"`,
 # `u"S"`, and PSY's own `u"MVA"`/`u"MVAr"`); re-exporting `@u_str` means `using
 # PowerSystems` is enough to write them without also importing Unitful.
-export @u_str
+# `PerUnit` carries the generic `u"CU"`/`u"SU"`/`u"NU"`: Unitful's `u"..."` only finds
+# unit modules bound by name in the caller, so re-exporting it is what makes them work
+# after `using PowerSystems`.
+export @u_str, PerUnit
+# Unit-system markers: cost curves' `U` parameter and the OpenAPI export mode.
 export CU, SU, NU, ComponentBaseUnit, SystemBaseUnit, NaturalUnit
-export AbstractRelativeUnit, RelativeQuantity
+export AbstractRelativeUnit
 export UnitCategory, AbstractPowerCategory,
     ActivePowerCategory, ReactivePowerCategory, ApparentPowerCategory,
     ImpedanceCategory, AdmittanceCategory,
@@ -749,10 +753,9 @@ const PC = PowerCoreOpenAPIModels
 const PO = PowerOperationsOpenAPIModels
 const PTS = InfrastructureTimeSeriesOpenAPIModels
 const PD = PowerOpenAPIModels
-using Unitful: @u_str, @unit, Quantity, Units, uconvert, ustrip
+using Unitful: @u_str, @unit, @dimension, @refunit, Quantity, Units, uconvert, ustrip
 
-# Relative-unit primitives live in IS; PSY re-exports them for downstream
-# packages so that `PSY.CU`, `PSY.RelativeQuantity`, etc. keep working.
+# Unit-system markers live in IS; PSY re-exports them for downstream packages.
 # `get_value`/`set_value` are IS's units-interface generics: PSY EXTENDS them
 # (adds the power-domain methods) rather than defining its own functions.
 import InfrastructureSystems:
@@ -760,7 +763,7 @@ import InfrastructureSystems:
     ComponentBaseUnit,
     SystemBaseUnit,
     NaturalUnit,
-    RelativeQuantity,
+    PerUnit,
     CU,
     SU,
     NU,
@@ -1132,7 +1135,9 @@ include("utils/enums_conversion.jl")
 include("models/serialization.jl")
 
 function __init__()
+    merge!(Unitful.promotion, _LOCAL_UNIT_PROMOTION)
     Unitful.register(PowerSystems)
+    return
 end
 
 end # module

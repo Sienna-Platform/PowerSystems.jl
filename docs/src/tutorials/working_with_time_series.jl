@@ -49,7 +49,7 @@ wind1 = RenewableDispatch(;
     power_factor = 1.0,
     operation_cost = RenewableGenerationCost(nothing),
     base_power = 10.0, # MVA,
-    input_basis = CU,
+    input_basis = u"CU",
 );
 load1 = PowerLoad(;
     name = "load1",
@@ -60,7 +60,7 @@ load1 = PowerLoad(;
     base_power = 10.0, # MVA
     max_active_power = 1.0, # 10 MW per-unitized by component base_power
     max_reactive_power = 0.0,
-    input_basis = CU,
+    input_basis = u"CU",
 );
 load2 = PowerLoad(;
     name = "load2",
@@ -71,12 +71,12 @@ load2 = PowerLoad(;
     base_power = 30.0, # MVA
     max_active_power = 1.0, # 30 MW per-unitized by component base_power
     max_reactive_power = 0.0,
-    input_basis = CU,
+    input_basis = u"CU",
 );
 add_components!(system, [bus1, wind1, load1, load2])
 
 # Recall that accessors take an explicit `units` argument, so we can inspect any value in the
-# units we want (e.g. `get_max_active_power(load2, NU)` for MW) without changing global state.
+# units we want (e.g. `get_max_active_power(load2, u"NU")` for MW) without changing global state.
 
 # Before we get started, print `wind1` to see its data:
 
@@ -182,7 +182,7 @@ for load in (load1, load2)
         load,
         SingleTimeSeries(;
             name = "max_active_power",
-            data = load_timearray .* get_max_active_power(load, SU),
+            data = load_timearray .* get_max_active_power(load, u"SU"),
         ),
     )
 end
@@ -218,7 +218,7 @@ get_time_series_array(SingleTimeSeries, load1, "max_active_power") # in MW
 # See that the normalized values have been scaled up by 10 MW.
 # Now let's look at `load2`. First check its `max_active_power` parameter in natural units (MW):
 
-get_max_active_power(load2, NU)
+get_max_active_power(load2, u"NU")
 
 # This has a higher peak maximum demand of 30 MW.
 # Next, retrieve its `max_active_power` time series:
@@ -377,7 +377,7 @@ end
 # Finally, use [`get_max_active_power`](@ref get_max_active_power(d::RenewableGen)) to
 # check the expected maximum (in natural units, MW):
 
-get_max_active_power(wind1, NU)
+get_max_active_power(wind1, u"NU")
 
 # See that the forecasts are not exceeding this maximum -- sanity check complete.
 # !!! tip

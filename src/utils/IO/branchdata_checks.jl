@@ -316,7 +316,7 @@ end
 function check_transformer_reactance(
     xfrm::TwoWindingTransformer,
 )
-    x_pu = get_x(get_circuit(xfrm), CU)
+    x_pu = get_x(get_circuit(xfrm), u"CU")
     if x_pu < TYPICAL_XFRM_REACTANCE.min
         @warn "Transformer $(get_name(xfrm)) per-unit reactance $(x_pu) is lower than the typical range $(TYPICAL_XFRM_REACTANCE). \
             Check if the reactance source data is correct." _group = IS.LOG_GROUP_PARSING maxlog =

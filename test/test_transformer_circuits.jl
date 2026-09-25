@@ -14,7 +14,7 @@ function _test_circuit(; base_power = 20.0, system_base = 100.0)
         reactive_power_flow = 0.05,
         base_power = base_power,
         base_voltage_primary = 138.0,
-        input_basis = CU,
+        input_basis = u"CU",
     )
     IS.set_base_value!(c, system_base)
     return c
@@ -35,40 +35,40 @@ end
 
 @testset "TransformerCircuit explicit-units getters use the circuit base" begin
     c = _test_circuit()
-    @test get_rating(c, CU) ≈ 0.5
-    @test get_rating(c, SU) ≈ 0.5 * 20.0 / 100.0
-    @test get_rating(c, NU) ≈ 10.0
-    @test get_active_power_flow(c, NU) ≈ 0.1 * 20.0
-    @test isnothing(get_rating_b(c, SU))
+    @test get_rating(c, u"CU") ≈ 0.5
+    @test get_rating(c, u"SU") ≈ 0.5 * 20.0 / 100.0
+    @test get_rating(c, u"NU") ≈ 10.0
+    @test get_active_power_flow(c, u"NU") ≈ 0.1 * 20.0
+    @test isnothing(get_rating_b(c, u"SU"))
 
     # Impedance (r/x): pu on circuit base_power referenced to base_voltage_primary.
     # Z_su = Z_du * (system_base / base_power); Z_nu = Z_du * (V² / base_power).
-    @test get_r(c, CU) ≈ 0.02
-    @test get_r(c, SU) ≈ 0.02 * (100.0 / 20.0)
-    @test get_r(c, NU) ≈ 0.02 * (138.0^2 / 20.0)
-    @test get_x(c, SU) ≈ 0.1 * (100.0 / 20.0)
+    @test get_r(c, u"CU") ≈ 0.02
+    @test get_r(c, u"SU") ≈ 0.02 * (100.0 / 20.0)
+    @test get_r(c, u"NU") ≈ 0.02 * (138.0^2 / 20.0)
+    @test get_x(c, u"SU") ≈ 0.1 * (100.0 / 20.0)
 end
 
 @testset "TransformerCircuit tagged setters round-trip" begin
     c = _test_circuit()
-    set_rating!(c, 0.2 * SU)              # 0.2 SU = 20 MVA = 1.0 CU
-    @test get_rating(c, CU) ≈ 1.0
-    set_active_power_flow!(c, 5.0 * CU)
-    @test get_active_power_flow(c, CU) ≈ 5.0
+    set_rating!(c, 0.2 * u"SU")              # 0.2 SU = 20 MVA = 1.0 CU
+    @test get_rating(c, u"CU") ≈ 1.0
+    set_active_power_flow!(c, 5.0 * u"CU")
+    @test get_active_power_flow(c, u"CU") ≈ 5.0
     @test_throws ArgumentError set_rating!(c, 0.9)   # bare floats rejected
 
     # Ω input divides by the circuit impedance base V²/base_power.
     z_base = 138.0^2 / 20.0
     set_x!(c, 0.3 * z_base * u"Ω")
-    @test get_x(c, CU) ≈ 0.3
+    @test get_x(c, u"CU") ≈ 0.3
     @test get_x(c, u"Ω") ≈ 0.3 * z_base
 end
 
 @testset "TransformerCircuit detached errors cleanly on SU" begin
     c = _test_circuit()
     IS.set_base_value!(c, nothing)
-    @test get_rating(c, CU) ≈ 0.5          # CU needs no system base
-    @test_throws ErrorException get_rating(c, SU)
+    @test get_rating(c, u"CU") ≈ 0.5          # CU needs no system base
+    @test_throws ErrorException get_rating(c, u"SU")
 end
 
 @testset "predicates" begin
@@ -127,25 +127,25 @@ end
 
 @testset "pairwise impedance converts against pair base" begin
     t = _test_t3w()
-    set_r_12!(t, 0.02 * CU)
-    @test get_r_12(t, CU) ≈ 0.02
+    set_r_12!(t, 0.02 * u"CU")
+    @test get_r_12(t, u"CU") ≈ 0.02
     # Independent derivation (not the engine under test): Zpu_su = Zpu_du * (Zbase_du / Zbase_su).
     # Zbase_du = V^2 / base_power_12 = V^2 / 15; Zbase_su = V^2 / system_base = V^2 / 100.
     # The base voltage V cancels in the ratio, leaving Zpu_su = Zpu_du * (system_base / base_power_12)
     # = 0.02 * (100.0 / 15.0).
-    @test get_r_12(t, SU) ≈ 0.02 * (100.0 / 15.0)   # Zpu_su = Zpu_du * sb/db for impedance
+    @test get_r_12(t, u"SU") ≈ 0.02 * (100.0 / 15.0)   # Zpu_su = Zpu_du * sb/db for impedance
 
     # Same derivation on the other two pairs, each against ITS OWN pair base —
     # catches a wrong-pair-base selection (e.g. r_23 accidentally using base_power_12).
-    set_r_23!(t, 0.03 * CU)
-    @test get_r_23(t, CU) ≈ 0.03
-    @test get_r_23(t, SU) ≈ 0.03 * (100.0 / 20.0)   # base_power_23 = 20
+    set_r_23!(t, 0.03 * u"CU")
+    @test get_r_23(t, u"CU") ≈ 0.03
+    @test get_r_23(t, u"SU") ≈ 0.03 * (100.0 / 20.0)   # base_power_23 = 20
 
-    set_r_31!(t, 0.04 * CU)
-    @test get_r_31(t, CU) ≈ 0.04
-    @test get_r_31(t, SU) ≈ 0.04 * (100.0 / 25.0)   # base_power_31 = 25
+    set_r_31!(t, 0.04 * u"CU")
+    @test get_r_31(t, u"CU") ≈ 0.04
+    @test get_r_31(t, u"SU") ≈ 0.04 * (100.0 / 25.0)   # base_power_31 = 25
     # r_31 is referenced to the TERTIARY circuit voltage (69 kV): NU uses that base.
-    @test get_r_31(t, NU) ≈ 0.04 * (69.0^2 / 25.0)
+    @test get_r_31(t, u"NU") ≈ 0.04 * (69.0^2 / 25.0)
 end
 
 @testset "units settings propagate to circuits" begin
@@ -175,13 +175,13 @@ end
         arc = Arc(ACBus(nothing), ACBus(nothing)),
         rating = 0.5,
         base_power = 100.0,
-        input_basis = CU,
+        input_basis = u"CU",
     )
     @test isnothing(IS.get_base_value(fresh_2w))
     set_circuit!(t2, fresh_2w)
     @test get_circuit(t2) === fresh_2w
     @test IS.get_base_value(get_circuit(t2)) === IS.get_base_value(t2)
-    @test get_rating(get_circuit(t2), SU) ≈ 0.5   # base_power == system_base here
+    @test get_rating(get_circuit(t2), u"SU") ≈ 0.5   # base_power == system_base here
 
     t3 = _test_t3w()
     fresh_3w = TransformerCircuit(;
@@ -189,24 +189,24 @@ end
         arc = Arc(ACBus(nothing), ACBus(nothing)),
         rating = 0.5,
         base_power = 15.0,
-        input_basis = CU,
+        input_basis = u"CU",
     )
     @test isnothing(IS.get_base_value(fresh_3w))
     set_primary_circuit!(t3, fresh_3w)
     @test get_primary_circuit(t3) === fresh_3w
     @test IS.get_base_value(get_primary_circuit(t3)) === IS.get_base_value(t3)
-    @test get_rating(get_primary_circuit(t3), SU) ≈ 0.5 * 15.0 / 100.0
+    @test get_rating(get_primary_circuit(t3), u"SU") ≈ 0.5 * 15.0 / 100.0
 end
 
 @testset "2W r/x forward to the circuit" begin
     t = _test_t2w()
     c = get_circuit(t)
     set_base_power!(c, 100.0)
-    set_x!(t, 0.1 * CU)
-    @test get_x(t, CU) ≈ 0.1
-    @test get_x(t, CU) == get_x(c, CU)
-    set_r!(t, 0.02 * CU)
-    @test get_r(c, CU) ≈ 0.02
+    set_x!(t, 0.1 * u"CU")
+    @test get_x(t, u"CU") ≈ 0.1
+    @test get_x(t, u"CU") == get_x(c, u"CU")
+    set_r!(t, 0.02 * u"CU")
+    @test get_r(c, u"CU") ≈ 0.02
 end
 
 @testset "2W parent magnetizing_shunt units round-trip" begin
@@ -215,28 +215,28 @@ end
     # base_power, base voltage = the circuit's base_voltage_primary.
     t = _test_t2w()                       # system_base = 100.0, circuit V = 138.0
     set_base_power!(get_circuit(t), 20.0)
-    set_magnetizing_shunt!(t, (0.05 + 0.0im) * CU)
+    set_magnetizing_shunt!(t, (0.05 + 0.0im) * u"CU")
     # Admittance: Y_su = Y_du * (base_power / system_base); Y_nu = Y_du * (base_power / V²).
-    @test get_magnetizing_shunt(t, CU) ≈ 0.05
-    @test get_magnetizing_shunt(t, SU) ≈ 0.05 * (20.0 / 100.0)
-    @test get_magnetizing_shunt(t, NU) ≈ 0.05 * (20.0 / 138.0^2)
+    @test get_magnetizing_shunt(t, u"CU") ≈ 0.05
+    @test get_magnetizing_shunt(t, u"SU") ≈ 0.05 * (20.0 / 100.0)
+    @test get_magnetizing_shunt(t, u"NU") ≈ 0.05 * (20.0 / 138.0^2)
     # S input divides by the admittance base base_power/V².
     y_base = 20.0 / 138.0^2
     set_magnetizing_shunt!(t, (4.0 * y_base) * u"S")
-    @test get_magnetizing_shunt(t, CU) ≈ 4.0
+    @test get_magnetizing_shunt(t, u"CU") ≈ 4.0
 end
 
 @testset "3W parent magnetizing_shunt uses base_power_12 and the primary base voltage" begin
     # The 3W magnetizing shunt is pu on base_power_12 (= 15) referenced to the
     # primary circuit's base voltage (= 230 kV) — the restored PairBase mapping.
     t = _test_t3w()                       # system_base = 100.0
-    set_magnetizing_shunt!(t, (0.05 + 0.0im) * CU)
-    @test get_magnetizing_shunt(t, CU) ≈ 0.05
-    @test get_magnetizing_shunt(t, SU) ≈ 0.05 * (15.0 / 100.0)
-    @test get_magnetizing_shunt(t, NU) ≈ 0.05 * (15.0 / 230.0^2)
+    set_magnetizing_shunt!(t, (0.05 + 0.0im) * u"CU")
+    @test get_magnetizing_shunt(t, u"CU") ≈ 0.05
+    @test get_magnetizing_shunt(t, u"SU") ≈ 0.05 * (15.0 / 100.0)
+    @test get_magnetizing_shunt(t, u"NU") ≈ 0.05 * (15.0 / 230.0^2)
     y_base = 15.0 / 230.0^2
     set_magnetizing_shunt!(t, (3.0 * y_base) * u"S")
-    @test get_magnetizing_shunt(t, CU) ≈ 3.0
+    @test get_magnetizing_shunt(t, u"CU") ≈ 3.0
 end
 
 @testset "shunt location enums construct and serialize" begin
@@ -273,8 +273,8 @@ end
     t.name = "t2w1"
     c = get_circuit(t)
     set_arc!(c, Arc(b1, b2))
-    set_rating!(c, 1.0 * CU)
-    set_x!(t, 0.1 * CU)
+    set_rating!(c, 1.0 * u"CU")
+    set_x!(t, 0.1 * u"CU")
     add_component!(sys, t)   # runchecks defaults to true; validation must pass
     @test get_component(TwoWindingTransformer, sys, "t2w1") !== nothing
     @test PSY.get_from_bus(t) === b1
@@ -316,9 +316,9 @@ end
     set_controlled_quantity_limits!(c, (min = 0.95, max = 1.05))
     set_number_of_tap_positions!(c, 33)
     set_available!(c, true)
-    set_rating!(c, 1.0 * CU)   # check_rating_values requires a non-nothing `rating`
+    set_rating!(c, 1.0 * u"CU")   # check_rating_values requires a non-nothing `rating`
     # magnetizing_shunt and shunt_location are now transformer-level fields
-    set_magnetizing_shunt!(t2w, (0.02 + 0.0im) * CU)
+    set_magnetizing_shunt!(t2w, (0.02 + 0.0im) * u"CU")
     set_shunt_location!(t2w, TwoWindingTransformerShuntLocation.SPLIT)
     add_component!(sys, t2w)
 
@@ -333,16 +333,16 @@ end
     set_arc!(get_tertiary_circuit(t3w), a3)
     foreach(c -> set_available!(c, true), get_circuits(t3w))
     set_star_bus!(t3w, star)
-    set_r_12!(t3w, 0.01 * CU)
-    set_r_31!(t3w, 0.02 * CU)
-    set_x_12!(t3w, 0.1 * CU)
-    set_r_23!(t3w, 0.015 * CU)
-    set_x_23!(t3w, 0.15 * CU)
-    set_x_31!(t3w, 0.2 * CU)
+    set_r_12!(t3w, 0.01 * u"CU")
+    set_r_31!(t3w, 0.02 * u"CU")
+    set_x_12!(t3w, 0.1 * u"CU")
+    set_r_23!(t3w, 0.015 * u"CU")
+    set_x_23!(t3w, 0.15 * u"CU")
+    set_x_31!(t3w, 0.2 * u"CU")
     set_base_power_12!(t3w, 100.0)
     set_base_power_23!(t3w, 100.0)
     set_base_power_31!(t3w, 100.0)
-    set_magnetizing_shunt!(t3w, (0.03 + 0.0im) * CU)
+    set_magnetizing_shunt!(t3w, (0.03 + 0.0im) * u"CU")
     set_shunt_location!(t3w, ThreeWindingTransformerShuntLocation.STAR)
     add_component!(sys, t3w)
 
@@ -363,7 +363,7 @@ end
     @test get_number_of_tap_positions(c2) == 33
     # parent-level shunt fields round-trip
     @test get_shunt_location(t2w2) == TwoWindingTransformerShuntLocation.SPLIT
-    @test get_magnetizing_shunt(t2w2, CU) ≈ 0.02
+    @test get_magnetizing_shunt(t2w2, u"CU") ≈ 0.02
     # arc resolved to the live Arc component in sys2 (id ref, not an inline copy)
     @test IS.get_id(get_arc(c2)) == IS.get_id(
         first(
@@ -373,10 +373,10 @@ end
     )
     @test IS.get_base_value(c2) == 100.0   # repopulated on add during load
     t3w2 = get_component(ThreeWindingTransformer, sys2, "t3w")
-    @test get_r_12(t3w2, CU) ≈ 0.01
-    @test get_r_31(t3w2, CU) ≈ 0.02
+    @test get_r_12(t3w2, u"CU") ≈ 0.01
+    @test get_r_31(t3w2, u"CU") ≈ 0.02
     @test get_shunt_location(t3w2) == ThreeWindingTransformerShuntLocation.STAR
-    @test get_magnetizing_shunt(t3w2, CU) ≈ 0.03
+    @test get_magnetizing_shunt(t3w2, u"CU") ≈ 0.03
     # 3W refs also resolve to live components in sys2 (id refs, not inline copies)
     @test IS.get_id(get_star_bus(t3w2)) ==
           IS.get_id(get_component(ACBus, sys2, "star"))

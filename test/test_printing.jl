@@ -7,9 +7,9 @@ The magnitudes a field's displayed value must contribute to the custom output.
 Asserting on magnitudes keeps the check on the values rather than on one spelling of the units,
 and covers `MinMax`-typed fields, whose value is a NamedTuple of them.
 """
-_display_magnitudes(x::RelativeQuantity) = [string(ustrip(x))]
 _display_magnitudes(x::NamedTuple) =
     collect(Iterators.flatten(_display_magnitudes(v) for v in values(x)))
+_display_magnitudes(x::Unitful.Quantity) = [string(Unitful.ustrip(x))]
 _display_magnitudes(x) = [string(x)]
 
 function are_type_and_fields_in_output(obj::T) where {T <: Component}
@@ -150,7 +150,7 @@ end
         ramp_limits = nothing,
         operation_cost = ThermalGenerationCost(nothing),
         base_power = 250.0,
-        input_basis = CU,
+        input_basis = u"CU",
     )
     io = IOBuffer()
     @test_logs (:warn, r"not attached to a System") show(io, "text/plain", detached)
@@ -172,23 +172,23 @@ end
         ramp_limits = nothing,
         operation_cost = ThermalGenerationCost(nothing),
         base_power = 250.0,
-        input_basis = CU,
+        input_basis = u"CU",
     )
 
     # Getters: SU errors, CU/NU work.
-    @test_throws Exception get_active_power(detached, SU)
-    @test get_active_power(detached, CU) ≈ 0.5
-    @test get_active_power(detached, NU) ≈ 125.0
-    @test_throws Exception get_active_power_unitful(detached, SU)
-    @test get_active_power_unitful(detached, CU) isa RelativeQuantity
-    @test get_active_power_unitful(detached, NU) isa Unitful.Quantity
+    @test_throws Exception get_active_power(detached, u"SU")
+    @test get_active_power(detached, u"CU") ≈ 0.5
+    @test get_active_power(detached, u"NU") ≈ 125.0
+    @test_throws Exception get_active_power_unitful(detached, u"SU")
+    @test get_active_power_unitful(detached, u"CU") isa Unitful.Quantity
+    @test get_active_power_unitful(detached, u"NU") isa Unitful.Quantity
 
     # Setters: SU errors, CU/NU work.
-    @test_throws Exception set_active_power!(detached, 1.0 * SU)
-    set_active_power!(detached, 0.4 * CU)
-    @test get_active_power(detached, CU) ≈ 0.4
+    @test_throws Exception set_active_power!(detached, 1.0 * u"SU")
+    set_active_power!(detached, 0.4 * u"CU")
+    @test get_active_power(detached, u"CU") ≈ 0.4
     set_active_power!(detached, 100.0 * u"MW")
-    @test get_active_power(detached, NU) ≈ 100.0
+    @test get_active_power(detached, u"NU") ≈ 100.0
 end
 
 @testset "Test printing of non-PowerSystems struct" begin
@@ -214,9 +214,9 @@ end
 end
 
 @testset "display_units_arg resolves for parametric struct types" begin
-    @test IS.display_units_arg(get_requirement, OnlineReserve{ReserveUp}) === IS.SU
-    @test IS.display_units_arg(get_requirement_unitful, OnlineReserve{ReserveUp}) ===
-          IS.SU
+    @test IS.display_units_arg(get_requirement, OnlineReserve{ReserveUp}) == u"SU"
+    @test IS.display_units_arg(get_requirement_unitful, OnlineReserve{ReserveUp}) ==
+          u"SU"
 end
 
 @testset "rating fields default to component-base display, unlike other converted fields" begin
@@ -239,10 +239,10 @@ end
         (TransformerCircuit, get_rating_c),
     ]
     for (T, getter) in rating_getters
-        @test IS.display_units_arg(getter, T) === IS.CU
+        @test IS.display_units_arg(getter, T) == u"CU"
         unitful_getter =
             getproperty(PowerSystems, Symbol(string(nameof(getter)), "_unitful"))
-        @test IS.display_units_arg(unitful_getter, T) === IS.CU
+        @test IS.display_units_arg(unitful_getter, T) == u"CU"
     end
 
     non_rating_getters = [
@@ -251,7 +251,7 @@ end
         (Line, get_r),
     ]
     for (T, getter) in non_rating_getters
-        @test IS.display_units_arg(getter, T) === IS.SU
+        @test IS.display_units_arg(getter, T) == u"SU"
     end
 end
 
@@ -267,13 +267,13 @@ end
 
     # rating: always CU, regardless of System attachment.
     rating_val = PowerSystems._show_accessor_value(get_rating, gen)
-    @test rating_val isa RelativeQuantity
-    @test rating_val == 1.0 * CU
+    @test rating_val isa Unitful.Quantity
+    @test rating_val == 1.0 * PSY.CUp
 
     # active_power: attached defaults to SU.
     active_power_val = PowerSystems._show_accessor_value(get_active_power, gen)
-    @test active_power_val isa RelativeQuantity
-    @test active_power_val == 1.25 * SU
+    @test active_power_val isa Unitful.Quantity
+    @test active_power_val == 1.25 * PSY.SUp
 
     # An explicit `units` override takes precedence over the trait default.
     forced_val = PowerSystems._show_accessor_value(get_active_power, gen; units = u"MW")
@@ -314,7 +314,7 @@ end
         ramp_limits = nothing,
         operation_cost = ThermalGenerationCost(nothing),
         base_power = 250.0,
-        input_basis = CU,
+        input_basis = u"CU",
     )
     detached_out = sprint(show_component, detached)
     @test occursin("active_power: 125.0 MW", detached_out) # SU fails, falls back to NU
@@ -325,7 +325,7 @@ end
 
     # An explicit override that fails (SU on an unattached component) errors
     # rather than silently falling back to NU/CU.
-    @test_throws Exception show_component(devnull, detached; units = SU)
+    @test_throws Exception show_component(devnull, detached; units = u"SU")
 end
 
 @testset "show_components preserves caller column order and honors units kwarg" begin
@@ -353,7 +353,7 @@ end
         io3,
         sys,
         ThermalStandard,
-        Dict("doubled" => x -> 2 * get_rating(x, CU)),
+        Dict("doubled" => x -> 2 * get_rating(x, u"CU")),
     )
     text3 = String(take!(io3))
     @test occursin("2.0", text3)
@@ -368,11 +368,11 @@ end
         sys,
         ThermalStandard,
         [:active_power, :rating];
-        units = Dict(:active_power => u"MW", :rating => CU),
+        units = Dict(:active_power => u"MW", :rating => u"CU"),
     )
     text = String(take!(io))
     @test occursin("125.0 MW", text)
-    @test occursin("1.0 CU", text)
+    @test occursin("1.0 CUp", text)
 
     # A column absent from the mapping keeps its own `display_units_arg` default
     # (SU for active_power) rather than inheriting a neighbour's unit.
@@ -380,15 +380,15 @@ end
     show_components(io2, sys, ThermalStandard, [:active_power, :rating];
         units = Dict(:rating => u"MW"))
     text2 = String(take!(io2))
-    @test occursin("1.25 SU", text2)
+    @test occursin("1.25 SUp", text2)
     @test occursin("250.0 MW", text2)
 
     # NamedTuple mappings work the same way.
     io3 = IOBuffer()
     show_components(io3, sys, ThermalStandard, [:active_power, :rating];
-        units = (active_power = CU, rating = u"MW"))
+        units = (active_power = u"CU", rating = u"MW"))
     text3 = String(take!(io3))
-    @test occursin("0.5 CU", text3)
+    @test occursin("0.5 CUp", text3)
     @test occursin("250.0 MW", text3)
 end
 

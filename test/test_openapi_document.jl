@@ -727,9 +727,9 @@ end
         gen2 = get_component(ThermalMultiStart, sys2, "ms1")
         @test !isnothing(gen2)
         @test get_base_power(gen2) == 50.0
-        @test get_active_power_limits(gen2, PSY.CU) == (min = 0.2, max = 1.0)
-        @test get_ramp_limits(gen2, PSY.CU / u"minute") == (up = 0.1, down = 0.1)
-        @test get_power_trajectory(gen2, PSY.CU) == (startup = 0.3, shutdown = 0.25)
+        @test get_active_power_limits(gen2, u"CU") == (min = 0.2, max = 1.0)
+        @test get_ramp_limits(gen2, u"CU/minute") == (up = 0.1, down = 0.1)
+        @test get_power_trajectory(gen2, u"CU") == (startup = 0.3, shutdown = 0.25)
         @test get_time_limits(gen2) == (up = 2.0, down = 1.0)
         @test get_start_time_limits(gen2) == (hot = 2.0, warm = 4.0, cold = 8.0)
         @test get_start_types(gen2) == 3

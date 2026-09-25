@@ -41,7 +41,7 @@ Renewable generators do not have a `max_active_power` parameter, which is instea
 - `dynamic_injector::Union{Nothing, DynamicInjection}`: (default: `nothing`) corresponding dynamic injection device
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
-- `input_basis`: (keyword constructor only, required) `CU` or `NU`, the units of bare numbers on unit-bearing fields. Tagged values (`50.0u"MW"`) keep their own units
+- `input_basis`: (keyword constructor only, required) `u"CU"` or `u"NU"`, the units of bare numbers on unit-bearing fields. Tagged values (`50.0u"MW"`) keep their own units
 """
 mutable struct RenewableNonDispatch <: RenewableGen
     "Name of the component. Components of the same type (e.g., `PowerLoad`) must have unique names, but components of different types (e.g., `PowerLoad` and `ACBus`) can have the same name"
@@ -76,7 +76,7 @@ function RenewableNonDispatch(name, available, bus, active_power, reactive_power
     RenewableNonDispatch(name, available, bus, active_power, reactive_power, rating, prime_mover_type, power_factor, base_power, services, dynamic_injector, ext, InfrastructureSystemsInternal(), )
 end
 
-function RenewableNonDispatch(; name, available, bus, active_power, reactive_power, rating, prime_mover_type, power_factor, base_power, services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Union{ComponentBaseUnit, NaturalUnit}, )
+function RenewableNonDispatch(; name, available, bus, active_power, reactive_power, rating, prime_mover_type, power_factor, base_power, services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Unitful.Units, )
     value = RenewableNonDispatch(name, available, bus, _placeholder(active_power), _placeholder(reactive_power), _placeholder(rating), prime_mover_type, power_factor, base_power, services, dynamic_injector, ext, internal, )
     set_active_power!(value, _tag(active_power, input_basis, Val(:mw)))
     set_reactive_power!(value, _tag(reactive_power, input_basis, Val(:mvar)))
@@ -100,7 +100,7 @@ function RenewableNonDispatch(::Nothing)
         services=Device[],
         dynamic_injector=nothing,
         ext=Dict{String, Any}(),
-        input_basis=CU,
+        input_basis=u"CU",
     )
 end
 
@@ -110,30 +110,30 @@ get_name(value::RenewableNonDispatch) = value.name
 get_available(value::RenewableNonDispatch) = value.available
 """Get [`RenewableNonDispatch`](@ref) `bus`."""
 get_bus(value::RenewableNonDispatch) = value.bus
-"""Get [`RenewableNonDispatch`](@ref) `active_power` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_active_power_unitful`](@ref)."""
+"""Get [`RenewableNonDispatch`](@ref) `active_power` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_active_power_unitful`](@ref)."""
 get_active_power(value::RenewableNonDispatch, units) = InfrastructureSystems._strip_units(get_value(value, Val(:active_power), Val(:mw), units))
-"""Get [`RenewableNonDispatch`](@ref) `active_power` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_active_power`](@ref)."""
+"""Get [`RenewableNonDispatch`](@ref) `active_power` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_active_power`](@ref)."""
 get_active_power_unitful(value::RenewableNonDispatch, units) = get_value(value, Val(:active_power), Val(:mw), units)
 get_active_power(value::RenewableNonDispatch) = _units_arg_required(get_active_power, value, :active_power, Val(:mw))
 get_active_power_unitful(value::RenewableNonDispatch) = _units_arg_required(get_active_power_unitful, value, :active_power, Val(:mw))
-InfrastructureSystems.display_units_arg(::typeof(get_active_power), ::Type{RenewableNonDispatch}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_active_power_unitful), ::Type{RenewableNonDispatch}) = InfrastructureSystems.SU
-"""Get [`RenewableNonDispatch`](@ref) `reactive_power` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_reactive_power_unitful`](@ref)."""
+InfrastructureSystems.display_units_arg(::typeof(get_active_power), ::Type{RenewableNonDispatch}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_active_power_unitful), ::Type{RenewableNonDispatch}) = u"SU"
+"""Get [`RenewableNonDispatch`](@ref) `reactive_power` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_reactive_power_unitful`](@ref)."""
 get_reactive_power(value::RenewableNonDispatch, units) = InfrastructureSystems._strip_units(get_value(value, Val(:reactive_power), Val(:mvar), units))
-"""Get [`RenewableNonDispatch`](@ref) `reactive_power` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_reactive_power`](@ref)."""
+"""Get [`RenewableNonDispatch`](@ref) `reactive_power` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_reactive_power`](@ref)."""
 get_reactive_power_unitful(value::RenewableNonDispatch, units) = get_value(value, Val(:reactive_power), Val(:mvar), units)
 get_reactive_power(value::RenewableNonDispatch) = _units_arg_required(get_reactive_power, value, :reactive_power, Val(:mvar))
 get_reactive_power_unitful(value::RenewableNonDispatch) = _units_arg_required(get_reactive_power_unitful, value, :reactive_power, Val(:mvar))
-InfrastructureSystems.display_units_arg(::typeof(get_reactive_power), ::Type{RenewableNonDispatch}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_unitful), ::Type{RenewableNonDispatch}) = InfrastructureSystems.SU
-"""Get [`RenewableNonDispatch`](@ref) `rating` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_rating_unitful`](@ref)."""
+InfrastructureSystems.display_units_arg(::typeof(get_reactive_power), ::Type{RenewableNonDispatch}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_unitful), ::Type{RenewableNonDispatch}) = u"SU"
+"""Get [`RenewableNonDispatch`](@ref) `rating` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_rating_unitful`](@ref)."""
 get_rating(value::RenewableNonDispatch, units) = InfrastructureSystems._strip_units(get_value(value, Val(:rating), Val(:mva), units))
-"""Get [`RenewableNonDispatch`](@ref) `rating` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_rating`](@ref)."""
+"""Get [`RenewableNonDispatch`](@ref) `rating` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_rating`](@ref)."""
 get_rating_unitful(value::RenewableNonDispatch, units) = get_value(value, Val(:rating), Val(:mva), units)
 get_rating(value::RenewableNonDispatch) = _units_arg_required(get_rating, value, :rating, Val(:mva))
 get_rating_unitful(value::RenewableNonDispatch) = _units_arg_required(get_rating_unitful, value, :rating, Val(:mva))
-InfrastructureSystems.display_units_arg(::typeof(get_rating), ::Type{RenewableNonDispatch}) = InfrastructureSystems.CU
-InfrastructureSystems.display_units_arg(::typeof(get_rating_unitful), ::Type{RenewableNonDispatch}) = InfrastructureSystems.CU
+InfrastructureSystems.display_units_arg(::typeof(get_rating), ::Type{RenewableNonDispatch}) = u"CU"
+InfrastructureSystems.display_units_arg(::typeof(get_rating_unitful), ::Type{RenewableNonDispatch}) = u"CU"
 """Get [`RenewableNonDispatch`](@ref) `prime_mover_type`."""
 get_prime_mover_type(value::RenewableNonDispatch) = value.prime_mover_type
 """Get [`RenewableNonDispatch`](@ref) `power_factor`."""
@@ -183,7 +183,7 @@ function from_openapi(po::PO.RenewableNonDispatch, refs::OpenAPIRefs, ::Componen
         prime_mover_type = PrimeMovers.Value(po.prime_mover_type.value),
         power_factor = po.power_factor,
         base_power = po.base_power,
-        input_basis = CU,
+        input_basis = u"CU",
     )
 end
 
@@ -198,7 +198,7 @@ function from_openapi(po::PO.RenewableNonDispatch, refs::OpenAPIRefs, ::NaturalU
         prime_mover_type = PrimeMovers.Value(po.prime_mover_type.value),
         power_factor = po.power_factor,
         base_power = po.base_power,
-        input_basis = CU,
+        input_basis = u"CU",
     )
 end
 
@@ -212,9 +212,9 @@ function to_openapi(value::RenewableNonDispatch, refs::OpenAPIRefs, ::ComponentB
         name = get_name(value),
         available = get_available(value),
         bus = component_id(refs, get_bus(value)),
-        active_power = get_active_power(value, CU),
-        reactive_power = get_reactive_power(value, CU),
-        rating = get_rating(value, CU),
+        active_power = get_active_power(value, u"CU"),
+        reactive_power = get_reactive_power(value, u"CU"),
+        rating = get_rating(value, u"CU"),
         prime_mover_type = PO.PrimeMovers(string(get_prime_mover_type(value))),
         power_factor = get_power_factor(value),
         base_power = _get_base_power(value),
@@ -228,9 +228,9 @@ function to_openapi(value::RenewableNonDispatch, refs::OpenAPIRefs, ::NaturalUni
         name = get_name(value),
         available = get_available(value),
         bus = component_id(refs, get_bus(value)),
-        active_power = get_active_power(value, CU) * _get_base_power(value),
-        reactive_power = get_reactive_power(value, CU) * _get_base_power(value),
-        rating = get_rating(value, CU) * _get_base_power(value),
+        active_power = get_active_power(value, u"CU") * _get_base_power(value),
+        reactive_power = get_reactive_power(value, u"CU") * _get_base_power(value),
+        rating = get_rating(value, u"CU") * _get_base_power(value),
         prime_mover_type = PO.PrimeMovers(string(get_prime_mover_type(value))),
         power_factor = get_power_factor(value),
         base_power = _get_base_power(value),

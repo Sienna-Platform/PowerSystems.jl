@@ -67,7 +67,7 @@ This is suitable for modeling storage charging and discharging with average effi
 - `dynamic_injector::Union{Nothing, DynamicInjection}`: (default: `nothing`) corresponding dynamic injection device
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
-- `input_basis`: (keyword constructor only, required) `CU` or `NU`, the units of bare numbers on unit-bearing fields. Tagged values (`50.0u"MW"`) keep their own units
+- `input_basis`: (keyword constructor only, required) `u"CU"` or `u"NU"`, the units of bare numbers on unit-bearing fields. Tagged values (`50.0u"MW"`) keep their own units
 """
 mutable struct EnergyReservoirStorage <: Storage
     "Name of the component. Components of the same type (e.g., `PowerLoad`) must have unique names, but components of different types (e.g., `PowerLoad` and `ACBus`) can have the same name"
@@ -130,7 +130,7 @@ function EnergyReservoirStorage(name, available, bus, prime_mover_type, storage_
     EnergyReservoirStorage(name, available, bus, prime_mover_type, storage_technology_type, storage_capacity, storage_level_limits, initial_storage_capacity_level, rating, active_power, input_active_power_limits, output_active_power_limits, efficiency, reactive_power, reactive_power_limits, base_power, operation_cost, conversion_factor, storage_target, cycle_limits, ramp_limits, self_discharge, standing_loss, services, dynamic_injector, ext, InfrastructureSystemsInternal(), )
 end
 
-function EnergyReservoirStorage(; name, available, bus, prime_mover_type, storage_technology_type, storage_capacity, storage_level_limits, initial_storage_capacity_level, rating, active_power, input_active_power_limits, output_active_power_limits, efficiency, reactive_power, reactive_power_limits, base_power, operation_cost=StorageCost(nothing), conversion_factor=1.0, storage_target=0.0, cycle_limits=1e4, ramp_limits=nothing, self_discharge=0.0, standing_loss=0.0, services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Union{ComponentBaseUnit, NaturalUnit}, )
+function EnergyReservoirStorage(; name, available, bus, prime_mover_type, storage_technology_type, storage_capacity, storage_level_limits, initial_storage_capacity_level, rating, active_power, input_active_power_limits, output_active_power_limits, efficiency, reactive_power, reactive_power_limits, base_power, operation_cost=StorageCost(nothing), conversion_factor=1.0, storage_target=0.0, cycle_limits=1e4, ramp_limits=nothing, self_discharge=0.0, standing_loss=0.0, services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Unitful.Units, )
     value = EnergyReservoirStorage(name, available, bus, prime_mover_type, storage_technology_type, _placeholder(storage_capacity), storage_level_limits, initial_storage_capacity_level, _placeholder(rating), _placeholder(active_power), _placeholder(input_active_power_limits), _placeholder(output_active_power_limits), efficiency, _placeholder(reactive_power), _placeholder(reactive_power_limits), base_power, operation_cost, conversion_factor, storage_target, cycle_limits, _placeholder(ramp_limits), self_discharge, _placeholder(standing_loss), services, dynamic_injector, ext, internal, )
     set_storage_capacity!(value, _tag(storage_capacity, input_basis, Val(:mw)))
     set_rating!(value, _tag(rating, input_basis, Val(:mva)))
@@ -174,7 +174,7 @@ function EnergyReservoirStorage(::Nothing)
         services=Device[],
         dynamic_injector=nothing,
         ext=Dict{String, Any}(),
-        input_basis=CU,
+        input_basis=u"CU",
     )
 end
 
@@ -188,68 +188,68 @@ get_bus(value::EnergyReservoirStorage) = value.bus
 get_prime_mover_type(value::EnergyReservoirStorage) = value.prime_mover_type
 """Get [`EnergyReservoirStorage`](@ref) `storage_technology_type`."""
 get_storage_technology_type(value::EnergyReservoirStorage) = value.storage_technology_type
-"""Get [`EnergyReservoirStorage`](@ref) `storage_capacity` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_storage_capacity_unitful`](@ref)."""
+"""Get [`EnergyReservoirStorage`](@ref) `storage_capacity` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_storage_capacity_unitful`](@ref)."""
 get_storage_capacity(value::EnergyReservoirStorage, units) = InfrastructureSystems._strip_units(get_value(value, Val(:storage_capacity), Val(:mw), units))
-"""Get [`EnergyReservoirStorage`](@ref) `storage_capacity` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_storage_capacity`](@ref)."""
+"""Get [`EnergyReservoirStorage`](@ref) `storage_capacity` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_storage_capacity`](@ref)."""
 get_storage_capacity_unitful(value::EnergyReservoirStorage, units) = get_value(value, Val(:storage_capacity), Val(:mw), units)
 get_storage_capacity(value::EnergyReservoirStorage) = _units_arg_required(get_storage_capacity, value, :storage_capacity, Val(:mw))
 get_storage_capacity_unitful(value::EnergyReservoirStorage) = _units_arg_required(get_storage_capacity_unitful, value, :storage_capacity, Val(:mw))
-InfrastructureSystems.display_units_arg(::typeof(get_storage_capacity), ::Type{EnergyReservoirStorage}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_storage_capacity_unitful), ::Type{EnergyReservoirStorage}) = InfrastructureSystems.SU
+InfrastructureSystems.display_units_arg(::typeof(get_storage_capacity), ::Type{EnergyReservoirStorage}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_storage_capacity_unitful), ::Type{EnergyReservoirStorage}) = u"SU"
 """Get [`EnergyReservoirStorage`](@ref) `storage_level_limits`."""
 get_storage_level_limits(value::EnergyReservoirStorage) = value.storage_level_limits
 """Get [`EnergyReservoirStorage`](@ref) `initial_storage_capacity_level`."""
 get_initial_storage_capacity_level(value::EnergyReservoirStorage) = value.initial_storage_capacity_level
-"""Get [`EnergyReservoirStorage`](@ref) `rating` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_rating_unitful`](@ref)."""
+"""Get [`EnergyReservoirStorage`](@ref) `rating` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_rating_unitful`](@ref)."""
 get_rating(value::EnergyReservoirStorage, units) = InfrastructureSystems._strip_units(get_value(value, Val(:rating), Val(:mva), units))
-"""Get [`EnergyReservoirStorage`](@ref) `rating` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_rating`](@ref)."""
+"""Get [`EnergyReservoirStorage`](@ref) `rating` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_rating`](@ref)."""
 get_rating_unitful(value::EnergyReservoirStorage, units) = get_value(value, Val(:rating), Val(:mva), units)
 get_rating(value::EnergyReservoirStorage) = _units_arg_required(get_rating, value, :rating, Val(:mva))
 get_rating_unitful(value::EnergyReservoirStorage) = _units_arg_required(get_rating_unitful, value, :rating, Val(:mva))
-InfrastructureSystems.display_units_arg(::typeof(get_rating), ::Type{EnergyReservoirStorage}) = InfrastructureSystems.CU
-InfrastructureSystems.display_units_arg(::typeof(get_rating_unitful), ::Type{EnergyReservoirStorage}) = InfrastructureSystems.CU
-"""Get [`EnergyReservoirStorage`](@ref) `active_power` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_active_power_unitful`](@ref)."""
+InfrastructureSystems.display_units_arg(::typeof(get_rating), ::Type{EnergyReservoirStorage}) = u"CU"
+InfrastructureSystems.display_units_arg(::typeof(get_rating_unitful), ::Type{EnergyReservoirStorage}) = u"CU"
+"""Get [`EnergyReservoirStorage`](@ref) `active_power` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_active_power_unitful`](@ref)."""
 get_active_power(value::EnergyReservoirStorage, units) = InfrastructureSystems._strip_units(get_value(value, Val(:active_power), Val(:mw), units))
-"""Get [`EnergyReservoirStorage`](@ref) `active_power` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_active_power`](@ref)."""
+"""Get [`EnergyReservoirStorage`](@ref) `active_power` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_active_power`](@ref)."""
 get_active_power_unitful(value::EnergyReservoirStorage, units) = get_value(value, Val(:active_power), Val(:mw), units)
 get_active_power(value::EnergyReservoirStorage) = _units_arg_required(get_active_power, value, :active_power, Val(:mw))
 get_active_power_unitful(value::EnergyReservoirStorage) = _units_arg_required(get_active_power_unitful, value, :active_power, Val(:mw))
-InfrastructureSystems.display_units_arg(::typeof(get_active_power), ::Type{EnergyReservoirStorage}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_active_power_unitful), ::Type{EnergyReservoirStorage}) = InfrastructureSystems.SU
-"""Get [`EnergyReservoirStorage`](@ref) `input_active_power_limits` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_input_active_power_limits_unitful`](@ref)."""
+InfrastructureSystems.display_units_arg(::typeof(get_active_power), ::Type{EnergyReservoirStorage}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_active_power_unitful), ::Type{EnergyReservoirStorage}) = u"SU"
+"""Get [`EnergyReservoirStorage`](@ref) `input_active_power_limits` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_input_active_power_limits_unitful`](@ref)."""
 get_input_active_power_limits(value::EnergyReservoirStorage, units) = InfrastructureSystems._strip_units(get_value(value, Val(:input_active_power_limits), Val(:mw), units))
-"""Get [`EnergyReservoirStorage`](@ref) `input_active_power_limits` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_input_active_power_limits`](@ref)."""
+"""Get [`EnergyReservoirStorage`](@ref) `input_active_power_limits` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_input_active_power_limits`](@ref)."""
 get_input_active_power_limits_unitful(value::EnergyReservoirStorage, units) = get_value(value, Val(:input_active_power_limits), Val(:mw), units)
 get_input_active_power_limits(value::EnergyReservoirStorage) = _units_arg_required(get_input_active_power_limits, value, :input_active_power_limits, Val(:mw))
 get_input_active_power_limits_unitful(value::EnergyReservoirStorage) = _units_arg_required(get_input_active_power_limits_unitful, value, :input_active_power_limits, Val(:mw))
-InfrastructureSystems.display_units_arg(::typeof(get_input_active_power_limits), ::Type{EnergyReservoirStorage}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_input_active_power_limits_unitful), ::Type{EnergyReservoirStorage}) = InfrastructureSystems.SU
-"""Get [`EnergyReservoirStorage`](@ref) `output_active_power_limits` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_output_active_power_limits_unitful`](@ref)."""
+InfrastructureSystems.display_units_arg(::typeof(get_input_active_power_limits), ::Type{EnergyReservoirStorage}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_input_active_power_limits_unitful), ::Type{EnergyReservoirStorage}) = u"SU"
+"""Get [`EnergyReservoirStorage`](@ref) `output_active_power_limits` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_output_active_power_limits_unitful`](@ref)."""
 get_output_active_power_limits(value::EnergyReservoirStorage, units) = InfrastructureSystems._strip_units(get_value(value, Val(:output_active_power_limits), Val(:mw), units))
-"""Get [`EnergyReservoirStorage`](@ref) `output_active_power_limits` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_output_active_power_limits`](@ref)."""
+"""Get [`EnergyReservoirStorage`](@ref) `output_active_power_limits` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_output_active_power_limits`](@ref)."""
 get_output_active_power_limits_unitful(value::EnergyReservoirStorage, units) = get_value(value, Val(:output_active_power_limits), Val(:mw), units)
 get_output_active_power_limits(value::EnergyReservoirStorage) = _units_arg_required(get_output_active_power_limits, value, :output_active_power_limits, Val(:mw))
 get_output_active_power_limits_unitful(value::EnergyReservoirStorage) = _units_arg_required(get_output_active_power_limits_unitful, value, :output_active_power_limits, Val(:mw))
-InfrastructureSystems.display_units_arg(::typeof(get_output_active_power_limits), ::Type{EnergyReservoirStorage}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_output_active_power_limits_unitful), ::Type{EnergyReservoirStorage}) = InfrastructureSystems.SU
+InfrastructureSystems.display_units_arg(::typeof(get_output_active_power_limits), ::Type{EnergyReservoirStorage}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_output_active_power_limits_unitful), ::Type{EnergyReservoirStorage}) = u"SU"
 """Get [`EnergyReservoirStorage`](@ref) `efficiency`."""
 get_efficiency(value::EnergyReservoirStorage) = value.efficiency
-"""Get [`EnergyReservoirStorage`](@ref) `reactive_power` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_reactive_power_unitful`](@ref)."""
+"""Get [`EnergyReservoirStorage`](@ref) `reactive_power` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_reactive_power_unitful`](@ref)."""
 get_reactive_power(value::EnergyReservoirStorage, units) = InfrastructureSystems._strip_units(get_value(value, Val(:reactive_power), Val(:mvar), units))
-"""Get [`EnergyReservoirStorage`](@ref) `reactive_power` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_reactive_power`](@ref)."""
+"""Get [`EnergyReservoirStorage`](@ref) `reactive_power` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_reactive_power`](@ref)."""
 get_reactive_power_unitful(value::EnergyReservoirStorage, units) = get_value(value, Val(:reactive_power), Val(:mvar), units)
 get_reactive_power(value::EnergyReservoirStorage) = _units_arg_required(get_reactive_power, value, :reactive_power, Val(:mvar))
 get_reactive_power_unitful(value::EnergyReservoirStorage) = _units_arg_required(get_reactive_power_unitful, value, :reactive_power, Val(:mvar))
-InfrastructureSystems.display_units_arg(::typeof(get_reactive_power), ::Type{EnergyReservoirStorage}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_unitful), ::Type{EnergyReservoirStorage}) = InfrastructureSystems.SU
-"""Get [`EnergyReservoirStorage`](@ref) `reactive_power_limits` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_reactive_power_limits_unitful`](@ref)."""
+InfrastructureSystems.display_units_arg(::typeof(get_reactive_power), ::Type{EnergyReservoirStorage}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_unitful), ::Type{EnergyReservoirStorage}) = u"SU"
+"""Get [`EnergyReservoirStorage`](@ref) `reactive_power_limits` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_reactive_power_limits_unitful`](@ref)."""
 get_reactive_power_limits(value::EnergyReservoirStorage, units) = InfrastructureSystems._strip_units(get_value(value, Val(:reactive_power_limits), Val(:mvar), units))
-"""Get [`EnergyReservoirStorage`](@ref) `reactive_power_limits` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_reactive_power_limits`](@ref)."""
+"""Get [`EnergyReservoirStorage`](@ref) `reactive_power_limits` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_reactive_power_limits`](@ref)."""
 get_reactive_power_limits_unitful(value::EnergyReservoirStorage, units) = get_value(value, Val(:reactive_power_limits), Val(:mvar), units)
 get_reactive_power_limits(value::EnergyReservoirStorage) = _units_arg_required(get_reactive_power_limits, value, :reactive_power_limits, Val(:mvar))
 get_reactive_power_limits_unitful(value::EnergyReservoirStorage) = _units_arg_required(get_reactive_power_limits_unitful, value, :reactive_power_limits, Val(:mvar))
-InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_limits), ::Type{EnergyReservoirStorage}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_limits_unitful), ::Type{EnergyReservoirStorage}) = InfrastructureSystems.SU
+InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_limits), ::Type{EnergyReservoirStorage}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_limits_unitful), ::Type{EnergyReservoirStorage}) = u"SU"
 
 _get_base_power(value::EnergyReservoirStorage) = value.base_power
 """Get [`EnergyReservoirStorage`](@ref) `operation_cost`."""
@@ -260,24 +260,24 @@ get_conversion_factor(value::EnergyReservoirStorage) = value.conversion_factor
 get_storage_target(value::EnergyReservoirStorage) = value.storage_target
 """Get [`EnergyReservoirStorage`](@ref) `cycle_limits`."""
 get_cycle_limits(value::EnergyReservoirStorage) = value.cycle_limits
-"""Get [`EnergyReservoirStorage`](@ref) `ramp_limits` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_ramp_limits_unitful`](@ref)."""
+"""Get [`EnergyReservoirStorage`](@ref) `ramp_limits` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_ramp_limits_unitful`](@ref)."""
 get_ramp_limits(value::EnergyReservoirStorage, units) = InfrastructureSystems._strip_units(get_value(value, Val(:ramp_limits), Val(:mw_per_minute), units))
-"""Get [`EnergyReservoirStorage`](@ref) `ramp_limits` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_ramp_limits`](@ref)."""
+"""Get [`EnergyReservoirStorage`](@ref) `ramp_limits` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_ramp_limits`](@ref)."""
 get_ramp_limits_unitful(value::EnergyReservoirStorage, units) = get_value(value, Val(:ramp_limits), Val(:mw_per_minute), units)
 get_ramp_limits(value::EnergyReservoirStorage) = _units_arg_required(get_ramp_limits, value, :ramp_limits, Val(:mw_per_minute))
 get_ramp_limits_unitful(value::EnergyReservoirStorage) = _units_arg_required(get_ramp_limits_unitful, value, :ramp_limits, Val(:mw_per_minute))
-InfrastructureSystems.display_units_arg(::typeof(get_ramp_limits), ::Type{EnergyReservoirStorage}) = SU / u"minute"
-InfrastructureSystems.display_units_arg(::typeof(get_ramp_limits_unitful), ::Type{EnergyReservoirStorage}) = SU / u"minute"
+InfrastructureSystems.display_units_arg(::typeof(get_ramp_limits), ::Type{EnergyReservoirStorage}) = u"SU/minute"
+InfrastructureSystems.display_units_arg(::typeof(get_ramp_limits_unitful), ::Type{EnergyReservoirStorage}) = u"SU/minute"
 """Get [`EnergyReservoirStorage`](@ref) `self_discharge`."""
 get_self_discharge(value::EnergyReservoirStorage) = value.self_discharge
-"""Get [`EnergyReservoirStorage`](@ref) `standing_loss` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_standing_loss_unitful`](@ref)."""
+"""Get [`EnergyReservoirStorage`](@ref) `standing_loss` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_standing_loss_unitful`](@ref)."""
 get_standing_loss(value::EnergyReservoirStorage, units) = InfrastructureSystems._strip_units(get_value(value, Val(:standing_loss), Val(:mw), units))
-"""Get [`EnergyReservoirStorage`](@ref) `standing_loss` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_standing_loss`](@ref)."""
+"""Get [`EnergyReservoirStorage`](@ref) `standing_loss` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_standing_loss`](@ref)."""
 get_standing_loss_unitful(value::EnergyReservoirStorage, units) = get_value(value, Val(:standing_loss), Val(:mw), units)
 get_standing_loss(value::EnergyReservoirStorage) = _units_arg_required(get_standing_loss, value, :standing_loss, Val(:mw))
 get_standing_loss_unitful(value::EnergyReservoirStorage) = _units_arg_required(get_standing_loss_unitful, value, :standing_loss, Val(:mw))
-InfrastructureSystems.display_units_arg(::typeof(get_standing_loss), ::Type{EnergyReservoirStorage}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_standing_loss_unitful), ::Type{EnergyReservoirStorage}) = InfrastructureSystems.SU
+InfrastructureSystems.display_units_arg(::typeof(get_standing_loss), ::Type{EnergyReservoirStorage}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_standing_loss_unitful), ::Type{EnergyReservoirStorage}) = u"SU"
 """Get [`EnergyReservoirStorage`](@ref) `services`."""
 get_services(value::EnergyReservoirStorage) = value.services
 """Get [`EnergyReservoirStorage`](@ref) `dynamic_injector`."""

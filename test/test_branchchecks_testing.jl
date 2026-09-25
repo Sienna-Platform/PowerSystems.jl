@@ -279,12 +279,12 @@ end
         base_power = 100.0,
         r = 0.01,
         x = 0.1,
-        input_basis = CU,
+        input_basis = u"CU",
     )
     xfrm = TwoWindingTransformer(;
         name = "negxfrm",
         circuit = circuit,
-        input_basis = CU,
+        input_basis = u"CU",
     )
     add_component!(sys, xfrm)
 
@@ -311,8 +311,8 @@ function _circuit_check_xfrm(name, bus_from, bus_to)
     set_name!(xfrm, name)
     w = get_circuit(xfrm)
     set_arc!(w, Arc(; from = bus_from, to = bus_to))
-    set_rating!(w, 1.0 * CU)
-    set_x!(xfrm, 0.1 * CU)
+    set_rating!(w, 1.0 * u"CU")
+    set_x!(xfrm, 0.1 * u"CU")
     return xfrm
 end
 

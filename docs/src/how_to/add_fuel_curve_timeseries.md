@@ -61,7 +61,7 @@ generator = ThermalStandard(;
     time_limits = (up = 2.0, down = 1.0),
     operation_cost = thermal_cost,
     base_power = 100.0,
-    input_basis = CU,
+    input_basis = u"CU",
 )
 
 # Create the system and add components
