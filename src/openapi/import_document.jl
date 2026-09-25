@@ -447,12 +447,17 @@ from_openapi(po::IC.GeographicInfo, ::OpenAPIRefs) = from_openapi(po)
 from_openapi(po::IC.DataSource, ::OpenAPIRefs) = from_openapi(po)
 
 """`table_number`/`transformer_winding`/`transformer_control_mode` carry no unit-bearing
-fields — a row number and two enum discriminators. `impedance_correction_curve` reuses
-`convert_cost`, the same PO->PSY `PiecewiseLinearData` converter cost curves use."""
+fields — a row number and two enum discriminators. The correction curves reuse
+`convert_cost`, the same PO->PSY `PiecewiseLinearData` converter cost curves use; the one
+`transformer_control_mode` does not select is absent on the wire and `nothing` here."""
+_optional_curve(::Union{Nothing, IC.Absent}) = nothing
+_optional_curve(curve) = convert_cost(curve)
+
 from_openapi(po::PO.ImpedanceCorrectionData, ::OpenAPIRefs) =
     ImpedanceCorrectionData(;
         table_number = po.table_number,
-        impedance_correction_curve = convert_cost(po.impedance_correction_curve),
+        tap_ratio_correction_curve = _optional_curve(po.tap_ratio_correction_curve),
+        phase_angle_correction_curve = _optional_curve(po.phase_angle_correction_curve),
         transformer_winding = WindingCategory.Value(po.transformer_winding.value),
         transformer_control_mode = ImpedanceCorrectionTransformerControlMode.Value(
             po.transformer_control_mode.value,

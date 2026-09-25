@@ -339,7 +339,8 @@ export WindingCategory
 export ImpedanceCorrectionTransformerControlMode
 
 export get_table_number
-export get_impedance_correction_curve
+export get_tap_ratio_correction_curve
+export get_phase_angle_correction_curve
 export get_transformer_winding
 export get_transformer_control_mode
 
@@ -406,6 +407,7 @@ export CurveMultiStep
 export FACTSOperationModes
 export VSCDCControlModes
 export VSCACControlModes
+export LCCControlMode
 export FACTSShuntControlType
 export SwitchedAdmittanceControlMode
 export DiscreteControlledBranchStatus

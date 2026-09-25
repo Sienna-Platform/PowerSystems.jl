@@ -52,7 +52,7 @@ function _vsc_po_minimal(; overrides...)
         dc_current = 300.0, reactive_power_from = 10.0,
         dc_control_from = PSY.PO.VSCDCControlModes("DC_POWER"),
         ac_control_from = PSY.PO.VSCACControlModes("AC_REACTIVE_POWER"),
-        dc_setpoint_from = 40.0, ac_setpoint_from = 0.95,
+        dc_power_setpoint_from = 40.0, power_factor_setpoint_from = 0.95,
         converter_loss_from = _loss_curve_po(1.2, 0.5),
         max_dc_current_from = 1000.0, rating_from = 200.0,
         reactive_power_limits_from = PSY.IC.MinMax(; min = -100.0, max = 100.0),
@@ -63,7 +63,7 @@ function _vsc_po_minimal(; overrides...)
         dc_voltage_droop_from = 0.0, reactive_power_to = 20.0,
         dc_control_to = PSY.PO.VSCDCControlModes("DC_POWER"),
         ac_control_to = PSY.PO.VSCACControlModes("AC_REACTIVE_POWER"),
-        dc_setpoint_to = 40.0, ac_setpoint_to = 0.98,
+        dc_power_setpoint_to = 40.0, power_factor_setpoint_to = 0.98,
         converter_loss_to = _loss_curve_po(1.1, 0.4),
         max_dc_current_to = 1000.0, rating_to = 200.0,
         reactive_power_limits_to = PSY.IC.MinMax(; min = -100.0, max = 100.0),
@@ -353,8 +353,6 @@ end
         x = 0.1,
         control_objective = PSY.PO.TransformerControlObjective("UNDEFINED"),
         regulated_bus_number = 0,
-        control_limits = PSY.IC.MinMax(; min = 0.9, max = 1.1),
-        controlled_quantity_limits = PSY.IC.MinMax(; min = 0.9, max = 1.1),
         number_of_tap_positions = 33,
         rating = 100.0, rating_b = nothing, rating_c = nothing,
         active_power_flow = 5.0, reactive_power_flow = 1.0,
@@ -383,8 +381,6 @@ end
         parameter_units = PSY.PO.ImpedanceUnitBasis("NATURAL_UNITS"), r = 0.01, x = 0.1,
         control_objective = PSY.PO.TransformerControlObjective("UNDEFINED"),
         regulated_bus_number = 0,
-        control_limits = PSY.IC.MinMax(; min = 0.9, max = 1.1),
-        controlled_quantity_limits = PSY.IC.MinMax(; min = 0.9, max = 1.1),
         number_of_tap_positions = 33,
         rating = nothing, rating_b = nothing, rating_c = nothing,
         active_power_flow = 0.0, reactive_power_flow = 0.0,
@@ -417,10 +413,10 @@ end
     @test_throws ErrorException PSY.from_openapi(bad_xfmr_po, refs, CU
     )
 
-    # `control_limits`/`controlled_quantity_limits` (`TransformerCircuit`) and
-    # `magnetizing_shunt` (`TwoWindingTransformer`) are `Absent`-by-omission on the wire but
-    # PSY declares real defaults for all three — a document omitting them must still build,
-    # not error on `Absent.min`/`Absent.real`.
+    # The five control bands (`TransformerCircuit`) are `Absent`-by-omission on the wire and
+    # `nothing` in PSY; `magnetizing_shunt` (`TwoWindingTransformer`) is `Absent`-by-omission
+    # with a real PSY default — a document omitting them must still build, not error on
+    # `Absent.min`/`Absent.real`.
     circuit_po_no_limits = PSY.PO.TransformerCircuit(;
         id = 24, available = true, arc = 10, tap = 1.0, alpha = 0.05,
         parameter_units = PSY.PO.ImpedanceUnitBasis("COMPONENT_BASE"), r = 0.01,
@@ -435,9 +431,32 @@ end
     )
     for val in (CU, NU)
         circuit_no_limits = PSY.from_openapi(circuit_po_no_limits, refs, val)
-        @test get_control_limits(circuit_no_limits) == (min = 0.9, max = 1.1)
-        @test get_controlled_quantity_limits(circuit_no_limits) == (min = 0.9, max = 1.1)
+        @test isnothing(get_tap_ratio_limits(circuit_no_limits))
+        @test isnothing(get_phase_angle_limits(circuit_no_limits))
+        @test isnothing(get_controlled_voltage_limits(circuit_no_limits))
+        @test isnothing(get_controlled_reactive_power_flow_limits(circuit_no_limits, CU))
+        @test isnothing(get_controlled_active_power_flow_limits(circuit_no_limits, CU))
     end
+
+    # A controlled circuit carries exactly the two bands its objective selects. The MVAr band
+    # is a power field on the circuit base, so it divides under NaturalUnit only.
+    circuit_po_q = _po_with(
+        circuit_po_no_limits;
+        id = 25,
+        control_objective = PSY.PO.TransformerControlObjective("REACTIVE_POWER_FLOW"),
+        regulated_bus_number = 4,
+        tap_ratio_limits = PSY.IC.MinMax(; min = 0.9, max = 1.1),
+        controlled_reactive_power_flow_limits = PSY.IC.MinMax(; min = -10.0, max = 10.0),
+    )
+    circuit_q_natural = PSY.from_openapi(circuit_po_q, refs, NU)
+    @test get_tap_ratio_limits(circuit_q_natural) == (min = 0.9, max = 1.1)
+    @test get_controlled_reactive_power_flow_limits(circuit_q_natural, CU) ==
+          (min = -0.2, max = 0.2)
+    @test isnothing(get_controlled_voltage_limits(circuit_q_natural))
+    @test isnothing(get_phase_angle_limits(circuit_q_natural))
+    circuit_q_device = PSY.from_openapi(circuit_po_q, refs, CU)
+    @test get_controlled_reactive_power_flow_limits(circuit_q_device, CU) ==
+          (min = -10.0, max = 10.0)
 
     xfmr_po_no_shunt = PSY.PO.TwoWindingTransformer(;
         id = 32, name = "xfmr3", circuit = 20,
@@ -468,8 +487,6 @@ end
         x = 0.01,
         control_objective = PSY.PO.TransformerControlObjective("UNDEFINED"),
         regulated_bus_number = 0,
-        control_limits = PSY.IC.MinMax(; min = 0.9, max = 1.1),
-        controlled_quantity_limits = PSY.IC.MinMax(; min = 0.9, max = 1.1),
         number_of_tap_positions = 33,
         rating = 100.0, rating_b = nothing, rating_c = nothing,
         active_power_flow = 0.0, reactive_power_flow = 0.0,
@@ -1270,9 +1287,8 @@ end
 @testset "OpenAPI converters: SwitchedAdmittance" begin
     refs = _refs_with_area_bus(; base_power = 100.0)
 
-    # `admittance_limits` is `Absent`-by-omission but PSY defaults it to `(min=1.0, max=1.0)`
-    # (a dimensionless multiplier bound, not a raw admittance) — a document omitting it must
-    # still build rather than erroring on `Absent.min`.
+    # `voltage_limits`/`reactive_power_range_limits` are `Absent`-by-omission and `nothing` in PSY
+    # under the default `FIXED` mode — a document omitting them must still build.
     sh_po = PSY.PO.SwitchedAdmittance(;
         id = 20, name = "sw1", available = true, bus = 4,
         admittance_units = PSY.PO.ShuntAdmittanceUnitBasis("COMPONENT_MVAR"),
@@ -1281,7 +1297,30 @@ end
     )
     for val in (CU, NU)
         sh = PSY.from_openapi(sh_po, refs, val)
-        @test get_admittance_limits(sh) == (min = 1.0, max = 1.0)
+        @test get_control_mode(sh) == SwitchedAdmittanceControlMode.FIXED
+        @test isnothing(get_voltage_limits(sh))
+        @test isnothing(get_reactive_power_range_limits(sh))
+    end
+
+    # A voltage mode carries a per-unit band; a reactive mode carries a fraction of the
+    # regulated device's reactive range. Both pass through in either unit system.
+    sh_po_v = _po_with(
+        sh_po; id = 23, name = "sw_v",
+        control_mode = PSY.PO.SwitchedAdmittanceControlMode("DISCRETE_VOLTAGE"),
+        voltage_limits = PSY.IC.MinMax(; min = 0.95, max = 1.05),
+    )
+    sh_v = PSY.from_openapi(sh_po_v, refs, NU)
+    @test get_voltage_limits(sh_v) == (min = 0.95, max = 1.05)
+    @test isnothing(get_reactive_power_range_limits(sh_v))
+    sh_po_q = _po_with(
+        sh_po; id = 24, name = "sw_q",
+        control_mode = PSY.PO.SwitchedAdmittanceControlMode("DISCRETE_REACTIVE_PLANT"),
+        reactive_power_range_limits = PSY.IC.MinMax(; min = 0.2, max = 0.8),
+    )
+    for val in (CU, NU)
+        sh_q = PSY.from_openapi(sh_po_q, refs, val)
+        @test get_reactive_power_range_limits(sh_q) == (min = 0.2, max = 0.8)
+        @test isnothing(get_voltage_limits(sh_q))
     end
 
     # `y_increase` and `solved_admittance` are both `Absent`-by-omission; PSY defaults them to
@@ -1301,7 +1340,7 @@ end
         _po_with(sh_po; id = 22, name = "sw3", admittance_units = PSY.IC.ABSENT)
     for val in (CU, NU)
         sh_no_units = PSY.from_openapi(sh_po_no_units, refs, val)
-        @test get_admittance_limits(sh_no_units) == (min = 1.0, max = 1.0)
+        @test get_Y_increase(sh_no_units) == [Complex(0.0, -0.1)]
     end
 end
 
@@ -1316,7 +1355,8 @@ end
     # must still build rather than erroring on `Absent.min`.
     lcc_po = PSY.PO.TwoTerminalLCCLine(;
         id = 20, name = "lcc1", available = true, arc = 10,
-        active_power_flow = 50.0, r = 0.01, transfer_setpoint = 50.0, power_mode = true,
+        active_power_flow = 50.0, r = 0.01,
+        control_mode = PSY.PO.LCCControlMode("POWER"), power_transfer_setpoint = 50.0,
         scheduled_dc_voltage = 200.0,
         rectifier_bridges = 2, rectifier_rc = 0.001, rectifier_xc = 0.01,
         rectifier_base_voltage = 138.0, rectifier_capacitor_reactance = 0.0,
@@ -1341,15 +1381,23 @@ end
         @test get_reactive_power_limits_to(lcc, CU) == (min = 0.0, max = 0.0)
     end
 
+    # POWER selects `power_transfer_setpoint`, a power field dividing by the base under
+    # NaturalUnit only; `current_transfer_setpoint` stays nothing.
+    lcc_power = PSY.from_openapi(lcc_po, refs, NU)
+    @test get_control_mode(lcc_power) == LCCControlMode.POWER
+    @test get_power_transfer_setpoint(lcc_power, CU) == 0.5
+    @test get_power_transfer_setpoint(lcc_power, NU) ≈ 50.0
+    @test isnothing(get_current_transfer_setpoint(lcc_power))
+    @test get_power_transfer_setpoint(PSY.from_openapi(lcc_po, refs, CU), CU) == 50.0
+
     # `compounding_resistance`/`rectifier_capacitor_reactance`/`inverter_capacitor_reactance`
     # are `Absent`-by-omission but PSY defaults each to `0.0` ohm — a document omitting them
-    # must still build rather than erroring inside `_lcc_ohm_to_pu`. `power_mode` is likewise
-    # `Absent`-by-omission with a PSY default of `true`; the `NaturalUnit` method reads it
-    # through `Val(...)` when picking `transfer_setpoint`'s unit, so an omitted `power_mode`
-    # must still resolve to the `ActivePower` (MW) branch rather than erroring on `Val(Absent)`.
+    # must still build rather than erroring inside `_lcc_ohm_to_pu`. `control_mode` is
+    # likewise `Absent`-by-omission and defaults to `BLOCKED`, under which both setpoints
+    # stay nothing.
     lcc_po_no_optional = PSY.PO.TwoTerminalLCCLine(;
         id = 21, name = "lcc2", available = true, arc = 10,
-        active_power_flow = 50.0, r = 0.01, transfer_setpoint = 50.0,
+        active_power_flow = 50.0, r = 0.01,
         scheduled_dc_voltage = 200.0,
         rectifier_bridges = 2, rectifier_rc = 0.001, rectifier_xc = 0.01,
         rectifier_base_voltage = 138.0,
@@ -1367,26 +1415,30 @@ end
     @test get_compounding_resistance(lcc_device_no_optional) == 0.0
     @test get_rectifier_capacitor_reactance(lcc_device_no_optional) == 0.0
     @test get_inverter_capacitor_reactance(lcc_device_no_optional) == 0.0
-    @test get_power_mode(lcc_device_no_optional)
-    @test get_transfer_setpoint(lcc_device_no_optional) == 50.0
+    @test get_control_mode(lcc_device_no_optional) == LCCControlMode.BLOCKED
+    @test isnothing(get_power_transfer_setpoint(lcc_device_no_optional, CU))
+    @test isnothing(get_current_transfer_setpoint(lcc_device_no_optional))
 
     lcc_natural_no_optional = PSY.from_openapi(lcc_po_no_optional, refs, NU)
     @test get_compounding_resistance(lcc_natural_no_optional) == 0.0
     @test get_rectifier_capacitor_reactance(lcc_natural_no_optional) == 0.0
     @test get_inverter_capacitor_reactance(lcc_natural_no_optional) == 0.0
-    @test get_power_mode(lcc_natural_no_optional)
-    @test get_transfer_setpoint(lcc_natural_no_optional) == 0.5
-    @test get_transfer_setpoint(lcc_natural_no_optional, NU) ≈ 50.0
-    @test get_transfer_setpoint(lcc_natural_no_optional, CU) ≈ 0.5
-    # Current mode stores Amperes, which no power base converts.
+    @test get_control_mode(lcc_natural_no_optional) == LCCControlMode.BLOCKED
+    @test isnothing(get_power_transfer_setpoint(lcc_natural_no_optional, CU))
+    # CURRENT stores amperes, which no power base converts.
     lcc_current = PSY.from_openapi(
-        _po_with(lcc_po_no_optional; id = 23, name = "lcc_current", power_mode = false),
+        _po_with(
+            lcc_po_no_optional;
+            id = 23, name = "lcc_current",
+            control_mode = PSY.PO.LCCControlMode("CURRENT"),
+            current_transfer_setpoint = 1200.0,
+        ),
         refs,
         NU,
     )
-    @test get_transfer_setpoint(lcc_current) == 50.0
-    @test get_transfer_setpoint(lcc_current, NU) == 50.0
-    @test get_transfer_setpoint(lcc_current, SU) == 50.0
+    @test get_control_mode(lcc_current) == LCCControlMode.CURRENT
+    @test get_current_transfer_setpoint(lcc_current) == 1200.0
+    @test isnothing(get_power_transfer_setpoint(lcc_current, CU))
 
     lcc_po_no_units = _po_with(
         lcc_po_no_optional;
@@ -1460,6 +1512,9 @@ end
         active_power_limits = PSY.IC.MinMax(; min = -100.0, max = 100.0),
         base_power = 100.0,
         voltage_setpoint_units = PSY.PO.VoltageUnitBasis("COMPONENT_BASE"),
+        dc_control = PSY.PO.VSCDCControlModes("DC_VOLTAGE"), dc_voltage_setpoint = 1.0,
+        ac_control = PSY.PO.VSCACControlModes("AC_REACTIVE_POWER"),
+        power_factor_setpoint = 1.0,
         power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
     )
     for val in (CU, NU)
@@ -1467,7 +1522,25 @@ end
         @test get_loss_function(ic) == LossCurve(LinearCurve(0.0), NaturalUnit())
         @test isnothing(get_remote_bus_control(ic))
         @test get_voltage_limits(ic) == (min = 0.0, max = 999.9)
+        @test get_dc_voltage_setpoint(ic) == 1.0
+        @test isnothing(get_dc_power_setpoint(ic, CU))
+        @test get_power_factor_setpoint(ic) == 1.0
+        @test isnothing(get_ac_voltage_setpoint(ic))
     end
+
+    # DC_POWER selects `dc_power_setpoint`, a power field dividing by the converter base under
+    # NaturalUnit only; the modes themselves have no default and must be on the wire.
+    ic_po_power = _po_with(
+        ic_po;
+        id = 23, name = "ic_power",
+        dc_control = PSY.PO.VSCDCControlModes("DC_POWER"),
+        dc_power_setpoint = 20.0, dc_voltage_setpoint = PSY.IC.ABSENT,
+    )
+    @test get_dc_power_setpoint(PSY.from_openapi(ic_po_power, refs, NU), CU) == 0.2
+    @test get_dc_power_setpoint(PSY.from_openapi(ic_po_power, refs, CU), CU) == 20.0
+    @test_throws ErrorException PSY.from_openapi(
+        _po_with(ic_po; id = 24, name = "ic_nomode", ac_control = PSY.IC.ABSENT), refs, CU,
+    )
 
     # A quadratic `loss_function` authored on the component base keeps that basis.
     ic_po_cu_loss = PSY.PO.InterconnectingConverter(;
@@ -1476,6 +1549,9 @@ end
         active_power_limits = PSY.IC.MinMax(; min = -100.0, max = 100.0),
         base_power = 100.0,
         voltage_setpoint_units = PSY.PO.VoltageUnitBasis("COMPONENT_BASE"),
+        dc_control = PSY.PO.VSCDCControlModes("DC_VOLTAGE"), dc_voltage_setpoint = 1.0,
+        ac_control = PSY.PO.VSCACControlModes("AC_REACTIVE_POWER"),
+        power_factor_setpoint = 1.0,
         power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
         loss_function = PSY.PC.LossCurve(;
             power_units = PSY.IC.UnitSystem("COMPONENT_BASE"),
@@ -1708,19 +1784,19 @@ end
         dc_current = 300.0, reactive_power_from = 10.0,
         dc_control_from = PSY.PO.VSCDCControlModes("DC_POWER"),
         ac_control_from = PSY.PO.VSCACControlModes("AC_REACTIVE_POWER"),
-        dc_setpoint_from = 40.0, ac_setpoint_from = 0.95,
+        dc_power_setpoint_from = 40.0, power_factor_setpoint_from = 0.95,
         converter_loss_from = _loss_curve_po(1.2, 0.5),
         max_dc_current_from = 1000.0, rating_from = 200.0,
         reactive_power_limits_from = PSY.IC.MinMax(; min = -100.0, max = 100.0),
         power_factor_weighting_fraction_from = 0.5,
         voltage_units = PSY.PO.VoltageUnitBasis("NATURAL_UNITS"),
-        # NATURAL_UNITS: `dc_setpoint_to` below is kV, divided by `rated_dc_voltage`.
+        # NATURAL_UNITS: `dc_voltage_setpoint_to` below is kV, divided by `rated_dc_voltage`.
         setpoint_voltage_units = PSY.PO.VoltageUnitBasis("NATURAL_UNITS"),
         voltage_limits_from = PSY.IC.MinMax(; min = 0.9, max = 1.1),
         dc_voltage_droop_from = 0.0, reactive_power_to = 20.0,
         dc_control_to = PSY.PO.VSCDCControlModes("DC_VOLTAGE"),
         ac_control_to = PSY.PO.VSCACControlModes("AC_REACTIVE_POWER"),
-        dc_setpoint_to = 204.0, ac_setpoint_to = 0.98,
+        dc_voltage_setpoint_to = 204.0, power_factor_setpoint_to = 0.98,
         converter_loss_to = _loss_curve_po(1.1, 0.4),
         max_dc_current_to = 1000.0, rating_to = 200.0,
         reactive_power_limits_to = PSY.IC.MinMax(; min = -100.0, max = 100.0),
@@ -1745,14 +1821,17 @@ end
     @test get_active_power_limits_from(natural, SU) == (min = -2.0, max = 2.0)
     @test get_reactive_power_limits_to(natural, SU) == (min = -1.0, max = 1.0)
     # DC_POWER setpoint is a power field: divides under NaturalUnit only.
-    @test get_dc_setpoint_from(natural) == 0.4
+    @test get_dc_power_setpoint_from(natural, SU) == 0.4
+    @test isnothing(get_dc_voltage_setpoint_from(natural))
     # DC_VOLTAGE setpoint is kV → pu of rated_dc_voltage, in both unit systems.
-    @test get_dc_setpoint_to(natural) == 1.02
+    @test get_dc_voltage_setpoint_to(natural) == 1.02
+    @test isnothing(get_dc_power_setpoint_to(natural, SU))
     # Siemens → pu is governed by admittance_units, not the document unit system.
     @test get_g(natural) == 200.0
     # Amperes, dimensionless, and kV fields have no base to convert against.
     @test get_dc_current(natural) == 300.0
-    @test get_ac_setpoint_from(natural) == 0.95
+    @test get_power_factor_setpoint_from(natural) == 0.95
+    @test isnothing(get_ac_voltage_setpoint_from(natural))
     @test get_voltage_limits_from(natural) == (min = 0.9, max = 1.1)
     @test get_rated_dc_voltage(natural) == 200.0
     @test isnothing(get_remote_bus_control_from(natural))
@@ -1765,8 +1844,8 @@ end
     add_component!(sys, device)
     @test get_active_power_flow(device, SU) == 50.0
     @test get_active_power_limits_from(device, SU) == (min = -200.0, max = 200.0)
-    @test get_dc_setpoint_from(device) == 40.0
-    @test get_dc_setpoint_to(device) == 1.02
+    @test get_dc_power_setpoint_from(device, SU) == 40.0
+    @test get_dc_voltage_setpoint_to(device) == 1.02
     @test get_g(device) == 200.0
 
     # `reactive_power_limits_from`/`_to` and `voltage_limits_from`/`_to` are
@@ -1795,12 +1874,12 @@ end
         @test get_voltage_limits_from(vsc_no_voltage_units) == (min = 0.9, max = 1.1)
     end
 
-    # `dc_setpoint_to` scales by `setpoint_voltage_units`.
+    # `dc_voltage_setpoint_to` scales by `setpoint_voltage_units`.
     vsc_po_no_setpoint_units =
         _po_with(vsc_po; id = 24, name = "vsc5", setpoint_voltage_units = PSY.IC.ABSENT)
     for val in (CU, NU)
         vsc_no_setpoint_units = PSY.from_openapi(vsc_po_no_setpoint_units, refs, val)
-        @test get_dc_setpoint_to(vsc_no_setpoint_units) == 1.02
+        @test get_dc_voltage_setpoint_to(vsc_no_setpoint_units) == 1.02
     end
 
     vsc_po_no_admittance_units =
@@ -1816,23 +1895,24 @@ end
     refs[10] =
         PSY.from_openapi(PSY.PO.Arc(; id = 10, from_id = 3, to_id = 4), refs, NU)
 
-    # `setpoint_voltage_units = COMPONENT_BASE` means `ac_setpoint_from` is already per-unit
+    # `setpoint_voltage_units = COMPONENT_BASE` means `ac_voltage_setpoint_from` is already per-unit
     # of the converter's own AC base voltage — PSY's own convention — so it passes through
     # unscaled with no `rated_ac_voltage_from` needed. This is what
     # PowerFlowFileParser's PSS/E reader writes for every VSC line (`make_vscline!`).
     vsc_po = _vsc_po_minimal(;
         ac_control_from = PSY.PO.VSCACControlModes("AC_VOLTAGE"),
-        ac_setpoint_from = 1.03,
+        ac_voltage_setpoint_from = 1.03, power_factor_setpoint_from = PSY.IC.ABSENT,
         setpoint_voltage_units = PSY.PO.VoltageUnitBasis("COMPONENT_BASE"),
     )
 
     natural = PSY.from_openapi(vsc_po, refs, NU)
-    @test get_ac_setpoint_from(natural) == 1.03
+    @test get_ac_voltage_setpoint_from(natural) == 1.03
+    @test isnothing(get_power_factor_setpoint_from(natural))
     @test get_rated_ac_voltage_from(natural) == 0.0
 
     vsc_po2 = _po_with(vsc_po; id = 22, name = "vsc3")
     device = PSY.from_openapi(vsc_po2, refs, CU)
-    @test get_ac_setpoint_from(device) == 1.03
+    @test get_ac_voltage_setpoint_from(device) == 1.03
 end
 
 @testset "OpenAPI converters: TwoTerminalVSCLine AC_VOLTAGE setpoint under NATURAL_UNITS" begin
@@ -1840,14 +1920,14 @@ end
     refs[10] =
         PSY.from_openapi(PSY.PO.Arc(; id = 10, from_id = 3, to_id = 4), refs, NU)
 
-    # `setpoint_voltage_units = NATURAL_UNITS` (the schema default) means `ac_setpoint_from`
+    # `setpoint_voltage_units = NATURAL_UNITS` (the schema default) means `ac_voltage_setpoint_from`
     # is kV, converted through `rated_ac_voltage_from` — the AC-side counterpart of
     # `rated_dc_voltage`, now a real wire-row field PowerFlowFileParser's `make_vscline!`
-    # writes from the terminal's own RAW bus base voltage — exactly like `dc_setpoint_*`'s
-    # DC-voltage branches convert through `rated_dc_voltage`.
+    # writes from the terminal's own RAW bus base voltage — exactly like
+    # `dc_voltage_setpoint_*` converts through `rated_dc_voltage`.
     vsc_po = _vsc_po_minimal(;
         ac_control_from = PSY.PO.VSCACControlModes("AC_VOLTAGE"),
-        ac_setpoint_from = 234.6,
+        ac_voltage_setpoint_from = 234.6, power_factor_setpoint_from = PSY.IC.ABSENT,
         rated_ac_voltage_from = 230.0,
         setpoint_voltage_units = PSY.PO.VoltageUnitBasis("NATURAL_UNITS"),
     )
@@ -1855,7 +1935,7 @@ end
     for val in (NU, CU)
         vsc = PSY.from_openapi(vsc_po, refs, val)
         @test get_rated_ac_voltage_from(vsc) == 230.0
-        @test get_ac_setpoint_from(vsc) == 234.6 / 230.0
+        @test get_ac_voltage_setpoint_from(vsc) == 234.6 / 230.0
     end
 end
 
@@ -1893,26 +1973,26 @@ end
     natural = _vsc_po_minimal(;
         setpoint_voltage_units = PSY.PO.VoltageUnitBasis("NATURAL_UNITS"),
         dc_control_to = PSY.PO.VSCDCControlModes("DC_VOLTAGE"),
-        dc_setpoint_to = 204.0,
+        dc_voltage_setpoint_to = 204.0, dc_power_setpoint_to = PSY.IC.ABSENT,
         ac_control_from = PSY.PO.VSCACControlModes("AC_VOLTAGE"),
-        ac_setpoint_from = 141.45,
+        ac_voltage_setpoint_from = 141.45, power_factor_setpoint_from = PSY.IC.ABSENT,
         rated_ac_voltage_from = 138.0,
     )
     vsc_natural = PSY.from_openapi(natural, refs, NU)
-    @test get_dc_setpoint_to(vsc_natural) == 204.0 / 200.0
-    @test get_ac_setpoint_from(vsc_natural) == 141.45 / 138.0
+    @test get_dc_voltage_setpoint_to(vsc_natural) == 204.0 / 200.0
+    @test get_ac_voltage_setpoint_from(vsc_natural) == 141.45 / 138.0
 
     # COMPONENT_BASE: already the per-unit PSY stores, so both pass through untouched.
     device = _vsc_po_minimal(;
         setpoint_voltage_units = PSY.PO.VoltageUnitBasis("COMPONENT_BASE"),
         dc_control_to = PSY.PO.VSCDCControlModes("DC_VOLTAGE"),
-        dc_setpoint_to = 1.02,
+        dc_voltage_setpoint_to = 1.02, dc_power_setpoint_to = PSY.IC.ABSENT,
         ac_control_from = PSY.PO.VSCACControlModes("AC_VOLTAGE"),
-        ac_setpoint_from = 1.025,
+        ac_voltage_setpoint_from = 1.025, power_factor_setpoint_from = PSY.IC.ABSENT,
     )
     vsc_device = PSY.from_openapi(device, refs, NU)
-    @test get_dc_setpoint_to(vsc_device) == 1.02
-    @test get_ac_setpoint_from(vsc_device) == 1.025
+    @test get_dc_voltage_setpoint_to(vsc_device) == 1.02
+    @test get_ac_voltage_setpoint_from(vsc_device) == 1.025
 
     # A basis outside the schema's two never reaches PSY, which is why
     # `_check_vsc_setpoint_voltage_units` only ever sees a legal value. Under OpenAPI.jl 1.x
@@ -1933,8 +2013,13 @@ end
     # IS given.
     ac_voltage = _vsc_po_minimal(;
         ac_control_from = PSY.PO.VSCACControlModes("AC_VOLTAGE"),
+        ac_voltage_setpoint_from = 1.03, power_factor_setpoint_from = PSY.IC.ABSENT,
     )
     @test_throws ErrorException PSY.from_openapi(ac_voltage, refs, NU)
+
+    # The control modes have no default: a document omitting one is rejected, not guessed.
+    no_mode = _vsc_po_minimal(; dc_control_from = PSY.IC.ABSENT)
+    @test_throws ErrorException PSY.from_openapi(no_mode, refs, NU)
 
     # Only NATURAL_UNITS is implemented for either unit-basis selector.
     bad_admittance = _vsc_po_minimal(;
