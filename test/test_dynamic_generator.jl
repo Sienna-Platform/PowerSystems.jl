@@ -35,7 +35,7 @@ static_gen = ThermalStandard(;
         2.0,
     ),
     base_power = 1.0,
-    input_basis = CU,
+    input_basis = u"CU",
 )
 
 branch_OMIB = [
@@ -561,7 +561,7 @@ end
             2.0,
         ),
         base_power = 1.0,
-        input_basis = CU,
+        input_basis = u"CU",
     )
 
     branches = [

@@ -1,7 +1,7 @@
 # Tests of the power-domain unit machinery: categories, convert_units across
 # per-unit/natural-unit boundaries, serialization, and custom Unitful units.
-# The RelativeQuantity arithmetic/comparison/display tests live in IS
-# (test/test_relative_units.jl) since those types are domain-agnostic.
+# The generic `u"CU"`/`u"SU"`/`u"NU"` and `resolve_per_unit` are tested in IS
+# (test/test_relative_units.jl) since they are domain-agnostic.
 
 import Unitful
 using Unitful: @u_str
@@ -77,69 +77,74 @@ end
     @test_throws ErrorException base_value(nv, IMPEDANCE)
 end
 
-@testset "Rate categories: a relative target must name a time" begin
+@testset "per_unit_table: per-unit units, natural base and residual per category" begin
+    # Every category shares the one `u"CU"`/`u"SU"`; only the natural unit and residual differ.
+    for (cat, natural, residual) in (
+        (ACTIVE_POWER, u"MW", Unitful.NoUnits),
+        (REACTIVE_POWER, u"MVAr", Unitful.NoUnits),
+        (VOLTAGE, u"kV", Unitful.NoUnits),
+        (IMPEDANCE, u"Ω", Unitful.NoUnits),
+        (ADMITTANCE, u"S", Unitful.NoUnits),
+        (CURRENT, u"kA", Unitful.NoUnits),
+        (PSY.ACTIVE_POWER_CHANGE_RATE, u"MW", u"minute^-1"),
+    )
+        @test PSY.per_unit_table(cat) == (u"CU", u"SU", natural, residual)
+    end
+end
+
+@testset "Per-unit values share one unit per base" begin
+    gen = MockGen(0.6, 50.0)
+    p = convert_units(gen, 0.5u"CU", ACTIVE_POWER, u"SU")
+    x = convert_units(gen, 0.01u"CU", IMPEDANCE, u"SU")
+    @test Unitful.unit(p) == u"SU"
+    @test Unitful.unit(x) == u"SU"
+    # Different kinds on one base add: the units do not say what a value is per-unit of.
+    @test x + p ≈ (Unitful.ustrip(x) + Unitful.ustrip(p)) * u"SU"
+    # Different bases still do not.
+    @test_throws Unitful.DimensionError p +
+                                        convert_units(gen, 0.5u"CU", ACTIVE_POWER, u"CU")
+    # A getter's value and a hand-typed one mix freely.
+    @test p + 0.1u"SU" ≈ 0.35u"SU"
+    # Products of per-unit values are not per-unit: I² · Z is `SU³`, not `SU`.
+    i = convert_units(gen, 1.2u"CU", CURRENT, u"SU")
+    @test Unitful.unit(i^2 * x) == u"SU^3"
+end
+
+@testset "Rate categories: a per-unit target must name a time" begin
     gen = MockGen(0.6, 50.0)   # 50 MVA component, 100 MVA system
     cat = PSY.ACTIVE_POWER_CHANGE_RATE
-    v = 0.1                     # stored: 0.1 CU per minute
+    v = 0.1u"CU/minute"         # stored: 0.1 CU per minute
 
     @test natural_unit(cat) == u"MW" / u"minute"
-    @test PSY.time_basis(cat) == u"minute"
     # The power axis per-unitizes exactly as a plain power does; time has no base.
     @test base_value(gen, cat) == base_value(gen, ACTIVE_POWER)
     @test system_base_value(gen, cat) == system_base_value(gen, ACTIVE_POWER)
 
     # Natural units: Unitful does the power and time conversion together.
-    @test PSY.convert_units(gen, v, cat, CU, u"MW/minute") ≈ 5.0u"MW/minute"
-    @test PSY.convert_units(gen, v, cat, CU, u"MW/hr") ≈ 300.0u"MW/hr"
-    @test PSY.convert_units(gen, v, cat, CU, NU) ≈ 5.0u"MW/minute"
+    @test convert_units(gen, v, cat, u"MW/minute") ≈ 5.0u"MW/minute"
+    @test convert_units(gen, v, cat, u"MW/hr") ≈ 300.0u"MW/hr"
+    @test convert_units(gen, v, cat, u"NU/minute") ≈ 5.0u"MW/minute"
 
-    # Relative bases per unit time: both axes move independently.
-    @test PSY.convert_units(gen, v, cat, CU, CU / u"minute") == 0.1 * CU / u"minute"
-    @test PSY.convert_units(gen, v, cat, CU, CU / u"hr") == 6.0 * CU / u"hr"
-    @test PSY.convert_units(gen, v, cat, CU, SU / u"minute") == 0.05 * SU / u"minute"
-    @test PSY.convert_units(gen, v, cat, CU, SU / u"hr") == 3.0 * SU / u"hr"
+    # Per-unit bases per unit time: both axes move independently.
+    @test convert_units(gen, v, cat, u"CU/minute") ≈ 0.1 * u"CU" / u"minute"
+    @test convert_units(gen, v, cat, u"CU/hr") ≈ 6.0 * u"CU" / u"hr"
+    @test convert_units(gen, v, cat, u"SU/minute") ≈ 0.05 * u"SU" / u"minute"
+    @test convert_units(gen, v, cat, u"SU/hr") ≈ 3.0 * u"SU" / u"hr"
 
     # Every spelling of the same rate stores the same number.
-    # `from` is what `set_value` dispatches: a tagged rate enters with its own relative
-    # marker, a plain Unitful quantity with NU.
-    for (tagged, from) in (
-        (5.0u"MW/minute", NU),
-        (300.0u"MW/hr", NU),
-        (0.1 * CU / u"minute", CU),
-        (6.0 * CU / u"hr", CU),
-        (0.05 * SU / u"minute", SU),
-    )
-        @test IS._strip_units(PSY.convert_units(gen, tagged, cat, from, CU)) ≈ v
+    for q in (5.0u"MW/minute", 300.0u"MW/hr", 0.1u"CU/minute", 6.0u"CU/hr",
+        0.05u"SU/minute", 6.0 * u"CU" / u"hr")
+        @test PSY._to_stored(gen, q, cat) ≈ 0.1
     end
 
-    # A bare relative marker names no time, so it is not a complete target.
-    @test_throws ArgumentError PSY.convert_units(gen, v, cat, CU, CU)
-    @test_throws ArgumentError PSY.convert_units(gen, v, cat, CU, SU)
-    # …and a rate marker is meaningless on a quantity that is not a rate.
-    @test_throws ArgumentError PSY.convert_units(gen, v, ACTIVE_POWER, CU, CU / u"hr")
+    # A bare per-unit base names no time, so it is not a complete target…
+    @test_throws ArgumentError convert_units(gen, v, cat, u"CU")
+    @test_throws ArgumentError convert_units(gen, v, cat, u"SU")
+    @test_throws ArgumentError PSY._to_stored(gen, 0.1u"CU", cat)
+    # …and a time is meaningless on a quantity that is not a rate.
+    @test_throws ArgumentError convert_units(gen, 0.6u"CU", ACTIVE_POWER, u"CU/hr")
     # A plain power unit has the wrong dimension.
-    @test_throws Unitful.DimensionError PSY.convert_units(gen, v, cat, CU, u"MW")
-    # The tag and the `from` marker must still agree.
-    @test_throws ArgumentError PSY.convert_units(gen, 0.1 * CU / u"hr", cat, SU, CU)
-end
-
-@testset "Rate quantities: spelling and nesting" begin
-    # Both spellings produce the identical value, and it is an ordinary Unitful
-    # quantity whose payload carries the per-unit marker.
-    @test 0.1 * (CU / u"hr") === 0.1 * CU / u"hr"
-    @test 0.1 * CU / u"hr" isa PSY.RelativeRate
-    @test IS._strip_units(0.1 * CU / u"hr") === 0.1
-    @test sprint(show, CU / u"minute") == "CU/minute"
-
-    # The reverse nesting is reachable through IS's `*(::Number, ::AbstractRelativeUnit)`
-    # and must be rejected rather than silently producing a different type.
-    @test_throws ArgumentError (0.1 / u"hr") * CU
-    @test_throws ArgumentError CU * (0.1 / u"hr")
-
-    # Round-trips through the wire format.
-    for q in (0.1 * CU / u"hr", 0.05 * SU / u"minute", 10.0 * u"MW" / u"minute")
-        @test PSY.deserialize_quantity(PSY.serialize_quantity(q)) == q
-    end
+    @test_throws Unitful.DimensionError convert_units(gen, v, cat, u"MW")
 end
 
 @testset "Unit categories print by name" begin
@@ -167,72 +172,60 @@ end
     @test system_base_value(gen, VOLTAGE) == 230.0
 end
 
-@testset "convert_units: CU → other" begin
-    gen = MockGen(0.6, 50.0)
+@testset "convert_units: component base → other" begin
+    gen = MockGen(0.6, 50.0)   # 50 MVA component, 100 MVA system
 
-    result = convert_units(gen, 0.6, ACTIVE_POWER, CU, u"MW")
-    @test result isa Unitful.Quantity
-    @test Unitful.ustrip(result) ≈ 30.0
-
-    result = convert_units(gen, 0.6, ACTIVE_POWER, CU, SU)
-    @test result isa RelativeQuantity{Float64, SystemBaseUnit}
-    @test ustrip(result) ≈ 0.3
-
-    result = convert_units(gen, 0.6, ACTIVE_POWER, CU, CU)
-    @test ustrip(result) ≈ 0.6
+    @test convert_units(gen, 0.6u"CU", ACTIVE_POWER, u"MW") ≈ 30.0u"MW"
+    @test convert_units(gen, 0.6u"CU", ACTIVE_POWER, u"SU") ≈ 0.3 * u"SU"
+    @test convert_units(gen, 0.6u"CU", ACTIVE_POWER, u"CU") ≈ 0.6 * u"CU"
+    @test convert_units(gen, 0.6u"CU", ACTIVE_POWER, u"NU") ≈ 30.0u"MW"
 end
 
-@testset "convert_units: SU → other" begin
+@testset "convert_units: system base → other" begin
     gen = MockGen(0.6, 50.0)
 
-    result = convert_units(gen, 0.3, ACTIVE_POWER, SU, u"MW")
-    @test Unitful.ustrip(result) ≈ 30.0
-
-    result = convert_units(gen, 0.3, ACTIVE_POWER, SU, CU)
-    @test ustrip(result) ≈ 0.6
-
-    result = convert_units(gen, 0.3, ACTIVE_POWER, SU, SU)
-    @test ustrip(result) ≈ 0.3
+    @test convert_units(gen, 0.3u"SU", ACTIVE_POWER, u"MW") ≈ 30.0u"MW"
+    @test convert_units(gen, 0.3u"SU", ACTIVE_POWER, u"CU") ≈ 0.6 * u"CU"
+    @test convert_units(gen, 0.3u"SU", ACTIVE_POWER, u"SU") ≈ 0.3 * u"SU"
 end
 
 @testset "convert_units: natural → per-unit" begin
     gen = MockGen(0.6, 50.0)
 
-    result = convert_units(gen, 30.0u"MW", ACTIVE_POWER, u"MW", CU)
-    @test ustrip(result) ≈ 0.6
+    @test convert_units(gen, 30.0u"MW", ACTIVE_POWER, u"CU") ≈ 0.6 * u"CU"
+    @test convert_units(gen, 30.0u"MW", ACTIVE_POWER, u"SU") ≈ 0.3 * u"SU"
+    @test convert_units(gen, 30000.0u"kW", ACTIVE_POWER, u"CU") ≈ 0.6 * u"CU"
+end
 
-    result = convert_units(gen, 30.0u"MW", ACTIVE_POWER, u"MW", SU)
-    @test ustrip(result) ≈ 0.3
+@testset "convert_units: resolved per-unit units in and out" begin
+    gen = MockGen(0.6, 50.0)
+    # A value carrying the resolved units (what a getter returns) converts like the
+    # generic spelling.
+    @test convert_units(gen, 0.6 * u"CU", ACTIVE_POWER, u"MW") ≈ 30.0u"MW"
+    @test convert_units(gen, 0.6 * u"CU", ACTIVE_POWER, u"SU") ≈ 0.3 * u"SU"
 end
 
 @testset "convert_units: impedance" begin
     line = MockLine(0.01, 0.1)
     z_base = 230.0^2 / 100.0
 
-    result = convert_units(line, 0.01, IMPEDANCE, CU, u"Ω")
-    @test Unitful.ustrip(result) ≈ 0.01 * z_base
-
+    @test convert_units(line, 0.01u"CU", IMPEDANCE, u"Ω") ≈ (0.01 * z_base) * u"Ω"
     # component base == system base, so the CU → SU ratio is 1.0
-    result = convert_units(line, 0.01, IMPEDANCE, CU, SU)
-    @test ustrip(result) ≈ 0.01
+    @test convert_units(line, 0.01u"CU", IMPEDANCE, u"SU") ≈ 0.01 * u"SU"
+    @test Unitful.unit(convert_units(line, 0.01u"CU", IMPEDANCE, u"NU")) == u"Ω"
 end
 
 @testset "convert_units: nothing passthrough" begin
     gen = MockGen(0.6, 50.0)
-    @test convert_units(gen, nothing, ACTIVE_POWER, CU, u"MW") === nothing
+    @test convert_units(gen, nothing, ACTIVE_POWER, u"MW") === nothing
 end
 
 @testset "convert_units: round-trip consistency" begin
     gen = MockGen(0.6, 50.0)
-    original = 0.6
-
-    mw = convert_units(gen, original, ACTIVE_POWER, CU, u"MW")
-    back = convert_units(gen, mw, ACTIVE_POWER, u"MW", CU)
-    @test ustrip(back) ≈ original
-
-    su = convert_units(gen, original, ACTIVE_POWER, CU, SU)
-    back = convert_units(gen, ustrip(su), ACTIVE_POWER, SU, CU)
-    @test ustrip(back) ≈ original
+    for to in (u"MW", u"SU", u"NU")
+        there = convert_units(gen, 0.6u"CU", ACTIVE_POWER, to)
+        @test convert_units(gen, there, ACTIVE_POWER, u"CU") ≈ 0.6 * u"CU"
+    end
 end
 
 @testset "convert_units: complex support" begin
@@ -240,38 +233,23 @@ end
 
     # ratio is 1.0 since component base == system base
     for z in (0.01 + 0.1im, ComplexF32(0.01, 0.1), Complex(1, 2))
-        @test ustrip(convert_units(line, z, IMPEDANCE, CU, SU)) ≈ z
+        @test Unitful.ustrip(convert_units(line, z * u"CU", IMPEDANCE, u"SU")) ≈ z
     end
 end
 
-@testset "convert_units: NU (natural units)" begin
-    gen = MockGen(0.6, 50.0)
+@testset "Serialization: per-unit quantities" begin
+    for (q, unit) in (
+        (0.6 * u"CU", "CU"),
+        (0.3 * u"SU", "SU"),
+        (0.01 * u"CU", "CU"),
+    )
+        d = PSY.serialize_quantity(q)
+        @test d["value"] == Unitful.ustrip(q)
+        @test d["unit"] == unit
+        @test PSY.deserialize_quantity(d) == q
+    end
 
-    result = convert_units(gen, 0.6, ACTIVE_POWER, CU, NU)
-    @test result isa Unitful.Quantity
-    @test Unitful.ustrip(result) ≈ 30.0
-
-    result = convert_units(gen, 0.01, IMPEDANCE, CU, NU)
-    @test Unitful.dimension(Unitful.unit(result)) == Unitful.dimension(u"Ω")
-
-    result = convert_units(gen, 30.0u"MW", ACTIVE_POWER, NU, CU)
-    @test ustrip(result) ≈ 0.6
-end
-
-@testset "Serialization: RelativeQuantity" begin
-    q = 0.6CU
-    d = PSY.serialize_quantity(q)
-    @test d["value"] == 0.6
-    @test d["unit"] == "CU"
-    @test PSY.deserialize_quantity(d) == q
-
-    q = 0.3SU
-    d = PSY.serialize_quantity(q)
-    @test d["value"] == 0.3
-    @test d["unit"] == "SU"
-    @test PSY.deserialize_quantity(d) == q
-
-    q = (0.01 + 0.1im) * SU
+    q = (0.01 + 0.1im) * u"SU"
     d = PSY.serialize_quantity(q)
     @test d["value"]["re"] == 0.01
     @test d["value"]["im"] == 0.1
@@ -319,15 +297,14 @@ end
         @test PSY.string_to_unit(spelling) == rate
     end
 
-    # A rate marker's own spelling has no exponent, so it is stable either way.
-    @test PSY.unit_to_string(CU / u"minute") == "CU/minute"
-    d = PSY.serialize_quantity(6.0 * CU / u"hr")
-    @test d == Dict("value" => 6.0, "unit" => "CU/hr")
-    @test PSY.deserialize_quantity(d) == 6.0 * CU / u"hr"
+    # A per-unit rate pins its spelling the same way.
+    d = PSY.serialize_quantity(6.0 * u"CU" / u"hr")
+    @test d == Dict("value" => 6.0, "unit" => "CU hr^-1")
+    @test PSY.deserialize_quantity(d) == 6.0 * u"CU" / u"hr"
 end
 
 @testset "Serialization: JSON string round-trip" begin
-    q = 0.3SU
+    q = 0.3 * u"SU"
     json = JSON.json(PSY.serialize_quantity(q))
     @test PSY.deserialize_quantity(json) == q
 
@@ -370,29 +347,29 @@ end
 
     # All three share one per-unit base and differ only in the natural unit they
     # carry, so the numbers match while the units do not.
-    @test Unitful.unit(get_active_power_unitful(gen, NU)) == u"MW"
-    @test Unitful.unit(get_reactive_power_unitful(gen, NU)) == u"MVAr"
-    @test Unitful.unit(get_rating_unitful(gen, NU)) == u"MVA"
-    @test get_rating(gen, NU) ≈ get_rating(gen, CU) * 250.0
+    @test Unitful.unit(get_active_power_unitful(gen, u"NU")) == u"MW"
+    @test Unitful.unit(get_reactive_power_unitful(gen, u"NU")) == u"MVAr"
+    @test Unitful.unit(get_rating_unitful(gen, u"NU")) == u"MVA"
+    @test get_rating(gen, u"NU") ≈ get_rating(gen, u"CU") * 250.0
 
-    limits = get_reactive_power_limits_unitful(gen, NU)
+    limits = get_reactive_power_limits_unitful(gen, u"NU")
     @test Unitful.unit(limits.min) == u"MVAr"
     @test Unitful.unit(limits.max) == u"MVAr"
 
     # Setters accept any power-dimensioned unit; the category only picks how a
     # value reads back, not how it is stored.
     set_reactive_power!(gen, 25.0 * u"MVAr")
-    @test get_reactive_power(gen, CU) ≈ 0.1
-    @test get_reactive_power(gen, NU) ≈ 25.0
+    @test get_reactive_power(gen, u"CU") ≈ 0.1
+    @test get_reactive_power(gen, u"NU") ≈ 25.0
 end
 
 @testset "base_value lifecycle" begin
     # sys_a: 100 MVA base; gen stored at component base (250 MVA default from _sys_with_thermal)
     sys_a, gen = _sys_with_thermal()
-    p_a = get_active_power(gen, SU)
+    p_a = get_active_power(gen, u"SU")
 
     remove_component!(sys_a, gen)
-    @test_throws ErrorException get_active_power(gen, SU)
+    @test_throws ErrorException get_active_power(gen, u"SU")
 
     # Transfer to sys_b (50 MVA base). Same stored CU value ⇒ SU value doubles.
     sys_b = System(50.0)
@@ -404,7 +381,7 @@ end
     add_component!(sys_b, bus_b)
     set_bus!(gen, bus_b)
     add_component!(sys_b, gen)
-    @test get_active_power(gen, SU) ≈ 2.0 * p_a
+    @test get_active_power(gen, u"SU") ≈ 2.0 * p_a
 end
 
 @testset "deepcopy preserves each component's base value" begin
@@ -421,7 +398,7 @@ end
     sys2 = roundtrip_system(sys)
     gen2 = get_component(ThermalStandard, sys2, get_name(gen))
     @test IS.get_base_value(gen2) == sys2.base_power
-    @test get_active_power(gen2, SU) ≈ get_active_power(gen, SU)
+    @test get_active_power(gen2, u"SU") ≈ get_active_power(gen, u"SU")
 end
 
 @testset "HybridSystem attach/detach propagates base value to subcomponents" begin
@@ -441,7 +418,7 @@ end
         renewable_unit = RenewableDispatch(nothing),
         base_power = 100.0,
         operation_cost = MarketBidCost(nothing),
-        input_basis = CU,
+        input_basis = u"CU",
     )
     subcomponents = collect(get_subcomponents(h_sys))
     @test length(subcomponents) == 4
@@ -452,13 +429,12 @@ end
     @test all(c -> IS.get_base_value(c) === nothing, subcomponents)
 end
 
-@testset "convert_units rejects marker/value mismatches" begin
+@testset "convert_units rejects per-unit targets with the wrong residual" begin
     sys, gen = _sys_with_thermal()
-
-    @test_throws ArgumentError convert_units(gen, 30.0 * u"MW", ACTIVE_POWER, SU, CU)
-    @test_throws ArgumentError convert_units(gen, 30.0 * u"MW", ACTIVE_POWER, CU, SU)
-    @test_throws ArgumentError convert_units(gen, 0.5 * CU, ACTIVE_POWER, SU, NU)
-    @test_throws ArgumentError convert_units(gen, 0.5, ACTIVE_POWER, u"MW", SU)
+    @test_throws ArgumentError convert_units(gen, 0.5u"CU", ACTIVE_POWER, u"CU/hr")
+    @test_throws ArgumentError convert_units(gen, 0.5u"CU/hr", ACTIVE_POWER, u"MW")
+    # Two generic units say nothing about which base the field is on.
+    @test_throws ArgumentError convert_units(gen, 0.5u"CU", ACTIVE_POWER, u"CU*SU")
 end
 
 # Build a minimal System + Line (100 MVA base, 138 kV buses) for impedance/
@@ -487,7 +463,7 @@ function _sys_with_line()
         rating = 1.0,
         angle_limits = (min = -0.7, max = 0.7),
         rating_b = 0.9,
-        input_basis = CU,
+        input_basis = u"CU",
     )
     add_component!(sys, line)
     return sys, line
@@ -511,8 +487,8 @@ function _local_make_test_3w_xfmr(; system_base = 100.0)
     set_base_voltage_primary!(get_primary_circuit(xfmr), 230.0)
     set_base_voltage_primary!(get_secondary_circuit(xfmr), 138.0)
     set_base_voltage_primary!(get_tertiary_circuit(xfmr), 69.0)
-    set_r_12!(xfmr, 0.01 * CU)
-    set_r_23!(xfmr, 0.02 * CU)
+    set_r_12!(xfmr, 0.01 * u"CU")
+    set_r_23!(xfmr, 0.02 * u"CU")
     return xfmr
 end
 
@@ -522,32 +498,31 @@ end
     xfmr3w = _local_make_test_3w_xfmr()
 
     # power category (Val{:mva})
-    @inferred get_active_power(gen, SU)
-    @inferred get_active_power(gen, CU)
-    @inferred get_active_power(gen, NU)
-    @inferred get_active_power_unitful(gen, SU)
-    @test typeof(get_active_power_unitful(gen, SU)) ==
-          IS.RelativeQuantity{Float64, IS.RelativeUnits.SystemBaseUnit}
+    @inferred get_active_power(gen, u"SU")
+    @inferred get_active_power(gen, u"CU")
+    @inferred get_active_power(gen, u"NU")
+    @inferred get_active_power_unitful(gen, u"SU")
+    @test Unitful.unit(get_active_power_unitful(gen, u"SU")) == u"SU"
 
     # impedance / admittance categories (Val{:ohm} / Val{:siemens})
-    @inferred get_r(line, SU)
-    @inferred get_x(line, CU)
-    @inferred get_b(line, SU)
+    @inferred get_r(line, u"SU")
+    @inferred get_x(line, u"CU")
+    @inferred get_b(line, u"SU")
 
     # compound NamedTuple fields
-    @inferred get_active_power_limits(gen, SU)
+    @inferred get_active_power_limits(gen, u"SU")
 
     # Union{Nothing, Float64} descriptor field: small-union return is the contract
     # rating_b is set to 0.9 in _sys_with_line so the non-nothing branch executes
-    @inferred Union{Nothing, Float64} get_rating_b(line, SU)
+    @inferred Union{Nothing, Float64} get_rating_b(line, u"SU")
 
     # three-winding pairwise bases (PairBase engine); r_12/r_23 are now
     # Union{Nothing, Float64} descriptor fields (optional pairwise block)
-    @inferred Union{Nothing, Float64} get_r_12(xfmr3w, SU)
-    @inferred Union{Nothing, Float64} get_r_23(xfmr3w, CU)
+    @inferred Union{Nothing, Float64} get_r_12(xfmr3w, u"SU")
+    @inferred Union{Nothing, Float64} get_r_23(xfmr3w, u"CU")
 
     # setter chain: returns the stored CU Float64
-    @inferred set_active_power!(gen, 0.4 * SU)
+    @inferred set_active_power!(gen, 0.4 * u"SU")
 end
 
 # NOTE: three testsets were dropped here as part of this merge, because each exercised a
@@ -557,7 +532,7 @@ end
 #    component" (from feat/rust-time-series-store) drove `set_units_base_system!` /
 #    `with_units_base`, i.e. the stateful units system that psy6 retired in "remove last
 #    pieces of stateful units system". Unit selection is now an explicit per-call argument
-#    (`get_active_power(gen, SU)`), which the testsets above already cover.
+#    (`get_active_power(gen, u"SU")`), which the testsets above already cover.
 #
 #  - "time series multiplier units default to SU" (from psy6) drove a per-series multiplier
 #    and the `units` kwarg on `get_time_series_values`, both of which this branch removed.
@@ -600,7 +575,7 @@ end
     for w in get_circuits(t3w)
         @test IS.get_base_value(w) === nothing
     end
-    @test_throws ErrorException get_r(get_primary_circuit(t3w), SU)
+    @test_throws ErrorException get_r(get_primary_circuit(t3w), u"SU")
 
     add_component!(sys, t3w)
     for w in get_circuits(t3w)
@@ -665,7 +640,7 @@ end
     for w in get_circuits(t3w)
         @test IS.get_base_value(w) === nothing
     end
-    @test_throws ErrorException get_r(get_primary_circuit(t3w), SU)
+    @test_throws ErrorException get_r(get_primary_circuit(t3w), u"SU")
 
     add_component!(sys, t3w)
     for w in get_circuits(t3w)
@@ -705,25 +680,25 @@ end
         input_basis = basis, kwargs...,
     )
 
-    gen = thermal(NU)
-    @test get_active_power(gen, CU) == 0.25
-    @test get_active_power_limits(gen, CU) == (min = 0.0, max = 0.5)
-    @test get_ramp_limits(gen, CU / u"minute") == (up = 0.05, down = 0.05)
+    gen = thermal(u"NU")
+    @test get_active_power(gen, u"CU") == 0.25
+    @test get_active_power_limits(gen, u"CU") == (min = 0.0, max = 0.5)
+    @test get_ramp_limits(gen, u"CU/minute") == (up = 0.05, down = 0.05)
 
-    gen = thermal(CU)
-    @test get_active_power(gen, CU) == 50.0
-    @test get_ramp_limits(gen, CU / u"minute") == (up = 10.0, down = 10.0)
+    gen = thermal(u"CU")
+    @test get_active_power(gen, u"CU") == 50.0
+    @test get_ramp_limits(gen, u"CU/minute") == (up = 10.0, down = 10.0)
 
     # A tagged value keeps its own units, whatever input_basis says.
-    gen = thermal(CU; active_power = 50.0u"MW",
-        ramp_limits = (up = 0.6 * CU / u"hr", down = 600.0u"MW/hr"))
-    @test get_active_power(gen, CU) == 0.25
-    @test get_ramp_limits(gen, CU / u"minute").up ≈ 0.01
-    @test get_ramp_limits(gen, CU / u"minute").down ≈ 0.05
+    gen = thermal(u"CU"; active_power = 50.0u"MW",
+        ramp_limits = (up = 0.6 * u"CU/hr", down = 600.0u"MW/hr"))
+    @test get_active_power(gen, u"CU") == 0.25
+    @test get_ramp_limits(gen, u"CU/minute").up ≈ 0.01
+    @test get_ramp_limits(gen, u"CU/minute").down ≈ 0.05
 
-    @test_throws TypeError thermal(SU)
-    @test_throws ErrorException thermal(CU; active_power = 0.5 * SU)  # no system base yet
-    @inferred thermal(NU)
+    @test_throws ArgumentError thermal(u"SU")
+    @test_throws ErrorException thermal(u"CU"; active_power = 0.5 * u"SU")  # no system base yet
+    @inferred thermal(u"NU")
 
     # Ω converts via the arc's base voltage.
     b1 = ACBus(nothing)
@@ -732,8 +707,8 @@ end
         name = "l", available = true, active_power_flow = 0.0,
         reactive_power_flow = 0.0,
         arc = Arc(b1, b1), r = 5.29u"Ω", x = 0.1, b = (from = 0.0, to = 0.0),
-        rating = 1.0, angle_limits = (min = -1.0, max = 1.0), input_basis = CU,
+        rating = 1.0, angle_limits = (min = -1.0, max = 1.0), input_basis = u"CU",
     )
-    @test get_r(line, CU) ≈ 0.01
-    @test get_x(line, CU) == 0.1
+    @test get_r(line, u"CU") ≈ 0.01
+    @test get_x(line, u"CU") == 0.1
 end

@@ -35,7 +35,7 @@ A Synchronous Machine connected to the system to provide inertia or reactive pow
 - `dynamic_injector::Union{Nothing, DynamicInjection}`: (default: `nothing`) corresponding dynamic injection device
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
-- `input_basis`: (keyword constructor only, required) `CU` or `NU`, the units of bare numbers on unit-bearing fields. Tagged values (`50.0u"MW"`) keep their own units
+- `input_basis`: (keyword constructor only, required) `u"CU"` or `u"NU"`, the units of bare numbers on unit-bearing fields. Tagged values (`50.0u"MW"`) keep their own units
 """
 mutable struct SynchronousCondenser <: StaticInjection
     "Name of the component. Components of the same type (e.g., `PowerLoad`) must have unique names, but components of different types (e.g., `PowerLoad` and `ACBus`) can have the same name"
@@ -68,7 +68,7 @@ function SynchronousCondenser(name, available, bus, reactive_power, rating, reac
     SynchronousCondenser(name, available, bus, reactive_power, rating, reactive_power_limits, base_power, active_power_losses, services, dynamic_injector, ext, InfrastructureSystemsInternal(), )
 end
 
-function SynchronousCondenser(; name, available, bus, reactive_power, rating, reactive_power_limits, base_power, active_power_losses=0.0, services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Union{ComponentBaseUnit, NaturalUnit}, )
+function SynchronousCondenser(; name, available, bus, reactive_power, rating, reactive_power_limits, base_power, active_power_losses=0.0, services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Unitful.Units, )
     value = SynchronousCondenser(name, available, bus, _placeholder(reactive_power), _placeholder(rating), _placeholder(reactive_power_limits), base_power, _placeholder(active_power_losses), services, dynamic_injector, ext, internal, )
     set_reactive_power!(value, _tag(reactive_power, input_basis, Val(:mvar)))
     set_rating!(value, _tag(rating, input_basis, Val(:mva)))
@@ -92,7 +92,7 @@ function SynchronousCondenser(::Nothing)
         services=Device[],
         dynamic_injector=nothing,
         ext=Dict{String, Any}(),
-        input_basis=CU,
+        input_basis=u"CU",
     )
 end
 
@@ -102,40 +102,40 @@ get_name(value::SynchronousCondenser) = value.name
 get_available(value::SynchronousCondenser) = value.available
 """Get [`SynchronousCondenser`](@ref) `bus`."""
 get_bus(value::SynchronousCondenser) = value.bus
-"""Get [`SynchronousCondenser`](@ref) `reactive_power` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_reactive_power_unitful`](@ref)."""
+"""Get [`SynchronousCondenser`](@ref) `reactive_power` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_reactive_power_unitful`](@ref)."""
 get_reactive_power(value::SynchronousCondenser, units) = InfrastructureSystems._strip_units(get_value(value, Val(:reactive_power), Val(:mvar), units))
-"""Get [`SynchronousCondenser`](@ref) `reactive_power` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_reactive_power`](@ref)."""
+"""Get [`SynchronousCondenser`](@ref) `reactive_power` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_reactive_power`](@ref)."""
 get_reactive_power_unitful(value::SynchronousCondenser, units) = get_value(value, Val(:reactive_power), Val(:mvar), units)
 get_reactive_power(value::SynchronousCondenser) = _units_arg_required(get_reactive_power, value, :reactive_power, Val(:mvar))
 get_reactive_power_unitful(value::SynchronousCondenser) = _units_arg_required(get_reactive_power_unitful, value, :reactive_power, Val(:mvar))
-InfrastructureSystems.display_units_arg(::typeof(get_reactive_power), ::Type{SynchronousCondenser}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_unitful), ::Type{SynchronousCondenser}) = InfrastructureSystems.SU
-"""Get [`SynchronousCondenser`](@ref) `rating` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_rating_unitful`](@ref)."""
+InfrastructureSystems.display_units_arg(::typeof(get_reactive_power), ::Type{SynchronousCondenser}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_unitful), ::Type{SynchronousCondenser}) = u"SU"
+"""Get [`SynchronousCondenser`](@ref) `rating` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_rating_unitful`](@ref)."""
 get_rating(value::SynchronousCondenser, units) = InfrastructureSystems._strip_units(get_value(value, Val(:rating), Val(:mva), units))
-"""Get [`SynchronousCondenser`](@ref) `rating` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_rating`](@ref)."""
+"""Get [`SynchronousCondenser`](@ref) `rating` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_rating`](@ref)."""
 get_rating_unitful(value::SynchronousCondenser, units) = get_value(value, Val(:rating), Val(:mva), units)
 get_rating(value::SynchronousCondenser) = _units_arg_required(get_rating, value, :rating, Val(:mva))
 get_rating_unitful(value::SynchronousCondenser) = _units_arg_required(get_rating_unitful, value, :rating, Val(:mva))
-InfrastructureSystems.display_units_arg(::typeof(get_rating), ::Type{SynchronousCondenser}) = InfrastructureSystems.CU
-InfrastructureSystems.display_units_arg(::typeof(get_rating_unitful), ::Type{SynchronousCondenser}) = InfrastructureSystems.CU
-"""Get [`SynchronousCondenser`](@ref) `reactive_power_limits` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_reactive_power_limits_unitful`](@ref)."""
+InfrastructureSystems.display_units_arg(::typeof(get_rating), ::Type{SynchronousCondenser}) = u"CU"
+InfrastructureSystems.display_units_arg(::typeof(get_rating_unitful), ::Type{SynchronousCondenser}) = u"CU"
+"""Get [`SynchronousCondenser`](@ref) `reactive_power_limits` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_reactive_power_limits_unitful`](@ref)."""
 get_reactive_power_limits(value::SynchronousCondenser, units) = InfrastructureSystems._strip_units(get_value(value, Val(:reactive_power_limits), Val(:mvar), units))
-"""Get [`SynchronousCondenser`](@ref) `reactive_power_limits` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_reactive_power_limits`](@ref)."""
+"""Get [`SynchronousCondenser`](@ref) `reactive_power_limits` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_reactive_power_limits`](@ref)."""
 get_reactive_power_limits_unitful(value::SynchronousCondenser, units) = get_value(value, Val(:reactive_power_limits), Val(:mvar), units)
 get_reactive_power_limits(value::SynchronousCondenser) = _units_arg_required(get_reactive_power_limits, value, :reactive_power_limits, Val(:mvar))
 get_reactive_power_limits_unitful(value::SynchronousCondenser) = _units_arg_required(get_reactive_power_limits_unitful, value, :reactive_power_limits, Val(:mvar))
-InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_limits), ::Type{SynchronousCondenser}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_limits_unitful), ::Type{SynchronousCondenser}) = InfrastructureSystems.SU
+InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_limits), ::Type{SynchronousCondenser}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_limits_unitful), ::Type{SynchronousCondenser}) = u"SU"
 
 _get_base_power(value::SynchronousCondenser) = value.base_power
-"""Get [`SynchronousCondenser`](@ref) `active_power_losses` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_active_power_losses_unitful`](@ref)."""
+"""Get [`SynchronousCondenser`](@ref) `active_power_losses` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_active_power_losses_unitful`](@ref)."""
 get_active_power_losses(value::SynchronousCondenser, units) = InfrastructureSystems._strip_units(get_value(value, Val(:active_power_losses), Val(:mw), units))
-"""Get [`SynchronousCondenser`](@ref) `active_power_losses` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_active_power_losses`](@ref)."""
+"""Get [`SynchronousCondenser`](@ref) `active_power_losses` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_active_power_losses`](@ref)."""
 get_active_power_losses_unitful(value::SynchronousCondenser, units) = get_value(value, Val(:active_power_losses), Val(:mw), units)
 get_active_power_losses(value::SynchronousCondenser) = _units_arg_required(get_active_power_losses, value, :active_power_losses, Val(:mw))
 get_active_power_losses_unitful(value::SynchronousCondenser) = _units_arg_required(get_active_power_losses_unitful, value, :active_power_losses, Val(:mw))
-InfrastructureSystems.display_units_arg(::typeof(get_active_power_losses), ::Type{SynchronousCondenser}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_active_power_losses_unitful), ::Type{SynchronousCondenser}) = InfrastructureSystems.SU
+InfrastructureSystems.display_units_arg(::typeof(get_active_power_losses), ::Type{SynchronousCondenser}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_active_power_losses_unitful), ::Type{SynchronousCondenser}) = u"SU"
 """Get [`SynchronousCondenser`](@ref) `services`."""
 get_services(value::SynchronousCondenser) = value.services
 """Get [`SynchronousCondenser`](@ref) `dynamic_injector`."""
@@ -178,7 +178,7 @@ function from_openapi(po::PO.SynchronousCondenser, refs::OpenAPIRefs, ::Componen
         reactive_power_limits = _minmax_from_po(po.reactive_power_limits),
         base_power = po.base_power,
         active_power_losses = _or_default(po.active_power_losses, 0.0),
-        input_basis = CU,
+        input_basis = u"CU",
     )
 end
 
@@ -192,7 +192,7 @@ function from_openapi(po::PO.SynchronousCondenser, refs::OpenAPIRefs, ::NaturalU
         reactive_power_limits = _minmax_from_po(po.reactive_power_limits, (/), po.base_power),
         base_power = po.base_power,
         active_power_losses = _or_default(po.active_power_losses, 0.0, (/), po.base_power),
-        input_basis = CU,
+        input_basis = u"CU",
     )
 end
 
@@ -206,11 +206,11 @@ function to_openapi(value::SynchronousCondenser, refs::OpenAPIRefs, ::ComponentB
         name = get_name(value),
         available = get_available(value),
         bus = component_id(refs, get_bus(value)),
-        reactive_power = get_reactive_power(value, CU),
-        rating = get_rating(value, CU),
-        reactive_power_limits = _minmax_po_optional(get_reactive_power_limits(value, CU)),
+        reactive_power = get_reactive_power(value, u"CU"),
+        rating = get_rating(value, u"CU"),
+        reactive_power_limits = _minmax_po_optional(get_reactive_power_limits(value, u"CU")),
         base_power = _get_base_power(value),
-        active_power_losses = get_active_power_losses(value, CU),
+        active_power_losses = get_active_power_losses(value, u"CU"),
         power_units = _power_units_string(CU),
     )
 end
@@ -221,11 +221,11 @@ function to_openapi(value::SynchronousCondenser, refs::OpenAPIRefs, ::NaturalUni
         name = get_name(value),
         available = get_available(value),
         bus = component_id(refs, get_bus(value)),
-        reactive_power = get_reactive_power(value, CU) * _get_base_power(value),
-        rating = get_rating(value, CU) * _get_base_power(value),
-        reactive_power_limits = _minmax_po_scaled_optional(get_reactive_power_limits(value, CU), _get_base_power(value)),
+        reactive_power = get_reactive_power(value, u"CU") * _get_base_power(value),
+        rating = get_rating(value, u"CU") * _get_base_power(value),
+        reactive_power_limits = _minmax_po_scaled_optional(get_reactive_power_limits(value, u"CU"), _get_base_power(value)),
         base_power = _get_base_power(value),
-        active_power_losses = get_active_power_losses(value, CU) * _get_base_power(value),
+        active_power_losses = get_active_power_losses(value, u"CU") * _get_base_power(value),
         power_units = _power_units_string(NU),
     )
 end

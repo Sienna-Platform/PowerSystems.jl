@@ -43,7 +43,7 @@ A [static](@ref S) power load that can be partially or completed shifted to late
 - `dynamic_injector::Union{Nothing, DynamicInjection}`: (default: `nothing`) corresponding dynamic injection device
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
-- `input_basis`: (keyword constructor only, required) `CU` or `NU`, the units of bare numbers on unit-bearing fields. Tagged values (`50.0u"MW"`) keep their own units
+- `input_basis`: (keyword constructor only, required) `u"CU"` or `u"NU"`, the units of bare numbers on unit-bearing fields. Tagged values (`50.0u"MW"`) keep their own units
 """
 mutable struct ShiftablePowerLoad <: ControllableLoad
     "Name of the component. Components of the same type (e.g., `PowerLoad`) must have unique names, but components of different types (e.g., `PowerLoad` and `ACBus`) can have the same name"
@@ -82,7 +82,7 @@ function ShiftablePowerLoad(name, available, bus, active_power, active_power_lim
     ShiftablePowerLoad(name, available, bus, active_power, active_power_limits, reactive_power, max_active_power, max_reactive_power, base_power, load_balance_time_horizon, operation_cost, services, dynamic_injector, ext, InfrastructureSystemsInternal(), )
 end
 
-function ShiftablePowerLoad(; name, available, bus, active_power, active_power_limits, reactive_power, max_active_power, max_reactive_power, base_power, load_balance_time_horizon, operation_cost, services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Union{ComponentBaseUnit, NaturalUnit}, )
+function ShiftablePowerLoad(; name, available, bus, active_power, active_power_limits, reactive_power, max_active_power, max_reactive_power, base_power, load_balance_time_horizon, operation_cost, services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Unitful.Units, )
     value = ShiftablePowerLoad(name, available, bus, _placeholder(active_power), _placeholder(active_power_limits), _placeholder(reactive_power), _placeholder(max_active_power), _placeholder(max_reactive_power), base_power, load_balance_time_horizon, operation_cost, services, dynamic_injector, ext, internal, )
     set_active_power!(value, _tag(active_power, input_basis, Val(:mw)))
     set_active_power_limits!(value, _tag(active_power_limits, input_basis, Val(:mw)))
@@ -110,7 +110,7 @@ function ShiftablePowerLoad(::Nothing)
         services=Device[],
         dynamic_injector=nothing,
         ext=Dict{String, Any}(),
-        input_basis=CU,
+        input_basis=u"CU",
     )
 end
 
@@ -120,46 +120,46 @@ get_name(value::ShiftablePowerLoad) = value.name
 get_available(value::ShiftablePowerLoad) = value.available
 """Get [`ShiftablePowerLoad`](@ref) `bus`."""
 get_bus(value::ShiftablePowerLoad) = value.bus
-"""Get [`ShiftablePowerLoad`](@ref) `active_power` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_active_power_unitful`](@ref)."""
+"""Get [`ShiftablePowerLoad`](@ref) `active_power` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_active_power_unitful`](@ref)."""
 get_active_power(value::ShiftablePowerLoad, units) = InfrastructureSystems._strip_units(get_value(value, Val(:active_power), Val(:mw), units))
-"""Get [`ShiftablePowerLoad`](@ref) `active_power` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_active_power`](@ref)."""
+"""Get [`ShiftablePowerLoad`](@ref) `active_power` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_active_power`](@ref)."""
 get_active_power_unitful(value::ShiftablePowerLoad, units) = get_value(value, Val(:active_power), Val(:mw), units)
 get_active_power(value::ShiftablePowerLoad) = _units_arg_required(get_active_power, value, :active_power, Val(:mw))
 get_active_power_unitful(value::ShiftablePowerLoad) = _units_arg_required(get_active_power_unitful, value, :active_power, Val(:mw))
-InfrastructureSystems.display_units_arg(::typeof(get_active_power), ::Type{ShiftablePowerLoad}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_active_power_unitful), ::Type{ShiftablePowerLoad}) = InfrastructureSystems.SU
-"""Get [`ShiftablePowerLoad`](@ref) `active_power_limits` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_active_power_limits_unitful`](@ref)."""
+InfrastructureSystems.display_units_arg(::typeof(get_active_power), ::Type{ShiftablePowerLoad}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_active_power_unitful), ::Type{ShiftablePowerLoad}) = u"SU"
+"""Get [`ShiftablePowerLoad`](@ref) `active_power_limits` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_active_power_limits_unitful`](@ref)."""
 get_active_power_limits(value::ShiftablePowerLoad, units) = InfrastructureSystems._strip_units(get_value(value, Val(:active_power_limits), Val(:mw), units))
-"""Get [`ShiftablePowerLoad`](@ref) `active_power_limits` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_active_power_limits`](@ref)."""
+"""Get [`ShiftablePowerLoad`](@ref) `active_power_limits` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_active_power_limits`](@ref)."""
 get_active_power_limits_unitful(value::ShiftablePowerLoad, units) = get_value(value, Val(:active_power_limits), Val(:mw), units)
 get_active_power_limits(value::ShiftablePowerLoad) = _units_arg_required(get_active_power_limits, value, :active_power_limits, Val(:mw))
 get_active_power_limits_unitful(value::ShiftablePowerLoad) = _units_arg_required(get_active_power_limits_unitful, value, :active_power_limits, Val(:mw))
-InfrastructureSystems.display_units_arg(::typeof(get_active_power_limits), ::Type{ShiftablePowerLoad}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_active_power_limits_unitful), ::Type{ShiftablePowerLoad}) = InfrastructureSystems.SU
-"""Get [`ShiftablePowerLoad`](@ref) `reactive_power` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_reactive_power_unitful`](@ref)."""
+InfrastructureSystems.display_units_arg(::typeof(get_active_power_limits), ::Type{ShiftablePowerLoad}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_active_power_limits_unitful), ::Type{ShiftablePowerLoad}) = u"SU"
+"""Get [`ShiftablePowerLoad`](@ref) `reactive_power` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_reactive_power_unitful`](@ref)."""
 get_reactive_power(value::ShiftablePowerLoad, units) = InfrastructureSystems._strip_units(get_value(value, Val(:reactive_power), Val(:mvar), units))
-"""Get [`ShiftablePowerLoad`](@ref) `reactive_power` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_reactive_power`](@ref)."""
+"""Get [`ShiftablePowerLoad`](@ref) `reactive_power` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_reactive_power`](@ref)."""
 get_reactive_power_unitful(value::ShiftablePowerLoad, units) = get_value(value, Val(:reactive_power), Val(:mvar), units)
 get_reactive_power(value::ShiftablePowerLoad) = _units_arg_required(get_reactive_power, value, :reactive_power, Val(:mvar))
 get_reactive_power_unitful(value::ShiftablePowerLoad) = _units_arg_required(get_reactive_power_unitful, value, :reactive_power, Val(:mvar))
-InfrastructureSystems.display_units_arg(::typeof(get_reactive_power), ::Type{ShiftablePowerLoad}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_unitful), ::Type{ShiftablePowerLoad}) = InfrastructureSystems.SU
-"""Get [`ShiftablePowerLoad`](@ref) `max_active_power` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_max_active_power_unitful`](@ref)."""
+InfrastructureSystems.display_units_arg(::typeof(get_reactive_power), ::Type{ShiftablePowerLoad}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_unitful), ::Type{ShiftablePowerLoad}) = u"SU"
+"""Get [`ShiftablePowerLoad`](@ref) `max_active_power` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_max_active_power_unitful`](@ref)."""
 get_max_active_power(value::ShiftablePowerLoad, units) = InfrastructureSystems._strip_units(get_value(value, Val(:max_active_power), Val(:mw), units))
-"""Get [`ShiftablePowerLoad`](@ref) `max_active_power` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_max_active_power`](@ref)."""
+"""Get [`ShiftablePowerLoad`](@ref) `max_active_power` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_max_active_power`](@ref)."""
 get_max_active_power_unitful(value::ShiftablePowerLoad, units) = get_value(value, Val(:max_active_power), Val(:mw), units)
 get_max_active_power(value::ShiftablePowerLoad) = _units_arg_required(get_max_active_power, value, :max_active_power, Val(:mw))
 get_max_active_power_unitful(value::ShiftablePowerLoad) = _units_arg_required(get_max_active_power_unitful, value, :max_active_power, Val(:mw))
-InfrastructureSystems.display_units_arg(::typeof(get_max_active_power), ::Type{ShiftablePowerLoad}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_max_active_power_unitful), ::Type{ShiftablePowerLoad}) = InfrastructureSystems.SU
-"""Get [`ShiftablePowerLoad`](@ref) `max_reactive_power` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_max_reactive_power_unitful`](@ref)."""
+InfrastructureSystems.display_units_arg(::typeof(get_max_active_power), ::Type{ShiftablePowerLoad}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_max_active_power_unitful), ::Type{ShiftablePowerLoad}) = u"SU"
+"""Get [`ShiftablePowerLoad`](@ref) `max_reactive_power` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_max_reactive_power_unitful`](@ref)."""
 get_max_reactive_power(value::ShiftablePowerLoad, units) = InfrastructureSystems._strip_units(get_value(value, Val(:max_reactive_power), Val(:mvar), units))
-"""Get [`ShiftablePowerLoad`](@ref) `max_reactive_power` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_max_reactive_power`](@ref)."""
+"""Get [`ShiftablePowerLoad`](@ref) `max_reactive_power` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_max_reactive_power`](@ref)."""
 get_max_reactive_power_unitful(value::ShiftablePowerLoad, units) = get_value(value, Val(:max_reactive_power), Val(:mvar), units)
 get_max_reactive_power(value::ShiftablePowerLoad) = _units_arg_required(get_max_reactive_power, value, :max_reactive_power, Val(:mvar))
 get_max_reactive_power_unitful(value::ShiftablePowerLoad) = _units_arg_required(get_max_reactive_power_unitful, value, :max_reactive_power, Val(:mvar))
-InfrastructureSystems.display_units_arg(::typeof(get_max_reactive_power), ::Type{ShiftablePowerLoad}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_max_reactive_power_unitful), ::Type{ShiftablePowerLoad}) = InfrastructureSystems.SU
+InfrastructureSystems.display_units_arg(::typeof(get_max_reactive_power), ::Type{ShiftablePowerLoad}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_max_reactive_power_unitful), ::Type{ShiftablePowerLoad}) = u"SU"
 
 _get_base_power(value::ShiftablePowerLoad) = value.base_power
 """Get [`ShiftablePowerLoad`](@ref) `load_balance_time_horizon`."""
@@ -218,7 +218,7 @@ function from_openapi(po::PO.ShiftablePowerLoad, refs::OpenAPIRefs, ::ComponentB
         base_power = po.base_power,
         load_balance_time_horizon = po.load_balance_time_horizon,
         operation_cost = convert_cost(po.operation_cost.value)::OperationalCost,
-        input_basis = CU,
+        input_basis = u"CU",
     )
 end
 
@@ -235,7 +235,7 @@ function from_openapi(po::PO.ShiftablePowerLoad, refs::OpenAPIRefs, ::NaturalUni
         base_power = po.base_power,
         load_balance_time_horizon = po.load_balance_time_horizon,
         operation_cost = convert_cost(po.operation_cost.value)::OperationalCost,
-        input_basis = CU,
+        input_basis = u"CU",
     )
 end
 
@@ -249,11 +249,11 @@ function to_openapi(value::ShiftablePowerLoad, refs::OpenAPIRefs, ::ComponentBas
         name = get_name(value),
         available = get_available(value),
         bus = component_id(refs, get_bus(value)),
-        active_power = get_active_power(value, CU),
-        active_power_limits = _minmax_po(get_active_power_limits(value, CU)),
-        reactive_power = get_reactive_power(value, CU),
-        max_active_power = get_max_active_power(value, CU),
-        max_reactive_power = get_max_reactive_power(value, CU),
+        active_power = get_active_power(value, u"CU"),
+        active_power_limits = _minmax_po(get_active_power_limits(value, u"CU")),
+        reactive_power = get_reactive_power(value, u"CU"),
+        max_active_power = get_max_active_power(value, u"CU"),
+        max_reactive_power = get_max_reactive_power(value, u"CU"),
         base_power = _get_base_power(value),
         load_balance_time_horizon = get_load_balance_time_horizon(value),
         operation_cost = PO.ShiftablePowerLoadOperationCost(convert_cost_to_openapi(get_operation_cost(value))),
@@ -267,11 +267,11 @@ function to_openapi(value::ShiftablePowerLoad, refs::OpenAPIRefs, ::NaturalUnit)
         name = get_name(value),
         available = get_available(value),
         bus = component_id(refs, get_bus(value)),
-        active_power = get_active_power(value, CU) * _get_base_power(value),
-        active_power_limits = _minmax_po_scaled(get_active_power_limits(value, CU), _get_base_power(value)),
-        reactive_power = get_reactive_power(value, CU) * _get_base_power(value),
-        max_active_power = get_max_active_power(value, CU) * _get_base_power(value),
-        max_reactive_power = get_max_reactive_power(value, CU) * _get_base_power(value),
+        active_power = get_active_power(value, u"CU") * _get_base_power(value),
+        active_power_limits = _minmax_po_scaled(get_active_power_limits(value, u"CU"), _get_base_power(value)),
+        reactive_power = get_reactive_power(value, u"CU") * _get_base_power(value),
+        max_active_power = get_max_active_power(value, u"CU") * _get_base_power(value),
+        max_reactive_power = get_max_reactive_power(value, u"CU") * _get_base_power(value),
         base_power = _get_base_power(value),
         load_balance_time_horizon = get_load_balance_time_horizon(value),
         operation_cost = PO.ShiftablePowerLoadOperationCost(convert_cost_to_openapi(get_operation_cost(value))),

@@ -118,12 +118,12 @@
             x = 0.1,
             base_voltage_primary = 230.0,
             base_voltage_secondary = 138.0,
-            input_basis = CU,
+            input_basis = u"CU",
         )
         t = TwoWindingTransformer(;
             name = "t2w_hv",
             circuit = circuit,
-            input_basis = CU,
+            input_basis = u"CU",
         )
         @test get_high_voltage(t) == 230.0
         @test get_low_voltage(t) == 138.0

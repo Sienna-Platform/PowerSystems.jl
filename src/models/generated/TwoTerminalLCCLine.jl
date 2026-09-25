@@ -97,7 +97,7 @@ As implemented in PSS/E.
 - `base_power::Float64`: (default: `100.0`) System base power for per-unitization of this component's per-unit fields, recorded per component in lieu of a system-level table (MVA), validation range: `(0.0001, nothing)`
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
-- `input_basis`: (keyword constructor only, required) `CU` or `NU`, the units of bare numbers on unit-bearing fields. Tagged values (`50.0u"MW"`) keep their own units
+- `input_basis`: (keyword constructor only, required) `u"CU"` or `u"NU"`, the units of bare numbers on unit-bearing fields. Tagged values (`50.0u"MW"`) keep their own units
 """
 mutable struct TwoTerminalLCCLine <: TwoTerminalHVDC
     "Name of the component. Components of the same type (e.g., `PowerLoad`) must have unique names, but components of different types (e.g., `PowerLoad` and `ACBus`) can have the same name"
@@ -190,7 +190,7 @@ function TwoTerminalLCCLine(name, available, arc, active_power_flow, r, transfer
     TwoTerminalLCCLine(name, available, arc, active_power_flow, r, transfer_setpoint, scheduled_dc_voltage, rectifier_bridges, rectifier_delay_angle_limits, rectifier_rc, rectifier_xc, rectifier_base_voltage, inverter_bridges, inverter_extinction_angle_limits, inverter_rc, inverter_xc, inverter_base_voltage, power_mode, switch_mode_voltage, compounding_resistance, min_compounding_voltage, rectifier_transformer_ratio, rectifier_tap_setting, rectifier_tap_limits, rectifier_tap_step, rectifier_delay_angle, rectifier_capacitor_reactance, inverter_transformer_ratio, inverter_tap_setting, inverter_tap_limits, inverter_tap_step, inverter_extinction_angle, inverter_capacitor_reactance, active_power_limits_from, active_power_limits_to, reactive_power_limits_from, reactive_power_limits_to, loss, services, base_power, ext, InfrastructureSystemsInternal(), )
 end
 
-function TwoTerminalLCCLine(; name, available, arc, active_power_flow, r, transfer_setpoint, scheduled_dc_voltage, rectifier_bridges, rectifier_delay_angle_limits, rectifier_rc, rectifier_xc, rectifier_base_voltage, inverter_bridges, inverter_extinction_angle_limits, inverter_rc, inverter_xc, inverter_base_voltage, power_mode=true, switch_mode_voltage=0.0, compounding_resistance=0.0, min_compounding_voltage=0.0, rectifier_transformer_ratio=1.0, rectifier_tap_setting=1.0, rectifier_tap_limits=(min=0.51, max=1.5), rectifier_tap_step=0.00625, rectifier_delay_angle=0.0, rectifier_capacitor_reactance=0.0, inverter_transformer_ratio=1.0, inverter_tap_setting=1.0, inverter_tap_limits=(min=0.51, max=1.5), inverter_tap_step=0.00625, inverter_extinction_angle=0.0, inverter_capacitor_reactance=0.0, active_power_limits_from=(min=0.0, max=0.0), active_power_limits_to=(min=0.0, max=0.0), reactive_power_limits_from=(min=0.0, max=0.0), reactive_power_limits_to=(min=0.0, max=0.0), loss=LossCurve(LinearCurve(0.0), NaturalUnit()), services=Device[], base_power=100.0, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Union{ComponentBaseUnit, NaturalUnit}, )
+function TwoTerminalLCCLine(; name, available, arc, active_power_flow, r, transfer_setpoint, scheduled_dc_voltage, rectifier_bridges, rectifier_delay_angle_limits, rectifier_rc, rectifier_xc, rectifier_base_voltage, inverter_bridges, inverter_extinction_angle_limits, inverter_rc, inverter_xc, inverter_base_voltage, power_mode=true, switch_mode_voltage=0.0, compounding_resistance=0.0, min_compounding_voltage=0.0, rectifier_transformer_ratio=1.0, rectifier_tap_setting=1.0, rectifier_tap_limits=(min=0.51, max=1.5), rectifier_tap_step=0.00625, rectifier_delay_angle=0.0, rectifier_capacitor_reactance=0.0, inverter_transformer_ratio=1.0, inverter_tap_setting=1.0, inverter_tap_limits=(min=0.51, max=1.5), inverter_tap_step=0.00625, inverter_extinction_angle=0.0, inverter_capacitor_reactance=0.0, active_power_limits_from=(min=0.0, max=0.0), active_power_limits_to=(min=0.0, max=0.0), reactive_power_limits_from=(min=0.0, max=0.0), reactive_power_limits_to=(min=0.0, max=0.0), loss=LossCurve(LinearCurve(0.0), NaturalUnit()), services=Device[], base_power=100.0, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Unitful.Units, )
     value = TwoTerminalLCCLine(name, available, arc, _placeholder(active_power_flow), r, transfer_setpoint, scheduled_dc_voltage, rectifier_bridges, rectifier_delay_angle_limits, rectifier_rc, rectifier_xc, rectifier_base_voltage, inverter_bridges, inverter_extinction_angle_limits, inverter_rc, inverter_xc, inverter_base_voltage, power_mode, switch_mode_voltage, compounding_resistance, min_compounding_voltage, rectifier_transformer_ratio, rectifier_tap_setting, rectifier_tap_limits, rectifier_tap_step, rectifier_delay_angle, rectifier_capacitor_reactance, inverter_transformer_ratio, inverter_tap_setting, inverter_tap_limits, inverter_tap_step, inverter_extinction_angle, inverter_capacitor_reactance, _placeholder(active_power_limits_from), _placeholder(active_power_limits_to), _placeholder(reactive_power_limits_from), _placeholder(reactive_power_limits_to), loss, services, base_power, ext, internal, )
     set_active_power_flow!(value, _tag(active_power_flow, input_basis, Val(:mw)))
     set_active_power_limits_from!(value, _tag(active_power_limits_from, input_basis, Val(:mw)))
@@ -245,7 +245,7 @@ function TwoTerminalLCCLine(::Nothing)
         services=Device[],
         base_power=100.0,
         ext=Dict{String, Any}(),
-        input_basis=CU,
+        input_basis=u"CU",
     )
 end
 
@@ -255,14 +255,14 @@ get_name(value::TwoTerminalLCCLine) = value.name
 get_available(value::TwoTerminalLCCLine) = value.available
 """Get [`TwoTerminalLCCLine`](@ref) `arc`."""
 get_arc(value::TwoTerminalLCCLine) = value.arc
-"""Get [`TwoTerminalLCCLine`](@ref) `active_power_flow` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_active_power_flow_unitful`](@ref)."""
+"""Get [`TwoTerminalLCCLine`](@ref) `active_power_flow` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_active_power_flow_unitful`](@ref)."""
 get_active_power_flow(value::TwoTerminalLCCLine, units) = InfrastructureSystems._strip_units(get_value(value, Val(:active_power_flow), Val(:mw), units))
-"""Get [`TwoTerminalLCCLine`](@ref) `active_power_flow` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_active_power_flow`](@ref)."""
+"""Get [`TwoTerminalLCCLine`](@ref) `active_power_flow` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_active_power_flow`](@ref)."""
 get_active_power_flow_unitful(value::TwoTerminalLCCLine, units) = get_value(value, Val(:active_power_flow), Val(:mw), units)
 get_active_power_flow(value::TwoTerminalLCCLine) = _units_arg_required(get_active_power_flow, value, :active_power_flow, Val(:mw))
 get_active_power_flow_unitful(value::TwoTerminalLCCLine) = _units_arg_required(get_active_power_flow_unitful, value, :active_power_flow, Val(:mw))
-InfrastructureSystems.display_units_arg(::typeof(get_active_power_flow), ::Type{TwoTerminalLCCLine}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_active_power_flow_unitful), ::Type{TwoTerminalLCCLine}) = InfrastructureSystems.SU
+InfrastructureSystems.display_units_arg(::typeof(get_active_power_flow), ::Type{TwoTerminalLCCLine}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_active_power_flow_unitful), ::Type{TwoTerminalLCCLine}) = u"SU"
 """Get [`TwoTerminalLCCLine`](@ref) `r`."""
 get_r(value::TwoTerminalLCCLine) = value.r
 """Get [`TwoTerminalLCCLine`](@ref) `transfer_setpoint`."""
@@ -321,38 +321,38 @@ get_inverter_tap_step(value::TwoTerminalLCCLine) = value.inverter_tap_step
 get_inverter_extinction_angle(value::TwoTerminalLCCLine) = value.inverter_extinction_angle
 """Get [`TwoTerminalLCCLine`](@ref) `inverter_capacitor_reactance`."""
 get_inverter_capacitor_reactance(value::TwoTerminalLCCLine) = value.inverter_capacitor_reactance
-"""Get [`TwoTerminalLCCLine`](@ref) `active_power_limits_from` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_active_power_limits_from_unitful`](@ref)."""
+"""Get [`TwoTerminalLCCLine`](@ref) `active_power_limits_from` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_active_power_limits_from_unitful`](@ref)."""
 get_active_power_limits_from(value::TwoTerminalLCCLine, units) = InfrastructureSystems._strip_units(get_value(value, Val(:active_power_limits_from), Val(:mw), units))
-"""Get [`TwoTerminalLCCLine`](@ref) `active_power_limits_from` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_active_power_limits_from`](@ref)."""
+"""Get [`TwoTerminalLCCLine`](@ref) `active_power_limits_from` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_active_power_limits_from`](@ref)."""
 get_active_power_limits_from_unitful(value::TwoTerminalLCCLine, units) = get_value(value, Val(:active_power_limits_from), Val(:mw), units)
 get_active_power_limits_from(value::TwoTerminalLCCLine) = _units_arg_required(get_active_power_limits_from, value, :active_power_limits_from, Val(:mw))
 get_active_power_limits_from_unitful(value::TwoTerminalLCCLine) = _units_arg_required(get_active_power_limits_from_unitful, value, :active_power_limits_from, Val(:mw))
-InfrastructureSystems.display_units_arg(::typeof(get_active_power_limits_from), ::Type{TwoTerminalLCCLine}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_active_power_limits_from_unitful), ::Type{TwoTerminalLCCLine}) = InfrastructureSystems.SU
-"""Get [`TwoTerminalLCCLine`](@ref) `active_power_limits_to` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_active_power_limits_to_unitful`](@ref)."""
+InfrastructureSystems.display_units_arg(::typeof(get_active_power_limits_from), ::Type{TwoTerminalLCCLine}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_active_power_limits_from_unitful), ::Type{TwoTerminalLCCLine}) = u"SU"
+"""Get [`TwoTerminalLCCLine`](@ref) `active_power_limits_to` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_active_power_limits_to_unitful`](@ref)."""
 get_active_power_limits_to(value::TwoTerminalLCCLine, units) = InfrastructureSystems._strip_units(get_value(value, Val(:active_power_limits_to), Val(:mw), units))
-"""Get [`TwoTerminalLCCLine`](@ref) `active_power_limits_to` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_active_power_limits_to`](@ref)."""
+"""Get [`TwoTerminalLCCLine`](@ref) `active_power_limits_to` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_active_power_limits_to`](@ref)."""
 get_active_power_limits_to_unitful(value::TwoTerminalLCCLine, units) = get_value(value, Val(:active_power_limits_to), Val(:mw), units)
 get_active_power_limits_to(value::TwoTerminalLCCLine) = _units_arg_required(get_active_power_limits_to, value, :active_power_limits_to, Val(:mw))
 get_active_power_limits_to_unitful(value::TwoTerminalLCCLine) = _units_arg_required(get_active_power_limits_to_unitful, value, :active_power_limits_to, Val(:mw))
-InfrastructureSystems.display_units_arg(::typeof(get_active_power_limits_to), ::Type{TwoTerminalLCCLine}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_active_power_limits_to_unitful), ::Type{TwoTerminalLCCLine}) = InfrastructureSystems.SU
-"""Get [`TwoTerminalLCCLine`](@ref) `reactive_power_limits_from` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_reactive_power_limits_from_unitful`](@ref)."""
+InfrastructureSystems.display_units_arg(::typeof(get_active_power_limits_to), ::Type{TwoTerminalLCCLine}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_active_power_limits_to_unitful), ::Type{TwoTerminalLCCLine}) = u"SU"
+"""Get [`TwoTerminalLCCLine`](@ref) `reactive_power_limits_from` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_reactive_power_limits_from_unitful`](@ref)."""
 get_reactive_power_limits_from(value::TwoTerminalLCCLine, units) = InfrastructureSystems._strip_units(get_value(value, Val(:reactive_power_limits_from), Val(:mvar), units))
-"""Get [`TwoTerminalLCCLine`](@ref) `reactive_power_limits_from` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_reactive_power_limits_from`](@ref)."""
+"""Get [`TwoTerminalLCCLine`](@ref) `reactive_power_limits_from` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_reactive_power_limits_from`](@ref)."""
 get_reactive_power_limits_from_unitful(value::TwoTerminalLCCLine, units) = get_value(value, Val(:reactive_power_limits_from), Val(:mvar), units)
 get_reactive_power_limits_from(value::TwoTerminalLCCLine) = _units_arg_required(get_reactive_power_limits_from, value, :reactive_power_limits_from, Val(:mvar))
 get_reactive_power_limits_from_unitful(value::TwoTerminalLCCLine) = _units_arg_required(get_reactive_power_limits_from_unitful, value, :reactive_power_limits_from, Val(:mvar))
-InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_limits_from), ::Type{TwoTerminalLCCLine}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_limits_from_unitful), ::Type{TwoTerminalLCCLine}) = InfrastructureSystems.SU
-"""Get [`TwoTerminalLCCLine`](@ref) `reactive_power_limits_to` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_reactive_power_limits_to_unitful`](@ref)."""
+InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_limits_from), ::Type{TwoTerminalLCCLine}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_limits_from_unitful), ::Type{TwoTerminalLCCLine}) = u"SU"
+"""Get [`TwoTerminalLCCLine`](@ref) `reactive_power_limits_to` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_reactive_power_limits_to_unitful`](@ref)."""
 get_reactive_power_limits_to(value::TwoTerminalLCCLine, units) = InfrastructureSystems._strip_units(get_value(value, Val(:reactive_power_limits_to), Val(:mvar), units))
-"""Get [`TwoTerminalLCCLine`](@ref) `reactive_power_limits_to` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_reactive_power_limits_to`](@ref)."""
+"""Get [`TwoTerminalLCCLine`](@ref) `reactive_power_limits_to` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_reactive_power_limits_to`](@ref)."""
 get_reactive_power_limits_to_unitful(value::TwoTerminalLCCLine, units) = get_value(value, Val(:reactive_power_limits_to), Val(:mvar), units)
 get_reactive_power_limits_to(value::TwoTerminalLCCLine) = _units_arg_required(get_reactive_power_limits_to, value, :reactive_power_limits_to, Val(:mvar))
 get_reactive_power_limits_to_unitful(value::TwoTerminalLCCLine) = _units_arg_required(get_reactive_power_limits_to_unitful, value, :reactive_power_limits_to, Val(:mvar))
-InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_limits_to), ::Type{TwoTerminalLCCLine}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_limits_to_unitful), ::Type{TwoTerminalLCCLine}) = InfrastructureSystems.SU
+InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_limits_to), ::Type{TwoTerminalLCCLine}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_limits_to_unitful), ::Type{TwoTerminalLCCLine}) = u"SU"
 """Get [`TwoTerminalLCCLine`](@ref) `loss`."""
 get_loss(value::TwoTerminalLCCLine) = value.loss
 """Get [`TwoTerminalLCCLine`](@ref) `services`."""

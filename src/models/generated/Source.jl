@@ -49,7 +49,7 @@ Commonly used in dynamics simulations to represent a very large machine on a sin
 - `services::Vector{Service}`: (default: `Device[]`) Services that this device contributes to
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
-- `input_basis`: (keyword constructor only, required) `CU` or `NU`, the units of bare numbers on unit-bearing fields. Tagged values (`50.0u"MW"`) keep their own units
+- `input_basis`: (keyword constructor only, required) `u"CU"` or `u"NU"`, the units of bare numbers on unit-bearing fields. Tagged values (`50.0u"MW"`) keep their own units
 """
 mutable struct Source <: StaticInjection
     "Name of the component. Components of the same type (e.g., `PowerLoad`) must have unique names, but components of different types (e.g., `PowerLoad` and `ACBus`) can have the same name"
@@ -94,7 +94,7 @@ function Source(name, available, bus, active_power=0.0, reactive_power=0.0, acti
     Source(name, available, bus, active_power, reactive_power, active_power_limits, reactive_power_limits, R_th, X_th, internal_voltage, internal_angle, base_power, base_voltage, operation_cost, dynamic_injector, services, ext, InfrastructureSystemsInternal(), )
 end
 
-function Source(; name, available, bus, active_power=0.0, reactive_power=0.0, active_power_limits=(min=0.0, max=0.0), reactive_power_limits=(min=0.0, max=0.0), R_th=0.0, X_th=0.0, internal_voltage=1.0, internal_angle=0.0, base_power=100.0, base_voltage=nothing, operation_cost=ImportExportCost(nothing), dynamic_injector=nothing, services=Device[], ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Union{ComponentBaseUnit, NaturalUnit}, )
+function Source(; name, available, bus, active_power=0.0, reactive_power=0.0, active_power_limits=(min=0.0, max=0.0), reactive_power_limits=(min=0.0, max=0.0), R_th=0.0, X_th=0.0, internal_voltage=1.0, internal_angle=0.0, base_power=100.0, base_voltage=nothing, operation_cost=ImportExportCost(nothing), dynamic_injector=nothing, services=Device[], ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Unitful.Units, )
     value = Source(name, available, bus, _placeholder(active_power), _placeholder(reactive_power), _placeholder(active_power_limits), _placeholder(reactive_power_limits), R_th, X_th, internal_voltage, internal_angle, base_power, base_voltage, operation_cost, dynamic_injector, services, ext, internal, )
     set_active_power!(value, _tag(active_power, input_basis, Val(:mw)))
     set_reactive_power!(value, _tag(reactive_power, input_basis, Val(:mvar)))
@@ -124,7 +124,7 @@ function Source(::Nothing)
         dynamic_injector=nothing,
         services=Device[],
         ext=Dict{String, Any}(),
-        input_basis=CU,
+        input_basis=u"CU",
     )
 end
 
@@ -134,38 +134,38 @@ get_name(value::Source) = value.name
 get_available(value::Source) = value.available
 """Get [`Source`](@ref) `bus`."""
 get_bus(value::Source) = value.bus
-"""Get [`Source`](@ref) `active_power` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_active_power_unitful`](@ref)."""
+"""Get [`Source`](@ref) `active_power` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_active_power_unitful`](@ref)."""
 get_active_power(value::Source, units) = InfrastructureSystems._strip_units(get_value(value, Val(:active_power), Val(:mw), units))
-"""Get [`Source`](@ref) `active_power` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_active_power`](@ref)."""
+"""Get [`Source`](@ref) `active_power` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_active_power`](@ref)."""
 get_active_power_unitful(value::Source, units) = get_value(value, Val(:active_power), Val(:mw), units)
 get_active_power(value::Source) = _units_arg_required(get_active_power, value, :active_power, Val(:mw))
 get_active_power_unitful(value::Source) = _units_arg_required(get_active_power_unitful, value, :active_power, Val(:mw))
-InfrastructureSystems.display_units_arg(::typeof(get_active_power), ::Type{Source}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_active_power_unitful), ::Type{Source}) = InfrastructureSystems.SU
-"""Get [`Source`](@ref) `reactive_power` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_reactive_power_unitful`](@ref)."""
+InfrastructureSystems.display_units_arg(::typeof(get_active_power), ::Type{Source}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_active_power_unitful), ::Type{Source}) = u"SU"
+"""Get [`Source`](@ref) `reactive_power` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_reactive_power_unitful`](@ref)."""
 get_reactive_power(value::Source, units) = InfrastructureSystems._strip_units(get_value(value, Val(:reactive_power), Val(:mvar), units))
-"""Get [`Source`](@ref) `reactive_power` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_reactive_power`](@ref)."""
+"""Get [`Source`](@ref) `reactive_power` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_reactive_power`](@ref)."""
 get_reactive_power_unitful(value::Source, units) = get_value(value, Val(:reactive_power), Val(:mvar), units)
 get_reactive_power(value::Source) = _units_arg_required(get_reactive_power, value, :reactive_power, Val(:mvar))
 get_reactive_power_unitful(value::Source) = _units_arg_required(get_reactive_power_unitful, value, :reactive_power, Val(:mvar))
-InfrastructureSystems.display_units_arg(::typeof(get_reactive_power), ::Type{Source}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_unitful), ::Type{Source}) = InfrastructureSystems.SU
-"""Get [`Source`](@ref) `active_power_limits` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_active_power_limits_unitful`](@ref)."""
+InfrastructureSystems.display_units_arg(::typeof(get_reactive_power), ::Type{Source}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_unitful), ::Type{Source}) = u"SU"
+"""Get [`Source`](@ref) `active_power_limits` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_active_power_limits_unitful`](@ref)."""
 get_active_power_limits(value::Source, units) = InfrastructureSystems._strip_units(get_value(value, Val(:active_power_limits), Val(:mw), units))
-"""Get [`Source`](@ref) `active_power_limits` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_active_power_limits`](@ref)."""
+"""Get [`Source`](@ref) `active_power_limits` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_active_power_limits`](@ref)."""
 get_active_power_limits_unitful(value::Source, units) = get_value(value, Val(:active_power_limits), Val(:mw), units)
 get_active_power_limits(value::Source) = _units_arg_required(get_active_power_limits, value, :active_power_limits, Val(:mw))
 get_active_power_limits_unitful(value::Source) = _units_arg_required(get_active_power_limits_unitful, value, :active_power_limits, Val(:mw))
-InfrastructureSystems.display_units_arg(::typeof(get_active_power_limits), ::Type{Source}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_active_power_limits_unitful), ::Type{Source}) = InfrastructureSystems.SU
-"""Get [`Source`](@ref) `reactive_power_limits` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_reactive_power_limits_unitful`](@ref)."""
+InfrastructureSystems.display_units_arg(::typeof(get_active_power_limits), ::Type{Source}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_active_power_limits_unitful), ::Type{Source}) = u"SU"
+"""Get [`Source`](@ref) `reactive_power_limits` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_reactive_power_limits_unitful`](@ref)."""
 get_reactive_power_limits(value::Source, units) = InfrastructureSystems._strip_units(get_value(value, Val(:reactive_power_limits), Val(:mvar), units))
-"""Get [`Source`](@ref) `reactive_power_limits` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_reactive_power_limits`](@ref)."""
+"""Get [`Source`](@ref) `reactive_power_limits` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_reactive_power_limits`](@ref)."""
 get_reactive_power_limits_unitful(value::Source, units) = get_value(value, Val(:reactive_power_limits), Val(:mvar), units)
 get_reactive_power_limits(value::Source) = _units_arg_required(get_reactive_power_limits, value, :reactive_power_limits, Val(:mvar))
 get_reactive_power_limits_unitful(value::Source) = _units_arg_required(get_reactive_power_limits_unitful, value, :reactive_power_limits, Val(:mvar))
-InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_limits), ::Type{Source}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_limits_unitful), ::Type{Source}) = InfrastructureSystems.SU
+InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_limits), ::Type{Source}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_limits_unitful), ::Type{Source}) = u"SU"
 """Get [`Source`](@ref) `R_th`."""
 get_R_th(value::Source) = value.R_th
 """Get [`Source`](@ref) `X_th`."""

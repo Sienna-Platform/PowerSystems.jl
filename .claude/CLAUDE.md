@@ -129,9 +129,9 @@ Five concrete transformer types became two, and series data moved onto a nested 
 ## The explicit-units engine (the defining psy6 feature)
 
 - Descriptor fields carry `needs_conversion: true` + `conversion_unit` (`:mva` / `:ohm` / `:siemens`) — **247 fields** across the descriptor. Codegen (IS-side) emits `get_X(comp, units)`, `get_X_unitful(comp, units)`, and `set_X!(comp, tagged_value)`.
-- Getters require the unit system explicitly: `get_rating(br, PSY.SU)`. `SU`/`CU`/`NU` markers come from `IS.RelativeUnits`; PSY gives them domain meaning (`base_power` is the component base, MVA).
-- Setters take **tagged** values and reject bare floats: `set_rating_b!(line, 0.9 * PSY.SU)`.
-- PSY extends `IS._strip_units` (required by the IS codegen contract) and overrides `IS.default_units(::Component)` to return `SU` for time-series multipliers.
+- Units are Unitful: `get_rating(br, u"SU")`, `set_rating_b!(line, 0.9u"SU")`, rates `u"SU/minute"`, `input_basis = u"CU"`/`u"NU"`. Bare floats are rejected.
+- Per-unit values carry IS's generic `u"CU"`/`u"SU"` for every category (this branch; the per-base alternative is PR #1817). Kinds on one base add; bases don't mix.
+- `SU`/`CU`/`NU` markers remain only for cost curves' `U` and the `to_file`/OpenAPI `units` mode.
 - **`with_units_base` / `set_units_base_system!` / `get_units_base` are GONE** (verified against `origin/psy6`: all three `isdefined(PowerSystems, …) == false`). The stateful units system was fully removed in the psy6 line — see `7ffbbdf8d` "remove last pieces of stateful units system". Every value is read with an explicit unit argument instead. The `UnitSystem` enum still exists as display metadata, but there is no setter. Downstream code calling any of the three must migrate to explicit unit args, not look for a replacement setter.
 - Serialization writes on whichever basis `to_file`'s `units` keyword names (`CU`/`NU`) — see "System file I/O" above for the write/read asymmetry and the `.sns` `CU`-only rule.
 - Cost curves default to `power_units = IS.NaturalUnit()`; `CostCurve{T,U}`/`FuelCurve{T,U}` carry the unit as a type parameter (IS4).

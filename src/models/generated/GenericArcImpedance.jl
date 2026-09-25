@@ -33,7 +33,7 @@ A virtual impedance between two buses that does not correspond to a physical com
 - `base_power::Float64`: (default: `100.0`) System base power for per-unitization of this component's per-unit fields, recorded per component in lieu of a system-level table (MVA), validation range: `(0.0001, nothing)`
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
-- `input_basis`: (keyword constructor only, required) `CU` or `NU`, the units of bare numbers on unit-bearing fields. Tagged values (`50.0u"MW"`) keep their own units
+- `input_basis`: (keyword constructor only, required) `u"CU"` or `u"NU"`, the units of bare numbers on unit-bearing fields. Tagged values (`50.0u"MW"`) keep their own units
 """
 mutable struct GenericArcImpedance <: ACTransmission
     "Name of the component. Components of the same type (e.g., `PowerLoad`) must have unique names, but components of different types (e.g., `PowerLoad` and `ACBus`) can have the same name"
@@ -64,7 +64,7 @@ function GenericArcImpedance(name, available, active_power_flow, reactive_power_
     GenericArcImpedance(name, available, active_power_flow, reactive_power_flow, max_flow, arc, r, x, base_power, ext, InfrastructureSystemsInternal(), )
 end
 
-function GenericArcImpedance(; name, available, active_power_flow, reactive_power_flow, max_flow, arc, r, x, base_power=100.0, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Union{ComponentBaseUnit, NaturalUnit}, )
+function GenericArcImpedance(; name, available, active_power_flow, reactive_power_flow, max_flow, arc, r, x, base_power=100.0, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Unitful.Units, )
     value = GenericArcImpedance(name, available, _placeholder(active_power_flow), _placeholder(reactive_power_flow), _placeholder(max_flow), arc, _placeholder(r), _placeholder(x), base_power, ext, internal, )
     set_active_power_flow!(value, _tag(active_power_flow, input_basis, Val(:mw)))
     set_reactive_power_flow!(value, _tag(reactive_power_flow, input_basis, Val(:mvar)))
@@ -88,7 +88,7 @@ function GenericArcImpedance(::Nothing)
         x=0.0,
         base_power=100.0,
         ext=Dict{String, Any}(),
-        input_basis=CU,
+        input_basis=u"CU",
     )
 end
 
@@ -96,48 +96,48 @@ end
 get_name(value::GenericArcImpedance) = value.name
 """Get [`GenericArcImpedance`](@ref) `available`."""
 get_available(value::GenericArcImpedance) = value.available
-"""Get [`GenericArcImpedance`](@ref) `active_power_flow` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_active_power_flow_unitful`](@ref)."""
+"""Get [`GenericArcImpedance`](@ref) `active_power_flow` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_active_power_flow_unitful`](@ref)."""
 get_active_power_flow(value::GenericArcImpedance, units) = InfrastructureSystems._strip_units(get_value(value, Val(:active_power_flow), Val(:mw), units))
-"""Get [`GenericArcImpedance`](@ref) `active_power_flow` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_active_power_flow`](@ref)."""
+"""Get [`GenericArcImpedance`](@ref) `active_power_flow` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_active_power_flow`](@ref)."""
 get_active_power_flow_unitful(value::GenericArcImpedance, units) = get_value(value, Val(:active_power_flow), Val(:mw), units)
 get_active_power_flow(value::GenericArcImpedance) = _units_arg_required(get_active_power_flow, value, :active_power_flow, Val(:mw))
 get_active_power_flow_unitful(value::GenericArcImpedance) = _units_arg_required(get_active_power_flow_unitful, value, :active_power_flow, Val(:mw))
-InfrastructureSystems.display_units_arg(::typeof(get_active_power_flow), ::Type{GenericArcImpedance}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_active_power_flow_unitful), ::Type{GenericArcImpedance}) = InfrastructureSystems.SU
-"""Get [`GenericArcImpedance`](@ref) `reactive_power_flow` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_reactive_power_flow_unitful`](@ref)."""
+InfrastructureSystems.display_units_arg(::typeof(get_active_power_flow), ::Type{GenericArcImpedance}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_active_power_flow_unitful), ::Type{GenericArcImpedance}) = u"SU"
+"""Get [`GenericArcImpedance`](@ref) `reactive_power_flow` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_reactive_power_flow_unitful`](@ref)."""
 get_reactive_power_flow(value::GenericArcImpedance, units) = InfrastructureSystems._strip_units(get_value(value, Val(:reactive_power_flow), Val(:mvar), units))
-"""Get [`GenericArcImpedance`](@ref) `reactive_power_flow` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_reactive_power_flow`](@ref)."""
+"""Get [`GenericArcImpedance`](@ref) `reactive_power_flow` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_reactive_power_flow`](@ref)."""
 get_reactive_power_flow_unitful(value::GenericArcImpedance, units) = get_value(value, Val(:reactive_power_flow), Val(:mvar), units)
 get_reactive_power_flow(value::GenericArcImpedance) = _units_arg_required(get_reactive_power_flow, value, :reactive_power_flow, Val(:mvar))
 get_reactive_power_flow_unitful(value::GenericArcImpedance) = _units_arg_required(get_reactive_power_flow_unitful, value, :reactive_power_flow, Val(:mvar))
-InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_flow), ::Type{GenericArcImpedance}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_flow_unitful), ::Type{GenericArcImpedance}) = InfrastructureSystems.SU
-"""Get [`GenericArcImpedance`](@ref) `max_flow` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_max_flow_unitful`](@ref)."""
+InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_flow), ::Type{GenericArcImpedance}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_flow_unitful), ::Type{GenericArcImpedance}) = u"SU"
+"""Get [`GenericArcImpedance`](@ref) `max_flow` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_max_flow_unitful`](@ref)."""
 get_max_flow(value::GenericArcImpedance, units) = InfrastructureSystems._strip_units(get_value(value, Val(:max_flow), Val(:mw), units))
-"""Get [`GenericArcImpedance`](@ref) `max_flow` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_max_flow`](@ref)."""
+"""Get [`GenericArcImpedance`](@ref) `max_flow` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_max_flow`](@ref)."""
 get_max_flow_unitful(value::GenericArcImpedance, units) = get_value(value, Val(:max_flow), Val(:mw), units)
 get_max_flow(value::GenericArcImpedance) = _units_arg_required(get_max_flow, value, :max_flow, Val(:mw))
 get_max_flow_unitful(value::GenericArcImpedance) = _units_arg_required(get_max_flow_unitful, value, :max_flow, Val(:mw))
-InfrastructureSystems.display_units_arg(::typeof(get_max_flow), ::Type{GenericArcImpedance}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_max_flow_unitful), ::Type{GenericArcImpedance}) = InfrastructureSystems.SU
+InfrastructureSystems.display_units_arg(::typeof(get_max_flow), ::Type{GenericArcImpedance}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_max_flow_unitful), ::Type{GenericArcImpedance}) = u"SU"
 """Get [`GenericArcImpedance`](@ref) `arc`."""
 get_arc(value::GenericArcImpedance) = value.arc
-"""Get [`GenericArcImpedance`](@ref) `r` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_r_unitful`](@ref)."""
+"""Get [`GenericArcImpedance`](@ref) `r` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_r_unitful`](@ref)."""
 get_r(value::GenericArcImpedance, units) = InfrastructureSystems._strip_units(get_value(value, Val(:r), Val(:ohm), units))
-"""Get [`GenericArcImpedance`](@ref) `r` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_r`](@ref)."""
+"""Get [`GenericArcImpedance`](@ref) `r` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_r`](@ref)."""
 get_r_unitful(value::GenericArcImpedance, units) = get_value(value, Val(:r), Val(:ohm), units)
 get_r(value::GenericArcImpedance) = _units_arg_required(get_r, value, :r, Val(:ohm))
 get_r_unitful(value::GenericArcImpedance) = _units_arg_required(get_r_unitful, value, :r, Val(:ohm))
-InfrastructureSystems.display_units_arg(::typeof(get_r), ::Type{GenericArcImpedance}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_r_unitful), ::Type{GenericArcImpedance}) = InfrastructureSystems.SU
-"""Get [`GenericArcImpedance`](@ref) `x` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_x_unitful`](@ref)."""
+InfrastructureSystems.display_units_arg(::typeof(get_r), ::Type{GenericArcImpedance}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_r_unitful), ::Type{GenericArcImpedance}) = u"SU"
+"""Get [`GenericArcImpedance`](@ref) `x` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_x_unitful`](@ref)."""
 get_x(value::GenericArcImpedance, units) = InfrastructureSystems._strip_units(get_value(value, Val(:x), Val(:ohm), units))
-"""Get [`GenericArcImpedance`](@ref) `x` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_x`](@ref)."""
+"""Get [`GenericArcImpedance`](@ref) `x` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_x`](@ref)."""
 get_x_unitful(value::GenericArcImpedance, units) = get_value(value, Val(:x), Val(:ohm), units)
 get_x(value::GenericArcImpedance) = _units_arg_required(get_x, value, :x, Val(:ohm))
 get_x_unitful(value::GenericArcImpedance) = _units_arg_required(get_x_unitful, value, :x, Val(:ohm))
-InfrastructureSystems.display_units_arg(::typeof(get_x), ::Type{GenericArcImpedance}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_x_unitful), ::Type{GenericArcImpedance}) = InfrastructureSystems.SU
+InfrastructureSystems.display_units_arg(::typeof(get_x), ::Type{GenericArcImpedance}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_x_unitful), ::Type{GenericArcImpedance}) = u"SU"
 
 _get_base_power(value::GenericArcImpedance) = value.base_power
 """Get [`GenericArcImpedance`](@ref) `ext`."""

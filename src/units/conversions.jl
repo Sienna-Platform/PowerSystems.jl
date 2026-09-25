@@ -101,19 +101,6 @@ const VOLTAGE = VoltageCategory()
 const CURRENT = CurrentCategory()
 const ACTIVE_POWER_CHANGE_RATE = ActivePowerChangeRateCategory()
 
-"""
-The categories denominated per unit time. A bare relative marker is rejected for these
-(it does not say per what time); they take `CU/u"minute"`, `SU/u"hr"`, or a natural
-compound unit like `u"MW/hr"`. Extend this `Union` when adding a rate category.
-"""
-const RateCategory = Union{ActivePowerChangeRateCategory}
-
-# The basis a rate category's *stored* per-unit value is denominated in: a stored
-# `ramp_limits` of 0.1 means 0.1 pu per minute. Declared rather than recovered from
-# `natural_unit`, which would mean picking the time factor out of a compound
-# `FreeUnits`' internals. See [`time_basis`](@ref).
-time_basis(::ActivePowerChangeRateCategory) = u"minute"
-
 # Categories compose, so a derived quantity's base and natural unit follow from its
 # parts rather than being declared: `VOLTAGE^Val(2) / POWER` *is* `IMPEDANCE`. The
 # exponents add and Unitful composes the natural unit, both at the type level.
@@ -209,299 +196,120 @@ _cu_to_su_ratio(c, ::UnitCategory{NU, P, V}) where {NU, P, V} =
     _base_factor(Val(P), _cu_su_power_ratio, c)
 
 # ============================================================
-# convert_units: value from one unit system to another
+# Per-unit units of a category
 # ============================================================
 
 """
-    convert_units(component, value, category, from, to)
+    per_unit_table(category) -> (component, system, natural, residual)
 
-Convert a value between unit systems.
+The units `category`'s values take on each basis: `u"CU"` on the component base, `u"SU"`
+on the system base (the same for every category), and the natural unit without
+the residual (`u"MW"`, `u"Ω"`), plus the residual itself: what is left of the natural
+unit once the per-unitized base is divided out (`u"minute^-1"` for a ramp, `NoUnits` for
+a plain quantity). A stored value is `component * residual`.
+
+Computed from the category's type in the generator, so every use is a constant.
+"""
+@generated function per_unit_table(::UnitCategory{N, P, V}) where {N, P, V}
+    natural = N()
+    residual = natural / (u"MW"^P * u"kV"^V)
+    if Unitful.dimension(residual) == Unitful.NoDims
+        # The natural units (MW, MVAr, MVA, kV, Ω, S, kA) are mutually consistent, so a
+        # dimensionless residual is exactly 1.
+        Unitful.uconvert(Unitful.NoUnits, 1.0 * residual) ≈ 1.0 ||
+            error("inconsistent natural unit $natural for per-unit exponents ($P, $V)")
+        residual = Unitful.NoUnits
+    end
+    component, system = PerUnit.CU, PerUnit.SU
+    return :(($component, $system, $(natural / residual), $residual))
+end
+
+# Which basis resolved units `t` are on: `:component`, `:system`, `:natural`, or
+# `:mismatch` for per-unit units whose residual is wrong for the category (a bare `u"CU"`
+# on a ramp). Called only from `_conversion_plan`'s generator.
+function _basis_of(t, component, system, residual)
+    dims = Unitful.dimension(t)
+    dims == Unitful.dimension(component * residual) && return :component
+    dims == Unitful.dimension(system * residual) && return :system
+    names = map(d -> typeof(d).parameters[1], typeof(dims).parameters[1])
+    per_unit =
+        any(in((:GenericComponentBase, :GenericSystemBase)), names)
+    return per_unit ? :mismatch : :natural
+end
+
+"""
+    _conversion_plan(category, units) -> (Val(basis), resolved_units)
+
+How to convert `category`'s values to or from `units`: `units` with any generic
+`u"CU"`/`u"SU"`/`u"NU"` resolved to the category's own, and which basis they are on. Both
+come from the argument types in the generator, once per (category, units) pair, so a getter
+compiles to the arithmetic alone.
+"""
+@generated function _conversion_plan(cat::UnitCategory, units::Unitful.Units)
+    component, system, natural, residual = per_unit_table(cat.instance)
+    t = IS.resolve_per_unit(units.instance, component, system, natural)
+    return :(($(Val(_basis_of(t, component, system, residual))), $t))
+end
+
+"""
+    convert_units(component, value::Quantity, category, to) -> Quantity
+
+Convert `value` to the units `to`, resolving per-unit bases against `component`. Either
+side may be natural (`u"MW"`) or per-unit, written with the generic `u"CU"`/`u"SU"`/`u"NU"`
+(`u"CU"`, `u"SU/hr"`).
 
 # Examples
 ```julia
-convert_units(gen, 0.6, ACTIVE_POWER, CU, u"MW")       # → 30.0 MW
-convert_units(gen, 30.0u"MW", ACTIVE_POWER, u"MW", CU) # → 0.6 CU
-convert_units(gen, 0.6, ACTIVE_POWER, CU, SU)       # → 0.3 SU
+convert_units(gen, 0.6u"CU", ACTIVE_POWER, u"MW")   # → 30.0 MW
+convert_units(gen, 30.0u"MW", ACTIVE_POWER, u"CU")  # → 0.6 CU
+convert_units(gen, 0.6u"CU", ACTIVE_POWER, u"SU")   # → 0.3 SU
 ```
 """
-function convert_units end
+convert_units(c, value::Quantity, cat::UnitCategory, to::Units) =
+    _from_stored(c, _to_stored(c, value, cat), cat, to)
+convert_units(::Any, ::Nothing, ::UnitCategory, ::Units) = nothing
 
-# Excludes `Quantity`/`RelativeQuantity`, which are `<: Number` but neither `<: Real` nor
-# `<: Complex`, and must fall through to the marker guards below. Widening this to `Number`
-# makes those guards ambiguous.
-const _BareNumber = Union{Real, Complex}
+# Stored (a bare component-base number, in the category's residual) → `to`.
+function _from_stored(c, v::Number, cat::UnitCategory, to::Units)
+    basis, t = _conversion_plan(cat, to)
+    return _from_stored(basis, c, v, cat, t, to)
+end
+_from_stored(::Any, ::Nothing, ::UnitCategory, ::Units) = nothing
 
-# --- From CU ---
+_from_stored(::Val{:component}, _, v, cat, t, _) =
+    uconvert(t, v * _stored_unit(Val(:component), cat))
+_from_stored(::Val{:system}, c, v, cat, t, _) =
+    uconvert(t, (v * _cu_to_su_ratio(c, cat)) * _stored_unit(Val(:system), cat))
+_from_stored(::Val{:natural}, c, v, cat, t, _) =
+    uconvert(t, (v * base_value(c, cat)) * natural_unit(cat))
+_from_stored(::Val{:mismatch}, _, _, cat, _, to) = _residual_error(cat, to)
 
-function convert_units(
-    c,
-    value::_BareNumber,
-    cat::UnitCategory,
-    ::ComponentBaseUnit,
-    units::Units,
+# A quantity → the bare stored number. A value tagged with the generic `u"CU"` is read
+# as this category's per-unit base.
+function _to_stored(c, q::Quantity, cat::UnitCategory)
+    basis, t = _conversion_plan(cat, Unitful.unit(q))
+    return _to_stored(basis, c, ustrip(q) * t, cat)
+end
+
+_to_stored(::Val{:component}, _, q, cat) = ustrip(_stored_unit(Val(:component), cat), q)
+_to_stored(::Val{:system}, c, q, cat) =
+    ustrip(_stored_unit(Val(:system), cat), q) / _cu_to_su_ratio(c, cat)
+_to_stored(::Val{:natural}, c, q, cat) =
+    ustrip(natural_unit(cat), q) / base_value(c, cat)
+_to_stored(::Val{:mismatch}, _, q, cat) = _residual_error(cat, Unitful.unit(q))
+
+_stored_unit(::Val{:component}, cat) = (t = per_unit_table(cat); t[1] * t[4])
+_stored_unit(::Val{:system}, cat) = (t = per_unit_table(cat); t[2] * t[4])
+
+@noinline _residual_error(cat, t) = throw(
+    ArgumentError(
+        "$(cat) values per unit are in $(_stored_unit(Val(:component), cat)) on the " *
+        "component base; `$t` does not match. Write the rest of the unit too, e.g. " *
+        "`u\"CU$(_residual_suffix(per_unit_table(cat)[4]))\"`.",
+    ),
 )
-    natural = value * base_value(c, cat) * natural_unit(cat)
-    return uconvert(units, natural)
-end
-
-# Relative↔relative conversions go through the power-only ratio: the voltage
-# terms in base_value/system_base_value cancel exactly, so fetching them would
-# be wasted work (and would wrongly require a base voltage to be defined).
-function convert_units(
-    c,
-    value::_BareNumber,
-    cat::UnitCategory,
-    ::ComponentBaseUnit,
-    ::SystemBaseUnit,
-)
-    return (value * _cu_to_su_ratio(c, cat)) * SU
-end
-
-convert_units(
-    ::Any,
-    value::_BareNumber,
-    ::UnitCategory,
-    ::ComponentBaseUnit,
-    ::ComponentBaseUnit,
-) =
-    value * CU
-
-# --- From SU ---
-
-function convert_units(
-    c,
-    value::_BareNumber,
-    cat::UnitCategory,
-    ::SystemBaseUnit,
-    units::Units,
-)
-    natural = value * system_base_value(c, cat) * natural_unit(cat)
-    return uconvert(units, natural)
-end
-
-function convert_units(
-    c,
-    value::_BareNumber,
-    cat::UnitCategory,
-    ::SystemBaseUnit,
-    ::ComponentBaseUnit,
-)
-    return (value / _cu_to_su_ratio(c, cat)) * CU
-end
-
-convert_units(
-    ::Any,
-    value::_BareNumber,
-    ::UnitCategory,
-    ::SystemBaseUnit,
-    ::SystemBaseUnit,
-) =
-    value * SU
-
-# --- From natural units ---
-
-function convert_units(c, val::Quantity, cat::UnitCategory, ::Units, ::ComponentBaseUnit)
-    natural_val = Unitful.ustrip(natural_unit(cat), val)
-    return RelativeQuantity(natural_val / base_value(c, cat), CU)
-end
-
-function convert_units(c, val::Quantity, cat::UnitCategory, ::Units, ::SystemBaseUnit)
-    natural_val = Unitful.ustrip(natural_unit(cat), val)
-    return RelativeQuantity(natural_val / system_base_value(c, cat), SU)
-end
-
-# --- To NU (natural units) — delegate to the category's natural unit ---
-
-function convert_units(c, value::_BareNumber, cat::UnitCategory, from, ::NaturalUnit)
-    return convert_units(c, value, cat, from, natural_unit(cat))
-end
-
-# --- From NU — delegate from the category's natural unit ---
-
-function convert_units(c, val::Quantity, cat::UnitCategory, ::NaturalUnit, to)
-    return convert_units(c, val, cat, natural_unit(cat), to)
-end
-
-# NU → NU (identity, attach the natural unit)
-function convert_units(c, val::Quantity, cat::UnitCategory, ::NaturalUnit, ::NaturalUnit)
-    return uconvert(natural_unit(cat), val)
-end
-
-# --- nothing passthrough ---
-convert_units(::Any, ::Nothing, ::UnitCategory, ::Any, ::Any) = nothing
-
-# --- rate categories: relative base per unit time ---
-
-# A value expressed per `FROM` becomes `value * _time_factor(FROM, TO)` per `TO`
-# (1/minute → 1/hr multiplies by hr/minute = 60). Both units are singleton types, so
-# this folds to a literal.
-_time_factor(::FROM, ::TO) where {FROM <: Unitful.Units, TO <: Unitful.Units} =
-    Unitful.ustrip(Unitful.uconvert(Unitful.NoUnits, 1.0 * (TO() / FROM())))
-
-# The CU <-> SU power re-basing on its own, factored out so the rate conversions can
-# reuse it.
-#
-# They cannot reach it by calling `convert_units(c, v, cat, CU, SU)`, because for a rate
-# category that signature *is* the rejection defined below, and it throws. That rejection
-# is aimed at a caller who names a bare `SU` as a target: incomplete, because it says
-# nothing about time. By the time the rate conversions need this they have already dealt
-# with the time axis themselves, and what is left -- scaling by the ratio of the two power
-# bases -- is identical to every other category's.
-_relative_rebase(::Any, v, ::UnitCategory, ::ComponentBaseUnit, ::ComponentBaseUnit) = v
-_relative_rebase(::Any, v, ::UnitCategory, ::SystemBaseUnit, ::SystemBaseUnit) = v
-_relative_rebase(c, v, cat::UnitCategory, ::ComponentBaseUnit, ::SystemBaseUnit) =
-    v * _cu_to_su_ratio(c, cat)
-_relative_rebase(c, v, cat::UnitCategory, ::SystemBaseUnit, ::ComponentBaseUnit) =
-    v / _cu_to_su_ratio(c, cat)
-
-# Storage (CU/SU at the category's storage time) → a relative rate marker: re-base the
-# power axis, rescale the time axis, then re-attach both markers.
-function convert_units(
-    c,
-    value::_BareNumber,
-    cat::RateCategory,
-    from::AbstractRelativeUnit,
-    to::RateUnit,
-)
-    base = relative_unit(to)
-    v = _relative_rebase(c, value, cat, from, base)
-    return RelativeQuantity(v * _time_factor(time_basis(cat), time_basis(to)), base) /
-           time_basis(to)
-end
-
-# A tagged rate value → anywhere: drop to the category's own time basis, then re-enter
-# the engine as an ordinary relative value. Mirrors the `RelativeQuantity` unwrap guard
-# below.
-# `from` is matched as `AbstractRelativeUnit` and the tag checked in the body rather
-# than tied to `U` in the signature: tying it leaves these ambiguous against the
-# "Unitful value carries a relative `from`" guard below, which they must beat.
-function convert_units(
-    c,
-    val::RelativeRate{T, U, D, TU},
-    cat::RateCategory,
-    from::AbstractRelativeUnit,
-    to::AbstractRelativeUnit,
-) where {T, U, D, TU}
-    _check_rate_tag(val, U(), from)
-    v = IS._strip_units(val) * _time_factor(time_basis(val), time_basis(cat))
-    return RelativeQuantity(_relative_rebase(c, v, cat, from, to), to)
-end
-
-# …and to a rate marker, where the time axis moves again rather than collapsing.
-function convert_units(
-    c,
-    val::RelativeRate{T, U, D, TU},
-    cat::RateCategory,
-    from::AbstractRelativeUnit,
-    to::RateUnit,
-) where {T, U, D, TU}
-    _check_rate_tag(val, U(), from)
-    v = IS._strip_units(val) * _time_factor(time_basis(val), time_basis(cat))
-    return convert_units(c, v, cat, from, to)
-end
-
-# Mirrors the `RelativeQuantity` tag/marker guard below: the value's own tag is
-# authoritative, so a contradicting `from` is a caller error, not something to coerce.
-@inline function _check_rate_tag(val, tag, from)
-    tag === from || throw(
-        ArgumentError(
-            "value $val is tagged $tag but `from = $from`; the tag and the `from` " *
-            "marker must agree",
-        ),
-    )
-    return nothing
-end
-
-# A bare relative marker does not name a time, so it is not a complete target for a rate.
-# One method per `(from, to)` marker pair, matching the specificity of the generic
-# methods above -- narrowing only the category would be an ambiguity, not an override.
-for FROM in (:ComponentBaseUnit, :SystemBaseUnit),
-    TO in (:ComponentBaseUnit, :SystemBaseUnit)
-
-    @eval function convert_units(
-        ::Any,
-        ::_BareNumber,
-        cat::RateCategory,
-        ::$FROM,
-        to::$TO,
-    )
-        throw(
-            ArgumentError(
-                "$(cat) is a rate; `$(to)` alone does not say per what time. Pass a " *
-                "relative base per unit time (e.g. `$(to)/u\"minute\"`, `$(to)/u\"hr\"`) " *
-                "or a natural unit such as `u\"MW/minute\"`.",
-            ),
-        )
-    end
-end
-
-# A rate marker is meaningless for a quantity that is not a rate.
-convert_units(
-    ::Any,
-    ::_BareNumber,
-    cat::UnitCategory,
-    ::AbstractRelativeUnit,
-    to::RateUnit,
-) =
-    throw(
-        ArgumentError(
-            "$(cat) is not a rate, so `$(relative_unit(to))/$(time_basis(to))` is not a " *
-            "valid target; pass `$(relative_unit(to))` on its own.",
-        ),
-    )
-
-# --- marker/value-type guards ---
-
-# A Unitful value's units are authoritative; a relative "from" marker contradicts them.
-function convert_units(
-    ::Any,
-    value::Quantity,
-    ::UnitCategory,
-    from::AbstractRelativeUnit,
-    ::Any,
-)
-    throw(
-        ArgumentError(
-            "value $value carries physical units but `from = $from` claims a relative " *
-            "base; pass the value's own units (or NU) as `from`",
-        ),
-    )
-end
-
-# A RelativeQuantity's marker is authoritative; it must match `from`.
-function convert_units(
-    c,
-    value::RelativeQuantity{<:Any, U},
-    cat::UnitCategory,
-    ::U,
-    to,
-) where {U <: AbstractRelativeUnit}
-    return convert_units(c, ustrip(value), cat, U(), to)
-end
-
-function convert_units(
-    ::Any,
-    value::RelativeQuantity{<:Any, V},
-    ::UnitCategory,
-    from::IS.AbstractUnitSystem,
-    ::Any,
-) where {V <: AbstractRelativeUnit}
-    throw(
-        ArgumentError(
-            "value is tagged $(IS.RelativeUnits.unit(value)) but `from = $from`; " *
-            "the tag and the `from` marker must agree",
-        ),
-    )
-end
-
-# Catch-all: any combination not defined above is unsupported — say so clearly.
-function convert_units(::Any, value, ::UnitCategory, from, to)
-    throw(
-        ArgumentError(
-            "unsupported unit conversion for $(typeof(value)) from $from to $to",
-        ),
-    )
-end
+_residual_suffix(::typeof(Unitful.NoUnits)) = ""
+_residual_suffix(r) = "*" * unit_to_string(r)
 
 # Multi-circuit components (e.g. three-winding transformers) do not need a
 # separate conversion family: a per-pair *base provider* view (see
