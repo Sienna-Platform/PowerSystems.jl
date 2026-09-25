@@ -10,6 +10,61 @@ const _PHASE_SHIFT_OBJECTIVES = (
     TransformerControlObjective.ASYMMETRIC_ACTIVE_POWER_FLOW_DISABLED,
 )
 
+# Authoritative objective → (actuator, target) pairing. Validation reads this table; every
+# `TransformerControlObjective` member appears exactly once, checked at load. Bands the
+# objective does not name are `nothing`.
+const _CONTROL_OBJECTIVE_BANDS =
+    Dict{TransformerControlObjective.Value, Tuple{Vararg{Symbol}}}(
+        TransformerControlObjective.UNDEFINED => (),
+        TransformerControlObjective.FIXED =>
+            (:tap_ratio_limits, :controlled_voltage_limits),
+        TransformerControlObjective.VOLTAGE =>
+            (:tap_ratio_limits, :controlled_voltage_limits),
+        TransformerControlObjective.VOLTAGE_DISABLED =>
+            (:tap_ratio_limits, :controlled_voltage_limits),
+        TransformerControlObjective.REACTIVE_POWER_FLOW =>
+            (:tap_ratio_limits, :controlled_reactive_power_flow_limits),
+        TransformerControlObjective.REACTIVE_POWER_FLOW_DISABLED =>
+            (:tap_ratio_limits, :controlled_reactive_power_flow_limits),
+        TransformerControlObjective.CONTROL_OF_DC_LINE =>
+            (:tap_ratio_limits, :controlled_active_power_flow_limits),
+        TransformerControlObjective.CONTROL_OF_DC_LINE_DISABLED =>
+            (:tap_ratio_limits, :controlled_active_power_flow_limits),
+        TransformerControlObjective.ACTIVE_POWER_FLOW =>
+            (:phase_angle_limits, :controlled_active_power_flow_limits),
+        TransformerControlObjective.ACTIVE_POWER_FLOW_DISABLED =>
+            (:phase_angle_limits, :controlled_active_power_flow_limits),
+        TransformerControlObjective.ASYMMETRIC_ACTIVE_POWER_FLOW =>
+            (:phase_angle_limits, :controlled_active_power_flow_limits),
+        TransformerControlObjective.ASYMMETRIC_ACTIVE_POWER_FLOW_DISABLED =>
+            (:phase_angle_limits, :controlled_active_power_flow_limits),
+    )
+@assert Set(keys(_CONTROL_OBJECTIVE_BANDS)) ==
+        Set(instances(TransformerControlObjective.Value))
+
+"""The five fixed-quantity control bands of a [`TransformerCircuit`](@ref)."""
+const CONTROL_BAND_FIELDS = (
+    :tap_ratio_limits,
+    :phase_angle_limits,
+    :controlled_voltage_limits,
+    :controlled_reactive_power_flow_limits,
+    :controlled_active_power_flow_limits,
+)
+
+"""
+    control_band_fields(objective::TransformerControlObjective.Value)
+
+The band fields `objective` selects as `(actuator, target)`, or `()` for `UNDEFINED`. Errors
+on a member the pairing table does not list rather than guessing.
+"""
+function control_band_fields(objective::TransformerControlObjective.Value)
+    bands = get(_CONTROL_OBJECTIVE_BANDS, objective, nothing)
+    isnothing(bands) && error(
+        "unhandled TransformerControlObjective $objective; add it to _CONTROL_OBJECTIVE_BANDS",
+    )
+    return bands
+end
+
 """
     is_phase_shifting(w::TransformerCircuit)
 

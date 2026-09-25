@@ -43,6 +43,14 @@ end
         rating = 2.0,
         active_power_limits_from = (min = -2.0, max = 2.0),
         active_power_limits_to = (min = -2.0, max = 2.0),
+        dc_control_from = VSCDCControlModes.DC_POWER,
+        ac_control_from = VSCACControlModes.AC_REACTIVE_POWER,
+        dc_control_to = VSCDCControlModes.DC_VOLTAGE,
+        ac_control_to = VSCACControlModes.AC_VOLTAGE,
+        dc_power_setpoint_from = 0.1,
+        power_factor_setpoint_from = 0.98,
+        dc_voltage_setpoint_to = 1.0,
+        ac_voltage_setpoint_to = 1.01,
         rated_dc_voltage = 320.0,
         rated_ac_voltage_from = 230.0,
         rated_ac_voltage_to = 138.0,
@@ -74,6 +82,31 @@ end
     @test get_remote_bus_control_to(vsc) == 13
     @test get_rmpct_from(vsc) == 60.0
     @test get_rmpct_to(vsc) == 40.0
+
+    # Each mode selects one setpoint field; the other one of the pair is nothing.
+    @test get_dc_power_setpoint_from(vsc, CU) == 0.1
+    @test isnothing(get_dc_voltage_setpoint_from(vsc))
+    @test get_dc_voltage_setpoint_to(vsc) == 1.0
+    @test isnothing(get_dc_power_setpoint_to(vsc, CU))
+    @test get_power_factor_setpoint_from(vsc) == 0.98
+    @test isnothing(get_ac_voltage_setpoint_from(vsc))
+    @test get_ac_voltage_setpoint_to(vsc) == 1.01
+    @test isnothing(get_power_factor_setpoint_to(vsc))
+end
+
+@testset "TwoTerminalVSCLine and InterconnectingConverter control modes have no default" begin
+    arc = Arc(ACBus(nothing), ACBus(nothing))
+    @test_throws UndefKeywordError TwoTerminalVSCLine(;
+        name = "vsc", available = true, arc = arc, active_power_flow = 0.1, rating = 2.0,
+        active_power_limits_from = (min = -2.0, max = 2.0),
+        active_power_limits_to = (min = -2.0, max = 2.0),
+        input_basis = CU,
+    )
+    @test_throws UndefKeywordError InterconnectingConverter(;
+        name = "ipc", available = true, bus = ACBus(nothing), dc_bus = DCBus(nothing),
+        active_power = 0.0, rating = 1.0, active_power_limits = (min = -1.0, max = 1.0),
+        base_power = 100.0, input_basis = CU,
+    )
 end
 
 @testset "InterconnectingConverter VSC remote-control / voltage-limit fields" begin
@@ -90,6 +123,10 @@ end
         rating = 1.0,
         active_power_limits = (min = -1.0, max = 1.0),
         base_power = 100.0,
+        dc_control = VSCDCControlModes.DC_VOLTAGE,
+        ac_control = VSCACControlModes.AC_REACTIVE_POWER,
+        dc_voltage_setpoint = 1.0,
+        power_factor_setpoint = 1.0,
         remote_bus_control = 5,
         rmpct = 75.0,
         power_factor_weighting_fraction = 0.25,
@@ -121,6 +158,10 @@ end
         rating = 1.0,
         active_power_limits = (min = -1.0, max = 1.0),
         base_power = 100.0,
+        dc_control = VSCDCControlModes.DC_VOLTAGE,
+        ac_control = VSCACControlModes.AC_REACTIVE_POWER,
+        dc_voltage_setpoint = 1.0,
+        power_factor_setpoint = 1.0,
         remote_bus_control = 0,
         input_basis = CU,
     )
