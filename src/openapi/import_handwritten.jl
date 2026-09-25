@@ -91,6 +91,13 @@ returns `default` (already the bare PSY-side value) when it is absent."""
 _or_default_enum(::Union{Nothing, IC.Absent}, default) = default
 _or_default_enum(v, default) = typeof(default)(v.value)
 
+"""A discriminator with no default: absent on the wire is an error naming the row, since no
+control mode can be assumed for an in-service converter."""
+_required_enum(
+    ::Union{Nothing, IC.Absent}, ::Type{T}, owner::AbstractString, field::AbstractString,
+) where {T} = error("$owner: $field is required and has no default")
+_required_enum(v, ::Type{T}, ::AbstractString, ::AbstractString) where {T} = T(v.value)
+
 # Optional PO fields map nothing/Absent -> nothing (the PSY kwargs accept it), as
 # `::Union{Nothing, IC.Absent}` method pairs, the same idiom cost_conversion.jl uses.
 
@@ -599,9 +606,13 @@ function from_openapi(
             TransformerControlObjective.UNDEFINED,
         ),
         regulated_bus_number = _or_default(po.regulated_bus_number, 0),
-        control_limits = _minmax(po.control_limits, (min = 0.9, max = 1.1)),
-        controlled_quantity_limits =
-        _minmax(po.controlled_quantity_limits, (min = 0.9, max = 1.1)),
+        tap_ratio_limits = _opt_minmax(po.tap_ratio_limits),
+        phase_angle_limits = _opt_minmax(po.phase_angle_limits),
+        controlled_voltage_limits = _opt_minmax(po.controlled_voltage_limits),
+        controlled_reactive_power_flow_limits =
+        _opt_minmax(po.controlled_reactive_power_flow_limits),
+        controlled_active_power_flow_limits =
+        _opt_minmax(po.controlled_active_power_flow_limits),
         number_of_tap_positions = _or_default(po.number_of_tap_positions, 33),
         rating = _scale_optional(po.rating, 1.0),
         rating_b = _scale_optional(po.rating_b, 1.0),
@@ -634,9 +645,13 @@ function from_openapi(
             TransformerControlObjective.UNDEFINED,
         ),
         regulated_bus_number = _or_default(po.regulated_bus_number, 0),
-        control_limits = _minmax(po.control_limits, (min = 0.9, max = 1.1)),
-        controlled_quantity_limits =
-        _minmax(po.controlled_quantity_limits, (min = 0.9, max = 1.1)),
+        tap_ratio_limits = _opt_minmax(po.tap_ratio_limits),
+        phase_angle_limits = _opt_minmax(po.phase_angle_limits),
+        controlled_voltage_limits = _opt_minmax(po.controlled_voltage_limits),
+        controlled_reactive_power_flow_limits =
+        _minmax_cu(po.controlled_reactive_power_flow_limits, dbp),
+        controlled_active_power_flow_limits =
+        _minmax_cu(po.controlled_active_power_flow_limits, dbp),
         number_of_tap_positions = _or_default(po.number_of_tap_positions, 33),
         rating = _scale_optional(po.rating, dbp),
         rating_b = _scale_optional(po.rating_b, dbp),
@@ -808,9 +823,11 @@ end
 # `FixedAdmittance.Y` (component_base.jl's `_DEVICEBASE_INSTANCE_DISPATCHED` lists both
 # `:skip`, identical treatment) — divided by `refs.base_power` in both methods, so the
 # `NaturalUnit` method delegates to `ComponentBaseUnit` exactly like `FixedAdmittance`.
-# `admittance_limits` is a dimensionless multiplier bound on the total admittance
-# (default `(min=1, max=1)`), not a raw admittance, and `number_engaged`/`number_of_steps`
-# are per-block integer counts — none of the three need a unit conversion.
+# `reactive_power_range_limits` (PSS/E VSWLO/VSWHI under a reactive control mode) is a
+# fraction of the regulated device's reactive range and `voltage_limits` (the same columns
+# under a voltage mode) is per unit of the regulated bus; both pass through, each `nothing`
+# unless `control_mode` selects it. `number_engaged`/`number_of_steps` are per-block integer
+# counts and need no conversion.
 # `solved_admittance` (PSS/E `BINIT`) is the solved-case susceptance in the same
 # COMPONENT_MVAR-on-system-base quantity as `Y_increase`, so it takes the same
 # `base_power` division; `nothing` (the field is optional in the schema) passes through
@@ -844,7 +861,8 @@ function from_openapi(po::PO.SwitchedAdmittance, refs::OpenAPIRefs, ::ComponentB
         number_of_steps = _or_default(po.number_of_steps, Int[]),
         Y_increase = _switched_admittance_y_increase(po.y_increase, base_power),
         solved_admittance = _switched_admittance_solved(po.solved_admittance, base_power),
-        admittance_limits = _minmax(po.admittance_limits, (min = 1.0, max = 1.0)),
+        voltage_limits = _opt_minmax(po.voltage_limits),
+        reactive_power_range_limits = _opt_minmax(po.reactive_power_range_limits),
         control_mode = _or_default_enum(
             po.control_mode,
             SwitchedAdmittanceControlMode.FIXED,
@@ -1170,7 +1188,7 @@ end
 # SAME ohm-to-pu conversion in BOTH `ComponentBaseUnit`/`NaturalUnit` methods (the Area/LoadZone
 # pattern above) — only the genuinely document-unit-system-governed power fields
 # (`active_power_flow`, `active_power_limits_*`, `reactive_power_limits_*`, and
-# `transfer_setpoint` when `power_mode` selects its `ActivePower` branch) differ between them.
+# `power_transfer_setpoint`) differ between them.
 #
 # PROVISIONAL, per explicit direction (2026-08-10) — may need revision: `r` and
 # `compounding_resistance` are DC-line quantities with no dedicated DC base voltage field to
@@ -1183,8 +1201,10 @@ end
 # `scheduled_dc_voltage`/`switch_mode_voltage`/`min_compounding_voltage`/
 # `rectifier_base_voltage`/`inverter_base_voltage` are stored as physical kV on the PSY side
 # (docstrings say "in kV" directly, no pu machinery) and pass through unconverted. Angles,
-# bridge counts, tap ratios/settings/limits/steps, and `power_mode` are dimensionless/radians
-# and pass through in both methods. `loss` reuses `TwoTerminalGenericHVDCLine`'s helper — same
+# bridge counts, tap ratios/settings/limits/steps, `control_mode`, and the amperes
+# `current_transfer_setpoint` pass through in both methods. `control_mode` selects which of
+# the two nullable setpoints is populated; the converter copies both as given and attach-time
+# validation enforces the pairing. `loss` reuses `TwoTerminalGenericHVDCLine`'s helper — same
 # PSY field type.
 
 const TWO_TERMINAL_LCC_PARAMETER_UNITS_IMPLEMENTED = Set(["NATURAL_UNITS"])
@@ -1210,13 +1230,6 @@ _check_lcc_dc_voltage_units(po) = _check_unit_basis(
 MVA)."""
 _lcc_ohm_to_pu(ohms, base_voltage, base_power) = ohms / (base_voltage^2 / base_power)
 
-"""`transfer_setpoint` follows `power_mode`: MW (`ActivePower`, divides like every sibling
-power field) when `true`, Amperes (`CurrentFlow`, no power-base conversion exists) when
-`false`."""
-_lcc_transfer_setpoint(transfer_setpoint, ::Val{true}, base_power) =
-    transfer_setpoint / base_power
-_lcc_transfer_setpoint(transfer_setpoint, ::Val{false}, _base_power) = transfer_setpoint
-
 function from_openapi(po::PO.TwoTerminalLCCLine, refs::OpenAPIRefs, ::ComponentBaseUnit)
     _check_lcc_parameter_units(po)
     _check_lcc_dc_voltage_units(po)
@@ -1227,7 +1240,8 @@ function from_openapi(po::PO.TwoTerminalLCCLine, refs::OpenAPIRefs, ::ComponentB
         arc = refs[po.arc],
         active_power_flow = po.active_power_flow,
         r = _lcc_ohm_to_pu(po.r, po.scheduled_dc_voltage, base_power),
-        transfer_setpoint = po.transfer_setpoint,
+        power_transfer_setpoint = _or_default(po.power_transfer_setpoint, nothing),
+        current_transfer_setpoint = _or_default(po.current_transfer_setpoint, nothing),
         scheduled_dc_voltage = po.scheduled_dc_voltage,
         rectifier_bridges = po.rectifier_bridges,
         rectifier_delay_angle_limits = _minmax(po.rectifier_delay_angle_limits),
@@ -1247,7 +1261,7 @@ function from_openapi(po::PO.TwoTerminalLCCLine, refs::OpenAPIRefs, ::ComponentB
         inverter_rc = _lcc_ohm_to_pu(po.inverter_rc, po.inverter_base_voltage, base_power),
         inverter_xc = _lcc_ohm_to_pu(po.inverter_xc, po.inverter_base_voltage, base_power),
         inverter_base_voltage = po.inverter_base_voltage,
-        power_mode = _or_default(po.power_mode, true),
+        control_mode = _or_default_enum(po.control_mode, LCCControlMode.BLOCKED),
         switch_mode_voltage = _or_default(po.switch_mode_voltage, 0.0),
         compounding_resistance = _lcc_ohm_to_pu(
             _or_default(po.compounding_resistance, 0.0), po.scheduled_dc_voltage, base_power,
@@ -1296,9 +1310,8 @@ function from_openapi(po::PO.TwoTerminalLCCLine, refs::OpenAPIRefs, ::NaturalUni
         arc = refs[po.arc],
         active_power_flow = po.active_power_flow / base_power,
         r = _lcc_ohm_to_pu(po.r, po.scheduled_dc_voltage, base_power),
-        transfer_setpoint = _lcc_transfer_setpoint(
-            po.transfer_setpoint, Val(_or_default(po.power_mode, true)), base_power,
-        ),
+        power_transfer_setpoint = _scale_optional(po.power_transfer_setpoint, base_power),
+        current_transfer_setpoint = _or_default(po.current_transfer_setpoint, nothing),
         scheduled_dc_voltage = po.scheduled_dc_voltage,
         rectifier_bridges = po.rectifier_bridges,
         rectifier_delay_angle_limits = _minmax(po.rectifier_delay_angle_limits),
@@ -1318,7 +1331,7 @@ function from_openapi(po::PO.TwoTerminalLCCLine, refs::OpenAPIRefs, ::NaturalUni
         inverter_rc = _lcc_ohm_to_pu(po.inverter_rc, po.inverter_base_voltage, base_power),
         inverter_xc = _lcc_ohm_to_pu(po.inverter_xc, po.inverter_base_voltage, base_power),
         inverter_base_voltage = po.inverter_base_voltage,
-        power_mode = _or_default(po.power_mode, true),
+        control_mode = _or_default_enum(po.control_mode, LCCControlMode.BLOCKED),
         switch_mode_voltage = _or_default(po.switch_mode_voltage, 0.0),
         compounding_resistance = _lcc_ohm_to_pu(
             _or_default(po.compounding_resistance, 0.0), po.scheduled_dc_voltage, base_power,
@@ -1373,20 +1386,19 @@ end
 # ── TwoTerminalVSCLine ──────────────────────────────────────────────────────────
 # `converter_loss_from`/`converter_loss_to::Union{LinearCurve, QuadraticCurve}` is the same
 # Union-of-two-concrete-curves shape that keeps `TwoTerminalGenericHVDCLine`/`TwoTerminalLCCLine`
-# hand-written, and `dc_setpoint_*`/`ac_setpoint_*` change meaning with a sibling enum field,
-# which no generator rule expresses.
+# hand-written, and the mode-selected setpoints are nullable per quantity with a voltage basis
+# taken from a sibling tag, which no generator rule expresses.
 #
 # `admittance_units`/`voltage_units` follow `TwoTerminalLCCLine`'s posture: only "NATURAL_UNITS"
 # (every current producer's value, and the schema default) is implemented, and anything else
 # errors rather than being guessed at. Because that basis is fixed, `g` needs the SAME siemens →
 # pu conversion in BOTH methods; only the document-unit-system-governed power fields
 # (`active_power_flow`, `rating`, `rating_from`/`to`, `reactive_power_from`/`to`,
-# `active_power_limits_*`, `reactive_power_limits_*`, and `dc_setpoint_*` when `dc_control_*`
-# selects its `DC_POWER` branch) differ between them — the `transfer_setpoint` rule LCC already
-# sets for a mode-switched power field.
+# `active_power_limits_*`, `reactive_power_limits_*`, and `dc_power_setpoint_*`) differ
+# between them.
 #
 # `rated_dc_voltage` is the DC-side base its own docstring declares it to be, so it is the base
-# for `g` and for the DC-voltage `dc_setpoint_*` branches. `0.0` means "unspecified", which is
+# for `g` and for `dc_voltage_setpoint_*`. `0.0` means "unspecified", which is
 # fine while nothing needs the base and unrecoverable once something does — hence
 # `_vsc_dc_base_voltage`, which errors only when a non-zero value actually has to be converted
 # rather than quietly producing a `0`/`Inf`.
@@ -1407,11 +1419,11 @@ end
 # `rated_ac_voltage_from`/`rated_ac_voltage_to` are the AC-side counterparts of
 # `rated_dc_voltage` — real wire-row fields now (PowerFlowFileParser's `make_vscline!` writes
 # each from the terminal's own RAW bus base voltage), read straight through as kV, same as
-# `rated_dc_voltage`. `ac_setpoint_*`'s `AC_VOLTAGE` branch reads `setpoint_voltage_units` to
+# `rated_dc_voltage`. `ac_voltage_setpoint_*` reads `setpoint_voltage_units` to
 # decide whether it can convert: `COMPONENT_BASE` is already per-unit of the converter's own AC
 # base voltage — PSY's own convention — so it passes through unscaled; `NATURAL_UNITS` is kV
 # and converts through `rated_ac_voltage_from`/`rated_ac_voltage_to`, exactly like
-# `dc_setpoint_*`'s DC-voltage branches convert through `rated_dc_voltage` — see
+# `dc_voltage_setpoint_*` converts through `rated_dc_voltage` — see
 # `_vsc_import_ac_base_voltage`, the same `0.0`-is-unspecified guard as `_vsc_dc_base_voltage`.
 
 const TWO_TERMINAL_VSC_ADMITTANCE_UNITS_IMPLEMENTED = Set(["NATURAL_UNITS"])
@@ -1496,32 +1508,12 @@ function _vsc_loss(l::PC.LossCurve)
     return _vsc_converter_loss(convert_cost(_unwrap_oneof(l.value_curve)), units)
 end
 
-"""
-`dc_setpoint_*` follows `dc_control_*`: MW under `DC_POWER` (a power field, so it divides
-with its siblings only under `NaturalUnit`), and per-unit under either DC-voltage-regulating
-mode — `setpoint_voltage_units` is checked to be `COMPONENT_BASE`, so no base is applied.
-"""
-_vsc_dc_setpoint(
-    po,
-    setpoint,
-    ::Val{VSCDCControlModes.DC_POWER},
-    base_power,
-    ::NaturalUnit,
-) =
-    setpoint / base_power
-_vsc_dc_setpoint(
-    _po, setpoint, ::Val{VSCDCControlModes.DC_POWER}, _base_power, ::ComponentBaseUnit,
-) = setpoint
-function _vsc_dc_setpoint(po, setpoint, ::Val{VSCDCControlModes.DC_VOLTAGE}, _bp, _unit)
-    return _vsc_dc_voltage_setpoint(po, setpoint, _vsc_setpoint_basis(po))
-end
-function _vsc_dc_setpoint(
-    po, setpoint, ::Val{VSCDCControlModes.DC_VOLTAGE_DROOP}, _bp, _unit,
-)
-    return _vsc_dc_voltage_setpoint(po, setpoint, _vsc_setpoint_basis(po))
-end
+"""`nothing` stays `nothing`; a `DC_POWER` order is a power field, dividing with its siblings
+only under `NaturalUnit`."""
+_vsc_optional_power(::Union{Nothing, IC.Absent}, _base_power, _unit) = nothing
+_vsc_optional_power(value, base_power, unit) = _vsc_power(value, base_power, unit)
 
-"""Errors when an `ac_setpoint_*` value needs an AC voltage base under `AC_VOLTAGE`/
+"""Errors when an `ac_voltage_setpoint_*` value needs an AC voltage base under
 `NATURAL_UNITS` but the matching `rated_ac_voltage_from`/`rated_ac_voltage_to` is `0.0`
 (unspecified). `0.0` is only usable while nothing actually needs the base, same posture as
 `_vsc_dc_base_voltage`."""
@@ -1540,43 +1532,54 @@ function _vsc_import_ac_base_voltage(po, rated, value, field::AbstractString)
 end
 
 """
-The basis `setpoint_voltage_units` declares for the voltage-regulating setpoints. PSY stores
-them per-unit, so `COMPONENT_BASE` passes through and only `NATURAL_UNITS` divides by a base.
+The basis `setpoint_voltage_units` declares for the voltage setpoints. PSY stores them
+per-unit, so `COMPONENT_BASE` passes through and only `NATURAL_UNITS` divides by a base.
 """
 _vsc_setpoint_basis(po) =
     Val(Symbol(_unit_basis_string(po.setpoint_voltage_units, "NATURAL_UNITS")))
 
-_vsc_dc_voltage_setpoint(_po, setpoint, ::Val{:COMPONENT_BASE}) = setpoint
-_vsc_dc_voltage_setpoint(po, setpoint, ::Val{:NATURAL_UNITS}) =
-    setpoint / _vsc_dc_base_voltage(po, setpoint, "dc_setpoint")
+"""`dc_voltage_setpoint_*`: `nothing` stays `nothing`; kV divides by `rated_dc_voltage`."""
+_vsc_optional_dc_voltage(_po, ::Union{Nothing, IC.Absent}) = nothing
+_vsc_optional_dc_voltage(po, value) =
+    _vsc_dc_voltage_setpoint(po, value, _vsc_setpoint_basis(po))
+_vsc_dc_voltage_setpoint(_po, value, ::Val{:COMPONENT_BASE}) = value
+_vsc_dc_voltage_setpoint(po, value, ::Val{:NATURAL_UNITS}) =
+    value / _vsc_dc_base_voltage(po, value, "dc_voltage_setpoint")
 
-"""
-`ac_setpoint_*` follows `ac_control_*`: a dimensionless power factor under
-`AC_REACTIVE_POWER`, and an AC-side voltage under `AC_VOLTAGE`, whose basis
-`setpoint_voltage_units` names. `COMPONENT_BASE` is already per-unit of the converter's own AC
-base voltage — PSY's own `ac_setpoint_*` convention — so it passes through unscaled.
-`NATURAL_UNITS` is kV, converted through `rated` — the caller's matching
-`rated_ac_voltage_from`/`rated_ac_voltage_to` — via `_vsc_import_ac_base_voltage`.
-"""
-_vsc_ac_setpoint(_po, setpoint, ::Val{VSCACControlModes.AC_REACTIVE_POWER}, _rated) =
-    setpoint
-function _vsc_ac_setpoint(po, setpoint, ::Val{VSCACControlModes.AC_VOLTAGE}, rated)
-    return _vsc_ac_voltage_setpoint(po, setpoint, rated, _vsc_setpoint_basis(po))
-end
-
-_vsc_ac_voltage_setpoint(_po, setpoint, _rated, ::Val{:COMPONENT_BASE}) = setpoint
-_vsc_ac_voltage_setpoint(po, setpoint, rated, ::Val{:NATURAL_UNITS}) =
-    setpoint / _vsc_import_ac_base_voltage(po, rated, setpoint, "ac_setpoint")
+"""`ac_voltage_setpoint_*`: `nothing` stays `nothing`; kV divides by the terminal's
+`rated_ac_voltage_from`/`rated_ac_voltage_to` via `_vsc_import_ac_base_voltage`."""
+_vsc_optional_ac_voltage(_po, ::Union{Nothing, IC.Absent}, _rated, ::AbstractString) =
+    nothing
+_vsc_optional_ac_voltage(po, value, rated, field::AbstractString) =
+    _vsc_ac_voltage_setpoint(po, value, rated, field, _vsc_setpoint_basis(po))
+_vsc_ac_voltage_setpoint(_po, value, _rated, _field, ::Val{:COMPONENT_BASE}) = value
+_vsc_ac_voltage_setpoint(po, value, rated, field, ::Val{:NATURAL_UNITS}) =
+    value / _vsc_import_ac_base_voltage(po, rated, value, field)
 
 """The shared body of both unit-system methods; only `unit` and `base_power` differ."""
 function _two_terminal_vsc_line(po, refs::OpenAPIRefs, base_power, unit)
     _check_vsc_admittance_units(po)
     _check_vsc_voltage_units(po)
     _check_vsc_setpoint_voltage_units(po)
-    dc_control_from = _or_default_enum(po.dc_control_from, VSCDCControlModes.DC_VOLTAGE)
-    dc_control_to = _or_default_enum(po.dc_control_to, VSCDCControlModes.DC_VOLTAGE)
-    ac_control_from = _or_default_enum(po.ac_control_from, VSCACControlModes.AC_VOLTAGE)
-    ac_control_to = _or_default_enum(po.ac_control_to, VSCACControlModes.AC_VOLTAGE)
+    owner = "TwoTerminalVSCLine \"$(po.name)\""
+    dc_control_from =
+        _required_enum(
+            po.dc_control_from,
+            VSCDCControlModes.Value,
+            owner,
+            "dc_control_from",
+        )
+    dc_control_to =
+        _required_enum(po.dc_control_to, VSCDCControlModes.Value, owner, "dc_control_to")
+    ac_control_from =
+        _required_enum(
+            po.ac_control_from,
+            VSCACControlModes.Value,
+            owner,
+            "ac_control_from",
+        )
+    ac_control_to =
+        _required_enum(po.ac_control_to, VSCACControlModes.Value, owner, "ac_control_to")
     rated_ac_voltage_from = _or_default(po.rated_ac_voltage_from, 0.0)
     rated_ac_voltage_to = _or_default(po.rated_ac_voltage_to, 0.0)
     arc = refs[po.arc]
@@ -1597,11 +1600,14 @@ function _two_terminal_vsc_line(po, refs::OpenAPIRefs, base_power, unit)
         reactive_power_from = _vsc_power(po.reactive_power_from, base_power, unit),
         dc_control_from = dc_control_from,
         ac_control_from = ac_control_from,
-        dc_setpoint_from = _vsc_dc_setpoint(
-            po, po.dc_setpoint_from, Val(dc_control_from), base_power, unit,
-        ),
-        ac_setpoint_from = _vsc_ac_setpoint(
-            po, po.ac_setpoint_from, Val(ac_control_from), rated_ac_voltage_from,
+        dc_power_setpoint_from =
+        _vsc_optional_power(po.dc_power_setpoint_from, base_power, unit),
+        dc_voltage_setpoint_from =
+        _vsc_optional_dc_voltage(po, po.dc_voltage_setpoint_from),
+        power_factor_setpoint_from = _or_default(po.power_factor_setpoint_from, nothing),
+        ac_voltage_setpoint_from = _vsc_optional_ac_voltage(
+            po, po.ac_voltage_setpoint_from, rated_ac_voltage_from,
+            "ac_voltage_setpoint_from",
         ),
         rated_ac_voltage_from = rated_ac_voltage_from,
         converter_loss_from = _vsc_loss(po.converter_loss_from),
@@ -1619,11 +1625,14 @@ function _two_terminal_vsc_line(po, refs::OpenAPIRefs, base_power, unit)
         reactive_power_to = _vsc_power(po.reactive_power_to, base_power, unit),
         dc_control_to = dc_control_to,
         ac_control_to = ac_control_to,
-        dc_setpoint_to = _vsc_dc_setpoint(
-            po, po.dc_setpoint_to, Val(dc_control_to), base_power, unit,
-        ),
-        ac_setpoint_to = _vsc_ac_setpoint(
-            po, po.ac_setpoint_to, Val(ac_control_to), rated_ac_voltage_to,
+        dc_power_setpoint_to =
+        _vsc_optional_power(po.dc_power_setpoint_to, base_power, unit),
+        dc_voltage_setpoint_to =
+        _vsc_optional_dc_voltage(po, po.dc_voltage_setpoint_to),
+        power_factor_setpoint_to = _or_default(po.power_factor_setpoint_to, nothing),
+        ac_voltage_setpoint_to = _vsc_optional_ac_voltage(
+            po, po.ac_voltage_setpoint_to, rated_ac_voltage_to,
+            "ac_voltage_setpoint_to",
         ),
         rated_ac_voltage_to = rated_ac_voltage_to,
         converter_loss_to = _vsc_loss(po.converter_loss_to),
@@ -1821,10 +1830,18 @@ function from_openapi(
         dc_current = _or_default(po.dc_current, 0.0),
         max_dc_current = _or_default(po.max_dc_current, 1e8),
         loss_function = _vsc_loss(po.loss_function),
-        dc_control = _or_default_enum(po.dc_control, VSCDCControlModes.DC_VOLTAGE),
-        ac_control = _or_default_enum(po.ac_control, VSCACControlModes.AC_REACTIVE_POWER),
-        dc_setpoint = _or_default(po.dc_setpoint, 0.0),
-        ac_setpoint = _or_default(po.ac_setpoint, 1.0),
+        dc_control = _required_enum(
+            po.dc_control, VSCDCControlModes.Value,
+            "InterconnectingConverter \"$(po.name)\"", "dc_control",
+        ),
+        ac_control = _required_enum(
+            po.ac_control, VSCACControlModes.Value,
+            "InterconnectingConverter \"$(po.name)\"", "ac_control",
+        ),
+        dc_power_setpoint = _or_default(po.dc_power_setpoint, nothing),
+        dc_voltage_setpoint = _or_default(po.dc_voltage_setpoint, nothing),
+        power_factor_setpoint = _or_default(po.power_factor_setpoint, nothing),
+        ac_voltage_setpoint = _or_default(po.ac_voltage_setpoint, nothing),
         dc_voltage_droop = _or_default(po.dc_voltage_droop, 0.0),
         remote_bus_control = _or_default(po.remote_bus_control, nothing),
         rmpct = _or_default(po.rmpct, 100.0),
@@ -1853,10 +1870,18 @@ function from_openapi(po::PO.InterconnectingConverter, refs::OpenAPIRefs, ::Natu
         dc_current = _or_default(po.dc_current, 0.0) / dbp,
         max_dc_current = _or_default(po.max_dc_current, 1e8) / dbp,
         loss_function = _vsc_loss(po.loss_function),
-        dc_control = _or_default_enum(po.dc_control, VSCDCControlModes.DC_VOLTAGE),
-        ac_control = _or_default_enum(po.ac_control, VSCACControlModes.AC_REACTIVE_POWER),
-        dc_setpoint = _or_default(po.dc_setpoint, 0.0),
-        ac_setpoint = _or_default(po.ac_setpoint, 1.0),
+        dc_control = _required_enum(
+            po.dc_control, VSCDCControlModes.Value,
+            "InterconnectingConverter \"$(po.name)\"", "dc_control",
+        ),
+        ac_control = _required_enum(
+            po.ac_control, VSCACControlModes.Value,
+            "InterconnectingConverter \"$(po.name)\"", "ac_control",
+        ),
+        dc_power_setpoint = _scale_optional(po.dc_power_setpoint, dbp),
+        dc_voltage_setpoint = _or_default(po.dc_voltage_setpoint, nothing),
+        power_factor_setpoint = _or_default(po.power_factor_setpoint, nothing),
+        ac_voltage_setpoint = _or_default(po.ac_voltage_setpoint, nothing),
         dc_voltage_droop = _or_default(po.dc_voltage_droop, 0.0),
         remote_bus_control = _or_default(po.remote_bus_control, nothing),
         rmpct = _or_default(po.rmpct, 100.0),

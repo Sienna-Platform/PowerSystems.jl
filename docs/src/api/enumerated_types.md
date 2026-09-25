@@ -215,6 +215,17 @@ tap changer, which can be used to determine the tap position during power flow c
 | `CONTROL_OF_DC_LINE`                    | Control of a DC line quantity                                             |
 | `ASYMMETRIC_ACTIVE_POWER_FLOW`          | Asymmetric active power flow control                                      |
 
+## [LCC Control Modes](@id lcc_control_mode)
+
+`LCCControlMode` selects which schedule a `TwoTerminalLCCLine` holds (PSS/E `MDC`). The
+mode names the populated setpoint; the other setpoint is `nothing`.
+
+| Name      | Description                                                          |
+|:--------- |:-------------------------------------------------------------------- |
+| `BLOCKED` | The line is blocked and holds no schedule                            |
+| `POWER`   | The line holds a power schedule in `power_transfer_setpoint` (MW)    |
+| `CURRENT` | The line holds a current schedule in `current_transfer_setpoint` (A) |
+
 ## [Market Bid Curve Styles](@id curvestyles_list)
 
 `CurveStyles` is the curve-clearing style of a [`MarketBidCost`](@ref) or

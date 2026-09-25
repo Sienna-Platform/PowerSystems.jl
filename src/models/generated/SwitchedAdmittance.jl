@@ -13,7 +13,8 @@ This file is auto-generated. Do not edit.
         number_of_steps::Vector{Int}
         Y_increase::Vector{Complex{Float64}}
         solved_admittance::Union{Nothing, Float64}
-        admittance_limits::MinMax
+        voltage_limits::Union{Nothing, MinMax}
+        reactive_power_range_limits::Union{Nothing, MinMax}
         control_mode::SwitchedAdmittanceControlMode.Value
         regulated_bus_number::Int
         dynamic_injector::Union{Nothing, DynamicInjection}
@@ -34,8 +35,9 @@ Most often used in power flow studies, iterating over the steps to see impacts o
 - `number_of_steps::Vector{Int}`: (default: `Int[]`) Vector with number of steps for each adjustable shunt block. For example, `number_of_steps[2]` are the number of available steps for admittance increment at block 2.
 - `Y_increase::Vector{Complex{Float64}}`: (default: `Complex{Float64}[]`) Vector with admittance increment step for each adjustable shunt block. For example, `Y_increase[2]` is the complex admittance increment for each step at block 2.
 - `solved_admittance::Union{Nothing, Float64}`: (default: `nothing`) Solved-case switched shunt admittance (PSS/E `BINIT`), or `nothing` when unset. When non-`nothing`, this value is the shunt's effective admittance, used in place of `number_engaged` ⋅ `Y_increase`; power flow writes the solved-for admittance back to this field. Set it only when the case is to be treated as solved as read in, or when the device is locked (`control_mode == SwitchedAdmittanceControlMode.FIXED`).
-- `admittance_limits::MinMax`: (default: `(min=1.0, max=1.0)`) Shunt admittance limits for switched shunt model
-- `control_mode::SwitchedAdmittanceControlMode.Value`: (default: `SwitchedAdmittanceControlMode.FIXED`) Switched-shunt control mode.
+- `voltage_limits::Union{Nothing, MinMax}`: (default: `nothing`) Regulated-voltage band (PSS/E VSWLO/VSWHI) at the regulated bus, per unit of its base voltage; `nothing` unless `control_mode` is `DISCRETE_VOLTAGE` or `CONTINUOUS_VOLTAGE`.
+- `reactive_power_range_limits::Union{Nothing, MinMax}`: (default: `nothing`) Regulated reactive-power band (PSS/E VSWLO/VSWHI) as a fraction of the regulated device's reactive power range, the plant, converter or FACTS shunt at the regulated bus; `nothing` unless `control_mode` is one of the `DISCRETE_REACTIVE_*` or `DISCRETE_ADMITTANCE_REMOTE` modes.
+- `control_mode::SwitchedAdmittanceControlMode.Value`: (default: `SwitchedAdmittanceControlMode.FIXED`) Switched-shunt control mode; see [`SwitchedAdmittanceControlMode`](@ref). Voltage modes use `voltage_limits`, reactive modes use `reactive_power_range_limits`; `UNDEFINED` and `FIXED` use neither.
 - `regulated_bus_number::Int`: (default: `0`) Bus number whose voltage/quantity this shunt regulates; 0 ⇒ local bus.
 - `dynamic_injector::Union{Nothing, DynamicInjection}`: (default: `nothing`) corresponding dynamic injection model for admittance
 - `services::Vector{Service}`: (default: `Device[]`) Services that this device contributes to
@@ -57,9 +59,11 @@ mutable struct SwitchedAdmittance <: ElectricLoad
     Y_increase::Vector{Complex{Float64}}
     "Solved-case switched shunt admittance (PSS/E `BINIT`), or `nothing` when unset. When non-`nothing`, this value is the shunt's effective admittance, used in place of `number_engaged` ⋅ `Y_increase`; power flow writes the solved-for admittance back to this field. Set it only when the case is to be treated as solved as read in, or when the device is locked (`control_mode == SwitchedAdmittanceControlMode.FIXED`)."
     solved_admittance::Union{Nothing, Float64}
-    "Shunt admittance limits for switched shunt model"
-    admittance_limits::MinMax
-    "Switched-shunt control mode."
+    "Regulated-voltage band (PSS/E VSWLO/VSWHI) at the regulated bus, per unit of its base voltage; `nothing` unless `control_mode` is `DISCRETE_VOLTAGE` or `CONTINUOUS_VOLTAGE`."
+    voltage_limits::Union{Nothing, MinMax}
+    "Regulated reactive-power band (PSS/E VSWLO/VSWHI) as a fraction of the regulated device's reactive power range, the plant, converter or FACTS shunt at the regulated bus; `nothing` unless `control_mode` is one of the `DISCRETE_REACTIVE_*` or `DISCRETE_ADMITTANCE_REMOTE` modes."
+    reactive_power_range_limits::Union{Nothing, MinMax}
+    "Switched-shunt control mode; see [`SwitchedAdmittanceControlMode`](@ref). Voltage modes use `voltage_limits`, reactive modes use `reactive_power_range_limits`; `UNDEFINED` and `FIXED` use neither."
     control_mode::SwitchedAdmittanceControlMode.Value
     "Bus number whose voltage/quantity this shunt regulates; 0 ⇒ local bus."
     regulated_bus_number::Int
@@ -73,12 +77,12 @@ mutable struct SwitchedAdmittance <: ElectricLoad
     internal::InfrastructureSystemsInternal
 end
 
-function SwitchedAdmittance(name, available, bus, number_engaged=Int[], number_of_steps=Int[], Y_increase=Complex{Float64}[], solved_admittance=nothing, admittance_limits=(min=1.0, max=1.0), control_mode=SwitchedAdmittanceControlMode.FIXED, regulated_bus_number=0, dynamic_injector=nothing, services=Device[], ext=Dict{String, Any}(), )
-    SwitchedAdmittance(name, available, bus, number_engaged, number_of_steps, Y_increase, solved_admittance, admittance_limits, control_mode, regulated_bus_number, dynamic_injector, services, ext, InfrastructureSystemsInternal(), )
+function SwitchedAdmittance(name, available, bus, number_engaged=Int[], number_of_steps=Int[], Y_increase=Complex{Float64}[], solved_admittance=nothing, voltage_limits=nothing, reactive_power_range_limits=nothing, control_mode=SwitchedAdmittanceControlMode.FIXED, regulated_bus_number=0, dynamic_injector=nothing, services=Device[], ext=Dict{String, Any}(), )
+    SwitchedAdmittance(name, available, bus, number_engaged, number_of_steps, Y_increase, solved_admittance, voltage_limits, reactive_power_range_limits, control_mode, regulated_bus_number, dynamic_injector, services, ext, InfrastructureSystemsInternal(), )
 end
 
-function SwitchedAdmittance(; name, available, bus, number_engaged=Int[], number_of_steps=Int[], Y_increase=Complex{Float64}[], solved_admittance=nothing, admittance_limits=(min=1.0, max=1.0), control_mode=SwitchedAdmittanceControlMode.FIXED, regulated_bus_number=0, dynamic_injector=nothing, services=Device[], ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), )
-    SwitchedAdmittance(name, available, bus, number_engaged, number_of_steps, Y_increase, solved_admittance, admittance_limits, control_mode, regulated_bus_number, dynamic_injector, services, ext, internal, )
+function SwitchedAdmittance(; name, available, bus, number_engaged=Int[], number_of_steps=Int[], Y_increase=Complex{Float64}[], solved_admittance=nothing, voltage_limits=nothing, reactive_power_range_limits=nothing, control_mode=SwitchedAdmittanceControlMode.FIXED, regulated_bus_number=0, dynamic_injector=nothing, services=Device[], ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), )
+    SwitchedAdmittance(name, available, bus, number_engaged, number_of_steps, Y_increase, solved_admittance, voltage_limits, reactive_power_range_limits, control_mode, regulated_bus_number, dynamic_injector, services, ext, internal, )
 end
 
 # Constructor for demo purposes; non-functional.
@@ -91,7 +95,8 @@ function SwitchedAdmittance(::Nothing)
         number_of_steps=Int[],
         Y_increase=Complex{Float64}[],
         solved_admittance=nothing,
-        admittance_limits=(min=0.0, max=0.0),
+        voltage_limits=nothing,
+        reactive_power_range_limits=nothing,
         control_mode=SwitchedAdmittanceControlMode.FIXED,
         regulated_bus_number=0,
         dynamic_injector=nothing,
@@ -114,8 +119,10 @@ get_number_of_steps(value::SwitchedAdmittance) = value.number_of_steps
 get_Y_increase(value::SwitchedAdmittance) = value.Y_increase
 """Get [`SwitchedAdmittance`](@ref) `solved_admittance`."""
 get_solved_admittance(value::SwitchedAdmittance) = value.solved_admittance
-"""Get [`SwitchedAdmittance`](@ref) `admittance_limits`."""
-get_admittance_limits(value::SwitchedAdmittance) = value.admittance_limits
+"""Get [`SwitchedAdmittance`](@ref) `voltage_limits`."""
+get_voltage_limits(value::SwitchedAdmittance) = value.voltage_limits
+"""Get [`SwitchedAdmittance`](@ref) `reactive_power_range_limits`."""
+get_reactive_power_range_limits(value::SwitchedAdmittance) = value.reactive_power_range_limits
 """Get [`SwitchedAdmittance`](@ref) `control_mode`."""
 get_control_mode(value::SwitchedAdmittance) = value.control_mode
 """Get [`SwitchedAdmittance`](@ref) `regulated_bus_number`."""
@@ -141,8 +148,10 @@ set_number_of_steps!(value::SwitchedAdmittance, val) = value.number_of_steps = v
 set_Y_increase!(value::SwitchedAdmittance, val) = value.Y_increase = val
 """Set [`SwitchedAdmittance`](@ref) `solved_admittance`."""
 set_solved_admittance!(value::SwitchedAdmittance, val) = value.solved_admittance = val
-"""Set [`SwitchedAdmittance`](@ref) `admittance_limits`."""
-set_admittance_limits!(value::SwitchedAdmittance, val) = value.admittance_limits = val
+"""Set [`SwitchedAdmittance`](@ref) `voltage_limits`."""
+set_voltage_limits!(value::SwitchedAdmittance, val) = value.voltage_limits = val
+"""Set [`SwitchedAdmittance`](@ref) `reactive_power_range_limits`."""
+set_reactive_power_range_limits!(value::SwitchedAdmittance, val) = value.reactive_power_range_limits = val
 """Set [`SwitchedAdmittance`](@ref) `control_mode`."""
 set_control_mode!(value::SwitchedAdmittance, val) = value.control_mode = val
 """Set [`SwitchedAdmittance`](@ref) `regulated_bus_number`."""

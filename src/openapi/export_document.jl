@@ -111,13 +111,17 @@ to_openapi(geo::GeographicInfo, refs::OpenAPIRefs) =
 to_openapi(ds::DataSource, refs::OpenAPIRefs) =
     to_openapi(ds, component_id(refs, ds))
 
+_optional_curve_to_wire(::Nothing) = IC.ABSENT
+_optional_curve_to_wire(curve) = convert_cost_to_openapi(curve)
+
 function to_openapi(attr::ImpedanceCorrectionData, refs::OpenAPIRefs)
     return PO.ImpedanceCorrectionData(;
         id = component_id(refs, attr),
         table_number = get_table_number(attr),
-        impedance_correction_curve = convert_cost_to_openapi(
-            get_impedance_correction_curve(attr),
-        ),
+        tap_ratio_correction_curve =
+        _optional_curve_to_wire(get_tap_ratio_correction_curve(attr)),
+        phase_angle_correction_curve =
+        _optional_curve_to_wire(get_phase_angle_correction_curve(attr)),
         transformer_winding = PO.ImpedanceCorrectionDataTransformerWinding(
             string(get_transformer_winding(attr)),
         ),
