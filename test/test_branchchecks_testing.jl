@@ -373,34 +373,193 @@ end
     @test get_component(TwoWindingTransformer, sys, "badbasevoltage2") === nothing
 end
 
-@testset "Circuit control_limits.min > max throws on add_component!" begin
-    sys = System(100.0)
-    bus_from, bus_to = _circuit_check_buses()
-    add_component!(sys, bus_from)
-    add_component!(sys, bus_to)
-    xfrm = _circuit_check_xfrm("badcontrollimits", bus_from, bus_to)
-    set_control_limits!(get_circuit(xfrm), (min = 1.1, max = 0.9))   # inverted
-
-    test_logger = IS.MultiLogger([ConsoleLogger(devnull, Logging.Error)])
-    Logging.with_logger(test_logger) do
-        @test_throws IS.InvalidValue add_component!(sys, xfrm)
+"""A circuit with `objective` and the given bands set; convertible bands take tagged values."""
+function _controlled_xfrm(name, bus_from, bus_to, objective; bands...)
+    xfrm = _circuit_check_xfrm(name, bus_from, bus_to)
+    w = get_circuit(xfrm)
+    set_control_objective!(w, objective)
+    for (field, band) in pairs(bands)
+        getfield(PowerSystems, Symbol("set_", field, "!"))(w, band)
     end
-    @test get_component(TwoWindingTransformer, sys, "badcontrollimits") === nothing
+    return xfrm
 end
 
-@testset "Circuit controlled_quantity_limits.min > max throws on add_component!" begin
+function _expect_invalid_circuit(xfrm, bus_from, bus_to)
     sys = System(100.0)
-    bus_from, bus_to = _circuit_check_buses()
     add_component!(sys, bus_from)
     add_component!(sys, bus_to)
-    xfrm = _circuit_check_xfrm("badcql", bus_from, bus_to)
-    set_controlled_quantity_limits!(get_circuit(xfrm), (min = 1.05, max = 0.95))
-
     test_logger = IS.MultiLogger([ConsoleLogger(devnull, Logging.Error)])
     Logging.with_logger(test_logger) do
         @test_throws IS.InvalidValue add_component!(sys, xfrm)
     end
-    @test get_component(TwoWindingTransformer, sys, "badcql") === nothing
+    @test get_component(TwoWindingTransformer, sys, get_name(xfrm)) === nothing
+end
+
+# One inverted band per fixed-quantity field, each under an objective that selects it.
+@testset "Circuit tap_ratio_limits.min > max throws on add_component!" begin
+    bus_from, bus_to = _circuit_check_buses()
+    _expect_invalid_circuit(
+        _controlled_xfrm(
+            "badtap", bus_from, bus_to, TransformerControlObjective.VOLTAGE;
+            tap_ratio_limits = (min = 1.1, max = 0.9),
+            controlled_voltage_limits = (min = 0.95, max = 1.05),
+        ),
+        bus_from, bus_to,
+    )
+end
+
+@testset "Circuit phase_angle_limits.min > max throws on add_component!" begin
+    bus_from, bus_to = _circuit_check_buses()
+    _expect_invalid_circuit(
+        _controlled_xfrm(
+            "badangle", bus_from, bus_to, TransformerControlObjective.ACTIVE_POWER_FLOW;
+            phase_angle_limits = (min = 0.5, max = -0.5),
+            controlled_active_power_flow_limits = (min = -1.0 * CU, max = 1.0 * CU),
+        ),
+        bus_from, bus_to,
+    )
+end
+
+@testset "Circuit controlled_voltage_limits.min > max throws on add_component!" begin
+    bus_from, bus_to = _circuit_check_buses()
+    _expect_invalid_circuit(
+        _controlled_xfrm(
+            "badcvl", bus_from, bus_to, TransformerControlObjective.VOLTAGE;
+            tap_ratio_limits = (min = 0.9, max = 1.1),
+            controlled_voltage_limits = (min = 1.05, max = 0.95),
+        ),
+        bus_from, bus_to,
+    )
+end
+
+@testset "Circuit controlled_reactive_power_flow_limits.min > max throws on add_component!" begin
+    bus_from, bus_to = _circuit_check_buses()
+    _expect_invalid_circuit(
+        _controlled_xfrm(
+            "badcq", bus_from, bus_to, TransformerControlObjective.REACTIVE_POWER_FLOW;
+            tap_ratio_limits = (min = 0.9, max = 1.1),
+            controlled_reactive_power_flow_limits = (min = 0.5 * CU, max = -0.5 * CU),
+        ),
+        bus_from, bus_to,
+    )
+end
+
+@testset "Circuit controlled_active_power_flow_limits.min > max throws on add_component!" begin
+    bus_from, bus_to = _circuit_check_buses()
+    _expect_invalid_circuit(
+        _controlled_xfrm(
+            "badcp", bus_from, bus_to, TransformerControlObjective.ACTIVE_POWER_FLOW;
+            phase_angle_limits = (min = -0.5, max = 0.5),
+            controlled_active_power_flow_limits = (min = 1.0 * CU, max = -1.0 * CU),
+        ),
+        bus_from, bus_to,
+    )
+end
+
+@testset "Circuit missing the band its control_objective selects throws on add_component!" begin
+    bus_from, bus_to = _circuit_check_buses()
+    # VOLTAGE selects the tap band and the voltage band; only the tap band is set.
+    _expect_invalid_circuit(
+        _controlled_xfrm(
+            "missingband", bus_from, bus_to, TransformerControlObjective.VOLTAGE;
+            tap_ratio_limits = (min = 0.9, max = 1.1),
+        ),
+        bus_from, bus_to,
+    )
+end
+
+@testset "Circuit band its control_objective does not use warns but adds" begin
+    sys = System(100.0)
+    bus_from, bus_to = _circuit_check_buses()
+    add_component!(sys, bus_from)
+    add_component!(sys, bus_to)
+    xfrm = _controlled_xfrm(
+        "strayband", bus_from, bus_to, TransformerControlObjective.VOLTAGE;
+        tap_ratio_limits = (min = 0.9, max = 1.1),
+        controlled_voltage_limits = (min = 0.95, max = 1.05),
+        controlled_active_power_flow_limits = (min = -1.0 * CU, max = 1.0 * CU),
+    )
+    @test_logs (:warn, r"does not use it") match_mode = :any add_component!(sys, xfrm)
+    @test get_component(TwoWindingTransformer, sys, "strayband") !== nothing
+end
+
+function _switched_shunt(name, bus, mode; bands...)
+    shunt = SwitchedAdmittance(nothing)
+    set_name!(shunt, name)
+    set_bus!(shunt, bus)
+    set_available!(shunt, true)
+    set_control_mode!(shunt, mode)
+    for (field, band) in pairs(bands)
+        getfield(PowerSystems, Symbol("set_", field, "!"))(shunt, band)
+    end
+    return shunt
+end
+
+@testset "SwitchedAdmittance control_mode selects its band on add_component!" begin
+    bus_from, _ = _circuit_check_buses()
+    sys = System(100.0)
+    add_component!(sys, bus_from)
+    band = (min = 0.95, max = 1.05)
+    add_component!(
+        sys,
+        _switched_shunt("fixed", bus_from, SwitchedAdmittanceControlMode.FIXED),
+    )
+    add_component!(
+        sys,
+        _switched_shunt(
+            "voltage", bus_from, SwitchedAdmittanceControlMode.DISCRETE_VOLTAGE;
+            voltage_limits = band,
+        ),
+    )
+    add_component!(
+        sys,
+        _switched_shunt(
+            "reactive", bus_from, SwitchedAdmittanceControlMode.DISCRETE_REACTIVE_FACTS;
+            reactive_power_range_limits = (min = 0.2, max = 0.8),
+        ),
+    )
+    @test length(collect(get_components(SwitchedAdmittance, sys))) == 3
+
+    test_logger = IS.MultiLogger([ConsoleLogger(devnull, Logging.Error)])
+    Logging.with_logger(test_logger) do
+        # the selected band missing, and the selected band inverted
+        @test_throws IS.InvalidValue add_component!(
+            sys,
+            _switched_shunt(
+                "missing",
+                bus_from,
+                SwitchedAdmittanceControlMode.CONTINUOUS_VOLTAGE,
+            ),
+        )
+        @test_throws IS.InvalidValue add_component!(
+            sys,
+            _switched_shunt(
+                "inverted", bus_from, SwitchedAdmittanceControlMode.DISCRETE_REACTIVE_VSC;
+                reactive_power_range_limits = (min = 0.8, max = 0.2),
+            ),
+        )
+    end
+    # an unselected band populated warns but adds
+    @test_logs (:warn, r"does not use it") match_mode = :any add_component!(
+        sys,
+        _switched_shunt(
+            "stray", bus_from, SwitchedAdmittanceControlMode.DISCRETE_VOLTAGE;
+            voltage_limits = band, reactive_power_range_limits = (min = 0.2, max = 0.8),
+        ),
+    )
+    @test get_component(SwitchedAdmittance, sys, "stray") !== nothing
+end
+
+@testset "Circuit UNDEFINED objective with every band nothing adds" begin
+    sys = System(100.0)
+    bus_from, bus_to = _circuit_check_buses()
+    add_component!(sys, bus_from)
+    add_component!(sys, bus_to)
+    xfrm = _circuit_check_xfrm("uncontrolled", bus_from, bus_to)
+    add_component!(sys, xfrm)
+    w = get_circuit(get_component(TwoWindingTransformer, sys, "uncontrolled"))
+    @test get_control_objective(w) == TransformerControlObjective.UNDEFINED
+    @test all(isnothing(getfield(w, f)) for f in PSY.CONTROL_BAND_FIELDS)
 end
 
 @testset "Circuit number_of_tap_positions < 0 throws on add_component!" begin

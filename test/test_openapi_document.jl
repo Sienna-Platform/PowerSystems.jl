@@ -841,7 +841,7 @@ end
     # converts implicitly: import must unwrap `.value`, export must construct the wrapper.
     attr = ImpedanceCorrectionData(;
         table_number = 3,
-        impedance_correction_curve = PiecewiseLinearData([
+        tap_ratio_correction_curve = PiecewiseLinearData([
             (x = 0.9, y = 1.0),
             (x = 1.1, y = 1.2),
         ]),
@@ -859,6 +859,25 @@ end
     @test get_transformer_winding(back) == WindingCategory.PRIMARY_WINDING
     @test get_transformer_control_mode(back) ==
           ImpedanceCorrectionTransformerControlMode.TAP_RATIO
-    @test get_impedance_correction_curve(back) ==
-          get_impedance_correction_curve(attr)
+    @test get_tap_ratio_correction_curve(back) == get_tap_ratio_correction_curve(attr)
+    @test isnothing(get_phase_angle_correction_curve(back))
+    @test po.phase_angle_correction_curve isa PSY.IC.Absent
+end
+
+@testset "ImpedanceCorrectionData requires the curve its control mode selects" begin
+    curve = PiecewiseLinearData([(x = 0.9, y = 1.0), (x = 1.1, y = 1.2)])
+    @test_throws ArgumentError ImpedanceCorrectionData(;
+        table_number = 1,
+        phase_angle_correction_curve = curve,
+        transformer_winding = WindingCategory.PRIMARY_WINDING,
+        transformer_control_mode = ImpedanceCorrectionTransformerControlMode.TAP_RATIO,
+    )
+    angle = ImpedanceCorrectionData(;
+        table_number = 2,
+        phase_angle_correction_curve = curve,
+        transformer_winding = WindingCategory.PRIMARY_WINDING,
+        transformer_control_mode = ImpedanceCorrectionTransformerControlMode.PHASE_SHIFT_ANGLE,
+    )
+    @test get_phase_angle_correction_curve(angle) == curve
+    @test isnothing(get_tap_ratio_correction_curve(angle))
 end

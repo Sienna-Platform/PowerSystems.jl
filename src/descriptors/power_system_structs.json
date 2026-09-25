@@ -548,18 +548,43 @@
                     "default": "0"
                 },
                 {
-                    "name": "control_limits",
-                    "comment": "Control band: tap-ratio bounds for voltage/reactive-power control or phase-angle bounds (rad) for active-power control",
-                    "null_value": "(min=0.9, max=1.1)",
-                    "data_type": "MinMax",
-                    "default": "(min=0.9, max=1.1)"
+                    "name": "tap_ratio_limits",
+                    "comment": "Tap-ratio actuator band (PSS/E RMA/RMI) when `control_objective` moves the tap; `nothing` otherwise. Dimensionless.",
+                    "null_value": "nothing",
+                    "data_type": "Union{Nothing, MinMax}",
+                    "default": "nothing"
                 },
                 {
-                    "name": "controlled_quantity_limits",
-                    "comment": "Controlled-quantity band: pu voltage / MVAr / MW bounds depending on `control_objective`",
-                    "null_value": "(min=0.9, max=1.1)",
-                    "data_type": "MinMax",
-                    "default": "(min=0.9, max=1.1)"
+                    "name": "phase_angle_limits",
+                    "comment": "Phase-shift actuator band (PSS/E RMA/RMI, rad) when `control_objective` moves the angle; `nothing` otherwise.",
+                    "null_value": "nothing",
+                    "data_type": "Union{Nothing, MinMax}",
+                    "default": "nothing"
+                },
+                {
+                    "name": "controlled_voltage_limits",
+                    "comment": "Regulated-voltage target band (PSS/E VMA/VMI), per unit of the regulated bus's base voltage; `nothing` unless `control_objective` selects it.",
+                    "null_value": "nothing",
+                    "data_type": "Union{Nothing, MinMax}",
+                    "default": "nothing"
+                },
+                {
+                    "name": "controlled_reactive_power_flow_limits",
+                    "comment": "Regulated reactive-power-flow target band (PSS/E VMA/VMI); `nothing` unless `control_objective` selects it.",
+                    "null_value": "nothing",
+                    "data_type": "Union{Nothing, MinMax}",
+                    "default": "nothing",
+                    "needs_conversion": true,
+                    "conversion_unit": ":mvar"
+                },
+                {
+                    "name": "controlled_active_power_flow_limits",
+                    "comment": "Regulated active-power-flow target band (PSS/E VMA/VMI); `nothing` unless `control_objective` selects it.",
+                    "null_value": "nothing",
+                    "data_type": "Union{Nothing, MinMax}",
+                    "default": "nothing",
+                    "needs_conversion": true,
+                    "conversion_unit": ":mw"
                 },
                 {
                     "name": "number_of_tap_positions",
@@ -1647,6 +1672,30 @@
                     "conversion_unit": ":mw"
                 },
                 {
+                    "name": "dc_control_from",
+                    "comment": "DC-side control mode of the `from` converter; see [`VSCDCControlModes`](@ref). No default: an in-service converter always controls something on each side, so the mode is supplied explicitly. The `(::Nothing)` demo constructor is the one place a mode is asserted without a matching setpoint.",
+                    "null_value": "VSCDCControlModes.DC_VOLTAGE",
+                    "data_type": "VSCDCControlModes.Value"
+                },
+                {
+                    "name": "ac_control_from",
+                    "comment": "AC-side control mode of the `from` converter; see [`VSCACControlModes`](@ref). No default: an in-service converter always controls something on each side, so the mode is supplied explicitly. The `(::Nothing)` demo constructor is the one place a mode is asserted without a matching setpoint.",
+                    "null_value": "VSCACControlModes.AC_VOLTAGE",
+                    "data_type": "VSCACControlModes.Value"
+                },
+                {
+                    "name": "dc_control_to",
+                    "comment": "DC-side control mode of the `to` converter; see [`VSCDCControlModes`](@ref). No default: an in-service converter always controls something on each side, so the mode is supplied explicitly. The `(::Nothing)` demo constructor is the one place a mode is asserted without a matching setpoint.",
+                    "null_value": "VSCDCControlModes.DC_VOLTAGE",
+                    "data_type": "VSCDCControlModes.Value"
+                },
+                {
+                    "name": "ac_control_to",
+                    "comment": "AC-side control mode of the `to` converter; see [`VSCACControlModes`](@ref). No default: an in-service converter always controls something on each side, so the mode is supplied explicitly. The `(::Nothing)` demo constructor is the one place a mode is asserted without a matching setpoint.",
+                    "null_value": "VSCACControlModes.AC_VOLTAGE",
+                    "data_type": "VSCACControlModes.Value"
+                },
+                {
                     "null_value": "0.0",
                     "name": "g",
                     "data_type": "Float64",
@@ -1670,36 +1719,38 @@
                     "default": "0.0"
                 },
                 {
-                    "name": "dc_control_from",
-                    "comment": "DC-side control mode of the `from` converter; see [`VSCDCControlModes`](@ref).",
-                    "null_value": "VSCDCControlModes.DC_VOLTAGE",
-                    "data_type": "VSCDCControlModes.Value",
-                    "default": "VSCDCControlModes.DC_VOLTAGE"
+                    "name": "dc_power_setpoint_from",
+                    "comment": "Active-power order of the `from` bus converter, used when `dc_control_from` is `DC_POWER`; `nothing` otherwise. Positive means the converter supplies power to the AC network at the `from` bus, negative means it withdraws.",
+                    "null_value": "nothing",
+                    "data_type": "Union{Nothing, Float64}",
+                    "default": "nothing",
+                    "needs_conversion": true,
+                    "conversion_unit": ":mw"
                 },
                 {
-                    "name": "ac_control_from",
-                    "comment": "AC-side control mode of the `from` converter; see [`VSCACControlModes`](@ref).",
-                    "null_value": "VSCACControlModes.AC_VOLTAGE",
-                    "data_type": "VSCACControlModes.Value",
-                    "default": "VSCACControlModes.AC_VOLTAGE"
+                    "name": "dc_voltage_setpoint_from",
+                    "comment": "DC-side voltage target of the `from` bus converter in per-unit of `rated_dc_voltage`, used when `dc_control_from` is `DC_VOLTAGE` or `DC_VOLTAGE_DROOP`; `nothing` otherwise.",
+                    "null_value": "nothing",
+                    "data_type": "Union{Nothing, Float64}",
+                    "default": "nothing"
                 },
                 {
-                    "name": "dc_setpoint_from",
-                    "comment": "Converter DC setpoint on the `from` bus converter, in per-unit. For a DC-voltage-controlling mode (`dc_control_from` is `DC_VOLTAGE` or `DC_VOLTAGE_DROOP`) this is the DC-side voltage in per-unit of `rated_dc_voltage`. For `DC_POWER` this is the active-power demand in per-unit ([`SYSTEM_BASE`](@ref per_unit)); positive means the converter supplies power to the AC network at the `from` bus, negative means it withdraws.",
-                    "null_value": "0.0",
-                    "data_type": "Float64",
-                    "default": "0.0"
+                    "name": "power_factor_setpoint_from",
+                    "comment": "Power-factor setpoint of the `from` bus converter, used when `ac_control_from` is `AC_REACTIVE_POWER`; `nothing` otherwise.",
+                    "null_value": "nothing",
+                    "data_type": "Union{Nothing, Float64}",
+                    "default": "nothing"
                 },
                 {
-                    "name": "ac_setpoint_from",
-                    "comment": "Converter AC setpoint in the `from` bus converter. When `ac_control_from` is `AC_VOLTAGE` this is the AC voltage on the AC side of the converter, in per-unit of `rated_ac_voltage_from`. When `ac_control_from` is `AC_REACTIVE_POWER`, this value is the power factor setpoint.",
-                    "null_value": "0.0",
-                    "data_type": "Float64",
-                    "default": "1.0"
+                    "name": "ac_voltage_setpoint_from",
+                    "comment": "AC-side voltage magnitude target of the `from` bus converter in per-unit of `rated_ac_voltage_from`, used when `ac_control_from` is `AC_VOLTAGE`; `nothing` otherwise.",
+                    "null_value": "nothing",
+                    "data_type": "Union{Nothing, Float64}",
+                    "default": "nothing"
                 },
                 {
                     "name": "rated_ac_voltage_from",
-                    "comment": "Rated (base) AC voltage at the `from` converter's AC terminal in kV. Used as the AC voltage base for interpreting `ac_setpoint_from` when `ac_control_from` is `AC_VOLTAGE`; `0.0` means unspecified (the setpoint is taken as per-unit directly).",
+                    "comment": "Rated (base) AC voltage at the `from` converter's AC terminal in kV. Used as the AC voltage base for interpreting `ac_voltage_setpoint_from` when `ac_control_from` is `AC_VOLTAGE`; `0.0` means unspecified (the setpoint is taken as per-unit directly).",
                     "null_value": "0.0",
                     "data_type": "Float64",
                     "default": "0.0"
@@ -1757,7 +1808,7 @@
                 },
                 {
                     "name": "dc_voltage_droop_from",
-                    "comment": "DC-voltage droop gain on the `from` converter, used when `dc_control_from` is `DC_VOLTAGE_DROOP`: `V_dc = dc_setpoint_from + dc_voltage_droop_from * P_c` (with `P_c` the converter's AC-side active-power injection).",
+                    "comment": "DC-voltage droop gain on the `from` converter, used when `dc_control_from` is `DC_VOLTAGE_DROOP`: `V_dc = dc_voltage_setpoint_from + dc_voltage_droop_from * P_c` (with `P_c` the converter's AC-side active-power injection).",
                     "null_value": "0.0",
                     "data_type": "Float64",
                     "default": "0.0"
@@ -1772,36 +1823,38 @@
                     "default": "0.0"
                 },
                 {
-                    "name": "dc_control_to",
-                    "comment": "DC-side control mode of the `to` converter; see [`VSCDCControlModes`](@ref).",
-                    "null_value": "VSCDCControlModes.DC_VOLTAGE",
-                    "data_type": "VSCDCControlModes.Value",
-                    "default": "VSCDCControlModes.DC_VOLTAGE"
+                    "name": "dc_power_setpoint_to",
+                    "comment": "Active-power order of the `to` bus converter, used when `dc_control_to` is `DC_POWER`; `nothing` otherwise. Positive means the converter supplies power to the AC network at the `to` bus, negative means it withdraws.",
+                    "null_value": "nothing",
+                    "data_type": "Union{Nothing, Float64}",
+                    "default": "nothing",
+                    "needs_conversion": true,
+                    "conversion_unit": ":mw"
                 },
                 {
-                    "name": "ac_control_to",
-                    "comment": "AC-side control mode of the `to` converter; see [`VSCACControlModes`](@ref).",
-                    "null_value": "VSCACControlModes.AC_VOLTAGE",
-                    "data_type": "VSCACControlModes.Value",
-                    "default": "VSCACControlModes.AC_VOLTAGE"
+                    "name": "dc_voltage_setpoint_to",
+                    "comment": "DC-side voltage target of the `to` bus converter in per-unit of `rated_dc_voltage`, used when `dc_control_to` is `DC_VOLTAGE` or `DC_VOLTAGE_DROOP`; `nothing` otherwise.",
+                    "null_value": "nothing",
+                    "data_type": "Union{Nothing, Float64}",
+                    "default": "nothing"
                 },
                 {
-                    "name": "dc_setpoint_to",
-                    "comment": "Converter DC setpoint on the `to` bus converter, in per-unit. For a DC-voltage-controlling mode (`dc_control_to` is `DC_VOLTAGE` or `DC_VOLTAGE_DROOP`) this is the DC-side voltage in per-unit of `rated_dc_voltage`. For `DC_POWER` this is the active-power demand in per-unit ([`SYSTEM_BASE`](@ref per_unit)); positive means the converter supplies power to the AC network at the `to` bus, negative means it withdraws.",
-                    "null_value": "0.0",
-                    "data_type": "Float64",
-                    "default": "0.0"
+                    "name": "power_factor_setpoint_to",
+                    "comment": "Power-factor setpoint of the `to` bus converter, used when `ac_control_to` is `AC_REACTIVE_POWER`; `nothing` otherwise.",
+                    "null_value": "nothing",
+                    "data_type": "Union{Nothing, Float64}",
+                    "default": "nothing"
                 },
                 {
-                    "name": "ac_setpoint_to",
-                    "comment": "Converter AC setpoint in the `to` bus converter. When `ac_control_to` is `AC_VOLTAGE` this is the AC voltage on the AC side of the converter, in per-unit of `rated_ac_voltage_to`. When `ac_control_to` is `AC_REACTIVE_POWER`, this value is the power factor setpoint.",
-                    "null_value": "0.0",
-                    "data_type": "Float64",
-                    "default": "1.0"
+                    "name": "ac_voltage_setpoint_to",
+                    "comment": "AC-side voltage magnitude target of the `to` bus converter in per-unit of `rated_ac_voltage_to`, used when `ac_control_to` is `AC_VOLTAGE`; `nothing` otherwise.",
+                    "null_value": "nothing",
+                    "data_type": "Union{Nothing, Float64}",
+                    "default": "nothing"
                 },
                 {
                     "name": "rated_ac_voltage_to",
-                    "comment": "Rated (base) AC voltage at the `to` converter's AC terminal in kV. Used as the AC voltage base for interpreting `ac_setpoint_to` when `ac_control_to` is `AC_VOLTAGE`; `0.0` means unspecified (the setpoint is taken as per-unit directly).",
+                    "comment": "Rated (base) AC voltage at the `to` converter's AC terminal in kV. Used as the AC voltage base for interpreting `ac_voltage_setpoint_to` when `ac_control_to` is `AC_VOLTAGE`; `0.0` means unspecified (the setpoint is taken as per-unit directly).",
                     "null_value": "0.0",
                     "data_type": "Float64",
                     "default": "0.0"
@@ -1859,7 +1912,7 @@
                 },
                 {
                     "name": "dc_voltage_droop_to",
-                    "comment": "DC-voltage droop gain on the `to` converter, used when `dc_control_to` is `DC_VOLTAGE_DROOP`: `V_dc = dc_setpoint_to + dc_voltage_droop_to * P_c` (with `P_c` the converter's AC-side active-power injection).",
+                    "comment": "DC-voltage droop gain on the `to` converter, used when `dc_control_to` is `DC_VOLTAGE_DROOP`: `V_dc = dc_voltage_setpoint_to + dc_voltage_droop_to * P_c` (with `P_c` the converter's AC-side active-power injection).",
                     "null_value": "0.0",
                     "data_type": "Float64",
                     "default": "0.0"
@@ -1985,12 +2038,6 @@
                     "comment": "Series resistance of the DC line in pu ([`SYSTEM_BASE`](@ref per_unit))"
                 },
                 {
-                    "name": "transfer_setpoint",
-                    "comment": "Desired set-point. If `power_mode = true` it is a power, stored per-unit on the component base like the other power fields; read it with `get_transfer_setpoint(lcc, units)` (e.g. `NU` for MW). If `power_mode = false` it is a current in Amperes, which no power base converts. A positive value represents the desired consumed power at the rectifier bus, while a negative value represents the desired power at the inverter bus (i.e. the absolute value of `transfer_setpoint` is the generated power at the inverter bus).",
-                    "null_value": "0.0",
-                    "data_type": "Float64"
-                },
-                {
                     "name": "scheduled_dc_voltage",
                     "comment": "Scheduled compounded DC voltage in kV. By default this parameter is the scheduled DC voltage in the inverter bus This parameter must not be specified in per-unit.",
                     "null_value": "0.0",
@@ -2057,11 +2104,27 @@
                     "data_type": "Float64"
                 },
                 {
-                    "name": "power_mode",
-                    "data_type": "Bool",
-                    "comment": "Boolean flag to identify if the LCC line is in power mode or current mode. If `power_mode = true`, `transfer_setpoint` is a power (per-unit on the component base), and if `power_mode = false` it is a current in Amperes.",
-                    "null_value": "false",
-                    "default": "true"
+                    "name": "control_mode",
+                    "data_type": "LCCControlMode.Value",
+                    "comment": "Control mode of the line (PSS/E MDC); see [`LCCControlMode`](@ref). `BLOCKED` holds no schedule, `POWER` holds `power_transfer_setpoint`, `CURRENT` holds `current_transfer_setpoint`.",
+                    "null_value": "LCCControlMode.BLOCKED",
+                    "default": "LCCControlMode.BLOCKED"
+                },
+                {
+                    "name": "power_transfer_setpoint",
+                    "comment": "Scheduled power transfer, used when `control_mode` is `POWER`; `nothing` otherwise. Positive is the power consumed at the rectifier bus, negative the power delivered at the inverter bus (its absolute value is the generated power at the inverter bus).",
+                    "null_value": "nothing",
+                    "data_type": "Union{Nothing, Float64}",
+                    "default": "nothing",
+                    "needs_conversion": true,
+                    "conversion_unit": ":mw"
+                },
+                {
+                    "name": "current_transfer_setpoint",
+                    "comment": "Scheduled current transfer in amperes, used when `control_mode` is `CURRENT`; `nothing` otherwise.",
+                    "null_value": "nothing",
+                    "data_type": "Union{Nothing, Float64}",
+                    "default": "nothing"
                 },
                 {
                     "name": "switch_mode_voltage",
@@ -3022,15 +3085,22 @@
                     "default": "nothing"
                 },
                 {
-                    "name": "admittance_limits",
-                    "comment": "Shunt admittance limits for switched shunt model",
-                    "null_value": "(min=0.0, max=0.0)",
-                    "data_type": "MinMax",
-                    "default": "(min=1.0, max=1.0)"
+                    "name": "voltage_limits",
+                    "comment": "Regulated-voltage band (PSS/E VSWLO/VSWHI) at the regulated bus, per unit of its base voltage; `nothing` unless `control_mode` is `DISCRETE_VOLTAGE` or `CONTINUOUS_VOLTAGE`.",
+                    "null_value": "nothing",
+                    "data_type": "Union{Nothing, MinMax}",
+                    "default": "nothing"
+                },
+                {
+                    "name": "reactive_power_range_limits",
+                    "comment": "Regulated reactive-power band (PSS/E VSWLO/VSWHI) as a fraction of the regulated device's reactive power range, the plant, converter or FACTS shunt at the regulated bus; `nothing` unless `control_mode` is one of the `DISCRETE_REACTIVE_*` or `DISCRETE_ADMITTANCE_REMOTE` modes.",
+                    "null_value": "nothing",
+                    "data_type": "Union{Nothing, MinMax}",
+                    "default": "nothing"
                 },
                 {
                     "name": "control_mode",
-                    "comment": "Switched-shunt control mode.",
+                    "comment": "Switched-shunt control mode; see [`SwitchedAdmittanceControlMode`](@ref). Voltage modes use `voltage_limits`, reactive modes use `reactive_power_range_limits`; `UNDEFINED` and `FIXED` use neither.",
                     "data_type": "SwitchedAdmittanceControlMode.Value",
                     "null_value": "SwitchedAdmittanceControlMode.FIXED",
                     "default": "SwitchedAdmittanceControlMode.FIXED"
@@ -4352,6 +4422,18 @@
                     "validation_action": "warn"
                 },
                 {
+                    "name": "dc_control",
+                    "comment": "DC-side control mode of the converter; see [`VSCDCControlModes`](@ref). No default: an in-service converter always controls something on each side, so the mode is supplied explicitly. The `(::Nothing)` demo constructor is the one place a mode is asserted without a matching setpoint.",
+                    "null_value": "VSCDCControlModes.DC_VOLTAGE",
+                    "data_type": "VSCDCControlModes.Value"
+                },
+                {
+                    "name": "ac_control",
+                    "comment": "AC-side control mode of the converter; see [`VSCACControlModes`](@ref). No default: an in-service converter always controls something on each side, so the mode is supplied explicitly. The `(::Nothing)` demo constructor is the one place a mode is asserted without a matching setpoint.",
+                    "null_value": "VSCACControlModes.AC_REACTIVE_POWER",
+                    "data_type": "VSCACControlModes.Value"
+                },
+                {
                     "name": "reactive_power_limits",
                     "comment": "Minimum and maximum reactive power limits. Set to `Nothing` if not applicable",
                     "null_value": "nothing",
@@ -4386,36 +4468,38 @@
                     "default": "LossCurve(LinearCurve(0.0), NaturalUnit())"
                 },
                 {
-                    "name": "dc_control",
-                    "comment": "DC-side control mode of the converter; see [`VSCDCControlModes`](@ref).",
-                    "null_value": "VSCDCControlModes.DC_VOLTAGE",
-                    "data_type": "VSCDCControlModes.Value",
-                    "default": "VSCDCControlModes.DC_VOLTAGE"
+                    "name": "dc_power_setpoint",
+                    "comment": "Active-power order of the converter, used when `dc_control` is `DC_POWER`; `nothing` otherwise. Positive means the converter supplies power to the AC network, negative means it withdraws.",
+                    "null_value": "nothing",
+                    "data_type": "Union{Nothing, Float64}",
+                    "default": "nothing",
+                    "needs_conversion": true,
+                    "conversion_unit": ":mw"
                 },
                 {
-                    "name": "ac_control",
-                    "comment": "AC-side control mode of the converter; see [`VSCACControlModes`](@ref).",
-                    "null_value": "VSCACControlModes.AC_REACTIVE_POWER",
-                    "data_type": "VSCACControlModes.Value",
-                    "default": "VSCACControlModes.AC_REACTIVE_POWER"
+                    "name": "dc_voltage_setpoint",
+                    "comment": "DC-side voltage target of the converter in per unit, used when `dc_control` is `DC_VOLTAGE` or `DC_VOLTAGE_DROOP`; `nothing` otherwise.",
+                    "null_value": "nothing",
+                    "data_type": "Union{Nothing, Float64}",
+                    "default": "nothing"
                 },
                 {
-                    "name": "dc_setpoint",
-                    "comment": "DC-voltage target (when dc_voltage_control is true) or active-power order (when false), in per unit.",
-                    "null_value": "0.0",
-                    "data_type": "Float64",
-                    "default": "0.0"
+                    "name": "power_factor_setpoint",
+                    "comment": "Power-factor setpoint of the converter, used when `ac_control` is `AC_REACTIVE_POWER`; `nothing` otherwise.",
+                    "null_value": "nothing",
+                    "data_type": "Union{Nothing, Float64}",
+                    "default": "nothing"
                 },
                 {
-                    "name": "ac_setpoint",
-                    "comment": "AC-voltage magnitude target (when ac_voltage_control is true), in per unit.",
-                    "null_value": "0.0",
-                    "data_type": "Float64",
-                    "default": "1.0"
+                    "name": "ac_voltage_setpoint",
+                    "comment": "AC-side voltage magnitude target of the converter in per unit, used when `ac_control` is `AC_VOLTAGE`; `nothing` otherwise.",
+                    "null_value": "nothing",
+                    "data_type": "Union{Nothing, Float64}",
+                    "default": "nothing"
                 },
                 {
                     "name": "dc_voltage_droop",
-                    "comment": "DC-voltage droop gain relating DC voltage to converter active power as V_dc = dc_setpoint - dc_voltage_droop * P_c. A value of 0.0 disables droop.",
+                    "comment": "DC-voltage droop gain relating DC voltage to converter active power as V_dc = dc_voltage_setpoint - dc_voltage_droop * P_c. A value of 0.0 disables droop.",
                     "null_value": "0.0",
                     "data_type": "Float64",
                     "default": "0.0"
