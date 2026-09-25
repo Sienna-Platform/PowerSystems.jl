@@ -583,6 +583,7 @@ export get_incremental_slope, set_incremental_slope!
 export get_decremental_slope, set_decremental_slope!
 export get_curve_style, set_curve_style!
 export get_curve_multistep, set_curve_multistep!
+export get_time_series_keys
 export get_import_offer_curves, set_import_offer_curves!
 export get_export_offer_curves, set_export_offer_curves!
 export get_import_variable_cost, get_export_variable_cost
@@ -1034,6 +1035,7 @@ include("models/cost_functions/RenewableGenerationCost.jl")
 include("models/cost_functions/StorageCost.jl")
 include("models/cost_functions/ThermalGenerationCost.jl")
 include("models/cost_functions/HydroReservoirCost.jl")
+include("models/cost_functions/time_series_keys.jl")
 
 # OpenAPI serde: hand-written pieces the generated from_openapi/to_openapi methods
 # build on. Must precede the generated includes. The rest of src/openapi/ is included

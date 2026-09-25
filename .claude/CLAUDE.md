@@ -17,9 +17,10 @@ to_file(sys, path; units = CU, force = false, pretty = false)
 from_file(path; system_kwargs...)   # no type argument — the form is inferred from `path`
 ```
 
-The extension of `path` chooses the form, and `to_file` refuses an unrecognized one in its own
-`else` branch *before* anything dispatches on the form — keep that order, or a typo'd extension
-becomes a `MethodError` on an internal helper.
+The extension of `path` chooses the form on **both** sides — `from_file` does not sniff content
+(`isdir`, zip magic). Each function is one `if`/`elseif` over the three extensions with an
+`else` that refuses the rest; every form funnels into one `_write_bundle` / `_read_bundle`, the
+archive wrapping them in IS's container.
 
 - **directory** (no extension) — `system.json` plus `time_series.h5` when there are time series.
 - **`.json`** — the same two, sidecar named from the document's stem (`case.json` → `case.h5`)
@@ -37,7 +38,7 @@ convertible field. Don't confuse it with the **`power_units` field** on cost cur
 power-bearing blobs — that is per-value wire data, spelled `"COMPONENT_BASE"`/`"NATURAL_UNITS"`.
 
 **The archive container is IS's, the extension is PSY's** — `IS.create_sienna_archive` /
-`extract_sienna_archive` / `is_sienna_archive` own the zip; PSY only supplies the extension
+`extract_sienna_archive` own the zip; PSY only supplies the extension
 (`SYSTEM_ARCHIVE_EXTENSION = ".sns"`, so PowerSystemsInvestmentsPortfolios can reuse the same
 container under `.snp`). Do not add zip or archive dependencies here.
 

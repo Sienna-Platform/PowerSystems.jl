@@ -437,6 +437,18 @@ function assign_new_uuid!(sys::System)
 end
 
 """
+Restore the system's identity to `uuid`.
+
+For a `System` rebuilt from a snapshot that recorded its UUID elsewhere -- a serialized form
+carries components and attributes, not the identity, so the rebuilt system would otherwise
+answer to a fresh UUID and stop matching the results that were produced from it.
+"""
+function set_system_uuid!(sys::System, uuid::Base.UUID)
+    sys.metadata.uuid = uuid
+    return
+end
+
+"""
 Set the description of the system.
 """
 set_description!(sys::System, description::AbstractString) =

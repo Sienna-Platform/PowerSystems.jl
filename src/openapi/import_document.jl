@@ -601,11 +601,7 @@ function from_openapi(
     sys = _system_with_sidecar(base_power, doc, time_series_storage_path; system_kwargs...)
     _apply_document_metadata!(sys, doc, keys(system_kwargs))
 
-    store = if isnothing(time_series_storage_path)
-        nothing
-    else
-        sys.data.time_series_manager.data_store
-    end
+    store = _import_store(sys, doc, time_series_storage_path)
     _load_time_series_associations!(sys, doc, store)
     refs = OpenAPIRefs(base_power; store = store)
 
@@ -665,6 +661,24 @@ function _load_time_series_associations!(sys::System, doc::PD.SystemDocument, st
         store, JSON.json(IC.encode(doc.time_series_associations)),
     )
     return nothing
+end
+
+"""
+The adopted sidecar's store, which resolves a cost's `association_id`, or `nothing` when the
+document names no series at all.
+"""
+_import_store(sys::System, ::PD.SystemDocument, ::AbstractString) =
+    IS.get_data_store(sys.data)
+
+function _import_store(::System, doc::PD.SystemDocument, ::Nothing)
+    isempty(doc.time_series_associations) && return nothing
+    throw(
+        IS.DataFormatError(
+            "from_openapi: the document carries $(length(doc.time_series_associations)) " *
+            "time series association row(s) but no time_series_storage_path was given — " *
+            "pass the path to the sidecar the document names",
+        ),
+    )
 end
 
 """Whether the store already has association rows, which then outrank the document's."""

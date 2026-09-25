@@ -27,21 +27,21 @@ convert_cost(w::IC.OneOfAPIModel, store) = convert_cost(w.value, store)
 # `association_id`, so only this import still needs a store to resolve one against.
 const _IMPORT_STORE = Base.ScopedValues.ScopedValue{IS.Store}()
 
-"""No sidecar was adopted, so there is nothing to bind; a document that then names a
-time-series-backed cost fails in `_current_import_store`."""
+"""The document names no series at all, so there is nothing to bind; a document that then
+names a time-series-backed cost fails in `_current_import_store`."""
 _with_import_store(f, ::Nothing) = f()
 
-"""Bind `store` for the duration of `f()`. `ScopedValue`-based, so a nested import and a
-task spawned inside one both see the innermost binding."""
+"""Bind `store` for the duration of `f()`. `ScopedValue`-based, so a nested import and a task
+spawned inside one both see the innermost binding."""
 _with_import_store(f, store::IS.Store) =
     Base.ScopedValues.with(f, _IMPORT_STORE => store)
 
 function _current_import_store()
     store = Base.ScopedValues.get(_IMPORT_STORE)
     isnothing(store) && error(
-        "convert_cost: the document names a time-series-backed cost, but no time series " *
-        "store is bound — either this ran outside an active from_openapi(System, doc) " *
-        "import, or no time_series_storage_path sidecar was adopted for it",
+        "convert_cost: the document names a time-series-backed cost, but no time series store is " *
+        "bound — either this ran outside an active from_openapi(System, doc) import, or " *
+        "the document describes no time series at all",
     )
     return something(store)
 end

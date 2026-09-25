@@ -486,6 +486,29 @@ function _group_association!(
 end
 
 """
+The store rows a document export declares: its supplemental attribute associations, its time
+series associations, and their count. [`to_openapi`](@ref) reads them from `sys`'s own store
+by default ([`read_export_store_rows`](@ref)); a document pointing at another store's sidecar
+takes that store's rows instead.
+"""
+struct ExportStoreRows
+    supplemental_attribute_associations::Vector{IC.SupplementalAttributeAssociation}
+    num_time_series::Int
+    time_series_associations::Vector{PTS.TimeSeriesAssociation}
+end
+
+"""
+$(TYPEDSIGNATURES)
+
+Read `sys`'s own [`ExportStoreRows`](@ref), the rows [`to_openapi`](@ref) declares by default.
+"""
+read_export_store_rows(sys::System) = ExportStoreRows(
+    IS.openapi_supplemental_attribute_association_rows(sys.data),
+    IS.get_num_time_series(sys.data),
+    IS.openapi_time_series_association_rows(sys.data),
+)
+
+"""
 Emit the attribute rows and their associations from the store's own OpenAPI export
 ([`IS.openapi_supplemental_attribute_association_rows`](@ref)) rather than converting each
 association row by hand: the rows already carry `component_id`/`attribute_id` in the
@@ -497,7 +520,11 @@ with the component itself. Each distinct attribute is registered into `refs` und
 before `to_openapi(attr, refs)` reads that id back. The store's rows already arrive sorted by
 `(component_id, attribute_id)`, so document order tracks component order with no local sort.
 """
-function _export_supplemental_attributes(refs::OpenAPIRefs, sys::System)
+function _export_supplemental_attributes(
+    refs::OpenAPIRefs,
+    sys::System,
+    store_rows::ExportStoreRows,
+)
     attribute_rows = IC.APIModel[]
     association_rows = IC.SupplementalAttributeAssociation[]
     plant_association_rows = PO.PlantAssociation[]
@@ -505,7 +532,7 @@ function _export_supplemental_attributes(refs::OpenAPIRefs, sys::System)
     attributes_by_id = Dict{Int, SupplementalAttribute}(
         IS.get_id(attr) => attr for attr in IS.iterate_supplemental_attributes(sys.data)
     )
-    for row in IS.openapi_supplemental_attribute_association_rows(sys.data)
+    for row in store_rows.supplemental_attribute_associations
         entity_id = Int(row.component_id)
         has_ref(refs, entity_id) || continue
         attr_id = Int(row.attribute_id)
@@ -599,19 +626,24 @@ function _export_all_time_series(
     refs::OpenAPIRefs,
     time_series_storage_path,
     write_catalog::Bool,
+    write_data::Bool,
+    store_rows::ExportStoreRows,
 )
     rows = PTS.TimeSeriesAssociation[]
     # Counted, not `isempty(store)`: one store holds the supplemental attribute associations
     # as well, so a System with attributes and no series has a non-empty store and would
     # otherwise demand a sidecar it has nothing to put in.
-    num_time_series = IS.get_num_time_series(sys.data)
+    num_time_series = store_rows.num_time_series
     iszero(num_time_series) && return rows
-    isnothing(time_series_storage_path) && error(
-        "to_openapi: $num_time_series time series are attached but no " *
-        "time_series_storage_path was given — cannot write the sidecar",
-    )
+    if isnothing(time_series_storage_path)
+        error(
+            "to_openapi: $num_time_series time series are attached but no " *
+            "time_series_storage_path was given — a document carrying association rows has " *
+            "to name the file their values live in.",
+        )
+    end
     skipped_counts = Dict{String, Int}()
-    for assoc in IS.openapi_time_series_association_rows(sys.data)
+    for assoc in store_rows.time_series_associations
         row = assoc.value
         owner_id = Int(row.owner_id)
         if !has_ref(refs, owner_id)
@@ -635,6 +667,17 @@ function _export_all_time_series(
     end
     # The rows above go into the document either way; `write_catalog` decides only whether
     # InfraStore's own `.sqlite` is written beside the arrays as well. See `to_file`.
+    if write_data
+        _write_time_series_values(sys, time_series_storage_path, write_catalog)
+    end
+    return rows
+end
+
+function _write_time_series_values(
+    sys::System,
+    time_series_storage_path,
+    write_catalog::Bool,
+)
     store = IS.get_data_store(sys.data)
     path = String(time_series_storage_path)
     if write_catalog
@@ -642,7 +685,7 @@ function _export_all_time_series(
     else
         IS.serialize_arrays(store, path)
     end
-    return rows
+    return nothing
 end
 
 # ── document-level entry point ──────────────────────────────────────────────────
@@ -676,12 +719,25 @@ Component `ext` is written through verbatim to `doc.ext`.
 `false` (default) writes the arrays alone, `true` keeps the catalog and makes it authoritative
 on read. Either way the rows appear in `doc.time_series_associations`. It requires
 `time_series_storage_path` whenever `sys` carries time series.
+
+A document can instead point at a sidecar another store wrote:
+
+  - `store_rows` holds the rows the document declares; it defaults to `sys`'s own
+    ([`ExportStoreRows`](@ref)).
+  - `write_time_series_data = false` writes no values; `time_series_storage_path` is still
+    required, since a document carrying rows must name their file.
+  - `association_id_map` remaps each cost's emitted `association_id` onto that store's ids. Empty
+    (the default) is a no-op; non-empty, it must cover every emitted id or `to_openapi` throws
+    `IS.DataFormatError`.
 """
 function to_openapi(
     sys::System;
     units::IS.AbstractUnitSystem = CU,
     time_series_storage_path = nothing,
     write_catalog::Bool = false,
+    write_time_series_data::Bool = true,
+    store_rows::ExportStoreRows = read_export_store_rows(sys),
+    association_id_map::AbstractDict{Int64, Int64} = Dict{Int64, Int64}(),
 )
     warn_unexportable_components(sys)
     _check_export_units(units)
@@ -693,15 +749,15 @@ function to_openapi(
         frequency = sys.frequency,
         time_series_storage_file = _sidecar_basename(time_series_storage_path),
     )
-    emitted = Set{Int}()
-    task_local_storage(_EMITTED_ASSOCIATION_IDS_KEY, emitted) do
+    context = _ExportContext(Set{Int}(), Dict{Int64, Int64}(association_id_map))
+    Base.ScopedValues.with(_EXPORT_CONTEXT => context) do
         _export_components!(doc, refs, sys, units)
         _export_market_bid_service_offers!(doc, refs)
         supplemental_attributes,
         supplemental_attribute_associations,
         plant_associations,
         combined_cycle_associations =
-            _export_supplemental_attributes(refs, sys)
+            _export_supplemental_attributes(refs, sys, store_rows)
         append!(doc.supplemental_attributes, supplemental_attributes)
         append!(
             doc.supplemental_attribute_associations,
@@ -716,12 +772,15 @@ function to_openapi(
         )
         append!(
             doc.time_series_associations,
-            _export_all_time_series(sys, refs, time_series_storage_path, write_catalog),
+            _export_all_time_series(
+                sys, refs, time_series_storage_path, write_catalog,
+                write_time_series_data, store_rows,
+            ),
         )
         _reserve_ids!(doc, refs)
     end
 
-    _check_costs_reference_declared_series!(doc, emitted)
+    _check_costs_reference_declared_series!(doc, context.emitted_ids)
     PD.validate_document(doc)
     return doc
 end
