@@ -1,7 +1,7 @@
 [deps]
 JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
-PowerCoreOpenAPIModels = "b7b40286-e793-417d-a9a0-b1583e4da1cb"
 PowerFlowFileParser = "bed98974-b02e-5e2f-9ee0-a103f5c450dd"
+PowerOpenAPIModels = "0730f07c-cff6-4c3b-a9df-c546153be50a"
 PowerSystems = "bcd98974-b02a-5e2f-9ee0-a103f5c450dd"
 
 # Sibling-checkout paths. This env exists only because the pipeline it exercises spans two
@@ -10,4 +10,4 @@ PowerSystems = "bcd98974-b02a-5e2f-9ee0-a103f5c450dd"
 [sources]
 PowerSystems = {path = "../.."}
 PowerFlowFileParser = {path = "../../../PowerFlowFileParser.jl"}
-PowerCoreOpenAPIModels = {path = "../../../PowerOpenAPIModels/PowerCoreOpenAPIModels.jl"}
+PowerOpenAPIModels = {path = "../../../PowerOpenAPIModels/PowerOpenAPIModels.jl"}

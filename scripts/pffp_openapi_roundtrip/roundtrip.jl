@@ -24,8 +24,12 @@
 #   parse           PFP.PowerModelsData(raw)
 #   build_openapi   PFP.build_openapi_system(pm)
 #   to_json         PFP.to_json(oapi, path)
-#   read_document   PC.read_document(path)
+#   read_document   PD.read_document(path)
 #   from_openapi    PSY.from_openapi(PSY.System, doc)
+#   to_openapi      PSY.to_openapi(sys), then the voltage control content of the two
+#                   documents is compared: every remote or regulated bus reference, every
+#                   generator setpoint, every load drop compensation and LCC reference, and
+#                   every voltage control association must come back unchanged
 #
 # Exit status is 1 when any case fails, so this can gate a manual verification run.
 
@@ -33,8 +37,8 @@ import JSON
 
 using PowerFlowFileParser
 const PFP = PowerFlowFileParser
-using PowerCoreOpenAPIModels
-const PC = PowerCoreOpenAPIModels
+using PowerOpenAPIModels
+const PD = PowerOpenAPIModels
 using PowerSystems
 const PSY = PowerSystems
 
@@ -99,6 +103,99 @@ end
 _sidecar(::Nothing, _json_path) = nothing
 _sidecar(named::AbstractString, json_path) = joinpath(dirname(json_path), named)
 
+# The wire fields that carry remote and shared voltage control. PowerSystems keeps every
+# document id on import and writes it back on export, so the two documents compare by id.
+const VOLTAGE_CONTROL_FIELDS = (
+    :remote_regulated_bus_id,
+    :remote_regulated_bus_id_from,
+    :remote_regulated_bus_id_to,
+    :voltage_setpoint,
+    :regulated_bus_id,
+    :regulated_bus_side,
+    :load_drop_compensation_r,
+    :load_drop_compensation_x,
+    :rectifier_commutating_bus_id,
+    :inverter_commutating_bus_id,
+    :rectifier_tap_transformer_id,
+    :inverter_tap_transformer_id,
+)
+
+_wire(value) = value
+_wire(value::PD.InfrastructureCoreOpenAPIModels.EnumAPIModel) = value.value
+_wire(value::PD.InfrastructureCoreOpenAPIModels.OneOfAPIModel) = _wire(value.value)
+_wire(::PD.InfrastructureCoreOpenAPIModels.Absent) = nothing
+_wire(value::PD.InfrastructureCoreOpenAPIModels.APIModel) = Dict(
+    field => _wire(getproperty(value, field)) for
+    field in propertynames(value) if field != :additional_properties
+)
+_wire(value::Number) = round(Float64(value); digits = 9)
+
+"""
+Every component's voltage control fields, keyed by (type, id), except transformer circuits,
+which PowerSystems numbers afresh on export and so come back as one sorted list under the
+key ("TransformerCircuit", 0).
+"""
+function voltage_control_fields(doc)
+    fields = Dict{Tuple{String, Int}, Any}()
+    circuits = Dict{Symbol, Any}[]
+    for type_name in PD.component_type_names(doc), component in doc.components[type_name]
+        entry = Dict{Symbol, Any}()
+        for field in VOLTAGE_CONTROL_FIELDS
+            hasproperty(component, field) || continue
+            entry[field] = _wire(getproperty(component, field))
+        end
+        isempty(entry) && continue
+        if type_name == "TransformerCircuit"
+            push!(circuits, entry)
+        else
+            fields[(type_name, Int(component.id))] = entry
+        end
+    end
+    isempty(circuits) || (fields[("TransformerCircuit", 0)] = sort!(circuits; by = repr))
+    return fields
+end
+
+_association_key(row) = (Int(row.control_id), Int(row.entity_id), _wire(row.terminal))
+
+"""
+Differences in the voltage control content of two documents, as messages; empty when the
+round trip preserved every field and association.
+"""
+function voltage_control_differences(before, after)
+    differences = String[]
+    before_fields = voltage_control_fields(before)
+    after_fields = voltage_control_fields(after)
+    for (key, entry) in before_fields
+        haskey(after_fields, key) ||
+            (push!(differences, "$(key[1]) $(key[2]) is missing after export"); continue)
+        if entry isa Vector
+            other = after_fields[key]
+            isequal(entry, other) || push!(
+                differences,
+                "transformer circuits changed: before $(setdiff(entry, other)); " *
+                "after $(setdiff(other, entry))",
+            )
+            continue
+        end
+        for (field, value) in entry
+            other = get(after_fields[key], field, :missing)
+            isequal(value, other) ||
+                push!(differences, "$(key[1]) $(key[2]).$field: $value became $other")
+        end
+    end
+    before_rows = Dict(_association_key(r) => _wire(r.weight) for r in before.voltage_control_associations)
+    after_rows = Dict(_association_key(r) => _wire(r.weight) for r in after.voltage_control_associations)
+    for (key, weight) in before_rows
+        other = get(after_rows, key, nothing)
+        isequal(weight, other) ||
+            push!(differences, "association $key: weight $weight became $other")
+    end
+    for key in setdiff(keys(after_rows), keys(before_rows))
+        push!(differences, "association $key appeared on export")
+    end
+    return differences
+end
+
 """
 Run one case through every stage, returning a record of where it stopped.
 
@@ -121,14 +218,20 @@ function run_case(path, workdir, keep_json)
         rec["json_mb"] = round(filesize(json_path) / 1e6; digits = 1)
 
         rec["stage"] = "read_document"
-        rec["t_read"] = @elapsed doc = PC.read_document(json_path)
+        rec["t_read"] = @elapsed doc = PD.read_document(json_path)
 
         rec["stage"] = "from_openapi"
-        ts_file = PC.get_time_series_storage_file(doc)
+        ts_file = PD.get_time_series_storage_file(doc)
         rec["t_psy"] = @elapsed sys = PSY.from_openapi(
             PSY.System, doc;
             time_series_storage_path = _sidecar(ts_file, json_path),
         )
+
+        rec["stage"] = "to_openapi"
+        rec["t_export"] = @elapsed doc_out = PSY.to_openapi(sys)
+        lost = voltage_control_differences(doc, doc_out)
+        rec["n_voltage_control_associations"] = length(doc_out.voltage_control_associations)
+        isempty(lost) || error("voltage control content changed: " * join(lost, "; "))
 
         rec["stage"] = "done"
         rec["ok"] = true

@@ -262,8 +262,8 @@ end
     fd = FACTSControlDevice(nothing)
     @test ustrip(get_max_reactive_power(fd, CU)) == 0.0  # demo constructor => 0.0
     @test get_shunt_control_type(fd) == FACTSShuntControlType.STATCOM
-    @test get_regulated_bus_number(fd) == 0
-    @test get_reactive_power_required(fd) == 0.0
+    @test isnothing(get_remote_regulated_bus(fd))
+    @test get_reactive_power_required(fd, CU) == 0.0
 
     fd_kw = FACTSControlDevice(;
         name = "F1", available = true, bus = ACBus(nothing),
@@ -275,11 +275,12 @@ end
     @test get_voltage_setpoint(fd_kw) == 1.0
     @test get_shunt_control_type(fd_kw) == FACTSShuntControlType.STATCOM
 
+    remote_bus = ACBus(nothing)
     set_shunt_control_type!(fd_kw, FACTSShuntControlType.SVC)
-    set_regulated_bus_number!(fd_kw, 42)
+    set_remote_regulated_bus!(fd_kw, remote_bus)
     set_max_reactive_power!(fd_kw, 150.0 * CU)
     @test get_shunt_control_type(fd_kw) == FACTSShuntControlType.SVC
-    @test get_regulated_bus_number(fd_kw) == 42
+    @test get_remote_regulated_bus(fd_kw) === remote_bus
     @test ustrip(get_max_reactive_power(fd_kw, CU)) == 150.0
 
     # Positional constructor now threads the reworked scalar fields
@@ -288,18 +289,18 @@ end
     @test ustrip(get_max_shunt_current(fd_pos, CU)) == 9999.0
     @test ustrip(get_max_reactive_power(fd_pos, CU)) == 9999.0
 
-    # SwitchedAdmittance: new control_mode + regulated_bus_number
+    # SwitchedAdmittance: control_mode + remote_regulated_bus
     sa = SwitchedAdmittance(nothing)
     @test get_control_mode(sa) == SwitchedAdmittanceControlMode.FIXED
-    @test get_regulated_bus_number(sa) == 0
+    @test isnothing(get_remote_regulated_bus(sa))
 
     sa_kw = SwitchedAdmittance(;
         name = "sa1", available = true, bus = ACBus(nothing),
         control_mode = SwitchedAdmittanceControlMode.DISCRETE_VOLTAGE,
-        regulated_bus_number = 7,
+        remote_regulated_bus = remote_bus,
     )
     @test get_control_mode(sa_kw) == SwitchedAdmittanceControlMode.DISCRETE_VOLTAGE
-    @test get_regulated_bus_number(sa_kw) == 7
+    @test get_remote_regulated_bus(sa_kw) === remote_bus
     set_control_mode!(sa_kw, SwitchedAdmittanceControlMode.CONTINUOUS_VOLTAGE)
     @test get_control_mode(sa_kw) == SwitchedAdmittanceControlMode.CONTINUOUS_VOLTAGE
 

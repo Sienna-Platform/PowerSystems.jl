@@ -364,6 +364,45 @@ automatic adjustment.
 " TransformerControlObjective
 
 IS.@scoped_enum(
+    TransformerRegulatedBusSide,
+    UNDEFINED = 0,
+    CONTROLLING_WINDING = 1,
+    OPPOSITE_WINDING = 2,
+)
+@doc"
+    TransformerRegulatedBusSide
+
+Side of a [`TransformerCircuit`](@ref)'s controlling winding on which its regulated bus
+lies, stored when that bus is neither end of the circuit's arc and derived from the arc
+otherwise (see [`get_regulated_bus_side`](@ref)). Replaces the sign of PSS/E `CONT`.
+
+# Values
+- `UNDEFINED = 0`: no side is stored; the regulated bus is an end of the arc (or there is
+  none) and the side follows from the arc
+- `CONTROLLING_WINDING = 1`: the regulated bus lies beyond the tapped (controlling)
+  winding's terminal, PSS/E's negative `CONT`
+- `OPPOSITE_WINDING = 2`: the regulated bus lies beyond the other winding's terminal,
+  PSS/E's positive `CONT`
+" TransformerRegulatedBusSide
+
+IS.@scoped_enum(
+    VoltageControlTerminal,
+    UNDEFINED = 0,
+    FROM = 1,
+    TO = 2,
+)
+@doc"
+    VoltageControlTerminal
+
+Which converter of a two-terminal line a voltage control group membership refers to.
+
+# Values
+- `UNDEFINED = 0`: the member is a single-bus device, so no converter is named
+- `FROM = 1`: the converter at the arc's `from` bus
+- `TO = 2`: the converter at the arc's `to` bus
+" VoltageControlTerminal
+
+IS.@scoped_enum(
     TwoWindingTransformerShuntLocation,
     PRIMARY = 1,
     SECONDARY = 2,

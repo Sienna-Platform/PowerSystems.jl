@@ -42,6 +42,7 @@ Pages   = ["outages.jl",
            "contingencies.jl",
            "impedance_correction.jl",
            "plant_attribute.jl",
+           "voltage_control.jl",
            "emissions_data.jl",
            "substation.jl"
            ]

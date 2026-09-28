@@ -29,12 +29,14 @@ end
     @test get_rated_dc_voltage(default_vsc) == 0.0
     @test get_rated_ac_voltage_from(default_vsc) == 0.0
     @test get_rated_ac_voltage_to(default_vsc) == 0.0
-    @test isnothing(get_remote_bus_control_from(default_vsc))
-    @test isnothing(get_remote_bus_control_to(default_vsc))
-    @test get_rmpct_from(default_vsc) == 100.0
-    @test get_rmpct_to(default_vsc) == 100.0
+    @test isnothing(get_remote_regulated_bus_from(default_vsc))
+    @test isnothing(get_remote_regulated_bus_to(default_vsc))
 
-    arc = Arc(ACBus(nothing), ACBus(nothing))
+    from_bus = ACBus(nothing)
+    to_bus = ACBus(nothing)
+    remote_from = ACBus(nothing)
+    remote_to = ACBus(nothing)
+    arc = Arc(from_bus, to_bus)
     vsc = TwoTerminalVSCLine(;
         name = "vsc",
         available = true,
@@ -46,85 +48,78 @@ end
         rated_dc_voltage = 320.0,
         rated_ac_voltage_from = 230.0,
         rated_ac_voltage_to = 138.0,
-        remote_bus_control_from = 7,
-        remote_bus_control_to = 9,
-        rmpct_from = 75.0,
-        rmpct_to = 50.0,
+        remote_regulated_bus_from = remote_from,
+        remote_regulated_bus_to = remote_to,
         input_basis = CU,
     )
     @test get_rated_dc_voltage(vsc) == 320.0
     @test get_rated_ac_voltage_from(vsc) == 230.0
     @test get_rated_ac_voltage_to(vsc) == 138.0
-    @test get_remote_bus_control_from(vsc) == 7
-    @test get_remote_bus_control_to(vsc) == 9
-    @test get_rmpct_from(vsc) == 75.0
-    @test get_rmpct_to(vsc) == 50.0
+    @test get_remote_regulated_bus_from(vsc) === remote_from
+    @test get_remote_regulated_bus_to(vsc) === remote_to
+    @test get_regulated_bus_from(vsc) === remote_from
+    @test get_regulated_bus_to(vsc) === remote_to
 
     set_rated_dc_voltage!(vsc, 500.0)
     set_rated_ac_voltage_from!(vsc, 345.0)
     set_rated_ac_voltage_to!(vsc, 161.0)
-    set_remote_bus_control_from!(vsc, 11)
-    set_remote_bus_control_to!(vsc, 13)
-    set_rmpct_from!(vsc, 60.0)
-    set_rmpct_to!(vsc, 40.0)
+    set_remote_regulated_bus_from!(vsc, nothing)
+    set_remote_regulated_bus_to!(vsc, nothing)
     @test get_rated_dc_voltage(vsc) == 500.0
     @test get_rated_ac_voltage_from(vsc) == 345.0
     @test get_rated_ac_voltage_to(vsc) == 161.0
-    @test get_remote_bus_control_from(vsc) == 11
-    @test get_remote_bus_control_to(vsc) == 13
-    @test get_rmpct_from(vsc) == 60.0
-    @test get_rmpct_to(vsc) == 40.0
+    @test get_regulated_bus_from(vsc) === from_bus
+    @test get_regulated_bus_to(vsc) === to_bus
 end
 
 @testset "InterconnectingConverter VSC remote-control / voltage-limit fields" begin
     default_ic = InterconnectingConverter(nothing)
-    @test isnothing(get_remote_bus_control(default_ic))
-    @test get_rmpct(default_ic) == 100.0
+    @test isnothing(get_remote_regulated_bus(default_ic))
 
+    own_bus = ACBus(nothing)
+    remote_bus = ACBus(nothing)
     ic = InterconnectingConverter(;
         name = "ipc",
         available = true,
-        bus = ACBus(nothing),
+        bus = own_bus,
         dc_bus = DCBus(nothing),
         active_power = 0.0,
         rating = 1.0,
         active_power_limits = (min = -1.0, max = 1.0),
         base_power = 100.0,
-        remote_bus_control = 5,
-        rmpct = 75.0,
+        remote_regulated_bus = remote_bus,
         power_factor_weighting_fraction = 0.25,
         voltage_limits = (min = 0.9, max = 1.1),
         input_basis = CU,
     )
-    @test get_remote_bus_control(ic) == 5
-    @test get_rmpct(ic) == 75.0
+    @test get_remote_regulated_bus(ic) === remote_bus
+    @test get_regulated_bus(ic) === remote_bus
     @test get_power_factor_weighting_fraction(ic) == 0.25
     @test get_voltage_limits(ic) == (min = 0.9, max = 1.1)
 
-    set_remote_bus_control!(ic, 8)
-    set_rmpct!(ic, 55.0)
+    set_remote_regulated_bus!(ic, nothing)
     set_power_factor_weighting_fraction!(ic, 0.75)
     set_voltage_limits!(ic, (min = 0.95, max = 1.05))
-    @test get_remote_bus_control(ic) == 8
-    @test get_rmpct(ic) == 55.0
+    @test isnothing(get_remote_regulated_bus(ic))
+    @test get_regulated_bus(ic) === own_bus
     @test get_power_factor_weighting_fraction(ic) == 0.75
     @test get_voltage_limits(ic) == (min = 0.95, max = 1.05)
 
-    # remote_bus_control is a bus number: nothing regulates the own bus, any set value must be > 0.
+    # A remote regulated bus equal to the own bus is invalid.
     sys = System(100.0; runchecks = false)
     bad_ic = InterconnectingConverter(;
         name = "bad_ic",
         available = true,
-        bus = ACBus(nothing),
+        bus = own_bus,
         dc_bus = DCBus(nothing),
         active_power = 0.0,
         rating = 1.0,
         active_power_limits = (min = -1.0, max = 1.0),
         base_power = 100.0,
-        remote_bus_control = 0,
+        remote_regulated_bus = own_bus,
         input_basis = CU,
     )
-    @test_logs (:error, "Invalid range") match_mode = :any @test_throws IS.InvalidValue PowerSystems.check_component(
+    @test_logs (:error, r"own bus") match_mode = :any @test_throws IS.InvalidValue PowerSystems.check_component(
         sys,
         bad_ic,
     )

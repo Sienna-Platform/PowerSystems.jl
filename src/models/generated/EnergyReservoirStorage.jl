@@ -22,6 +22,8 @@ This file is auto-generated. Do not edit.
         reactive_power::Float64
         reactive_power_limits::Union{Nothing, MinMax}
         base_power::Float64
+        remote_regulated_bus::Union{Nothing, ACBus}
+        voltage_setpoint::Float64
         operation_cost::OperationalCost
         conversion_factor::Float64
         storage_target::Float64
@@ -56,6 +58,8 @@ This is suitable for modeling storage charging and discharging with average effi
 - `reactive_power::Float64`: Initial reactive power set point of the unit (MVAR), validation range: `reactive_power_limits`
 - `reactive_power_limits::Union{Nothing, MinMax}`: Minimum and maximum reactive power limits. Set to `Nothing` if not applicable
 - `base_power::Float64`: Base power of the unit (MVA) for [per unitization](@ref per_unit), validation range: `(0.0001, nothing)`
+- `remote_regulated_bus::Union{Nothing, ACBus}`: (default: `nothing`) Bus whose voltage this unit regulates when it is not its own `bus`; `nothing` means the unit regulates `bus`, and a value equal to `bus` is invalid. An available [`VoltageDroopControl`](@ref) the unit belongs to overrides this target; [`get_regulated_bus`](@ref) resolves it
+- `voltage_setpoint::Float64`: (default: `1.0`) Voltage magnitude the unit holds at the bus it regulates, in per-unit of that bus's `base_voltage`, while the type of its own bus marks it as voltage regulating. Ignored while the unit belongs to an available [`VoltageDroopControl`](@ref), validation range: `(0, nothing)`
 - `operation_cost::OperationalCost`: (default: `StorageCost(nothing)`) [`OperationalCost`](@ref) of storage
 - `conversion_factor::Float64`: (default: `1.0`) Conversion factor of `storage_capacity` to MWh, if different than 1.0. For example, X MWh/liter hydrogen
 - `storage_target::Float64`: (default: `0.0`) Storage target at the end of simulation as ratio of storage capacity
@@ -102,6 +106,10 @@ mutable struct EnergyReservoirStorage <: Storage
     reactive_power_limits::Union{Nothing, MinMax}
     "Base power of the unit (MVA) for [per unitization](@ref per_unit)"
     base_power::Float64
+    "Bus whose voltage this unit regulates when it is not its own `bus`; `nothing` means the unit regulates `bus`, and a value equal to `bus` is invalid. An available [`VoltageDroopControl`](@ref) the unit belongs to overrides this target; [`get_regulated_bus`](@ref) resolves it"
+    remote_regulated_bus::Union{Nothing, ACBus}
+    "Voltage magnitude the unit holds at the bus it regulates, in per-unit of that bus's `base_voltage`, while the type of its own bus marks it as voltage regulating. Ignored while the unit belongs to an available [`VoltageDroopControl`](@ref)"
+    voltage_setpoint::Float64
     "[`OperationalCost`](@ref) of storage"
     operation_cost::OperationalCost
     "Conversion factor of `storage_capacity` to MWh, if different than 1.0. For example, X MWh/liter hydrogen"
@@ -126,12 +134,12 @@ mutable struct EnergyReservoirStorage <: Storage
     internal::InfrastructureSystemsInternal
 end
 
-function EnergyReservoirStorage(name, available, bus, prime_mover_type, storage_technology_type, storage_capacity, storage_level_limits, initial_storage_capacity_level, rating, active_power, input_active_power_limits, output_active_power_limits, efficiency, reactive_power, reactive_power_limits, base_power, operation_cost=StorageCost(nothing), conversion_factor=1.0, storage_target=0.0, cycle_limits=1e4, ramp_limits=nothing, self_discharge=0.0, standing_loss=0.0, services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), )
-    EnergyReservoirStorage(name, available, bus, prime_mover_type, storage_technology_type, storage_capacity, storage_level_limits, initial_storage_capacity_level, rating, active_power, input_active_power_limits, output_active_power_limits, efficiency, reactive_power, reactive_power_limits, base_power, operation_cost, conversion_factor, storage_target, cycle_limits, ramp_limits, self_discharge, standing_loss, services, dynamic_injector, ext, InfrastructureSystemsInternal(), )
+function EnergyReservoirStorage(name, available, bus, prime_mover_type, storage_technology_type, storage_capacity, storage_level_limits, initial_storage_capacity_level, rating, active_power, input_active_power_limits, output_active_power_limits, efficiency, reactive_power, reactive_power_limits, base_power, remote_regulated_bus=nothing, voltage_setpoint=1.0, operation_cost=StorageCost(nothing), conversion_factor=1.0, storage_target=0.0, cycle_limits=1e4, ramp_limits=nothing, self_discharge=0.0, standing_loss=0.0, services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), )
+    EnergyReservoirStorage(name, available, bus, prime_mover_type, storage_technology_type, storage_capacity, storage_level_limits, initial_storage_capacity_level, rating, active_power, input_active_power_limits, output_active_power_limits, efficiency, reactive_power, reactive_power_limits, base_power, remote_regulated_bus, voltage_setpoint, operation_cost, conversion_factor, storage_target, cycle_limits, ramp_limits, self_discharge, standing_loss, services, dynamic_injector, ext, InfrastructureSystemsInternal(), )
 end
 
-function EnergyReservoirStorage(; name, available, bus, prime_mover_type, storage_technology_type, storage_capacity, storage_level_limits, initial_storage_capacity_level, rating, active_power, input_active_power_limits, output_active_power_limits, efficiency, reactive_power, reactive_power_limits, base_power, operation_cost=StorageCost(nothing), conversion_factor=1.0, storage_target=0.0, cycle_limits=1e4, ramp_limits=nothing, self_discharge=0.0, standing_loss=0.0, services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Union{ComponentBaseUnit, NaturalUnit}, )
-    value = EnergyReservoirStorage(name, available, bus, prime_mover_type, storage_technology_type, _placeholder(storage_capacity), storage_level_limits, initial_storage_capacity_level, _placeholder(rating), _placeholder(active_power), _placeholder(input_active_power_limits), _placeholder(output_active_power_limits), efficiency, _placeholder(reactive_power), _placeholder(reactive_power_limits), base_power, operation_cost, conversion_factor, storage_target, cycle_limits, _placeholder(ramp_limits), self_discharge, _placeholder(standing_loss), services, dynamic_injector, ext, internal, )
+function EnergyReservoirStorage(; name, available, bus, prime_mover_type, storage_technology_type, storage_capacity, storage_level_limits, initial_storage_capacity_level, rating, active_power, input_active_power_limits, output_active_power_limits, efficiency, reactive_power, reactive_power_limits, base_power, remote_regulated_bus=nothing, voltage_setpoint=1.0, operation_cost=StorageCost(nothing), conversion_factor=1.0, storage_target=0.0, cycle_limits=1e4, ramp_limits=nothing, self_discharge=0.0, standing_loss=0.0, services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Union{ComponentBaseUnit, NaturalUnit}, )
+    value = EnergyReservoirStorage(name, available, bus, prime_mover_type, storage_technology_type, _placeholder(storage_capacity), storage_level_limits, initial_storage_capacity_level, _placeholder(rating), _placeholder(active_power), _placeholder(input_active_power_limits), _placeholder(output_active_power_limits), efficiency, _placeholder(reactive_power), _placeholder(reactive_power_limits), base_power, remote_regulated_bus, voltage_setpoint, operation_cost, conversion_factor, storage_target, cycle_limits, _placeholder(ramp_limits), self_discharge, _placeholder(standing_loss), services, dynamic_injector, ext, internal, )
     set_storage_capacity!(value, _tag(storage_capacity, input_basis, Val(:mw)))
     set_rating!(value, _tag(rating, input_basis, Val(:mva)))
     set_active_power!(value, _tag(active_power, input_basis, Val(:mw)))
@@ -164,6 +172,8 @@ function EnergyReservoirStorage(::Nothing)
         reactive_power=0.0,
         reactive_power_limits=(min=0.0, max=0.0),
         base_power=100.0,
+        remote_regulated_bus=nothing,
+        voltage_setpoint=1.0,
         operation_cost=StorageCost(nothing),
         conversion_factor=0.0,
         storage_target=0.0,
@@ -252,6 +262,10 @@ InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_limits), ::T
 InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_limits_unitful), ::Type{EnergyReservoirStorage}) = InfrastructureSystems.SU
 
 _get_base_power(value::EnergyReservoirStorage) = value.base_power
+"""Get [`EnergyReservoirStorage`](@ref) `remote_regulated_bus`."""
+get_remote_regulated_bus(value::EnergyReservoirStorage) = value.remote_regulated_bus
+"""Get [`EnergyReservoirStorage`](@ref) `voltage_setpoint`."""
+get_voltage_setpoint(value::EnergyReservoirStorage) = value.voltage_setpoint
 """Get [`EnergyReservoirStorage`](@ref) `operation_cost`."""
 get_operation_cost(value::EnergyReservoirStorage) = value.operation_cost
 """Get [`EnergyReservoirStorage`](@ref) `conversion_factor`."""
@@ -325,6 +339,10 @@ set_reactive_power!(value::EnergyReservoirStorage, val::_UntaggedNumber) = _unit
 set_reactive_power_limits!(value::EnergyReservoirStorage, val) = value.reactive_power_limits = set_value(value, Val(:reactive_power_limits), val, Val(:mvar))
 set_reactive_power_limits!(value::EnergyReservoirStorage, val::_UntaggedNumber) = _units_tag_required(set_reactive_power_limits!, value, :reactive_power_limits, Val(:mvar), val)
 set_reactive_power_limits!(value::EnergyReservoirStorage, val::NamedTuple{(:min, :max), <:Tuple{Vararg{_UntaggedNumber}}}) = _units_tag_required(set_reactive_power_limits!, value, :reactive_power_limits, Val(:mvar), val)
+"""Set [`EnergyReservoirStorage`](@ref) `remote_regulated_bus`."""
+set_remote_regulated_bus!(value::EnergyReservoirStorage, val) = value.remote_regulated_bus = val
+"""Set [`EnergyReservoirStorage`](@ref) `voltage_setpoint`."""
+set_voltage_setpoint!(value::EnergyReservoirStorage, val) = value.voltage_setpoint = val
 """Set [`EnergyReservoirStorage`](@ref) `operation_cost`."""
 set_operation_cost!(value::EnergyReservoirStorage, val) = value.operation_cost = val
 """Set [`EnergyReservoirStorage`](@ref) `conversion_factor`."""

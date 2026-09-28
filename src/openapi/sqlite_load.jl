@@ -46,6 +46,33 @@ function _group_index_by_pair(doc::PD.SystemDocument)
     return indices
 end
 
+"""
+Weight and terminal of every `(control_id, entity_id)` pair in `doc.voltage_control_associations`.
+A two-terminal member appears once per group, so one pair holds one row; a second row for the
+same pair is malformed.
+"""
+function _voltage_control_membership_by_pair(doc::PD.SystemDocument)
+    memberships = Dict{
+        Tuple{Int, Int},
+        NamedTuple{
+            (:weight, :terminal),
+            Tuple{Float64, Union{Nothing, VoltageControlTerminal.Value}},
+        },
+    }()
+    for a in doc.voltage_control_associations
+        key = (Int(a.control_id), Int(a.entity_id))
+        haskey(memberships, key) && error(
+            "load_supplemental_attribute_associations!: control_id=$(key[1]) " *
+            "entity_id=$(key[2]) has a duplicate voltage_control_associations row",
+        )
+        memberships[key] = (
+            weight = _or_default(a.weight, 1.0),
+            terminal = _optional_enum(a.terminal, VoltageControlTerminal.Value),
+        )
+    end
+    return memberships
+end
+
 """Loud error naming `id` when the document's declared `attribute_type` is absent or does
 not match `nameof(typeof(resolved))`."""
 function _check_resolved_type_matches(resolved, declared_type, id)
@@ -95,6 +122,7 @@ function load_supplemental_attribute_associations!(
     )
     converted = Dict{Int, SupplementalAttribute}()
     group_index_by_pair = _group_index_by_pair(doc)
+    voltage_control_by_pair = _voltage_control_membership_by_pair(doc)
     # One store read for the whole table instead of a probe per row; rows written below are
     # folded back in so a document that repeats a pair still attaches rather than re-adds.
     stored_pairs = Set{Tuple{Int, Int}}(
@@ -120,10 +148,12 @@ function load_supplemental_attribute_associations!(
                 refs[attribute_id] = built
                 return built
             end
-            group_indices = get(group_index_by_pair, (attribute_id, component_id), nothing)
-            _attach_attribute!(
-                sys, stored_pairs, refs[component_id], attribute, group_indices,
-            )
+            pair = (attribute_id, component_id)
+            membership = get(group_index_by_pair, pair, nothing)
+            if isnothing(membership)
+                membership = get(voltage_control_by_pair, pair, nothing)
+            end
+            _attach_attribute!(sys, stored_pairs, refs[component_id], attribute, membership)
         end
     end
     for assoc in doc.service_associations

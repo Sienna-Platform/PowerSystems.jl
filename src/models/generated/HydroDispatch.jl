@@ -18,6 +18,8 @@ This file is auto-generated. Do not edit.
         ramp_limits::Union{Nothing, UpDown}
         time_limits::Union{Nothing, UpDown}
         base_power::Float64
+        remote_regulated_bus::Union{Nothing, ACBus}
+        voltage_setpoint::Float64
         status::OperationalStates.Value
         time_at_status::Float64
         operation_cost::OperationalCost
@@ -44,6 +46,8 @@ For hydro generators with an upper reservoir, see [`HydroReservoir`](@ref)
 - `ramp_limits::Union{Nothing, UpDown}`: Ramp up and ramp down limits (MW/min), validation range: `(0, nothing)`
 - `time_limits::Union{Nothing, UpDown}`: Minimum up and Minimum down time limits in minutes, validation range: `(0, nothing)`
 - `base_power::Float64`: Base power of the unit (MVA) for [per unitization](@ref per_unit), validation range: `(0.0001, nothing)`
+- `remote_regulated_bus::Union{Nothing, ACBus}`: (default: `nothing`) Bus whose voltage this unit regulates when it is not its own `bus`; `nothing` means the unit regulates `bus`, and a value equal to `bus` is invalid. An available [`VoltageDroopControl`](@ref) the unit belongs to overrides this target; [`get_regulated_bus`](@ref) resolves it
+- `voltage_setpoint::Float64`: (default: `1.0`) Voltage magnitude the unit holds at the bus it regulates, in per-unit of that bus's `base_voltage`, while the type of its own bus marks it as voltage regulating. Ignored while the unit belongs to an available [`VoltageDroopControl`](@ref), validation range: `(0, nothing)`
 - `status::OperationalStates.Value`: (default: `OperationalStates.OFFLINE`) Operating state of the unit at the start of a simulation. Options are listed [here](@ref opstate_list)
 - `time_at_status::Float64`: (default: `INFINITE_TIME`) Time (e.g., `Minutes(360)`) the generator has been on or off, as indicated by `status`
 - `operation_cost::OperationalCost`: (default: `HydroGenerationCost(nothing)`) [`OperationalCost`](@ref) of generation
@@ -78,6 +82,10 @@ mutable struct HydroDispatch <: HydroGen
     time_limits::Union{Nothing, UpDown}
     "Base power of the unit (MVA) for [per unitization](@ref per_unit)"
     base_power::Float64
+    "Bus whose voltage this unit regulates when it is not its own `bus`; `nothing` means the unit regulates `bus`, and a value equal to `bus` is invalid. An available [`VoltageDroopControl`](@ref) the unit belongs to overrides this target; [`get_regulated_bus`](@ref) resolves it"
+    remote_regulated_bus::Union{Nothing, ACBus}
+    "Voltage magnitude the unit holds at the bus it regulates, in per-unit of that bus's `base_voltage`, while the type of its own bus marks it as voltage regulating. Ignored while the unit belongs to an available [`VoltageDroopControl`](@ref)"
+    voltage_setpoint::Float64
     "Operating state of the unit at the start of a simulation. Options are listed [here](@ref opstate_list)"
     status::OperationalStates.Value
     "Time (e.g., `Minutes(360)`) the generator has been on or off, as indicated by `status`"
@@ -94,12 +102,12 @@ mutable struct HydroDispatch <: HydroGen
     internal::InfrastructureSystemsInternal
 end
 
-function HydroDispatch(name, available, bus, active_power, reactive_power, rating, prime_mover_type, active_power_limits, reactive_power_limits, ramp_limits, time_limits, base_power, status=OperationalStates.OFFLINE, time_at_status=INFINITE_TIME, operation_cost=HydroGenerationCost(nothing), services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), )
-    HydroDispatch(name, available, bus, active_power, reactive_power, rating, prime_mover_type, active_power_limits, reactive_power_limits, ramp_limits, time_limits, base_power, status, time_at_status, operation_cost, services, dynamic_injector, ext, InfrastructureSystemsInternal(), )
+function HydroDispatch(name, available, bus, active_power, reactive_power, rating, prime_mover_type, active_power_limits, reactive_power_limits, ramp_limits, time_limits, base_power, remote_regulated_bus=nothing, voltage_setpoint=1.0, status=OperationalStates.OFFLINE, time_at_status=INFINITE_TIME, operation_cost=HydroGenerationCost(nothing), services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), )
+    HydroDispatch(name, available, bus, active_power, reactive_power, rating, prime_mover_type, active_power_limits, reactive_power_limits, ramp_limits, time_limits, base_power, remote_regulated_bus, voltage_setpoint, status, time_at_status, operation_cost, services, dynamic_injector, ext, InfrastructureSystemsInternal(), )
 end
 
-function HydroDispatch(; name, available, bus, active_power, reactive_power, rating, prime_mover_type, active_power_limits, reactive_power_limits, ramp_limits, time_limits, base_power, status=OperationalStates.OFFLINE, time_at_status=INFINITE_TIME, operation_cost=HydroGenerationCost(nothing), services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Union{ComponentBaseUnit, NaturalUnit}, )
-    value = HydroDispatch(name, available, bus, _placeholder(active_power), _placeholder(reactive_power), _placeholder(rating), prime_mover_type, _placeholder(active_power_limits), _placeholder(reactive_power_limits), _placeholder(ramp_limits), time_limits, base_power, status, time_at_status, operation_cost, services, dynamic_injector, ext, internal, )
+function HydroDispatch(; name, available, bus, active_power, reactive_power, rating, prime_mover_type, active_power_limits, reactive_power_limits, ramp_limits, time_limits, base_power, remote_regulated_bus=nothing, voltage_setpoint=1.0, status=OperationalStates.OFFLINE, time_at_status=INFINITE_TIME, operation_cost=HydroGenerationCost(nothing), services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Union{ComponentBaseUnit, NaturalUnit}, )
+    value = HydroDispatch(name, available, bus, _placeholder(active_power), _placeholder(reactive_power), _placeholder(rating), prime_mover_type, _placeholder(active_power_limits), _placeholder(reactive_power_limits), _placeholder(ramp_limits), time_limits, base_power, remote_regulated_bus, voltage_setpoint, status, time_at_status, operation_cost, services, dynamic_injector, ext, internal, )
     set_active_power!(value, _tag(active_power, input_basis, Val(:mw)))
     set_reactive_power!(value, _tag(reactive_power, input_basis, Val(:mvar)))
     set_rating!(value, _tag(rating, input_basis, Val(:mva)))
@@ -125,6 +133,8 @@ function HydroDispatch(::Nothing)
         ramp_limits=nothing,
         time_limits=nothing,
         base_power=100.0,
+        remote_regulated_bus=nothing,
+        voltage_setpoint=1.0,
         status=OperationalStates.OFFLINE,
         time_at_status=INFINITE_TIME,
         operation_cost=HydroGenerationCost(nothing),
@@ -195,6 +205,10 @@ InfrastructureSystems.display_units_arg(::typeof(get_ramp_limits_unitful), ::Typ
 get_time_limits(value::HydroDispatch) = value.time_limits
 
 _get_base_power(value::HydroDispatch) = value.base_power
+"""Get [`HydroDispatch`](@ref) `remote_regulated_bus`."""
+get_remote_regulated_bus(value::HydroDispatch) = value.remote_regulated_bus
+"""Get [`HydroDispatch`](@ref) `voltage_setpoint`."""
+get_voltage_setpoint(value::HydroDispatch) = value.voltage_setpoint
 """Get [`HydroDispatch`](@ref) `status`."""
 get_status(value::HydroDispatch) = value.status
 """Get [`HydroDispatch`](@ref) `time_at_status`."""
@@ -239,6 +253,10 @@ set_ramp_limits!(value::HydroDispatch, val::_UntaggedNumber) = _units_tag_requir
 set_ramp_limits!(value::HydroDispatch, val::NamedTuple{(:up, :down), <:Tuple{Vararg{_UntaggedNumber}}}) = _units_tag_required(set_ramp_limits!, value, :ramp_limits, Val(:mw_per_minute), val)
 """Set [`HydroDispatch`](@ref) `time_limits`."""
 set_time_limits!(value::HydroDispatch, val) = value.time_limits = val
+"""Set [`HydroDispatch`](@ref) `remote_regulated_bus`."""
+set_remote_regulated_bus!(value::HydroDispatch, val) = value.remote_regulated_bus = val
+"""Set [`HydroDispatch`](@ref) `voltage_setpoint`."""
+set_voltage_setpoint!(value::HydroDispatch, val) = value.voltage_setpoint = val
 """Set [`HydroDispatch`](@ref) `status`."""
 set_status!(value::HydroDispatch, val) = value.status = val
 """Set [`HydroDispatch`](@ref) `time_at_status`."""
@@ -265,6 +283,8 @@ function from_openapi(po::PO.HydroDispatch, refs::OpenAPIRefs, ::ComponentBaseUn
         ramp_limits = _updown_from_po(po.ramp_limits),
         time_limits = _updown_from_po(po.time_limits),
         base_power = po.base_power,
+        remote_regulated_bus = resolve_ref(refs, po.remote_regulated_bus_id, ACBus),
+        voltage_setpoint = (_require_unit_basis(po.voltage_setpoint_units, "COMPONENT_BASE", "HydroDispatch.voltage_setpoint_units", po.id); _or_default(po.voltage_setpoint, 1.0)),
         status = _or_default_enum(po.status, OperationalStates.OFFLINE),
         time_at_status = _or_default(po.time_at_status, INFINITE_TIME),
         operation_cost = convert_cost(po.operation_cost.value)::OperationalCost,
@@ -286,6 +306,8 @@ function from_openapi(po::PO.HydroDispatch, refs::OpenAPIRefs, ::NaturalUnit)
         ramp_limits = _updown_from_po(po.ramp_limits, (/), po.base_power),
         time_limits = _updown_from_po(po.time_limits),
         base_power = po.base_power,
+        remote_regulated_bus = resolve_ref(refs, po.remote_regulated_bus_id, ACBus),
+        voltage_setpoint = (_require_unit_basis(po.voltage_setpoint_units, "COMPONENT_BASE", "HydroDispatch.voltage_setpoint_units", po.id); _or_default(po.voltage_setpoint, 1.0)),
         status = _or_default_enum(po.status, OperationalStates.OFFLINE),
         time_at_status = _or_default(po.time_at_status, INFINITE_TIME),
         operation_cost = convert_cost(po.operation_cost.value)::OperationalCost,
@@ -312,6 +334,9 @@ function to_openapi(value::HydroDispatch, refs::OpenAPIRefs, ::ComponentBaseUnit
         ramp_limits = _updown_po_optional(get_ramp_limits(value, CU / u"minute")),
         time_limits = _updown_po_optional(get_time_limits(value)),
         base_power = _get_base_power(value),
+        remote_regulated_bus_id = _component_id_optional(refs, get_remote_regulated_bus(value)),
+        voltage_setpoint_units = PO.VoltageUnitBasis("COMPONENT_BASE"),
+        voltage_setpoint = get_voltage_setpoint(value),
         status = PO.OperationalStates(string(get_status(value))),
         time_at_status = get_time_at_status(value),
         operation_cost = PO.HydroDispatchOperationCost(convert_cost_to_openapi(get_operation_cost(value))),
@@ -334,6 +359,9 @@ function to_openapi(value::HydroDispatch, refs::OpenAPIRefs, ::NaturalUnit)
         ramp_limits = _updown_po_scaled_optional(get_ramp_limits(value, CU / u"minute"), _get_base_power(value)),
         time_limits = _updown_po_optional(get_time_limits(value)),
         base_power = _get_base_power(value),
+        remote_regulated_bus_id = _component_id_optional(refs, get_remote_regulated_bus(value)),
+        voltage_setpoint_units = PO.VoltageUnitBasis("COMPONENT_BASE"),
+        voltage_setpoint = get_voltage_setpoint(value),
         status = PO.OperationalStates(string(get_status(value))),
         time_at_status = get_time_at_status(value),
         operation_cost = PO.HydroDispatchOperationCost(convert_cost_to_openapi(get_operation_cost(value))),
