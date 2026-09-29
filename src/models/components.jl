@@ -177,25 +177,18 @@ end
 """
     rebase_component!(c::Component, new_base_power)
 
-Change `c`'s `base_power` to `new_base_power` (MVA, or a power-dimensioned
-`Unitful.Quantity`) while keeping every unit-converted field's natural-unit value: each is
-re-expressed on the new base. Contrast [`set_base_power!`](@ref), which moves the base under
-the stored per-unit values and so changes what they mean.
+Set `c`'s `base_power` to `new_base_power` (MVA, or a power-dimensioned `Unitful.Quantity`),
+re-expressing every unit-converted field so its natural-unit value is unchanged. Contrast
+[`set_base_power!`](@ref), which keeps the stored per-unit values and so changes what they
+mean.
 
-Throws an `ArgumentError`, leaving `c` untouched, when `c` holds per-unit data this does not
-re-express: a transformer (its base lives on its circuits), a dynamic injection model or a
-static injector carrying one (dynamic parameters are per-unitized on the device base), cost
-curves stated in component base, or time series declared in component base.
-
-# Examples
-```julia
-rebase_component!(gen, 250.0)
-get_active_power_limits(gen, NU)  # unchanged
-```
+Throws an `ArgumentError`, leaving `c` unchanged, for per-unit data it can't re-express:
+transformers, dynamic models, component-base cost curves, and component-base time series.
+Components whose base is the system base error as in `set_base_power!`.
 """
 function rebase_component!(c::Component, new_base_power)
     _check_rebaseable(c)
-    # Read everything before moving the base: every read converts through it.
+    # Read all fields first: each read converts through the current base.
     fields = _natural_unit_fields(c)
     set_base_power!(c, new_base_power)
     for (setter, value) in fields
@@ -204,8 +197,7 @@ function rebase_component!(c::Component, new_base_power)
     return c
 end
 
-# The unit-converted fields are the ones whose getter carries a `display_units_arg` trait;
-# every such field uses the standard `get_<field>`/`set_<field>!` names.
+# Unit-converted fields are those whose `get_<field>` has a `display_units_arg` trait.
 function _natural_unit_fields(c::Component)
     fields = Pair{Function, Any}[]
     for name in fieldnames(typeof(c))
