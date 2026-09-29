@@ -98,8 +98,8 @@ Notes:
   - Time-series retrieval passes a units argument to two-argument scaling-factor
     multipliers; the default for PowerSystems components is `SU`. One-argument multipliers
     (custom closures) are still invoked with the owner only.
-  - `CostCurve`/`FuelCurve` take the marker instances (`NaturalUnit()`,
-    `SystemBaseUnit()`, `ComponentBaseUnit()`) for `power_units`.
+  - Cost curves (`CostCurve`, `FuelCurve`) are not per-unitized: their x-axis is always
+    power in MW.
 
 ## Defining components
 

@@ -34,8 +34,8 @@ holds every row, and `from_openapi` replays them into a fresh catalog.
 
 **The `units` keyword takes a marker, not a Symbol** — `CU` (default) or `NU`; `SU` throws by
 dispatch (no `Union` check), since it has no system-base member on the wire. It governs every
-convertible field. Don't confuse it with the **`power_units` field** on cost curves and
-power-bearing blobs — that is per-value wire data, spelled `"COMPONENT_BASE"`/`"NATURAL_UNITS"`.
+convertible field. Don't confuse it with the **`power_units` field** on power-bearing
+blobs, which is per-value wire data spelled `"COMPONENT_BASE"`/`"NATURAL_UNITS"`.
 
 **The archive container is IS's, the extension is PSY's** — `IS.create_sienna_archive` /
 `extract_sienna_archive` own the zip; PSY only supplies the extension
@@ -134,7 +134,7 @@ Five concrete transformer types became two, and series data moved onto a nested 
 - PSY extends `IS._strip_units` (required by the IS codegen contract) and overrides `IS.default_units(::Component)` to return `SU` for time-series multipliers.
 - **`with_units_base` / `set_units_base_system!` / `get_units_base` are GONE** (verified against `origin/psy6`: all three `isdefined(PowerSystems, …) == false`). The stateful units system was fully removed in the psy6 line — see `7ffbbdf8d` "remove last pieces of stateful units system". Every value is read with an explicit unit argument instead. The `UnitSystem` enum still exists as display metadata, but there is no setter. Downstream code calling any of the three must migrate to explicit unit args, not look for a replacement setter.
 - Serialization writes on whichever basis `to_file`'s `units` keyword names (`CU`/`NU`) — see "System file I/O" above for the write/read asymmetry and the `.sns` `CU`-only rule.
-- Cost curves default to `power_units = IS.NaturalUnit()`; `CostCurve{T,U}`/`FuelCurve{T,U}` carry the unit as a type parameter (IS4).
+- Cost curves are natural units only (x axis in MW): `CostCurve{T}`/`FuelCurve{T}` carry no unit system, and the market-bid, import/export and reserve types have no unit parameter.
 - Units test filter: `julia --project=test test/runtests.jl test_units` (fast, ~22 s).
 
 ### Known audit items (do not silently "fix"; coordinate)

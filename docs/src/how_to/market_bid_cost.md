@@ -99,8 +99,7 @@ generator = ThermalStandard(;
 The user is expected to pass the `TimeSeriesData` that holds the energy bid data which can be
 of any type (i.e. `SingleTimeSeries` or `Deterministic`) and data must be `PiecewiseStepData`.
 This data type is created by specifying a vector of `n` powers, and `n-1` marginal costs.
-The data must be specified in natural units, that is power in MW and marginal cost in $/MWh
-or it will not be accepted when adding to the system.
+The data is in natural units: power in MW and marginal cost in $/MWh.
 Code below shows an example of how to build a Deterministic TimeSeries.
 
 ```@repl market_bid_cost
@@ -129,13 +128,10 @@ arguments for `set_variable_cost!` are:
   - `sys::System`: PowerSystem System
   - `component::StaticInjection`: Static injection device
   - `time_series_data::TimeSeriesData`: TimeSeriesData
-  - `power_units::UnitSystem`: UnitSystem
-
-Currently, time series data only supports natural units for time series data, i.e. MW for power and $/MWh for marginal costs.
 
 ```@repl market_bid_cost
 sys = System(100.0, [bus], [generator])
-set_variable_cost!(sys, generator, time_series_data, UnitSystem.NATURAL_UNITS)
+set_variable_cost!(sys, generator, time_series_data)
 ```
 
 **Note:** `set_variable_cost!` add curves to the `incremental_offer_curves` in the MarketBidCost.
@@ -160,5 +156,5 @@ time_series_data = Deterministic(;
     data = data,
     resolution = Dates.Hour(1),
 )
-set_service_bid!(sys, generator, service, time_series_data, UnitSystem.NATURAL_UNITS)
+set_service_bid!(sys, generator, service, time_series_data)
 ```
