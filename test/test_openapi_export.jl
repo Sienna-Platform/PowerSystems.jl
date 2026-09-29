@@ -989,7 +989,7 @@ end
     )
     ta = TimeSeries.TimeArray(dates, data)
     hub_ts = SingleTimeSeries(; name = get_name(hub), data = ta)
-    set_hub_bid!(sys, vp_hub, hub, hub_ts, IS.NaturalUnit())
+    set_hub_bid!(sys, vp_hub, hub, hub_ts)
 
     vp_nodal = VirtualParticipant(; name = "vp_nodal", available = true,
         settlement_point = b2, max_supply = 10.0, max_demand = 10.0,

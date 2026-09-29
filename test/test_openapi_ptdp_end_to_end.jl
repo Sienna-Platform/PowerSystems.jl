@@ -225,7 +225,6 @@ function _ptdp_e2e_attach_ts_costs!(sys::System)
     old_variable = get_variable_operation_cost(get_operation_cost(fuel_gen))
     new_variable = FuelCurve(;
         value_curve = get_value_curve(old_variable),
-        power_units = get_power_units(old_variable),
         fuel_cost_time_series = fuel_key,
         startup_fuel_offtake = IS.get_startup_fuel_offtake(old_variable),
         vom_cost = get_vom_cost(old_variable),

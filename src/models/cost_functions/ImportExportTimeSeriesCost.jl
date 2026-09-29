@@ -10,11 +10,11 @@ areas. All offer curve fields are backed by time series data via IS.jl's time-se
 ValueCurve types.
 For static (non-time-varying) bids, use [`ImportExportCost`](@ref).
 """
-mutable struct ImportExportTimeSeriesCost{U <: IS.AbstractUnitSystem} <: OfferCurveCost
+mutable struct ImportExportTimeSeriesCost <: OfferCurveCost
     "Import price curves (time series)"
-    import_offer_curves::CostCurve{<:TimeSeriesPiecewiseIncrementalCurve, U}
+    import_offer_curves::CostCurve{<:TimeSeriesPiecewiseIncrementalCurve}
     "Export price curves (time series)"
-    export_offer_curves::CostCurve{<:TimeSeriesPiecewiseIncrementalCurve, U}
+    export_offer_curves::CostCurve{<:TimeSeriesPiecewiseIncrementalCurve}
     "Weekly limit on the amount of energy that can be imported, defined in MWh."
     energy_import_weekly_limit::Float64
     "Weekly limit on the amount of energy that can be exported, defined in MWh."
@@ -30,14 +30,7 @@ function ImportExportTimeSeriesCost(;
     energy_export_weekly_limit = INFINITE_BOUND,
     ancillary_service_offers = Vector{Service}(),
 )
-    U_imp = typeof(get_power_units(import_offer_curves))
-    U_exp = typeof(get_power_units(export_offer_curves))
-    U_imp === U_exp || throw(
-        ArgumentError(
-            "import_offer_curves and export_offer_curves must share a unit system (got $(U_imp()) vs $(U_exp()))",
-        ),
-    )
-    return ImportExportTimeSeriesCost{U_imp}(
+    return ImportExportTimeSeriesCost(
         import_offer_curves,
         export_offer_curves,
         energy_import_weekly_limit,
@@ -81,10 +74,7 @@ Make a time-series-backed `CostCurve{<:TimeSeriesPiecewiseIncrementalCurve}` fro
 `TimeSeriesKey`, suitable for the `import_offer_curves` or `export_offer_curves` field of
 an [`ImportExportTimeSeriesCost`](@ref).
 """
-function make_import_export_ts_curve(
-    ts_key::TimeSeriesKey,
-    power_units::IS.AbstractUnitSystem = IS.NaturalUnit(),
-)
+function make_import_export_ts_curve(ts_key::TimeSeriesKey)
     vc = TimeSeriesPiecewiseIncrementalCurve(ts_key, nothing, nothing)
-    return CostCurve(vc, power_units)
+    return CostCurve(vc)
 end

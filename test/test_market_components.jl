@@ -386,13 +386,13 @@ end
     vp_noassoc = VirtualParticipant(; name = "vp_noassoc", available = true,
         max_supply = 5.0, max_demand = 5.0, operation_cost = MarketBidCost(nothing))
     add_component!(sys, vp_noassoc)
-    @test_throws ErrorException set_hub_bid!(sys, vp_noassoc, hub, ts, IS.NaturalUnit())
+    @test_throws ErrorException set_hub_bid!(sys, vp_noassoc, hub, ts)
 
-    set_hub_bid!(sys, vp, hub, ts, IS.NaturalUnit())
+    set_hub_bid!(sys, vp, hub, ts)
     @test get_time_series(SingleTimeSeries, vp, get_name(hub)) isa SingleTimeSeries
 
     # duplicate hub bid is rejected loudly, not silently overwritten
-    @test_throws ErrorException set_hub_bid!(sys, vp, hub, ts, IS.NaturalUnit())
+    @test_throws ErrorException set_hub_bid!(sys, vp, hub, ts)
 
     # wrong-eltype time series is rejected with an actionable error
     bad_ta = TimeSeries.TimeArray(dates, [1.0, 2.0])
@@ -401,7 +401,7 @@ end
         max_supply = 5.0, max_demand = 5.0, operation_cost = MarketBidCost(nothing))
     add_component!(sys, vp_bad)
     add_trading_hub!(sys, vp_bad, hub)
-    @test_throws TypeError set_hub_bid!(sys, vp_bad, hub, bad_ts, IS.NaturalUnit())
+    @test_throws TypeError set_hub_bid!(sys, vp_bad, hub, bad_ts)
 
     # remove_trading_hub! / clear_trading_hubs!
     remove_trading_hub!(vp_bad, hub)

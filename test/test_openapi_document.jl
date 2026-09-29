@@ -358,7 +358,7 @@ end
         start_up = (hot = 100.0, warm = 200.0, cold = 300.0),
         shut_down = LinearCurve(2.0),
         incremental_offer_curves = make_market_bid_curve(
-            [0.0, 50.0, 100.0], [10.0, 20.0], 0.0; power_units = IS.NaturalUnit(),
+            [0.0, 50.0, 100.0], [10.0, 20.0], 0.0,
         ),
         incremental_slope = true,
     )
@@ -408,7 +408,7 @@ function _market_bid_cost_fixture()
         start_up = (hot = 100.0, warm = 200.0, cold = 300.0),
         shut_down = LinearCurve(2.0),
         incremental_offer_curves = make_market_bid_curve(
-            [0.0, 50.0, 100.0], [10.0, 20.0], 0.0; power_units = IS.NaturalUnit(),
+            [0.0, 50.0, 100.0], [10.0, 20.0], 0.0,
         ),
     )
     set_operation_cost!(gen, mbc)
@@ -715,7 +715,7 @@ end
     add_service!(sys, svc, [gen])
     mbc = MarketBidCost(;
         incremental_offer_curves = make_market_bid_curve(
-            [0.0, 25.0, 50.0], [12.0, 24.0], 0.0; power_units = IS.NaturalUnit(),
+            [0.0, 25.0, 50.0], [12.0, 24.0], 0.0,
         ),
     )
     push!(get_ancillary_service_offers(mbc), svc)

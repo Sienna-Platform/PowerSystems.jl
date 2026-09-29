@@ -9,7 +9,7 @@ $(TYPEDFIELDS)
 An operating cost for static (non-time-varying) market bids of energy and ancillary
 services. For time-varying bids, use [`MarketBidTimeSeriesCost`](@ref).
 """
-mutable struct MarketBidCost{U <: IS.AbstractUnitSystem} <: OfferCurveCost
+mutable struct MarketBidCost <: OfferCurveCost
     "Minimum-energy offer: cost to operate at minimum stable level, in \$/MWh at the curve's minimum power, stored as submitted. \$/h sources convert at parse (MEO = no-load cost / P_min)."
     minimum_energy_offer::LinearCurve
     "Start-up cost at different stages of the thermal cycle (hot, warm, cold)"
@@ -17,9 +17,9 @@ mutable struct MarketBidCost{U <: IS.AbstractUnitSystem} <: OfferCurveCost
     "Shut-down cost"
     shut_down::LinearCurve
     "Sell Offer Curves data as a [`CostCurve`](@ref) of [`PiecewiseIncrementalCurve`](@ref)"
-    incremental_offer_curves::CostCurve{PiecewiseIncrementalCurve, U}
+    incremental_offer_curves::CostCurve{PiecewiseIncrementalCurve}
     "Buy Offer Curves data as a [`CostCurve`](@ref) of [`PiecewiseIncrementalCurve`](@ref)"
-    decremental_offer_curves::CostCurve{PiecewiseIncrementalCurve, U}
+    decremental_offer_curves::CostCurve{PiecewiseIncrementalCurve}
     "Bids for the ancillary services"
     ancillary_service_offers::Vector{Service}
     "Linear-interpolation flag for the corresponding offer curve; false (default) is the step interpretation. Mutually exclusive with block groups on the same curve."
@@ -46,13 +46,6 @@ function MarketBidCost(;
     curve_style = CurveStyles.VARIABLE,
     curve_multistep = CurveMultiStep.SINGLE_STEP,
 )
-    U_inc = typeof(get_power_units(incremental_offer_curves))
-    U_dec = typeof(get_power_units(decremental_offer_curves))
-    U_inc === U_dec || throw(
-        ArgumentError(
-            "incremental_offer_curves and decremental_offer_curves must share a unit system (got $(U_inc()) vs $(U_dec()))",
-        ),
-    )
     check_curve_style_exclusivity(curve_style, incremental_slope, decremental_slope)
     check_fixed_single_segment(
         curve_style, incremental_offer_curves, "incremental_offer_curves",
@@ -60,7 +53,7 @@ function MarketBidCost(;
     check_fixed_single_segment(
         curve_style, decremental_offer_curves, "decremental_offer_curves",
     )
-    return MarketBidCost{U_inc}(
+    return MarketBidCost(
         minimum_energy_offer, start_up, shut_down,
         incremental_offer_curves, decremental_offer_curves,
         ancillary_service_offers,
@@ -162,7 +155,7 @@ Return `true` if the given [`ProductionVariableCostCurve`](@ref) is a market bid
 (a `CostCurve{PiecewiseIncrementalCurve}` as used in [`MarketBidCost`](@ref)).
 """
 function is_market_bid_curve(curve::ProductionVariableCostCurve)
-    return (curve isa IS.AnyCostCurve{PiecewiseIncrementalCurve})
+    return curve isa CostCurve{PiecewiseIncrementalCurve}
 end
 
 """
@@ -178,17 +171,11 @@ function make_market_bid_curve(
     powers::Vector{Float64},
     marginal_costs::Vector{Float64},
     initial_input::Float64;
-    power_units::IS.AbstractUnitSystem = IS.NaturalUnit(),
     input_at_zero::Union{Nothing, Float64} = nothing,
 )
     if length(powers) == length(marginal_costs) + 1
         fd = PiecewiseStepData(powers, marginal_costs)
-        return make_market_bid_curve(
-            fd,
-            initial_input;
-            power_units = power_units,
-            input_at_zero = input_at_zero,
-        )
+        return make_market_bid_curve(fd, initial_input; input_at_zero = input_at_zero)
     else
         throw(
             ArgumentError(
@@ -204,10 +191,9 @@ Make a static `CostCurve{PiecewiseIncrementalCurve}` from `PiecewiseStepData`.
 function make_market_bid_curve(
     data::PiecewiseStepData,
     initial_input::Float64;
-    power_units::IS.AbstractUnitSystem = IS.NaturalUnit(),
     input_at_zero::Union{Nothing, Float64} = nothing,
 )
-    cc = CostCurve(IncrementalCurve(data, initial_input, input_at_zero), power_units)
+    cc = CostCurve(IncrementalCurve(data, initial_input, input_at_zero))
     @assert is_market_bid_curve(cc)
     return cc
 end

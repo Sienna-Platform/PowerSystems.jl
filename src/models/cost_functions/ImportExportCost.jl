@@ -7,16 +7,14 @@ $(TYPEDFIELDS)
 
 An operating cost for static (non-time-varying) imports/exports and ancillary services
 from neighboring areas. The data model employs a `CostCurve{PiecewiseIncrementalCurve}`
-with an implied zero cost at zero power. The type parameter `U <: AbstractUnitSystem`
-is the shared unit system of the two offer curves (propagated from
-`CostCurve`'s `U` parameter); `ImportExportCost{NaturalUnit}` is the default.
+with an implied zero cost at zero power.
 For time-varying bids, use [`ImportExportTimeSeriesCost`](@ref).
 """
-mutable struct ImportExportCost{U <: IS.AbstractUnitSystem} <: OfferCurveCost
+mutable struct ImportExportCost <: OfferCurveCost
     "Buy Price Curves data to import power"
-    import_offer_curves::CostCurve{PiecewiseIncrementalCurve, U}
+    import_offer_curves::CostCurve{PiecewiseIncrementalCurve}
     "Sell Price Curves data to export power"
-    export_offer_curves::CostCurve{PiecewiseIncrementalCurve, U}
+    export_offer_curves::CostCurve{PiecewiseIncrementalCurve}
     "Weekly limit on the amount of energy that can be imported, defined in MWh."
     energy_import_weekly_limit::Float64
     "Weekly limit on the amount of energy that can be exported, defined in MWh."
@@ -34,19 +32,13 @@ function ImportExportCost(;
 )
     import_offer_curves = something(import_offer_curves, ZERO_OFFER_CURVE)
     export_offer_curves = something(export_offer_curves, ZERO_OFFER_CURVE)
-    U_imp = typeof(get_power_units(import_offer_curves))
-    U_exp = typeof(get_power_units(export_offer_curves))
-    U_imp === U_exp || throw(
-        ArgumentError(
-            "import_offer_curves and export_offer_curves must share a unit system (got $(U_imp()) vs $(U_exp()))",
-        ),
-    )
-    return ImportExportCost{U_imp}(
+    return ImportExportCost(
         import_offer_curves,
         export_offer_curves,
         energy_import_weekly_limit,
         energy_export_weekly_limit,
-        ancillary_service_offers,
+        # The exact field type selects the field constructor, not the compat method below.
+        convert(Vector{Service}, ancillary_service_offers),
     )
 end
 
@@ -57,7 +49,7 @@ end
 
 # Deserialization compatibility: import_offer_curves and export_offer_curves were
 # serialized as Nothing in older PSY versions. The kwarg constructor substitutes
-# ZERO_OFFER_CURVE for Nothing and validates the shared unit system.
+# ZERO_OFFER_CURVE for Nothing.
 function ImportExportCost(
     import_offer_curves::Union{Nothing, CostCurve{PiecewiseIncrementalCurve}},
     export_offer_curves::Union{Nothing, CostCurve{PiecewiseIncrementalCurve}},
@@ -106,21 +98,15 @@ set_energy_export_weekly_limit!(value::ImportExportCost, val) =
 _iszero_or_nothing(x) = isnothing(x) || iszero(x)
 
 function is_import_export_curve(curve::ProductionVariableCostCurve)
-    return (curve isa IS.AnyCostCurve{PiecewiseIncrementalCurve}) &&
+    return curve isa CostCurve{PiecewiseIncrementalCurve} &&
            _iszero_or_nothing(get_initial_input(get_value_curve(curve))) &&
            _iszero_or_nothing(get_input_at_zero(get_value_curve(curve))) &&
            iszero(first(get_x_coords(get_value_curve(curve))))
 end
 
 # Internal helper: build a static import/export `CostCurve` from validated step data.
-function make_import_export_curve(
-    curve::PiecewiseStepData,
-    power_units::IS.AbstractUnitSystem = IS.NaturalUnit(),
-)
-    cc = CostCurve(
-        PiecewiseIncrementalCurve(curve, 0.0, 0.0),
-        power_units,
-    )
+function make_import_export_curve(curve::PiecewiseStepData)
+    cc = CostCurve(PiecewiseIncrementalCurve(curve, 0.0, 0.0))
     @assert is_import_export_curve(cc)
     return cc
 end
@@ -136,15 +122,11 @@ curve must have incremental (convex) slopes.
 import_curve = make_import_curve([0.0, 100.0, 105.0, 120.0, 200.0], [5.0, 10.0, 20.0, 40.0])
 ```
 """
-function make_import_curve(
-    power::Vector{Float64},
-    price::Vector{Float64},
-    power_units::IS.AbstractUnitSystem = IS.NaturalUnit(),
-)
+function make_import_curve(power::Vector{Float64}, price::Vector{Float64})
     curve = PiecewiseStepData(power, price)
     is_convex(curve) ||
         throw(ArgumentError("Import Curve does not have incremental slopes. Check slopes."))
-    return make_import_export_curve(curve, power_units)
+    return make_import_export_curve(curve)
 end
 
 """
@@ -158,13 +140,9 @@ curve must have decremental (concave) slopes.
 export_curve = make_export_curve([0.0, 100.0, 105.0, 120.0, 200.0], [40.0, 20.0, 10.0, 5.0])
 ```
 """
-function make_export_curve(
-    power::Vector{Float64},
-    price::Vector{Float64},
-    power_units::IS.AbstractUnitSystem = IS.NaturalUnit(),
-)
+function make_export_curve(power::Vector{Float64}, price::Vector{Float64})
     curve = PiecewiseStepData(power, price)
     is_concave(curve) ||
         throw(ArgumentError("Export Curve does not have decremental slopes. Check slopes."))
-    return make_import_export_curve(curve, power_units)
+    return make_import_export_curve(curve)
 end

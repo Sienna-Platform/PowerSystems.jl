@@ -1,8 +1,8 @@
 # VALIDATORS
 function _validate_reserve_demand_curve(
-    cost::CostCurve{PiecewiseIncrementalCurve, U},
+    cost::CostCurve{PiecewiseIncrementalCurve},
     name::String,
-) where {U <: IS.AbstractUnitSystem}
+)
     value_curve = get_value_curve(cost)
     function_data = get_function_data(value_curve)
     x_coords = get_x_coords(function_data)
@@ -21,7 +21,7 @@ function _validate_reserve_demand_curve(
     end
 end
 
-function _validate_reserve_demand_curve(cost::T, name::String) where {T <: CostCurve}
+function _validate_reserve_demand_curve(cost::CostCurve, name::String)
     throw(
         ArgumentError(
             "Reserve curve of type $(typeof(cost)) on $name cannot represent an ORDC curve, use CostCurve{PiecewiseIncrementalCurve} instead",
@@ -81,14 +81,13 @@ a single timestep and return one static `CostCurve`.
 """
 function _resolve_ts_cost_curve(
     component::Component,
-    curve::CostCurve{<:TimeSeriesPiecewiseIncrementalCurve, U},
+    curve::CostCurve{<:TimeSeriesPiecewiseIncrementalCurve},
     start_time::Dates.DateTime,
     len::Int,
-) where {U <: IS.AbstractUnitSystem}
+)
     static_vcs = IS.build_static_curves(get_value_curve(curve), component, start_time, len)
-    power_units = get_power_units(curve)
     vom_cost = get_vom_cost(curve)
-    return [CostCurve(vc, power_units, vom_cost) for vc in static_vcs]
+    return [CostCurve(vc, vom_cost) for vc in static_vcs]
 end
 
 _resolve_ts_cost_curve(component::Component, curve, start_time::Dates.DateTime) =
@@ -316,9 +315,8 @@ Auxiliary make market bid curve for timeseries with nothing inputs.
 """
 function _make_market_bid_curve(data::PiecewiseStepData;
     initial_input::Union{Nothing, Float64} = nothing,
-    power_units::IS.AbstractUnitSystem = IS.NaturalUnit(),
     input_at_zero::Union{Nothing, Float64} = nothing)
-    cc = CostCurve(IncrementalCurve(data, initial_input, input_at_zero), power_units)
+    cc = CostCurve(IncrementalCurve(data, initial_input, input_at_zero))
     @assert is_market_bid_curve(cc)
     return cc
 end
@@ -421,38 +419,9 @@ end
 
 # ── SETTER IMPLEMENTATIONS ──────────────────────────────────────────────────
 
-function _check_power_units(
-    data::ProductionVariableCostCurve,
-    power_units::IS.AbstractUnitSystem,
-)
-    if get_power_units(data) != power_units
-        throw(
-            ArgumentError(
-                "Units specified in CostCurve data differs from the units specified in the set cost.",
-            ),
-        )
-    end
-end
-
-# Offer-curve fields pin the cost's unit-system parameter `U`, so changing
-# units requires rebuilding the cost object rather than mutating the field.
-# `_replace_offer_curve` is the single chokepoint for the static-curve setters:
-# it validates the cost kind and slot, re-tags the sibling placeholder curve,
-# and returns the rebuilt cost.
-
-# A placeholder offer curve carries no information (all-zero slopes with
-# zero-or-unset offsets), so re-tagging it to a new unit system is lossless.
-_is_placeholder_offer(curve::CostCurve) =
-    all(iszero, get_slopes(get_value_curve(curve))) &&
-    _iszero_or_nothing(get_initial_input(get_value_curve(curve))) &&
-    _iszero_or_nothing(get_input_at_zero(get_value_curve(curve)))
-
-_retag_placeholder(curve::CostCurve, ::Type{U}) where {U <: IS.AbstractUnitSystem} =
-    if _is_placeholder_offer(curve)
-        CostCurve(get_value_curve(curve), U(), get_vom_cost(curve))
-    else
-        curve
-    end
+# `_replace_offer_curve` is the single chokepoint for the static-curve setters: it
+# validates the cost kind and slot and rebuilds the cost, so the constructor's
+# checks (e.g. the FIXED single-segment rule) also cover the new curve.
 
 _throw_wrong_offer_slot(cost, slot) = throw(
     ArgumentError("cannot set the $slot offer curve on a $(nameof(typeof(cost)))"),
@@ -461,19 +430,11 @@ _throw_wrong_offer_slot(cost, slot) = throw(
 function _replace_offer_curve(
     cost::MarketBidCost,
     slot::Symbol,
-    data::CostCurve{PiecewiseIncrementalCurve, U},
-) where {U <: IS.AbstractUnitSystem}
+    data::CostCurve{PiecewiseIncrementalCurve},
+)
     slot in (:incremental, :decremental) || _throw_wrong_offer_slot(cost, slot)
-    inc = if slot === :incremental
-        data
-    else
-        _retag_placeholder(get_incremental_offer_curves(cost), U)
-    end
-    dec = if slot === :decremental
-        data
-    else
-        _retag_placeholder(get_decremental_offer_curves(cost), U)
-    end
+    inc = slot === :incremental ? data : get_incremental_offer_curves(cost)
+    dec = slot === :decremental ? data : get_decremental_offer_curves(cost)
     return MarketBidCost(;
         minimum_energy_offer = get_minimum_energy_offer(cost),
         start_up = get_start_up(cost),
@@ -487,11 +448,11 @@ end
 function _replace_offer_curve(
     cost::ImportExportCost,
     slot::Symbol,
-    data::CostCurve{PiecewiseIncrementalCurve, U},
-) where {U <: IS.AbstractUnitSystem}
+    data::CostCurve{PiecewiseIncrementalCurve},
+)
     slot in (:import, :export) || _throw_wrong_offer_slot(cost, slot)
-    imp = slot === :import ? data : _retag_placeholder(get_import_offer_curves(cost), U)
-    exp = slot === :export ? data : _retag_placeholder(get_export_offer_curves(cost), U)
+    imp = slot === :import ? data : get_import_offer_curves(cost)
+    exp = slot === :export ? data : get_export_offer_curves(cost)
     return ImportExportCost(;
         import_offer_curves = imp,
         export_offer_curves = exp,
@@ -520,19 +481,14 @@ _replace_offer_curve(cost, slot::Symbol, ::CostCurve) = throw(
 )
 
 """
-Set the variable cost for a `StaticInjection` device with a `MarketBidCost`.
-
-The component's `MarketBidCost` is rebuilt with the unit system of `data`;
-a placeholder (all-zero) decremental curve is re-tagged to match, while a
-real decremental curve in a different unit system raises an `ArgumentError`.
+Set the incremental offer curve of a `StaticInjection` device with a `MarketBidCost`.
+The component's `MarketBidCost` is rebuilt around `data`.
 """
 function set_variable_cost!(
     ::System,
     component::StaticInjection,
-    data::CostCurve{PiecewiseIncrementalCurve, U},
-    power_units::IS.AbstractUnitSystem,
-) where {U <: IS.AbstractUnitSystem}
-    _check_power_units(data, power_units)
+    data::CostCurve{PiecewiseIncrementalCurve},
+)
     set_operation_cost!(
         component,
         _replace_offer_curve(get_operation_cost(component), :incremental, data),
@@ -540,31 +496,17 @@ function set_variable_cost!(
     return
 end
 
-function set_variable_cost!(
-    sys::System,
-    component::StaticInjection,
-    data::CostCurve{PiecewiseIncrementalCurve, U},
-) where {U <: IS.AbstractUnitSystem}
-    @warn "Variable Cost UnitSystem not specified for $(get_name(component)). set_variable_cost! assumes data is in IS.NaturalUnit()"
-    set_variable_cost!(sys, component, data, IS.NaturalUnit())
-    return
-end
-
 set_incremental_variable_cost!(
     sys::System,
     component::StaticInjection,
-    data::CostCurve{PiecewiseIncrementalCurve, U},
-    power_units::IS.AbstractUnitSystem,
-) where {U <: IS.AbstractUnitSystem} =
-    set_variable_cost!(sys, component, data, power_units)
+    data::CostCurve{PiecewiseIncrementalCurve},
+) = set_variable_cost!(sys, component, data)
 
 function set_decremental_variable_cost!(
     ::System,
     component::StaticInjection,
-    data::CostCurve{PiecewiseIncrementalCurve, U},
-    power_units::IS.AbstractUnitSystem,
-) where {U <: IS.AbstractUnitSystem}
-    _check_power_units(data, power_units)
+    data::CostCurve{PiecewiseIncrementalCurve},
+)
     set_operation_cost!(
         component,
         _replace_offer_curve(get_operation_cost(component), :decremental, data),
@@ -575,10 +517,8 @@ end
 function set_import_variable_cost!(
     ::System,
     component::StaticInjection,
-    data::CostCurve{PiecewiseIncrementalCurve, U},
-    power_units::IS.AbstractUnitSystem,
-) where {U <: IS.AbstractUnitSystem}
-    _check_power_units(data, power_units)
+    data::CostCurve{PiecewiseIncrementalCurve},
+)
     set_operation_cost!(
         component,
         _replace_offer_curve(get_operation_cost(component), :import, data),
@@ -589,10 +529,8 @@ end
 function set_export_variable_cost!(
     ::System,
     component::StaticInjection,
-    data::CostCurve{PiecewiseIncrementalCurve, U},
-    power_units::IS.AbstractUnitSystem,
-) where {U <: IS.AbstractUnitSystem}
-    _check_power_units(data, power_units)
+    data::CostCurve{PiecewiseIncrementalCurve},
+)
     set_operation_cost!(
         component,
         _replace_offer_curve(get_operation_cost(component), :export, data),
@@ -605,8 +543,8 @@ end
 function set_variable_cost!(
     ::System,
     component::AbstractReserve,
-    data::CostCurve{PiecewiseIncrementalCurve, U},
-) where {U <: IS.AbstractUnitSystem}
+    data::CostCurve{PiecewiseIncrementalCurve},
+)
     name = get_name(component)
     _validate_reserve_demand_curve(data, name)
     set_variable!(component, data)
@@ -661,7 +599,6 @@ function set_fuel_cost!(
     new_var_cost =
         FuelCurve(
             get_value_curve(var_cost),
-            get_power_units(var_cost),
             to_set,
             get_startup_fuel_offtake(var_cost),
             get_vom_cost(var_cost),
@@ -686,7 +623,6 @@ function set_service_bid!(
     component::StaticInjection,
     service::Service,
     time_series_data::IS.TimeSeriesData{<:PiecewiseStepData},
-    power_units::IS.AbstractUnitSystem,
 )
     cost = get_operation_cost(component)
     (cost isa OfferCurveCost) || throw(
@@ -695,13 +631,6 @@ function set_service_bid!(
     if get_name(time_series_data) != get_name(service)
         error(
             "Name provided in the TimeSeries Data $(get_name(time_series_data)), doesn't match the Service $(get_name(service)).",
-        )
-    end
-    if power_units != IS.NaturalUnit()
-        throw(
-            ArgumentError(
-                "Power Unit specified for service market bids must be NATURAL_UNITS",
-            ),
         )
     end
     verify_device_eligibility(sys, component, service)
@@ -718,7 +647,6 @@ function set_service_bid!(
     ::StaticInjection,
     ::Service,
     time_series_data::IS.TimeSeriesData,
-    ::IS.AbstractUnitSystem,
 )
     return _reject_ts_eltype(:set_service_bid!, PiecewiseStepData, time_series_data)
 end
@@ -740,18 +668,10 @@ function set_hub_bid!(
     vp::VirtualParticipant,
     hub::TradingHub,
     time_series_data::IS.TimeSeriesData{<:PiecewiseStepData},
-    power_units::IS.AbstractUnitSystem,
 )
     if get_name(time_series_data) != get_name(hub)
         error(
             "Name provided in the TimeSeries Data $(get_name(time_series_data)), doesn't match the TradingHub $(get_name(hub)).",
-        )
-    end
-    if power_units != IS.NaturalUnit()
-        throw(
-            ArgumentError(
-                "Power Unit specified for hub market bids must be NATURAL_UNITS",
-            ),
         )
     end
     if !has_trading_hub(vp, hub)
@@ -775,7 +695,6 @@ function set_hub_bid!(
     ::VirtualParticipant,
     ::TradingHub,
     time_series_data::IS.TimeSeriesData,
-    ::IS.AbstractUnitSystem,
 )
     return _reject_ts_eltype(:set_hub_bid!, PiecewiseStepData, time_series_data)
 end

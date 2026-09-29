@@ -635,7 +635,6 @@ end
         ta = TimeSeries.TimeArray(dates, data)
         expected_curves[i] = cc
         expected_ts_values[i] = TimeSeries.values(ta)
-        power_units = IS.NaturalUnit()
         service = OnlineReserve{ReserveDown}(;
             name = "init_$i",
             available = false,
@@ -654,7 +653,6 @@ end
             gen,
             service,
             IS.SingleTimeSeries(; name = "init_$i", data = ta),
-            power_units,
         )
     end
     sys2 = roundtrip_system(sys)
@@ -742,7 +740,7 @@ end
     )
     add_service!(sys, service, [gen])
     key = _attach_pwl_forecast(sys, service, "variable_cost")
-    set_variable!(service, make_market_bid_ts_curve(key, nothing, IS.NaturalUnit()))
+    set_variable!(service, make_market_bid_ts_curve(key))
 
     sys2 = roundtrip_system(sys; form = form)
     service2 = get_component(OnlineReserve{ReserveUp}, sys2, "ordc")

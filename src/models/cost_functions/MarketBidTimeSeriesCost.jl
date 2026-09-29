@@ -9,7 +9,7 @@ An operating cost for time-varying market bids of energy and ancillary services.
 All cost curve fields are backed by time series data via IS.jl's time-series ValueCurve types.
 For static (non-time-varying) bids, use [`MarketBidCost`](@ref).
 """
-mutable struct MarketBidTimeSeriesCost{U <: IS.AbstractUnitSystem} <: OfferCurveCost
+mutable struct MarketBidTimeSeriesCost <: OfferCurveCost
     "Minimum-energy offer: cost to operate at minimum stable level, in \$/MWh at the curve's minimum power, stored as submitted. \$/h sources convert at parse (MEO = no-load cost / P_min)."
     minimum_energy_offer::TimeSeriesLinearCurve
     "Key of a time series of `NTuple{3, Float64}` start-up cost stages, resolved to a
@@ -20,9 +20,9 @@ mutable struct MarketBidTimeSeriesCost{U <: IS.AbstractUnitSystem} <: OfferCurve
     "Shut-down cost (time series)"
     shut_down::TimeSeriesLinearCurve
     "Sell Offer Curves data (time series)"
-    incremental_offer_curves::CostCurve{<:TimeSeriesPiecewiseIncrementalCurve, U}
+    incremental_offer_curves::CostCurve{<:TimeSeriesPiecewiseIncrementalCurve}
     "Buy Offer Curves data (time series)"
-    decremental_offer_curves::CostCurve{<:TimeSeriesPiecewiseIncrementalCurve, U}
+    decremental_offer_curves::CostCurve{<:TimeSeriesPiecewiseIncrementalCurve}
     "Bids for the ancillary services"
     ancillary_service_offers::Vector{Service}
     "Linear-interpolation flag for the corresponding offer curve; false (default) is the step interpretation. Mutually exclusive with block groups on the same curve."
@@ -47,15 +47,8 @@ function MarketBidTimeSeriesCost(;
     curve_style = CurveStyles.VARIABLE,
     curve_multistep = CurveMultiStep.SINGLE_STEP,
 )
-    U_inc = typeof(get_power_units(incremental_offer_curves))
-    U_dec = typeof(get_power_units(decremental_offer_curves))
-    U_inc === U_dec || throw(
-        ArgumentError(
-            "incremental_offer_curves and decremental_offer_curves must share a unit system (got $(U_inc()) vs $(U_dec()))",
-        ),
-    )
     check_curve_style_exclusivity(curve_style, incremental_slope, decremental_slope)
-    return MarketBidTimeSeriesCost{U_inc}(
+    return MarketBidTimeSeriesCost(
         minimum_energy_offer, start_up, shut_down,
         incremental_offer_curves, decremental_offer_curves,
         ancillary_service_offers,
@@ -123,10 +116,9 @@ Make a time-series-backed `CostCurve{<:TimeSeriesPiecewiseIncrementalCurve}` fro
 """
 function make_market_bid_ts_curve(
     ts_key::TimeSeriesKey,
-    initial_input_key::Union{Nothing, TimeSeriesKey} = nothing,
-    power_units::IS.AbstractUnitSystem = IS.NaturalUnit();
+    initial_input_key::Union{Nothing, TimeSeriesKey} = nothing;
     input_at_zero_key::Union{Nothing, TimeSeriesKey} = nothing,
 )
     vc = TimeSeriesPiecewiseIncrementalCurve(ts_key, initial_input_key, input_at_zero_key)
-    return CostCurve(vc, power_units)
+    return CostCurve(vc)
 end

@@ -7,9 +7,9 @@
     fc = FuelCurve(InputOutputCurve(IS.QuadraticFunctionData(1, 2, 3)), 4.0)
     @test sprint(show, "text/plain", fc) ==
           sprint(show, "text/plain", fc; context = :compact => false) ==
-          "FuelCurve:\n  value_curve: QuadraticCurve (a type of InputOutputCurve) where function is: f(x) = 1.0 x^2 + 2.0 x + 3.0\n  fuel_cost: 4.0\n  fuel_cost_time_series: nothing\n  startup_fuel_offtake: LinearCurve (a type of InputOutputCurve) where function is: f(x) = 0.0 x + 0.0\n  vom_cost: LinearCurve (a type of InputOutputCurve) where function is: f(x) = 0.0 x + 0.0\n  power_units: NU"
+          "FuelCurve:\n  value_curve: QuadraticCurve (a type of InputOutputCurve) where function is: f(x) = 1.0 x^2 + 2.0 x + 3.0\n  fuel_cost: 4.0\n  fuel_cost_time_series: nothing\n  startup_fuel_offtake: LinearCurve (a type of InputOutputCurve) where function is: f(x) = 0.0 x + 0.0\n  vom_cost: LinearCurve (a type of InputOutputCurve) where function is: f(x) = 0.0 x + 0.0"
     @test sprint(show, "text/plain", fc; context = :compact => true) ==
-          "FuelCurve with power_units NU, fuel_cost 4.0, fuel_cost_time_series nothing, startup_fuel_offtake LinearCurve(0.0, 0.0), vom_cost LinearCurve(0.0, 0.0), and value_curve:\n  QuadraticCurve (a type of InputOutputCurve) where function is: f(x) = 1.0 x^2 + 2.0 x + 3.0"
+          "FuelCurve with fuel_cost 4.0, fuel_cost_time_series nothing, startup_fuel_offtake LinearCurve(0.0, 0.0), vom_cost LinearCurve(0.0, 0.0), and value_curve:\n  QuadraticCurve (a type of InputOutputCurve) where function is: f(x) = 1.0 x^2 + 2.0 x + 3.0"
 end
 
 @testset "Test MarketBidCost direct struct creation and some scalar cost_function_timeseries interface" begin
@@ -48,12 +48,11 @@ end
             marginal_costs .* 1.5,
         ),
     )
-    # Setters take the explicit unit-system marker and rebuild the cost object,
-    # so assertions read the component's current cost.
-    set_incremental_variable_cost!(sys, generator, cc2, IS.NaturalUnit())
+    # Setters rebuild the cost object, so assertions read the component's current cost.
+    set_incremental_variable_cost!(sys, generator, cc2)
     @test get_incremental_variable_cost(generator, get_operation_cost(generator)) == cc2
 
-    set_decremental_variable_cost!(sys, generator, cc2, IS.NaturalUnit())
+    set_decremental_variable_cost!(sys, generator, cc2)
     @test get_decremental_offer_curves(get_operation_cost(generator)) == cc2
 end
 
@@ -87,7 +86,7 @@ end
 end
 
 test_costs = Dict(
-    IS.AnyCostCurve{QuadraticCurve} =>
+    CostCurve{QuadraticCurve} =>
         repeat([CostCurve(QuadraticCurve(999.0, 2.0, 1.0))], 24),
     PiecewiseStepData =>
         repeat(
@@ -285,21 +284,14 @@ end
     ie_cost2 =
         build_iec_sys()
 
-    # Setters rebuild the cost object (the unit system is a type parameter),
-    # so assertions read the component's current cost.
+    # Setters rebuild the cost object, so assertions read the component's current cost.
     new_import = make_import_curve([0.0, 50.0, 100.0], [10.0, 20.0])
-    set_import_variable_cost!(sys, source, new_import, IS.NaturalUnit())
+    set_import_variable_cost!(sys, source, new_import)
     @test get_import_offer_curves(get_operation_cost(source)) == new_import
 
     new_export = make_export_curve([0.0, 50.0, 100.0], [20.0, 10.0])
-    set_export_variable_cost!(sys, source, new_export, IS.NaturalUnit())
+    set_export_variable_cost!(sys, source, new_export)
     @test get_export_offer_curves(get_operation_cost(source)) == new_export
-
-    # Test unit mismatch throws
-    @test_throws ArgumentError set_import_variable_cost!(
-        sys, source, new_import, IS.SystemBaseUnit())
-    @test_throws ArgumentError set_export_variable_cost!(
-        sys, source, new_export, IS.SystemBaseUnit())
 end
 
 @testset "Test HydroReservoirCost getters and setters" begin
@@ -471,7 +463,6 @@ end
             start_up = get_start_up(old_cost),
             variable_operation_cost = FuelCurve(;
                 value_curve = get_value_curve(old_variable),
-                power_units = get_power_units(old_variable),
                 fuel_cost_time_series = fuel_key,
             ),
         ),
@@ -496,7 +487,6 @@ end
             start_up = get_start_up(old_cost),
             variable_operation_cost = FuelCurve(;
                 value_curve = get_value_curve(old_variable),
-                power_units = get_power_units(old_variable),
                 fuel_cost = 2.0,
             ),
         ),
@@ -615,45 +605,43 @@ end
         mbtc, :incremental, PSY.ZERO_OFFER_CURVE)
 end
 
-@testset "set_variable_cost! rebuilds MarketBidCost with the data units" begin
+@testset "set_variable_cost! rebuilds MarketBidCost around the new curve" begin
     sys = System(100.0)
     gen = ThermalStandard(nothing)
-    set_operation_cost!(gen, MarketBidCost(nothing))  # MarketBidCost{NaturalUnit}
-    @test get_operation_cost(gen) isa MarketBidCost{IS.NaturalUnit}
+    set_operation_cost!(gen, MarketBidCost(nothing))
 
-    data = CostCurve(
-        PiecewiseIncrementalCurve(0.0, [0.0, 1.0], [10.0]),
-        IS.SystemBaseUnit(),
-    )
-    set_variable_cost!(sys, gen, data, IS.SystemBaseUnit())
+    data = CostCurve(PiecewiseIncrementalCurve(0.0, [0.0, 100.0], [0.1]))
+    set_variable_cost!(sys, gen, data)
     new_cost = get_operation_cost(gen)
-    @test new_cost isa MarketBidCost{IS.SystemBaseUnit}
+    @test new_cost isa MarketBidCost
     @test get_incremental_offer_curves(new_cost) == data
     # untouched fields carry over
+    @test get_decremental_offer_curves(new_cost) == PSY.ZERO_OFFER_CURVE
     @test get_start_up(new_cost) ==
           (hot = PSY.START_COST, warm = PSY.START_COST, cold = PSY.START_COST)
 end
 
-@testset "set_import/export_variable_cost! rebuild ImportExportCost units" begin
+@testset "set_import/export_variable_cost! rebuild ImportExportCost" begin
     sys = System(100.0)
     source = Source(nothing)
-    set_operation_cost!(source, ImportExportCost())  # both placeholders, NaturalUnit
-    new_import = make_import_curve([0.0, 0.5, 1.0], [10.0, 20.0], IS.SystemBaseUnit())
-    set_import_variable_cost!(sys, source, new_import, IS.SystemBaseUnit())
+    set_operation_cost!(source, ImportExportCost())
+    new_import = make_import_curve([0.0, 50.0, 100.0], [0.1, 0.2])
+    set_import_variable_cost!(sys, source, new_import)
     cost = get_operation_cost(source)
-    @test cost isa ImportExportCost{IS.SystemBaseUnit}
+    @test cost isa ImportExportCost
     @test get_import_offer_curves(cost) == new_import
+    @test get_export_offer_curves(cost) == PSY.ZERO_OFFER_CURVE
 
-    # a real (non-placeholder) opposite-side curve in a different unit system
-    # cannot be silently re-tagged and is rejected
-    sysb, sourceb, = build_iec_sys()
-    @test_throws ArgumentError set_import_variable_cost!(
-        sysb, sourceb, new_import, IS.SystemBaseUnit())
+    # a real opposite-side curve survives the rebuild
+    sysb, sourceb, _, _, _, export_curve, = build_iec_sys()
+    set_import_variable_cost!(sysb, sourceb, new_import)
+    @test get_import_offer_curves(get_operation_cost(sourceb)) == new_import
+    @test get_export_offer_curves(get_operation_cost(sourceb)) == export_curve
 end
 
 @testset "get_time_series_keys enumerates every key a cost holds" begin
     scalar =
-        ThermalGenerationCost(CostCurve(LinearCurve(20.0), NaturalUnit()), 0.0, 0.0, 0.0)
+        ThermalGenerationCost(CostCurve(LinearCurve(20.0)), 0.0, 0.0, 0.0)
     @test isempty(get_time_series_keys(scalar))
 
     sys, gen = _sys_with_thermal()
@@ -723,7 +711,7 @@ end
 @testset "get_time_series_keys reaches the time-series curves of every cost type" begin
     sys, gen = _sys_with_thermal()
     lin = [_attach_linear_forecast(sys, gen, "linear_keys_$i") for i in 1:5]
-    ts_curve(key) = CostCurve(IS.TimeSeriesLinearCurve(key), NaturalUnit())
+    ts_curve(key) = CostCurve(IS.TimeSeriesLinearCurve(key))
 
     renewable = RenewableGenerationCost(;
         variable_operation_cost = ts_curve(lin[1]),
