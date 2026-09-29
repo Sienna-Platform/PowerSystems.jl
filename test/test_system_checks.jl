@@ -1,7 +1,7 @@
 
 @testset "total_load_rating: sums StaticLoad and admittance loads as Float64 MW" begin
     sys = System(100.0)
-    bus = ACBus(;
+    bus = ACBus(; input_basis = CU,
         number = 1, name = "b1", available = true,
         bustype = ACBusTypes.REF, angle = 0.0, magnitude = 1.0,
         voltage_limits = (min = 0.9, max = 1.1), base_voltage = 138.0,

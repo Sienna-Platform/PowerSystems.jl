@@ -175,9 +175,60 @@ function _base_power_units_error(u)
     )
 end
 
+# `base_voltage` follows the same rule as `base_power`: it is the anchor for every
+# voltage-dimensioned field, so it is only ever read or written in natural units (kV).
+# The one-argument getter is generated (or hand-written for branches/circuits); these add
+# the units-bearing forms on top of it.
+
+"""
+Get a component's base voltage as a bare `Float64` in natural units. The units argument
+must denote natural units: `NU`, or a voltage-dimensioned `Unitful` unit (e.g. `u"kV"`,
+`u"V"`). Per-unit bases (`SU`, `CU`) error. See [`get_base_voltage_unitful`](@ref).
+"""
+get_base_voltage(c::UnitsBearer, u) = IS._strip_units(get_base_voltage_unitful(c, u))
+
+"""
+The base voltage as a unit-bearing quantity (kV), or `nothing` when unset.
+See [`get_base_voltage`](@ref).
+"""
+get_base_voltage_unitful(c::UnitsBearer) = _base_voltage_kv(get_base_voltage(c))
+get_base_voltage_unitful(c::UnitsBearer, ::NaturalUnit) = get_base_voltage_unitful(c)
+get_base_voltage_unitful(c::UnitsBearer, u::Unitful.Units) =
+    _uconvert_or_nothing(u, get_base_voltage_unitful(c))
+get_base_voltage_unitful(::UnitsBearer, u::AbstractRelativeUnit) =
+    _base_voltage_units_error(u)
+
+_base_voltage_kv(::Nothing) = nothing
+_base_voltage_kv(v::Real) = v * u"kV"
+_uconvert_or_nothing(::Unitful.Units, ::Nothing) = nothing
+_uconvert_or_nothing(u::Unitful.Units, q) = Unitful.uconvert(u, q)
+
+"""
+Set a bus's or source's `base_voltage` (stored as a bare kV `Float64`). Accepts a bare
+number (interpreted as kV), `nothing`, or a voltage-dimensioned `Unitful.Quantity` (e.g.
+`230.0u"kV"`). Per-unit inputs (`SU`, `CU`) and non-voltage units error.
+"""
+set_base_voltage!(c::Union{Bus, Source}, val::Union{Nothing, Real}) = c.base_voltage = val
+set_base_voltage!(c::Union{Bus, Source}, val::Unitful.Quantity) =
+    c.base_voltage = Unitful.ustrip(u"kV", val)
+set_base_voltage!(::Union{Bus, Source}, ::RelativeQuantity{<:Any, U}) where {U} =
+    _base_voltage_units_error(U())
+
+function _base_voltage_units_error(u)
+    throw(
+        ArgumentError(
+            "base_voltage is always in natural units (kV). Pass no units, `NU`, " *
+            "or a voltage-dimensioned Unitful unit such as `u\"kV\"`; got `$u`. " *
+            "Per-unit bases (`SU`, `CU`) are not valid for base_voltage.",
+        ),
+    )
+end
+
 IS.display_units_arg(::typeof(get_base_power), ::Type{<:Component}) = NU
 IS.display_units_arg(::typeof(get_base_power_unitful), ::Type{<:Component}) = NU
 IS.display_units_arg(::typeof(set_base_power!), ::Type{<:Component}) = NU
+IS.display_units_arg(::typeof(get_base_voltage), ::Type{<:Component}) = NU
+IS.display_units_arg(::typeof(get_base_voltage_unitful), ::Type{<:Component}) = NU
 
 # Make `_strip_units` work for Unitful quantities; IS doesn't depend on Unitful.
 IS._strip_units(q::Unitful.Quantity) = Unitful.ustrip(q)
@@ -451,6 +502,7 @@ _unit_category(::Val{:mvar}) = REACTIVE_POWER
 _unit_category(::Val{:mva}) = APPARENT_POWER
 _unit_category(::Val{:ohm}) = IMPEDANCE
 _unit_category(::Val{:siemens}) = ADMITTANCE
+_unit_category(::Val{:kv}) = VOLTAGE
 # A rate. The schema vocabulary calls this quantity `ActivePowerChangeRate`
 # (SiennaSchemas Core/units.json), default unit MW/min; the token names the time unit
 # the stored per-unit value is denominated in.
@@ -472,6 +524,7 @@ _natural_unit_example(::Val{:mvar}) = "u\"MVAr\""
 _natural_unit_example(::Val{:mva}) = "u\"MVA\""
 _natural_unit_example(::Val{:ohm}) = "u\"Ω\""
 _natural_unit_example(::Val{:siemens}) = "u\"S\""
+_natural_unit_example(::Val{:kv}) = "u\"kV\""
 _natural_unit_example(::Val{:mw_per_minute}) = "u\"MW/minute\""
 
 # Which field the message is about. `field` is a `Val` on the generated paths and

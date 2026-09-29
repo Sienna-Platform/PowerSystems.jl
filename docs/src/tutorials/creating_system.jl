@@ -34,7 +34,7 @@ sys = System(100.0)
 # or reference bus](@ref acbustypes_list).
 # Let's start with a reference bus:
 
-bus1 = ACBus(;
+bus1 = ACBus(; input_basis = CU,
     number = 1,
     name = "bus1",
     available = true,
@@ -64,7 +64,7 @@ sys
 # which that can be used to define differential equations for transient simulations.
 # Let's create a second bus:
 
-bus2 = ACBus(;
+bus2 = ACBus(; input_basis = CU,
     number = 2,
     name = "bus2",
     available = true,

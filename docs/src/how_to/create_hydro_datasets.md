@@ -30,7 +30,7 @@ import PowerSystems as PSY
 sys = System(100.0)
 
 # Create and add a bus
-bus = ACBus(;
+bus = ACBus(; input_basis = CU,
     number = 1,
     name = "bus1",
     available = true,
@@ -94,7 +94,7 @@ set_downstream_turbine!(reservoir, turbine)
 sys = System(100.0)
 
 # Create and add a bus
-bus = ACBus(;
+bus = ACBus(; input_basis = CU,
     number = 1,
     name = "bus1",
     available = true,

@@ -261,7 +261,7 @@ using PowerSystems
 # Create a system with thermal generators
 sys = System(100.0)  # 100 MVA base
 
-bus = ACBus(;
+bus = ACBus(; input_basis = CU,
     number = 1,
     name = "Bus1",
     bustype = ACBusTypes.REF,

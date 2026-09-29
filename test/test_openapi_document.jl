@@ -226,7 +226,7 @@ end
 
 @testset "OpenAPI supplemental attribute converters" begin
     refs = PSY.OpenAPIRefs(100.0)
-    bus = ACBus(;
+    bus = ACBus(; input_basis = CU,
         number = 1, name = "bus1", available = true, bustype = ACBusTypes.REF,
         angle = 0.0, magnitude = 1.0, voltage_limits = (min = 0.9, max = 1.1),
         base_voltage = 138.0,

@@ -29,7 +29,7 @@ per-unit base:
 | Apparent power | `u"MVA"`     | `rating`, `rating_b`, `base_power`                |
 | Impedance      | `u"Ω"`       | `r`, `x`                                          |
 | Admittance     | `u"S"`       | `b`, `g`                                          |
-| Voltage        | `u"kV"`      | `base_voltage`                                    |
+| Voltage        | `u"kV"`      | `magnitude`, `voltage_limits`, `internal_voltage` |
 
 Natural units are written with Unitful's `u"..."` string macro, which `PowerSystems`
 re-exports — `using PowerSystems` is enough, no `using Unitful` needed. There are no
@@ -46,6 +46,34 @@ get_rating_unitful(gen, NU)          # 250.0 MVA
 Because the three power units share a dimension, any of them is accepted wherever a
 power-dimensioned unit is expected — `get_rating(gen, u"MW")` and
 `set_reactive_power!(gen, 25.0 * u"MW")` both work, and `uconvert` handles the relabeling.
+
+Voltages are per-unitized on the component's `base_voltage` (a bus's own, for
+[`ACBus`](@ref) and [`DCBus`](@ref)), which is the same in `CU` and `SU`, so the two
+agree and neither needs the component attached to a system. Only `NU` reads the base
+voltage, and it errors when `base_voltage` is `nothing`:
+
+```julia
+get_magnitude(bus, CU)       # 1.02
+get_magnitude(bus, SU)       # 1.02, identical
+get_magnitude(bus, u"kV")    # 234.6, on a 230 kV bus
+set_magnitude!(bus, 0.98 * CU)
+```
+
+## Base values are always in natural units
+
+`base_power` (MVA) and `base_voltage` (kV) are the anchors every per-unit value is defined
+against, so expressing them in `CU` or `SU` would be circular. Their getters need no units
+argument; one is accepted only if it names natural units (`NU`, `u"MW"`, `u"kV"`, …). Their
+setters take a bare number, which is read in MVA or kV, or a quantity carrying a Unitful unit.
+Per-unit markers raise an `ArgumentError`:
+
+```julia
+get_base_voltage(bus)                # 230.0 (kV)
+get_base_voltage(bus, u"V")          # 230000.0
+set_base_voltage!(bus, 345.0)        # kV
+set_base_voltage!(bus, 345.0u"kV")
+set_base_voltage!(bus, 1.0 * CU)     # ArgumentError
+```
 
 ## Explicit units in accessors
 

@@ -626,6 +626,7 @@ export get_internal_voltage
 export get_internal_voltage_bias
 export get_internal_voltage_coefficients
 export get_internal_voltage_frequencies
+export get_internal_voltage_unitful
 export get_inv_d_fluxlink
 export get_inv_q_fluxlink
 export get_inverter_base_voltage
@@ -673,6 +674,7 @@ export get_lv
 export get_magnetizing_shunt
 export get_magnetizing_shunt_unitful
 export get_magnitude
+export get_magnitude_unitful
 export get_max_active_power
 export get_max_active_power_unitful
 export get_max_constant_active_power
@@ -856,6 +858,7 @@ export get_voltage
 export get_voltage_limits
 export get_voltage_limits_from
 export get_voltage_limits_to
+export get_voltage_limits_unitful
 export get_voltage_setpoint
 export get_x
 export get_x_12

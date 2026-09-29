@@ -318,13 +318,17 @@
                     "null_value": "0.0",
                     "data_type": "Union{Nothing, Float64}",
                     "valid_range": "voltage_limits",
-                    "validation_action": "warn"
+                    "validation_action": "warn",
+                    "needs_conversion": true,
+                    "conversion_unit": ":kv"
                 },
                 {
                     "name": "voltage_limits",
                     "comment": "limits on the voltage variation as multiples of `base_voltage`",
                     "null_value": "(min=0.0, max=0.0)",
-                    "data_type": "Union{Nothing, MinMax}"
+                    "data_type": "Union{Nothing, MinMax}",
+                    "needs_conversion": true,
+                    "conversion_unit": ":kv"
                 },
                 {
                     "name": "base_voltage",
@@ -335,7 +339,8 @@
                         "min": 0,
                         "max": null
                     },
-                    "validation_action": "error"
+                    "validation_action": "error",
+                    "exclude_setter": true
                 },
                 {
                     "name": "area",
@@ -398,13 +403,17 @@
                     "null_value": "0.0",
                     "data_type": "Union{Nothing, Float64}",
                     "valid_range": "voltage_limits",
-                    "validation_action": "warn"
+                    "validation_action": "warn",
+                    "needs_conversion": true,
+                    "conversion_unit": ":kv"
                 },
                 {
                     "name": "voltage_limits",
                     "comment": "limits on the voltage variation as multiples of `base_voltage`",
                     "null_value": "(min=0.0, max=0.0)",
-                    "data_type": "Union{Nothing, MinMax}"
+                    "data_type": "Union{Nothing, MinMax}",
+                    "needs_conversion": true,
+                    "conversion_unit": ":kv"
                 },
                 {
                     "name": "base_voltage",
@@ -415,7 +424,8 @@
                         "min": 0,
                         "max": null
                     },
-                    "validation_action": "error"
+                    "validation_action": "error",
+                    "exclude_setter": true
                 },
                 {
                     "name": "area",
@@ -18905,7 +18915,9 @@
                         "min": 0,
                         "max": null
                     },
-                    "default": "1.0"
+                    "default": "1.0",
+                    "needs_conversion": true,
+                    "conversion_unit": ":kv"
                 },
                 {
                     "name": "internal_angle",
@@ -18933,7 +18945,8 @@
                         "min": 0,
                         "max": null
                     },
-                    "validation_action": "error"
+                    "validation_action": "error",
+                    "exclude_setter": true
                 },
                 {
                     "name": "operation_cost",

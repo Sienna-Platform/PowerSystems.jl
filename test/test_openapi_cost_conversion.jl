@@ -557,7 +557,7 @@ end
     # it, and importing that against another sidecar binds the cost to whichever series
     # holds that id there — silently, since the identity cross-check has nothing to match.
     sys = System(100.0)
-    bus = ACBus(;
+    bus = ACBus(; input_basis = CU,
         number = 1, name = "b", available = true, bustype = ACBusTypes.REF,
         angle = 0.0, magnitude = 1.0, voltage_limits = (min = 0.9, max = 1.1),
         base_voltage = 230.0,

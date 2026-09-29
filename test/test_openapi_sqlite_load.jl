@@ -17,7 +17,7 @@ function _sqlite_load_fixture()
     sys = System(100.0)
     refs = PSY.OpenAPIRefs(100.0)
 
-    bus1 = ACBus(;
+    bus1 = ACBus(; input_basis = CU,
         number = 1, name = "bus1", available = true, bustype = ACBusTypes.REF,
         angle = 0.0, magnitude = 1.0, voltage_limits = (min = 0.9, max = 1.1),
         base_voltage = 138.0,
@@ -25,7 +25,7 @@ function _sqlite_load_fixture()
     add_component!(sys, bus1)
     refs[3] = bus1
 
-    bus2 = ACBus(;
+    bus2 = ACBus(; input_basis = CU,
         number = 2, name = "bus2", available = true, bustype = ACBusTypes.PQ,
         angle = 0.0, magnitude = 1.0, voltage_limits = (min = 0.9, max = 1.1),
         base_voltage = 138.0,

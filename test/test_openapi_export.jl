@@ -5,7 +5,7 @@
 # assertions follow the exact specification.
 
 _export_bus(; number = 1, area = nothing, load_zone = nothing, bustype = ACBusTypes.REF) =
-    ACBus(;
+    ACBus(; input_basis = CU,
         number = number, name = "bus$number", available = true, bustype = bustype,
         angle = 0.0, magnitude = 1.0, voltage_limits = (min = 0.9, max = 1.1),
         base_voltage = 138.0, area = area, load_zone = load_zone,
@@ -459,11 +459,11 @@ end
     # and no `base_power` field — same posture as reserves' `requirement`. Both export
     # methods multiply by `get_base_power(refs)` and are identical; `base_current` (not a
     # power base) is `r`/`l`/`c`'s own anchor and rides through untouched.
-    dcbus1 = DCBus(;
+    dcbus1 = DCBus(; input_basis = CU,
         number = 1, name = "dcbus1", available = true,
         magnitude = 1.0, voltage_limits = (min = 0.9, max = 1.1), base_voltage = 500.0,
     )
-    dcbus2 = DCBus(;
+    dcbus2 = DCBus(; input_basis = CU,
         number = 2, name = "dcbus2", available = true,
         magnitude = 1.0, voltage_limits = (min = 0.9, max = 1.1), base_voltage = 500.0,
     )

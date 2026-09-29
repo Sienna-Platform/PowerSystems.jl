@@ -33,7 +33,7 @@ the process:
 ```@repl serialize_data
 using PowerSystems
 sys = System(100.0)
-bus = ACBus(;
+bus = ACBus(; input_basis = CU,
     number = 1, name = "bus1", available = true, bustype = ACBusTypes.REF,
     angle = 0.0, magnitude = 1.0, voltage_limits = (min = 0.9, max = 1.1),
     base_voltage = 230.0,

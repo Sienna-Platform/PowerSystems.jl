@@ -13,7 +13,7 @@ function _sys_with_storage(;
     standing_loss = 0.0,
 )
     sys = System(system_base)
-    bus = ACBus(;
+    bus = ACBus(; input_basis = CU,
         number = 1, name = "b1", available = true,
         bustype = ACBusTypes.REF, angle = 0.0, magnitude = 1.0,
         voltage_limits = (min = 0.9, max = 1.1), base_voltage = 138.0,
