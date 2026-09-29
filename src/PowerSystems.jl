@@ -700,6 +700,7 @@ export natural_unit, base_value, system_base_value, convert_units
 # are plain (non-unit-converting) fields with no `_unitful` companion; their bare
 # getters/setters are exported via generated/includes.jl.
 export get_base_power_unitful
+export rebase_component!
 export get_base_voltage_unitful
 
 # ComponentSelector
