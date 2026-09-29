@@ -32,18 +32,19 @@ UUIDs = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [sources]
-InfrastructureCoreOpenAPIModels = {rev = "main", subdir = "InfrastructureCoreOpenAPIModels.jl", url = "https://github.com/Sienna-Platform/PowerOpenAPIModels.git"}
-InfrastructureSystems = {rev = "IS4", url = "https://github.com/Sienna-Platform/InfrastructureSystems.jl.git"}
-InfrastructureTimeSeriesOpenAPIModels = {rev = "main", subdir = "InfrastructureTimeSeriesOpenAPIModels.jl", url = "https://github.com/Sienna-Platform/PowerOpenAPIModels.git"}
-PowerCoreOpenAPIModels = {rev = "main", subdir = "PowerCoreOpenAPIModels.jl", url = "https://github.com/Sienna-Platform/PowerOpenAPIModels.git"}
-PowerDynamicsOpenAPIModels = {rev = "main", subdir = "PowerDynamicsOpenAPIModels.jl", url = "https://github.com/Sienna-Platform/PowerOpenAPIModels.git"}
+# rh/natural-unit-costs set: revert to the base branches once these merge.
+InfrastructureCoreOpenAPIModels = {rev = "rh/natural-unit-costs", subdir = "InfrastructureCoreOpenAPIModels.jl", url = "https://github.com/Sienna-Platform/PowerOpenAPIModels.git"}
+InfrastructureSystems = {rev = "rh/natural-unit-costs", url = "https://github.com/Sienna-Platform/InfrastructureSystems.jl.git"}
+InfrastructureTimeSeriesOpenAPIModels = {rev = "rh/natural-unit-costs", subdir = "InfrastructureTimeSeriesOpenAPIModels.jl", url = "https://github.com/Sienna-Platform/PowerOpenAPIModels.git"}
+PowerCoreOpenAPIModels = {rev = "rh/natural-unit-costs", subdir = "PowerCoreOpenAPIModels.jl", url = "https://github.com/Sienna-Platform/PowerOpenAPIModels.git"}
+PowerDynamicsOpenAPIModels = {rev = "rh/natural-unit-costs", subdir = "PowerDynamicsOpenAPIModels.jl", url = "https://github.com/Sienna-Platform/PowerOpenAPIModels.git"}
 PowerFlowFileParser = {rev = "psy6", url = "https://github.com/Sienna-Platform/PowerFlowFileParser.jl.git"}
-PowerInvestmentsOpenAPIModels = {rev = "main", subdir = "PowerInvestmentsOpenAPIModels.jl", url = "https://github.com/Sienna-Platform/PowerOpenAPIModels.git"}
-PowerOpenAPIModels = {rev = "main", subdir = "PowerOpenAPIModels.jl", url = "https://github.com/Sienna-Platform/PowerOpenAPIModels.git"}
-PowerOperationsOpenAPIModels = {rev = "main", subdir = "PowerOperationsOpenAPIModels.jl", url = "https://github.com/Sienna-Platform/PowerOpenAPIModels.git"}
+PowerInvestmentsOpenAPIModels = {rev = "rh/natural-unit-costs", subdir = "PowerInvestmentsOpenAPIModels.jl", url = "https://github.com/Sienna-Platform/PowerOpenAPIModels.git"}
+PowerOpenAPIModels = {rev = "rh/natural-unit-costs", subdir = "PowerOpenAPIModels.jl", url = "https://github.com/Sienna-Platform/PowerOpenAPIModels.git"}
+PowerOperationsOpenAPIModels = {rev = "rh/natural-unit-costs", subdir = "PowerOperationsOpenAPIModels.jl", url = "https://github.com/Sienna-Platform/PowerOpenAPIModels.git"}
 PowerSystemCaseBuilder = {rev = "psy6", url = "https://github.com/Sienna-Platform/PowerSystemCaseBuilder.jl.git"}
 PowerSystems = {path = ".."}
-PowerTableDataParser = {url = "https://github.com/luke-kiernan/PowerTableDataParser.jl.git", rev = "psy6"}
+PowerTableDataParser = {url = "https://github.com/rodrigomha/PowerTableDataParser.jl.git", rev = "rh/natural-unit-costs"}
 
 [compat]
 InfrastructureSystems = "3"
