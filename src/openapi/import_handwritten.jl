@@ -1720,7 +1720,7 @@ function from_openapi(po::PO.Source, refs::OpenAPIRefs, ::ComponentBaseUnit)
         base_power = _require_base_power("Source", po.id, po.base_power),
         base_voltage = _or_default(po.base_voltage, nothing),
         operation_cost = _convert_source_operation_cost(
-            po.operation_cost, get_store(refs), get_base_power(refs),
+            po.operation_cost, get_store(refs),
         )::OperationalCost,
         input_basis = CU,
     )
@@ -1745,7 +1745,7 @@ function from_openapi(po::PO.Source, refs::OpenAPIRefs, ::NaturalUnit)
         base_power = dbp,
         base_voltage = _or_default(po.base_voltage, nothing),
         operation_cost = _convert_source_operation_cost(
-            po.operation_cost, get_store(refs), get_base_power(refs),
+            po.operation_cost, get_store(refs),
         )::OperationalCost,
         input_basis = CU,
     )

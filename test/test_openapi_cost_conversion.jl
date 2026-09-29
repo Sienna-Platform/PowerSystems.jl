@@ -463,13 +463,15 @@ end
     @test get_energy_export_weekly_limit(round_tripped) == 4321.0
 end
 
-@testset "convert_cost_to_openapi(ImportExportTimeSeriesCost): no base_power argument" begin
-    # The 2-arg fallback and base_power threading this converter used to need for scaling
-    # are gone now that the field is MWh; it takes the cost alone.
+@testset "ImportExportTimeSeriesCost converters take no base_power argument" begin
+    # The weekly limits are MWh and the offer curves natural units, so nothing scales.
     @test !hasmethod(
         PSY.convert_cost_to_openapi, Tuple{ImportExportTimeSeriesCost, Real},
     )
     @test !hasmethod(PSY.convert_cost_to_openapi, Tuple{OperationalCost, Real})
+    @test !hasmethod(
+        PSY.convert_cost, Tuple{PSY.PC.ImportExportTimeSeriesCost, IS.Store, Real},
+    )
 end
 
 @testset "convert_cost: ImportExportCost and ImportExportTimeSeriesCost weekly limits round trip identically" begin
@@ -520,8 +522,7 @@ end
         @test static_wire.energy_import_weekly_limit == ts_wire.energy_import_weekly_limit
         @test static_wire.energy_export_weekly_limit == ts_wire.energy_export_weekly_limit
 
-        # A wildly non-1.0 base_power must not perturb the round trip.
-        ts_round_tripped = PSY.convert_cost(ts_wire, store, 250.0)
+        ts_round_tripped = PSY.convert_cost(ts_wire, store)
         @test get_energy_import_weekly_limit(ts_round_tripped) ==
               get_energy_import_weekly_limit(ts_cost)
         @test get_energy_export_weekly_limit(ts_round_tripped) ==

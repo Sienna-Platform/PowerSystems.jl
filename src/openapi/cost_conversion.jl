@@ -499,11 +499,9 @@ convert_cost(po::PC.MarketBidTimeSeriesCost) = convert_cost(po, _current_import_
 """
 Time-varying import/export bids. Mirrors `convert_cost(::PC.ImportExportCost)`, except the
 offer curves are time-series-backed (need `store`). `energy_import_weekly_limit`/
-`energy_export_weekly_limit` are MWh on both sides of the wire, so they need no scaling;
-`base_power` is accepted only to match `_convert_source_operation_cost`'s uniform dispatch
-across every admissible `Source.operation_cost` variant.
+`energy_export_weekly_limit` are MWh on both sides of the wire, so they need no scaling.
 """
-function convert_cost(po::PC.ImportExportTimeSeriesCost, store, _base_power::Real)
+function convert_cost(po::PC.ImportExportTimeSeriesCost, store)
     return ImportExportTimeSeriesCost(;
         import_offer_curves = convert_cost(
             _require(
@@ -532,16 +530,15 @@ end
 `Source.operation_cost` (`PO.SourceOperationCost`) is the one place `ImportExportCost`,
 `ImportExportTimeSeriesCost`, and `MarketBidTimeSeriesCost` are all admissible, and `Source`'s
 hand-written `from_openapi` (unlike a generated per-device converter) already receives `refs`,
-so it resolves both `store` and `base_power` up front and calls this rather than the ambient
-1-arg path.
+so it resolves `store` up front and calls this rather than the ambient 1-arg path.
 """
-_convert_source_operation_cost(w::PO.SourceOperationCost, store, base_power::Real) =
-    _convert_source_operation_cost(w.value, store, base_power)
-_convert_source_operation_cost(po::PC.ImportExportCost, ::Any, ::Real) = convert_cost(po)
-_convert_source_operation_cost(po::PC.MarketBidTimeSeriesCost, store, ::Real) =
-    convert_cost(po, store)
-_convert_source_operation_cost(po::PC.ImportExportTimeSeriesCost, store, base_power::Real) =
-    convert_cost(po, store, base_power)
+_convert_source_operation_cost(w::PO.SourceOperationCost, store) =
+    _convert_source_operation_cost(w.value, store)
+_convert_source_operation_cost(po::PC.ImportExportCost, ::Any) = convert_cost(po)
+_convert_source_operation_cost(
+    po::Union{PC.MarketBidTimeSeriesCost, PC.ImportExportTimeSeriesCost},
+    store,
+) = convert_cost(po, store)
 
 function convert_cost(po::PC.HydroReservoirCost)
     return HydroReservoirCost(;
