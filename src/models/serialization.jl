@@ -49,11 +49,11 @@ function IS.serialize(component::T) where {T <: _CONTAINS_SHOULD_ENCODE}
     IS.add_serialization_metadata!(data, T)
 
     # Sets IS.CONSTRUCT_WITH_PARAMETERS_KEY so IS.get_type_from_serialization_metadata
-    # reconstructs type parameters on deserialize. Needed because Reserve{T}/
-    # OfflineReserve{U}/GroupReserve{T} are parametric families with no one clean shared
-    # supertype to dispatch this on generically. IS's own serialization.jl labels this the
-    # "workaround for PSY.Reserve subtypes".
-    if T <: Reserve || T <: OfflineReserve || T <: GroupReserve
+    # reconstructs type parameters on deserialize. Needed because Reserve{T}/GroupReserve{T}
+    # are parametric families with no one clean shared supertype to dispatch this on
+    # generically. IS's own serialization.jl labels this the "workaround for PSY.Reserve
+    # subtypes".
+    if T <: Reserve || T <: GroupReserve
         data[IS.METADATA_KEY][IS.CONSTRUCT_WITH_PARAMETERS_KEY] = true
     end
 

@@ -142,7 +142,7 @@ owners, exactly as PSY's own exporter enumerates it (`_plan_components` in
 """
 function _ptdp_e2e_system_component_counts(sys::System)
     # Keyed by `nameof`, which strips type parameters: a document names a parametric service
-    # by its bare type name, so `OnlineReserve{ReserveUp, NaturalUnit}` must count as
+    # by its bare type name, so `OnlineReserve{ReserveUp}` must count as
     # "OnlineReserve". This is why the IS `*_counts_by_type` helpers cannot stand in here —
     # they key by `strip_module_name`, which keeps the parameters.
     counts = Dict{String, Int}()

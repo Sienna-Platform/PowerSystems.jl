@@ -1350,10 +1350,10 @@ end
 const RESERVE_DIRECTION_TO_STRING = _invert(RESERVE_DIRECTION)
 
 function to_openapi(
-    reserve::OnlineReserve{T, U},
+    reserve::OnlineReserve{T},
     refs::OpenAPIRefs,
     ::ComponentBaseUnit,
-) where {T <: ReserveDirection, U}
+) where {T <: ReserveDirection}
     return PO.OnlineReserve(;
         id = component_id(refs, reserve),
         name = get_name(reserve),
@@ -1370,18 +1370,18 @@ function to_openapi(
 end
 
 function to_openapi(
-    reserve::OnlineReserve{T, U},
+    reserve::OnlineReserve,
     refs::OpenAPIRefs,
     ::NaturalUnit,
-) where {T <: ReserveDirection, U}
+)
     return to_openapi(reserve, refs, CU)
 end
 
 function to_openapi(
-    reserve::OfflineReserve{U},
+    reserve::OfflineReserve,
     refs::OpenAPIRefs,
     ::ComponentBaseUnit,
-) where {U}
+)
     return PO.OfflineReserve(;
         id = component_id(refs, reserve),
         name = get_name(reserve),
@@ -1397,10 +1397,10 @@ function to_openapi(
 end
 
 function to_openapi(
-    reserve::OfflineReserve{U},
+    reserve::OfflineReserve,
     refs::OpenAPIRefs,
     ::NaturalUnit,
-) where {U}
+)
     return to_openapi(reserve, refs, CU)
 end
 

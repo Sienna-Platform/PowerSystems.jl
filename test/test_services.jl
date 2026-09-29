@@ -251,7 +251,8 @@ end
 @testset "Test struct type collections" begin
     # Lock the reserve tree's shape: membership assertions instead of a count so a
     # failure names the type that moved.
-    @test Set(IS.get_all_concrete_subtypes(Service)) == Set([AGC, TransmissionInterface])
+    @test Set(IS.get_all_concrete_subtypes(Service)) ==
+          Set([AGC, OfflineReserve, TransmissionInterface])
     @test Set(InteractiveUtils.subtypes(AbstractReserve)) ==
           Set([Reserve, OfflineReserve, GroupReserve])
     @test InteractiveUtils.subtypes(Reserve) == [OnlineReserve]

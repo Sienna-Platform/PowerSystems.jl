@@ -141,7 +141,7 @@ end
     add_component!(sys, reserve)
     @test has_demand_curve(reserve)
     @test get_variable_cost(reserve) == cc
-    @test get_variable(reserve) isa IS.AnyCostCurve{PiecewiseIncrementalCurve}
+    @test get_variable(reserve) isa CostCurve{PiecewiseIncrementalCurve}
 
     # Test set_variable_cost! with validation
     cc2 = CostCurve(

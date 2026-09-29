@@ -65,8 +65,7 @@ whether one is present.
 The `ReserveDirection` must be specified as [`ReserveUp`](@ref), [`ReserveDown`](@ref), or
 [`ReserveSymmetric`](@ref).
 """
-mutable struct OnlineReserve{T <: ReserveDirection, U <: IS.AbstractUnitSystem} <:
-               Reserve{T}
+mutable struct OnlineReserve{T <: ReserveDirection} <: Reserve{T}
     "Name of the component"
     name::String
     "Indicator of whether the component is connected and online"
@@ -79,8 +78,8 @@ mutable struct OnlineReserve{T <: ReserveDirection, U <: IS.AbstractUnitSystem} 
     # (absorbing the retired ReserveDemandCurve / ReserveDemandTimeSeriesCurve). Revisit later.
     "Operating reserve demand curve (static or time-series-backed). `ZERO_OFFER_CURVE` means no curve is defined"
     variable::Union{
-        CostCurve{PiecewiseIncrementalCurve, U},
-        CostCurve{<:TimeSeriesPiecewiseIncrementalCurve, U},
+        CostCurve{PiecewiseIncrementalCurve},
+        CostCurve{<:TimeSeriesPiecewiseIncrementalCurve},
     }
     "The time in minutes reserve contribution must be sustained at a specified level"
     sustained_time::Float64
@@ -108,8 +107,7 @@ function OnlineReserve{T}(
     deployed_fraction = 0.0,
     ext = Dict{String, Any}(),
 ) where {T <: ReserveDirection}
-    U = typeof(get_power_units(variable))
-    return OnlineReserve{T, U}(
+    return OnlineReserve{T}(
         name, available, time_frame, requirement, variable, sustained_time,
         max_output_fraction, max_participation_factor, deployed_fraction, ext,
         InfrastructureSystemsInternal(),
@@ -129,28 +127,7 @@ function OnlineReserve{T}(;
     ext = Dict{String, Any}(),
     internal = InfrastructureSystemsInternal(),
 ) where {T <: ReserveDirection}
-    U = typeof(get_power_units(variable))
-    return OnlineReserve{T, U}(
-        name, available, time_frame, requirement, variable, sustained_time,
-        max_output_fraction, max_participation_factor, deployed_fraction, ext, internal,
-    )
-end
-
-# Deserialization resolves `OnlineReserve{T, U}` from metadata and calls it with kwargs.
-function OnlineReserve{T, U}(;
-    name,
-    available,
-    time_frame,
-    requirement = 0.0,
-    variable = ZERO_OFFER_CURVE,
-    sustained_time = 60.0,
-    max_output_fraction = 1.0,
-    max_participation_factor = 1.0,
-    deployed_fraction = 0.0,
-    ext = Dict{String, Any}(),
-    internal = InfrastructureSystemsInternal(),
-) where {T <: ReserveDirection, U <: IS.AbstractUnitSystem}
-    return OnlineReserve{T, U}(
+    return OnlineReserve{T}(
         name, available, time_frame, requirement, variable, sustained_time,
         max_output_fraction, max_participation_factor, deployed_fraction, ext, internal,
     )
@@ -180,7 +157,7 @@ come online quickly.
 
 Upward only, so unlike [`OnlineReserve`](@ref) there is no `ReserveDirection` parameter.
 """
-mutable struct OfflineReserve{U <: IS.AbstractUnitSystem} <: AbstractReserve
+mutable struct OfflineReserve <: AbstractReserve
     "Name of the component"
     name::String
     "Indicator of whether the component is connected and online"
@@ -193,8 +170,8 @@ mutable struct OfflineReserve{U <: IS.AbstractUnitSystem} <: AbstractReserve
     # time-series-backed CostCurve. Revisit later.
     "Operating reserve demand curve (static or time-series-backed). `ZERO_OFFER_CURVE` means no curve is defined"
     variable::Union{
-        CostCurve{PiecewiseIncrementalCurve, U},
-        CostCurve{<:TimeSeriesPiecewiseIncrementalCurve, U},
+        CostCurve{PiecewiseIncrementalCurve},
+        CostCurve{<:TimeSeriesPiecewiseIncrementalCurve},
     }
     "The time in minutes reserve contribution must be sustained at a specified level"
     sustained_time::Float64
@@ -222,8 +199,7 @@ function OfflineReserve(
     deployed_fraction = 0.0,
     ext = Dict{String, Any}(),
 )
-    U = typeof(get_power_units(variable))
-    return OfflineReserve{U}(
+    return OfflineReserve(
         name, available, time_frame, requirement, variable, sustained_time,
         max_output_fraction, max_participation_factor, deployed_fraction, ext,
         InfrastructureSystemsInternal(),
@@ -243,28 +219,7 @@ function OfflineReserve(;
     ext = Dict{String, Any}(),
     internal = InfrastructureSystemsInternal(),
 )
-    U = typeof(get_power_units(variable))
-    return OfflineReserve{U}(
-        name, available, time_frame, requirement, variable, sustained_time,
-        max_output_fraction, max_participation_factor, deployed_fraction, ext, internal,
-    )
-end
-
-# Deserialization resolves `OfflineReserve{U}` from metadata and calls it with kwargs.
-function OfflineReserve{U}(;
-    name,
-    available,
-    time_frame,
-    requirement = 0.0,
-    variable = ZERO_OFFER_CURVE,
-    sustained_time = 60.0,
-    max_output_fraction = 1.0,
-    max_participation_factor = 1.0,
-    deployed_fraction = 0.0,
-    ext = Dict{String, Any}(),
-    internal = InfrastructureSystemsInternal(),
-) where {U <: IS.AbstractUnitSystem}
-    return OfflineReserve{U}(
+    return OfflineReserve(
         name, available, time_frame, requirement, variable, sustained_time,
         max_output_fraction, max_participation_factor, deployed_fraction, ext, internal,
     )
@@ -300,8 +255,7 @@ makes an ELASTIC group (one demand curve met by the awards of several sub-produc
 The `ReserveDirection` must be specified as [`ReserveUp`](@ref), [`ReserveDown`](@ref), or
 [`ReserveSymmetric`](@ref).
 """
-mutable struct GroupReserve{T <: ReserveDirection, U <: IS.AbstractUnitSystem} <:
-               AbstractReserve
+mutable struct GroupReserve{T <: ReserveDirection} <: AbstractReserve
     "Name of the component"
     name::String
     "Indicator of whether the component is connected and online"
@@ -312,8 +266,8 @@ mutable struct GroupReserve{T <: ReserveDirection, U <: IS.AbstractUnitSystem} <
     # time-series-backed CostCurve. Revisit later.
     "Operating reserve demand curve for the group (static or time-series-backed). `ZERO_OFFER_CURVE` means no curve is defined"
     variable::Union{
-        CostCurve{PiecewiseIncrementalCurve, U},
-        CostCurve{<:TimeSeriesPiecewiseIncrementalCurve, U},
+        CostCurve{PiecewiseIncrementalCurve},
+        CostCurve{<:TimeSeriesPiecewiseIncrementalCurve},
     }
     "An extra dictionary for users to add metadata that are not used in simulation"
     ext::Dict{String, Any}
@@ -331,8 +285,7 @@ function GroupReserve{T}(
     ext = Dict{String, Any}(),
     contributing_services = Vector{Service}(),
 ) where {T <: ReserveDirection}
-    U = typeof(get_power_units(variable))
-    return GroupReserve{T, U}(
+    return GroupReserve{T}(
         name, available, requirement, variable, ext, contributing_services,
         InfrastructureSystemsInternal(),
     )
@@ -347,23 +300,7 @@ function GroupReserve{T}(;
     contributing_services = Vector{Service}(),
     internal = InfrastructureSystemsInternal(),
 ) where {T <: ReserveDirection}
-    U = typeof(get_power_units(variable))
-    return GroupReserve{T, U}(
-        name, available, requirement, variable, ext, contributing_services, internal,
-    )
-end
-
-# Deserialization resolves `GroupReserve{T, U}` from metadata and calls it with kwargs.
-function GroupReserve{T, U}(;
-    name,
-    available,
-    requirement,
-    variable = ZERO_OFFER_CURVE,
-    ext = Dict{String, Any}(),
-    contributing_services = Vector{Service}(),
-    internal = InfrastructureSystemsInternal(),
-) where {T <: ReserveDirection, U <: IS.AbstractUnitSystem}
-    return GroupReserve{T, U}(
+    return GroupReserve{T}(
         name, available, requirement, variable, ext, contributing_services, internal,
     )
 end
