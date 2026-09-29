@@ -37,7 +37,7 @@ function ImportExportCost(;
         export_offer_curves,
         energy_import_weekly_limit,
         energy_export_weekly_limit,
-        # The exact field type selects the field constructor, not the compat method below.
+        # The field type routes this to the default constructor, not the compat method below.
         convert(Vector{Service}, ancillary_service_offers),
     )
 end
