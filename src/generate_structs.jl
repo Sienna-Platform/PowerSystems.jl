@@ -258,7 +258,8 @@ const OPENAPI_COMPOUND_MEMBERS = Dict(
 """
 Which **per-unit base** anchors a field's natural-units conversion on the wire -- not
 which physical dimension it has. `:power` means "scale by S_base", `:impedance` by
-Z_base, `:admittance` by Y_base.
+Z_base, `:admittance` by Y_base. `:voltage` is a pass-through: voltages are pu on the wire
+in both document forms, and V_base is the same in CU and SU.
 
 A rate is `:power` for exactly this reason: `pu/min -> MW/min` is a multiplication by
 `base_power`, the same arithmetic as `pu -> MW`, because there is no time *base* to
@@ -271,8 +272,6 @@ const OPENAPI_CONVERSION_BASES = Dict(
     ":mw_per_minute" => :power,
     ":ohm" => :impedance,
     ":siemens" => :admittance,
-    # Voltage is pu on the wire in both document forms (SiennaSchemas `x-unit: pu`), and
-    # V_base is the same in CU and SU, so the value passes through unscaled.
     ":kv" => :voltage,
 )
 

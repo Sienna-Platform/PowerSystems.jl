@@ -47,10 +47,9 @@ Because the three power units share a dimension, any of them is accepted whereve
 power-dimensioned unit is expected — `get_rating(gen, u"MW")` and
 `set_reactive_power!(gen, 25.0 * u"MW")` both work, and `uconvert` handles the relabeling.
 
-Voltages are per-unitized on the component's `base_voltage` (a bus's own, for
-[`ACBus`](@ref) and [`DCBus`](@ref)), which is the same in `CU` and `SU`, so the two
-agree and neither needs the component attached to a system. Only `NU` reads the base
-voltage, and it errors when `base_voltage` is `nothing`:
+Voltage fields are per unit on the component's own `base_voltage`. That base is the same
+in `CU` and `SU`, so both return the same number, even for a component not yet added to
+a system. Converting to `NU` needs `base_voltage` to be set:
 
 ```julia
 get_magnitude(bus, CU)       # 1.02

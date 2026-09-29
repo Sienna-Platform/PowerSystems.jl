@@ -175,15 +175,12 @@ function _base_power_units_error(u)
     )
 end
 
-# `base_voltage` follows the same rule as `base_power`: it is the anchor for every
-# voltage-dimensioned field, so it is only ever read or written in natural units (kV).
-# The one-argument getter is generated (or hand-written for branches/circuits); these add
-# the units-bearing forms on top of it.
+# `base_voltage`, like `base_power`, is a per-unit anchor and so only exists in natural
+# units (kV).
 
 """
-Get a component's base voltage as a bare `Float64` in natural units. The units argument
-must denote natural units: `NU`, or a voltage-dimensioned `Unitful` unit (e.g. `u"kV"`,
-`u"V"`). Per-unit bases (`SU`, `CU`) error. See [`get_base_voltage_unitful`](@ref).
+Get the base voltage in `units`, which must be natural: `NU`, `u"kV"`, `u"V"`, ...
+`SU`/`CU` error. See [`get_base_voltage_unitful`](@ref).
 """
 get_base_voltage(c::UnitsBearer, u) = IS._strip_units(get_base_voltage_unitful(c, u))
 
@@ -203,10 +200,11 @@ _base_voltage_kv(v::Real) = v * u"kV"
 _uconvert_or_nothing(::Unitful.Units, ::Nothing) = nothing
 _uconvert_or_nothing(u::Unitful.Units, q) = Unitful.uconvert(u, q)
 
+# Hand-written: the descriptor marks `base_voltage` `exclude_setter`, since a generated
+# `set_base_voltage!(::ACBus, val)` would be ambiguous with the `Quantity` method.
 """
-Set a bus's or source's `base_voltage` (stored as a bare kV `Float64`). Accepts a bare
-number (interpreted as kV), `nothing`, or a voltage-dimensioned `Unitful.Quantity` (e.g.
-`230.0u"kV"`). Per-unit inputs (`SU`, `CU`) and non-voltage units error.
+Set a bus's or source's `base_voltage` from a bare number (kV), `nothing`, or a voltage
+quantity such as `230.0u"kV"`. `SU`/`CU` and non-voltage units error.
 """
 set_base_voltage!(c::Union{Bus, Source}, val::Union{Nothing, Real}) = c.base_voltage = val
 set_base_voltage!(c::Union{Bus, Source}, val::Unitful.Quantity) =
