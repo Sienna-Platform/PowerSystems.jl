@@ -38,7 +38,7 @@ InfrastructureSystems = {rev = "rh/natural-unit-costs", url = "https://github.co
 InfrastructureTimeSeriesOpenAPIModels = {rev = "rh/natural-unit-costs", subdir = "InfrastructureTimeSeriesOpenAPIModels.jl", url = "https://github.com/Sienna-Platform/PowerOpenAPIModels.git"}
 PowerCoreOpenAPIModels = {rev = "rh/natural-unit-costs", subdir = "PowerCoreOpenAPIModels.jl", url = "https://github.com/Sienna-Platform/PowerOpenAPIModels.git"}
 PowerDynamicsOpenAPIModels = {rev = "rh/natural-unit-costs", subdir = "PowerDynamicsOpenAPIModels.jl", url = "https://github.com/Sienna-Platform/PowerOpenAPIModels.git"}
-PowerFlowFileParser = {rev = "psy6", url = "https://github.com/Sienna-Platform/PowerFlowFileParser.jl.git"}
+PowerFlowFileParser = {rev = "rh/natural-unit-costs", url = "https://github.com/Sienna-Platform/PowerFlowFileParser.jl.git"}
 PowerInvestmentsOpenAPIModels = {rev = "rh/natural-unit-costs", subdir = "PowerInvestmentsOpenAPIModels.jl", url = "https://github.com/Sienna-Platform/PowerOpenAPIModels.git"}
 PowerOpenAPIModels = {rev = "rh/natural-unit-costs", subdir = "PowerOpenAPIModels.jl", url = "https://github.com/Sienna-Platform/PowerOpenAPIModels.git"}
 PowerOperationsOpenAPIModels = {rev = "rh/natural-unit-costs", subdir = "PowerOperationsOpenAPIModels.jl", url = "https://github.com/Sienna-Platform/PowerOpenAPIModels.git"}
