@@ -685,3 +685,42 @@ end
     # component); `add_component!` checks it against the system base.
     @test get_base_power(ln_detached) == 100.0
 end
+
+@testset "Test rebase_component! keeps natural-unit values" begin
+    sys, gen = _sys_with_thermal(; system_base = 100.0, component_base = 250.0)
+    set_ramp_limits!(gen, (up = 0.1 * CU / u"minute", down = 0.2 * CU / u"minute"))
+    nu_before = Dict(f => v for (f, v) in PSY._natural_unit_fields(gen))
+    @test length(nu_before) >= 6  # scalars, min/max pairs, and the ramp rate are all covered
+
+    @test rebase_component!(gen, 500.0) === gen
+    @test get_base_power(gen) == 500.0
+    for (setter, value) in PSY._natural_unit_fields(gen)
+        before = nu_before[setter]
+        @test all(isapprox.(values(Tuple(value)), values(Tuple(before))))
+    end
+    @test get_rating(gen, NU) ≈ 250.0
+    @test get_rating(gen, CU) ≈ 0.5
+    @test get_active_power_limits(gen, NU).max ≈ 250.0
+    @test get_ramp_limits(gen, u"MW/minute").up ≈ 25.0
+
+    # Contrast: set_base_power! moves the base under the stored per-unit values.
+    set_base_power!(gen, 250.0)
+    @test get_rating(gen, NU) ≈ 125.0
+end
+
+@testset "Test rebase_component! refuses per-unit data it can't re-express" begin
+    sys, gen = _sys_with_thermal(; system_base = 100.0, component_base = 250.0)
+    ts = SingleTimeSeries(
+        "max_active_power",
+        TimeArray(collect(DateTime("2024-01-01"):Hour(1):DateTime("2024-01-01T02:00")),
+            [0.5, 0.6, 0.7]);
+        unit_system = CU,
+    )
+    add_time_series!(sys, gen, ts)
+    @test_throws ArgumentError rebase_component!(gen, 500.0)
+    @test get_base_power(gen) == 250.0  # untouched
+
+    # A base shared with the system can't be moved at all.
+    line = first(get_components(Line, PSB.build_system(PSITestSystems, "c_sys5")))
+    @test_throws ErrorException rebase_component!(line, 50.0)
+end

@@ -163,6 +163,86 @@ function _set_base_power!(::SystemBasePower, c, ::Float64)
 end
 
 """
+    rebase_component!(c::Component, new_base_power)
+
+Change `c`'s `base_power` to `new_base_power` (MVA, or a power-dimensioned
+`Unitful.Quantity`) while keeping every unit-converted field's natural-unit value: each is
+re-expressed on the new base. Contrast [`set_base_power!`](@ref), which moves the base under
+the stored per-unit values and so changes what they mean.
+
+Throws an `ArgumentError`, leaving `c` untouched, when `c` holds per-unit data this does not
+re-express: a transformer (its base lives on its circuits), a dynamic injection model or a
+static injector carrying one (dynamic parameters are per-unitized on the device base), cost
+curves stated in component base, or time series declared in component base.
+
+# Examples
+```julia
+rebase_component!(gen, 250.0)
+get_active_power_limits(gen, NU)  # unchanged
+```
+"""
+function rebase_component!(c::Component, new_base_power)
+    _check_rebaseable(c)
+    # Read everything before moving the base: every read converts through it.
+    fields = _natural_unit_fields(c)
+    set_base_power!(c, new_base_power)
+    for (setter, value) in fields
+        setter(c, value)
+    end
+    return c
+end
+
+# The unit-converted fields are the ones whose getter carries a `display_units_arg` trait;
+# every such field uses the standard `get_<field>`/`set_<field>!` names.
+function _natural_unit_fields(c::Component)
+    fields = Pair{Function, Any}[]
+    for name in fieldnames(typeof(c))
+        name === :base_power && continue
+        getter_name = Symbol("get_$name")
+        isdefined(PowerSystems, getter_name) || continue
+        getter = getproperty(PowerSystems, getter_name)
+        ismissing(IS.display_units_arg(getter, typeof(c))) && continue
+        value = IS.unitful_variant(getter)(c, NU)
+        isnothing(value) && continue
+        push!(fields, getproperty(PowerSystems, Symbol("set_$(name)!")) => value)
+    end
+    return fields
+end
+
+function _check_rebaseable(c::Component)
+    reason = _rebase_blocker(c)
+    isnothing(reason) && return
+    throw(ArgumentError("cannot rebase $(summary(c)): $reason"))
+end
+
+function _rebase_blocker(c::Component)
+    c isa Union{TwoWindingTransformer, ThreeWindingTransformer} &&
+        return "a transformer's per-unit data lives on its circuits"
+    c isa DynamicInjection &&
+        return "dynamic model parameters are per-unitized on the device base"
+    c isa StaticInjection && !isnothing(get_dynamic_injector(c)) &&
+        return "its dynamic injector's parameters are per-unitized on the device base"
+    _has_component_base_cost(c) &&
+        return "its operation cost has curves in component base; restate them in natural units first"
+    any(
+        md -> IS.get_unit_system(md) isa ComponentBaseUnit,
+        IS.list_time_series_metadata(c),
+    ) &&
+        return "it has time series declared in component base; rebase before attaching them"
+    return nothing
+end
+
+_is_component_base_curve(x) =
+    applicable(get_power_units, x) && get_power_units(x) isa ComponentBaseUnit
+
+function _has_component_base_cost(c::Component)
+    applicable(get_operation_cost, c) || return false
+    cost = get_operation_cost(c)
+    _is_component_base_curve(cost) && return true
+    return any(f -> _is_component_base_curve(getfield(cost, f)), fieldnames(typeof(cost)))
+end
+
+"""
 Reject any attempt to read/write `base_power` in non-natural units.
 """
 function _base_power_units_error(u)
