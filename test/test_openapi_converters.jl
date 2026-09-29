@@ -588,7 +588,6 @@ end
         start_up = PSY.PC.ThermalGenerationCostStartUp(200.0),
         variable_operation_cost = PSY.PC.ProductionVariableCostCurve(
             PSY.PC.CostCurve(;
-                power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
                 value_curve = PSY.PC.ValueCurve(
                     PSY.PC.InputOutputCurve(;
                         function_data = PSY.PC.InputOutputCurveFunctionData(
@@ -672,7 +671,6 @@ end
         cost_type = "LOAD",
         fixed = 2400.0,
         variable_operation_cost = PSY.PC.CostCurve(;
-            power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
             value_curve = PSY.PC.ValueCurve(
                 PSY.PC.InputOutputCurve(;
                     function_data = PSY.PC.InputOutputCurveFunctionData(
@@ -781,7 +779,6 @@ end
         fixed = 1.0,
         variable_operation_cost = PSY.PC.ProductionVariableCostCurve(
             PSY.PC.CostCurve(;
-                power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
                 value_curve = PSY.PC.ValueCurve(
                     PSY.PC.InputOutputCurve(;
                         function_data = PSY.PC.InputOutputCurveFunctionData(
@@ -982,7 +979,6 @@ end
         cost_type = "RENEWABLE",
         fixed = 0.0,
         variable_operation_cost = PSY.PC.CostCurve(;
-            power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
             value_curve = PSY.PC.ValueCurve(
                 PSY.PC.InputOutputCurve(;
                     function_data = PSY.PC.InputOutputCurveFunctionData(
@@ -1703,7 +1699,6 @@ end
     @test_throws ErrorException PSY._resolve_reserve_direction("BOGUS", "test")
 
     ordc_po = PSY.PC.CostCurve(;
-        power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
         value_curve = PSY.PC.ValueCurve(
             PSY.PC.IncrementalCurve(;
                 function_data = PSY.PC.IncrementalCurveFunctionData(
@@ -2054,7 +2049,6 @@ end
                 cost_type = "LOAD",
                 fixed = 2400.0,
                 variable_operation_cost = PSY.PC.CostCurve(;
-                    power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
                     value_curve = PSY.PC.ValueCurve(_io_curve(150.0, 0.0)),
                     vom_cost = _io_curve(0.0, 0.0),
                 ),

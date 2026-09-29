@@ -6,12 +6,10 @@ _po_linear_io(prop, const_) = PSY.PC.InputOutputCurve(;
     ),
 )
 
-_po_cost_curve(; power_units = "NATURAL_UNITS", vom_cost = _po_linear_io(0.0, 0.0)) =
-    PSY.PC.CostCurve(;
-        power_units = PSY.IC.UnitSystem(power_units),
-        value_curve = PSY.PC.ValueCurve(_po_linear_io(10.0, 5.0)),
-        vom_cost = vom_cost,
-    )
+_po_cost_curve(; vom_cost = _po_linear_io(0.0, 0.0)) = PSY.PC.CostCurve(;
+    value_curve = PSY.PC.ValueCurve(_po_linear_io(10.0, 5.0)),
+    vom_cost = vom_cost,
+)
 
 @testset "convert_cost: FunctionData variants" begin
     @test PSY.convert_cost(
@@ -67,39 +65,31 @@ end
     @test avg == AverageRateCurve(LinearFunctionData(1.0, 0.0), 20.0)
 end
 
-@testset "convert_cost: power_units marker mapping" begin
-    # The wire enum is COMPONENT_BASE/NATURAL_UNITS only — there is no system-base member.
-    for (str, marker) in (
-        ("NATURAL_UNITS", NaturalUnit()),
-        ("COMPONENT_BASE", ComponentBaseUnit()),
+@testset "convert_cost: cost power_units from an older document" begin
+    # The schema has no cost `power_units`, so decoding keeps it as an additional property.
+    function with_units(po, units)
+        raw = PSY.IC.encode(po)
+        raw["power_units"] = units
+        return PSY.IC.decode(typeof(po), raw)
+    end
+    fc_po = PSY.PC.FuelCurve(;
+        value_curve = PSY.PC.ValueCurve(_po_linear_io(10.0, 5.0)),
+        fuel_cost = 2.0,
+        vom_cost = _po_linear_io(0.0, 0.0),
     )
-        curve = PSY.convert_cost(_po_cost_curve(; power_units = str))
-        @test get_power_units(curve) == marker
-        @test PSY._power_units_to_string(marker, curve).value == str
+    for po in (_po_cost_curve(), fc_po)
+        @test PSY.convert_cost(with_units(po, "NATURAL_UNITS")) == PSY.convert_cost(po)
+        @test_throws ArgumentError PSY.convert_cost(with_units(po, "COMPONENT_BASE"))
+        @test_throws ArgumentError PSY.convert_cost(with_units(po, "SYSTEM_BASE"))
     end
-    # Tested directly against the barrier: PC.CostCurve's own OpenAPI-generated enum
-    # validator would reject "BOGUS"/"SYSTEM_BASE" at construction time, before
-    # convert_cost ever runs.
-    @test_throws ErrorException PSY._with_power_units(identity, "BOGUS")
-    @test_throws ErrorException PSY._with_power_units(identity, "SYSTEM_BASE")
-    @test_throws ErrorException PSY._with_power_units(identity, nothing)
-
-    # The barrier hands `f` a CONCRETE marker, never a Union — that is the whole point of
-    # its being higher-order, since the marker is a type parameter of the curve it builds.
-    for (str, marker) in
-        (("NATURAL_UNITS", NaturalUnit()), ("COMPONENT_BASE", ComponentBaseUnit()))
-        @test PSY._with_power_units(typeof, str) === typeof(marker)
-    end
-
-    # A SystemBaseUnit curve has no valid wire value and no reachable base_power to
-    # rescale against, so export errors rather than silently relabelling it COMPONENT_BASE.
-    sb_curve = CostCurve(LinearCurve(10.0, 5.0), SystemBaseUnit())
-    @test_throws ErrorException PSY.convert_cost_to_openapi(sb_curve)
+    # Export writes no cost `power_units`.
+    exported = PSY.IC.encode(PSY.convert_cost_to_openapi(CostCurve(LinearCurve(10.0, 5.0))))
+    @test !haskey(exported, "power_units")
 end
 
 @testset "convert_cost: CostCurve and FuelCurve" begin
     cc = PSY.convert_cost(_po_cost_curve())
-    @test cc isa CostCurve{LinearCurve, NaturalUnit}
+    @test cc isa CostCurve{LinearCurve}
     @test get_function_data(get_value_curve(cc)) == LinearFunctionData(10.0, 5.0)
     @test get_vom_cost(cc) == LinearCurve(0.0)
 
@@ -108,7 +98,6 @@ end
 
     fc = PSY.convert_cost(
         PSY.PC.FuelCurve(;
-            power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
             value_curve = PSY.PC.ValueCurve(
                 PSY.PC.IncrementalCurve(;
                     function_data = PSY.PC.IncrementalCurveFunctionData(
@@ -236,8 +225,7 @@ end
     @test get_energy_surplus_cost(cost) == 4.0
 end
 
-_po_offer_curve(x_coords, y_coords; power_units = "NATURAL_UNITS") = PSY.PC.CostCurve(;
-    power_units = PSY.IC.UnitSystem(power_units),
+_po_offer_curve(x_coords, y_coords) = PSY.PC.CostCurve(;
     value_curve = PSY.PC.ValueCurve(
         PSY.PC.IncrementalCurve(;
             function_data = PSY.PC.IncrementalCurveFunctionData(
@@ -313,7 +301,6 @@ end
     @test PSY.convert_reserve_variable(nothing) === PSY.ZERO_OFFER_CURVE
 
     po_ordc = PSY.PC.CostCurve(;
-        power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
         value_curve = PSY.PC.ValueCurve(
             PSY.PC.IncrementalCurve(;
                 function_data = PSY.PC.IncrementalCurveFunctionData(
@@ -334,7 +321,6 @@ end
     # Neither set.
     @test_throws ErrorException PSY.convert_cost(
         PSY.PC.FuelCurve(;
-            power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
             value_curve = PSY.PC.ValueCurve(_po_linear_io(1.0, 0.0)),
             vom_cost = _po_linear_io(0.0, 0.0),
         ),
@@ -343,7 +329,6 @@ end
     # resolves, so this errors before ever touching a store.
     @test_throws ErrorException PSY.convert_cost(
         PSY.PC.FuelCurve(;
-            power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
             value_curve = PSY.PC.ValueCurve(_po_linear_io(1.0, 0.0)),
             fuel_cost = 3.5,
             fuel_cost_time_series = 7,
@@ -389,7 +374,6 @@ end
         fc = PSY._with_import_store(store) do
             PSY.convert_cost(
                 PSY.PC.FuelCurve(;
-                    power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
                     value_curve = PSY.PC.ValueCurve(
                         PSY.PC.TimeSeriesIncrementalCurve(;
                             function_data = PSY.IC.FunctionData(
@@ -419,7 +403,6 @@ end
     # the 1-arg ambient form errors rather than silently treating it as absent.
     @test_throws ErrorException PSY.convert_cost(
         PSY.PC.FuelCurve(;
-            power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
             value_curve = PSY.PC.ValueCurve(_po_linear_io(1.0, 0.0)),
             fuel_cost_time_series = 7,
             vom_cost = _po_linear_io(0.0, 0.0),
@@ -439,7 +422,6 @@ end
                 ),
             ),
             incremental_offer_curves = PSY.PC.CostCurve(;
-                power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
                 value_curve = PSY.PC.ValueCurve(
                     PSY.PC.TimeSeriesIncrementalCurve(;
                         function_data = PSY.IC.FunctionData(
@@ -450,7 +432,6 @@ end
                 vom_cost = _po_linear_io(0.0, 0.0),
             ),
             decremental_offer_curves = PSY.PC.CostCurve(;
-                power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
                 value_curve = PSY.PC.ValueCurve(
                     PSY.PC.TimeSeriesIncrementalCurve(;
                         function_data = PSY.IC.FunctionData(

@@ -294,7 +294,6 @@ function make_openapi_test_doc(;
         start_up = PSY.PC.ThermalGenerationCostStartUp(200.0),
         variable_operation_cost = PSY.PC.ProductionVariableCostCurve(
             PSY.PC.CostCurve(;
-                power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
                 value_curve = PSY.PC.ValueCurve(
                     PSY.PC.InputOutputCurve(;
                         function_data = PSY.PC.InputOutputCurveFunctionData(

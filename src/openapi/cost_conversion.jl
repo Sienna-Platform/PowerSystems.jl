@@ -56,27 +56,20 @@ _require(::Nothing, context::AbstractString) =
 _require(x, ::AbstractString) = x
 
 """
-Call `f` with the unit marker the document string `s` names.
-
-Higher-order rather than marker-returning: the marker is a type parameter of
-`CostCurve`/`FuelCurve`, so returning it from a runtime string would hand the caller a
-`Union{NaturalUnit, ComponentBaseUnit}` and make the construction dynamic. Calling `f` inside each
-branch specializes the whole construction on one concrete marker.
+Cost curves are natural units only. An older document may carry a cost `power_units`, which
+the bindings keep in `additional_properties`: `NATURAL_UNITS` is ignored, any other basis is
+refused rather than silently read as MW.
 """
-_with_power_units(::Any, ::Union{Nothing, IC.Absent}) =
-    error("convert_cost: power_units is required and missing")
-
-# The document's `power_units` is a validating wrapper struct under OpenAPI.jl 1.x, not the
-# bare string 0.2 produced; unwrap by dispatch so the branch below keeps specializing on a
-# concrete marker.
-_with_power_units(f, units::IC.UnitSystem) = _with_power_units(f, units.value)
-
-function _with_power_units(f, s::AbstractString)
-    s == "NATURAL_UNITS" && return f(NaturalUnit())
-    s == "COMPONENT_BASE" && return f(ComponentBaseUnit())
-    error(
-        "convert_cost: unmapped power_units \"$s\" — expected one of " *
-        "NATURAL_UNITS, COMPONENT_BASE",
+_check_cost_power_units(c::Union{PC.CostCurve, PC.FuelCurve}) =
+    _check_cost_power_units(get(c.additional_properties, "power_units", nothing))
+_check_cost_power_units(::Nothing) = nothing
+function _check_cost_power_units(units)
+    units == "NATURAL_UNITS" && return
+    throw(
+        ArgumentError(
+            "convert_cost: cost curves are natural units only (x axis in MW); got " *
+            "power_units $(repr(units)). Convert the curve to natural units first.",
+        ),
     )
 end
 
@@ -228,22 +221,18 @@ convert_cost(vc::PC.TimeSeriesAverageRateCurve) = convert_cost(vc, _current_impo
 # ── ProductionVariableCostCurve: CostCurve / FuelCurve ─────────────────────────
 
 function convert_cost(c::PC.CostCurve)
+    _check_cost_power_units(c)
     value_curve = convert_cost(_require(c.value_curve, "CostCurve.value_curve"))
-    vom_cost = _vom_cost(c.vom_cost)
-    return _with_power_units(c.power_units) do units
-        CostCurve(; value_curve = value_curve, power_units = units, vom_cost = vom_cost)
-    end
+    return CostCurve(value_curve, _vom_cost(c.vom_cost))
 end
 
 """Store-aware form: `value_curve` may be time-series-backed (`MarketBidTimeSeriesCost`'s
 `incremental_offer_curves`/`decremental_offer_curves`, `ImportExportTimeSeriesCost`'s
 `import_offer_curves`/`export_offer_curves`)."""
 function convert_cost(c::PC.CostCurve, store)
+    _check_cost_power_units(c)
     value_curve = convert_cost(_require(c.value_curve, "CostCurve.value_curve"), store)
-    vom_cost = _vom_cost(c.vom_cost)
-    return _with_power_units(c.power_units) do units
-        CostCurve(; value_curve = value_curve, power_units = units, vom_cost = vom_cost)
-    end
+    return CostCurve(value_curve, _vom_cost(c.vom_cost))
 end
 
 """Resolve `FuelCurve`'s two mutually exclusive fields. `store` is unused on the
@@ -260,6 +249,7 @@ _fuel_cost_fields(::Any, ::Real, ::Integer) = error(
 )
 
 function convert_cost(f::PC.FuelCurve, store)
+    _check_cost_power_units(f)
     value_curve = convert_cost(_require(f.value_curve, "FuelCurve.value_curve"), store)
     vom_cost = _vom_cost(f.vom_cost)
     fuel_cost, fuel_cost_time_series = _fuel_cost_fields(
@@ -267,15 +257,12 @@ function convert_cost(f::PC.FuelCurve, store)
         _optional_from_wire(f.fuel_cost),
         _optional_from_wire(f.fuel_cost_time_series),
     )
-    return _with_power_units(f.power_units) do units
-        FuelCurve(;
-            value_curve = value_curve,
-            power_units = units,
-            fuel_cost = fuel_cost,
-            fuel_cost_time_series = fuel_cost_time_series,
-            vom_cost = vom_cost,
-        )
-    end
+    return FuelCurve(;
+        value_curve = value_curve,
+        fuel_cost = fuel_cost,
+        fuel_cost_time_series = fuel_cost_time_series,
+        vom_cost = vom_cost,
+    )
 end
 
 """Resolve `FuelCurve`'s two mutually exclusive fields for the ambient 1-arg form: the
@@ -300,21 +287,19 @@ variant pulls the ambient store itself via its own 1-arg method, regardless of w
 only fetched when `fuel_cost_time_series` is actually present, so a scalar `fuel_cost` with a
 non-time-series value curve still converts with no active import bound at all."""
 function convert_cost(f::PC.FuelCurve)
+    _check_cost_power_units(f)
     value_curve = convert_cost(_require(f.value_curve, "FuelCurve.value_curve"))
     vom_cost = _vom_cost(f.vom_cost)
     fuel_cost, fuel_cost_time_series = _fuel_cost_fields_ambient(
         _optional_from_wire(f.fuel_cost),
         _optional_from_wire(f.fuel_cost_time_series),
     )
-    return _with_power_units(f.power_units) do units
-        FuelCurve(;
-            value_curve = value_curve,
-            power_units = units,
-            fuel_cost = fuel_cost,
-            fuel_cost_time_series = fuel_cost_time_series,
-            vom_cost = vom_cost,
-        )
-    end
+    return FuelCurve(;
+        value_curve = value_curve,
+        fuel_cost = fuel_cost,
+        fuel_cost_time_series = fuel_cost_time_series,
+        vom_cost = vom_cost,
+    )
 end
 
 _optional_cost_curve(::Nothing) = zero(CostCurve)
