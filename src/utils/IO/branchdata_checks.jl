@@ -123,8 +123,8 @@ function line_rating_calculation(l::Union{Line, MonitoredLine})
     b = -l.x / (l.r^2 + l.x^2)
     y_mag = sqrt(g^2 + b^2)
 
-    from_voltage_limits = get_voltage_limits(get_arc(l).from)
-    to_voltage_limits = get_voltage_limits(get_arc(l).to)
+    from_voltage_limits = get_voltage_limits(get_arc(l).from, CU)
+    to_voltage_limits = get_voltage_limits(get_arc(l).to, CU)
 
     fr_vmin = isnothing(from_voltage_limits) ? 0.9 : from_voltage_limits.min
     to_vmin = isnothing(to_voltage_limits) ? 0.9 : to_voltage_limits.min

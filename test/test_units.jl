@@ -396,7 +396,7 @@ end
 
     # Transfer to sys_b (50 MVA base). Same stored CU value ⇒ SU value doubles.
     sys_b = System(50.0)
-    bus_b = ACBus(;
+    bus_b = ACBus(; input_basis = CU,
         number = 1, name = "b1", available = true,
         bustype = ACBusTypes.REF, angle = 0.0, magnitude = 1.0,
         voltage_limits = (min = 0.9, max = 1.1), base_voltage = 138.0,
@@ -426,7 +426,7 @@ end
 
 @testset "HybridSystem attach/detach propagates base value to subcomponents" begin
     sys = System(100.0)
-    bus = ACBus(;
+    bus = ACBus(; input_basis = CU,
         number = 1, name = "b1", available = true,
         bustype = ACBusTypes.REF, angle = 0.0, magnitude = 1.0,
         voltage_limits = (min = 0.9, max = 1.1), base_voltage = 138.0,
@@ -466,12 +466,12 @@ end
 # get_rating_b returns Float64 (the small-union contract under test).
 function _sys_with_line()
     sys = System(100.0)
-    bus_from = ACBus(;
+    bus_from = ACBus(; input_basis = CU,
         number = 1, name = "f1", available = true,
         bustype = ACBusTypes.REF, angle = 0.0, magnitude = 1.0,
         voltage_limits = (min = 0.9, max = 1.1), base_voltage = 138.0,
     )
-    bus_to = ACBus(;
+    bus_to = ACBus(; input_basis = CU,
         number = 2, name = "t1", available = true,
         bustype = ACBusTypes.PQ, angle = 0.0, magnitude = 1.0,
         voltage_limits = (min = 0.9, max = 1.1), base_voltage = 138.0,
@@ -736,4 +736,41 @@ end
     )
     @test get_r(line, CU) ≈ 0.01
     @test get_x(line, CU) == 0.1
+end
+
+@testset "voltage fields convert through the bus's base voltage" begin
+    bus = ACBus(; input_basis = NU,
+        number = 1, name = "b", available = true, bustype = ACBusTypes.PQ,
+        angle = 0.0, magnitude = 235.0, voltage_limits = (min = 207.0, max = 253.0),
+        base_voltage = 230.0,
+    )
+    @test get_magnitude(bus, CU) ≈ 235.0 / 230.0
+    @test get_magnitude(bus, SU) ≈ 235.0 / 230.0  # V_base is shared, no system needed
+    @test get_magnitude_unitful(bus, NU) ≈ 235.0u"kV"
+    @test all(values(get_voltage_limits(bus, u"kV")) .≈ (207.0, 253.0))
+    @test_throws ArgumentError get_magnitude(bus)
+    @test_throws ArgumentError set_magnitude!(bus, 1.0)
+    set_magnitude!(bus, 0.95 * CU)
+    @test get_magnitude(bus, CU) == 0.95
+    set_magnitude!(bus, 115_000.0u"V")
+    @test get_magnitude(bus, CU) ≈ 0.5
+
+    # base_voltage is natural-units only, like base_power.
+    @test get_base_voltage(bus) == 230.0
+    @test get_base_voltage(bus, NU) == 230.0
+    @test get_base_voltage(bus, u"V") == 230_000.0
+    @test get_base_voltage_unitful(bus) == 230.0u"kV"
+    @test_throws ArgumentError get_base_voltage(bus, CU)
+    @test_throws ArgumentError get_base_voltage(bus, SU)
+    set_base_voltage!(bus, 115)
+    @test get_base_voltage(bus) == 115.0
+    set_base_voltage!(bus, 345.0u"kV")
+    @test get_base_voltage(bus) == 345.0
+    @test_throws ArgumentError set_base_voltage!(bus, 1.0 * CU)
+    @test_throws ArgumentError set_base_voltage!(bus, 1.0 * SU)
+    @test_throws Unitful.DimensionError set_base_voltage!(bus, 1.0u"MW")
+    set_base_voltage!(bus, nothing)
+    @test get_base_voltage_unitful(bus, NU) === nothing
+    @test get_magnitude(bus, CU) ≈ 0.5  # relative reads never need the base
+    @test_throws ErrorException get_magnitude(bus, NU)
 end

@@ -98,7 +98,7 @@ and hard coding any missing data.
 
 ```julia
 for row in eachrow(bus_params)
-    bus = ACBus(;
+    bus = ACBus(; input_basis = CU,
         number = row[bus_number],
         name = "bus$(row[bus_number])",
         available = true,

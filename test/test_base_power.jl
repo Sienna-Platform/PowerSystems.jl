@@ -249,7 +249,7 @@ end
 @testset "Suggested natural units are what the accessors accept" begin
     sys, gen = _sys_with_thermal(; system_base = 100.0, component_base = 250.0)
     bus1 = get_component(ACBus, sys, "b1")
-    bus2 = ACBus(;
+    bus2 = ACBus(; input_basis = CU,
         number = 2, name = "b2", available = true,
         bustype = ACBusTypes.PV, angle = 0.0, magnitude = 1.0,
         voltage_limits = (min = 0.9, max = 1.1), base_voltage = 138.0,
@@ -622,12 +622,12 @@ end
 @testset "SystemBasePower components must state the system base" begin
     system_base = 1000.0
     sys = System(system_base)
-    b1 = ACBus(;
+    b1 = ACBus(; input_basis = CU,
         number = 1, name = "b1", available = true,
         bustype = ACBusTypes.REF, angle = 0.0, magnitude = 1.0,
         voltage_limits = (min = 0.9, max = 1.1), base_voltage = 138.0,
     )
-    b2 = ACBus(;
+    b2 = ACBus(; input_basis = CU,
         number = 2, name = "b2", available = true,
         bustype = ACBusTypes.PQ, angle = 0.0, magnitude = 1.0,
         voltage_limits = (min = 0.9, max = 1.1), base_voltage = 138.0,

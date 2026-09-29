@@ -12,7 +12,7 @@ using TimeSeries
 using DataStructures: SortedDict
 
 # Create a bus
-bus = ACBus(;
+bus = ACBus(; input_basis = CU,
     number = 1,
     name = "bus1",
     available = true,

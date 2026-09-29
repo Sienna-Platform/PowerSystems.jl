@@ -258,7 +258,8 @@ const OPENAPI_COMPOUND_MEMBERS = Dict(
 """
 Which **per-unit base** anchors a field's natural-units conversion on the wire -- not
 which physical dimension it has. `:power` means "scale by S_base", `:impedance` by
-Z_base, `:admittance` by Y_base.
+Z_base, `:admittance` by Y_base. `:voltage` is a pass-through: voltages are pu on the wire
+in both document forms, and V_base is the same in CU and SU.
 
 A rate is `:power` for exactly this reason: `pu/min -> MW/min` is a multiplication by
 `base_power`, the same arithmetic as `pu -> MW`, because there is no time *base* to
@@ -271,6 +272,7 @@ const OPENAPI_CONVERSION_BASES = Dict(
     ":mw_per_minute" => :power,
     ":ohm" => :impedance,
     ":siemens" => :admittance,
+    ":kv" => :voltage,
 )
 
 """
@@ -462,7 +464,7 @@ end
 """
 Classify the natural-units conversion rule for a scalar/compound field from the existing
 `needs_conversion` + `conversion_unit` descriptor keys. Returns `:none`, `:power`,
-`:impedance`, or `:admittance`.
+`:impedance`, `:admittance`, or `:voltage` (pass-through, see `OPENAPI_CONVERSION_BASES`).
 """
 function openapi_natural_conversion(struct_name, field)
     if !get(field, "needs_conversion", false)
@@ -587,7 +589,7 @@ function openapi_scalar_exprs(field_name, conversion, nullable, bases, default_e
     if !isnothing(fallback)
         device = openapi_default_wrap(field_name, fallback)
     end
-    if conversion == :none
+    if conversion in (:none, :voltage)
         return (device, device)
     end
     op, base = openapi_conversion_op_base(conversion, bases)
@@ -630,7 +632,7 @@ longer changes the emitted expression."""
 function openapi_compound_exprs(field_name, bare, members, conversion, nullable, bases)
     extractor = OPENAPI_IMPORT_COMPOUND_EXTRACTORS[bare]
     device = "$extractor(po.$field_name)"
-    if conversion == :none
+    if conversion in (:none, :voltage)
         return (device, device)
     end
     op, base = openapi_conversion_op_base(conversion, bases)
@@ -878,8 +880,9 @@ function openapi_export_scalar_exprs(
     bases,
     unit_arg,
 )
-    if conversion == :none
-        device = "$getter(value)"
+    if conversion in (:none, :voltage)
+        # A `:voltage` getter still needs its units argument; the value is not rescaled.
+        device = conversion == :none ? "$getter(value)" : "$getter(value, $unit_arg)"
         if !nullable
             return (device, device)
         end
@@ -960,6 +963,10 @@ function openapi_export_compound_exprs(
         )
     end
     device_ctor = openapi_export_compound_ctor_device(ctors, nullable)
+    if conversion == :voltage
+        device = "$device_ctor($getter(value, $unit_arg))"
+        return (device, device)
+    end
     natural_ctor = openapi_export_compound_ctor_natural(ctors, nullable, conversion)
     if isnothing(device_ctor) || isnothing(natural_ctor)
         variant = "required"

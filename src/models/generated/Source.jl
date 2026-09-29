@@ -95,11 +95,12 @@ function Source(name, available, bus, active_power=0.0, reactive_power=0.0, acti
 end
 
 function Source(; name, available, bus, active_power=0.0, reactive_power=0.0, active_power_limits=(min=0.0, max=0.0), reactive_power_limits=(min=0.0, max=0.0), R_th=0.0, X_th=0.0, internal_voltage=1.0, internal_angle=0.0, base_power=100.0, base_voltage=nothing, operation_cost=ImportExportCost(nothing), dynamic_injector=nothing, services=Device[], ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Union{ComponentBaseUnit, NaturalUnit}, )
-    value = Source(name, available, bus, _placeholder(active_power), _placeholder(reactive_power), _placeholder(active_power_limits), _placeholder(reactive_power_limits), R_th, X_th, internal_voltage, internal_angle, base_power, base_voltage, operation_cost, dynamic_injector, services, ext, internal, )
+    value = Source(name, available, bus, _placeholder(active_power), _placeholder(reactive_power), _placeholder(active_power_limits), _placeholder(reactive_power_limits), R_th, X_th, _placeholder(internal_voltage), internal_angle, base_power, base_voltage, operation_cost, dynamic_injector, services, ext, internal, )
     set_active_power!(value, _tag(active_power, input_basis, Val(:mw)))
     set_reactive_power!(value, _tag(reactive_power, input_basis, Val(:mvar)))
     set_active_power_limits!(value, _tag(active_power_limits, input_basis, Val(:mw)))
     set_reactive_power_limits!(value, _tag(reactive_power_limits, input_basis, Val(:mvar)))
+    set_internal_voltage!(value, _tag(internal_voltage, input_basis, Val(:kv)))
     return value
 end
 _takes_input_basis(::Type{<:Source}) = true
@@ -170,8 +171,14 @@ InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_limits_unitf
 get_R_th(value::Source) = value.R_th
 """Get [`Source`](@ref) `X_th`."""
 get_X_th(value::Source) = value.X_th
-"""Get [`Source`](@ref) `internal_voltage`."""
-get_internal_voltage(value::Source) = value.internal_voltage
+"""Get [`Source`](@ref) `internal_voltage` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_internal_voltage_unitful`](@ref)."""
+get_internal_voltage(value::Source, units) = InfrastructureSystems._strip_units(get_value(value, Val(:internal_voltage), Val(:kv), units))
+"""Get [`Source`](@ref) `internal_voltage` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_internal_voltage`](@ref)."""
+get_internal_voltage_unitful(value::Source, units) = get_value(value, Val(:internal_voltage), Val(:kv), units)
+get_internal_voltage(value::Source) = _units_arg_required(get_internal_voltage, value, :internal_voltage, Val(:kv))
+get_internal_voltage_unitful(value::Source) = _units_arg_required(get_internal_voltage_unitful, value, :internal_voltage, Val(:kv))
+InfrastructureSystems.display_units_arg(::typeof(get_internal_voltage), ::Type{Source}) = InfrastructureSystems.SU
+InfrastructureSystems.display_units_arg(::typeof(get_internal_voltage_unitful), ::Type{Source}) = InfrastructureSystems.SU
 """Get [`Source`](@ref) `internal_angle`."""
 get_internal_angle(value::Source) = value.internal_angle
 
@@ -212,11 +219,10 @@ set_R_th!(value::Source, val) = value.R_th = val
 """Set [`Source`](@ref) `X_th`."""
 set_X_th!(value::Source, val) = value.X_th = val
 """Set [`Source`](@ref) `internal_voltage`."""
-set_internal_voltage!(value::Source, val) = value.internal_voltage = val
+set_internal_voltage!(value::Source, val) = value.internal_voltage = set_value(value, Val(:internal_voltage), val, Val(:kv))
+set_internal_voltage!(value::Source, val::_UntaggedNumber) = _units_tag_required(set_internal_voltage!, value, :internal_voltage, Val(:kv), val)
 """Set [`Source`](@ref) `internal_angle`."""
 set_internal_angle!(value::Source, val) = value.internal_angle = val
-"""Set [`Source`](@ref) `base_voltage`."""
-set_base_voltage!(value::Source, val) = value.base_voltage = val
 """Set [`Source`](@ref) `operation_cost`."""
 set_operation_cost!(value::Source, val) = value.operation_cost = val
 """Set [`Source`](@ref) `services`."""

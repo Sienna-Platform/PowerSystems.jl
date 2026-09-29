@@ -202,7 +202,7 @@ end
 function System(
     ::Nothing;
     buses = [
-        ACBus(;
+        ACBus(; input_basis = CU,
             number = 0,
             name = "init",
             bustype = ACBusTypes.REF,

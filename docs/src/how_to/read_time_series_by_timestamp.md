@@ -25,7 +25,7 @@ using Dates
 using TimeSeries
 
 sys = System(100.0)
-bus = ACBus(;
+bus = ACBus(; input_basis = CU,
     available = true,
     number = 1,
     name = "bus1",

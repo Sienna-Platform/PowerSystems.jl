@@ -35,6 +35,7 @@ An AC bus
 - `load_zone::Union{Nothing, LoadZone}`: (default: `nothing`) the load zone containing the bus
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
+- `input_basis`: (keyword constructor only, required) `CU` or `NU`, the units of bare numbers on unit-bearing fields. Tagged values (`50.0u"MW"`) keep their own units
 """
 mutable struct ACBus <: Bus
     "A unique bus identification number (positive integer)"
@@ -85,9 +86,13 @@ function ACBus(number, name, available, bustype, angle, magnitude, voltage_limit
     ACBus(number, name, available, bustype, angle, magnitude, voltage_limits, base_voltage, area, load_zone, ext, InfrastructureSystemsInternal(), )
 end
 
-function ACBus(; number, name, available, bustype, angle, magnitude, voltage_limits, base_voltage, area=nothing, load_zone=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), )
-    ACBus(number, name, available, bustype, angle, magnitude, voltage_limits, base_voltage, area, load_zone, ext, internal, )
+function ACBus(; number, name, available, bustype, angle, magnitude, voltage_limits, base_voltage, area=nothing, load_zone=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Union{ComponentBaseUnit, NaturalUnit}, )
+    value = ACBus(number, name, available, bustype, angle, _placeholder(magnitude), _placeholder(voltage_limits), base_voltage, area, load_zone, ext, internal, )
+    set_magnitude!(value, _tag(magnitude, input_basis, Val(:kv)))
+    set_voltage_limits!(value, _tag(voltage_limits, input_basis, Val(:kv)))
+    return value
 end
+_takes_input_basis(::Type{<:ACBus}) = true
 
 # Constructor for demo purposes; non-functional.
 function ACBus(::Nothing)
@@ -103,6 +108,7 @@ function ACBus(::Nothing)
         area=nothing,
         load_zone=nothing,
         ext=Dict{String, Any}(),
+        input_basis=CU,
     )
 end
 
@@ -116,10 +122,22 @@ get_available(value::ACBus) = value.available
 get_bustype(value::ACBus) = value.bustype
 """Get [`ACBus`](@ref) `angle`."""
 get_angle(value::ACBus) = value.angle
-"""Get [`ACBus`](@ref) `magnitude`."""
-get_magnitude(value::ACBus) = value.magnitude
-"""Get [`ACBus`](@ref) `voltage_limits`."""
-get_voltage_limits(value::ACBus) = value.voltage_limits
+"""Get [`ACBus`](@ref) `magnitude` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_magnitude_unitful`](@ref)."""
+get_magnitude(value::ACBus, units) = InfrastructureSystems._strip_units(get_value(value, Val(:magnitude), Val(:kv), units))
+"""Get [`ACBus`](@ref) `magnitude` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_magnitude`](@ref)."""
+get_magnitude_unitful(value::ACBus, units) = get_value(value, Val(:magnitude), Val(:kv), units)
+get_magnitude(value::ACBus) = _units_arg_required(get_magnitude, value, :magnitude, Val(:kv))
+get_magnitude_unitful(value::ACBus) = _units_arg_required(get_magnitude_unitful, value, :magnitude, Val(:kv))
+InfrastructureSystems.display_units_arg(::typeof(get_magnitude), ::Type{ACBus}) = InfrastructureSystems.SU
+InfrastructureSystems.display_units_arg(::typeof(get_magnitude_unitful), ::Type{ACBus}) = InfrastructureSystems.SU
+"""Get [`ACBus`](@ref) `voltage_limits` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_voltage_limits_unitful`](@ref)."""
+get_voltage_limits(value::ACBus, units) = InfrastructureSystems._strip_units(get_value(value, Val(:voltage_limits), Val(:kv), units))
+"""Get [`ACBus`](@ref) `voltage_limits` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_voltage_limits`](@ref)."""
+get_voltage_limits_unitful(value::ACBus, units) = get_value(value, Val(:voltage_limits), Val(:kv), units)
+get_voltage_limits(value::ACBus) = _units_arg_required(get_voltage_limits, value, :voltage_limits, Val(:kv))
+get_voltage_limits_unitful(value::ACBus) = _units_arg_required(get_voltage_limits_unitful, value, :voltage_limits, Val(:kv))
+InfrastructureSystems.display_units_arg(::typeof(get_voltage_limits), ::Type{ACBus}) = InfrastructureSystems.SU
+InfrastructureSystems.display_units_arg(::typeof(get_voltage_limits_unitful), ::Type{ACBus}) = InfrastructureSystems.SU
 """Get [`ACBus`](@ref) `base_voltage`."""
 get_base_voltage(value::ACBus) = value.base_voltage
 """Get [`ACBus`](@ref) `area`."""
@@ -138,11 +156,12 @@ set_bustype!(value::ACBus, val) = value.bustype = val
 """Set [`ACBus`](@ref) `angle`."""
 set_angle!(value::ACBus, val) = value.angle = val
 """Set [`ACBus`](@ref) `magnitude`."""
-set_magnitude!(value::ACBus, val) = value.magnitude = val
+set_magnitude!(value::ACBus, val) = value.magnitude = set_value(value, Val(:magnitude), val, Val(:kv))
+set_magnitude!(value::ACBus, val::_UntaggedNumber) = _units_tag_required(set_magnitude!, value, :magnitude, Val(:kv), val)
 """Set [`ACBus`](@ref) `voltage_limits`."""
-set_voltage_limits!(value::ACBus, val) = value.voltage_limits = val
-"""Set [`ACBus`](@ref) `base_voltage`."""
-set_base_voltage!(value::ACBus, val) = value.base_voltage = val
+set_voltage_limits!(value::ACBus, val) = value.voltage_limits = set_value(value, Val(:voltage_limits), val, Val(:kv))
+set_voltage_limits!(value::ACBus, val::_UntaggedNumber) = _units_tag_required(set_voltage_limits!, value, :voltage_limits, Val(:kv), val)
+set_voltage_limits!(value::ACBus, val::NamedTuple{(:min, :max), <:Tuple{Vararg{_UntaggedNumber}}}) = _units_tag_required(set_voltage_limits!, value, :voltage_limits, Val(:kv), val)
 """Set [`ACBus`](@ref) `area`."""
 set_area!(value::ACBus, val) = value.area = val
 """Set [`ACBus`](@ref) `load_zone`."""
@@ -163,6 +182,7 @@ function from_openapi(po::PO.ACBus, refs::OpenAPIRefs, ::ComponentBaseUnit)
         base_voltage = _or_default(po.base_voltage, nothing),
         area = resolve_ref(refs, po.area, Area),
         load_zone = resolve_ref(refs, po.load_zone, LoadZone),
+        input_basis = CU,
     )
 end
 
@@ -178,6 +198,7 @@ function from_openapi(po::PO.ACBus, refs::OpenAPIRefs, ::NaturalUnit)
         base_voltage = _or_default(po.base_voltage, nothing),
         area = resolve_ref(refs, po.area, Area),
         load_zone = resolve_ref(refs, po.load_zone, LoadZone),
+        input_basis = CU,
     )
 end
 
@@ -193,8 +214,8 @@ function to_openapi(value::ACBus, refs::OpenAPIRefs, ::ComponentBaseUnit)
         available = get_available(value),
         bustype = PO.ACBusType(string(get_bustype(value))),
         angle = _optional_to_wire(get_angle(value)),
-        magnitude = _optional_to_wire(get_magnitude(value)),
-        voltage_limits = _minmax_po_optional(get_voltage_limits(value)),
+        magnitude = _optional_to_wire(get_magnitude(value, CU)),
+        voltage_limits = _minmax_po_optional(get_voltage_limits(value, CU)),
         base_voltage = _optional_to_wire(get_base_voltage(value)),
         area = _component_id_optional(refs, get_area(value)),
         load_zone = _component_id_optional(refs, get_load_zone(value)),
@@ -209,8 +230,8 @@ function to_openapi(value::ACBus, refs::OpenAPIRefs, ::NaturalUnit)
         available = get_available(value),
         bustype = PO.ACBusType(string(get_bustype(value))),
         angle = _optional_to_wire(get_angle(value)),
-        magnitude = _optional_to_wire(get_magnitude(value)),
-        voltage_limits = _minmax_po_optional(get_voltage_limits(value)),
+        magnitude = _optional_to_wire(get_magnitude(value, CU)),
+        voltage_limits = _minmax_po_optional(get_voltage_limits(value, CU)),
         base_voltage = _optional_to_wire(get_base_voltage(value)),
         area = _component_id_optional(refs, get_area(value)),
         load_zone = _component_id_optional(refs, get_load_zone(value)),

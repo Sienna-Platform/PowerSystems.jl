@@ -27,7 +27,7 @@ using TimeSeries
 # a simple system with a bus, a wind generator, and two loads:
 
 system = System(100.0); # 100 MVA base power
-bus1 = ACBus(;
+bus1 = ACBus(; input_basis = CU,
     number = 1,
     name = "bus1",
     available = true,
