@@ -719,6 +719,13 @@ end
     @test_throws ArgumentError rebase_component!(gen, 500.0)
     @test get_base_power(gen) == 250.0  # untouched
 
+    # Opting in keeps the stored series, so the base now scales them.
+    rebase_component!(gen, 500.0; keep_time_series = true)
+    @test get_base_power(gen) == 500.0
+    @test get_rating(gen, NU) ≈ 250.0
+    @test get_time_series_values(SingleTimeSeries, gen, "max_active_power") ==
+          [0.5, 0.6, 0.7]
+
     # A base shared with the system can't be moved at all.
     line = first(get_components(Line, PSB.build_system(PSITestSystems, "c_sys5")))
     @test_throws ErrorException rebase_component!(line, 50.0)
