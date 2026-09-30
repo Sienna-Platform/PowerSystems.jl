@@ -348,31 +348,28 @@ end
     end
 end
 
-@testset "Unit-aware set_base_power!" begin
+@testset "set_base_power! points to rebase_component!" begin
     sys, gen = _sys_with_thermal(; system_base = 100.0, component_base = 250.0)
-    system_base = PSY._get_base_power(sys)
+    err = try
+        set_base_power!(gen, 75.0)
+    catch e
+        e
+    end
+    @test err isa ArgumentError && occursin("rebase_component!", err.msg)
+    @test get_base_power(gen) == 250.0
 
-    # Bare Float64 — interpreted and stored as MVA.
-    set_base_power!(gen, 75.0)
-    @test PSY._get_base_power(gen) ≈ 75.0
-    @test get_base_power(gen) ≈ 75.0
-
-    # Unitful.Quantity in MW (MVA and MW share dimensions; storage is MVA).
-    set_base_power!(gen, 80.0 * u"MW")
+    # rebase_component! takes MVA or a power-dimensioned quantity.
+    rebase_component!(gen, 80.0 * u"MW")
     @test PSY._get_base_power(gen) ≈ 80.0
-
-    # Unitful.Quantity in MVA.
-    set_base_power!(gen, 90.0 * u"MVA")
+    rebase_component!(gen, 90.0 * u"MVA")
     @test PSY._get_base_power(gen) ≈ 90.0
 
     # Per-unit bases are circular for base_power and are rejected.
-    @test_throws ArgumentError set_base_power!(gen, 0.5 * SU)
-    @test_throws ArgumentError set_base_power!(gen, 1.25 * SU)
-    @test_throws ArgumentError set_base_power!(gen, 1.0 * CU)
-    @test_throws ArgumentError set_base_power!(gen, 0.5 * CU)
-
+    @test_throws ArgumentError rebase_component!(gen, 0.5 * SU)
+    @test_throws ArgumentError rebase_component!(gen, 1.0 * CU)
     # Dimensionally wrong inputs fail at conversion time.
-    @test_throws Unitful.DimensionError set_base_power!(gen, 1.0 * u"kV")
+    @test_throws Unitful.DimensionError rebase_component!(gen, 1.0 * u"kV")
+    @test get_base_power(gen) ≈ 90.0
 end
 
 @testset "Plain get/set for ThreeWindingTransformer base_power_{12,23,31}" begin
@@ -405,9 +402,9 @@ function _make_test_3w_xfmr(; system_base = 100.0)
     set_base_power_12!(xfmr, 15.0)
     set_base_power_23!(xfmr, 20.0)
     set_base_power_31!(xfmr, 25.0)
-    set_base_power!(get_primary_circuit(xfmr), 15.0)
-    set_base_power!(get_secondary_circuit(xfmr), 20.0)
-    set_base_power!(get_tertiary_circuit(xfmr), 25.0)
+    set_primary_circuit!(xfmr, _circuit_with_base(15.0))
+    set_secondary_circuit!(xfmr, _circuit_with_base(20.0))
+    set_tertiary_circuit!(xfmr, _circuit_with_base(25.0))
     set_base_voltage_primary!(get_primary_circuit(xfmr), 230.0)
     set_base_voltage_primary!(get_secondary_circuit(xfmr), 138.0)
     set_base_voltage_primary!(get_tertiary_circuit(xfmr), 69.0)
@@ -416,7 +413,8 @@ end
 
 @testset "3W magnetizing_shunt converts on the primary circuit base" begin
     xfmr = _make_test_3w_xfmr()                       # anchor 100; base_power_12 = 15
-    set_base_power!(get_primary_circuit(xfmr), 50.0)  # decouple circuit base from pair base
+    # Decouple the circuit base from the pair base.
+    set_primary_circuit!(xfmr, _circuit_with_base(50.0; base_voltage_primary = 230.0))
     set_magnetizing_shunt!(xfmr, (1.0 + 0.0im) * CU)
     # SU must scale by the primary CIRCUIT base (50), not base_power_12 (15)
     @test real(get_magnetizing_shunt(xfmr, SU)) ≈ 1.0 * 50.0 / 100.0
@@ -663,10 +661,10 @@ end
     @test get_rating(ln, CU) ≈ 1.0
     @test get_rating(ln, SU) ≈ 1.0
 
-    # set_base_power! is disallowed for SystemBasePower types: the field has no
-    # meaning independent of the system it is attached to.
-    @test_throws ErrorException set_base_power!(ln, 50.0)
-    @test_throws ErrorException set_base_power!(area, 50.0)
+    # A SystemBasePower type's base has no meaning independent of the system it is
+    # attached to, so it can't be rebased either.
+    @test_throws ErrorException rebase_component!(ln, 50.0)
+    @test_throws ErrorException rebase_component!(area, 50.0)
 
     # A detached component of this kind keeps the descriptor default and errors
     # on any access that requires a defined system base, mirroring the behavior
@@ -695,16 +693,12 @@ end
     @test get_base_power(gen) == 500.0
     for (setter, value) in PSY._natural_unit_fields(gen)
         before = nu_before[setter]
-        @test all(isapprox.(values(Tuple(value)), values(Tuple(before))))
+        @test all(isapprox.(Tuple(value), Tuple(before)))
     end
     @test get_rating(gen, NU) ≈ 250.0
     @test get_rating(gen, CU) ≈ 0.5
     @test get_active_power_limits(gen, NU).max ≈ 250.0
     @test get_ramp_limits(gen, u"MW/minute").up ≈ 25.0
-
-    # set_base_power! keeps the stored per-unit values instead.
-    set_base_power!(gen, 250.0)
-    @test get_rating(gen, NU) ≈ 125.0
 end
 
 @testset "Test rebase_component! refuses per-unit data it can't re-express" begin
@@ -725,6 +719,11 @@ end
     @test get_rating(gen, NU) ≈ 250.0
     @test get_time_series_values(SingleTimeSeries, gen, "max_active_power") ==
           [0.5, 0.6, 0.7]
+
+    # So can a converter whose loss curve is stated in component base.
+    ic = InterconnectingConverter(nothing)
+    set_loss_function!(ic, LossCurve(LinearCurve(0.01), CU))
+    @test_throws ArgumentError rebase_component!(ic, 50.0)
 
     # A base shared with the system can't be moved at all.
     line = first(get_components(Line, PSB.build_system(PSITestSystems, "c_sys5")))

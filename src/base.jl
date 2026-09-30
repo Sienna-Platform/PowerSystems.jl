@@ -2550,7 +2550,7 @@ end
 function handle_component_addition!(sys::System, dyn_injector::DynamicInjection; kwargs...)
     static_injector = kwargs[:static_injector]
     static_base_power = _get_base_power(static_injector)
-    set_base_power!(dyn_injector, static_base_power)
+    _set_base_power!(dyn_injector, static_base_power)
     set_dynamic_injector!(static_injector, dyn_injector)
     return
 end

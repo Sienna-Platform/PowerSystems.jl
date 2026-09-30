@@ -263,8 +263,6 @@ set_active_power_flow!(value::TransformerCircuit, val::_UntaggedNumber) = _units
 """Set [`TransformerCircuit`](@ref) `reactive_power_flow`."""
 set_reactive_power_flow!(value::TransformerCircuit, val) = value.reactive_power_flow = set_value(value, Val(:reactive_power_flow), val, Val(:mvar))
 set_reactive_power_flow!(value::TransformerCircuit, val::_UntaggedNumber) = _units_tag_required(set_reactive_power_flow!, value, :reactive_power_flow, Val(:mvar), val)
-"""Set [`TransformerCircuit`](@ref) `base_power`."""
-set_base_power!(value::TransformerCircuit, val) = value.base_power = val
 """Set [`TransformerCircuit`](@ref) `base_voltage_primary`."""
 set_base_voltage_primary!(value::TransformerCircuit, val) = value.base_voltage_primary = val
 """Set [`TransformerCircuit`](@ref) `base_voltage_secondary`."""
