@@ -155,11 +155,11 @@
     }
 ]</code></pre><h2 id="Read-and-assign-time-series-to-System-using-these-parameters."><a class="docs-heading-anchor" href="#Read-and-assign-time-series-to-System-using-these-parameters.">Read and assign time series to <code>System</code> using these parameters.</a><a id="Read-and-assign-time-series-to-System-using-these-parameters.-1"></a><a class="docs-heading-anchor-permalink" href="#Read-and-assign-time-series-to-System-using-these-parameters." title="Permalink"></a></h2><pre><code class="language-julia hljs">fname = joinpath(FORECASTS_DIR, &quot;timeseries_pointers_da.json&quot;)
 add_time_series!(sys, fname)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">5-element Vector{TimeSeriesKey}:
- StaticTimeSeriesKey(SingleTimeSeries, &quot;max_active_power&quot;, Dates.DateTime(&quot;2026-09-23T00:00:00&quot;), Dates.Millisecond(3600000), 24, Dict{String, Any}())
- StaticTimeSeriesKey(SingleTimeSeries, &quot;max_active_power&quot;, Dates.DateTime(&quot;2026-09-23T00:00:00&quot;), Dates.Millisecond(3600000), 24, Dict{String, Any}())
- StaticTimeSeriesKey(SingleTimeSeries, &quot;max_active_power&quot;, Dates.DateTime(&quot;2026-09-23T00:00:00&quot;), Dates.Millisecond(3600000), 24, Dict{String, Any}())
- StaticTimeSeriesKey(SingleTimeSeries, &quot;max_active_power&quot;, Dates.DateTime(&quot;2026-09-23T00:00:00&quot;), Dates.Millisecond(3600000), 24, Dict{String, Any}())
- StaticTimeSeriesKey(SingleTimeSeries, &quot;max_active_power&quot;, Dates.DateTime(&quot;2026-09-23T00:00:00&quot;), Dates.Millisecond(3600000), 24, Dict{String, Any}())</code></pre><p>You can print the <code>System</code> to see a new table summarizing the time series data that has been added:</p><pre><code class="language-julia hljs">sys</code></pre><table>
+ StaticTimeSeriesKey(SingleTimeSeries, &quot;max_active_power&quot;, Dates.DateTime(&quot;2026-09-30T00:00:00&quot;), Dates.Millisecond(3600000), 24, Dict{String, Any}())
+ StaticTimeSeriesKey(SingleTimeSeries, &quot;max_active_power&quot;, Dates.DateTime(&quot;2026-09-30T00:00:00&quot;), Dates.Millisecond(3600000), 24, Dict{String, Any}())
+ StaticTimeSeriesKey(SingleTimeSeries, &quot;max_active_power&quot;, Dates.DateTime(&quot;2026-09-30T00:00:00&quot;), Dates.Millisecond(3600000), 24, Dict{String, Any}())
+ StaticTimeSeriesKey(SingleTimeSeries, &quot;max_active_power&quot;, Dates.DateTime(&quot;2026-09-30T00:00:00&quot;), Dates.Millisecond(3600000), 24, Dict{String, Any}())
+ StaticTimeSeriesKey(SingleTimeSeries, &quot;max_active_power&quot;, Dates.DateTime(&quot;2026-09-30T00:00:00&quot;), Dates.Millisecond(3600000), 24, Dict{String, Any}())</code></pre><p>You can print the <code>System</code> to see a new table summarizing the time series data that has been added:</p><pre><code class="language-julia hljs">sys</code></pre><table>
   <thead>
     <tr class = "title">
       <td colspan = "2" style = "font-size: x-large; font-weight: bold; text-align: center;">System</td>
@@ -279,7 +279,7 @@ add_time_series!(sys, fname)</code></pre><pre class="documenter-example-output">
       <td style = "text-align: left;">Component</td>
       <td style = "text-align: left;">max_active_power</td>
       <td style = "text-align: left;">SingleTimeSeries</td>
-      <td style = "text-align: left;">2026-09-23T00:00:00</td>
+      <td style = "text-align: left;">2026-09-30T00:00:00</td>
       <td style = "text-align: left;">1 hour</td>
       <td style = "text-align: left;">3</td>
       <td style = "text-align: left;">24</td>
@@ -289,7 +289,7 @@ add_time_series!(sys, fname)</code></pre><pre class="documenter-example-output">
       <td style = "text-align: left;">Component</td>
       <td style = "text-align: left;">max_active_power</td>
       <td style = "text-align: left;">SingleTimeSeries</td>
-      <td style = "text-align: left;">2026-09-23T00:00:00</td>
+      <td style = "text-align: left;">2026-09-30T00:00:00</td>
       <td style = "text-align: left;">1 hour</td>
       <td style = "text-align: left;">2</td>
       <td style = "text-align: left;">24</td>
@@ -301,4 +301,4 @@ mermaid.initialize({
     startOnLoad: true,
     theme: "neutral"
 });
-</script></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../add_component_natural_units/">« ...add a component using natural units (MW)</a><a class="docs-footer-nextpage" href="../improve_ts_performance/">Improve performance with time series data »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.15.0 on <span class="colophon-date" title="Wednesday 23 September 2026 15:49">Wednesday 23 September 2026</span>. Using Julia version 1.13.0.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+</script></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../add_component_natural_units/">« ...add a component using natural units (MW)</a><a class="docs-footer-nextpage" href="../improve_ts_performance/">Improve performance with time series data »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.15.0 on <span class="colophon-date" title="Wednesday 30 September 2026 22:56">Wednesday 30 September 2026</span>. Using Julia version 1.13.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
