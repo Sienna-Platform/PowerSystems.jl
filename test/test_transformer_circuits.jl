@@ -98,9 +98,9 @@ function _test_t3w(; system_base = 100.0)
     set_base_power_12!(t, 15.0)
     set_base_power_23!(t, 20.0)
     set_base_power_31!(t, 25.0)
-    set_base_power!(get_primary_circuit(t), 15.0)
-    set_base_power!(get_secondary_circuit(t), 20.0)
-    set_base_power!(get_tertiary_circuit(t), 25.0)
+    set_primary_circuit!(t, _circuit_with_base(15.0))
+    set_secondary_circuit!(t, _circuit_with_base(20.0))
+    set_tertiary_circuit!(t, _circuit_with_base(25.0))
     set_base_voltage_primary!(get_primary_circuit(t), 230.0)
     set_base_voltage_primary!(get_secondary_circuit(t), 138.0)
     set_base_voltage_primary!(get_tertiary_circuit(t), 69.0)
@@ -201,11 +201,10 @@ end
 @testset "2W r/x forward to the circuit" begin
     t = _test_t2w()
     c = get_circuit(t)
-    set_base_power!(c, 100.0)
-    set_x!(t, 0.1 * u"CU")
+    set_x!(t, 0.1u"CU")
     @test get_x(t, u"CU") ≈ 0.1
     @test get_x(t, u"CU") == get_x(c, u"CU")
-    set_r!(t, 0.02 * u"CU")
+    set_r!(t, 0.02u"CU")
     @test get_r(c, u"CU") ≈ 0.02
 end
 
@@ -214,7 +213,7 @@ end
     # bases through the 2W forwarding provider: component base = the circuit's
     # base_power, base voltage = the circuit's base_voltage_primary.
     t = _test_t2w()                       # system_base = 100.0, circuit V = 138.0
-    set_base_power!(get_circuit(t), 20.0)
+    set_circuit!(t, _circuit_with_base(20.0; base_voltage_primary = 138.0))
     set_magnetizing_shunt!(t, (0.05 + 0.0im) * u"CU")
     # Admittance: Y_su = Y_du * (base_power / system_base); Y_nu = Y_du * (base_power / V²).
     @test get_magnetizing_shunt(t, u"CU") ≈ 0.05

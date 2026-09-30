@@ -145,15 +145,13 @@ function _base_power_in(mva::Float64, u::Unitful.Units)
 end
 
 """
-Set a component's `base_power` (stored as a bare MVA `Float64`).
+    set_base_power!(c, val)
 
-Accepts a bare `Float64` (interpreted as MVA) or a power-dimensioned
-`Unitful.Quantity` (e.g. `80.0u"MW"`, `90.0u"MVA"`). Per-unit inputs (`u"SU"`, `u"CU"`)
-and non-power units error: `base_power` is only meaningful in absolute power.
+Always throws. Moving `base_power` under the stored per-unit values would change the
+natural-unit value of every per-unit field; use [`rebase_component!`](@ref), which keeps
+them.
 """
-set_base_power!(c::Component, val::Float64) = _set_base_power!(base_power_kind(c), c, val)
-set_base_power!(c::Component, val::Unitful.Quantity) =
-    _set_base_power!(base_power_kind(c), c, _base_power_mva(val))
+set_base_power!(c::Component, _) = _set_base_power_error(c)
 
 # `ustrip(MVA, …)` converts power units and throws for non-power units.
 function _base_power_mva(val::Unitful.Quantity)
@@ -165,6 +163,20 @@ end
 _require_natural(::Val{:natural}, _, _) = nothing
 @noinline _require_natural(::Val, u, units_error) = units_error(u)
 
+_set_base_power_error(c) = throw(
+    ArgumentError(
+        "set_base_power! is not supported: changing base_power would change the " *
+        "natural-unit value of every per-unit field of $(summary(c)). Use " *
+        "rebase_component!(component, new_base_power), which keeps them.",
+    ),
+)
+
+# Moves the base without touching the stored per-unit values. Only for callers that
+# re-express those values themselves (`rebase_component!`) or keep bases in lockstep.
+_set_base_power!(c::Component, val::Real) =
+    _set_base_power!(base_power_kind(c), c, Float64(val))
+_set_base_power!(c::Component, val::Unitful.Quantity) =
+    _set_base_power!(c, _base_power_mva(val))
 _set_base_power!(::ComponentBasePower, c, val::Float64) = (c.base_power = val)
 function _set_base_power!(::SystemBasePower, c, ::Float64)
     error(
@@ -178,13 +190,11 @@ end
     rebase_component!(c::Component, new_base_power; keep_time_series = false)
 
 Set `c`'s `base_power` to `new_base_power` (MVA, or a power-dimensioned `Unitful.Quantity`),
-re-expressing every unit-converted field so its natural-unit value is unchanged. Contrast
-[`set_base_power!`](@ref), which keeps the stored per-unit values and so changes what they
-mean.
+re-expressing every unit-converted field so its natural-unit value is unchanged.
 
 Throws an `ArgumentError`, leaving `c` unchanged, for per-unit data it can't re-express:
-transformers, dynamic models, component-base cost curves, and component-base time series.
-Components whose base is the system base error as in `set_base_power!`.
+transformers, dynamic models, component-base cost and loss curves, and component-base time
+series. Components whose base is the system base can't be rebased and also error.
 
 Pass `keep_time_series = true` to leave component-base time series as stored, so their
 natural-unit values change with the base. That is for correcting series whose component-base
@@ -194,7 +204,7 @@ function rebase_component!(c::Component, new_base_power; keep_time_series::Bool 
     _check_rebaseable(c, keep_time_series)
     # Read all fields first: each read converts through the current base.
     fields = _natural_unit_fields(c)
-    set_base_power!(c, new_base_power)
+    _set_base_power!(c, new_base_power)
     for (setter, value) in fields
         setter(c, value)
     end
@@ -210,7 +220,7 @@ function _natural_unit_fields(c::Component)
         isdefined(PowerSystems, getter_name) || continue
         getter = getproperty(PowerSystems, getter_name)
         ismissing(IS.display_units_arg(getter, typeof(c))) && continue
-        value = IS.unitful_variant(getter)(c, NU)
+        value = IS.unitful_variant(getter)(c, u"NU")
         isnothing(value) && continue
         push!(fields, getproperty(PowerSystems, Symbol("set_$(name)!")) => value)
     end
@@ -230,8 +240,8 @@ function _rebase_blocker(c::Component, keep_time_series::Bool)
         return "dynamic model parameters are per-unitized on the device base"
     c isa StaticInjection && !isnothing(get_dynamic_injector(c)) &&
         return "its dynamic injector's parameters are per-unitized on the device base"
-    _has_component_base_cost(c) &&
-        return "its operation cost has curves in component base; restate them in natural units first"
+    _has_component_base_curve(c) &&
+        return "it has cost or loss curves in component base; restate them in natural units first"
     !keep_time_series &&
         any(
             md -> IS.get_unit_system(md) isa ComponentBaseUnit,
@@ -244,10 +254,12 @@ end
 _is_component_base_curve(x) =
     applicable(get_power_units, x) && get_power_units(x) isa ComponentBaseUnit
 
-function _has_component_base_cost(c::Component)
+# Curves held directly (e.g. a converter's `loss_function`) or one level into the operation
+# cost (e.g. `ThermalGenerationCost.variable`).
+function _has_component_base_curve(c::Component)
+    any(f -> _is_component_base_curve(getfield(c, f)), fieldnames(typeof(c))) && return true
     applicable(get_operation_cost, c) || return false
     cost = get_operation_cost(c)
-    _is_component_base_curve(cost) && return true
     return any(f -> _is_component_base_curve(getfield(cost, f)), fieldnames(typeof(cost)))
 end
 
@@ -319,7 +331,6 @@ end
 
 IS.display_units_arg(::typeof(get_base_power), ::Type{<:Component}) = u"NU"
 IS.display_units_arg(::typeof(get_base_power_unitful), ::Type{<:Component}) = u"NU"
-IS.display_units_arg(::typeof(set_base_power!), ::Type{<:Component}) = u"NU"
 IS.display_units_arg(::typeof(get_base_voltage), ::Type{<:Component}) = u"NU"
 IS.display_units_arg(::typeof(get_base_voltage_unitful), ::Type{<:Component}) = u"NU"
 
@@ -508,16 +519,10 @@ set_base_power_23!(t::ThreeWindingTransformer, v::Union{Float64, Nothing}) =
 set_base_power_31!(t::ThreeWindingTransformer, v::Union{Float64, Nothing}) =
     t.base_power_31 = v
 
-# A TwoWindingTransformer's series electrical data lives entirely on its circuit.
-# Forward the base-power accessors to the circuit so the units engine's component-base
-# resolution and downstream base-power reads/writes keep working. The value-typed
-# setter variants mirror the generic Component ones (natural units only) so no
-# ambiguity arises with `set_base_power!(::Component, ...)`.
+# A TwoWindingTransformer's series electrical data lives entirely on its circuit, so the
+# units engine's component-base resolution reads the circuit's base power.
 _get_base_power(t::TwoWindingTransformer) = get_base_power(get_circuit(t))
-set_base_power!(t::TwoWindingTransformer, val::Float64) =
-    set_base_power!(get_circuit(t), val)
-set_base_power!(t::TwoWindingTransformer, val::Unitful.Quantity) =
-    set_base_power!(get_circuit(t), _base_power_mva(val))
+set_base_power!(c::TransformerCircuit, _) = _set_base_power_error(c)
 
 # The series impedance r/x lives on the circuit. These forwarding accessors keep
 # dispatch on the parent working (e.g. PowerNetworkMatrices reads get_r/get_x on

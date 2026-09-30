@@ -24,6 +24,14 @@ end
 
 struct NonexistentComponent <: StaticInjection end
 
+"""A detached transformer circuit with the given base (circuits have no base setter)."""
+_circuit_with_base(base_power::Float64; base_voltage_primary = nothing) =
+    TransformerCircuit(;
+        available = false, arc = Arc(ACBus(nothing), ACBus(nothing)),
+        base_power = base_power, base_voltage_primary = base_voltage_primary,
+        input_basis = u"CU",
+    )
+
 """Build a minimal `System` + `ThermalStandard` with the requested component base
 so unit-conversion tests don't depend on PSB-built fixtures."""
 function _sys_with_thermal(; system_base = 100.0, component_base = 250.0)

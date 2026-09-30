@@ -484,8 +484,6 @@ end
     @test get_dynamic_injector(static_gen) === Gen2AVR
     @test PSY._get_base_power(static_gen) == PSY._get_base_power(Gen2AVR)
 
-    set_base_power!(static_gen, 1234.5)
-    @test PSY._get_base_power(static_gen) == 1234.5
     @test PSY._get_system_base_power(static_gen) == PSY._get_base_power(sys)
 
     # Rule: Can't set the pair injector if the current injector is already set.
