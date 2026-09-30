@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Basics · PowerSystems.jl</title><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.045/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.24/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.png" alt="PowerSystems.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../../">PowerSystems.jl</a></span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Welcome Page</a></li><li><a class="tocitem" href="../../quick_start_guide/">Quick Start Guide</a></li><li><a class="tocitem" href="../intro_page/">Tutorials</a></li><li><span class="tocitem">Modeler Guide</span><ul><li><a class="tocitem" href="../../modeler_guide/type_structure/">Type Structure</a></li><li><a class="tocitem" href="../../modeler_guide/system/">System</a></li><li><a class="tocitem" href="../../modeler_guide/time_series/">Time Series Data</a></li><li><a class="tocitem" href="../../modeler_guide/enumerated_types/">Enumerated Types</a></li><li><a class="tocitem" href="../../modeler_guide/example_dynamic_data/">Dynamic Devices</a></li><li><a class="tocitem" href="../../modeler_guide/system_dynamic_data/">Creating a System with Dynamic devices</a></li><li><a class="tocitem" href="../../modeler_guide/market_bid_cost/">PowerSystems <code>MarketBidCost</code></a></li><li><a class="tocitem" href="../../modeler_guide/generated_modeling_with_JuMP/">Modeling With Jump</a></li><li><a class="tocitem" href="../../modeler_guide/generated_parsing/">Parsing</a></li></ul></li><li><span class="tocitem">Model Developer Guide</span><ul><li><a class="tocitem" href="../../model_developer_guide/extending_parsing/">Extending Parsing</a></li><li><a class="tocitem" href="../../model_developer_guide/adding_custom_types/">Adding Types</a></li><li><a class="tocitem" href="../../model_developer_guide/generated_adding_additional_fields/">Adding Additional Fields</a></li></ul></li><li><span class="tocitem">Code Base Developer Guide</span><ul><li><a class="tocitem" href="../../code_base_developer_guide/developer/">Developer Guide</a></li><li><a class="tocitem" href="../../code_base_developer_guide/adding_new_types/">Adding New Types</a></li><li><a class="tocitem" href="../../code_base_developer_guide/troubleshooting/">Troubleshooting</a></li></ul></li><li><span class="tocitem">Model Library</span><ul><li><input class="collapse-toggle" id="menuitem-7-1" type="checkbox"/><label class="tocitem" for="menuitem-7-1"><span class="docs-label">DeviceParameter</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../model_library/generated_MarketBidCost/">MarketBidCost</a></li><li><a class="tocitem" href="../../model_library/generated_MultiStartCost/">MultiStartCost</a></li><li><a class="tocitem" href="../../model_library/generated_StorageManagementCost/">StorageManagementCost</a></li><li><a class="tocitem" href="../../model_library/generated_ThreePartCost/">ThreePartCost</a></li><li><a class="tocitem" href="../../model_library/generated_TwoPartCost/">TwoPartCost</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-7-2" type="checkbox"/><label class="tocitem" for="menuitem-7-2"><span class="docs-label">DynamicInverterComponent</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../model_library/generated_Converter/">Converter</a></li><li><a class="tocitem" href="../../model_library/generated_DCSource/">DCSource</a></li><li><a class="tocitem" href="../../model_library/generated_Filter/">Filter</a></li><li><a class="tocitem" href="../../model_library/generated_FrequencyEstimator/">FrequencyEstimator</a></li><li><a class="tocitem" href="../../model_library/generated_InnerControl/">InnerControl</a></li><li><a class="tocitem" href="../../model_library/outer_control/">OuterControl</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-7-3" type="checkbox"/><label class="tocitem" for="menuitem-7-3"><span class="docs-label">StaticInjection</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../model_library/generated_InterruptiblePowerLoad/">InterruptiblePowerLoad</a></li><li><a class="tocitem" href="../../model_library/generated_FixedAdmittance/">FixedAdmittance</a></li><li><a class="tocitem" href="../../model_library/generated_SwitchedAdmittance/">SwitchedAdmittance</a></li><li><a class="tocitem" href="../../model_library/generated_PowerLoad/">PowerLoad</a></li><li><a class="tocitem" href="../../model_library/generated_ExponentialLoad/">ExponentialLoad</a></li><li><a class="tocitem" href="../../model_library/generated_StandardLoad/">StandardLoad</a></li><li><a class="tocitem" href="../../model_library/generated_HydroDispatch/">HydroDispatch</a></li><li><a class="tocitem" href="../../model_library/generated_HydroEnergyReservoir/">HydroEnergyReservoir</a></li><li><a class="tocitem" href="../../model_library/generated_HydroPumpedStorage/">HydroPumpedStorage</a></li><li><a class="tocitem" href="../../model_library/generated_RenewableDispatch/">RenewableDispatch</a></li><li><a class="tocitem" href="../../model_library/generated_RenewableFix/">RenewableFix</a></li><li><a class="tocitem" href="../../model_library/generated_ThermalMultiStart/">ThermalMultiStart</a></li><li><a class="tocitem" href="../../model_library/generated_ThermalStandard/">ThermalStandard</a></li><li><a class="tocitem" href="../../model_library/generated_Source/">Source</a></li><li><a class="tocitem" href="../../model_library/generated_HybridSystem/">HybridSystem</a></li><li><a class="tocitem" href="../../model_library/generated_BatteryEMS/">BatteryEMS</a></li><li><a class="tocitem" href="../../model_library/generated_GenericBattery/">GenericBattery</a></li><li><a class="tocitem" href="../../model_library/hybrid_device/">HybridSystem</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-7-4" type="checkbox"/><label class="tocitem" for="menuitem-7-4"><span class="docs-label">Topology</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../model_library/generated_Area/">Area</a></li><li><a class="tocitem" href="../../model_library/generated_LoadZone/">LoadZone</a></li><li><a class="tocitem" href="../../model_library/generated_Arc/">Arc</a></li><li><a class="tocitem" href="../../model_library/generated_Bus/">Bus</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-7-5" type="checkbox"/><label class="tocitem" for="menuitem-7-5"><span class="docs-label">DynamicInjection</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../model_library/dynamic_inverter/">Dynamic Inverter</a></li><li><a class="tocitem" href="../../model_library/dynamic_generator/">Dynamic Generator</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-7-6" type="checkbox"/><label class="tocitem" for="menuitem-7-6"><span class="docs-label">Service</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../model_library/generated_AGC/">AGC</a></li><li><a class="tocitem" href="../../model_library/generated_StaticReserveNonSpinning/">StaticReserveNonSpinning</a></li><li><a class="tocitem" href="../../model_library/generated_VariableReserveNonSpinning/">VariableReserveNonSpinning</a></li><li><a class="tocitem" href="../../model_library/generated_Transfer/">Transfer</a></li><li><a class="tocitem" href="../../model_library/reserves/">Reserves</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-7-7" type="checkbox"/><label class="tocitem" for="menuitem-7-7"><span class="docs-label">Branch</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../model_library/generated_Line/">Line</a></li><li><a class="tocitem" href="../../model_library/generated_MonitoredLine/">MonitoredLine</a></li><li><a class="tocitem" href="../../model_library/generated_PhaseShiftingTransformer/">PhaseShiftingTransformer</a></li><li><a class="tocitem" href="../../model_library/generated_TapTransformer/">TapTransformer</a></li><li><a class="tocitem" href="../../model_library/generated_Transformer2W/">Transformer2W</a></li><li><a class="tocitem" href="../../model_library/generated_HVDCLine/">HVDCLine</a></li><li><a class="tocitem" href="../../model_library/generated_VSCDCLine/">VSCDCLine</a></li><li><a class="tocitem" href="../../model_library/dynamic_branch/">Dynamic Lines</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-7-8" type="checkbox"/><label class="tocitem" for="menuitem-7-8"><span class="docs-label">DynamicGeneratorComponent</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../model_library/generated_AVR/">AVR</a></li><li><a class="tocitem" href="../../model_library/generated_Machine/">Machine</a></li><li><a class="tocitem" href="../../model_library/generated_PSS/">PSS</a></li><li><a class="tocitem" href="../../model_library/generated_Shaft/">Shaft</a></li><li><a class="tocitem" href="../../model_library/generated_TurbineGov/">TurbineGov</a></li></ul></li></ul></li><li><a class="tocitem" href="../../api/public/">Public API Reference</a></li><li><a class="tocitem" href="../../api/internal/">Internal API Reference</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>Basics</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Basics</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/NREL-Sienna/PowerSystems.jl/blob/main/docs/src/tutorials/basics.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Basics"><a class="docs-heading-anchor" href="#Basics">Basics</a><a id="Basics-1"></a><a class="docs-heading-anchor-permalink" href="#Basics" title="Permalink"></a></h1><p>This tutorial shows some basic operations that you can do in PowerSystems.jl with your data.</p><h2 id="Types-in-PowerSystems"><a class="docs-heading-anchor" href="#Types-in-PowerSystems">Types in PowerSystems</a><a id="Types-in-PowerSystems-1"></a><a class="docs-heading-anchor-permalink" href="#Types-in-PowerSystems" title="Permalink"></a></h2><p>PowerSystems.jl provides a type hierarchy for specifying power system data. Data that describes infrastructure components is held in <code>struct</code>s. For example, a <code>Bus</code> is defined as follows with fields for the parameters required to describe a bus (along with an <code>internal</code> field used by InfrastructureSystems to improve the efficiency of handling data).</p><pre><code class="language- hljs">print_struct(Bus)</code></pre><h3 id="Type-Hierarchy"><a class="docs-heading-anchor" href="#Type-Hierarchy">Type Hierarchy</a><a id="Type-Hierarchy-1"></a><a class="docs-heading-anchor-permalink" href="#Type-Hierarchy" title="Permalink"></a></h3><p>PowerSystems is intended to organize data containers by the behavior of the devices that the data represents. To that end, a type hierarchy has been defined with several levels of abstract types starting with <code>InfrastructureSystemsType</code>. There are a bunch of subtypes of <code>InfrastructureSystemsType</code>, but the important ones to know about are:</p><ul><li><code>Component</code>: includes all elements of power system data<ul><li><code>Topology</code>: includes non physical elements describing network connectivity</li><li><code>Service</code>: includes descriptions of system requirements (other than energy balance)</li><li><code>Device</code>: includes descriptions of all the physical devices in a power system</li></ul></li><li><code>InfrastructureSystems.DeviceParameter</code>: includes structs that hold data describing the</li></ul><p>dynamic, or economic capabilities of <code>Device</code>.</p><ul><li><code>TimeSeriesData</code>: Includes all time series types<ul><li><code>Forecast</code>: includes structs to define time series of forecasted data where multiple</li></ul></li></ul><p>values can represent each time stamp</p><ul><li><code>StaticTimeSeries</code>: includes structs to define time series with a single value for each</li></ul><p>time stamp</p><ul><li><code>System</code>: collects all of the <code>Component</code>s</li></ul><pre><code class="language- hljs">print_tree(PowerSystems.IS.InfrastructureSystemsType)</code></pre><h3 id="TimeSeriesData"><a class="docs-heading-anchor" href="#TimeSeriesData"><code>TimeSeriesData</code></a><a id="TimeSeriesData-1"></a><a class="docs-heading-anchor-permalink" href="#TimeSeriesData" title="Permalink"></a></h3><p><a href="https://nrel-sienna.github.io/PowerSystems.jl/stable/modeler_guide/time_series/"><em>Read the Docs!</em></a> Every <code>Component</code> has a <code>time_series_container::InfrastructureSystems.TimeSeriesContainer</code> field. <code>TimeSeriesData</code> are used to hold time series information that describes the temporally dependent data of fields within the same struct. For example, the <code>ThermalStandard.time_series_container</code> field can describe other fields in the struct (<code>available</code>, <code>activepower</code>, <code>reactivepower</code>).</p><p><code>TimeSeriesData</code>s themselves can take the form of the following:</p><pre><code class="language- hljs">print_tree(TimeSeriesData)</code></pre><p>In each case, the time series contains fields for <code>scaling_factor_multiplier</code> and <code>data</code> to identify the details of  th <code>Component</code> field that the time series describes, and the time series <code>data</code>. For example: we commonly want to use a time series to describe the maximum active power capability of a renewable generator. In this case, we can create a <code>SingleTimeSeries</code> with a <code>TimeArray</code> and an accessor function to the maximum active power field in the struct describing the generator. In this way, we can store a scaling factor time series that will get multiplied by the maximum active power rather than the magnitudes of the maximum active power time series.</p><pre><code class="language- hljs">print_struct(Deterministic)</code></pre><p>Examples of how to create and add time series to system can be found in the <a href="https://nbviewer.jupyter.org/github/NREL-Sienna/SIIPExamples.jl/blob/main/notebook/2_PowerSystems_examples/05_add_forecasts.ipynb">Add Time Series Example</a></p><h3 id="System"><a class="docs-heading-anchor" href="#System">System</a><a id="System-1"></a><a class="docs-heading-anchor-permalink" href="#System" title="Permalink"></a></h3><p>The <code>System</code> object collects all of the individual components into a single struct along with some metadata about the system itself (e.g. <code>base_power</code>)</p><pre><code class="language- hljs">print_struct(System)</code></pre><h2 id="Example-Code"><a class="docs-heading-anchor" href="#Example-Code">Example Code</a><a id="Example-Code-1"></a><a class="docs-heading-anchor-permalink" href="#Example-Code" title="Permalink"></a></h2><p>PowerSystems contains a few basic data files (mostly for testing and demonstration).</p><pre><code class="language-julia hljs">BASE_DIR = abspath(joinpath(dirname(Base.find_package(&quot;PowerSystems&quot;)), &quot;..&quot;))
+include(joinpath(BASE_DIR, &quot;test&quot;, &quot;data_5bus_pu.jl&quot;)) #.jl file containing 5-Bus system data
+nodes_5 = nodes5() # function to create 5-Bus buses</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">5-element Vector{Bus}:
+ Bus(1, nodeA, BusTypes.PV = 2, 0.0, 1.0, (min = 0.9, max = 1.05), 230.0, nothing, nothing, Dict{String, Any}())
+ Bus(2, nodeB, BusTypes.PQ = 1, 0.0, 1.0, (min = 0.9, max = 1.05), 230.0, nothing, nothing, Dict{String, Any}())
+ Bus(3, nodeC, BusTypes.PV = 2, 0.0, 1.0, (min = 0.9, max = 1.05), 230.0, nothing, nothing, Dict{String, Any}())
+ Bus(4, nodeD, BusTypes.REF = 3, 0.0, 1.0, (min = 0.9, max = 1.05), 230.0, nothing, nothing, Dict{String, Any}())
+ Bus(5, nodeE, BusTypes.PV = 2, 0.0, 1.0, (min = 0.9, max = 1.05), 230.0, nothing, nothing, Dict{String, Any}())</code></pre><h3 id="Create-a-System"><a class="docs-heading-anchor" href="#Create-a-System">Create a <code>System</code></a><a id="Create-a-System-1"></a><a class="docs-heading-anchor-permalink" href="#Create-a-System" title="Permalink"></a></h3><pre><code class="language-julia hljs">sys = System(
+    100.0,
+    nodes_5,
+    vcat(thermal_generators5(nodes_5), renewable_generators5(nodes_5)),
+    loads5(nodes_5),
+    branches5(nodes_5),
+)</code></pre><table>
+  <caption style = "text-align: left;">System</caption>
+  <thead>
+    <tr class = "header headerLastRow">
+      <th style = "text-align: left;">Property</th>
+      <th style = "text-align: left;">Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style = "text-align: left;">Name</td>
+      <td style = "text-align: left;"></td>
+    </tr>
+    <tr>
+      <td style = "text-align: left;">Description</td>
+      <td style = "text-align: left;"></td>
+    </tr>
+    <tr>
+      <td style = "text-align: left;">System Units Base</td>
+      <td style = "text-align: left;">SYSTEM_BASE</td>
+    </tr>
+    <tr>
+      <td style = "text-align: left;">Base Power</td>
+      <td style = "text-align: left;">100.0</td>
+    </tr>
+    <tr>
+      <td style = "text-align: left;">Base Frequency</td>
+      <td style = "text-align: left;">60.0</td>
+    </tr>
+    <tr>
+      <td style = "text-align: left;">Num Components</td>
+      <td style = "text-align: left;">28</td>
+    </tr>
+  </tbody>
+</table>
+
+<table>
+  <caption style = "text-align: left;">Static Components</caption>
+  <thead>
+    <tr class = "header headerLastRow">
+      <th style = "text-align: left;">Type</th>
+      <th style = "text-align: left;">Count</th>
+      <th style = "text-align: left;">Has Static Time Series</th>
+      <th style = "text-align: left;">Has Forecasts</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style = "text-align: left;">Arc</td>
+      <td style = "text-align: left;">6</td>
+      <td style = "text-align: left;">false</td>
+      <td style = "text-align: left;">false</td>
+    </tr>
+    <tr>
+      <td style = "text-align: left;">Bus</td>
+      <td style = "text-align: left;">5</td>
+      <td style = "text-align: left;">false</td>
+      <td style = "text-align: left;">false</td>
+    </tr>
+    <tr>
+      <td style = "text-align: left;">Line</td>
+      <td style = "text-align: left;">6</td>
+      <td style = "text-align: left;">false</td>
+      <td style = "text-align: left;">false</td>
+    </tr>
+    <tr>
+      <td style = "text-align: left;">PowerLoad</td>
+      <td style = "text-align: left;">3</td>
+      <td style = "text-align: left;">false</td>
+      <td style = "text-align: left;">false</td>
+    </tr>
+    <tr>
+      <td style = "text-align: left;">RenewableDispatch</td>
+      <td style = "text-align: left;">3</td>
+      <td style = "text-align: left;">false</td>
+      <td style = "text-align: left;">false</td>
+    </tr>
+    <tr>
+      <td style = "text-align: left;">ThermalStandard</td>
+      <td style = "text-align: left;">5</td>
+      <td style = "text-align: left;">false</td>
+      <td style = "text-align: left;">false</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="Accessing-System-Data"><a class="docs-heading-anchor" href="#Accessing-System-Data">Accessing <code>System</code> Data</a><a id="Accessing-System-Data-1"></a><a class="docs-heading-anchor-permalink" href="#Accessing-System-Data" title="Permalink"></a></h3><p>PowerSystems provides functional interfaces to all data. The following examples outline the intended approach to accessing data expressed using PowerSystems.</p><p>PowerSystems enforces unique <code>name</code> fields between components of a particular concrete type. So, in order to retrieve a specific component, the user must specify the type of the component along with the name and system</p><h4 id="Accessing-components"><a class="docs-heading-anchor" href="#Accessing-components">Accessing components</a><a id="Accessing-components-1"></a><a class="docs-heading-anchor-permalink" href="#Accessing-components" title="Permalink"></a></h4><pre><code class="language-julia hljs">@show get_component(Bus, sys, &quot;nodeA&quot;)
+@show get_component(Line, sys, &quot;1&quot;)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">1 (Line):
+   name: 1
+   available: true
+   active_power_flow: 0.0
+   reactive_power_flow: 0.0
+   arc: nodeA -&gt; nodeB (Arc)
+   r: 0.00281
+   x: 0.0281
+   b: (from = 0.00356, to = 0.00356)
+   rate: 2.0
+   angle_limits: (min = -0.7, max = 0.7)
+   services: 0-element Vector{Service}
+   ext: Dict{String, Any}()
+   time_series_container: 
+   InfrastructureSystems.SystemUnitsSettings:
+      base_value: 100.0
+      unit_system: UnitSystem.SYSTEM_BASE = 0</code></pre><p>Similarly, you can access all the components of a particular type: *note: the return type of get_components is a <code>FlattenIteratorWrapper</code>, so call <code>collect</code> to get an <code>Array</code></p><pre><code class="language-julia hljs">get_components(Bus, sys) |&gt; collect</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">5-element Vector{Bus}:
+ Bus(1, nodeA, BusTypes.PV = 2, 0.0, 1.0, (min = 0.9, max = 1.05), 230.0, nothing, nothing, Dict{String, Any}())
+ Bus(3, nodeC, BusTypes.PV = 2, 0.0, 1.0, (min = 0.9, max = 1.05), 230.0, nothing, nothing, Dict{String, Any}())
+ Bus(5, nodeE, BusTypes.PV = 2, 0.0, 1.0, (min = 0.9, max = 1.05), 230.0, nothing, nothing, Dict{String, Any}())
+ Bus(2, nodeB, BusTypes.PQ = 1, 0.0, 1.0, (min = 0.9, max = 1.05), 230.0, nothing, nothing, Dict{String, Any}())
+ Bus(4, nodeD, BusTypes.REF = 3, 0.0, 1.0, (min = 0.9, max = 1.05), 230.0, nothing, nothing, Dict{String, Any}())</code></pre><p><code>get_components</code> also works on abstract types:</p><pre><code class="language-julia hljs">get_components(Branch, sys) |&gt; collect</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">6-element Vector{Branch}:
+ Line(4, true, 0.0, 0.0, Arc(Bus(2, nodeB, BusTypes.PQ = 1, 0.0, 1.0, (min = 0.9, max = 1.05), 230.0, nothing, nothing, Dict{String, Any}()), Bus(3, nodeC, BusTypes.PV = 2, 0.0, 1.0, (min = 0.9, max = 1.05), 230.0, nothing, nothing, Dict{String, Any}())), 0.00108, 0.0108, (from = 0.00926, to = 0.00926), 11.148, (min = -0.7, max = 0.7), Service[], Dict{String, Any}())
+ Line(1, true, 0.0, 0.0, Arc(Bus(1, nodeA, BusTypes.PV = 2, 0.0, 1.0, (min = 0.9, max = 1.05), 230.0, nothing, nothing, Dict{String, Any}()), Bus(2, nodeB, BusTypes.PQ = 1, 0.0, 1.0, (min = 0.9, max = 1.05), 230.0, nothing, nothing, Dict{String, Any}())), 0.00281, 0.0281, (from = 0.00356, to = 0.00356), 2.0, (min = -0.7, max = 0.7), Service[], Dict{String, Any}())
+ Line(5, true, 0.0, 0.0, Arc(Bus(3, nodeC, BusTypes.PV = 2, 0.0, 1.0, (min = 0.9, max = 1.05), 230.0, nothing, nothing, Dict{String, Any}()), Bus(4, nodeD, BusTypes.REF = 3, 0.0, 1.0, (min = 0.9, max = 1.05), 230.0, nothing, nothing, Dict{String, Any}())), 0.00297, 0.0297, (from = 0.00337, to = 0.00337), 40.53, (min = -0.7, max = 0.7), Service[], Dict{String, Any}())
+ Line(2, true, 0.0, 0.0, Arc(Bus(1, nodeA, BusTypes.PV = 2, 0.0, 1.0, (min = 0.9, max = 1.05), 230.0, nothing, nothing, Dict{String, Any}()), Bus(4, nodeD, BusTypes.REF = 3, 0.0, 1.0, (min = 0.9, max = 1.05), 230.0, nothing, nothing, Dict{String, Any}())), 0.00304, 0.0304, (from = 0.00329, to = 0.00329), 2.0, (min = -0.7, max = 0.7), Service[], Dict{String, Any}())
+ Line(6, true, 0.0, 0.0, Arc(Bus(4, nodeD, BusTypes.REF = 3, 0.0, 1.0, (min = 0.9, max = 1.05), 230.0, nothing, nothing, Dict{String, Any}()), Bus(5, nodeE, BusTypes.PV = 2, 0.0, 1.0, (min = 0.9, max = 1.05), 230.0, nothing, nothing, Dict{String, Any}())), 0.00297, 0.0297, (from = 0.00337, to = 0.00337), 2.0, (min = -0.7, max = 0.7), Service[], Dict{String, Any}())
+ Line(3, true, 0.0, 0.0, Arc(Bus(1, nodeA, BusTypes.PV = 2, 0.0, 1.0, (min = 0.9, max = 1.05), 230.0, nothing, nothing, Dict{String, Any}()), Bus(5, nodeE, BusTypes.PV = 2, 0.0, 1.0, (min = 0.9, max = 1.05), 230.0, nothing, nothing, Dict{String, Any}())), 0.00064, 0.0064, (from = 0.01563, to = 0.01563), 18.812, (min = -0.7, max = 0.7), Service[], Dict{String, Any}())</code></pre><p>The fields within a component can be accessed using the <code>get_*</code> functions: <em>It&#39;s highly recommended that users avoid using the <code>.</code> to access fields since we make no guarantees on the stability field names and locations. We do however promise to keep the accessor functions stable.</em></p><pre><code class="language-julia hljs">bus1 = get_component(Bus, sys, &quot;nodeA&quot;)
+@show get_name(bus1);
+@show get_magnitude(bus1);</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">get_name(bus1) = &quot;nodeA&quot;
+get_magnitude(bus1) = 1.0</code></pre><h4 id="Accessing-TimeSeries"><a class="docs-heading-anchor" href="#Accessing-TimeSeries">Accessing <code>TimeSeries</code></a><a id="Accessing-TimeSeries-1"></a><a class="docs-heading-anchor-permalink" href="#Accessing-TimeSeries" title="Permalink"></a></h4><p>First we need to add some time series to the <code>System</code></p><pre><code class="language-julia hljs">loads = collect(get_components(PowerLoad, sys))
+for (l, ts) in zip(loads, load_timeseries_DA[2])
+    add_time_series!(
+        sys,
+        l,
+        Deterministic(
+            &quot;activepower&quot;,
+            Dict(TimeSeries.timestamp(load_timeseries_DA[2][1])[1] =&gt; ts),
+        ),
+    )
+end</code></pre><p>If we want to access a specific time series for a specific component, we need to specify:</p><ul><li>time series type</li><li><code>component</code></li><li>initial_time</li><li>label</li></ul><p>We can find the initial time of all the time series in the system:</p><pre><code class="language-julia hljs">get_forecast_initial_times(sys)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">1-element Vector{Dates.DateTime}:
+ 2024-01-02T00:00:00</code></pre><p>We can find the names of all time series attached to a component:</p><pre><code class="language-julia hljs">ts_names = get_time_series_names(Deterministic, loads[1])</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">1-element Vector{String}:
+ &quot;activepower&quot;</code></pre><p>We can access a specific time series for a specific component:</p><pre><code class="language-julia hljs">ta = get_time_series_array(Deterministic, loads[1], ts_names[1])</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">24×1 TimeSeries.TimeArray{Float64, 1, Dates.DateTime, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}} 2024-01-02T00:00:00 to 2024-01-02T23:00:00
+│                     │ A      │
+├─────────────────────┼────────┤
+│ 2024-01-02T00:00:00 │ 0.8211 │
+│ 2024-01-02T01:00:00 │ 0.8181 │
+│ 2024-01-02T02:00:00 │ 0.8052 │
+│ 2024-01-02T03:00:00 │ 0.7719 │
+│ 2024-01-02T04:00:00 │ 0.7472 │
+│ 2024-01-02T05:00:00 │ 0.7602 │
+│ 2024-01-02T06:00:00 │ 0.7451 │
+│ 2024-01-02T07:00:00 │ 0.712  │
+│ ⋮                   │ ⋮      │
+│ 2024-01-02T17:00:00 │ 0.9783 │
+│ 2024-01-02T18:00:00 │ 1.0741 │
+│ 2024-01-02T19:00:00 │ 1.0912 │
+│ 2024-01-02T20:00:00 │ 1.0081 │
+│ 2024-01-02T21:00:00 │ 0.9929 │
+│ 2024-01-02T22:00:00 │ 0.9902 │
+│ 2024-01-02T23:00:00 │ 0.8795 │</code></pre><p>Or, we can just get the values of the time series:</p><pre><code class="language-julia hljs">ts = get_time_series_values(Deterministic, loads[1], ts_names[1])</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">24-element view(::Vector{Float64}, 1:24) with eltype Float64:
+ 0.8211115673304841
+ 0.8180567149641168
+ 0.8051901577287169
+ 0.7719246319012254
+ 0.7472465987416634
+ 0.7601706176873917
+ 0.7451319792765411
+ 0.7120408082886874
+ 0.8131899534516999
+ 0.8128153604723648
+ ⋮
+ 0.8276036954664064
+ 0.8847205853621778
+ 0.9782696645745933
+ 1.0740769461877493
+ 1.0911732816024555
+ 1.0080928023386584
+ 0.9929111779730051
+ 0.9901993595913173
+ 0.8795204487456694</code></pre></article><nav class="docs-footer"><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.24 on <span class="colophon-date" title="Monday 1 May 2023 18:28">Monday 1 May 2023</span>. Using Julia version 1.8.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

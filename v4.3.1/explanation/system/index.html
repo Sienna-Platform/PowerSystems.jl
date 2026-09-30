@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>System · PowerSystems.jl</title><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.045/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.24/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.png" alt="PowerSystems.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../../">PowerSystems.jl</a></span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Welcome Page</a></li><li><span class="tocitem">Tutorials</span><ul><li><a class="tocitem" href="../../tutorials/creating_system/">Create and Explore a Power <code>System</code></a></li><li><a class="tocitem" href="../../tutorials/working_with_time_series/">Working with Time Series</a></li><li><a class="tocitem" href="../../tutorials/add_dynamic_device/">Adding dynamic devices</a></li></ul></li><li><span class="tocitem">How to...</span><ul><li><a class="tocitem" href="../../how_to/install/">...install PowerSystems.jl</a></li><li><a class="tocitem" href="../../how_to/powersystembuilder/">...load a <code>system</code> from <code>PowerSystemCaseBuilder</code></a></li><li><a class="tocitem" href="../../how_to/parsing/">...parse data from Matpower, PSSE, or CSV files</a></li><li><a class="tocitem" href="../../how_to/add_ts_from_csvs/">...add time series data from CSVs</a></li><li><a class="tocitem" href="../../how_to/extend_tabular_parsing/">...customize the tabular data parser</a></li><li><a class="tocitem" href="../../how_to/get_buses/">...get all the buses in a system</a></li><li><a class="tocitem" href="../../how_to/get_available_generators/">...get the available generators in a system</a></li><li><a class="tocitem" href="../../how_to/add_cost_curve/">...add an Operating Cost</a></li><li><a class="tocitem" href="../../how_to/market_bid_cost/">...add a market bid</a></li><li><a class="tocitem" href="../../how_to/adding_additional_fields/">...add additional data to a component</a></li><li><a class="tocitem" href="../../how_to/add_new_types/">...add a new Type</a></li><li><a class="tocitem" href="../../how_to/improve_ts_performance/">...improve performance with time series data</a></li><li><a class="tocitem" href="../../how_to/serialize_data/">...serialize data to a JSON</a></li><li><a class="tocitem" href="../../how_to/reduce_repl_printing/">...reduce REPL printing</a></li><li><a class="tocitem" href="../../how_to/migrating_to_psy4/">...migrate from version 3.0 to 4.0</a></li></ul></li><li><span class="tocitem">Explanation</span><ul><li class="is-active"><a class="tocitem" href>System</a><ul class="internal"><li><a class="tocitem" href="#Accessing-components-stored-in-the-system"><span>Accessing components stored in the system</span></a></li><li><a class="tocitem" href="#dot_access"><span>Accessing data stored in a component</span></a></li><li><a class="tocitem" href="#JSON-Serialization"><span>JSON Serialization</span></a></li><li><a class="tocitem" href="#Viewing-PowerSystems-Data-in-JSON-Format"><span>Viewing PowerSystems Data in JSON Format</span></a></li></ul></li><li><a class="tocitem" href="../type_structure/">Type Structure</a></li><li><a class="tocitem" href="../per_unit/">Per-unit Conventions</a></li><li><a class="tocitem" href="../time_series/">Time Series Data</a></li><li><a class="tocitem" href="../example_dynamic_data/">Dynamic Devices</a></li></ul></li><li><span class="tocitem">Model Library</span><ul><li><input class="collapse-toggle" id="menuitem-5-1" type="checkbox"/><label class="tocitem" for="menuitem-5-1"><span class="docs-label">DynamicInverterComponent</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../model_library/generated_Converter/">Converter</a></li><li><a class="tocitem" href="../../model_library/generated_DCSource/">DCSource</a></li><li><a class="tocitem" href="../../model_library/generated_Filter/">Filter</a></li><li><a class="tocitem" href="../../model_library/generated_FrequencyEstimator/">FrequencyEstimator</a></li><li><a class="tocitem" href="../../model_library/generated_InnerControl/">InnerControl</a></li><li><a class="tocitem" href="../../model_library/generated_OutputCurrentLimiter/">OutputCurrentLimiter</a></li><li><a class="tocitem" href="../../model_library/outer_control/">OuterControl</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-5-2" type="checkbox"/><label class="tocitem" for="menuitem-5-2"><span class="docs-label">StaticInjection</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../model_library/generated_FixedAdmittance/">FixedAdmittance</a></li><li><a class="tocitem" href="../../model_library/generated_InterruptiblePowerLoad/">InterruptiblePowerLoad</a></li><li><a class="tocitem" href="../../model_library/generated_ExponentialLoad/">ExponentialLoad</a></li><li><a class="tocitem" href="../../model_library/generated_PowerLoad/">PowerLoad</a></li><li><a class="tocitem" href="../../model_library/generated_StandardLoad/">StandardLoad</a></li><li><a class="tocitem" href="../../model_library/generated_SwitchedAdmittance/">SwitchedAdmittance</a></li><li><a class="tocitem" href="../../model_library/generated_HydroDispatch/">HydroDispatch</a></li><li><a class="tocitem" href="../../model_library/generated_HydroEnergyReservoir/">HydroEnergyReservoir</a></li><li><a class="tocitem" href="../../model_library/generated_HydroPumpedStorage/">HydroPumpedStorage</a></li><li><a class="tocitem" href="../../model_library/generated_RenewableDispatch/">RenewableDispatch</a></li><li><a class="tocitem" href="../../model_library/generated_RenewableNonDispatch/">RenewableNonDispatch</a></li><li><a class="tocitem" href="../../model_library/generated_ThermalMultiStart/">ThermalMultiStart</a></li><li><a class="tocitem" href="../../model_library/generated_ThermalStandard/">ThermalStandard</a></li><li><a class="tocitem" href="../../model_library/generated_InterconnectingConverter/">InterconnectingConverter</a></li><li><a class="tocitem" href="../../model_library/generated_Source/">Source</a></li><li><a class="tocitem" href="../../model_library/generated_EnergyReservoirStorage/">EnergyReservoirStorage</a></li><li><a class="tocitem" href="../../model_library/hybrid_system/">HybridSystem</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-5-3" type="checkbox"/><label class="tocitem" for="menuitem-5-3"><span class="docs-label">Operating Costs</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../model_library/thermal_generation_cost/">ThermalGenerationCost</a></li><li><a class="tocitem" href="../../model_library/hydro_generation_cost/">HydroGenerationCost</a></li><li><a class="tocitem" href="../../model_library/renewable_generation_cost/">RenewableGenerationCost</a></li><li><a class="tocitem" href="../../model_library/storage_cost/">StorageCost</a></li><li><a class="tocitem" href="../../model_library/load_cost/">LoadCost</a></li><li><a class="tocitem" href="../../model_library/market_bid_cost/">MarketBidCost</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-5-4" type="checkbox"/><label class="tocitem" for="menuitem-5-4"><span class="docs-label">Topology</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../model_library/generated_Area/">Area</a></li><li><a class="tocitem" href="../../model_library/generated_LoadZone/">LoadZone</a></li><li><a class="tocitem" href="../../model_library/generated_Arc/">Arc</a></li><li><a class="tocitem" href="../../model_library/generated_ACBus/">ACBus</a></li><li><a class="tocitem" href="../../model_library/generated_DCBus/">DCBus</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-5-5" type="checkbox"/><label class="tocitem" for="menuitem-5-5"><span class="docs-label">Cost Curves</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../model_library/cost_curves/">Variable Cost Curves</a></li><li><a class="tocitem" href="../../model_library/value_curves/">Value Curves</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-5-6" type="checkbox"/><label class="tocitem" for="menuitem-5-6"><span class="docs-label">DynamicInjection</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../model_library/dynamic_inverter/">Dynamic Inverter</a></li><li><a class="tocitem" href="../../model_library/dynamic_generator/">Dynamic Generator</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-5-7" type="checkbox"/><label class="tocitem" for="menuitem-5-7"><span class="docs-label">Service</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../model_library/generated_AGC/">AGC</a></li><li><a class="tocitem" href="../../model_library/generated_ConstantReserveNonSpinning/">ConstantReserveNonSpinning</a></li><li><a class="tocitem" href="../../model_library/generated_VariableReserveNonSpinning/">VariableReserveNonSpinning</a></li><li><a class="tocitem" href="../../model_library/generated_TransmissionInterface/">TransmissionInterface</a></li><li><a class="tocitem" href="../../model_library/reserves/">Reserves</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-5-8" type="checkbox"/><label class="tocitem" for="menuitem-5-8"><span class="docs-label">Branch</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../model_library/generated_Line/">Line</a></li><li><a class="tocitem" href="../../model_library/generated_MonitoredLine/">MonitoredLine</a></li><li><a class="tocitem" href="../../model_library/generated_PhaseShiftingTransformer/">PhaseShiftingTransformer</a></li><li><a class="tocitem" href="../../model_library/generated_TapTransformer/">TapTransformer</a></li><li><a class="tocitem" href="../../model_library/generated_Transformer2W/">Transformer2W</a></li><li><a class="tocitem" href="../../model_library/generated_TwoTerminalHVDCLine/">TwoTerminalHVDCLine</a></li><li><a class="tocitem" href="../../model_library/generated_TwoTerminalVSCDCLine/">TwoTerminalVSCDCLine</a></li><li><a class="tocitem" href="../../model_library/generated_AreaInterchange/">AreaInterchange</a></li><li><a class="tocitem" href="../../model_library/generated_TModelHVDCLine/">TModelHVDCLine</a></li><li><a class="tocitem" href="../../model_library/dynamic_branch/">Dynamic Lines</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-5-9" type="checkbox"/><label class="tocitem" for="menuitem-5-9"><span class="docs-label">DynamicGeneratorComponent</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../model_library/generated_AVR/">AVR</a></li><li><a class="tocitem" href="../../model_library/generated_Machine/">Machine</a></li><li><a class="tocitem" href="../../model_library/generated_PSS/">PSS</a></li><li><a class="tocitem" href="../../model_library/generated_Shaft/">Shaft</a></li><li><a class="tocitem" href="../../model_library/generated_TurbineGov/">TurbineGov</a></li></ul></li></ul></li><li><span class="tocitem">Reference</span><ul><li><a class="tocitem" href="../../api/public/">Public API</a></li><li><a class="tocitem" href="../../api/internal/">Internal API Reference</a></li><li><a class="tocitem" href="../../api/glossary/">Glossary and Acronyms</a></li><li><a class="tocitem" href="../../api/type_tree/">Type Hierarchy</a></li><li><a class="tocitem" href="../../api/valuecurve_options/"><code>ValueCurve</code> Options</a></li><li><a class="tocitem" href="../../api/enumerated_types/">Specifying the category of...</a></li><li><a class="tocitem" href="../../api/developer_guidelines/">Developer Guidelines</a></li><li><a class="tocitem" href="../../api/citation/">Citation</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Explanation</a></li><li class="is-active"><a href>System</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>System</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/NREL-Sienna/PowerSystems.jl/blob/main/docs/src/explanation/system.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="system_doc"><a class="docs-heading-anchor" href="#system_doc">System</a><a id="system_doc-1"></a><a class="docs-heading-anchor-permalink" href="#system_doc" title="Permalink"></a></h1><p>The <code>System</code> is the main container of components and the time series data references. <code>PowerSystems.jl</code> uses a hybrid approach to data storage, where the component data and time series references are stored in volatile memory while the actual time series data is stored in an HDF5 file. This design loads into memory the portions of the data that are relevant at time of the query, and so avoids overwhelming the memory resources.</p><img src="../../assets/System.png" width="50%"/><h2 id="Accessing-components-stored-in-the-system"><a class="docs-heading-anchor" href="#Accessing-components-stored-in-the-system">Accessing components stored in the system</a><a id="Accessing-components-stored-in-the-system-1"></a><a class="docs-heading-anchor-permalink" href="#Accessing-components-stored-in-the-system" title="Permalink"></a></h2><p><code>PowerSystems.jl</code> implements a wide variety of methods to search for components to aid in the development of models. The code block shows an example of retrieving components through the type hierarchy with the <a href="../../api/public/#PowerSystems.get_components-Tuple{System, SupplementalAttribute}"><code>get_components</code></a> function and exploiting the type hierarchy for modeling purposes.</p><p>The default implementation of the function <a href="../../api/public/#PowerSystems.get_components-Tuple{System, SupplementalAttribute}"><code>get_components</code></a> takes the desired device type (concrete or abstract) and the system and it also accepts filter functions for a more refined search. The container is optimized for iteration over abstract or concrete component types as described by the <a href="../type_structure/#type_structure">Type Structure</a>. Given the potential size of the return, <code>PowerSystems.jl</code> returns Julia iterators in order to avoid unnecessary memory allocations.</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; using PowerSystems</code><code class="nohighlight hljs ansi" style="display:block;"></code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; file_dir = joinpath(pkgdir(PowerSystems), &quot;docs&quot;, &quot;src&quot;, &quot;tutorials&quot;, &quot;tutorials_data&quot;)</code><code class="nohighlight hljs ansi" style="display:block;">&quot;/home/runner/work/PowerSystems.jl/PowerSystems.jl/docs/src/tutorials/tutorials_data&quot;</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; system = System(joinpath(file_dir, &quot;RTS_GMLC.m&quot;));</code><code class="nohighlight hljs ansi" style="display:block;">┌ Error: Matlab parser skipping line number 802 consisting of:
+│   ];
+└ @ PowerSystems ~/work/PowerSystems.jl/PowerSystems.jl/src/parsers/im_io/matlab.jl:64
+[ Info: Correcting vm in bus 101 to 1.0468 to match generator set-point
+[ Info: Correcting vm in bus 102 to 1.0467 to match generator set-point
+[ Info: Correcting vm in bus 107 to 1.05 to match generator set-point
+[ Info: Correcting vm in bus 113 to 1.0347 to match generator set-point
+[ Info: Correcting vm in bus 115 to 1.0428 to match generator set-point
+[ Info: Correcting vm in bus 116 to 1.0461 to match generator set-point
+[ Info: Correcting vm in bus 201 to 1.05 to match generator set-point
+[ Info: Correcting vm in bus 202 to 1.05 to match generator set-point
+[ Info: Correcting vm in bus 207 to 0.9699 to match generator set-point
+[ Info: Correcting vm in bus 213 to 1.05 to match generator set-point
+[ Info: Correcting vm in bus 215 to 1.0437 to match generator set-point
+[ Info: Correcting vm in bus 216 to 1.0473 to match generator set-point
+[ Info: Correcting vm in bus 301 to 1.05 to match generator set-point
+[ Info: Correcting vm in bus 302 to 1.05 to match generator set-point
+[ Info: Correcting vm in bus 307 to 0.9568 to match generator set-point
+[ Info: Correcting vm in bus 313 to 1.0 to match generator set-point
+[ Info: Correcting vm in bus 315 to 1.0422 to match generator set-point
+[ Info: Correcting vm in bus 316 to 1.0449 to match generator set-point
+[ Info: Correcting vm in bus 114 to 1.0441 to match generator set-point
+[ Info: Correcting vm in bus 214 to 1.05 to match generator set-point
+[ Info: Correcting vm in bus 314 to 1.0 to match generator set-point
+[ Info: Correcting vm in bus 118 to 1.0 to match generator set-point
+[ Info: Correcting vm in bus 122 to 1.0 to match generator set-point
+[ Info: extending matpower format with data: areas 3x3
+[ Info: extending matpower format with data: gen_name 158x4
+[ Info: added zero cost function data for dclines
+[ Info: extending matpower format by appending matrix &quot;gen_name&quot; in to &quot;gen&quot;
+[ Info: this code only supports angmin values in -90 deg. to 90 deg., tightening the value on branch 5 from -90.0 to -60.0 deg.
+[ Info: this code only supports angmax values in -90 deg. to 90 deg., tightening the value on branch 5 from 90.0 to 60.0 deg.
+[ Info: this code only supports angmin values in -90 deg. to 90 deg., tightening the value on branch 56 from -90.0 to -60.0 deg.
+[ Info: this code only supports angmax values in -90 deg. to 90 deg., tightening the value on branch 56 from 90.0 to 60.0 deg.
+[ Info: this code only supports angmin values in -90 deg. to 90 deg., tightening the value on branch 35 from -90.0 to -60.0 deg.
+[ Info: this code only supports angmax values in -90 deg. to 90 deg., tightening the value on branch 35 from 90.0 to 60.0 deg.
+[ Info: this code only supports angmin values in -90 deg. to 90 deg., tightening the value on branch 55 from -90.0 to -60.0 deg.
+[ Info: this code only supports angmax values in -90 deg. to 90 deg., tightening the value on branch 55 from 90.0 to 60.0 deg.
+[ Info: this code only supports angmin values in -90 deg. to 90 deg., tightening the value on branch 110 from -90.0 to -60.0 deg.
+[ Info: this code only supports angmax values in -90 deg. to 90 deg., tightening the value on branch 110 from 90.0 to 60.0 deg.
+[ Info: this code only supports angmin values in -90 deg. to 90 deg., tightening the value on branch 114 from -90.0 to -60.0 deg.
+[ Info: this code only supports angmax values in -90 deg. to 90 deg., tightening the value on branch 114 from 90.0 to 60.0 deg.
+[ Info: this code only supports angmin values in -90 deg. to 90 deg., tightening the value on branch 60 from -90.0 to -60.0 deg.
+[ Info: this code only supports angmax values in -90 deg. to 90 deg., tightening the value on branch 60 from 90.0 to 60.0 deg.
+[ Info: this code only supports angmin values in -90 deg. to 90 deg., tightening the value on branch 30 from -90.0 to -60.0 deg.
+[ Info: this code only supports angmax values in -90 deg. to 90 deg., tightening the value on branch 30 from 90.0 to 60.0 deg.
+[ Info: this code only supports angmin values in -90 deg. to 90 deg., tightening the value on branch 32 from -90.0 to -60.0 deg.
+[ Info: this code only supports angmax values in -90 deg. to 90 deg., tightening the value on branch 32 from 90.0 to 60.0 deg.
+[ Info: this code only supports angmin values in -90 deg. to 90 deg., tightening the value on branch 6 from -90.0 to -60.0 deg.
+[ Info: this code only supports angmax values in -90 deg. to 90 deg., tightening the value on branch 6 from 90.0 to 60.0 deg.
+[ Info: this code only supports angmin values in -90 deg. to 90 deg., tightening the value on branch 67 from -90.0 to -60.0 deg.
+[ Info: this code only supports angmax values in -90 deg. to 90 deg., tightening the value on branch 67 from 90.0 to 60.0 deg.
+[ Info: this code only supports angmin values in -90 deg. to 90 deg., tightening the value on branch 45 from -90.0 to -60.0 deg.
+[ Info: this code only supports angmax values in -90 deg. to 90 deg., tightening the value on branch 45 from 90.0 to 60.0 deg.
+[ Info: this code only supports angmin values in -90 deg. to 90 deg., tightening the value on branch 117 from -90.0 to -60.0 deg.
+[ Info: this code only supports angmax values in -90 deg. to 90 deg., tightening the value on branch 117 from 90.0 to 60.0 deg.
+[ Info: this code only supports angmin values in -90 deg. to 90 deg., tightening the value on branch 73 from -90.0 to -60.0 deg.
+[ Info: this code only supports angmax values in -90 deg. to 90 deg., tightening the value on branch 73 from 90.0 to 60.0 deg.
+[ Info: this code only supports angmin values in -90 deg. to 90 deg., tightening the value on branch 115 from -90.0 to -60.0 deg.
+[ Info: this code only supports angmax values in -90 deg. to 90 deg., tightening the value on branch 115 from 90.0 to 60.0 deg.
+[ Info: this code only supports angmin values in -90 deg. to 90 deg., tightening the value on branch 112 from -90.0 to -60.0 deg.
+[ Info: this code only supports angmax values in -90 deg. to 90 deg., tightening the value on branch 112 from 90.0 to 60.0 deg.
+[ Info: this code only supports angmin values in -90 deg. to 90 deg., tightening the value on branch 64 from -90.0 to -60.0 deg.
+[ Info: this code only supports angmax values in -90 deg. to 90 deg., tightening the value on branch 64 from 90.0 to 60.0 deg.
+[ Info: this code only supports angmin values in -90 deg. to 90 deg., tightening the value on branch 90 from -90.0 to -60.0 deg.
+[ Info: this code only supports angmax values in -90 deg. to 90 deg., tightening the value on branch 90 from 90.0 to 60.0 deg.
+[ Info: this code only supports angmin values in -90 deg. to 90 deg., tightening the value on branch 4 from -90.0 to -60.0 deg.
+[ Info: this code only supports angmax values in -90 deg. to 90 deg., tightening the value on branch 4 from 90.0 to 60.0 deg.
+[ Info: this code only supports angmin values in -90 deg. to 90 deg., tightening the value on branch 13 from -90.0 to -60.0 deg.
+[ Info: this code only supports angmax values in -90 deg. to 90 deg., tightening the value on branch 13 from 90.0 to 60.0 deg.
+[ Info: this code only supports angmin values in -90 deg. to 90 deg., tightening the value on branch 54 from -90.0 to -60.0 deg.
+[ Info: this code only supports angmax values in -90 deg. to 90 deg., tightening the value on branch 54 from 90.0 to 60.0 deg.
+[ Info: this code only supports angmin values in -90 deg. to 90 deg., tightening the value on branch 63 from -90.0 to -60.0 deg.
+[ Info: this code only supports angmax values in -90 deg. to 90 deg., tightening the value on branch 63 from 90.0 to 60.0 deg.
+[ Info: this code only supports angmin values in -90 deg. to 90 deg., tightening the value on branch 86 from -90.0 to -60.0 deg.
+[ Info: this code only supports angmax values in -90 deg. to 90 deg., tightening the value on branch 86 from 90.0 to 60.0 deg.
+[ Info: this code only supports angmin values in -90 deg. to 90 deg., tightening the value on branch 104 from -90.0 to -60.0 deg.
+[ Info: this code only supports angmax values in -90 deg. to 90 deg., tightening the value on branch 104 from 90.0 to 60.0 deg.
+[ Info: this code only supports angmin values in -90 deg. to 90 deg., tightening the value on branch 91 from -90.0 to -60.0 deg.
+[ Info: this code only supports angmax values in -90 deg. to 90 deg., tightening the value on branch 91 from 90.0 to 60.0 deg.
+[ Info: this code only supports angmin values in -90 deg. to 90 deg., tightening the value on branch 62 from -90.0 to -60.0 deg.
+[ Info: this code only supports angmax values in -90 deg. to 90 deg., tightening the value on branch 62 from 90.0 to 60.0 deg.
+[ Info: this code only supports angmin values in -90 deg. to 90 deg., tightening the value on branch 58 from -90.0 to -60.0 deg.
+[ Info: this code only supports angmax values in -90 deg. to 90 deg., tightening the value on branch 58 from 90.0 to 60.0 deg.
+[ Info: this code only supports angmin values in -90 deg. to 90 deg., tightening the value on branch 52 from -90.0 to -60.0 deg.
+[ Info: this code only supports angmax values in -90 deg. to 90 deg., tightening the value on branch 52 from 90.0 to 60.0 deg.
+[ Info: this code only supports angmin values in -90 deg. to 90 deg., tightening the value on branch 12 from -90.0 to -60.0 deg.
+[ Info: this code only supports angmax values in -90 deg. to 90 deg., tightening the value on branch 12 from 90.0 to 60.0 deg.
+[ Info: this code only supports angmin values in -90 deg. to 90 deg., tightening the value on branch 28 from -90.0 to -60.0 deg.
+[ Info: this code only supports angmax values in -90 deg. to 90 deg., tightening the value on branch 28 from 90.0 to 60.0 deg.
+[ Info: this code only supports angmin values in -90 deg. to 90 deg., tightening the value on branch 75 from -90.0 to -60.0 deg.
+[ Info: this code only supports angmax values in -90 deg. to 90 deg., tightening the value on branch 75 from 90.0 to 60.0 deg.
+[ Info: this code only supports angmin values in -90 deg. to 90 deg., tightening the value on branch 23 from -90.0 to -60.0 deg.
+[ Info: this code only supports angmax values in -90 deg. to 90 deg., tightening the value on branch 23 from 90.0 to 60.0 deg.
+[ Info: this code only supports angmin values in -90 deg. to 90 deg., tightening the value on branch 111 from -90.0 to -60.0 deg.
+[ Info: this code only supports angmax values in -90 deg. to 90 deg., tightening the value on branch 111 from 90.0 to 60.0 deg.
+[ Info: this code only supports angmin values in -90 deg. to 90 deg., tightening the value on branch 92 from -90.0 to -60.0 deg.
+[ Info: this code only supports angmax values in -90 deg. to 90 deg., tightening the value on branch 92 from 90.0 to 60.0 deg.
+[ Info: this code only supports angmin values in -90 deg. to 90 deg., tightening the value on branch 41 from -90.0 to -60.0 deg.
+[ Info: this code only supports angmax values in -90 deg. to 90 deg., tightening the value on branch 41 from 90.0 to 60.0 deg.
+[ Info: this code only supports angmin values in -90 deg. to 90 deg., tightening the value on branch 43 from -90.0 to -60.0 deg.
+[ Info: this code only supports angmax values in -90 deg. to 90 deg., tightening the value on branch 43 from 90.0 to 60.0 deg.
+[ Info: this code only supports angmin values in -90 deg. to 90 deg., tightening the value on branch 11 from -90.0 to -60.0 deg.
+[ Info: this code only supports angmax values in -90 deg. to 90 deg., tightening the value on branch 11 from 90.0 to 60.0 deg.
+[ Info: this code only supports angmin values in -90 deg. to 90 deg., tightening the value on branch 36 from -90.0 to -60.0 deg.
+[ Info: this code only supports angmax values in -90 deg. to 90 deg., tightening the value on branch 36 from 90.0 to 60.0 deg.
+[ Info: this code only supports angmin values in -90 deg. to 90 deg., tightening the value on branch 68 from -90.0 to -60.0 deg.
+[ Info: this code only supports angmax values in -90 deg. to 90 deg., tightening the value on branch 68 from 90.0 to 60.0 deg.
+[ Info: this code only supports angmin values in -90 deg. to 90 deg., tightening the value on branch 69 from -90.0 to -60.0 deg.
+[ Info: this code only supports angmax values in -90 deg. to 90 deg., tightening the value on branch 69 from 90.0 to 60.0 deg.
+[ Info: this code only supports angmin values in -90 deg. to 90 deg., tightening the value on branch 98 from -90.0 to -60.0 deg.
+[ Info: this code only supports angmax values in -90 deg. to 90 deg., tightening the value on branch 98 from 90.0 to 60.0 deg.
+[ Info: this code only supports angmin values in -90 deg. to 90 deg., tightening the value on branch 82 from -90.0 to -60.0 deg.
+[ Info: this code only supports angmax values in -90 deg. to 90 deg., tightening the value on branch 82 from 90.0 to 60.0 deg.
+[ Info: this code only supports angmin values in -90 deg. to 90 deg., tightening the value on branch 85 from -90.0 to -60.0 deg.
+[ Info: this code only supports angmax values in -90 deg. to 90 deg., tightening the value on branch 85 from 90.0 to 60.0 deg.
+[ Info: this code only supports angmin values in -90 deg. to 90 deg., tightening the value on branch 118 from -90.0 to -60.0 deg.
+[ Info: this code only supports angmax values in -90 deg. to 90 deg., tightening the value on branch 118 from 90.0 to 60.0 deg.
+[ Info: this code only supports angmin values in -90 deg. to 90 deg., tightening the value on branch 119 from -90.0 to -60.0 deg.
+[ Info: this code only supports angmax values in -90 deg. to 90 deg., tightening the value on branch 119 from 90.0 to 60.0 deg.
+[ Info: this code only supports angmin values in -90 deg. to 90 deg., tightening the value on branch 39 from -90.0 to -60.0 deg.
+[ Info: this code only supports angmax values in -90 deg. to 90 deg., tightening the value on branch 39 from 90.0 to 60.0 deg.
+[ Info: this code only supports angmin values in -90 deg. to 90 deg., tightening the value on branch 84 from -90.0 to -60.0 deg.
+[ Info: this code only supports angmax values in -90 deg. to 90 deg., tightening the value on branch 84 from 90.0 to 60.0 deg.
+[ Info: this code only supports angmin values in -90 deg. to 90 deg., tightening the value on branch 77 from -90.0 to -60.0 deg.
+[ Info: this code only supports angmax values in -90 deg. to 90 deg., tightening the value on branch 77 from 90.0 to 60.0 deg.
+[ Info: this code only supports angmin values in -90 deg. to 90 deg., tightening the value on branch 7 from -90.0 to -60.0 deg.
+[ Info: this code only supports angmax values in -90 deg. to 90 deg., tightening the value on branch 7 from 90.0 to 60.0 deg.
+[ Info: this code only supports angmin values in -90 deg. to 90 deg., tightening the value on branch 25 from -90.0 to -60.0 deg.
+[ Info: this code only supports angmax values in -90 deg. to 90 deg., tightening the value on branch 25 from 90.0 to 60.0 deg.
+[ Info: the voltage setpoint on generator 123 does not match the value at bus 308
+[ Info: the voltage setpoint on generator 117 does not match the value at bus 212
+[ Info: the voltage setpoint on generator 136 does not match the value at bus 320
+[ Info: the voltage setpoint on generator 104 does not match the value at bus 310
+[ Info: the voltage setpoint on generator 122 does not match the value at bus 119
+[ Info: the voltage setpoint on generator 75 does not match the value at bus 122
+[ Info: the voltage setpoint on generator 111 does not match the value at bus 319
+[ Info: the voltage setpoint on generator 148 does not match the value at bus 320
+[ Info: the voltage setpoint on generator 77 does not match the value at bus 122
+[ Info: the voltage setpoint on generator 108 does not match the value at bus 324
+[ Info: the voltage setpoint on generator 76 does not match the value at bus 122
+[ Info: the voltage setpoint on generator 156 does not match the value at bus 303
+[ Info: the voltage setpoint on generator 18 does not match the value at bus 118
+[ Info: the voltage setpoint on generator 116 does not match the value at bus 104
+[ Info: the voltage setpoint on generator 140 does not match the value at bus 320
+[ Info: the voltage setpoint on generator 79 does not match the value at bus 122
+[ Info: the voltage setpoint on generator 141 does not match the value at bus 320
+[ Info: the voltage setpoint on generator 138 does not match the value at bus 320
+[ Info: the voltage setpoint on generator 106 does not match the value at bus 312
+[ Info: the voltage setpoint on generator 109 does not match the value at bus 324
+[ Info: the voltage setpoint on generator 107 does not match the value at bus 310
+[ Info: the voltage setpoint on generator 78 does not match the value at bus 122
+[ Info: the voltage setpoint on generator 105 does not match the value at bus 324
+[ Info: the voltage setpoint on generator 137 does not match the value at bus 320
+[ Info: the voltage setpoint on generator 154 does not match the value at bus 309
+[ Info: the voltage setpoint on generator 121 does not match the value at bus 103
+[ Info: the voltage setpoint on generator 80 does not match the value at bus 122
+[ Info: the voltage setpoint on generator 155 does not match the value at bus 317
+[ Info: the voltage setpoint on generator 97 does not match the value at bus 320
+[ Info: the from bus voltage setpoint on dc line 1 does not match the value at bus 113
+[ Info: the to bus voltage setpoint on dc line 1 does not match the value at bus 316
+[ Info: simplifying pwl cost on generator 110, [0.0, 0.0, 0.312, 0.0, 0.624, 0.0, 0.9359999999999999, 0.0] -&gt; [0.0, 0.0, 0.9359999999999999, 0.0]
+[ Info: simplifying pwl cost on generator 114, [0.0, 0.0, 0.0863333, 0.0, 0.1726667, 0.0, 0.259, 0.0] -&gt; [0.0, 0.0, 0.259, 0.0]
+[ Info: simplifying pwl cost on generator 123, [0.0, 0.0, 0.3363333, 0.0, 0.6726667000000001, 0.0, 1.0090000000000001, 0.0] -&gt; [0.0, 0.0, 1.0090000000000001, 0.0]
+[ Info: simplifying pwl cost on generator 117, [0.3, 0.0, 0.66, 0.0, 1.2, 0.0, 1.6, 0.0] -&gt; [0.3, 0.0, 1.6, 0.0]
+[ Info: simplifying pwl cost on generator 136, [0.0, 0.0, 0.091, 0.0, 0.182, 0.0, 0.273, 0.0] -&gt; [0.0, 0.0, 0.273, 0.0]
+[ Info: simplifying pwl cost on generator 145, [0.0, 0.0, 0.030333299999999997, 0.0, 0.060666700000000004, 0.0, 0.091, 0.0] -&gt; [0.0, 0.0, 0.091, 0.0]
+[ Info: pwl x value 0.0033333 is outside the bounds 0.0-0.0 on generator 73
+[ Info: pwl x value 0.0066667 is outside the bounds 0.0-0.0 on generator 73
+[ Info: pwl x value 0.01 is outside the bounds 0.0-0.0 on generator 73
+[ Info: simplifying pwl cost on generator 73, [0.0, 0.0, 0.0033333, 0.0, 0.0066667, 0.0, 0.01, 0.0] -&gt; [0.0, 0.0, 0.01, 0.0]
+[ Info: simplifying pwl cost on generator 115, [0.0, 0.0, 0.0843333, 0.0, 0.1686667, 0.0, 0.253, 0.0] -&gt; [0.0, 0.0, 0.253, 0.0]
+[ Info: simplifying pwl cost on generator 153, [0.0, 0.0, 0.044000000000000004, 0.0, 0.08800000000000001, 0.0, 0.132, 0.0] -&gt; [0.0, 0.0, 0.132, 0.0]
+[ Info: simplifying pwl cost on generator 112, [0.0, 0.0, 0.41700000000000004, 0.0, 0.8340000000000001, 0.0, 1.251, 0.0] -&gt; [0.0, 0.0, 1.251, 0.0]
+[ Info: simplifying pwl cost on generator 151, [0.0, 0.0, 0.034333300000000004, 0.0, 0.0686667, 0.0, 0.10300000000000001, 0.0] -&gt; [0.0, 0.0, 0.10300000000000001, 0.0]
+[ Info: simplifying pwl cost on generator 90, [0.0, 0.0, 0.1666667, 0.0, 0.33333329999999994, 0.0, 0.5, 0.0] -&gt; [0.0, 0.0, 0.5, 0.0]
+[ Info: simplifying pwl cost on generator 139, [0.0, 0.0, 0.0906667, 0.0, 0.1813333, 0.0, 0.272, 0.0] -&gt; [0.0, 0.0, 0.272, 0.0]
+[ Info: simplifying pwl cost on generator 86, [0.0, 0.0, 0.1666667, 0.0, 0.33333329999999994, 0.0, 0.5, 0.0] -&gt; [0.0, 0.0, 0.5, 0.0]
+[ Info: simplifying pwl cost on generator 104, [0.0, 0.0, 0.1723333, 0.0, 0.3446667, 0.0, 0.517, 0.0] -&gt; [0.0, 0.0, 0.517, 0.0]
+[ Info: simplifying pwl cost on generator 91, [0.0, 0.0, 0.1666667, 0.0, 0.33333329999999994, 0.0, 0.5, 0.0] -&gt; [0.0, 0.0, 0.5, 0.0]
+[ Info: simplifying pwl cost on generator 158, [0.0, 0.0, 0.1666667, 0.0, 0.33333329999999994, 0.0, 0.5, 0.0] -&gt; [0.0, 0.0, 0.5, 0.0]
+[ Info: simplifying pwl cost on generator 150, [0.0, 0.0, 0.0373333, 0.0, 0.0746667, 0.0, 0.11199999999999999, 0.0] -&gt; [0.0, 0.0, 0.11199999999999999, 0.0]
+[ Info: simplifying pwl cost on generator 122, [0.0, 0.0, 0.222, 0.0, 0.444, 0.0, 0.6659999999999999, 0.0] -&gt; [0.0, 0.0, 0.6659999999999999, 0.0]
+[ Info: simplifying pwl cost on generator 75, [0.0, 0.0, 0.1666667, 0.0, 0.33333329999999994, 0.0, 0.5, 0.0] -&gt; [0.0, 0.0, 0.5, 0.0]
+[ Info: simplifying pwl cost on generator 111, [0.0, 0.0, 0.6273333, 0.0, 1.2546667, 0.0, 1.882, 0.0] -&gt; [0.0, 0.0, 1.882, 0.0]
+[ Info: simplifying pwl cost on generator 148, [0.0, 0.0, 0.0313333, 0.0, 0.0626667, 0.0, 0.094, 0.0] -&gt; [0.0, 0.0, 0.094, 0.0]
+[ Info: pwl x value 0.0033333 is outside the bounds 0.0-0.0 on generator 92
+[ Info: pwl x value 0.0066667 is outside the bounds 0.0-0.0 on generator 92
+[ Info: pwl x value 0.01 is outside the bounds 0.0-0.0 on generator 92
+[ Info: simplifying pwl cost on generator 92, [0.0, 0.0, 0.0033333, 0.0, 0.0066667, 0.0, 0.01, 0.0] -&gt; [0.0, 0.0, 0.01, 0.0]
+[ Info: simplifying pwl cost on generator 98, [0.0, 0.0, 0.172, 0.0, 0.344, 0.0, 0.516, 0.0] -&gt; [0.0, 0.0, 0.516, 0.0]
+[ Info: pwl x value 0.0033333 is outside the bounds 0.0-0.0 on generator 82
+[ Info: pwl x value 0.0066667 is outside the bounds 0.0-0.0 on generator 82
+[ Info: pwl x value 0.01 is outside the bounds 0.0-0.0 on generator 82
+[ Info: simplifying pwl cost on generator 82, [0.0, 0.0, 0.0033333, 0.0, 0.0066667, 0.0, 0.01, 0.0] -&gt; [0.0, 0.0, 0.01, 0.0]
+[ Info: simplifying pwl cost on generator 85, [0.0, 0.0, 0.1666667, 0.0, 0.33333329999999994, 0.0, 0.5, 0.0] -&gt; [0.0, 0.0, 0.5, 0.0]
+[ Info: simplifying pwl cost on generator 118, [0.0, 0.0, 0.08900000000000001, 0.0, 0.17800000000000002, 0.0, 0.267, 0.0] -&gt; [0.0, 0.0, 0.267, 0.0]
+[ Info: simplifying pwl cost on generator 119, [0.0, 0.0, 0.0873333, 0.0, 0.1746667, 0.0, 0.262, 0.0] -&gt; [0.0, 0.0, 0.262, 0.0]
+[ Info: simplifying pwl cost on generator 125, [0.0, 0.0, 0.2103333, 0.0, 0.4206667, 0.0, 0.631, 0.0] -&gt; [0.0, 0.0, 0.631, 0.0]
+[ Info: simplifying pwl cost on generator 130, [0.0, 0.0, 0.2136667, 0.0, 0.4273333, 0.0, 0.6409999999999999, 0.0] -&gt; [0.0, 0.0, 0.6409999999999999, 0.0]
+[ Info: simplifying pwl cost on generator 84, [0.0, 0.0, 0.1666667, 0.0, 0.33333329999999994, 0.0, 0.5, 0.0] -&gt; [0.0, 0.0, 0.5, 0.0]
+[ Info: simplifying pwl cost on generator 77, [0.0, 0.0, 0.1666667, 0.0, 0.33333329999999994, 0.0, 0.5, 0.0] -&gt; [0.0, 0.0, 0.5, 0.0]
+[ Info: simplifying pwl cost on generator 95, [0.0, 0.0, 0.1666667, 0.0, 0.33333329999999994, 0.0, 0.5, 0.0] -&gt; [0.0, 0.0, 0.5, 0.0]
+[ Info: simplifying pwl cost on generator 126, [0.0, 0.0, 0.218, 0.0, 0.436, 0.0, 0.654, 0.0] -&gt; [0.0, 0.0, 0.654, 0.0]
+[ Info: simplifying pwl cost on generator 108, [0.0, 0.0, 0.172, 0.0, 0.344, 0.0, 0.516, 0.0] -&gt; [0.0, 0.0, 0.516, 0.0]
+[ Info: simplifying pwl cost on generator 76, [0.0, 0.0, 0.1666667, 0.0, 0.33333329999999994, 0.0, 0.5, 0.0] -&gt; [0.0, 0.0, 0.5, 0.0]
+[ Info: simplifying pwl cost on generator 103, [0.0, 0.0, 0.311, 0.0, 0.622, 0.0, 0.9329999999999999, 0.0] -&gt; [0.0, 0.0, 0.9329999999999999, 0.0]
+[ Info: simplifying pwl cost on generator 156, [0.0, 0.0, 2.8233333, 0.0, 5.6466667, 0.0, 8.47, 0.0] -&gt; [0.0, 0.0, 8.47, 0.0]
+[ Info: simplifying pwl cost on generator 93, [0.0, 0.0, 0.1666667, 0.0, 0.33333329999999994, 0.0, 0.5, 0.0] -&gt; [0.0, 0.0, 0.5, 0.0]
+[ Info: simplifying pwl cost on generator 124, [0.0, 0.0, 0.33899999999999997, 0.0, 0.6779999999999999, 0.0, 1.0170000000000001, 0.0] -&gt; [0.0, 0.0, 1.0170000000000001, 0.0]
+[ Info: simplifying pwl cost on generator 87, [0.0, 0.0, 0.1666667, 0.0, 0.33333329999999994, 0.0, 0.5, 0.0] -&gt; [0.0, 0.0, 0.5, 0.0]
+[ Info: simplifying pwl cost on generator 127, [0.0, 0.0, 0.2233333, 0.0, 0.4466667, 0.0, 0.67, 0.0] -&gt; [0.0, 0.0, 0.67, 0.0]
+[ Info: simplifying pwl cost on generator 116, [0.0, 0.0, 0.0893333, 0.0, 0.17866669999999998, 0.0, 0.268, 0.0] -&gt; [0.0, 0.0, 0.268, 0.0]
+[ Info: simplifying pwl cost on generator 100, [0.0, 0.0, 0.317, 0.0, 0.634, 0.0, 0.951, 0.0] -&gt; [0.0, 0.0, 0.951, 0.0]
+[ Info: simplifying pwl cost on generator 132, [0.0, 0.0, 0.20800000000000002, 0.0, 0.41600000000000004, 0.0, 0.624, 0.0] -&gt; [0.0, 0.0, 0.624, 0.0]
+[ Info: simplifying pwl cost on generator 140, [0.0, 0.0, 0.09, 0.0, 0.18, 0.0, 0.27, 0.0] -&gt; [0.0, 0.0, 0.27, 0.0]
+[ Info: simplifying pwl cost on generator 79, [0.0, 0.0, 0.1666667, 0.0, 0.33333329999999994, 0.0, 0.5, 0.0] -&gt; [0.0, 0.0, 0.5, 0.0]
+[ Info: simplifying pwl cost on generator 81, [0.0, 0.0, 0.1666667, 0.0, 0.33333329999999994, 0.0, 0.5, 0.0] -&gt; [0.0, 0.0, 0.5, 0.0]
+[ Info: simplifying pwl cost on generator 144, [0.0, 0.0, 0.0313333, 0.0, 0.0626667, 0.0, 0.094, 0.0] -&gt; [0.0, 0.0, 0.094, 0.0]
+[ Info: simplifying pwl cost on generator 147, [0.0, 0.0, 0.0323333, 0.0, 0.0646667, 0.0, 0.09699999999999999, 0.0] -&gt; [0.0, 0.0, 0.09699999999999999, 0.0]
+┌ Info: Constructing System from Power Models
+│   data[&quot;name&quot;] = &quot;RTS_GMLC&quot;
+└   data[&quot;source_type&quot;] = &quot;matpower&quot;
+[ Info: Reading bus data
+[ Info: Reading Load data in PowerModels dict to populate System ...
+[ Info: Reading LoadZones data in PowerModels dict to populate System ...
+[ Info: Reading generator data
+┌ Warning: EnergyReservoirStorage should be defined as a PowerModels storage... Skipping
+└ @ PowerSystems ~/work/PowerSystems.jl/PowerSystems.jl/src/parsers/power_models_data.jl:619
+[ Info: Reading branch data
+[ Info: Reading shunt data
+[ Info: Reading DC Line data
+[ Info: Reading storage data</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; thermal_gens = get_components(ThermalStandard, system)</code><code class="nohighlight hljs ansi" style="display:block;">ThermalStandard Counts:
+ThermalStandard: 76</code></pre><p>It is also possible to execute <a href="../../api/public/#PowerSystems.get_components-Tuple{System, SupplementalAttribute}"><code>get_components</code></a> with abstract types from the <a href="../type_structure/#type_structure">abstract tree</a>. For instance, it is possible to retrieve all renewable generators</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; thermal_gens = get_components(RenewableGen, system)</code><code class="nohighlight hljs ansi" style="display:block;">RenewableGen Counts:
+RenewableDispatch: 30
+RenewableNonDispatch: 31</code></pre><p>The most common filtering requirement is by component name and for this case the method <a href="../../api/public/#PowerSystems.get_component-Tuple{System, Base.UUID}"><code>get_component</code></a> returns a single component taking the device type, system and name as arguments.</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; my_thermal_gen = get_component(ThermalStandard, system, &quot;323_CC_1&quot;)</code><code class="nohighlight hljs ansi" style="display:block;">ThermalStandard: 323_CC_1:
+   name: 323_CC_1
+   available: true
+   status: true
+   bus: ACBus: COMTE
+   active_power: 3.55
+   reactive_power: 0.3741
+   rating: 3.853894134508627
+   active_power_limits: (min = 1.7, max = 3.55)
+   reactive_power_limits: (min = -0.25, max = 1.5)
+   ramp_limits: (up = 0.0414, down = 0.0414)
+   operation_cost: ThermalGenerationCost composed of variable: CostCurve{PiecewisePointCurve}
+   base_power: 100.0
+   time_limits: nothing
+   must_run: false
+   prime_mover_type: PrimeMovers.CC = 4
+   fuel: ThermalFuels.NATURAL_GAS = 7
+   services: 0-element Vector{Service}
+   time_at_status: 10000.0
+   dynamic_injector: nothing
+   ext: Dict{String, Any}()
+   InfrastructureSystems.SystemUnitsSettings:
+      base_value: 100.0
+      unit_system: UnitSystem.SYSTEM_BASE = 0
+   has_supplemental_attributes: false
+   has_time_series: false</code></pre><h2 id="dot_access"><a class="docs-heading-anchor" href="#dot_access">Accessing data stored in a component</a><a id="dot_access-1"></a><a class="docs-heading-anchor-permalink" href="#dot_access" title="Permalink"></a></h2><p><strong>Using the &quot;dot&quot; access to get a parameter value from a component is actively discouraged, use &quot;getter&quot; functions instead</strong></p><p>Using code autogeneration, <code>PowerSystems.jl</code> implements accessor (or &quot;getter&quot;) functions to enable the retrieval of parameters defined in the component struct fields. Julia syntax enables access to this data using the &quot;dot&quot; access (e.g. <code>component.field</code>), however <em>this is actively discouraged</em> for two reasons:</p><ol><li>We make no guarantees on the stability of component structure definitions. We will maintain version stability on the accessor methods.</li><li>Per-unit conversions are made in the return of data from the accessor functions. (see the <a href="../per_unit/#per_unit">per-unit section</a> for more details)</li></ol><p>For example, the <code>my_thermal_gen.active_power_limits</code> parameter of a thermal generator should be accessed as follows:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; get_active_power_limits(my_thermal_gen)</code><code class="nohighlight hljs ansi" style="display:block;">(min = 1.7, max = 3.55)</code></pre><p>You can also view data from all instances of a concrete type in one table with the function <code>show_components</code>. It provides a few options:</p><ol><li>View the standard fields by accepting the defaults.</li><li>Pass a dictionary where the keys are column names and the values are functions that accept a component as a single argument.</li><li>Pass a vector of symbols that are field names of the type.</li></ol><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; show_components(system, ThermalStandard)</code><code class="nohighlight hljs ansi" style="display:block;">ThermalStandard
+┌─────────────────┬───────────┐
+│ name            │ available │
+├─────────────────┼───────────┤
+│ 322_CT_6        │ true      │
+│ 321_CC_1        │ true      │
+│ 202_STEAM_3     │ true      │
+│ 315_STEAM_1     │ true      │
+│ 223_CT_4        │ true      │
+│ 213_CT_1        │ true      │
+│ 123_STEAM_2     │ true      │
+│ 223_CT_6        │ true      │
+│ 313_CC_1        │ true      │
+│ 202_CT_2        │ true      │
+│ 101_STEAM_3     │ true      │
+│ 302_CT_1        │ true      │
+│ 123_CT_1        │ true      │
+│ 113_CT_3        │ true      │
+│ 302_CT_3        │ true      │
+│ 215_CT_4        │ true      │
+│ 102_STEAM_3     │ true      │
+│ 301_CT_4        │ true      │
+│ 202_CT_1        │ true      │
+│ 113_CT_2        │ true      │
+│ 221_CC_1        │ true      │
+│ 223_CT_5        │ true      │
+│ 315_CT_7        │ true      │
+│ 215_CT_5        │ true      │
+│ 114_SYNC_COND_1 │ true      │
+│ 323_CC_1        │ true      │
+│ 101_STEAM_4     │ true      │
+│ 113_CT_1        │ true      │
+│ 318_CC_1        │ true      │
+│ 223_STEAM_3     │ true      │
+│ 307_CT_2        │ true      │
+│ 213_CT_2        │ true      │
+│ 113_CT_4        │ true      │
+│ 315_STEAM_3     │ true      │
+│ 118_CC_1        │ true      │
+│ 315_CT_8        │ true      │
+│ 302_CT_2        │ true      │
+│ 218_CC_1        │ true      │
+│ 213_CC_3        │ true      │
+│ 115_STEAM_3     │ true      │
+│ 323_CC_2        │ true      │
+│ 101_CT_1        │ true      │
+│ 314_SYNC_COND_1 │ true      │
+│ 115_STEAM_2     │ true      │
+│ 101_CT_2        │ true      │
+│ 322_CT_5        │ true      │
+│ 214_SYNC_COND_1 │ true      │
+│ 315_STEAM_5     │ true      │
+│ 207_CT_2        │ true      │
+│ 123_STEAM_3     │ true      │
+│ 223_STEAM_1     │ true      │
+│ 123_CT_5        │ true      │
+│ 301_CT_1        │ true      │
+│ 223_STEAM_2     │ true      │
+│ 202_STEAM_4     │ true      │
+│ 116_STEAM_1     │ true      │
+│ 315_STEAM_4     │ true      │
+│ 315_STEAM_2     │ true      │
+│ 115_STEAM_1     │ true      │
+│ 121_NUCLEAR_1   │ true      │
+│ 102_CT_2        │ true      │
+│ 123_CT_4        │ true      │
+│ 207_CT_1        │ true      │
+│ 316_STEAM_1     │ true      │
+│ 301_CT_3        │ true      │
+│ 102_CT_1        │ true      │
+│ 216_STEAM_1     │ true      │
+│ 315_CT_6        │ true      │
+│ 201_CT_2        │ true      │
+│ 201_STEAM_3     │ true      │
+│ 201_CT_1        │ true      │
+│ 301_CT_2        │ true      │
+│ 302_CT_4        │ true      │
+│ 307_CT_1        │ true      │
+│ 102_STEAM_4     │ true      │
+│ 107_CC_1        │ true      │
+└─────────────────┴───────────┘</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; show_components(system, ThermalStandard, Dict(&quot;has_time_series&quot; =&gt; x -&gt; has_time_series(x)))</code><code class="nohighlight hljs ansi" style="display:block;">ThermalStandard
+┌─────────────────┬───────────┬─────────────────┐
+│ name            │ available │ has_time_series │
+├─────────────────┼───────────┼─────────────────┤
+│ 322_CT_6        │ true      │ false           │
+│ 321_CC_1        │ true      │ false           │
+│ 202_STEAM_3     │ true      │ false           │
+│ 315_STEAM_1     │ true      │ false           │
+│ 223_CT_4        │ true      │ false           │
+│ 213_CT_1        │ true      │ false           │
+│ 123_STEAM_2     │ true      │ false           │
+│ 223_CT_6        │ true      │ false           │
+│ 313_CC_1        │ true      │ false           │
+│ 202_CT_2        │ true      │ false           │
+│ 101_STEAM_3     │ true      │ false           │
+│ 302_CT_1        │ true      │ false           │
+│ 123_CT_1        │ true      │ false           │
+│ 113_CT_3        │ true      │ false           │
+│ 302_CT_3        │ true      │ false           │
+│ 215_CT_4        │ true      │ false           │
+│ 102_STEAM_3     │ true      │ false           │
+│ 301_CT_4        │ true      │ false           │
+│ 202_CT_1        │ true      │ false           │
+│ 113_CT_2        │ true      │ false           │
+│ 221_CC_1        │ true      │ false           │
+│ 223_CT_5        │ true      │ false           │
+│ 315_CT_7        │ true      │ false           │
+│ 215_CT_5        │ true      │ false           │
+│ 114_SYNC_COND_1 │ true      │ false           │
+│ 323_CC_1        │ true      │ false           │
+│ 101_STEAM_4     │ true      │ false           │
+│ 113_CT_1        │ true      │ false           │
+│ 318_CC_1        │ true      │ false           │
+│ 223_STEAM_3     │ true      │ false           │
+│ 307_CT_2        │ true      │ false           │
+│ 213_CT_2        │ true      │ false           │
+│ 113_CT_4        │ true      │ false           │
+│ 315_STEAM_3     │ true      │ false           │
+│ 118_CC_1        │ true      │ false           │
+│ 315_CT_8        │ true      │ false           │
+│ 302_CT_2        │ true      │ false           │
+│ 218_CC_1        │ true      │ false           │
+│ 213_CC_3        │ true      │ false           │
+│ 115_STEAM_3     │ true      │ false           │
+│ 323_CC_2        │ true      │ false           │
+│ 101_CT_1        │ true      │ false           │
+│ 314_SYNC_COND_1 │ true      │ false           │
+│ 115_STEAM_2     │ true      │ false           │
+│ 101_CT_2        │ true      │ false           │
+│ 322_CT_5        │ true      │ false           │
+│ 214_SYNC_COND_1 │ true      │ false           │
+│ 315_STEAM_5     │ true      │ false           │
+│ 207_CT_2        │ true      │ false           │
+│ 123_STEAM_3     │ true      │ false           │
+│ 223_STEAM_1     │ true      │ false           │
+│ 123_CT_5        │ true      │ false           │
+│ 301_CT_1        │ true      │ false           │
+│ 223_STEAM_2     │ true      │ false           │
+│ 202_STEAM_4     │ true      │ false           │
+│ 116_STEAM_1     │ true      │ false           │
+│ 315_STEAM_4     │ true      │ false           │
+│ 315_STEAM_2     │ true      │ false           │
+│ 115_STEAM_1     │ true      │ false           │
+│ 121_NUCLEAR_1   │ true      │ false           │
+│ 102_CT_2        │ true      │ false           │
+│ 123_CT_4        │ true      │ false           │
+│ 207_CT_1        │ true      │ false           │
+│ 316_STEAM_1     │ true      │ false           │
+│ 301_CT_3        │ true      │ false           │
+│ 102_CT_1        │ true      │ false           │
+│ 216_STEAM_1     │ true      │ false           │
+│ 315_CT_6        │ true      │ false           │
+│ 201_CT_2        │ true      │ false           │
+│ 201_STEAM_3     │ true      │ false           │
+│ 201_CT_1        │ true      │ false           │
+│ 301_CT_2        │ true      │ false           │
+│ 302_CT_4        │ true      │ false           │
+│ 307_CT_1        │ true      │ false           │
+│ 102_STEAM_4     │ true      │ false           │
+│ 107_CC_1        │ true      │ false           │
+└─────────────────┴───────────┴─────────────────┘</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; show_components(system, ThermalStandard, [:active_power, :reactive_power])</code><code class="nohighlight hljs ansi" style="display:block;">ThermalStandard
+┌─────────────────┬───────────┬──────────────┬────────────────┐
+│ name            │ available │ active_power │ reactive_power │
+├─────────────────┼───────────┼──────────────┼────────────────┤
+│ 322_CT_6        │ true      │ 0.55         │ -0.0973        │
+│ 321_CC_1        │ true      │ 3.55         │ -0.0334        │
+│ 202_STEAM_3     │ true      │ 0.76         │ 0.0201         │
+│ 315_STEAM_1     │ true      │ 0.05         │ 0.06           │
+│ 223_CT_4        │ true      │ 0.22         │ 0.0024         │
+│ 213_CT_1        │ true      │ 0.55         │ 0.0923         │
+│ 123_STEAM_2     │ true      │ 1.55         │ -0.0519        │
+│ 223_CT_6        │ true      │ 0.22         │ 0.0024         │
+│ 313_CC_1        │ true      │ 3.55         │ 1.5            │
+│ 202_CT_2        │ true      │ 0.08         │ 0.0513         │
+│ 101_STEAM_3     │ true      │ 0.76         │ 0.0014         │
+│ 302_CT_1        │ true      │ 0.08         │ 0.0616         │
+│ 123_CT_1        │ true      │ 0.55         │ 0.0062         │
+│ 113_CT_3        │ true      │ 0.55         │ 0.19           │
+│ 302_CT_3        │ true      │ 0.55         │ 0.1099         │
+│ 215_CT_4        │ true      │ 0.55         │ 0.19           │
+│ 102_STEAM_3     │ true      │ 0.76         │ -0.0231        │
+│ 301_CT_4        │ true      │ 0.44         │ 0.1653         │
+│ 202_CT_1        │ true      │ 0.08         │ 0.0513         │
+│ 113_CT_2        │ true      │ 0.55         │ 0.19           │
+│ 221_CC_1        │ true      │ 2.9697       │ -0.0752        │
+│ 223_CT_5        │ true      │ 0.22         │ 0.0024         │
+│ 315_CT_7        │ true      │ 0.55         │ 0.19           │
+│ 215_CT_5        │ true      │ 0.55         │ 0.19           │
+│ 114_SYNC_COND_1 │ true      │ 0.0          │ 1.0332         │
+│ 323_CC_1        │ true      │ 3.55         │ 0.3741         │
+│ 101_STEAM_4     │ true      │ 0.76         │ 0.0014         │
+│ 113_CT_1        │ true      │ 0.55         │ 0.19           │
+│ 318_CC_1        │ true      │ 3.55         │ 0.6312         │
+│ 223_STEAM_3     │ true      │ 3.5          │ 0.2059         │
+│ 307_CT_2        │ true      │ 0.55         │ 0.19           │
+│ 213_CT_2        │ true      │ 0.55         │ 0.0923         │
+│ 113_CT_4        │ true      │ 0.55         │ 0.19           │
+│ 315_STEAM_3     │ true      │ 0.05         │ 0.06           │
+│ 118_CC_1        │ true      │ 3.55         │ 0.6843         │
+│ 315_CT_8        │ true      │ 0.55         │ 0.6            │
+│ 302_CT_2        │ true      │ 0.08         │ 0.0616         │
+│ 218_CC_1        │ true      │ 3.55         │ 0.603          │
+│ 213_CC_3        │ true      │ 3.55         │ 1.358          │
+│ 115_STEAM_3     │ true      │ 1.55         │ 0.8            │
+│ 323_CC_2        │ true      │ 3.55         │ 0.3741         │
+│ 101_CT_1        │ true      │ 0.08         │ 0.0496         │
+│ 314_SYNC_COND_1 │ true      │ 0.0          │ 1.6663         │
+│ 115_STEAM_2     │ true      │ 0.05         │ 0.06           │
+│ 101_CT_2        │ true      │ 0.08         │ 0.0496         │
+│ 322_CT_5        │ true      │ 0.55         │ -0.0973        │
+│ 214_SYNC_COND_1 │ true      │ 0.0          │ 1.2528         │
+│ 315_STEAM_5     │ true      │ 0.05         │ 0.06           │
+│ 207_CT_2        │ true      │ 0.55         │ 0.19           │
+│ 123_STEAM_3     │ true      │ 3.5          │ 0.2841         │
+│ 223_STEAM_1     │ true      │ 1.55         │ -0.1031        │
+│ 123_CT_5        │ true      │ 0.55         │ 0.0062         │
+│ 301_CT_1        │ true      │ 0.08         │ 0.0795         │
+│ 223_STEAM_2     │ true      │ 1.55         │ -0.1031        │
+│ 202_STEAM_4     │ true      │ 0.76         │ 0.0201         │
+│ 116_STEAM_1     │ true      │ 1.55         │ 0.8            │
+│ 315_STEAM_4     │ true      │ 0.05         │ 0.06           │
+│ 315_STEAM_2     │ true      │ 0.05         │ 0.06           │
+│ 115_STEAM_1     │ true      │ 0.05         │ 0.06           │
+│ 121_NUCLEAR_1   │ true      │ 4.0          │ -0.2187        │
+│ 102_CT_2        │ true      │ 0.08         │ 0.0488         │
+│ 123_CT_4        │ true      │ 0.55         │ 0.0062         │
+│ 207_CT_1        │ true      │ 0.55         │ 0.19           │
+│ 316_STEAM_1     │ true      │ 1.55         │ 0.8            │
+│ 301_CT_3        │ true      │ 0.44         │ 0.1653         │
+│ 102_CT_1        │ true      │ 0.08         │ 0.0488         │
+│ 216_STEAM_1     │ true      │ 1.55         │ 0.8            │
+│ 315_CT_6        │ true      │ 0.55         │ 0.19           │
+│ 201_CT_2        │ true      │ 0.08         │ 0.0529         │
+│ 201_STEAM_3     │ true      │ 0.76         │ 0.0699         │
+│ 201_CT_1        │ true      │ 0.08         │ 0.0529         │
+│ 301_CT_2        │ true      │ 0.08         │ 0.0795         │
+│ 302_CT_4        │ true      │ 0.55         │ 0.1099         │
+│ 307_CT_1        │ true      │ 0.55         │ 0.19           │
+│ 102_STEAM_4     │ true      │ 0.76         │ -0.0231        │
+│ 107_CC_1        │ true      │ 3.55         │ 0.4951         │
+└─────────────────┴───────────┴──────────────┴────────────────┘</code></pre><h2 id="JSON-Serialization"><a class="docs-heading-anchor" href="#JSON-Serialization">JSON Serialization</a><a id="JSON-Serialization-1"></a><a class="docs-heading-anchor-permalink" href="#JSON-Serialization" title="Permalink"></a></h2><p><code>PowerSystems.jl</code> provides functionality to serialize an entire system to a JSON file and then deserialize it back to a system. The main benefit is that deserializing is significantly faster than reconstructing the system from raw data files.</p><p>The function that serializes the system <a href="../../api/public/#InfrastructureSystems.to_json-Tuple{System, AbstractString}"><code>to_json</code></a> requires the system and a file name</p><pre><code class="language-julia hljs">to_json(system, &quot;system.json&quot;)</code></pre><p>The serialization process stores 3 files</p><ol><li>System data file (<code>*.json</code> file)</li><li>Validation data file (<code>*.json</code> file)</li><li>Time Series data file (<code>*.h5</code> file)</li></ol><p>To deserialize:</p><pre><code class="language-julia hljs">system2 = System(&quot;system.json&quot;)</code></pre><p>PowerSystems generates UUIDs for the System and all components in order to have a way to uniquely identify objects. During deserialization it restores the same UUIDs.  If you will modify the System or components after deserialization then it is recommended that you set this flag to generate new UUIDs.</p><pre><code class="language-julia hljs">system2 = System(&quot;system.json&quot;, assign_new_uuids = true)</code></pre><h2 id="Viewing-PowerSystems-Data-in-JSON-Format"><a class="docs-heading-anchor" href="#Viewing-PowerSystems-Data-in-JSON-Format">Viewing PowerSystems Data in JSON Format</a><a id="Viewing-PowerSystems-Data-in-JSON-Format-1"></a><a class="docs-heading-anchor-permalink" href="#Viewing-PowerSystems-Data-in-JSON-Format" title="Permalink"></a></h2><p>PowerSystems data can be serialized and deserialized in JSON. This section shows how to explore the data outside of Julia using.</p><pre><code class="language-julia hljs">system = System(&quot;system.json&quot;)</code></pre><p>It can be useful to view and filter the PowerSystems data in this format. There are many tools available to browse JSON data.</p><p>Here is an example <a href="http://jsonviewer.stack.hu">GUI tool</a> that is available online in a browser.</p><p>The command line utility <a href="https://stedolan.github.io/jq/">jq</a> offers even more features. The rest of this document provides example commands.</p><ul><li>View the entire file pretty-printed</li></ul><pre><code class="language-zsh hljs">jq . system.json</code></pre><ul><li>View the PowerSystems component types</li></ul><pre><code class="language-zsh hljs">jq &#39;.data.components | .[] | .__metadata__ | .type&#39; system.json | sort | uniq</code></pre><ul><li>View specific components</li></ul><pre><code class="language-zsh hljs">jq &#39;.data.components | .[] | select(.__metadata__.type == &quot;ThermalStandard&quot;)&#39; system.json</code></pre><ul><li>Get the count of a component type</li></ul><pre><code class="language-zsh hljs"># There is almost certainly a better way.
+jq &#39;.data.components | .[] | select(.__metadata__.type == &quot;ThermalStandard&quot;)&#39; system.json | grep -c ThermalStandard</code></pre><ul><li>View specific component by name</li></ul><pre><code class="language-zsh hljs">jq &#39;.data.components | .[] | select(.__metadata__.type == &quot;ThermalStandard&quot; and .name == &quot;107_CC_1&quot;)&#39; system.json</code></pre><ul><li>Filter on a field value</li></ul><pre><code class="language-zsh hljs">jq &#39;.data.components | .[] | select(.__metadata__.type == &quot;ThermalStandard&quot; and .active_power &gt; 2.3)&#39; system.json</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../how_to/migrating_to_psy4/">« ...migrate from version 3.0 to 4.0</a><a class="docs-footer-nextpage" href="../type_structure/">Type Structure »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.25 on <span class="colophon-date" title="Thursday 29 August 2024 00:03">Thursday 29 August 2024</span>. Using Julia version 1.10.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

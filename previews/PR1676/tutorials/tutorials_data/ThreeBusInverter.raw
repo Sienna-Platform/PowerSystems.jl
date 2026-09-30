@@ -1,0 +1,34 @@
+0, 100, 33, 0, 0, 60  / 24-Apr-2020 19:28:39 - MATPOWER 7.0.1-dev
+
+
+     101, 'BUS 1       ',       138, 3,    1,    1, 1,           1.02,        0,  1.1,  0.9,  1.1,  0.9
+     102, 'BUS 2       ',       138, 2,    1,    1, 1,           1.0142,           0,  1.1,  0.9,  1.1,  0.9
+     103, 'BUS 3       ',       138, 2,    1,    1, 1,           1.0059,           0,  1.1,  0.9,  1.1,  0.9
+0 / END OF BUS DATA, BEGIN LOAD DATA
+     101,  1, 1,    1,    1,       50,       10, 0, 0, 0, 0, 1, 1, 0
+     102,  1, 1,    1,    1,       100,      30, 0, 0, 0, 0, 1, 1, 0
+     103,  1, 1,    1,    1,       30,       10, 0, 0, 0, 0, 1, 1, 0
+0 / END OF LOAD DATA, BEGIN FIXED SHUNT DATA
+0 / END OF FIXED SHUNT DATA, BEGIN GENERATOR DATA
+     102,  1,       70,         0,       100,      -100,   1.0142, 0,     100, 0, 1, 0, 0, 1, 1, 100,       318,         0, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1
+     103,  1,       80,         0,       100,      -100,   1.0059, 0,     100, 0, 1, 0, 0, 1, 1, 100,       318,         0, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1
+0 / END OF GENERATOR DATA, BEGIN BRANCH DATA
+     101,      103, 1,  0.01000,     0.12,      0.2,     250,     250,     250, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1
+     101,      102, 1,  0.01000,     0.12,      0.2,     250,     250,     250, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1
+     102,      103, 1,  0.02000,     0.9,      1.0,     250,     250,     250, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1
+0 / END OF BRANCH DATA, BEGIN TRANSFORMER DATA
+0 / END OF TRANSFORMER DATA, BEGIN AREA DATA
+0 / END OF AREA DATA, BEGIN TWO-TERMINAL DC DATA
+0 / END OF TWO-TERMINAL DC DATA, BEGIN VOLTAGE SOURCE CONVERTER DATA
+0 / END OF VOLTAGE SOURCE CONVERTER DATA, BEGIN IMPEDANCE CORRECTION DATA
+0 / END OF IMPEDANCE CORRECTION DATA, BEGIN MULTI-TERMINAL DC DATA
+0 / END OF MULTI-TERMINAL DC DATA, BEGIN MULTI-SECTION LINE DATA
+0 / END OF MULTI-SECTION LINE DATA, BEGIN ZONE DATA
+0 / END OF ZONE DATA, BEGIN INTER-AREA TRANSFER DATA
+0 / END OF INTER-AREA TRANSFER DATA, BEGIN OWNER DATA
+0 / END OF OWNER DATA, BEGIN FACTS CONTROL DEVICE DATA
+0 / END OF FACTS CONTROL DEVICE DATA, BEGIN SWITCHED SHUNT DATA
+0 / END OF SWITCHED SHUNT DATA, BEGIN GNE DEVICE DATA
+0 / END OF GNE DEVICE DATA, BEGIN INDUCTION MACHINE DATA
+0 / END OF INDUCTION MACHINE DATA
+Q

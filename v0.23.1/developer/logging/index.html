@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Logging · PowerSystems.jl</title><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.png" alt="PowerSystems.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit">PowerSystems.jl</span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Introduction</a></li><li><span class="tocitem">User Guide</span><ul><li><a class="tocitem" href="../../man/parsing/">Constructing a System from raw data</a></li><li><a class="tocitem" href="../../man/data/">Saving and Viewing PowerSystems Data</a></li></ul></li><li><span class="tocitem">Developer</span><ul><li><a class="tocitem" href="../tests/">Tests</a></li><li class="is-active"><a class="tocitem" href>Logging</a><ul class="internal"><li><a class="tocitem" href="#Use-Cases"><span>Use Cases</span></a></li></ul></li><li><a class="tocitem" href="../style/">Style Guide</a></li><li><a class="tocitem" href="../extending_parsing/">Extending Parsing</a></li></ul></li><li><span class="tocitem">API</span><ul><li><a class="tocitem" href="../../api/PowerSystems/">PowerSystems</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Developer</a></li><li class="is-active"><a href>Logging</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Logging</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/NREL-SIIP/PowerSystems.jl/blob/master/docs/src/developer/logging.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Logging"><a class="docs-heading-anchor" href="#Logging">Logging</a><a id="Logging-1"></a><a class="docs-heading-anchor-permalink" href="#Logging" title="Permalink"></a></h1><p>This document describes logging facilities available in the PowerSystems module. The examples assume the following imports:</p><pre><code class="language-julia">import Logging
+import PowerSystems: configure_logging, open_file_logger, MultiLogger, LogEventTracker</code></pre><h2 id="Use-Cases"><a class="docs-heading-anchor" href="#Use-Cases">Use Cases</a><a id="Use-Cases-1"></a><a class="docs-heading-anchor-permalink" href="#Use-Cases" title="Permalink"></a></h2><h3 id="Enable-logging-in-REPL-or-Jupyter-Notebook"><a class="docs-heading-anchor" href="#Enable-logging-in-REPL-or-Jupyter-Notebook">Enable logging in REPL or Jupyter Notebook</a><a id="Enable-logging-in-REPL-or-Jupyter-Notebook-1"></a><a class="docs-heading-anchor-permalink" href="#Enable-logging-in-REPL-or-Jupyter-Notebook" title="Permalink"></a></h3><p>Use <code>configure_logging</code> to create a logger with your preferences (console and/or file, levels, etc.).</p><p><strong>Note:</strong> log messages are not automatically flushed to files. Call <code>flush(logger)</code> to make this happen.</p><h4 id="Example"><a class="docs-heading-anchor" href="#Example">Example</a><a id="Example-1"></a><a class="docs-heading-anchor-permalink" href="#Example" title="Permalink"></a></h4><pre><code class="language-julia">logger = configure_logging(; filename=&quot;log.txt&quot;)
+@info &quot;hello world&quot;
+flush(logger)
+@error &quot;some error&quot;
+close(logger)</code></pre><p>The function provides lots of customization. Refer to the docstring for complete details.</p><h3 id="Log-to-console-and-file-in-an-application-or-unit-test-environment."><a class="docs-heading-anchor" href="#Log-to-console-and-file-in-an-application-or-unit-test-environment.">Log to console and file in an application or unit test environment.</a><a id="Log-to-console-and-file-in-an-application-or-unit-test-environment.-1"></a><a class="docs-heading-anchor-permalink" href="#Log-to-console-and-file-in-an-application-or-unit-test-environment." title="Permalink"></a></h3><p>Create a <code>MultiLogger</code> from <code>Logging.ConsoleLogger</code> and <code>Logging.SimpleLogger</code>. Use <code>open_file_logger</code> to guarantee that all messages get flushed to the file.</p><h4 id="Example-2"><a class="docs-heading-anchor" href="#Example-2">Example</a><a class="docs-heading-anchor-permalink" href="#Example-2" title="Permalink"></a></h4><pre><code class="language-julia">console_logger = ConsoleLogger(stderr, Logging.Error)
+
+open_file_logger(&quot;log.txt&quot;, Logging.Info) do file_logger
+    multi_logger = MultiLogger([console_logger, file_logger])
+    global_logger(multi_logger)
+    
+    do_stuff()
+end</code></pre><p><strong>Note:</strong> If someone may execute the code in the REPL then wrap that code in a try/finally block and reset the global logger upon exit.</p><h4 id="Example-3"><a class="docs-heading-anchor" href="#Example-3">Example</a><a class="docs-heading-anchor-permalink" href="#Example-3" title="Permalink"></a></h4><pre><code class="language-julia">function run_tests()
+    console_logger = ConsoleLogger(stderr, Logging.Error)
+    
+    open_file_logger(&quot;log.txt&quot;, Logging.Info) do file_logger
+        multi_logger = MultiLogger([console_logger, file_logger])
+        global_logger(multi_logger)
+        
+        do_stuff()
+    end
+end
+
+logger = global_logger()
+
+try
+    run_tests()
+finally
+    # Guarantee that the global logger is reset.
+    global_logger(logger)
+    nothing
+end</code></pre><h3 id="Suppress-frequent-messages"><a class="docs-heading-anchor" href="#Suppress-frequent-messages">Suppress frequent messages</a><a id="Suppress-frequent-messages-1"></a><a class="docs-heading-anchor-permalink" href="#Suppress-frequent-messages" title="Permalink"></a></h3><p>The standard Logging module in Julia provides a method to suppress messages. Tag the log message with maxlog=X.</p><h4 id="Example-4"><a class="docs-heading-anchor" href="#Example-4">Example</a><a class="docs-heading-anchor-permalink" href="#Example-4" title="Permalink"></a></h4><pre><code class="language-julia">for i in range(1, length=100)
+    @error &quot;something happened&quot; i maxlog=2
+end</code></pre><p>Only 2 messages will get logged.</p><h3 id="Get-a-summary-of-log-messages"><a class="docs-heading-anchor" href="#Get-a-summary-of-log-messages">Get a summary of log messages</a><a id="Get-a-summary-of-log-messages-1"></a><a class="docs-heading-anchor-permalink" href="#Get-a-summary-of-log-messages" title="Permalink"></a></h3><p>By default a <code>MultiLogger</code> creates a <code>LogEventTracker</code> that keeps counts of all messages. Call <code>report_log_summary</code> after execution.</p><h4 id="Example-5"><a class="docs-heading-anchor" href="#Example-5">Example</a><a class="docs-heading-anchor-permalink" href="#Example-5" title="Permalink"></a></h4><pre><code class="language-julia">logger = configure_logging(; filename=&quot;log.txt&quot;)
+@info &quot;hello world&quot;
+
+# Include a summary in the log file.
+@info report_log_summary(logger)
+close(logger)</code></pre><h5 id="Example-output"><a class="docs-heading-anchor" href="#Example-output">Example output</a><a id="Example-output-1"></a><a class="docs-heading-anchor-permalink" href="#Example-output" title="Permalink"></a></h5><pre><code class="language-none">julia&gt; for i in range(1, length=100)
+           @info &quot;hello&quot; maxlog=2
+           @warn &quot;beware&quot; maxlog=2
+       end
+julia&gt; @info report_log_summary(logger)
+┌ Info:
+│ Log message summary:
+│
+│ 0 Error events:
+│
+│ 1 Warn events:
+│   count=100 at REPL[19]:3
+│     example message=&quot;beware&quot;
+│     suppressed=98
+│
+│ 1 Info events:
+│   count=100 at REPL[19]:2
+│     example message=&quot;hello&quot;
+└     suppressed=98</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../tests/">« Tests</a><a class="docs-footer-nextpage" href="../style/">Style Guide »</a></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Saturday 18 July 2020 02:12">Saturday 18 July 2020</span>. Using Julia version 1.4.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
