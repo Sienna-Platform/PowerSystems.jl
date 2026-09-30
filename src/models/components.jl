@@ -175,7 +175,7 @@ function _set_base_power!(::SystemBasePower, c, ::Float64)
 end
 
 """
-    rebase_component!(c::Component, new_base_power)
+    rebase_component!(c::Component, new_base_power; keep_time_series = false)
 
 Set `c`'s `base_power` to `new_base_power` (MVA, or a power-dimensioned `Unitful.Quantity`),
 re-expressing every unit-converted field so its natural-unit value is unchanged. Contrast
@@ -185,9 +185,13 @@ mean.
 Throws an `ArgumentError`, leaving `c` unchanged, for per-unit data it can't re-express:
 transformers, dynamic models, component-base cost curves, and component-base time series.
 Components whose base is the system base error as in `set_base_power!`.
+
+Pass `keep_time_series = true` to leave component-base time series as stored, so their
+natural-unit values change with the base. That is for correcting series whose component-base
+label was wrong, not for preserving them.
 """
-function rebase_component!(c::Component, new_base_power)
-    _check_rebaseable(c)
+function rebase_component!(c::Component, new_base_power; keep_time_series::Bool = false)
+    _check_rebaseable(c, keep_time_series)
     # Read all fields first: each read converts through the current base.
     fields = _natural_unit_fields(c)
     set_base_power!(c, new_base_power)
@@ -213,13 +217,13 @@ function _natural_unit_fields(c::Component)
     return fields
 end
 
-function _check_rebaseable(c::Component)
-    reason = _rebase_blocker(c)
+function _check_rebaseable(c::Component, keep_time_series::Bool)
+    reason = _rebase_blocker(c, keep_time_series)
     isnothing(reason) && return
     throw(ArgumentError("cannot rebase $(summary(c)): $reason"))
 end
 
-function _rebase_blocker(c::Component)
+function _rebase_blocker(c::Component, keep_time_series::Bool)
     c isa Union{TwoWindingTransformer, ThreeWindingTransformer} &&
         return "a transformer's per-unit data lives on its circuits"
     c isa DynamicInjection &&
@@ -228,10 +232,11 @@ function _rebase_blocker(c::Component)
         return "its dynamic injector's parameters are per-unitized on the device base"
     _has_component_base_cost(c) &&
         return "its operation cost has curves in component base; restate them in natural units first"
-    any(
-        md -> IS.get_unit_system(md) isa ComponentBaseUnit,
-        IS.list_time_series_metadata(c),
-    ) &&
+    !keep_time_series &&
+        any(
+            md -> IS.get_unit_system(md) isa ComponentBaseUnit,
+            IS.list_time_series_metadata(c),
+        ) &&
         return "it has time series declared in component base; rebase before attaching them"
     return nothing
 end
