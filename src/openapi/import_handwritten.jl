@@ -2004,6 +2004,7 @@ function from_openapi(po::PO.GroupReserve, refs::OpenAPIRefs, ::ComponentBaseUni
         name = po.name,
         available = po.available,
         requirement = po.requirement / get_base_power(refs),
+        variable = convert_reserve_variable(po.variable),
     )
 end
 

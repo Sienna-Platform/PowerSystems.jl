@@ -752,6 +752,56 @@ end
     @test get_function_data(get_value_curve(resolved)) == _TS_RESOLVE_PWL_DATA[1]
 end
 
+"""A `GroupReserve` over one `OnlineReserve` that one generator provides."""
+function _group_reserve_system()
+    sys = System(100.0)
+    bus = ACBus(nothing)
+    bus.name = "bus1"
+    bus.number = 1
+    bus.bustype = ACBusTypes.REF
+    add_component!(sys, bus)
+    gen = ThermalStandard(nothing)
+    gen.bus = bus
+    gen.name = "gen1"
+    add_component!(sys, gen)
+    sub = OnlineReserve{ReserveUp}(; name = "sub", available = true, time_frame = 10.0)
+    add_service!(sys, sub, [gen])
+    group = GroupReserve{ReserveUp}(; name = "group", available = true, requirement = 0.0)
+    add_service!(sys, group, Service[sub])
+    return sys, group
+end
+
+# A GroupReserve carries its demand curve on `variable`, as the reserves it groups do.
+@testset "roundtrip: group reserve with a demand curve" begin
+    sys, group = _group_reserve_system()
+    cc = CostCurve(PiecewiseIncrementalCurve(0.0, [0.0, 100.0, 200.0], [25.0, 30.0]))
+    set_variable!(group, cc)
+
+    sys2 = roundtrip_system(sys)
+    group2 = get_component(GroupReserve{ReserveUp}, sys2, "group")
+    @test has_demand_curve(group2)
+    @test get_function_data(get_value_curve(get_variable(group2))) ==
+          get_function_data(get_value_curve(cc))
+    @test get_name.(get_contributing_services(group2)) == ["sub"]
+end
+
+@testset "roundtrip: group reserve with a time-series-backed demand curve ($form)" for form in
+                                                                                       (
+    :directory,
+    :document,
+    :archive,
+)
+    sys, group = _group_reserve_system()
+    key = _attach_pwl_forecast(sys, group, "variable_cost")
+    set_variable!(group, make_market_bid_ts_curve(key, nothing, IS.NaturalUnit()))
+
+    sys2 = roundtrip_system(sys; form = form)
+    group2 = get_component(GroupReserve{ReserveUp}, sys2, "group")
+    @test get_value_curve(get_variable(group2)) isa TimeSeriesPiecewiseIncrementalCurve
+    resolved = get_variable_cost(group2; start_time = _TS_RESOLVE_INITIAL_TIME)
+    @test get_function_data(get_value_curve(resolved)) == _TS_RESOLVE_PWL_DATA[1]
+end
+
 @testset "roundtrip: System field metadata (name/description)" begin
     # frequency is deliberately NOT asserted here: src/openapi/import_document.jl's
     # _apply_document_metadata! (pre-existing on this branch, unrelated to this plan) only
