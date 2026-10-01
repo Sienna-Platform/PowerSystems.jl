@@ -1410,6 +1410,7 @@ function to_openapi(
         name = get_name(reserve),
         available = get_available(reserve),
         requirement = get_requirement(reserve, SU) * get_base_power(refs),
+        variable = convert_reserve_variable_to_openapi(reserve),
         reserve_direction = PO.ReserveDirection(RESERVE_DIRECTION_TO_STRING[T]),
     )
 end
