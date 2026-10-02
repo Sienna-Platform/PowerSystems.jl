@@ -213,17 +213,10 @@ function check_circuit_values(circuit::TransformerCircuit, xfrm_name::AbstractSt
         end
     end
 
-    control_limits = get_control_limits(circuit)
-    if control_limits.min > control_limits.max
-        @error "Circuit control_limits.min $(control_limits.min) exceeds max $(control_limits.max) for transformer $(xfrm_name)." _group =
-            IS.LOG_GROUP_PARSING maxlog = PS_MAX_LOG
-        is_valid = false
-    end
-
-    controlled_quantity_limits = get_controlled_quantity_limits(circuit)
-    if controlled_quantity_limits.min > controlled_quantity_limits.max
-        @error "Circuit controlled_quantity_limits.min $(controlled_quantity_limits.min) exceeds max $(controlled_quantity_limits.max) for transformer $(xfrm_name)." _group =
-            IS.LOG_GROUP_PARSING maxlog = PS_MAX_LOG
+    if !_check_mode_fields(
+        "Circuit of transformer $(xfrm_name)", circuit, :control_objective,
+        CONTROL_OBJECTIVE_BAND_FIELDS,
+    )
         is_valid = false
     end
 
@@ -235,6 +228,165 @@ function check_circuit_values(circuit::TransformerCircuit, xfrm_name::AbstractSt
 
     return is_valid
 end
+
+# ── Mode-selected fields ─────────────────────────────────────────────────────────
+# A discriminator enum names which `Union{Nothing, T}` fields carry a value. One table per
+# enum, exhaustive at load time; the checks derive from the tables. The selected field
+# missing is an error, an unselected field populated is a warning, so a genuinely dual case
+# stays representable.
+
+function _mode_fields(::Type{E}, pairs::Pair...) where {E}
+    table = Dict{E, Tuple{Vararg{Symbol}}}(pairs...)
+    Set(keys(table)) == Set(instances(E)) || error("mode table for $E is not exhaustive")
+    return table
+end
+_all_fields(table) = unique(Iterators.flatten(values(table)))
+
+const LCC_SETPOINT_FIELDS = _mode_fields(
+    LCCControlMode.Value,
+    LCCControlMode.BLOCKED => (),
+    LCCControlMode.POWER => (:power_transfer_setpoint,),
+    LCCControlMode.CURRENT => (:current_transfer_setpoint,),
+)
+const VSC_DC_SETPOINT_FIELDS = _mode_fields(
+    VSCDCControlModes.Value,
+    VSCDCControlModes.DC_POWER => (:dc_power_setpoint,),
+    VSCDCControlModes.DC_VOLTAGE => (:dc_voltage_setpoint,),
+    VSCDCControlModes.DC_VOLTAGE_DROOP => (:dc_voltage_setpoint,),
+)
+const VSC_AC_SETPOINT_FIELDS = _mode_fields(
+    VSCACControlModes.Value,
+    VSCACControlModes.AC_REACTIVE_POWER => (:power_factor_setpoint,),
+    VSCACControlModes.AC_VOLTAGE => (:ac_voltage_setpoint,),
+)
+const SWITCHED_ADMITTANCE_BAND_FIELDS = _mode_fields(
+    SwitchedAdmittanceControlMode.Value,
+    SwitchedAdmittanceControlMode.UNDEFINED => (),
+    SwitchedAdmittanceControlMode.FIXED => (),
+    SwitchedAdmittanceControlMode.DISCRETE_VOLTAGE => (:voltage_limits,),
+    SwitchedAdmittanceControlMode.CONTINUOUS_VOLTAGE => (:voltage_limits,),
+    SwitchedAdmittanceControlMode.DISCRETE_REACTIVE_PLANT =>
+        (:reactive_power_range_limits,),
+    SwitchedAdmittanceControlMode.DISCRETE_REACTIVE_VSC =>
+        (:reactive_power_range_limits,),
+    SwitchedAdmittanceControlMode.DISCRETE_ADMITTANCE_REMOTE =>
+        (:reactive_power_range_limits,),
+    SwitchedAdmittanceControlMode.DISCRETE_REACTIVE_FACTS =>
+        (:reactive_power_range_limits,),
+)
+const IMPEDANCE_CORRECTION_CURVE_FIELDS = _mode_fields(
+    ImpedanceCorrectionTransformerControlMode.Value,
+    ImpedanceCorrectionTransformerControlMode.TAP_RATIO =>
+        (:tap_ratio_correction_curve,),
+    ImpedanceCorrectionTransformerControlMode.PHASE_SHIFT_ANGLE =>
+        (:phase_angle_correction_curve,),
+)
+"""Objective → `(actuator, target)` bands of a [`TransformerCircuit`](@ref); `()` for `UNDEFINED`."""
+const CONTROL_OBJECTIVE_BAND_FIELDS = _mode_fields(
+    TransformerControlObjective.Value,
+    TransformerControlObjective.UNDEFINED => (),
+    TransformerControlObjective.FIXED =>
+        (:tap_ratio_limits, :controlled_voltage_limits),
+    TransformerControlObjective.VOLTAGE =>
+        (:tap_ratio_limits, :controlled_voltage_limits),
+    TransformerControlObjective.VOLTAGE_DISABLED =>
+        (:tap_ratio_limits, :controlled_voltage_limits),
+    TransformerControlObjective.REACTIVE_POWER_FLOW =>
+        (:tap_ratio_limits, :controlled_reactive_power_flow_limits),
+    TransformerControlObjective.REACTIVE_POWER_FLOW_DISABLED =>
+        (:tap_ratio_limits, :controlled_reactive_power_flow_limits),
+    TransformerControlObjective.CONTROL_OF_DC_LINE =>
+        (:tap_ratio_limits, :controlled_active_power_flow_limits),
+    TransformerControlObjective.CONTROL_OF_DC_LINE_DISABLED =>
+        (:tap_ratio_limits, :controlled_active_power_flow_limits),
+    TransformerControlObjective.ACTIVE_POWER_FLOW =>
+        (:phase_angle_limits, :controlled_active_power_flow_limits),
+    TransformerControlObjective.ACTIVE_POWER_FLOW_DISABLED =>
+        (:phase_angle_limits, :controlled_active_power_flow_limits),
+    TransformerControlObjective.ASYMMETRIC_ACTIVE_POWER_FLOW =>
+        (:phase_angle_limits, :controlled_active_power_flow_limits),
+    TransformerControlObjective.ASYMMETRIC_ACTIVE_POWER_FLOW_DISABLED =>
+        (:phase_angle_limits, :controlled_active_power_flow_limits),
+)
+
+"""
+Problems with `comp`'s fields for the mode held in `mode_field`, as `(errors, warnings)`
+message lists. `suffix` selects a converter terminal (`"_from"`/`"_to"`). An inverted
+`MinMax` band is an error as well.
+"""
+function _mode_field_problems(
+    owner::AbstractString,
+    comp,
+    mode_field::Symbol,
+    table;
+    suffix = "",
+)
+    mode = getfield(comp, Symbol(mode_field, suffix))
+    required = table[mode]
+    errors = String[]
+    warnings = String[]
+    for f in _all_fields(table)
+        v = getfield(comp, Symbol(f, suffix))
+        if f in required && isnothing(v)
+            push!(
+                errors,
+                "$owner: $mode_field$suffix = $mode requires $f$suffix, which is nothing.",
+            )
+        elseif !(f in required) && !isnothing(v)
+            push!(
+                warnings,
+                "$owner: $f$suffix is populated but $mode_field$suffix = $mode does not use it.",
+            )
+        end
+        if v isa MinMax && v.min > v.max
+            push!(errors, "$owner: $f$suffix.min $(v.min) exceeds max $(v.max).")
+        end
+    end
+    return errors, warnings
+end
+
+"""Log what `_mode_field_problems` finds; `false` when any of it is an error."""
+function _check_mode_fields(
+    owner::AbstractString,
+    comp,
+    mode_field::Symbol,
+    table;
+    suffix = "",
+)
+    errors, warnings = _mode_field_problems(owner, comp, mode_field, table; suffix)
+    for msg in warnings
+        @warn msg _group = IS.LOG_GROUP_PARSING maxlog = PS_MAX_LOG
+    end
+    for msg in errors
+        @error msg _group = IS.LOG_GROUP_PARSING maxlog = PS_MAX_LOG
+    end
+    return isempty(errors)
+end
+
+validate_component_with_system(lcc::TwoTerminalLCCLine, ::System) = _check_mode_fields(
+    "TwoTerminalLCCLine $(get_name(lcc))", lcc, :control_mode, LCC_SETPOINT_FIELDS,
+)
+
+function _check_converter_terminal(owner::AbstractString, comp, suffix::AbstractString)
+    dc_ok = _check_mode_fields(owner, comp, :dc_control, VSC_DC_SETPOINT_FIELDS; suffix)
+    ac_ok = _check_mode_fields(owner, comp, :ac_control, VSC_AC_SETPOINT_FIELDS; suffix)
+    return dc_ok && ac_ok
+end
+
+function validate_component_with_system(vsc::TwoTerminalVSCLine, ::System)
+    owner = "TwoTerminalVSCLine $(get_name(vsc))"
+    from_ok = _check_converter_terminal(owner, vsc, "_from")
+    to_ok = _check_converter_terminal(owner, vsc, "_to")
+    return from_ok && to_ok
+end
+
+validate_component_with_system(conv::InterconnectingConverter, ::System) =
+    _check_converter_terminal("InterconnectingConverter $(get_name(conv))", conv, "")
+
+validate_component_with_system(shunt::SwitchedAdmittance, ::System) = _check_mode_fields(
+    "SwitchedAdmittance $(get_name(shunt))", shunt, :control_mode,
+    SWITCHED_ADMITTANCE_BAND_FIELDS,
+)
 
 function validate_component_with_system(
     xfrm::TwoWindingTransformer,

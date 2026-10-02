@@ -14,8 +14,11 @@ This file is auto-generated. Do not edit.
         x::Float64
         control_objective::TransformerControlObjective.Value
         regulated_bus_number::Int
-        control_limits::MinMax
-        controlled_quantity_limits::MinMax
+        tap_ratio_limits::Union{Nothing, MinMax}
+        phase_angle_limits::Union{Nothing, MinMax}
+        controlled_voltage_limits::Union{Nothing, MinMax}
+        controlled_reactive_power_flow_limits::Union{Nothing, MinMax}
+        controlled_active_power_flow_limits::Union{Nothing, MinMax}
         number_of_tap_positions::Int
         rating::Union{Nothing, Float64}
         rating_b::Union{Nothing, Float64}
@@ -41,8 +44,11 @@ A [`TwoWindingTransformer`](@ref) has one circuit; a [`ThreeWindingTransformer`]
 - `x::Float64`: (default: `0.0`) Circuit reactance in pu (component base on `base_power`) referenced to `base_voltage_primary`. For a two-winding transformer this is the series impedance; for a three-winding transformer it is the star-leg equivalent, validation range: `(-2, 4)`
 - `control_objective::TransformerControlObjective.Value`: (default: `TransformerControlObjective.UNDEFINED`) Tap-changer / phase-shifter control objective. `UNDEFINED` means this circuit has no control block. See [`TransformerControlObjective`](@ref)
 - `regulated_bus_number::Int`: (default: `0`) Controlled bus number; the sign indicates the regulation side
-- `control_limits::MinMax`: (default: `(min=0.9, max=1.1)`) Control band: tap-ratio bounds for voltage/reactive-power control or phase-angle bounds (rad) for active-power control
-- `controlled_quantity_limits::MinMax`: (default: `(min=0.9, max=1.1)`) Controlled-quantity band: pu voltage / MVAr / MW bounds depending on `control_objective`
+- `tap_ratio_limits::Union{Nothing, MinMax}`: (default: `nothing`) Tap-ratio actuator band (PSS/E RMA/RMI) when `control_objective` moves the tap; `nothing` otherwise. Dimensionless.
+- `phase_angle_limits::Union{Nothing, MinMax}`: (default: `nothing`) Phase-shift actuator band (PSS/E RMA/RMI, rad) when `control_objective` moves the angle; `nothing` otherwise.
+- `controlled_voltage_limits::Union{Nothing, MinMax}`: (default: `nothing`) Regulated-voltage target band (PSS/E VMA/VMI), per unit of the regulated bus's base voltage; `nothing` unless `control_objective` selects it.
+- `controlled_reactive_power_flow_limits::Union{Nothing, MinMax}`: (default: `nothing`) Regulated reactive-power-flow target band (PSS/E VMA/VMI); `nothing` unless `control_objective` selects it.
+- `controlled_active_power_flow_limits::Union{Nothing, MinMax}`: (default: `nothing`) Regulated active-power-flow target band (PSS/E VMA/VMI); `nothing` unless `control_objective` selects it.
 - `number_of_tap_positions::Int`: (default: `33`) Number of tap positions
 - `rating::Union{Nothing, Float64}`: (default: `nothing`) Thermal rating (MVA) stored in component base per unit on `base_power`
 - `rating_b::Union{Nothing, Float64}`: (default: `nothing`) Second current rating; entered in MVA.
@@ -72,10 +78,16 @@ mutable struct TransformerCircuit <: DeviceParameter
     control_objective::TransformerControlObjective.Value
     "Controlled bus number; the sign indicates the regulation side"
     regulated_bus_number::Int
-    "Control band: tap-ratio bounds for voltage/reactive-power control or phase-angle bounds (rad) for active-power control"
-    control_limits::MinMax
-    "Controlled-quantity band: pu voltage / MVAr / MW bounds depending on `control_objective`"
-    controlled_quantity_limits::MinMax
+    "Tap-ratio actuator band (PSS/E RMA/RMI) when `control_objective` moves the tap; `nothing` otherwise. Dimensionless."
+    tap_ratio_limits::Union{Nothing, MinMax}
+    "Phase-shift actuator band (PSS/E RMA/RMI, rad) when `control_objective` moves the angle; `nothing` otherwise."
+    phase_angle_limits::Union{Nothing, MinMax}
+    "Regulated-voltage target band (PSS/E VMA/VMI), per unit of the regulated bus's base voltage; `nothing` unless `control_objective` selects it."
+    controlled_voltage_limits::Union{Nothing, MinMax}
+    "Regulated reactive-power-flow target band (PSS/E VMA/VMI); `nothing` unless `control_objective` selects it."
+    controlled_reactive_power_flow_limits::Union{Nothing, MinMax}
+    "Regulated active-power-flow target band (PSS/E VMA/VMI); `nothing` unless `control_objective` selects it."
+    controlled_active_power_flow_limits::Union{Nothing, MinMax}
     "Number of tap positions"
     number_of_tap_positions::Int
     "Thermal rating (MVA) stored in component base per unit on `base_power`"
@@ -98,14 +110,16 @@ mutable struct TransformerCircuit <: DeviceParameter
     base_value::Union{Nothing, Float64}
 end
 
-function TransformerCircuit(available, arc, tap=1.0, α=0.0, r=0.0, x=0.0, control_objective=TransformerControlObjective.UNDEFINED, regulated_bus_number=0, control_limits=(min=0.9, max=1.1), controlled_quantity_limits=(min=0.9, max=1.1), number_of_tap_positions=33, rating=nothing, rating_b=nothing, rating_c=nothing, active_power_flow=0.0, reactive_power_flow=0.0, base_power=100.0, base_voltage_primary=nothing, base_voltage_secondary=nothing, )
-    TransformerCircuit(available, arc, tap, α, r, x, control_objective, regulated_bus_number, control_limits, controlled_quantity_limits, number_of_tap_positions, rating, rating_b, rating_c, active_power_flow, reactive_power_flow, base_power, base_voltage_primary, base_voltage_secondary, nothing, )
+function TransformerCircuit(available, arc, tap=1.0, α=0.0, r=0.0, x=0.0, control_objective=TransformerControlObjective.UNDEFINED, regulated_bus_number=0, tap_ratio_limits=nothing, phase_angle_limits=nothing, controlled_voltage_limits=nothing, controlled_reactive_power_flow_limits=nothing, controlled_active_power_flow_limits=nothing, number_of_tap_positions=33, rating=nothing, rating_b=nothing, rating_c=nothing, active_power_flow=0.0, reactive_power_flow=0.0, base_power=100.0, base_voltage_primary=nothing, base_voltage_secondary=nothing, )
+    TransformerCircuit(available, arc, tap, α, r, x, control_objective, regulated_bus_number, tap_ratio_limits, phase_angle_limits, controlled_voltage_limits, controlled_reactive_power_flow_limits, controlled_active_power_flow_limits, number_of_tap_positions, rating, rating_b, rating_c, active_power_flow, reactive_power_flow, base_power, base_voltage_primary, base_voltage_secondary, nothing, )
 end
 
-function TransformerCircuit(; available, arc, tap=1.0, α=0.0, r=0.0, x=0.0, control_objective=TransformerControlObjective.UNDEFINED, regulated_bus_number=0, control_limits=(min=0.9, max=1.1), controlled_quantity_limits=(min=0.9, max=1.1), number_of_tap_positions=33, rating=nothing, rating_b=nothing, rating_c=nothing, active_power_flow=0.0, reactive_power_flow=0.0, base_power=100.0, base_voltage_primary=nothing, base_voltage_secondary=nothing, base_value=nothing, input_basis::Union{ComponentBaseUnit, NaturalUnit}, )
-    value = TransformerCircuit(available, arc, tap, α, _placeholder(r), _placeholder(x), control_objective, regulated_bus_number, control_limits, controlled_quantity_limits, number_of_tap_positions, _placeholder(rating), _placeholder(rating_b), _placeholder(rating_c), _placeholder(active_power_flow), _placeholder(reactive_power_flow), base_power, base_voltage_primary, base_voltage_secondary, base_value, )
+function TransformerCircuit(; available, arc, tap=1.0, α=0.0, r=0.0, x=0.0, control_objective=TransformerControlObjective.UNDEFINED, regulated_bus_number=0, tap_ratio_limits=nothing, phase_angle_limits=nothing, controlled_voltage_limits=nothing, controlled_reactive_power_flow_limits=nothing, controlled_active_power_flow_limits=nothing, number_of_tap_positions=33, rating=nothing, rating_b=nothing, rating_c=nothing, active_power_flow=0.0, reactive_power_flow=0.0, base_power=100.0, base_voltage_primary=nothing, base_voltage_secondary=nothing, base_value=nothing, input_basis::Union{ComponentBaseUnit, NaturalUnit}, )
+    value = TransformerCircuit(available, arc, tap, α, _placeholder(r), _placeholder(x), control_objective, regulated_bus_number, tap_ratio_limits, phase_angle_limits, controlled_voltage_limits, _placeholder(controlled_reactive_power_flow_limits), _placeholder(controlled_active_power_flow_limits), number_of_tap_positions, _placeholder(rating), _placeholder(rating_b), _placeholder(rating_c), _placeholder(active_power_flow), _placeholder(reactive_power_flow), base_power, base_voltage_primary, base_voltage_secondary, base_value, )
     set_r!(value, _tag(r, input_basis, Val(:ohm)))
     set_x!(value, _tag(x, input_basis, Val(:ohm)))
+    set_controlled_reactive_power_flow_limits!(value, _tag(controlled_reactive_power_flow_limits, input_basis, Val(:mvar)))
+    set_controlled_active_power_flow_limits!(value, _tag(controlled_active_power_flow_limits, input_basis, Val(:mw)))
     set_rating!(value, _tag(rating, input_basis, Val(:mva)))
     set_rating_b!(value, _tag(rating_b, input_basis, Val(:mva)))
     set_rating_c!(value, _tag(rating_c, input_basis, Val(:mva)))
@@ -126,8 +140,11 @@ function TransformerCircuit(::Nothing)
         x=0.0,
         control_objective=TransformerControlObjective.UNDEFINED,
         regulated_bus_number=0,
-        control_limits=(min=0.9, max=1.1),
-        controlled_quantity_limits=(min=0.9, max=1.1),
+        tap_ratio_limits=nothing,
+        phase_angle_limits=nothing,
+        controlled_voltage_limits=nothing,
+        controlled_reactive_power_flow_limits=nothing,
+        controlled_active_power_flow_limits=nothing,
         number_of_tap_positions=33,
         rating=nothing,
         rating_b=nothing,
@@ -169,10 +186,28 @@ InfrastructureSystems.display_units_arg(::typeof(get_x_unitful), ::Type{Transfor
 get_control_objective(value::TransformerCircuit) = value.control_objective
 """Get [`TransformerCircuit`](@ref) `regulated_bus_number`."""
 get_regulated_bus_number(value::TransformerCircuit) = value.regulated_bus_number
-"""Get [`TransformerCircuit`](@ref) `control_limits`."""
-get_control_limits(value::TransformerCircuit) = value.control_limits
-"""Get [`TransformerCircuit`](@ref) `controlled_quantity_limits`."""
-get_controlled_quantity_limits(value::TransformerCircuit) = value.controlled_quantity_limits
+"""Get [`TransformerCircuit`](@ref) `tap_ratio_limits`."""
+get_tap_ratio_limits(value::TransformerCircuit) = value.tap_ratio_limits
+"""Get [`TransformerCircuit`](@ref) `phase_angle_limits`."""
+get_phase_angle_limits(value::TransformerCircuit) = value.phase_angle_limits
+"""Get [`TransformerCircuit`](@ref) `controlled_voltage_limits`."""
+get_controlled_voltage_limits(value::TransformerCircuit) = value.controlled_voltage_limits
+"""Get [`TransformerCircuit`](@ref) `controlled_reactive_power_flow_limits` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_controlled_reactive_power_flow_limits_unitful`](@ref)."""
+get_controlled_reactive_power_flow_limits(value::TransformerCircuit, units) = InfrastructureSystems._strip_units(get_value(value, Val(:controlled_reactive_power_flow_limits), Val(:mvar), units))
+"""Get [`TransformerCircuit`](@ref) `controlled_reactive_power_flow_limits` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_controlled_reactive_power_flow_limits`](@ref)."""
+get_controlled_reactive_power_flow_limits_unitful(value::TransformerCircuit, units) = get_value(value, Val(:controlled_reactive_power_flow_limits), Val(:mvar), units)
+get_controlled_reactive_power_flow_limits(value::TransformerCircuit) = _units_arg_required(get_controlled_reactive_power_flow_limits, value, :controlled_reactive_power_flow_limits, Val(:mvar))
+get_controlled_reactive_power_flow_limits_unitful(value::TransformerCircuit) = _units_arg_required(get_controlled_reactive_power_flow_limits_unitful, value, :controlled_reactive_power_flow_limits, Val(:mvar))
+InfrastructureSystems.display_units_arg(::typeof(get_controlled_reactive_power_flow_limits), ::Type{TransformerCircuit}) = InfrastructureSystems.SU
+InfrastructureSystems.display_units_arg(::typeof(get_controlled_reactive_power_flow_limits_unitful), ::Type{TransformerCircuit}) = InfrastructureSystems.SU
+"""Get [`TransformerCircuit`](@ref) `controlled_active_power_flow_limits` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_controlled_active_power_flow_limits_unitful`](@ref)."""
+get_controlled_active_power_flow_limits(value::TransformerCircuit, units) = InfrastructureSystems._strip_units(get_value(value, Val(:controlled_active_power_flow_limits), Val(:mw), units))
+"""Get [`TransformerCircuit`](@ref) `controlled_active_power_flow_limits` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_controlled_active_power_flow_limits`](@ref)."""
+get_controlled_active_power_flow_limits_unitful(value::TransformerCircuit, units) = get_value(value, Val(:controlled_active_power_flow_limits), Val(:mw), units)
+get_controlled_active_power_flow_limits(value::TransformerCircuit) = _units_arg_required(get_controlled_active_power_flow_limits, value, :controlled_active_power_flow_limits, Val(:mw))
+get_controlled_active_power_flow_limits_unitful(value::TransformerCircuit) = _units_arg_required(get_controlled_active_power_flow_limits_unitful, value, :controlled_active_power_flow_limits, Val(:mw))
+InfrastructureSystems.display_units_arg(::typeof(get_controlled_active_power_flow_limits), ::Type{TransformerCircuit}) = InfrastructureSystems.SU
+InfrastructureSystems.display_units_arg(::typeof(get_controlled_active_power_flow_limits_unitful), ::Type{TransformerCircuit}) = InfrastructureSystems.SU
 """Get [`TransformerCircuit`](@ref) `number_of_tap_positions`."""
 get_number_of_tap_positions(value::TransformerCircuit) = value.number_of_tap_positions
 """Get [`TransformerCircuit`](@ref) `rating` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_rating_unitful`](@ref)."""
@@ -242,10 +277,20 @@ set_x!(value::TransformerCircuit, val::_UntaggedNumber) = _units_tag_required(se
 set_control_objective!(value::TransformerCircuit, val) = value.control_objective = val
 """Set [`TransformerCircuit`](@ref) `regulated_bus_number`."""
 set_regulated_bus_number!(value::TransformerCircuit, val) = value.regulated_bus_number = val
-"""Set [`TransformerCircuit`](@ref) `control_limits`."""
-set_control_limits!(value::TransformerCircuit, val) = value.control_limits = val
-"""Set [`TransformerCircuit`](@ref) `controlled_quantity_limits`."""
-set_controlled_quantity_limits!(value::TransformerCircuit, val) = value.controlled_quantity_limits = val
+"""Set [`TransformerCircuit`](@ref) `tap_ratio_limits`."""
+set_tap_ratio_limits!(value::TransformerCircuit, val) = value.tap_ratio_limits = val
+"""Set [`TransformerCircuit`](@ref) `phase_angle_limits`."""
+set_phase_angle_limits!(value::TransformerCircuit, val) = value.phase_angle_limits = val
+"""Set [`TransformerCircuit`](@ref) `controlled_voltage_limits`."""
+set_controlled_voltage_limits!(value::TransformerCircuit, val) = value.controlled_voltage_limits = val
+"""Set [`TransformerCircuit`](@ref) `controlled_reactive_power_flow_limits`."""
+set_controlled_reactive_power_flow_limits!(value::TransformerCircuit, val) = value.controlled_reactive_power_flow_limits = set_value(value, Val(:controlled_reactive_power_flow_limits), val, Val(:mvar))
+set_controlled_reactive_power_flow_limits!(value::TransformerCircuit, val::_UntaggedNumber) = _units_tag_required(set_controlled_reactive_power_flow_limits!, value, :controlled_reactive_power_flow_limits, Val(:mvar), val)
+set_controlled_reactive_power_flow_limits!(value::TransformerCircuit, val::NamedTuple{(:min, :max), <:Tuple{Vararg{_UntaggedNumber}}}) = _units_tag_required(set_controlled_reactive_power_flow_limits!, value, :controlled_reactive_power_flow_limits, Val(:mvar), val)
+"""Set [`TransformerCircuit`](@ref) `controlled_active_power_flow_limits`."""
+set_controlled_active_power_flow_limits!(value::TransformerCircuit, val) = value.controlled_active_power_flow_limits = set_value(value, Val(:controlled_active_power_flow_limits), val, Val(:mw))
+set_controlled_active_power_flow_limits!(value::TransformerCircuit, val::_UntaggedNumber) = _units_tag_required(set_controlled_active_power_flow_limits!, value, :controlled_active_power_flow_limits, Val(:mw), val)
+set_controlled_active_power_flow_limits!(value::TransformerCircuit, val::NamedTuple{(:min, :max), <:Tuple{Vararg{_UntaggedNumber}}}) = _units_tag_required(set_controlled_active_power_flow_limits!, value, :controlled_active_power_flow_limits, Val(:mw), val)
 """Set [`TransformerCircuit`](@ref) `number_of_tap_positions`."""
 set_number_of_tap_positions!(value::TransformerCircuit, val) = value.number_of_tap_positions = val
 """Set [`TransformerCircuit`](@ref) `rating`."""

@@ -11,10 +11,27 @@ _export_bus(; number = 1, area = nothing, load_zone = nothing, bustype = ACBusTy
         base_voltage = 138.0, area = area, load_zone = load_zone,
     )
 
+"""The setpoint keyword one terminal's DC mode selects, as a splattable pair."""
+_dc_setpoint_kwarg(mode, side, value) =
+    if mode == VSCDCControlModes.DC_POWER
+        (Symbol("dc_power_setpoint_", side) => value,)
+    else
+        (Symbol("dc_voltage_setpoint_", side) => value,)
+    end
+
+"""The setpoint keyword one terminal's AC mode selects, as a splattable pair."""
+_ac_setpoint_kwarg(mode, side, value) =
+    if mode == VSCACControlModes.AC_REACTIVE_POWER
+        (Symbol("power_factor_setpoint_", side) => value,)
+    else
+        (Symbol("ac_voltage_setpoint_", side) => value,)
+    end
+
 """
 A `TwoTerminalVSCLine` on a 100 MVA / 200 kV DC base, with one converter on each DC control
-mode so both `dc_setpoint` conversions are exercised at once, and a quadratic loss on the `to`
-side to cover the second arm of the `Union{LinearCurve, QuadraticCurve}` field.
+mode so both DC setpoint fields are exercised at once, and a quadratic loss on the `to` side
+to cover the second arm of the `Union{LinearCurve, QuadraticCurve}` field. Each mode's
+selected setpoint is populated and its partner left `nothing`.
 """
 _export_vsc(
     arc;
@@ -32,7 +49,8 @@ _export_vsc(
     g = 200.0, dc_current = 300.0, reactive_power_from = 0.1,
     dc_control_from = VSCDCControlModes.DC_POWER,
     ac_control_from = ac_control_from,
-    dc_setpoint_from = 0.4, ac_setpoint_from = 0.95,
+    dc_power_setpoint_from = 0.4,
+    _ac_setpoint_kwarg(ac_control_from, "from", 0.95)...,
     rated_ac_voltage_from = rated_ac_voltage_from,
     converter_loss_from = LossCurve(LinearCurve(1.2, 0.5), NaturalUnit()),
     max_dc_current_from = 1000.0, rating_from = 2.0,
@@ -42,7 +60,8 @@ _export_vsc(
     dc_voltage_droop_from = 0.0, reactive_power_to = 0.2,
     dc_control_to = dc_control_to,
     ac_control_to = ac_control_to,
-    dc_setpoint_to = 1.02, ac_setpoint_to = 0.98,
+    _dc_setpoint_kwarg(dc_control_to, "to", 1.02)...,
+    _ac_setpoint_kwarg(ac_control_to, "to", 0.98)...,
     rated_ac_voltage_to = rated_ac_voltage_to,
     converter_loss_to = LossCurve(QuadraticCurve(0.01, 1.1, 0.4), NaturalUnit()),
     max_dc_current_to = 1000.0, rating_to = 2.0,
@@ -165,8 +184,6 @@ end
         available = true, arc = arc, tap = 1.0, α = 0.05, r = 0.01, x = 0.1,
         control_objective = TransformerControlObjective.UNDEFINED,
         regulated_bus_number = 0,
-        control_limits = (min = 0.9, max = 1.1),
-        controlled_quantity_limits = (min = 0.9, max = 1.1),
         number_of_tap_positions = 33, rating = 2.0, rating_b = nothing,
         rating_c = nothing,
         active_power_flow = 0.1, reactive_power_flow = 0.02, base_power = 50.0,
@@ -1427,8 +1444,12 @@ end
     @test natural_po.reactive_power_limits_to.max == 100.0
     # DC_POWER setpoint scales with the other power fields; the voltage-regulating ones are
     # written per-unit as stored, tagged by `setpoint_voltage_units`.
-    @test natural_po.dc_setpoint_from == 40.0
-    @test natural_po.dc_setpoint_to == 1.02
+    @test natural_po.dc_power_setpoint_from == 40.0
+    @test natural_po.dc_voltage_setpoint_from isa PSY.IC.Absent
+    @test natural_po.dc_voltage_setpoint_to == 1.02
+    @test natural_po.dc_power_setpoint_to isa PSY.IC.Absent
+    @test natural_po.power_factor_setpoint_from == 0.95
+    @test natural_po.ac_voltage_setpoint_from isa PSY.IC.Absent
     @test natural_po.setpoint_voltage_units.value == "COMPONENT_BASE"
     # pu → siemens against Ybase = 100 / 200^2.
     @test natural_po.g == 0.5
@@ -1443,8 +1464,8 @@ end
     device_po = PSY.to_openapi(vsc, refs, CU)
     @test device_po.active_power_flow == 0.5
     @test device_po.active_power_limits_from.min == -2.0
-    @test device_po.dc_setpoint_from == 0.4
-    @test device_po.dc_setpoint_to == 1.02
+    @test device_po.dc_power_setpoint_from == 0.4
+    @test device_po.dc_voltage_setpoint_to == 1.02
     @test device_po.setpoint_voltage_units.value == "COMPONENT_BASE"
     @test device_po.g == 0.5
 end
@@ -1473,11 +1494,12 @@ end
     # natural-units document divides by. Neither depends on the unit system, since both
     # are voltages, not power fields.
     natural_po = PSY.to_openapi(vsc, refs, NU)
-    @test natural_po.ac_setpoint_from == 0.95
+    @test natural_po.ac_voltage_setpoint_from == 0.95
+    @test natural_po.power_factor_setpoint_from isa PSY.IC.Absent
     @test natural_po.setpoint_voltage_units.value == "COMPONENT_BASE"
     @test natural_po.rated_ac_voltage_from == 230.0
     component_po = PSY.to_openapi(vsc, refs, CU)
-    @test component_po.ac_setpoint_from == 0.95
+    @test component_po.ac_voltage_setpoint_from == 0.95
     @test component_po.rated_ac_voltage_from == 230.0
 end
 
@@ -1532,17 +1554,27 @@ end
     end
 end
 
-@testset "OpenAPI export: TwoTerminalVSCLine unconvertible values error" begin
+@testset "OpenAPI export: TwoTerminalVSCLine AC voltage setpoint needs no AC base" begin
     bus1 = _export_bus(; number = 1)
     bus2 = _export_bus(; number = 2, bustype = ACBusTypes.PQ)
     arc = Arc(; from = bus1, to = bus2)
     refs = PSY.OpenAPIRefs(100.0)
 
-    # A non-zero ac_setpoint_from with no AC voltage base (`rated_ac_voltage_from` unset,
-    # the default) has nothing to be expressed against.
+    # `ac_voltage_setpoint_*` is written per unit under `setpoint_voltage_units =
+    # COMPONENT_BASE`, so an unset `rated_ac_voltage_from` (the default 0.0) does not block
+    # export; only a later natural-units import of that value would need the base.
     ac_voltage = _export_vsc(arc; ac_control_from = VSCACControlModes.AC_VOLTAGE)
+    sys = System(100.0)
+    for component in (bus1, bus2, arc, ac_voltage)
+        add_component!(sys, component)
+    end
+    refs[1] = bus1
+    refs[2] = bus2
+    refs[3] = arc
     refs[4] = ac_voltage
-    @test_throws ErrorException PSY.to_openapi(ac_voltage, refs, NU)
+    po = PSY.to_openapi(ac_voltage, refs, NU)
+    @test po.ac_voltage_setpoint_from == 0.95
+    @test po.rated_ac_voltage_from == 0.0
 end
 
 @testset "OpenAPI export: TwoTerminalVSCLine tolerates a missing DC voltage base" begin

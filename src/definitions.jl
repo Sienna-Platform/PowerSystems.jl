@@ -183,7 +183,7 @@ IS.@scoped_enum(
     VSCDCControlModes,
     DC_POWER = 0,           # converter controls active power transferred to the DC side
     DC_VOLTAGE = 1,         # converter controls the DC-side voltage
-    DC_VOLTAGE_DROOP = 2,   # P–Vdc droop: V_dc = dc_setpoint − droop_gain · P_c
+    DC_VOLTAGE_DROOP = 2,   # P–Vdc droop: V_dc = dc_voltage_setpoint − droop_gain · P_c
 )
 @doc"
 DC-side control mode of a voltage-source-converter (VSC) terminal.
@@ -192,7 +192,7 @@ DC-side control mode of a voltage-source-converter (VSC) terminal.
 |:------------------ |:---------------------------------------------------------------------------- |
 | `DC_POWER`         | The converter controls the active power transferred to the DC side           |
 | `DC_VOLTAGE`       | The converter controls (regulates) its DC-side voltage                       |
-| `DC_VOLTAGE_DROOP` | DC-voltage droop, `V_dc = dc_setpoint − droop_gain · P_c` (gain in a field)  |
+| `DC_VOLTAGE_DROOP` | DC-voltage droop, `V_dc = dc_voltage_setpoint − droop_gain · P_c` (gain in a field) |
 " VSCDCControlModes
 
 IS.@scoped_enum(
@@ -208,6 +208,23 @@ AC-side control mode of a voltage-source-converter (VSC) terminal.
 | `AC_REACTIVE_POWER` | The converter controls reactive power (fixed power factor)        |
 | `AC_VOLTAGE`        | The converter controls (regulates) its AC-side voltage magnitude  |
 " VSCACControlModes
+
+IS.@scoped_enum(
+    LCCControlMode,
+    BLOCKED = 0,   # the line is blocked and holds no schedule (PSS/E MDC = 0)
+    POWER = 1,     # power schedule in `power_transfer_setpoint` (MDC = 1)
+    CURRENT = 2,   # current schedule in `current_transfer_setpoint` (MDC = 2)
+)
+@doc"
+Control mode of an LCC-HVDC line (PSS/E `MDC`). The mode selects which setpoint the line
+holds; the other setpoint is `nothing`.
+
+| Value     | Description                                                            |
+|:--------- |:---------------------------------------------------------------------- |
+| `BLOCKED` | The line is blocked and holds no schedule                              |
+| `POWER`   | The line holds a power schedule in `power_transfer_setpoint` (MW)      |
+| `CURRENT` | The line holds a current schedule in `current_transfer_setpoint` (A)   |
+" LCCControlMode
 
 IS.@scoped_enum(
     FACTSShuntControlType,

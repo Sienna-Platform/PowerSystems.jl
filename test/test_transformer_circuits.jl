@@ -312,8 +312,8 @@ end
     set_tap!(c, 1.05)
     set_control_objective!(c, TransformerControlObjective.VOLTAGE)
     set_regulated_bus_number!(c, 2)
-    set_control_limits!(c, (min = 0.9, max = 1.1))
-    set_controlled_quantity_limits!(c, (min = 0.95, max = 1.05))
+    set_tap_ratio_limits!(c, (min = 0.9, max = 1.1))
+    set_controlled_voltage_limits!(c, (min = 0.95, max = 1.05))
     set_number_of_tap_positions!(c, 33)
     set_available!(c, true)
     set_rating!(c, 1.0 * CU)   # check_rating_values requires a non-nothing `rating`
@@ -355,10 +355,14 @@ end
     t2w2 = get_component(TwoWindingTransformer, sys2, "t2w")
     c2 = get_circuit(t2w2)
     @test get_tap(c2) == 1.05
-    # the full flat control block round-trips: scoped enum, both MinMax fields, and Ints
+    # the full flat control block round-trips: scoped enum, the two bands VOLTAGE selects,
+    # and Ints; the unselected bands stay nothing
     @test get_control_objective(c2) == TransformerControlObjective.VOLTAGE
-    @test get_control_limits(c2) == (min = 0.9, max = 1.1)
-    @test get_controlled_quantity_limits(c2) == (min = 0.95, max = 1.05)
+    @test get_tap_ratio_limits(c2) == (min = 0.9, max = 1.1)
+    @test get_controlled_voltage_limits(c2) == (min = 0.95, max = 1.05)
+    @test isnothing(get_phase_angle_limits(c2))
+    @test isnothing(get_controlled_reactive_power_flow_limits(c2, CU))
+    @test isnothing(get_controlled_active_power_flow_limits(c2, CU))
     @test get_regulated_bus_number(c2) == 2
     @test get_number_of_tap_positions(c2) == 33
     # parent-level shunt fields round-trip
