@@ -404,6 +404,90 @@ end
     )
 end
 
+"""Two OnlineReserves `A` and `B` on one generator and a GroupReserve `R_UP` over both, all attached."""
+function _bounded_group_system(; max_requirement = nothing)
+    sys = System(100.0)
+    bus = ACBus(nothing)
+    bus.name = "bus1"
+    bus.number = 1
+    bus.bustype = ACBusTypes.REF
+    add_component!(sys, bus)
+    gen = ThermalStandard(nothing)
+    gen.bus = bus
+    gen.name = "gen1"
+    add_component!(sys, gen)
+    a = OnlineReserve{ReserveUp}(; name = "A", available = true, time_frame = 10.0)
+    b = OnlineReserve{ReserveUp}(; name = "B", available = true, time_frame = 10.0)
+    add_service!(sys, a, [gen])
+    add_service!(sys, b, [gen])
+    group = GroupReserve{ReserveUp}(;
+        name = "R_UP", available = true, requirement = 20.0, max_requirement)
+    add_service!(sys, group, Service[a, b])
+    return sys, group, a, b
+end
+
+@testset "GroupReserve participation bounds reject malformed fractions" begin
+    sys, group, a, _ = _bounded_group_system(; max_requirement = 20.0)
+    id = IS.get_id(a)
+    for bad in ((id, -0.1, 1.0), (id, 0.0, NaN), (id, Inf, 1.0))
+        @test_throws ArgumentError set_participation_bounds!(sys, group, [bad])
+    end
+    @test_throws ArgumentError GroupReserve{ReserveUp}(;
+        name = "G", available = true, requirement = 0.0,
+        participation_bounds = [(1, -0.1, 1.0)])
+    @test isempty(get_participation_bounds(group))
+    # Integer fractions convert to the field's Float64.
+    set_participation_bounds!(sys, group, [(id, 1, 1)])
+    @test get_participation_bounds(group) == [(id, 1.0, 1.0)]
+end
+
+@testset "GroupReserve participation bounds name distinct members" begin
+    sys, group, a, b = _bounded_group_system(; max_requirement = 20.0)
+    bounds = [(IS.get_id(a), 1.0, 1.0), (IS.get_id(b), 0.0, 0.6)]
+    set_participation_bounds!(sys, group, bounds)
+    @test get_participation_bounds(group) == bounds
+    # Not a member: the generator's id.
+    gen = get_component(ThermalStandard, sys, "gen1")
+    @test_throws ArgumentError set_participation_bounds!(
+        sys, group, [(IS.get_id(gen), 1.0, 1.0)])
+    # Two entries on one member would collide on POM's (group, member, t) row key.
+    @test_throws ArgumentError set_participation_bounds!(
+        sys, group, [(IS.get_id(a), 1.0, 1.0), (IS.get_id(a), 0.0, 0.5)])
+    @test get_participation_bounds(group) == bounds
+end
+
+@testset "A max participation bound below 1.0 needs a max_requirement" begin
+    sys, group, a, _ = _bounded_group_system()
+    id = IS.get_id(a)
+    # 0.0 and 1.0 are the no-op defaults, so a floor alone needs no cap.
+    set_participation_bounds!(sys, group, [(id, 1.0, 1.0)])
+    @test_throws ArgumentError set_participation_bounds!(sys, group, [(id, 0.0, 0.5)])
+    @test_throws ArgumentError GroupReserve{ReserveUp}(;
+        name = "G", available = true, requirement = 0.0,
+        participation_bounds = [(1, 0.0, 0.5)])
+    set_max_requirement!(group, 20.0 * u"MW")
+    set_participation_bounds!(sys, group, [(id, 0.0, 0.5)])
+    @test_throws ArgumentError set_max_requirement!(group, nothing)
+end
+
+@testset "A capped, bounded GroupReserve logs no validation-config warning" begin
+    sys, _, a, b = _bounded_group_system()
+    group = GroupReserve{ReserveUp}(; name = "QUIET", available = true, requirement = 0.0,
+        max_requirement = 1.0, participation_bounds = [(IS.get_id(a), 0.5, 1.0)])
+    @test_logs min_level = Logging.Warn add_service!(sys, group, Service[a, b])
+end
+
+@testset "A bounded member cannot leave the group until its bound does" begin
+    sys, group, a, b = _bounded_group_system()
+    set_participation_bounds!(sys, group, [(IS.get_id(a), 1.0, 1.0)])
+    @test_throws ArgumentError set_contributing_services!(sys, group, Service[b])
+    @test_throws ArgumentError set_contributing_services!(group, Service[b])
+    @test_throws ArgumentError remove_component!(sys, a)
+    set_participation_bounds!(sys, group, Tuple{Int, Float64, Float64}[])
+    set_contributing_services!(sys, group, Service[b])
+    @test get_name.(get_contributing_services(group)) == ["B"]
+end
+
 @testset "Test OfflineReserve" begin
     # create system
     sys = System(100.0)

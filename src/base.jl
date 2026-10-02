@@ -813,6 +813,7 @@ function add_service!(
     for _service in get_contributing_services(service)
         throw_if_not_attached(_service, sys)
     end
+    _check_participation_bounds(service)
 
     set_units_setting!(service, sys.base_power)
     IS.add_component!(sys.data, service; skip_validation = skip_validation, kwargs...)
@@ -828,7 +829,44 @@ function set_contributing_services!(
     for _service in val
         throw_if_not_attached(_service, sys)
     end
-    service.contributing_services = val
+    set_contributing_services!(service, val)
+    return
+end
+
+"""
+Throw unless each of `bounds` names a distinct contributing service of `group` and has valid
+fractions (see `_check_bound_fractions`).
+"""
+function _check_participation_bounds(
+    group::GroupReserve,
+    bounds = get_participation_bounds(group),
+)
+    name = get_name(group)
+    _check_bound_fractions(name, group.max_requirement, bounds)
+    members = Set(IS.get_id(s) for s in get_contributing_services(group))
+    seen = Set{Int}()
+    for (member, _, _) in bounds
+        member in members || throw(
+            ArgumentError(
+                "GroupReserve $name: a participation bound names id $member, which is not " *
+                "one of its contributing services"),
+        )
+        member in seen && throw(
+            ArgumentError(
+                "GroupReserve $name: member id $member has two participation bounds; " *
+                "put both sides in one (member, min, max) entry"),
+        )
+        push!(seen, member)
+    end
+    return
+end
+
+"""Set GroupReserve participation_bounds, `(member, min, max)` entries, with check."""
+function set_participation_bounds!(sys::System, service::GroupReserve, val)
+    throw_if_not_attached(service, sys)
+    bounds = convert(Vector{Tuple{Int, Float64, Float64}}, val)
+    _check_participation_bounds(service, bounds)
+    service.participation_bounds = bounds
     return
 end
 
@@ -849,6 +887,7 @@ function add_service!(
 )
     skip_validation = _validate_or_skip!(sys, service, skip_validation)
     set_contributing_services!(sys, service, contributing_services)
+    _check_participation_bounds(service)
 
     set_units_setting!(service, sys.base_power)
     IS.add_component!(sys.data, service; skip_validation = skip_validation, kwargs...)

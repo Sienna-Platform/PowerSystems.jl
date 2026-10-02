@@ -400,6 +400,8 @@ export get_deployed_fraction
 export set_deployed_fraction!
 export get_contributing_services
 export set_contributing_services!
+export get_participation_bounds
+export set_participation_bounds!
 export TransmissionInterface
 
 export AngleUnits

@@ -285,6 +285,27 @@ function OfflineReserve(::Nothing)
     )
 end
 
+# Entry fractions are finite and >= 0; a max below 1.0 is a share of max_requirement, so it
+# needs one (1.0, the default, adds nothing beyond the group's cap).
+function _check_bound_fractions(name, max_requirement, bounds)
+    for (member, lo, hi) in bounds
+        for (side, f) in (("min", lo), ("max", hi))
+            isfinite(f) && f >= 0 || throw(
+                ArgumentError(
+                    "GroupReserve $name: member id $member has $side fraction $f; fractions are finite and >= 0",
+                ),
+            )
+        end
+        hi < 1.0 && isnothing(max_requirement) &&
+            throw(
+                ArgumentError(
+                    "GroupReserve $name: member id $member has max $hi < 1.0, which needs a max_requirement",
+                ),
+            )
+    end
+    return
+end
+
 """
 $(TYPEDEF)
 $(TYPEDFIELDS)
@@ -298,6 +319,10 @@ a member reserve also counts toward the group. Attach an Operating Reserve Deman
 makes an ELASTIC group (one demand curve met by the awards of several sub-products) representable.
 A `max_requirement` caps the members' total, scaled by a `"max_requirement"` time series when one
 is attached, as `requirement` is.
+`participation_bounds` bounds each member's award as a fraction of the group's requirement or
+`max_requirement`, scaled per step by a `"participation_bound_min"` or `"participation_bound_max"`
+series on the group added with `features = Dict("member" => id)`; set it with
+[`set_participation_bounds!`](@ref) once the group is attached.
 
 The `ReserveDirection` must be specified as [`ReserveUp`](@ref), [`ReserveDown`](@ref), or
 [`ReserveSymmetric`](@ref).
@@ -323,8 +348,19 @@ mutable struct GroupReserve{T <: ReserveDirection, U <: IS.AbstractUnitSystem} <
     ext::Dict{String, Any}
     "Services that contribute to this group requirement"
     contributing_services::Vector{Service}
+    "Per-member bounds `(member, min, max)`: `member` is the IS id of a contributing service, `min` a fraction of `requirement` (0.0 = no floor) and `max` a fraction of `max_requirement` (1.0 = no cap beyond the group's). A `\"participation_bound_min\"` or `\"participation_bound_max\"` series on the group with the feature `\"member\" => member` scales a fraction per step"
+    participation_bounds::Vector{Tuple{Int, Float64, Float64}}
     "(**Do not modify.**) PowerSystems.jl internal reference"
     internal::InfrastructureSystemsInternal
+
+    function GroupReserve{T, U}(
+        name, available, requirement, max_requirement, variable, ext,
+        contributing_services, participation_bounds, internal,
+    ) where {T <: ReserveDirection, U <: IS.AbstractUnitSystem}
+        _check_bound_fractions(name, max_requirement, participation_bounds)
+        return new{T, U}(name, available, requirement, max_requirement, variable, ext,
+            contributing_services, participation_bounds, internal)
+    end
 end
 
 function GroupReserve{T}(
@@ -335,11 +371,12 @@ function GroupReserve{T}(
     ext = Dict{String, Any}(),
     contributing_services = Vector{Service}(),
     max_requirement = nothing,
+    participation_bounds = Tuple{Int, Float64, Float64}[],
 ) where {T <: ReserveDirection}
     U = typeof(get_power_units(variable))
     return GroupReserve{T, U}(
         name, available, requirement, max_requirement, variable, ext, contributing_services,
-        InfrastructureSystemsInternal(),
+        participation_bounds, InfrastructureSystemsInternal(),
     )
 end
 
@@ -351,12 +388,13 @@ function GroupReserve{T}(;
     variable = ZERO_OFFER_CURVE,
     ext = Dict{String, Any}(),
     contributing_services = Vector{Service}(),
+    participation_bounds = Tuple{Int, Float64, Float64}[],
     internal = InfrastructureSystemsInternal(),
 ) where {T <: ReserveDirection}
     U = typeof(get_power_units(variable))
     return GroupReserve{T, U}(
         name, available, requirement, max_requirement, variable, ext,
-        contributing_services, internal,
+        contributing_services, participation_bounds, internal,
     )
 end
 
@@ -369,11 +407,12 @@ function GroupReserve{T, U}(;
     variable = ZERO_OFFER_CURVE,
     ext = Dict{String, Any}(),
     contributing_services = Vector{Service}(),
+    participation_bounds = Tuple{Int, Float64, Float64}[],
     internal = InfrastructureSystemsInternal(),
 ) where {T <: ReserveDirection, U <: IS.AbstractUnitSystem}
     return GroupReserve{T, U}(
         name, available, requirement, max_requirement, variable, ext,
-        contributing_services, internal,
+        contributing_services, participation_bounds, internal,
     )
 end
 
@@ -482,6 +521,8 @@ get_variable(value::GroupReserve) = value.variable
 get_ext(value::GroupReserve) = value.ext
 """Get [`GroupReserve`](@ref) `contributing_services`."""
 get_contributing_services(value::GroupReserve) = value.contributing_services
+"""Get [`GroupReserve`](@ref) `participation_bounds`."""
+get_participation_bounds(value::GroupReserve) = value.participation_bounds
 """Get [`GroupReserve`](@ref) `internal`."""
 get_internal(value::GroupReserve) = value.internal
 
@@ -491,14 +532,29 @@ set_available!(value::GroupReserve, val) = value.available = val
 set_requirement!(value::GroupReserve, val) =
     value.requirement = set_value(value, Val(:requirement), val, Val(:mw))
 """Set [`GroupReserve`](@ref) `max_requirement` (a units-tagged value, or `nothing` for no cap)."""
-set_max_requirement!(value::GroupReserve, val) =
+function set_max_requirement!(value::GroupReserve, val)
+    isnothing(val) &&
+        _check_bound_fractions(get_name(value), nothing, value.participation_bounds)
     value.max_requirement = set_value(value, Val(:max_requirement), val, Val(:mw))
+    return
+end
 """Set [`GroupReserve`](@ref) `variable` (its operating reserve demand curve)."""
 set_variable!(value::GroupReserve, val) = value.variable = val
 """Set [`GroupReserve`](@ref) `ext`."""
 set_ext!(value::GroupReserve, val) = value.ext = val
-"""Set [`GroupReserve`](@ref) `contributing_services`."""
-set_contributing_services!(value::GroupReserve, val) = value.contributing_services = val
+"""Set [`GroupReserve`](@ref) `contributing_services`; refuses to drop a member that has a participation bound."""
+function set_contributing_services!(value::GroupReserve, val)
+    kept = Set(IS.get_id(s) for s in val)
+    for (member, _, _) in value.participation_bounds
+        member in kept || throw(
+            ArgumentError(
+                "GroupReserve $(get_name(value)): member id $member has a participation " *
+                "bound; remove it with set_participation_bounds! before dropping the member",
+            ),
+        )
+    end
+    return value.contributing_services = val
+end
 
 """
 Return whether an Operating Reserve Demand Curve is defined on `reserve`.
