@@ -365,6 +365,15 @@ end
     @test_throws ArgumentError remove_component!(sys, service)
 end
 
+@testset "A GroupReserve with a demand curve logs no validation-config warning" begin
+    sys = System(100.0)
+    curve = CostCurve(PiecewiseIncrementalCurve(0.0, [0.0, 40.0, 80.0], [80.0, 10.0]))
+    group = GroupReserve{ReserveUp}(;
+        name = "CURVE", available = true, requirement = 0.0, variable = curve)
+    # IS warns once per non-nothing field its descriptor does not list (IS src/validation.jl:65).
+    @test_logs min_level = Logging.Warn add_service!(sys, group)
+end
+
 @testset "Test OfflineReserve" begin
     # create system
     sys = System(100.0)

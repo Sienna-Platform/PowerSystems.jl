@@ -19978,6 +19978,9 @@
                     "conversion_unit": ":mw"
                 },
                 {
+                    "name": "variable"
+                },
+                {
                     "name": "ext"
                 },
                 {
