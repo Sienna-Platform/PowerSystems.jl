@@ -643,7 +643,8 @@ end
 """
 Replay the document's `time_series_associations` rows into an empty catalog, or validate them
 against one the store already brought — which depends on what the sidecar carried, not on which
-form wrote it.
+form wrote it. An adopted sidecar's catalog is authoritative and is checked against the document by
+`PD.validate_time_series_catalog`.
 
 Runs before the component pass: a `MarketBidTimeSeriesCost` or time-series `FuelCurve` resolves
 its `association_id` against the store while its owner is being built.
@@ -653,13 +654,10 @@ _load_time_series_associations!(::System, ::PD.SystemDocument, ::Nothing) = noth
 function _load_time_series_associations!(sys::System, doc::PD.SystemDocument, store)
     isempty(doc.time_series_associations) && return nothing
     if _catalog_is_authoritative(store)
-        return _validate_time_series_associations!(sys, doc)
+        catalog = IS.openapi_time_series_association_json(sys.data)
+        return PD.validate_time_series_catalog(doc, catalog)
     end
-    # `IC.encode`, not bare `JSON.json`: each row is a oneOf wrapper, and JSON would write
-    # its `value` field rather than the member the store's importer expects.
-    IS.import_time_series_association_rows!(
-        store, JSON.json(IC.encode(doc.time_series_associations)),
-    )
+    IS.import_time_series_association_rows!(store, PD.time_series_association_json(doc))
     return nothing
 end
 
@@ -727,138 +725,6 @@ function _system_with_sidecar(
         IS.InfrastructureSystemsInternal(),
     )
     return System(data, base_power; kwargs...)
-end
-
-"""
-Cross-check the document's own `time_series_associations` rows against the adopted sidecar's
-catalog. A no-op when there is no sidecar or the document names no rows.
-
-The sidecar is authoritative, so this never writes: every document row must match a sidecar
-row, identified by `(owner_id, owner_category, time_series_type, name, resolution, interval,
-features)` — the same identity tuple the store's own uniqueness index keys on (`owner_type`
-is a denormalized label excluded from identity); a type that carries no `resolution`/
-`interval` field at all (e.g. `NonSequentialTimeSeries`) treats it as `nothing`. A matched row
-must then agree with its counterpart field-for-field — compared as canonical OpenAPI JSON,
-excluding `uri`/`data_hash` (informational: a document assembled from a different store may
-legitimately carry different values for either, so neither participates in identity or
-drift). A document row with no sidecar counterpart, or one that drifts from its match, means
-the bundle is corrupt and throws `IS.DataFormatError` naming the row and, for drift, the
-differing fields. Sidecar rows the document does not mention are tolerated (`@debug`-logged)
-— a document only ever names the owners it carries.
-"""
-function _validate_time_series_associations!(sys::System, doc::PD.SystemDocument)
-    store_rows = [
-        _unwrap_oneof(row) for row in IS.openapi_time_series_association_rows(sys.data)
-    ]
-    store_by_identity = Dict(_ts_row_identity(row) => row for row in store_rows)
-    referenced = Set{keytype(store_by_identity)}()
-
-    for assoc in doc.time_series_associations
-        row = _unwrap_oneof(assoc)
-        identity = _ts_row_identity(row)
-        store_row = get(store_by_identity, identity, nothing)
-        if isnothing(store_row)
-            throw(
-                IS.DataFormatError(
-                    "from_openapi(System, doc): time series association " *
-                    "$(_ts_row_label(identity)) has no matching row in the adopted " *
-                    "sidecar's catalog",
-                ),
-            )
-        end
-        push!(referenced, identity)
-        # Checked explicitly, ahead of the generic field-drift comparison below: a mismatched
-        # `association_id` means every key built from it during this import points at the
-        # wrong association altogether, not just a stale metadata field, so it gets its own
-        # named error carrying both values rather than surfacing as one entry in a
-        # `drifted on: ...` list. A `nothing` document value is not treated as "unset and
-        # therefore skip" — the schema marks `association_id` required, so a document row
-        # missing it is malformed and must error loudly rather than compare vacuously equal
-        # to another `nothing`.
-        isnothing(row.association_id) && throw(
-            IS.DataFormatError(
-                "from_openapi(System, doc): time series association " *
-                "$(_ts_row_label(identity)) has no association_id in the document, but " *
-                "the schema marks it required",
-            ),
-        )
-        row.association_id == store_row.association_id || throw(
-            IS.DataFormatError(
-                "from_openapi(System, doc): time series association " *
-                "$(_ts_row_label(identity)) has association_id=$(row.association_id) in " *
-                "the document but association_id=$(store_row.association_id) in the " *
-                "adopted sidecar's catalog",
-            ),
-        )
-        drift = _ts_row_drift(row, store_row)
-        isempty(drift) || throw(
-            IS.DataFormatError(
-                "from_openapi(System, doc): time series association " *
-                "$(_ts_row_label(identity)) drifted from the sidecar's catalog on: " *
-                "$(join(drift, ", "))",
-            ),
-        )
-    end
-
-    unmatched = setdiff(keys(store_by_identity), referenced)
-    isempty(unmatched) ||
-        @debug "from_openapi(System, doc): sidecar catalog rows the document does not mention" unmatched
-
-    return nothing
-end
-
-"""The wire field value of `field` on `row`, or `nothing` when `row`'s type does not carry
-that field at all (e.g. `NonSequentialTimeSeries` has no `resolution`/`interval`) — as
-opposed to carrying it unset, which is also `nothing`. Either way, absent and unset compare
-equal for identity purposes."""
-function _ts_field(row, field::Symbol)
-    hasproperty(row, field) && return getproperty(row, field)
-    return nothing
-end
-
-"""The `(owner_id, owner_category, time_series_type, name, resolution, interval, features)`
-named tuple a time series association row is matched by — the same identity the store's own
-uniqueness index keys on. See [`_validate_time_series_associations!`](@ref).
-
-Features are compared by value: the wire type wraps each value in a mutable
-`TimeSeriesFeatureValue`, which compares by object identity, so a document row and its store
-counterpart would never match on the wrappers themselves."""
-_ts_row_identity(row) = (
-    owner_id = row.owner_id, owner_category = row.owner_category,
-    time_series_type = row.time_series_type, name = row.name,
-    resolution = _ts_field(row, :resolution), interval = _ts_field(row, :interval),
-    features = _ts_feature_values(row.features),
-)
-
-_ts_feature_values(::Union{Nothing, IC.Absent}) = nothing
-_ts_feature_values(features::AbstractDict) =
-    Dict{String, Any}(String(k) => _ts_feature_value(v) for (k, v) in features)
-_ts_feature_values(features::PTS.TimeSeriesFeatures) =
-    _ts_feature_values(features.additional_properties)
-_ts_feature_value(v::InfrastructureTimeSeriesOpenAPIModels.TimeSeriesFeatureValue) = v.value
-_ts_feature_value(v) = v
-
-"""Human-readable label for a time series association identity, for error messages."""
-function _ts_row_label(identity)
-    return "$(identity.time_series_type) owner $(identity.owner_id) \"$(identity.name)\""
-end
-
-"""Wire field names on which `doc_row` and `store_row` differ, comparing canonical OpenAPI
-JSON and excluding `uri`/`data_hash`."""
-function _ts_row_drift(doc_row, store_row)
-    doc_json = _ts_row_wire_dict(doc_row)
-    store_json = _ts_row_wire_dict(store_row)
-    fields = union(keys(doc_json), keys(store_json))
-    return sort!(
-        [f for f in fields if get(doc_json, f, nothing) != get(store_json, f, nothing)],
-    )
-end
-
-function _ts_row_wire_dict(row)
-    dict = JSON.parse(JSON.json(row))
-    delete!(dict, "uri")
-    delete!(dict, "data_hash")
-    return dict
 end
 
 """`ancillary_service_offers` ids off an ALREADY-UNWRAPPED wire operation cost that

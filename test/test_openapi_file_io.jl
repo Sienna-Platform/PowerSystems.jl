@@ -898,3 +898,43 @@ end
     @test get_time_series_values(gen2, ts1b; start_time = initial_time) == ta_vals
     @test get_time_series_values(gen2, ts2b; start_time = initial_time) == ta_vals
 end
+
+"""Rewrite the document at `path` after applying `edit!` to its parsed JSON."""
+function _edit_document!(edit!, path::AbstractString)
+    raw = JSON.parsefile(path; dicttype = Dict{String, Any})
+    edit!(raw)
+    open(io -> JSON.print(io, raw), path, "w")
+    return nothing
+end
+
+@testset "from_file rejects a schema-invalid time series association row ($form)" for form in
+                                                                                      (
+    "case.json",
+    "case.sns",
+)
+    mktempdir() do dir
+        document = joinpath(dir, "case.json")
+        to_file(_file_io_fixture(), document)
+        # The schema reserves `resolution` as a feature name; decoding alone accepts it.
+        _edit_document!(document) do raw
+            first(raw["time_series_associations"])["features"] =
+                Dict("resolution" => "PT1H")
+        end
+        if form == "case.json"
+            @test_throws PSY.IC.SchemaValidationError from_file(document)
+        else
+            # An archive carries the same document; the edited row fails before the store opens.
+            archive = joinpath(dir, form)
+            to_file(_file_io_fixture(), archive)
+            extracted = mktempdir()
+            PSY.IS.extract_sienna_archive(archive; directory = extracted)
+            _edit_document!(joinpath(extracted, PSY.SYSTEM_DOCUMENT_FILE)) do raw
+                first(raw["time_series_associations"])["features"] =
+                    Dict("resolution" => "PT1H")
+            end
+            @test_throws PSY.IC.SchemaValidationError PSY._read_bundle(
+                joinpath(extracted, PSY.SYSTEM_DOCUMENT_FILE),
+            )
+        end
+    end
+end
