@@ -365,6 +365,34 @@ end
     @test_throws ArgumentError remove_component!(sys, service)
 end
 
+@testset "A GroupReserve member cannot be removed by name either" begin
+    sys = System(100.0)
+    bus = ACBus(nothing)
+    bus.name = "bus1"
+    bus.number = 1
+    add_component!(sys, bus)
+    gen = ThermalStandard(nothing)
+    gen.bus = bus
+    gen.name = "gen1"
+    add_component!(sys, gen)
+    member =
+        OnlineReserve{ReserveUp}(; name = "MEMBER", available = true, time_frame = 10.0)
+    add_service!(sys, member, [gen])
+    group = GroupReserve{ReserveUp}(; name = "GROUP", available = true, requirement = 0.0)
+    add_service!(sys, group, Service[member])
+    @test_throws ArgumentError remove_component!(
+        OnlineReserve{ReserveUp, NaturalUnit},
+        sys,
+        "MEMBER",
+    )
+    @test has_component(sys, OnlineReserve{ReserveUp}, "MEMBER")
+    @test_throws ArgumentError remove_component!(
+        OnlineReserve{ReserveUp, NaturalUnit},
+        sys,
+        "ABSENT",
+    )
+end
+
 @testset "Test OfflineReserve" begin
     # create system
     sys = System(100.0)

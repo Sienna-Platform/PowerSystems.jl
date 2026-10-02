@@ -1017,8 +1017,9 @@ function remove_component!(
     sys::System,
     name::AbstractString,
 ) where {T <: Component}
-    component = IS.remove_component!(T, sys.data, name)
-    handle_component_removal!(sys, component)
+    component = get_component(T, sys, name)
+    isnothing(component) && throw(ArgumentError("$T $name is not stored in the system"))
+    remove_component!(sys, component)
     return
 end
 
