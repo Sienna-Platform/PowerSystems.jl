@@ -334,7 +334,7 @@ function from_openapi(po::PO.StandardLoad, refs::OpenAPIRefs, ::ComponentBaseUni
         max_impedance_reactive_power = _or_default(po.max_impedance_reactive_power, 0.0),
         max_current_active_power = _or_default(po.max_current_active_power, 0.0),
         max_current_reactive_power = _or_default(po.max_current_reactive_power, 0.0),
-        conformity = _or_default_enum(po.conformity, LoadConformity.UNDEFINED),
+        conformity = _or_default(po.conformity, LoadConformity.UNDEFINED),
         input_basis = u"CU",
     )
 end
@@ -357,7 +357,7 @@ function from_openapi(po::PO.StandardLoad, refs::OpenAPIRefs, ::NaturalUnit)
         max_impedance_reactive_power = _or_default(po.max_impedance_reactive_power, 0.0, (/), po.base_power),
         max_current_active_power = _or_default(po.max_current_active_power, 0.0, (/), po.base_power),
         max_current_reactive_power = _or_default(po.max_current_reactive_power, 0.0, (/), po.base_power),
-        conformity = _or_default_enum(po.conformity, LoadConformity.UNDEFINED),
+        conformity = _or_default(po.conformity, LoadConformity.UNDEFINED),
         input_basis = u"CU",
     )
 end

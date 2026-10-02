@@ -61,71 +61,6 @@ for T in (:TradingHub, :VirtualParticipant, :PointToPointBid)
     @eval from_openapi(po::PO.$T, refs::OpenAPIRefs) = from_openapi(po, refs, NU)
 end
 
-"""Named tuple of `(min, max)` from a PO `MinMax`-shaped struct, or `default` (the PSY
-descriptor default) when the field is absent from the wire."""
-_minmax(m) = (min = Float64(m.min), max = Float64(m.max))
-_minmax(::Union{Nothing, IC.Absent}, default) = default
-_minmax(m, ::Any) = _minmax(m)
-
-"""Named tuple of `(from, to)` from a PO `FromTo`-shaped struct, or `default` (the PSY
-descriptor default) when the field is absent from the wire."""
-_fromto(m) = (from = Float64(m.from), to = Float64(m.to))
-_fromto(::Union{Nothing, IC.Absent}, default) = default
-_fromto(m, ::Any) = _fromto(m)
-
-"""A field the PSY descriptor declares required-with-a-default (e.g. `Area.load_response`,
-`TransformerCircuit.α`/`regulated_bus_number`) but the wire declares optional-by-omission:
-`Absent`/`nothing` falls back to that same descriptor default rather than failing to build the
-component at all."""
-_or_default(::Union{Nothing, IC.Absent}, default) = default
-_or_default(v, ::Any) = v
-
-"""Same as `_or_default` for a field the natural-units method rescales: `op(v, base)` runs
-only on a value that is present, so an absent field takes `default` without the arithmetic
-ever touching the sentinel. Mirrors the `(op, base)` arity the compound extractors take."""
-_or_default(::Union{Nothing, IC.Absent}, default, ::Any, ::Any) = default
-_or_default(v, ::Any, op, base) = op(v, base)
-
-"""Same as `_or_default`, for a wire enum field: unwraps `.value` when the field is present,
-returns `default` (already the bare PSY-side value) when it is absent."""
-_or_default_enum(::Union{Nothing, IC.Absent}, default) = default
-_or_default_enum(v, default) = typeof(default)(v.value)
-
-"""A discriminator with no default: absent on the wire is an error naming the row, since no
-control mode can be assumed for an in-service converter."""
-_required_enum(
-    ::Union{Nothing, IC.Absent}, ::Type{T}, owner::AbstractString, field::AbstractString,
-) where {T} = error("$owner: $field is required and has no default")
-_required_enum(v, ::Type{T}, ::AbstractString, ::AbstractString) where {T} = T(v.value)
-
-# Optional PO fields map nothing/Absent -> nothing (the PSY kwargs accept it), as
-# `::Union{Nothing, IC.Absent}` method pairs, the same idiom cost_conversion.jl uses.
-
-"""`(min, max)` passed through unconverted, or `nothing` when absent."""
-_opt_minmax(::Union{Nothing, IC.Absent}) = nothing
-_opt_minmax(m) = _minmax(m)
-
-"""`(min, max)` divided by `base`, or `nothing` when absent."""
-_minmax_cu(::Union{Nothing, IC.Absent}, base) = nothing
-_minmax_cu(m, base) = (min = Float64(m.min) / base, max = Float64(m.max) / base)
-
-"""`(min, max)` divided by `base`, or `default` (already in the target unit — zero scales to
-itself, which is the only default this pairs with today) when absent."""
-_minmax_cu(::Union{Nothing, IC.Absent}, default, base) = default
-_minmax_cu(m, ::Any, base) = _minmax_cu(m, base)
-
-"""`(up, down)` divided by `base`, or `nothing` when absent."""
-_updown_cu(::Union{Nothing, IC.Absent}, base) = nothing
-_updown_cu(m, base) = (up = Float64(m.up) / base, down = Float64(m.down) / base)
-
-"""`(up, down)` passed through unconverted, or `nothing` when absent."""
-_opt_updown(::Union{Nothing, IC.Absent}) = nothing
-_opt_updown(m) = (up = Float64(m.up), down = Float64(m.down))
-
-"""`v` divided by `base`, or `nothing` when absent."""
-_scale_optional(::Union{Nothing, IC.Absent}, base) = nothing
-_scale_optional(v, base) = Float64(v) / base
-
 """The base a document power value is written against: `base_power` under `NaturalUnit`,
 `1.0` under `ComponentBaseUnit`. Import divides by it, export multiplies by it."""
 _power_base(base_power, ::NaturalUnit) = base_power
@@ -150,18 +85,6 @@ function _level_fraction(v, max_level, name, field)
     end
     return v / max_level
 end
-
-"""`Complex(real, imag)` from a PO `ComplexNumber`-shaped struct, or `default` (the PSY
-descriptor default) when the field is absent from the wire."""
-_complex_number(c) = Complex(c.real, c.imag)
-_complex_number(::Union{Nothing, IC.Absent}, default) = default
-_complex_number(c, ::Any) = _complex_number(c)
-
-"""`(in, out)` from a PO `InOut`-shaped struct, or `default` (the PSY descriptor default)
-when the field is absent from the wire. Inverse of export's `_inout_po`."""
-_inout(m) = (in = m.in, out = m.out)
-_inout(::Union{Nothing, IC.Absent}, default) = default
-_inout(m, ::Any) = _inout(m)
 
 """Resolve upstream/downstream `HydroUnit` ids to components; `nothing` means no
 association (a reservoir can legitimately have zero upstream/downstream turbines) and
@@ -280,7 +203,7 @@ function from_openapi(
     return TransmissionInterface(;
         name = po.name,
         available = po.available,
-        active_power_flow_limits = _minmax(po.active_power_flow_limits),
+        active_power_flow_limits = _from_wire(po.active_power_flow_limits),
         violation_penalty = _or_default(po.violation_penalty, INFINITE_COST),
         direction_mapping = po.direction_mapping.additional_properties,
         base_power = _require_base_power("TransmissionInterface", po.id, po.base_power),
@@ -297,7 +220,7 @@ function from_openapi(
     return TransmissionInterface(;
         name = po.name,
         available = po.available,
-        active_power_flow_limits = _minmax_cu(po.active_power_flow_limits, bp),
+        active_power_flow_limits = _or_default(po.active_power_flow_limits, nothing, /, bp),
         violation_penalty = _or_default(po.violation_penalty, INFINITE_COST),
         direction_mapping = po.direction_mapping.additional_properties,
         base_power = bp,
@@ -323,12 +246,12 @@ function from_openapi(po::PO.Line, refs::OpenAPIRefs, ::ComponentBaseUnit)
         arc = refs[po.arc],
         r = po.r,
         x = po.x,
-        b = _fromto(po.b, (from = 0.0, to = 0.0)),
+        b = _or_default(po.b, (from = 0.0, to = 0.0)),
         rating = po.rating,
-        angle_limits = _minmax(po.angle_limits),
-        rating_b = _scale_optional(po.rating_b, 1.0),
-        rating_c = _scale_optional(po.rating_c, 1.0),
-        g = _fromto(po.g, (from = 0.0, to = 0.0)),
+        angle_limits = _from_wire(po.angle_limits),
+        rating_b = _or_default(po.rating_b, nothing, /, 1.0),
+        rating_c = _or_default(po.rating_c, nothing, /, 1.0),
+        g = _or_default(po.g, (from = 0.0, to = 0.0)),
         base_power = _require_base_power("Line", po.id, po.base_power),
         input_basis = u"CU",
     )
@@ -344,12 +267,12 @@ function from_openapi(po::PO.Line, refs::OpenAPIRefs, ::NaturalUnit)
         arc = refs[po.arc],
         r = po.r,
         x = po.x,
-        b = _fromto(po.b, (from = 0.0, to = 0.0)),
+        b = _or_default(po.b, (from = 0.0, to = 0.0)),
         rating = po.rating / sbp,
-        angle_limits = _minmax(po.angle_limits),
-        rating_b = _scale_optional(po.rating_b, sbp),
-        rating_c = _scale_optional(po.rating_c, sbp),
-        g = _fromto(po.g, (from = 0.0, to = 0.0)),
+        angle_limits = _from_wire(po.angle_limits),
+        rating_b = _or_default(po.rating_b, nothing, /, sbp),
+        rating_c = _or_default(po.rating_c, nothing, /, sbp),
+        g = _or_default(po.g, (from = 0.0, to = 0.0)),
         base_power = sbp,
         input_basis = u"CU",
     )
@@ -379,13 +302,13 @@ function from_openapi(po::PO.MonitoredLine, refs::OpenAPIRefs, ::ComponentBaseUn
         arc = refs[po.arc],
         r = po.r,
         x = po.x,
-        b = _fromto(po.b),
+        b = _from_wire(po.b),
         flow_limits = _fromto_toframe(po.flow_limits),
         rating = po.rating,
-        angle_limits = _minmax(po.angle_limits),
-        rating_b = _scale_optional(po.rating_b, 1.0),
-        rating_c = _scale_optional(po.rating_c, 1.0),
-        g = _fromto(po.g, (from = 0.0, to = 0.0)),
+        angle_limits = _from_wire(po.angle_limits),
+        rating_b = _or_default(po.rating_b, nothing, /, 1.0),
+        rating_c = _or_default(po.rating_c, nothing, /, 1.0),
+        g = _or_default(po.g, (from = 0.0, to = 0.0)),
         base_power = _require_base_power("MonitoredLine", po.id, po.base_power),
         input_basis = u"CU",
     )
@@ -401,13 +324,13 @@ function from_openapi(po::PO.MonitoredLine, refs::OpenAPIRefs, ::NaturalUnit)
         arc = refs[po.arc],
         r = po.r,
         x = po.x,
-        b = _fromto(po.b),
+        b = _from_wire(po.b),
         flow_limits = _fromto_toframe_cu(po.flow_limits, sbp),
         rating = po.rating / sbp,
-        angle_limits = _minmax(po.angle_limits),
-        rating_b = _scale_optional(po.rating_b, sbp),
-        rating_c = _scale_optional(po.rating_c, sbp),
-        g = _fromto(po.g, (from = 0.0, to = 0.0)),
+        angle_limits = _from_wire(po.angle_limits),
+        rating_b = _or_default(po.rating_b, nothing, /, sbp),
+        rating_c = _or_default(po.rating_c, nothing, /, sbp),
+        g = _or_default(po.g, (from = 0.0, to = 0.0)),
         base_power = sbp,
         input_basis = u"CU",
     )
@@ -489,15 +412,15 @@ function from_openapi(
         r = po.r,
         x = po.x,
         rating = po.rating,
-        discrete_branch_type = _or_default_enum(
+        discrete_branch_type = _or_default(
             po.discrete_branch_type,
             DiscreteControlledBranchType.OTHER,
         ),
-        branch_status = _or_default_enum(
+        branch_status = _or_default(
             po.branch_status,
             DiscreteControlledBranchStatus.CLOSED,
         ),
-        normal_branch_status = _or_default_enum(
+        normal_branch_status = _or_default(
             po.normal_branch_status,
             DiscreteControlledBranchStatus.CLOSED,
         ),
@@ -525,15 +448,15 @@ function from_openapi(
         r = po.r,
         x = po.x,
         rating = po.rating / bp,
-        discrete_branch_type = _or_default_enum(
+        discrete_branch_type = _or_default(
             po.discrete_branch_type,
             DiscreteControlledBranchType.OTHER,
         ),
-        branch_status = _or_default_enum(
+        branch_status = _or_default(
             po.branch_status,
             DiscreteControlledBranchStatus.CLOSED,
         ),
-        normal_branch_status = _or_default_enum(
+        normal_branch_status = _or_default(
             po.normal_branch_status,
             DiscreteControlledBranchStatus.CLOSED,
         ),
@@ -606,22 +529,22 @@ function from_openapi(
         α = _or_default(po.alpha, 0.0),
         r = _or_default(po.r, 0.0),
         x = _or_default(po.x, 0.0),
-        control_objective = _or_default_enum(
+        control_objective = _or_default(
             po.control_objective,
             TransformerControlObjective.UNDEFINED,
         ),
         regulated_bus_number = _or_default(po.regulated_bus_number, 0),
-        tap_ratio_limits = _opt_minmax(po.tap_ratio_limits),
-        phase_angle_limits = _opt_minmax(po.phase_angle_limits),
-        controlled_voltage_limits = _opt_minmax(po.controlled_voltage_limits),
+        tap_ratio_limits = _or_default(po.tap_ratio_limits, nothing),
+        phase_angle_limits = _or_default(po.phase_angle_limits, nothing),
+        controlled_voltage_limits = _or_default(po.controlled_voltage_limits, nothing),
         controlled_reactive_power_flow_limits =
-        _opt_minmax(po.controlled_reactive_power_flow_limits),
+        _or_default(po.controlled_reactive_power_flow_limits, nothing),
         controlled_active_power_flow_limits =
-        _opt_minmax(po.controlled_active_power_flow_limits),
+        _or_default(po.controlled_active_power_flow_limits, nothing),
         number_of_tap_positions = _or_default(po.number_of_tap_positions, 33),
-        rating = _scale_optional(po.rating, 1.0),
-        rating_b = _scale_optional(po.rating_b, 1.0),
-        rating_c = _scale_optional(po.rating_c, 1.0),
+        rating = _or_default(po.rating, nothing, /, 1.0),
+        rating_b = _or_default(po.rating_b, nothing, /, 1.0),
+        rating_c = _or_default(po.rating_c, nothing, /, 1.0),
         active_power_flow = _or_default(po.active_power_flow, 0.0),
         reactive_power_flow = _or_default(po.reactive_power_flow, 0.0),
         base_power = po.base_power,
@@ -645,22 +568,22 @@ function from_openapi(
         α = _or_default(po.alpha, 0.0),
         r = _or_default(po.r, 0.0),
         x = _or_default(po.x, 0.0),
-        control_objective = _or_default_enum(
+        control_objective = _or_default(
             po.control_objective,
             TransformerControlObjective.UNDEFINED,
         ),
         regulated_bus_number = _or_default(po.regulated_bus_number, 0),
-        tap_ratio_limits = _opt_minmax(po.tap_ratio_limits),
-        phase_angle_limits = _opt_minmax(po.phase_angle_limits),
-        controlled_voltage_limits = _opt_minmax(po.controlled_voltage_limits),
+        tap_ratio_limits = _or_default(po.tap_ratio_limits, nothing),
+        phase_angle_limits = _or_default(po.phase_angle_limits, nothing),
+        controlled_voltage_limits = _or_default(po.controlled_voltage_limits, nothing),
         controlled_reactive_power_flow_limits =
-        _minmax_cu(po.controlled_reactive_power_flow_limits, dbp),
+        _or_default(po.controlled_reactive_power_flow_limits, nothing, /, dbp),
         controlled_active_power_flow_limits =
-        _minmax_cu(po.controlled_active_power_flow_limits, dbp),
+        _or_default(po.controlled_active_power_flow_limits, nothing, /, dbp),
         number_of_tap_positions = _or_default(po.number_of_tap_positions, 33),
-        rating = _scale_optional(po.rating, dbp),
-        rating_b = _scale_optional(po.rating_b, dbp),
-        rating_c = _scale_optional(po.rating_c, dbp),
+        rating = _or_default(po.rating, nothing, /, dbp),
+        rating_b = _or_default(po.rating_b, nothing, /, dbp),
+        rating_c = _or_default(po.rating_c, nothing, /, dbp),
         active_power_flow = _or_default(po.active_power_flow, 0.0) / dbp,
         reactive_power_flow = _or_default(po.reactive_power_flow, 0.0) / dbp,
         base_power = dbp,
@@ -694,8 +617,8 @@ function from_openapi(
     return TwoWindingTransformer(;
         name = po.name,
         circuit = refs[po.circuit],
-        magnetizing_shunt = _complex_number(po.magnetizing_shunt, Complex(0.0, 0.0)),
-        shunt_location = _or_default_enum(
+        magnetizing_shunt = _or_default(po.magnetizing_shunt, Complex(0.0, 0.0)),
+        shunt_location = _or_default(
             po.shunt_location,
             TwoWindingTransformerShuntLocation.PRIMARY,
         ),
@@ -765,8 +688,8 @@ function from_openapi(
         base_power_12 = _or_default(po.base_power_12, nothing),
         base_power_23 = _or_default(po.base_power_23, nothing),
         base_power_31 = _or_default(po.base_power_31, nothing),
-        magnetizing_shunt = _complex_number(po.magnetizing_shunt, Complex(0.0, 0.0)),
-        shunt_location = _or_default_enum(
+        magnetizing_shunt = _or_default(po.magnetizing_shunt, Complex(0.0, 0.0)),
+        shunt_location = _or_default(
             po.shunt_location,
             ThreeWindingTransformerShuntLocation.PRIMARY,
         ),
@@ -802,7 +725,7 @@ _check_fixed_admittance_units(po) = _check_unit_basis(
 )
 
 _fixed_admittance_pu(po, refs::OpenAPIRefs) =
-    _complex_number(po.y) / get_base_power(refs)
+    _from_wire(po.y) / get_base_power(refs)
 
 function from_openapi(po::PO.FixedAdmittance, refs::OpenAPIRefs, ::ComponentBaseUnit)
     _check_fixed_admittance_units(po)
@@ -850,7 +773,7 @@ _check_switched_admittance_units(po) = _check_unit_basis(
 _switched_admittance_y_increase(::Union{Nothing, IC.Absent}, base_power) =
     Complex{Float64}[]
 _switched_admittance_y_increase(values, base_power) =
-    [_complex_number(v) / base_power for v in values]
+    [_from_wire(v) / base_power for v in values]
 
 _switched_admittance_solved(::Union{Nothing, IC.Absent}, base_power) = nothing
 _switched_admittance_solved(value, base_power) = value / base_power
@@ -866,12 +789,9 @@ function from_openapi(po::PO.SwitchedAdmittance, refs::OpenAPIRefs, ::ComponentB
         number_of_steps = _or_default(po.number_of_steps, Int[]),
         Y_increase = _switched_admittance_y_increase(po.y_increase, base_power),
         solved_admittance = _switched_admittance_solved(po.solved_admittance, base_power),
-        voltage_limits = _opt_minmax(po.voltage_limits),
-        reactive_power_range_limits = _opt_minmax(po.reactive_power_range_limits),
-        control_mode = _or_default_enum(
-            po.control_mode,
-            SwitchedAdmittanceControlMode.FIXED,
-        ),
+        voltage_limits = _or_default(po.voltage_limits, nothing),
+        reactive_power_range_limits = _or_default(po.reactive_power_range_limits, nothing),
+        control_mode = _or_default(po.control_mode, SwitchedAdmittanceControlMode.FIXED),
         regulated_bus_number = _or_default(po.regulated_bus_number, 0),
     )
 end
@@ -918,7 +838,7 @@ function from_openapi(po::PO.FACTSControlDevice, refs::OpenAPIRefs, ::ComponentB
         voltage_setpoint = po.voltage_setpoint,
         max_shunt_current = po.max_shunt_current,
         max_reactive_power = _or_default(po.max_reactive_power, 9999.0),
-        shunt_control_type = _or_default_enum(
+        shunt_control_type = _or_default(
             po.shunt_control_type,
             FACTSShuntControlType.STATCOM,
         ),
@@ -944,7 +864,7 @@ function from_openapi(po::PO.FACTSControlDevice, refs::OpenAPIRefs, ::NaturalUni
         voltage_setpoint = po.voltage_setpoint,
         max_shunt_current = po.max_shunt_current / bp,
         max_reactive_power = _or_default(po.max_reactive_power, 9999.0) / bp,
-        shunt_control_type = _or_default_enum(
+        shunt_control_type = _or_default(
             po.shunt_control_type,
             FACTSShuntControlType.STATCOM,
         ),
@@ -979,14 +899,14 @@ function from_openapi(po::PO.HydroReservoir, refs::OpenAPIRefs, ::ComponentBaseU
     reservoir = HydroReservoir(;
         name = po.name,
         available = po.available,
-        storage_level_limits = _minmax(po.storage_level_limits),
+        storage_level_limits = _from_wire(po.storage_level_limits),
         initial_level = _level_fraction(
             po.initial_level,
             max_level,
             po.name,
             "initial_level",
         ),
-        spillage_limits = _opt_minmax(po.spillage_limits),
+        spillage_limits = _or_default(po.spillage_limits, nothing),
         inflow = po.inflow,
         outflow = po.outflow,
         level_targets = _level_fraction(
@@ -1051,21 +971,21 @@ function from_openapi(
         prime_mover_type = PrimeMovers.Value(po.prime_mover_type.value),
         storage_technology_type = StorageTech.Value(po.storage_technology_type.value),
         storage_capacity = po.storage_capacity,
-        storage_level_limits = _minmax(po.storage_level_limits),
+        storage_level_limits = _from_wire(po.storage_level_limits),
         initial_storage_capacity_level = po.initial_storage_capacity_level,
         rating = po.rating,
         active_power = po.active_power,
-        input_active_power_limits = _minmax(po.input_active_power_limits),
-        output_active_power_limits = _minmax(po.output_active_power_limits),
-        efficiency = _inout(po.efficiency),
+        input_active_power_limits = _from_wire(po.input_active_power_limits),
+        output_active_power_limits = _from_wire(po.output_active_power_limits),
+        efficiency = _from_wire(po.efficiency),
         reactive_power = po.reactive_power,
-        reactive_power_limits = _opt_minmax(po.reactive_power_limits),
+        reactive_power_limits = _or_default(po.reactive_power_limits, nothing),
         base_power = _require_base_power("EnergyReservoirStorage", po.id, po.base_power),
         operation_cost = convert_cost(po.operation_cost),
         conversion_factor = _or_default(po.conversion_factor, 1.0),
         storage_target = _or_default(po.storage_target, 0.0),
         cycle_limits = _or_default(po.cycle_limits, 1e4),
-        ramp_limits = _opt_updown(po.ramp_limits),
+        ramp_limits = _or_default(po.ramp_limits, nothing),
         self_discharge = _or_default(po.self_discharge, 0.0),
         standing_loss = _or_default(po.standing_loss, 0.0),
         input_basis = u"CU",
@@ -1086,21 +1006,31 @@ function from_openapi(
         prime_mover_type = PrimeMovers.Value(po.prime_mover_type.value),
         storage_technology_type = StorageTech.Value(po.storage_technology_type.value),
         storage_capacity = po.storage_capacity / dbp,
-        storage_level_limits = _minmax(po.storage_level_limits),
+        storage_level_limits = _from_wire(po.storage_level_limits),
         initial_storage_capacity_level = po.initial_storage_capacity_level,
         rating = po.rating / dbp,
         active_power = po.active_power / dbp,
-        input_active_power_limits = _minmax_cu(po.input_active_power_limits, dbp),
-        output_active_power_limits = _minmax_cu(po.output_active_power_limits, dbp),
-        efficiency = _inout(po.efficiency),
+        input_active_power_limits = _or_default(
+            po.input_active_power_limits,
+            nothing,
+            /,
+            dbp,
+        ),
+        output_active_power_limits = _or_default(
+            po.output_active_power_limits,
+            nothing,
+            /,
+            dbp,
+        ),
+        efficiency = _from_wire(po.efficiency),
         reactive_power = po.reactive_power / dbp,
-        reactive_power_limits = _minmax_cu(po.reactive_power_limits, dbp),
+        reactive_power_limits = _or_default(po.reactive_power_limits, nothing, /, dbp),
         base_power = dbp,
         operation_cost = convert_cost(po.operation_cost),
         conversion_factor = _or_default(po.conversion_factor, 1.0),
         storage_target = _or_default(po.storage_target, 0.0),
         cycle_limits = _or_default(po.cycle_limits, 1e4),
-        ramp_limits = _updown_cu(po.ramp_limits, dbp),
+        ramp_limits = _or_default(po.ramp_limits, nothing, /, dbp),
         self_discharge = _or_default(po.self_discharge, 0.0),
         standing_loss = _or_default(po.standing_loss, 0.0) / dbp,
         input_basis = u"CU",
@@ -1148,10 +1078,10 @@ function from_openapi(
         available = po.available,
         active_power_flow = po.active_power_flow,
         arc = refs[po.arc],
-        active_power_limits_from = _minmax(po.active_power_limits_from),
-        active_power_limits_to = _minmax(po.active_power_limits_to),
-        reactive_power_limits_from = _minmax(po.reactive_power_limits_from),
-        reactive_power_limits_to = _minmax(po.reactive_power_limits_to),
+        active_power_limits_from = _from_wire(po.active_power_limits_from),
+        active_power_limits_to = _from_wire(po.active_power_limits_to),
+        reactive_power_limits_from = _from_wire(po.reactive_power_limits_from),
+        reactive_power_limits_to = _from_wire(po.reactive_power_limits_to),
         loss = _hvdc_loss(po.loss),
         base_power = _require_base_power(
             "TwoTerminalGenericHVDCLine",
@@ -1173,10 +1103,25 @@ function from_openapi(
         available = po.available,
         active_power_flow = po.active_power_flow / sbp,
         arc = refs[po.arc],
-        active_power_limits_from = _minmax_cu(po.active_power_limits_from, sbp),
-        active_power_limits_to = _minmax_cu(po.active_power_limits_to, sbp),
-        reactive_power_limits_from = _minmax_cu(po.reactive_power_limits_from, sbp),
-        reactive_power_limits_to = _minmax_cu(po.reactive_power_limits_to, sbp),
+        active_power_limits_from = _or_default(
+            po.active_power_limits_from,
+            nothing,
+            /,
+            sbp,
+        ),
+        active_power_limits_to = _or_default(po.active_power_limits_to, nothing, /, sbp),
+        reactive_power_limits_from = _or_default(
+            po.reactive_power_limits_from,
+            nothing,
+            /,
+            sbp,
+        ),
+        reactive_power_limits_to = _or_default(
+            po.reactive_power_limits_to,
+            nothing,
+            /,
+            sbp,
+        ),
         loss = _hvdc_loss(po.loss),
         base_power = sbp,
         input_basis = u"CU",
@@ -1234,7 +1179,7 @@ function from_openapi(po::PO.TwoTerminalLCCLine, refs::OpenAPIRefs, ::ComponentB
         current_transfer_setpoint = _or_default(po.current_transfer_setpoint, nothing),
         scheduled_dc_voltage = po.scheduled_dc_voltage,
         rectifier_bridges = po.rectifier_bridges,
-        rectifier_delay_angle_limits = _minmax(po.rectifier_delay_angle_limits),
+        rectifier_delay_angle_limits = _from_wire(po.rectifier_delay_angle_limits),
         rectifier_rc = _lcc_ohm_to_pu(
             po.rectifier_rc,
             po.rectifier_base_voltage,
@@ -1247,11 +1192,11 @@ function from_openapi(po::PO.TwoTerminalLCCLine, refs::OpenAPIRefs, ::ComponentB
         ),
         rectifier_base_voltage = po.rectifier_base_voltage,
         inverter_bridges = po.inverter_bridges,
-        inverter_extinction_angle_limits = _minmax(po.inverter_extinction_angle_limits),
+        inverter_extinction_angle_limits = _from_wire(po.inverter_extinction_angle_limits),
         inverter_rc = _lcc_ohm_to_pu(po.inverter_rc, po.inverter_base_voltage, base_power),
         inverter_xc = _lcc_ohm_to_pu(po.inverter_xc, po.inverter_base_voltage, base_power),
         inverter_base_voltage = po.inverter_base_voltage,
-        control_mode = _or_default_enum(po.control_mode, LCCControlMode.BLOCKED),
+        control_mode = _or_default(po.control_mode, LCCControlMode.BLOCKED),
         switch_mode_voltage = _or_default(po.switch_mode_voltage, 0.0),
         compounding_resistance = _lcc_ohm_to_pu(
             _or_default(po.compounding_resistance, 0.0), po.scheduled_dc_voltage, base_power,
@@ -1259,7 +1204,10 @@ function from_openapi(po::PO.TwoTerminalLCCLine, refs::OpenAPIRefs, ::ComponentB
         min_compounding_voltage = _or_default(po.min_compounding_voltage, 0.0),
         rectifier_transformer_ratio = _or_default(po.rectifier_transformer_ratio, 1.0),
         rectifier_tap_setting = _or_default(po.rectifier_tap_setting, 1.0),
-        rectifier_tap_limits = _minmax(po.rectifier_tap_limits, (min = 0.51, max = 1.5)),
+        rectifier_tap_limits = _or_default(
+            po.rectifier_tap_limits,
+            (min = 0.51, max = 1.5),
+        ),
         rectifier_tap_step = _or_default(po.rectifier_tap_step, 0.00625),
         rectifier_delay_angle = _or_default(po.rectifier_delay_angle, 0.0),
         rectifier_capacitor_reactance = _lcc_ohm_to_pu(
@@ -1269,7 +1217,7 @@ function from_openapi(po::PO.TwoTerminalLCCLine, refs::OpenAPIRefs, ::ComponentB
         ),
         inverter_transformer_ratio = _or_default(po.inverter_transformer_ratio, 1.0),
         inverter_tap_setting = _or_default(po.inverter_tap_setting, 1.0),
-        inverter_tap_limits = _minmax(po.inverter_tap_limits, (min = 0.51, max = 1.5)),
+        inverter_tap_limits = _or_default(po.inverter_tap_limits, (min = 0.51, max = 1.5)),
         inverter_tap_step = _or_default(po.inverter_tap_step, 0.00625),
         inverter_extinction_angle = _or_default(po.inverter_extinction_angle, 0.0),
         inverter_capacitor_reactance = _lcc_ohm_to_pu(
@@ -1278,12 +1226,15 @@ function from_openapi(po::PO.TwoTerminalLCCLine, refs::OpenAPIRefs, ::ComponentB
             base_power,
         ),
         active_power_limits_from =
-        _minmax(po.active_power_limits_from, (min = 0.0, max = 0.0)),
-        active_power_limits_to = _minmax(po.active_power_limits_to, (min = 0.0, max = 0.0)),
+        _or_default(po.active_power_limits_from, (min = 0.0, max = 0.0)),
+        active_power_limits_to = _or_default(
+            po.active_power_limits_to,
+            (min = 0.0, max = 0.0),
+        ),
         reactive_power_limits_from =
-        _minmax(po.reactive_power_limits_from, (min = 0.0, max = 0.0)),
+        _or_default(po.reactive_power_limits_from, (min = 0.0, max = 0.0)),
         reactive_power_limits_to =
-        _minmax(po.reactive_power_limits_to, (min = 0.0, max = 0.0)),
+        _or_default(po.reactive_power_limits_to, (min = 0.0, max = 0.0)),
         loss = _hvdc_loss(po.loss),
         base_power = base_power,
         input_basis = u"CU",
@@ -1300,11 +1251,16 @@ function from_openapi(po::PO.TwoTerminalLCCLine, refs::OpenAPIRefs, ::NaturalUni
         arc = refs[po.arc],
         active_power_flow = po.active_power_flow / base_power,
         r = _lcc_ohm_to_pu(po.r, po.scheduled_dc_voltage, base_power),
-        power_transfer_setpoint = _scale_optional(po.power_transfer_setpoint, base_power),
+        power_transfer_setpoint = _or_default(
+            po.power_transfer_setpoint,
+            nothing,
+            /,
+            base_power,
+        ),
         current_transfer_setpoint = _or_default(po.current_transfer_setpoint, nothing),
         scheduled_dc_voltage = po.scheduled_dc_voltage,
         rectifier_bridges = po.rectifier_bridges,
-        rectifier_delay_angle_limits = _minmax(po.rectifier_delay_angle_limits),
+        rectifier_delay_angle_limits = _from_wire(po.rectifier_delay_angle_limits),
         rectifier_rc = _lcc_ohm_to_pu(
             po.rectifier_rc,
             po.rectifier_base_voltage,
@@ -1317,11 +1273,11 @@ function from_openapi(po::PO.TwoTerminalLCCLine, refs::OpenAPIRefs, ::NaturalUni
         ),
         rectifier_base_voltage = po.rectifier_base_voltage,
         inverter_bridges = po.inverter_bridges,
-        inverter_extinction_angle_limits = _minmax(po.inverter_extinction_angle_limits),
+        inverter_extinction_angle_limits = _from_wire(po.inverter_extinction_angle_limits),
         inverter_rc = _lcc_ohm_to_pu(po.inverter_rc, po.inverter_base_voltage, base_power),
         inverter_xc = _lcc_ohm_to_pu(po.inverter_xc, po.inverter_base_voltage, base_power),
         inverter_base_voltage = po.inverter_base_voltage,
-        control_mode = _or_default_enum(po.control_mode, LCCControlMode.BLOCKED),
+        control_mode = _or_default(po.control_mode, LCCControlMode.BLOCKED),
         switch_mode_voltage = _or_default(po.switch_mode_voltage, 0.0),
         compounding_resistance = _lcc_ohm_to_pu(
             _or_default(po.compounding_resistance, 0.0), po.scheduled_dc_voltage, base_power,
@@ -1329,7 +1285,10 @@ function from_openapi(po::PO.TwoTerminalLCCLine, refs::OpenAPIRefs, ::NaturalUni
         min_compounding_voltage = _or_default(po.min_compounding_voltage, 0.0),
         rectifier_transformer_ratio = _or_default(po.rectifier_transformer_ratio, 1.0),
         rectifier_tap_setting = _or_default(po.rectifier_tap_setting, 1.0),
-        rectifier_tap_limits = _minmax(po.rectifier_tap_limits, (min = 0.51, max = 1.5)),
+        rectifier_tap_limits = _or_default(
+            po.rectifier_tap_limits,
+            (min = 0.51, max = 1.5),
+        ),
         rectifier_tap_step = _or_default(po.rectifier_tap_step, 0.00625),
         rectifier_delay_angle = _or_default(po.rectifier_delay_angle, 0.0),
         rectifier_capacitor_reactance = _lcc_ohm_to_pu(
@@ -1339,7 +1298,7 @@ function from_openapi(po::PO.TwoTerminalLCCLine, refs::OpenAPIRefs, ::NaturalUni
         ),
         inverter_transformer_ratio = _or_default(po.inverter_transformer_ratio, 1.0),
         inverter_tap_setting = _or_default(po.inverter_tap_setting, 1.0),
-        inverter_tap_limits = _minmax(po.inverter_tap_limits, (min = 0.51, max = 1.5)),
+        inverter_tap_limits = _or_default(po.inverter_tap_limits, (min = 0.51, max = 1.5)),
         inverter_tap_step = _or_default(po.inverter_tap_step, 0.00625),
         inverter_extinction_angle = _or_default(po.inverter_extinction_angle, 0.0),
         inverter_capacitor_reactance = _lcc_ohm_to_pu(
@@ -1347,24 +1306,28 @@ function from_openapi(po::PO.TwoTerminalLCCLine, refs::OpenAPIRefs, ::NaturalUni
             po.inverter_base_voltage,
             base_power,
         ),
-        active_power_limits_from = _minmax_cu(
+        active_power_limits_from = _or_default(
             po.active_power_limits_from,
             (min = 0.0, max = 0.0),
+            /,
             base_power,
         ),
-        active_power_limits_to = _minmax_cu(
+        active_power_limits_to = _or_default(
             po.active_power_limits_to,
             (min = 0.0, max = 0.0),
+            /,
             base_power,
         ),
-        reactive_power_limits_from = _minmax_cu(
+        reactive_power_limits_from = _or_default(
             po.reactive_power_limits_from,
             (min = 0.0, max = 0.0),
+            /,
             base_power,
         ),
-        reactive_power_limits_to = _minmax_cu(
+        reactive_power_limits_to = _or_default(
             po.reactive_power_limits_to,
             (min = 0.0, max = 0.0),
+            /,
             base_power,
         ),
         loss = _hvdc_loss(po.loss),
@@ -1488,8 +1451,18 @@ function from_openapi(
         arc = refs[po.arc],
         active_power_flow = po.active_power_flow / power_base,
         rating = po.rating / power_base,
-        active_power_limits_from = _minmax_cu(po.active_power_limits_from, power_base),
-        active_power_limits_to = _minmax_cu(po.active_power_limits_to, power_base),
+        active_power_limits_from = _or_default(
+            po.active_power_limits_from,
+            nothing,
+            /,
+            power_base,
+        ),
+        active_power_limits_to = _or_default(
+            po.active_power_limits_to,
+            nothing,
+            /,
+            power_base,
+        ),
         g = _vsc_siemens_to_pu(po, rated_dc_voltage, base_power),
         dc_current = _or_default(po.dc_current, 0.0),
         reactive_power_from = po.reactive_power_from / power_base,
@@ -1499,7 +1472,12 @@ function from_openapi(
         ac_control_from = _required_enum(
             po.ac_control_from, VSCACControlModes.Value, owner, "ac_control_from",
         ),
-        dc_power_setpoint_from = _scale_optional(po.dc_power_setpoint_from, power_base),
+        dc_power_setpoint_from = _or_default(
+            po.dc_power_setpoint_from,
+            nothing,
+            /,
+            power_base,
+        ),
         dc_voltage_setpoint_from = _vsc_optional_voltage(
             po, po.dc_voltage_setpoint_from, rated_dc_voltage,
             "dc_voltage_setpoint_from", "rated_dc_voltage",
@@ -1513,14 +1491,17 @@ function from_openapi(
         converter_loss_from = _vsc_loss(po.converter_loss_from),
         max_dc_current_from = _or_default(po.max_dc_current_from, 1e8),
         rating_from = po.rating_from / power_base,
-        reactive_power_limits_from = _minmax_cu(
-            po.reactive_power_limits_from, (min = 0.0, max = 0.0), power_base,
+        reactive_power_limits_from = _or_default(
+            po.reactive_power_limits_from,
+            (min = 0.0, max = 0.0),
+            /,
+            power_base,
         ),
         power_factor_weighting_fraction_from = _or_default(
             po.power_factor_weighting_fraction_from,
             1.0,
         ),
-        voltage_limits_from = _minmax(po.voltage_limits_from, (min = 0.0, max = 999.9)),
+        voltage_limits_from = _or_default(po.voltage_limits_from, (min = 0.0, max = 999.9)),
         dc_voltage_droop_from = _or_default(po.dc_voltage_droop_from, 0.0),
         reactive_power_to = po.reactive_power_to / power_base,
         dc_control_to = _required_enum(
@@ -1529,7 +1510,7 @@ function from_openapi(
         ac_control_to = _required_enum(
             po.ac_control_to, VSCACControlModes.Value, owner, "ac_control_to",
         ),
-        dc_power_setpoint_to = _scale_optional(po.dc_power_setpoint_to, power_base),
+        dc_power_setpoint_to = _or_default(po.dc_power_setpoint_to, nothing, /, power_base),
         dc_voltage_setpoint_to = _vsc_optional_voltage(
             po, po.dc_voltage_setpoint_to, rated_dc_voltage,
             "dc_voltage_setpoint_to", "rated_dc_voltage",
@@ -1543,14 +1524,17 @@ function from_openapi(
         converter_loss_to = _vsc_loss(po.converter_loss_to),
         max_dc_current_to = _or_default(po.max_dc_current_to, 1e8),
         rating_to = po.rating_to / power_base,
-        reactive_power_limits_to = _minmax_cu(
-            po.reactive_power_limits_to, (min = 0.0, max = 0.0), power_base,
+        reactive_power_limits_to = _or_default(
+            po.reactive_power_limits_to,
+            (min = 0.0, max = 0.0),
+            /,
+            power_base,
         ),
         power_factor_weighting_fraction_to = _or_default(
             po.power_factor_weighting_fraction_to,
             1.0,
         ),
-        voltage_limits_to = _minmax(po.voltage_limits_to, (min = 0.0, max = 999.9)),
+        voltage_limits_to = _or_default(po.voltage_limits_to, (min = 0.0, max = 999.9)),
         dc_voltage_droop_to = _or_default(po.dc_voltage_droop_to, 0.0),
         rated_dc_voltage = rated_dc_voltage,
         remote_bus_control_from = po.remote_bus_control_from,
@@ -1587,8 +1571,8 @@ function from_openapi(po::PO.Source, refs::OpenAPIRefs, ::ComponentBaseUnit)
         bus = resolve_ref(refs, po.bus, ACBus),
         active_power = _or_default(po.active_power, 0.0),
         reactive_power = _or_default(po.reactive_power, 0.0),
-        active_power_limits = _minmax(po.active_power_limits, (min = 0.0, max = 0.0)),
-        reactive_power_limits = _opt_minmax(po.reactive_power_limits),
+        active_power_limits = _or_default(po.active_power_limits, (min = 0.0, max = 0.0)),
+        reactive_power_limits = _or_default(po.reactive_power_limits, nothing),
         R_th = _or_default(po.r_th, 0.0),
         X_th = _or_default(po.x_th, 0.0),
         internal_voltage = _or_default(po.internal_voltage, 1.0),
@@ -1612,8 +1596,8 @@ function from_openapi(po::PO.Source, refs::OpenAPIRefs, ::NaturalUnit)
         active_power = _or_default(po.active_power, 0.0) / dbp,
         reactive_power = _or_default(po.reactive_power, 0.0) / dbp,
         active_power_limits =
-        _minmax_cu(po.active_power_limits, (min = 0.0, max = 0.0), dbp),
-        reactive_power_limits = _minmax_cu(po.reactive_power_limits, dbp),
+        _or_default(po.active_power_limits, (min = 0.0, max = 0.0), /, dbp),
+        reactive_power_limits = _or_default(po.reactive_power_limits, nothing, /, dbp),
         R_th = _or_default(po.r_th, 0.0),
         X_th = _or_default(po.x_th, 0.0),
         internal_voltage = _or_default(po.internal_voltage, 1.0),
@@ -1657,8 +1641,13 @@ function from_openapi(po::PO.TModelHVDCLine, refs::OpenAPIRefs, ::ComponentBaseU
         r = po.r,
         l = po.l,
         c = po.c,
-        active_power_limits_from = _minmax_cu(po.active_power_limits_from, sbp),
-        active_power_limits_to = _minmax_cu(po.active_power_limits_to, sbp),
+        active_power_limits_from = _or_default(
+            po.active_power_limits_from,
+            nothing,
+            /,
+            sbp,
+        ),
+        active_power_limits_to = _or_default(po.active_power_limits_to, nothing, /, sbp),
         base_current = po.base_current,
         input_basis = u"CU",
     )
@@ -1700,9 +1689,9 @@ function from_openapi(
         dc_bus = resolve_ref(refs, po.dc_bus, DCBus),
         active_power = po.active_power,
         rating = po.rating,
-        active_power_limits = _minmax(po.active_power_limits),
+        active_power_limits = _from_wire(po.active_power_limits),
         base_power = _require_base_power("InterconnectingConverter", po.id, po.base_power),
-        reactive_power_limits = _opt_minmax(po.reactive_power_limits),
+        reactive_power_limits = _or_default(po.reactive_power_limits, nothing),
         dc_current = _or_default(po.dc_current, 0.0),
         max_dc_current = _or_default(po.max_dc_current, 1e8),
         loss_function = _vsc_loss(po.loss_function),
@@ -1725,7 +1714,7 @@ function from_openapi(
             po.power_factor_weighting_fraction,
             1.0,
         ),
-        voltage_limits = _minmax(po.voltage_limits, (min = 0.0, max = 999.9)),
+        voltage_limits = _or_default(po.voltage_limits, (min = 0.0, max = 999.9)),
         input_basis = u"CU",
     )
 end
@@ -1740,9 +1729,9 @@ function from_openapi(po::PO.InterconnectingConverter, refs::OpenAPIRefs, ::Natu
         dc_bus = resolve_ref(refs, po.dc_bus, DCBus),
         active_power = po.active_power / dbp,
         rating = po.rating / dbp,
-        active_power_limits = _minmax_cu(po.active_power_limits, dbp),
+        active_power_limits = _or_default(po.active_power_limits, nothing, /, dbp),
         base_power = dbp,
-        reactive_power_limits = _minmax_cu(po.reactive_power_limits, dbp),
+        reactive_power_limits = _or_default(po.reactive_power_limits, nothing, /, dbp),
         dc_current = _or_default(po.dc_current, 0.0) / dbp,
         max_dc_current = _or_default(po.max_dc_current, 1e8) / dbp,
         loss_function = _vsc_loss(po.loss_function),
@@ -1754,7 +1743,7 @@ function from_openapi(po::PO.InterconnectingConverter, refs::OpenAPIRefs, ::Natu
             po.ac_control, VSCACControlModes.Value,
             "InterconnectingConverter \"$(po.name)\"", "ac_control",
         ),
-        dc_power_setpoint = _scale_optional(po.dc_power_setpoint, dbp),
+        dc_power_setpoint = _or_default(po.dc_power_setpoint, nothing, /, dbp),
         dc_voltage_setpoint = _or_default(po.dc_voltage_setpoint, nothing),
         power_factor_setpoint = _or_default(po.power_factor_setpoint, nothing),
         ac_voltage_setpoint = _or_default(po.ac_voltage_setpoint, nothing),
@@ -1765,7 +1754,7 @@ function from_openapi(po::PO.InterconnectingConverter, refs::OpenAPIRefs, ::Natu
             po.power_factor_weighting_fraction,
             1.0,
         ),
-        voltage_limits = _minmax(po.voltage_limits, (min = 0.0, max = 999.9)),
+        voltage_limits = _or_default(po.voltage_limits, (min = 0.0, max = 999.9)),
         input_basis = u"CU",
     )
 end
@@ -1797,7 +1786,7 @@ end
 
 """`(in, out)` passed through unconverted, or `nothing` when absent."""
 _opt_inout(::Union{Nothing, IC.Absent}) = nothing
-_opt_inout(m) = _inout(m)
+_opt_inout(m) = _from_wire(m)
 
 function from_openapi(po::PO.HybridSystem, refs::OpenAPIRefs, ::ComponentBaseUnit)
     _hybrid_base_power(po)
@@ -1815,11 +1804,11 @@ function from_openapi(po::PO.HybridSystem, refs::OpenAPIRefs, ::ComponentBaseUni
         storage = resolve_ref(refs, po.storage, Storage),
         renewable_unit = resolve_ref(refs, po.renewable_unit, RenewableGen),
         interconnection_impedance =
-        _complex_number(po.interconnection_impedance, Complex(0.0, 0.0)),
+        _or_default(po.interconnection_impedance, Complex(0.0, 0.0)),
         interconnection_rating = po.interconnection_rating,
-        input_active_power_limits = _opt_minmax(po.input_active_power_limits),
-        output_active_power_limits = _opt_minmax(po.output_active_power_limits),
-        reactive_power_limits = _opt_minmax(po.reactive_power_limits),
+        input_active_power_limits = _or_default(po.input_active_power_limits, nothing),
+        output_active_power_limits = _or_default(po.output_active_power_limits, nothing),
+        reactive_power_limits = _or_default(po.reactive_power_limits, nothing),
         interconnection_efficiency = _opt_inout(po.interconnection_efficiency),
         input_basis = u"CU",
     )
@@ -1841,11 +1830,21 @@ function from_openapi(po::PO.HybridSystem, refs::OpenAPIRefs, ::NaturalUnit)
         storage = resolve_ref(refs, po.storage, Storage),
         renewable_unit = resolve_ref(refs, po.renewable_unit, RenewableGen),
         interconnection_impedance =
-        _complex_number(po.interconnection_impedance, Complex(0.0, 0.0)),
-        interconnection_rating = _scale_optional(po.interconnection_rating, dbp),
-        input_active_power_limits = _minmax_cu(po.input_active_power_limits, dbp),
-        output_active_power_limits = _minmax_cu(po.output_active_power_limits, dbp),
-        reactive_power_limits = _minmax_cu(po.reactive_power_limits, dbp),
+        _or_default(po.interconnection_impedance, Complex(0.0, 0.0)),
+        interconnection_rating = _or_default(po.interconnection_rating, nothing, /, dbp),
+        input_active_power_limits = _or_default(
+            po.input_active_power_limits,
+            nothing,
+            /,
+            dbp,
+        ),
+        output_active_power_limits = _or_default(
+            po.output_active_power_limits,
+            nothing,
+            /,
+            dbp,
+        ),
+        reactive_power_limits = _or_default(po.reactive_power_limits, nothing, /, dbp),
         interconnection_efficiency = _opt_inout(po.interconnection_efficiency),
         input_basis = u"CU",
     )
