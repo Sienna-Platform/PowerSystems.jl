@@ -913,28 +913,30 @@ end
     "case.sns",
 )
     mktempdir() do dir
-        document = joinpath(dir, "case.json")
-        to_file(_file_io_fixture(), document)
         # The schema reserves `resolution` as a feature name; decoding alone accepts it.
-        _edit_document!(document) do raw
+        reserve_resolution!(raw) =
             first(raw["time_series_associations"])["features"] =
                 Dict("resolution" => "PT1H")
-        end
         if form == "case.json"
+            document = joinpath(dir, form)
+            to_file(_file_io_fixture(), document)
+            _edit_document!(reserve_resolution!, document)
             @test_throws PSY.IC.SchemaValidationError from_file(document)
         else
-            # An archive carries the same document; the edited row fails before the store opens.
+            # Edit the document inside the archive and repack it; it fails before the store opens.
             archive = joinpath(dir, form)
             to_file(_file_io_fixture(), archive)
             extracted = mktempdir()
             PSY.IS.extract_sienna_archive(archive; directory = extracted)
-            _edit_document!(joinpath(extracted, PSY.SYSTEM_DOCUMENT_FILE)) do raw
-                first(raw["time_series_associations"])["features"] =
-                    Dict("resolution" => "PT1H")
-            end
-            @test_throws PSY.IC.SchemaValidationError PSY._read_bundle(
+            _edit_document!(
+                reserve_resolution!,
                 joinpath(extracted, PSY.SYSTEM_DOCUMENT_FILE),
             )
+            edited = joinpath(dir, "edited.sns")
+            PSY.IS.create_sienna_archive(edited, PSY.SYSTEM_ARCHIVE_EXTENSION) do bundle
+                cp(extracted, bundle; force = true)
+            end
+            @test_throws PSY.IC.SchemaValidationError from_file(edited)
         end
     end
 end
