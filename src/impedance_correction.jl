@@ -44,13 +44,7 @@ function ImpedanceCorrectionData(;
     transformer_control_mode,
     internal = InfrastructureSystemsInternal(),
 )
-    check_correction_curves(
-        table_number,
-        transformer_control_mode,
-        tap_ratio_correction_curve,
-        phase_angle_correction_curve,
-    )
-    return ImpedanceCorrectionData(
+    attr = ImpedanceCorrectionData(
         table_number,
         tap_ratio_correction_curve,
         phase_angle_correction_curve,
@@ -58,38 +52,16 @@ function ImpedanceCorrectionData(;
         transformer_control_mode,
         internal,
     )
-end
-
-"""The curve field `mode` selects. Exhaustive over the enum: an unhandled member errors."""
-function correction_curve_field(mode::ImpedanceCorrectionTransformerControlMode.Value)
-    if mode == ImpedanceCorrectionTransformerControlMode.TAP_RATIO
-        return :tap_ratio_correction_curve
-    elseif mode == ImpedanceCorrectionTransformerControlMode.PHASE_SHIFT_ANGLE
-        return :phase_angle_correction_curve
+    # Supplemental attributes have no attach-time validator, so the pairing rule runs here.
+    errors, warnings = _mode_field_problems(
+        "ImpedanceCorrectionData table $table_number", attr, :transformer_control_mode,
+        IMPEDANCE_CORRECTION_CURVE_FIELDS,
+    )
+    for msg in warnings
+        @warn msg maxlog = PS_MAX_LOG
     end
-    error("unhandled ImpedanceCorrectionTransformerControlMode $mode")
-end
-
-# Supplemental attributes have no attach-time validator hook, so the pairing rule runs in the
-# keyword constructor: the selected curve is required, the other one warns when populated.
-function check_correction_curves(table_number, mode, tap_curve, angle_curve)
-    selected = correction_curve_field(mode)
-    curves =
-        (tap_ratio_correction_curve = tap_curve, phase_angle_correction_curve = angle_curve)
-    for (name, curve) in pairs(curves)
-        if name == selected
-            isnothing(curve) && throw(
-                ArgumentError(
-                    "ImpedanceCorrectionData table $table_number: transformer_control_mode = $mode " *
-                    "requires $name, which is nothing",
-                ),
-            )
-        elseif !isnothing(curve)
-            @warn "ImpedanceCorrectionData table $table_number: $name is populated but " *
-                  "transformer_control_mode = $mode does not use it." maxlog = PS_MAX_LOG
-        end
-    end
-    return
+    isempty(errors) || throw(ArgumentError(join(errors, " ")))
+    return attr
 end
 
 """Get [`ImpedanceCorrectionData`](@ref) `table_number`."""
