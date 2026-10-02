@@ -223,18 +223,24 @@ end
     # helper (the PO type is never PSY's NamedTuple alias, and it declares the field `Any`,
     # so inline member access would be a dynamic getproperty chain); natural-units divides
     # each member by Z_base = V_base^2/S_base, passing `/` so the arithmetic stays division.
-    @test occursin("impedance_limits = _minmax_from_po(po.impedance_limits),", device_body)
     @test occursin(
-        "impedance_limits = _minmax_from_po(po.impedance_limits, (/), (po.base_voltage^2 / po.base_power)),",
+        "impedance_limits = _or_default(po.impedance_limits, nothing),",
+        device_body,
+    )
+    @test occursin(
+        "impedance_limits = _or_default(po.impedance_limits, nothing, (/), (po.base_voltage^2 / po.base_power)),",
         natural_body,
     )
 
     # Nullable compound power conversion: no emitted nothing-guard in either method — the
     # helper's ::Nothing method is the guard, so nullability no longer changes the
     # expression.
-    @test occursin("optional_limits = _minmax_from_po(po.optional_limits),", device_body)
     @test occursin(
-        "optional_limits = _minmax_from_po(po.optional_limits, (/), po.base_power),",
+        "optional_limits = _or_default(po.optional_limits, nothing),",
+        device_body,
+    )
+    @test occursin(
+        "optional_limits = _or_default(po.optional_limits, nothing, (/), po.base_power),",
         natural_body,
     )
 end
@@ -284,8 +290,14 @@ end
 
     # Compound pu-override: still rebuilt through the extraction helper (PO type isn't
     # PSY's NamedTuple alias) but never scaled — no `op`/`base` arguments in either method.
-    @test occursin("impedance_limits = _minmax_from_po(po.impedance_limits),", device_body)
-    @test occursin("impedance_limits = _minmax_from_po(po.impedance_limits),", natural_body)
+    @test occursin(
+        "impedance_limits = _or_default(po.impedance_limits, nothing),",
+        device_body,
+    )
+    @test occursin(
+        "impedance_limits = _or_default(po.impedance_limits, nothing),",
+        natural_body,
+    )
 
     # An unmapped openapi_unit value must error rather than be silently ignored.
     bad_value = [

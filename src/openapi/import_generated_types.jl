@@ -1,79 +1,80 @@
-# Typed extraction at the PO boundary, for the generated `from_openapi` methods.
+# Typed extraction at the PO boundary, shared by the generated and hand-written
+# `from_openapi` methods.
 #
 # `PowerOperationsOpenAPIModels`' generated structs declare every `$ref`ed field as bare
 # `Any` — 7 of the 22 fields on `PO.ThermalMultiStart` — so `po.active_power_limits.min`
 # is a dynamic `getproperty` chain that annotating `po` cannot recover: the type is
-# genuinely absent from the struct definition, not merely unstated at the call. These
-# helpers restore it by dispatching on the `PC` compound struct once, at the boundary,
-# after which every member access is a concrete field load.
+# genuinely absent from the struct definition, not merely unstated at the call. `_from_wire`
+# restores it by dispatching on the compound struct once, at the boundary, after which
+# every member access is a concrete field load.
 #
-# One name per alias, not the four the export side needs
-# (`OPENAPI_EXPORT_COMPOUND_CTORS`): the required/optional split is dispatch on
-# `::Nothing`, and the natural-units split is the `op`/`base` arity. That also lets the
-# generator drop the `if isnothing(po.x)` wrapper it used to emit around every nullable
-# compound.
+# Each field read is three independent choices, one per argument of `_or_default`:
+#   - decode, by the wire value's type: `_from_wire` (compound → NamedTuple/Complex; scalar
+#     passes through) or, for a wire enum, the PSY enum the default's type names;
+#   - absent policy: the `default` argument (`nothing` for an optional field), or
+#     `_required_enum` for a discriminator with no default;
+#   - rescale: the optional `op`/`base` pair, applied member-wise to a compound.
 #
 # `op` is passed as a function rather than baked into separate `_scaled`/`_unscaled`
 # helpers so the emitted arithmetic stays exactly what it was — `/` for power and
 # impedance, `*` for admittance. Rewriting `x / base` as `x * inv(base)` would change the
 # last bits of every converted value.
 
-"""Rebuild a `MinMax` from its PO struct; `nothing` in means `nothing` out."""
-@inline _minmax_from_po(x::IC.MinMax) = (min = x.min, max = x.max)
-@inline _minmax_from_po(::Union{Nothing, IC.Absent}) = nothing
-@inline _minmax_from_po(x::IC.MinMax, op::F, base) where {F} =
-    (min = op(x.min, base), max = op(x.max, base))
-@inline _minmax_from_po(::Union{Nothing, IC.Absent}, ::Any, ::Any) = nothing
+const _WireAbsent = Union{Nothing, IC.Absent}
 
-"""Rebuild an `UpDown` from its PO struct; `nothing` in means `nothing` out."""
-@inline _updown_from_po(x::IC.UpDown) = (up = x.up, down = x.down)
-@inline _updown_from_po(::Union{Nothing, IC.Absent}) = nothing
-@inline _updown_from_po(x::IC.UpDown, op::F, base) where {F} =
-    (up = op(x.up, base), down = op(x.down, base))
-@inline _updown_from_po(::Union{Nothing, IC.Absent}, ::Any, ::Any) = nothing
+"""Decode a present wire value into its PSY shape. Compound members are `Float64` on the
+PSY side but `Union{Nothing, Absent, Float64}` on the wire, so a member the document
+omits fails here rather than reaching the component constructor."""
+@inline _from_wire(x::IC.MinMax) = (min = Float64(x.min), max = Float64(x.max))
+@inline _from_wire(x::IC.UpDown) = (up = Float64(x.up), down = Float64(x.down))
+@inline _from_wire(x::IC.FromTo) = (from = Float64(x.from), to = Float64(x.to))
+@inline _from_wire(x::IC.InOut) = (in = Float64(x.in), out = Float64(x.out))
+@inline _from_wire(x::IC.ComplexNumber) = Complex(Float64(x.real), Float64(x.imag))
+# `IC.FromToToFrom`: the schema drops the underscore PSY's `FromTo_ToFrom` alias keeps.
+@inline _from_wire(x::IC.FromToToFrom) =
+    (from_to = Float64(x.from_to), to_from = Float64(x.to_from))
+@inline _from_wire(x::PC.StartUpShutDown) =
+    (startup = Float64(x.startup), shutdown = Float64(x.shutdown))
+@inline _from_wire(x::PC.TurbinePump) =
+    (turbine = Float64(x.turbine), pump = Float64(x.pump))
+@inline _from_wire(x::PC.StartUpStages) =
+    (hot = Float64(x.hot), warm = Float64(x.warm), cold = Float64(x.cold))
+@inline _from_wire(x) = x
+# A required field reached `_from_wire` directly, with no `_or_default` to absorb absence.
+_from_wire(::_WireAbsent) = throw(ArgumentError("a required field is absent from the wire"))
 
-"""Rebuild a `FromTo` from its PO struct; `nothing` in means `nothing` out."""
-@inline _fromto_from_po(x::IC.FromTo) = (from = x.from, to = x.to)
-@inline _fromto_from_po(::Union{Nothing, IC.Absent}) = nothing
-@inline _fromto_from_po(x::IC.FromTo, op::F, base) where {F} =
-    (from = op(x.from, base), to = op(x.to, base))
-@inline _fromto_from_po(::Union{Nothing, IC.Absent}, ::Any, ::Any) = nothing
+"""`op(member, base)` over every member of a decoded compound, or `op(x, base)` on a
+scalar."""
+@inline _rescale(op::F, x::NamedTuple, base) where {F} = map(m -> op(m, base), x)
+@inline _rescale(op::F, x, base) where {F} = op(x, base)
 
-"""Rebuild an `InOut` from its PO struct; `nothing` in means `nothing` out."""
-@inline _inout_from_po(x::IC.InOut) = (in = x.in, out = x.out)
-@inline _inout_from_po(::Union{Nothing, IC.Absent}) = nothing
-@inline _inout_from_po(x::IC.InOut, op::F, base) where {F} =
-    (in = op(x.in, base), out = op(x.out, base))
-@inline _inout_from_po(::Union{Nothing, IC.Absent}, ::Any, ::Any) = nothing
+"""The decoded wire value, or `default` when the field is absent from the wire. `default`
+is the PSY descriptor default for a field the descriptor declares required-with-a-default
+but the wire declares optional-by-omission (e.g. `Area.load_response`), and `nothing` for a
+field that is optional on both sides. Absent is a distinct sentinel from `nothing`, and
+dispatch covers both without a type check at the call site."""
+@inline _or_default(::_WireAbsent, default) = default
+@inline _or_default(v, ::Any) = _from_wire(v)
 
-"""Rebuild a `FromTo_ToFrom` from its PO struct (`IC.FromToToFrom` — the schema drops the
-underscore PSY's alias keeps); `nothing` in means `nothing` out."""
-@inline _fromto_tofrom_from_po(x::IC.FromToToFrom) =
-    (from_to = x.from_to, to_from = x.to_from)
-@inline _fromto_tofrom_from_po(::Union{Nothing, IC.Absent}) = nothing
-@inline _fromto_tofrom_from_po(x::IC.FromToToFrom, op::F, base) where {F} =
-    (from_to = op(x.from_to, base), to_from = op(x.to_from, base))
-@inline _fromto_tofrom_from_po(::Union{Nothing, IC.Absent}, ::Any, ::Any) = nothing
+"""A wire enum is its own wrapper struct around a `String`; the PSY `@scoped_enum` it
+decodes to is the type of the default, and constructs straight from that string."""
+@inline _or_default(v::IC.EnumAPIModel, default::Enum) = typeof(default)(v.value)
 
-"""Rebuild a `StartUpShutDown` from its PO struct; `nothing` in means `nothing` out."""
-@inline _startup_shutdown_from_po(x::PC.StartUpShutDown) =
-    (startup = x.startup, shutdown = x.shutdown)
-@inline _startup_shutdown_from_po(::Union{Nothing, IC.Absent}) = nothing
-@inline _startup_shutdown_from_po(x::PC.StartUpShutDown, op::F, base) where {F} =
-    (startup = op(x.startup, base), shutdown = op(x.shutdown, base))
-@inline _startup_shutdown_from_po(::Union{Nothing, IC.Absent}, ::Any, ::Any) = nothing
+"""Same as `_or_default` for a field the natural-units method rescales: `op` runs only on
+a value that is present, so an absent field takes `default` unscaled and the arithmetic
+never touches the sentinel."""
+@inline _or_default(::_WireAbsent, default, ::Any, ::Any) = default
+@inline _or_default(v, ::Any, op::F, base) where {F} = _rescale(op, _from_wire(v), base)
 
-"""Rebuild a `TurbinePump` from its PO struct; `nothing` in means `nothing` out."""
-@inline _turbinepump_from_po(x::PC.TurbinePump) = (turbine = x.turbine, pump = x.pump)
-@inline _turbinepump_from_po(::Union{Nothing, IC.Absent}) = nothing
-@inline _turbinepump_from_po(x::PC.TurbinePump, op::F, base) where {F} =
-    (turbine = op(x.turbine, base), pump = op(x.pump, base))
-@inline _turbinepump_from_po(::Union{Nothing, IC.Absent}, ::Any, ::Any) = nothing
-
-"""Rebuild a `StartUpStages` from its PO struct; `nothing` in means `nothing` out."""
-@inline _startup_stages_from_po(x::PC.StartUpStages) =
-    (hot = x.hot, warm = x.warm, cold = x.cold)
-@inline _startup_stages_from_po(::Union{Nothing, IC.Absent}) = nothing
-@inline _startup_stages_from_po(x::PC.StartUpStages, op::F, base) where {F} =
-    (hot = op(x.hot, base), warm = op(x.warm, base), cold = op(x.cold, base))
-@inline _startup_stages_from_po(::Union{Nothing, IC.Absent}, ::Any, ::Any) = nothing
+"""A wire enum with no default: absent is an error naming the row, since no control mode
+can be assumed for an in-service converter."""
+_required_enum(
+    ::_WireAbsent, ::Type{T}, owner::AbstractString, field::AbstractString,
+) where {T} = error("$owner: $field is required and has no default")
+_required_enum(
+    v::IC.EnumAPIModel,
+    ::Type{T},
+    ::AbstractString,
+    ::AbstractString,
+) where {T} =
+    T(v.value)

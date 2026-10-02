@@ -206,8 +206,8 @@ function from_openapi(po::PO.MotorLoad, refs::OpenAPIRefs, ::ComponentBaseUnit)
         base_power = po.base_power,
         rating = po.rating,
         max_active_power = po.max_active_power,
-        reactive_power_limits = _minmax_from_po(po.reactive_power_limits),
-        motor_technology = _or_default_enum(po.motor_technology, MotorLoadTechnology.UNDETERMINED),
+        reactive_power_limits = _or_default(po.reactive_power_limits, nothing),
+        motor_technology = _or_default(po.motor_technology, MotorLoadTechnology.UNDETERMINED),
         input_basis = CU,
     )
 end
@@ -222,8 +222,8 @@ function from_openapi(po::PO.MotorLoad, refs::OpenAPIRefs, ::NaturalUnit)
         base_power = po.base_power,
         rating = po.rating / po.base_power,
         max_active_power = po.max_active_power / po.base_power,
-        reactive_power_limits = _minmax_from_po(po.reactive_power_limits, (/), po.base_power),
-        motor_technology = _or_default_enum(po.motor_technology, MotorLoadTechnology.UNDETERMINED),
+        reactive_power_limits = _or_default(po.reactive_power_limits, nothing, (/), po.base_power),
+        motor_technology = _or_default(po.motor_technology, MotorLoadTechnology.UNDETERMINED),
         input_basis = CU,
     )
 end

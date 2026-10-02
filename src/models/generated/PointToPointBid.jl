@@ -124,7 +124,7 @@ function from_openapi(po::PO.PointToPointBid, refs::OpenAPIRefs, ::ComponentBase
         from = resolve_ref(refs, po.from_id, Component),
         to = resolve_ref(refs, po.to_id, Component),
         max_active_power = po.max_active_power,
-        price_limits = _minmax_from_po(po.price_limits),
+        price_limits = _or_default(po.price_limits, nothing),
         spread_bid = convert_cost(po.spread_bid.value)::Union{MarketBidCost, MarketBidTimeSeriesCost},
         linked_crr = _or_default(po.linked_crr, nothing),
     )
@@ -137,7 +137,7 @@ function from_openapi(po::PO.PointToPointBid, refs::OpenAPIRefs, ::NaturalUnit)
         from = resolve_ref(refs, po.from_id, Component),
         to = resolve_ref(refs, po.to_id, Component),
         max_active_power = po.max_active_power,
-        price_limits = _minmax_from_po(po.price_limits),
+        price_limits = _or_default(po.price_limits, nothing),
         spread_bid = convert_cost(po.spread_bid.value)::Union{MarketBidCost, MarketBidTimeSeriesCost},
         linked_crr = _or_default(po.linked_crr, nothing),
     )
