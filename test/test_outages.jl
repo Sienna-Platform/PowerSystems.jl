@@ -465,7 +465,10 @@ end
     new_row = PSY._po_with(wrapper.value; name = "not_the_real_series_name")
     doc.time_series_associations[1] = typeof(wrapper)(new_row)
 
-    @test_throws IS.DataFormatError PSY.from_openapi(
+    @test_throws PSY.IC.DocumentFormatError PSY.from_openapi(
+        System, doc; time_series_storage_path = joinpath(dir, "time_series.h5"),
+    )
+    @test_throws r"no matching row in the time series catalog" PSY.from_openapi(
         System, doc; time_series_storage_path = joinpath(dir, "time_series.h5"),
     )
 end
