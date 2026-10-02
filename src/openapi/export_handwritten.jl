@@ -1058,17 +1058,11 @@ function to_openapi(lcc::TwoTerminalLCCLine, refs::OpenAPIRefs, ::NaturalUnit)
 end
 
 # ── TwoTerminalVSCLine ──────────────────────────────────────────────────────────
-# Always exports "NATURAL_UNITS" for `admittance_units`/`voltage_units` (the only basis
-# implemented), so `g` converts pu → siemens in BOTH methods. Only the power-family fields and
-# `dc_power_setpoint_*` are discriminated by `power_units`, multiplying by `base_power` under
-# `NaturalUnit`.
-# `voltage_limits_*`, `dc_voltage_droop_*`, the current fields, `rmpct_*`, the weighting
-# fractions, and `rated_dc_voltage`/`rated_ac_voltage_from`/`rated_ac_voltage_to` pass through —
-# see import_handwritten.jl's header for why each one is left alone. The voltage setpoints
-# `dc_voltage_setpoint_*`/`ac_voltage_setpoint_*` also pass through unconverted (PSY stores them
-# per-unit), tagged `setpoint_voltage_units = "COMPONENT_BASE"` — a lossless export that needs no AC
-# voltage base; import resolves the `AC_VOLTAGE` kV basis from `rated_ac_voltage_from`/
-# `rated_ac_voltage_to` on the row itself.
+# `admittance_units`/`voltage_units` always export "NATURAL_UNITS", so `g` converts pu →
+# siemens under both unit systems; the power-family fields and `dc_power_setpoint_*` multiply
+# by `base_power` under `NaturalUnit` only. The voltage setpoints export per-unit as PSY
+# stores them, tagged `setpoint_voltage_units = "COMPONENT_BASE"`. Everything else passes
+# through; import_handwritten.jl's header says why.
 
 """pu → siemens via `Ybase = base_power / rated_dc_voltage^2` (kV, MVA)."""
 function _vsc_pu_to_siemens(vsc::TwoTerminalVSCLine, base_power)
@@ -1077,7 +1071,7 @@ function _vsc_pu_to_siemens(vsc::TwoTerminalVSCLine, base_power)
     return g / (base_voltage^2 / base_power)
 end
 
-"""Mirrors import's `_vsc_dc_base_voltage`, but unlike it, never errors: a `0.0` rating
+"""Mirrors import's `_vsc_base_voltage`, but unlike it, never errors: a `0.0` rating
 falls back to `one(rated)` regardless of `value`, so export always succeeds."""
 function _vsc_export_dc_base_voltage(vsc::TwoTerminalVSCLine, value, field::AbstractString)
     rated = get_rated_dc_voltage(vsc)
@@ -1094,43 +1088,38 @@ function _vsc_export_dc_base_voltage(vsc::TwoTerminalVSCLine, value, field::Abst
     return one(rated)
 end
 
-"""`nothing` is absent on the wire; a `DC_POWER` order scales with the other power fields."""
-_vsc_optional_power_to_openapi(::Nothing, _base_power, _unit) = IC.ABSENT
-_vsc_optional_power_to_openapi(value, base_power, unit) =
-    _vsc_power_to_openapi(value, base_power, unit)
+"""`nothing` is absent on the wire; a present value scales by `power_base`."""
+_optional_scaled_to_wire(::Nothing, _power_base) = IC.ABSENT
+_optional_scaled_to_wire(value, power_base) = value * power_base
 
-"""The shared body of both unit-system methods; only `unit` decides the power scaling."""
-function _two_terminal_vsc_line_to_openapi(vsc::TwoTerminalVSCLine, refs::OpenAPIRefs, unit)
+function to_openapi(
+    vsc::TwoTerminalVSCLine,
+    refs::OpenAPIRefs,
+    unit::Union{ComponentBaseUnit, NaturalUnit},
+)
     base_power = _get_base_power(vsc)
-    dc_control_from = get_dc_control_from(vsc)
-    dc_control_to = get_dc_control_to(vsc)
-    ac_control_from = get_ac_control_from(vsc)
-    ac_control_to = get_ac_control_to(vsc)
+    power_base = _power_base(base_power, unit)
     return PO.TwoTerminalVSCLine(;
         id = component_id(refs, vsc),
         name = get_name(vsc),
         available = get_available(vsc),
         arc = component_id(refs, get_arc(vsc)),
-        active_power_flow = _vsc_power_to_openapi(
-            get_active_power_flow(vsc, u"SU"), base_power, unit,
+        active_power_flow = get_active_power_flow(vsc, u"SU") * power_base,
+        rating = get_rating(vsc, u"SU") * power_base,
+        active_power_limits_from = _minmax_po_scaled(
+            get_active_power_limits_from(vsc, u"SU"), power_base,
         ),
-        rating = _vsc_power_to_openapi(get_rating(vsc, u"SU"), base_power, unit),
-        active_power_limits_from = _vsc_minmax_to_openapi(
-            get_active_power_limits_from(vsc, u"SU"), base_power, unit,
-        ),
-        active_power_limits_to = _vsc_minmax_to_openapi(
-            get_active_power_limits_to(vsc, u"SU"), base_power, unit,
+        active_power_limits_to = _minmax_po_scaled(
+            get_active_power_limits_to(vsc, u"SU"), power_base,
         ),
         admittance_units = PO.AdmittanceUnitBasis("NATURAL_UNITS"),
         g = _vsc_pu_to_siemens(vsc, base_power),
         dc_current = get_dc_current(vsc),
-        reactive_power_from = _vsc_power_to_openapi(
-            get_reactive_power_from(vsc, u"SU"), base_power, unit,
-        ),
-        dc_control_from = PO.VSCDCControlModes(string(dc_control_from)),
-        ac_control_from = PO.VSCACControlModes(string(ac_control_from)),
-        dc_power_setpoint_from = _vsc_optional_power_to_openapi(
-            get_dc_power_setpoint_from(vsc, u"SU"), base_power, unit,
+        reactive_power_from = get_reactive_power_from(vsc, u"SU") * power_base,
+        dc_control_from = PO.VSCDCControlModes(string(get_dc_control_from(vsc))),
+        ac_control_from = PO.VSCACControlModes(string(get_ac_control_from(vsc))),
+        dc_power_setpoint_from = _optional_scaled_to_wire(
+            get_dc_power_setpoint_from(vsc, u"SU"), power_base,
         ),
         dc_voltage_setpoint_from = _optional_to_wire(get_dc_voltage_setpoint_from(vsc)),
         power_factor_setpoint_from = _optional_to_wire(get_power_factor_setpoint_from(vsc)),
@@ -1138,9 +1127,9 @@ function _two_terminal_vsc_line_to_openapi(vsc::TwoTerminalVSCLine, refs::OpenAP
         rated_ac_voltage_from = get_rated_ac_voltage_from(vsc),
         converter_loss_from = _hvdc_loss_to_openapi(get_converter_loss_from(vsc)),
         max_dc_current_from = get_max_dc_current_from(vsc),
-        rating_from = _vsc_power_to_openapi(get_rating_from(vsc, u"SU"), base_power, unit),
-        reactive_power_limits_from = _vsc_minmax_to_openapi(
-            get_reactive_power_limits_from(vsc, u"SU"), base_power, unit,
+        rating_from = get_rating_from(vsc, u"SU") * power_base,
+        reactive_power_limits_from = _minmax_po_scaled(
+            get_reactive_power_limits_from(vsc, u"SU"), power_base,
         ),
         power_factor_weighting_fraction_from =
         get_power_factor_weighting_fraction_from(vsc),
@@ -1148,13 +1137,11 @@ function _two_terminal_vsc_line_to_openapi(vsc::TwoTerminalVSCLine, refs::OpenAP
         setpoint_voltage_units = PO.VoltageUnitBasis("COMPONENT_BASE"),
         voltage_limits_from = _minmax_po(get_voltage_limits_from(vsc)),
         dc_voltage_droop_from = get_dc_voltage_droop_from(vsc),
-        reactive_power_to = _vsc_power_to_openapi(
-            get_reactive_power_to(vsc, u"SU"), base_power, unit,
-        ),
-        dc_control_to = PO.VSCDCControlModes(string(dc_control_to)),
-        ac_control_to = PO.VSCACControlModes(string(ac_control_to)),
-        dc_power_setpoint_to = _vsc_optional_power_to_openapi(
-            get_dc_power_setpoint_to(vsc, u"SU"), base_power, unit,
+        reactive_power_to = get_reactive_power_to(vsc, u"SU") * power_base,
+        dc_control_to = PO.VSCDCControlModes(string(get_dc_control_to(vsc))),
+        ac_control_to = PO.VSCACControlModes(string(get_ac_control_to(vsc))),
+        dc_power_setpoint_to = _optional_scaled_to_wire(
+            get_dc_power_setpoint_to(vsc, u"SU"), power_base,
         ),
         dc_voltage_setpoint_to = _optional_to_wire(get_dc_voltage_setpoint_to(vsc)),
         power_factor_setpoint_to = _optional_to_wire(get_power_factor_setpoint_to(vsc)),
@@ -1162,9 +1149,9 @@ function _two_terminal_vsc_line_to_openapi(vsc::TwoTerminalVSCLine, refs::OpenAP
         rated_ac_voltage_to = get_rated_ac_voltage_to(vsc),
         converter_loss_to = _hvdc_loss_to_openapi(get_converter_loss_to(vsc)),
         max_dc_current_to = get_max_dc_current_to(vsc),
-        rating_to = _vsc_power_to_openapi(get_rating_to(vsc, u"SU"), base_power, unit),
-        reactive_power_limits_to = _vsc_minmax_to_openapi(
-            get_reactive_power_limits_to(vsc, u"SU"), base_power, unit,
+        rating_to = get_rating_to(vsc, u"SU") * power_base,
+        reactive_power_limits_to = _minmax_po_scaled(
+            get_reactive_power_limits_to(vsc, u"SU"), power_base,
         ),
         power_factor_weighting_fraction_to = get_power_factor_weighting_fraction_to(vsc),
         voltage_limits_to = _minmax_po(get_voltage_limits_to(vsc)),
@@ -1178,18 +1165,6 @@ function _two_terminal_vsc_line_to_openapi(vsc::TwoTerminalVSCLine, refs::OpenAP
         power_units = _power_units_string(unit),
     )
 end
-
-_vsc_power_to_openapi(value, base_power, ::NaturalUnit) = value * base_power
-_vsc_power_to_openapi(value, _base_power, ::ComponentBaseUnit) = value
-
-_vsc_minmax_to_openapi(m, base_power, ::NaturalUnit) = _minmax_po_scaled(m, base_power)
-_vsc_minmax_to_openapi(m, _base_power, ::ComponentBaseUnit) = _minmax_po(m)
-
-to_openapi(vsc::TwoTerminalVSCLine, refs::OpenAPIRefs, unit::ComponentBaseUnit) =
-    _two_terminal_vsc_line_to_openapi(vsc, refs, unit)
-
-to_openapi(vsc::TwoTerminalVSCLine, refs::OpenAPIRefs, unit::NaturalUnit) =
-    _two_terminal_vsc_line_to_openapi(vsc, refs, unit)
 
 # ── HydroReservoir ──────────────────────────────────────────────────────────────
 # No unit-converted fields; both unit-system methods identical (mirrors import).

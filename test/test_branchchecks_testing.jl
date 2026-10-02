@@ -559,7 +559,10 @@ end
     add_component!(sys, xfrm)
     w = get_circuit(get_component(TwoWindingTransformer, sys, "uncontrolled"))
     @test get_control_objective(w) == TransformerControlObjective.UNDEFINED
-    @test all(isnothing(getfield(w, f)) for f in PSY.CONTROL_BAND_FIELDS)
+    @test all(
+        isnothing(getfield(w, f)) for
+        f in PSY._all_fields(PSY.CONTROL_OBJECTIVE_BAND_FIELDS)
+    )
 end
 
 @testset "Circuit number_of_tap_positions < 0 throws on add_component!" begin
