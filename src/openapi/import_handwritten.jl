@@ -2004,10 +2004,37 @@ function from_openapi(po::PO.GroupReserve, refs::OpenAPIRefs, ::ComponentBaseUni
         name = po.name,
         available = po.available,
         requirement = po.requirement / get_base_power(refs),
+        max_requirement = _or_default(po.max_requirement, nothing, /, get_base_power(refs)),
+        participation_bounds = _participation_bounds_from_openapi(
+            refs,
+            po.participation_bounds,
+        ),
         variable = convert_reserve_variable(po.variable),
     )
 end
 
 function from_openapi(po::PO.GroupReserve, refs::OpenAPIRefs, ::NaturalUnit)
     return from_openapi(po, refs, CU)
+end
+
+"""Entries from the wire: document ids resolve to the members' ids (members convert before
+groups), as `_monitored_component_uuids` does. Membership is checked after the association rows load."""
+_participation_bounds_from_openapi(::OpenAPIRefs, ::Union{Nothing, IC.Absent}) =
+    Tuple{Int, Float64, Float64}[]
+function _participation_bounds_from_openapi(refs::OpenAPIRefs, bounds)
+    # Each entry is a plain number array (D11): check its length and a whole id here.
+    function entry(b)
+        length(b) == 3 || throw(
+            ArgumentError(
+                "GroupReserve participation bound $b has $(length(b)) numbers, not [member, min, max]",
+            ),
+        )
+        isinteger(b[1]) || throw(
+            ArgumentError(
+                "GroupReserve participation bound member id $(b[1]) is not a whole number",
+            ),
+        )
+        return (IS.get_id(refs[Int(b[1])]), b[2], b[3])
+    end
+    return Tuple{Int, Float64, Float64}[entry(b) for b in bounds]
 end

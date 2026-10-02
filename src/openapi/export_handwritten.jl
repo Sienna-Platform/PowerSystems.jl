@@ -1410,6 +1410,8 @@ function to_openapi(
         name = get_name(reserve),
         available = get_available(reserve),
         requirement = get_requirement(reserve, SU) * get_base_power(refs),
+        max_requirement = _optional_to_wire(_max_requirement_mw(reserve, refs)),
+        participation_bounds = _participation_bounds_to_openapi(refs, reserve),
         variable = convert_reserve_variable_to_openapi(reserve),
         reserve_direction = PO.ReserveDirection(RESERVE_DIRECTION_TO_STRING[T]),
     )
@@ -1421,4 +1423,22 @@ function to_openapi(
     ::NaturalUnit,
 ) where {T <: ReserveDirection}
     return to_openapi(reserve, refs, CU)
+end
+
+function _max_requirement_mw(reserve::GroupReserve, refs::OpenAPIRefs)
+    cap = get_max_requirement(reserve, SU)
+    return isnothing(cap) ? nothing : cap * get_base_power(refs)
+end
+
+"""A group's `(member, min, max)` entries on the wire, members by document id (a component's id
+is its document id, as for an outage's `monitored_components`); none omits the field."""
+function _participation_bounds_to_openapi(refs::OpenAPIRefs, group::GroupReserve)
+    bounds = get_participation_bounds(group)
+    isempty(bounds) && return IC.ABSENT
+    for (member, _, _) in bounds
+        has_ref(refs, member) || error(
+            "to_openapi: GroupReserve $(get_name(group)) bounds id $member, absent from the document",
+        )
+    end
+    return [Float64[member, lo, hi] for (member, lo, hi) in bounds]
 end

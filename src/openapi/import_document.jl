@@ -636,6 +636,8 @@ function from_openapi(
     end
 
     load_supplemental_attribute_associations!(sys, refs, doc)
+    # Bounds name members, which only the association rows above attach.
+    foreach(_check_participation_bounds, get_components(GroupReserve, sys))
 
     return sys
 end

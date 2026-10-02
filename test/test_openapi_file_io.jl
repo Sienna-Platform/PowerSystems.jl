@@ -802,6 +802,84 @@ end
     @test get_function_data(get_value_curve(resolved)) == _TS_RESOLVE_PWL_DATA[1]
 end
 
+"""`_group_reserve_system` with a second member, a 50 MW cap, a floor on `sub` scaled by a
+featured series, and a static cap on `other`."""
+function _bounded_group_reserve_system()
+    sys, group = _group_reserve_system()
+    sub = only(get_contributing_services(group))
+    other = OnlineReserve{ReserveUp}(; name = "other", available = true, time_frame = 10.0)
+    add_service!(sys, other, collect(get_components(ThermalStandard, sys)))
+    set_contributing_services!(sys, group, Service[sub, other])
+    set_max_requirement!(group, 50.0 * u"MW")
+    add_time_series!(sys, group,
+        IS.Deterministic(;
+            data = SortedDict(_TS_RESOLVE_INITIAL_TIME => fill(0.5, 24)),
+            name = "participation_bound_min",
+            resolution = _TS_RESOLVE_RESOLUTION,
+        ); features = Dict("member" => IS.get_id(sub)))
+    set_participation_bounds!(sys, group,
+        [(IS.get_id(sub), 1.0, 1.0), (IS.get_id(other), 0.0, 0.25)])
+    return sys, group
+end
+
+@testset "roundtrip: group reserve cap, participation bounds and their series ($form)" for form in
+                                                                                           (
+    :directory,
+    :document,
+    :archive,
+)
+    sys, _ = _bounded_group_reserve_system()
+    sys2 = roundtrip_system(sys; form = form)
+    group2 = get_component(GroupReserve{ReserveUp}, sys2, "group")
+    @test get_max_requirement(group2, u"MW") ≈ 50.0
+    id_of = Dict(get_name(s) => IS.get_id(s) for s in get_contributing_services(group2))
+    @test get_participation_bounds(group2) ==
+          [(id_of["sub"], 1.0, 1.0), (id_of["other"], 0.0, 0.25)]
+    # The member feature still finds the series of the right member.
+    @test IS.get_time_series_values(IS.Deterministic, group2, "participation_bound_min";
+        start_time = _TS_RESOLVE_INITIAL_TIME,
+        features = Dict("member" => id_of["sub"])) == fill(0.5, 24)
+    @test !has_time_series(group2, "participation_bound_min";
+        features = Dict("member" => id_of["other"]))
+end
+
+@testset "a group reserve without a cap or bounds writes neither field" begin
+    sys, _ = _group_reserve_system()
+    path = joinpath(mktempdir(), "case.json")
+    to_file(sys, path; force = true)
+    group = only(JSON.parsefile(path)["components"]["GroupReserve"])
+    @test !haskey(group, "max_requirement")
+    @test !haskey(group, "participation_bounds")
+end
+
+# The wire id is a JSON number (D11), so a non-integer id passes the schema and PSY refuses it.
+@testset "import refuses a participation bound on $(what)" for (what, edit!) in (
+    (
+        "a non-member",
+        (entry, sys) -> entry[1] = IS.get_id(get_component(ThermalStandard, sys, "gen1")),
+    ),
+    ("a non-integer member id", (entry, _) -> entry[1] += 0.5),
+    ("a negative fraction", (entry, _) -> entry[2] = -0.5),
+)
+    sys, group = _group_reserve_system()
+    sub = only(get_contributing_services(group))
+    set_participation_bounds!(sys, group, [(IS.get_id(sub), 0.5, 1.0)])
+    path = joinpath(mktempdir(), "case.json")
+    to_file(sys, path; force = true)
+    doc = JSON.parsefile(path)
+    edit!(only(doc["components"]["GroupReserve"])["participation_bounds"][1], sys)
+    write(path, JSON.json(doc))
+    @test_throws ArgumentError from_file(path)
+end
+
+@testset "the converter refuses an entry that is not [whole id, min, max]" begin
+    # The Julia binding checks the length too; PSY checks it again for the import's own sake.
+    refs = PSY.OpenAPIRefs(100.0)
+    for bad in ([1.0, 1.0], [1.0, 1.0, 1.0, 2.0], [1.5, 1.0, 1.0])
+        @test_throws ArgumentError PSY._participation_bounds_from_openapi(refs, [bad])
+    end
+end
+
 @testset "roundtrip: System field metadata (name/description)" begin
     # frequency is deliberately NOT asserted here: src/openapi/import_document.jl's
     # _apply_document_metadata! (pre-existing on this branch, unrelated to this plan) only
