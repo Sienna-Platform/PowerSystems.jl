@@ -374,6 +374,36 @@ end
     @test_logs min_level = Logging.Warn add_service!(sys, group)
 end
 
+@testset "GroupReserve max_requirement mirrors requirement" begin
+    sys = System(100.0)
+    group = GroupReserve{ReserveUp}(; name = "CAP", available = true, requirement = 0.0)
+    add_service!(sys, group)
+    @test isnothing(get_max_requirement(group, SU))
+    set_max_requirement!(group, 450.0 * u"MW")
+    @test get_max_requirement(group, SU) ≈ 4.5
+    @test get_max_requirement(group, u"MW") ≈ 450.0
+    set_max_requirement!(group, nothing)
+    @test isnothing(get_max_requirement(group, SU))
+    # The positional constructor still takes the six arguments it took before.
+    @test isnothing(GroupReserve{ReserveUp}("POS", true, 0.0).max_requirement)
+    @test GroupReserve{ReserveUp}(; name = "KW", available = true, requirement = 0.0,
+        max_requirement = 2.0).max_requirement == 2.0
+    # The descriptor lists the new field too, so a capped group logs no warning.
+    capped = GroupReserve{ReserveUp}(;
+        name = "CAPPED", available = true, requirement = 0.0, max_requirement = 2.0)
+    @test_logs min_level = Logging.Warn add_service!(sys, capped)
+end
+
+@testset "GroupReserve rejects a negative max_requirement" begin
+    sys = System(100.0)
+    group = GroupReserve{ReserveUp}(;
+        name = "BAD", available = true, requirement = 0.0, max_requirement = -1.0)
+    @test_logs (:error,) match_mode = :any @test_throws(
+        PSY.InvalidValue,
+        add_service!(sys, group),
+    )
+end
+
 @testset "Test OfflineReserve" begin
     # create system
     sys = System(100.0)

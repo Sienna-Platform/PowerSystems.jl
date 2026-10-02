@@ -387,6 +387,9 @@ export set_time_frame!
 export get_requirement
 export get_requirement_unitful
 export set_requirement!
+export get_max_requirement
+export get_max_requirement_unitful
+export set_max_requirement!
 export get_sustained_time
 export set_sustained_time!
 export get_max_output_fraction

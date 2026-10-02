@@ -19978,6 +19978,18 @@
                     "conversion_unit": ":mw"
                 },
                 {
+                    "name": "max_requirement",
+                    "null_value": "nothing",
+                    "data_type": "Union{Nothing, Float64}",
+                    "valid_range": {
+                        "min": 0,
+                        "max": null
+                    },
+                    "validation_action": "error",
+                    "needs_conversion": true,
+                    "conversion_unit": ":mw"
+                },
+                {
                     "name": "variable"
                 },
                 {

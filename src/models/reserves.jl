@@ -296,6 +296,8 @@ a member reserve also counts toward the group. Attach an Operating Reserve Deman
 `variable` to price the group requirement rather than enforce it, exactly as for
 [`OnlineReserve`](@ref); [`has_demand_curve`](@ref) reports whether one is present. This is what
 makes an ELASTIC group (one demand curve met by the awards of several sub-products) representable.
+A `max_requirement` caps the members' total, scaled by a `"max_requirement"` time series when one
+is attached, as `requirement` is.
 
 The `ReserveDirection` must be specified as [`ReserveUp`](@ref), [`ReserveDown`](@ref), or
 [`ReserveSymmetric`](@ref).
@@ -308,6 +310,8 @@ mutable struct GroupReserve{T <: ReserveDirection, U <: IS.AbstractUnitSystem} <
     available::Bool
     "The value of required reserves in p.u. ([`SYSTEM_BASE`](@ref per_unit))"
     requirement::Float64
+    "The most the members may be awarded in total, in p.u. ([`SYSTEM_BASE`](@ref per_unit)), scaled by a `\"max_requirement\"` time series when one is attached. `nothing` means no cap"
+    max_requirement::Union{Nothing, Float64}
     # TODO DISCUSS: see OnlineReserve.variable - the ORDC is a Union of a static and a
     # time-series-backed CostCurve. Revisit later.
     "Operating reserve demand curve for the group (static or time-series-backed). `ZERO_OFFER_CURVE` means no curve is defined"
@@ -330,10 +334,11 @@ function GroupReserve{T}(
     variable = ZERO_OFFER_CURVE,
     ext = Dict{String, Any}(),
     contributing_services = Vector{Service}(),
+    max_requirement = nothing,
 ) where {T <: ReserveDirection}
     U = typeof(get_power_units(variable))
     return GroupReserve{T, U}(
-        name, available, requirement, variable, ext, contributing_services,
+        name, available, requirement, max_requirement, variable, ext, contributing_services,
         InfrastructureSystemsInternal(),
     )
 end
@@ -342,6 +347,7 @@ function GroupReserve{T}(;
     name,
     available,
     requirement,
+    max_requirement = nothing,
     variable = ZERO_OFFER_CURVE,
     ext = Dict{String, Any}(),
     contributing_services = Vector{Service}(),
@@ -349,7 +355,8 @@ function GroupReserve{T}(;
 ) where {T <: ReserveDirection}
     U = typeof(get_power_units(variable))
     return GroupReserve{T, U}(
-        name, available, requirement, variable, ext, contributing_services, internal,
+        name, available, requirement, max_requirement, variable, ext,
+        contributing_services, internal,
     )
 end
 
@@ -358,13 +365,15 @@ function GroupReserve{T, U}(;
     name,
     available,
     requirement,
+    max_requirement = nothing,
     variable = ZERO_OFFER_CURVE,
     ext = Dict{String, Any}(),
     contributing_services = Vector{Service}(),
     internal = InfrastructureSystemsInternal(),
 ) where {T <: ReserveDirection, U <: IS.AbstractUnitSystem}
     return GroupReserve{T, U}(
-        name, available, requirement, variable, ext, contributing_services, internal,
+        name, available, requirement, max_requirement, variable, ext,
+        contributing_services, internal,
     )
 end
 
@@ -459,6 +468,14 @@ get_requirement_unitful(value::GroupReserve, units) =
     get_value(value, Val(:requirement), Val(:mw), units)
 IS.display_units_arg(::typeof(get_requirement), ::Type{<:GroupReserve}) = IS.SU
 IS.display_units_arg(::typeof(get_requirement_unitful), ::Type{<:GroupReserve}) = IS.SU
+"""Get [`GroupReserve`](@ref) `max_requirement` as a bare number in the requested `units`, or `nothing` when the group has no cap."""
+get_max_requirement(value::GroupReserve, units) =
+    IS._strip_units(get_value(value, Val(:max_requirement), Val(:mw), units))
+"""Get [`GroupReserve`](@ref) `max_requirement` as a unit-bearing quantity in the requested `units`, or `nothing`."""
+get_max_requirement_unitful(value::GroupReserve, units) =
+    get_value(value, Val(:max_requirement), Val(:mw), units)
+IS.display_units_arg(::typeof(get_max_requirement), ::Type{<:GroupReserve}) = IS.SU
+IS.display_units_arg(::typeof(get_max_requirement_unitful), ::Type{<:GroupReserve}) = IS.SU
 """Get [`GroupReserve`](@ref) `variable` (its operating reserve demand curve)."""
 get_variable(value::GroupReserve) = value.variable
 """Get [`GroupReserve`](@ref) `ext`."""
@@ -473,6 +490,9 @@ set_available!(value::GroupReserve, val) = value.available = val
 """Set [`GroupReserve`](@ref) `requirement`."""
 set_requirement!(value::GroupReserve, val) =
     value.requirement = set_value(value, Val(:requirement), val, Val(:mw))
+"""Set [`GroupReserve`](@ref) `max_requirement` (a units-tagged value, or `nothing` for no cap)."""
+set_max_requirement!(value::GroupReserve, val) =
+    value.max_requirement = set_value(value, Val(:max_requirement), val, Val(:mw))
 """Set [`GroupReserve`](@ref) `variable` (its operating reserve demand curve)."""
 set_variable!(value::GroupReserve, val) = value.variable = val
 """Set [`GroupReserve`](@ref) `ext`."""
