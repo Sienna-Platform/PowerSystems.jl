@@ -306,17 +306,24 @@ a working location first, **and rejects every later write to the time series sto
 enforced mode, not only an I/O shortcut. `name`, `description` and `frequency` name document
 fields, and a value passed here outranks the document's.
 
+`validate = false` skips the schema check of every document row and time series association
+row, most of the read time for a large document. Use it for a file the caller trusts, such as
+one `to_file` wrote. Every structural check still runs: required fields, enum values,
+references, unit bases, and the match between the document and its sidecar catalog.
+
 `system_kwargs` pass through to the `System` being built (`time_series_in_memory`,
 `time_series_directory`, `runchecks`, ...).
 """
-function from_file(path::AbstractString; system_kwargs...)
+function from_file(path::AbstractString; validate::Bool = true, system_kwargs...)
     ext = lowercase(splitext(path)[2])
     if ext == SYSTEM_ARCHIVE_EXTENSION
-        return _from_archive(path; system_kwargs...)
+        return _from_archive(path; validate = validate, system_kwargs...)
     elseif ext == ".json"
-        return _read_bundle(path; system_kwargs...)
+        return _read_bundle(path; validate = validate, system_kwargs...)
     elseif isempty(ext)
-        return _read_bundle(joinpath(path, SYSTEM_DOCUMENT_FILE); system_kwargs...)
+        return _read_bundle(
+            joinpath(path, SYSTEM_DOCUMENT_FILE); validate = validate, system_kwargs...,
+        )
     else
         throw(
             IS.DataFormatError(
@@ -368,11 +375,15 @@ function _read_archive(path::AbstractString, dir::AbstractString; system_kwargs.
 end
 
 """Read the document at `document_path`, adopting the sidecar it names from beside it."""
-function _read_bundle(document_path::AbstractString; system_kwargs...)
+function _read_bundle(
+    document_path::AbstractString;
+    validate::Bool = true,
+    system_kwargs...,
+)
     if !isfile(document_path)
         throw(IS.DataFormatError("$document_path is not a serialized System document"))
     end
-    doc = PD.read_document(document_path)
+    doc = PD.read_document(document_path; validate = validate)
     dir = dirname(document_path)
     if isempty(dir)
         dir = "."
@@ -381,6 +392,7 @@ function _read_bundle(document_path::AbstractString; system_kwargs...)
         System,
         doc;
         time_series_storage_path = _resolve_sidecar(doc, dir),
+        validate = validate,
         system_kwargs...,
     )
 end

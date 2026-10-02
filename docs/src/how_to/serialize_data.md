@@ -118,3 +118,6 @@ rm("mysystem.json");
 rm("mysystem.h5"; force = true); #hide
 rm("mysystem.sns"); #hide
 ```
+
+For a file you trust, such as one `to_file` wrote, `from_file(path; validate = false)` skips the schema check of each document row, which is most of the read time for a large system.
+The structural checks still run: required fields, references, unit bases, and the match between the document and its time series catalog.

@@ -898,3 +898,77 @@ end
     @test get_time_series_values(gen2, ts1b; start_time = initial_time) == ta_vals
     @test get_time_series_values(gen2, ts2b; start_time = initial_time) == ta_vals
 end
+
+"""What a load must reproduce of `_file_io_fixture`: every component by type and name, the
+bus fields, the generator's attribute and its time series values."""
+function _load_signature(sys::System)
+    bus = get_component(ACBus, sys, "b1")
+    gen = get_component(ThermalStandard, sys, "g1")
+    return (
+        components = sort!([
+            (string(nameof(typeof(c))), get_name(c)) for c in get_components(Component, sys)
+        ]),
+        bus = (get_number(bus), get_bustype(bus), get_available(bus)),
+        attributes = [get_name(a) for a in get_supplemental_attributes(EmissionsData, gen)],
+        series = TimeSeries.values(
+            PSY.get_data(get_time_series(SingleTimeSeries, gen, "max_active_power")),
+        ),
+    )
+end
+
+"""Rewrite the document at `path` after applying `edit!` to its parsed JSON."""
+function _edit_document!(edit!, path::AbstractString)
+    raw = JSON.parsefile(path; dicttype = Dict{String, Any})
+    edit!(raw)
+    open(io -> JSON.print(io, raw), path, "w")
+    return nothing
+end
+
+@testset "from_file: validate = false loads a valid system identically ($form)" for form in
+                                                                                    (
+    :directory,
+    :document,
+    :archive,
+)
+    sys = _file_io_fixture()
+    checked = roundtrip_system(sys; form = form)
+    unchecked = roundtrip_system(sys; form = form, validate = false)
+    @test _load_signature(unchecked) == _load_signature(checked)
+    _close_sidecar_store!(checked)
+    _close_sidecar_store!(unchecked)
+end
+
+@testset "from_file: the default read rejects a schema-invalid document" begin
+    mktempdir() do dir
+        document = joinpath(dir, "case.json")
+        to_file(_file_io_fixture(), document)
+        # The schema types `available` as a boolean; decoding alone converts 1 to true.
+        _edit_document!(document) do raw
+            only(raw["components"]["ACBus"])["available"] = 1
+        end
+        @test_throws PSY.IC.SchemaValidationError from_file(document)
+        sys = from_file(document; validate = false)
+        @test get_available(get_component(ACBus, sys, "b1"))
+        _close_sidecar_store!(sys)
+    end
+end
+
+@testset "from_file: validate = false keeps the structural checks" begin
+    mktempdir() do dir
+        document = joinpath(dir, "case.json")
+        # No time series, so no sidecar store is open when a read throws.
+        to_file(_file_io_fixture(; with_time_series = false), document)
+        clean = read(document, String)
+
+        _edit_document!(document) do raw
+            delete!(only(raw["components"]["ThermalStandard"]), "name")
+        end
+        @test_throws PSY.IC.DecodeError from_file(document; validate = false)
+
+        write(document, clean)
+        _edit_document!(document) do raw
+            only(raw["components"]["ThermalStandard"])["bus"] = 999_999
+        end
+        @test_throws r"unresolved id 999999" from_file(document; validate = false)
+    end
+end

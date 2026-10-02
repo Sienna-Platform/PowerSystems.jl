@@ -574,6 +574,9 @@ given — adopts the HDF5 sidecar as the System's own time series store.
 Time-series rows are reconciled against whatever the sidecar brought, by
 [`_load_time_series_associations!`](@ref).
 
+`validate = false` skips the schema check of those rows, the document's and the sidecar
+catalog's; [`from_file`](@ref) passes the value it read the document with.
+
 Errors loudly, naming the offending type, id or field, rather than silently skipping
 malformed input.
 
@@ -594,6 +597,7 @@ function from_openapi(
     doc::PD.SystemDocument;
     base_power::Float64 = 100.0,
     time_series_storage_path = nothing,
+    validate::Bool = true,
     system_kwargs...,
 )
     _check_no_unconverted_component_types(doc.components)
@@ -602,7 +606,7 @@ function from_openapi(
     _apply_document_metadata!(sys, doc, keys(system_kwargs))
 
     store = _import_store(sys, doc, time_series_storage_path)
-    _load_time_series_associations!(sys, doc, store)
+    _load_time_series_associations!(sys, doc, store, validate)
     refs = OpenAPIRefs(base_power; store = store)
 
     # Bound for the whole component pass: a `MarketBidTimeSeriesCost`/time-series-backed
@@ -648,18 +652,23 @@ form wrote it.
 Runs before the component pass: a `MarketBidTimeSeriesCost` or time-series `FuelCurve` resolves
 its `association_id` against the store while its owner is being built.
 """
-_load_time_series_associations!(::System, ::PD.SystemDocument, ::Nothing) = nothing
+_load_time_series_associations!(::System, ::PD.SystemDocument, ::Nothing, ::Bool) = nothing
 
-function _load_time_series_associations!(sys::System, doc::PD.SystemDocument, store)
+function _load_time_series_associations!(
+    sys::System,
+    doc::PD.SystemDocument,
+    store,
+    validate::Bool,
+)
     isempty(doc.time_series_associations) && return nothing
     if _catalog_is_authoritative(store)
-        return _validate_time_series_associations!(sys, doc)
+        return _validate_time_series_associations!(sys, doc, validate)
     end
     # `IC.encode`, not bare `JSON.json`: each row is a oneOf wrapper, and JSON would write
     # its `value` field rather than the member the store's importer expects.
-    IS.import_time_series_association_rows!(
-        store, JSON.json(IC.encode(doc.time_series_associations)),
-    )
+    rows = doc.time_series_associations
+    encoded = validate ? IC.encode(rows) : IC._encode_unvalidated(rows)
+    IS.import_time_series_association_rows!(store, JSON.json(encoded))
     return nothing
 end
 
@@ -746,9 +755,16 @@ the bundle is corrupt and throws `IS.DataFormatError` naming the row and, for dr
 differing fields. Sidecar rows the document does not mention are tolerated (`@debug`-logged)
 — a document only ever names the owners it carries.
 """
-function _validate_time_series_associations!(sys::System, doc::PD.SystemDocument)
+function _validate_time_series_associations!(
+    sys::System,
+    doc::PD.SystemDocument,
+    validate::Bool,
+)
+    # Decoded here rather than by `IS.openapi_time_series_association_rows`, which always runs
+    # the schema check.
     store_rows = [
-        _unwrap_oneof(row) for row in IS.openapi_time_series_association_rows(sys.data)
+        _unwrap_oneof(IC.decode(PTS.TimeSeriesAssociation, row, validate)) for
+        row in JSON.parse(IS.openapi_time_series_association_json(sys.data))
     ]
     store_by_identity = Dict(_ts_row_identity(row) => row for row in store_rows)
     referenced = Set{keytype(store_by_identity)}()
