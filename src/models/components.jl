@@ -219,8 +219,11 @@ function _natural_unit_fields(c::Component)
         getter_name = Symbol("get_$name")
         isdefined(PowerSystems, getter_name) || continue
         getter = getproperty(PowerSystems, getter_name)
-        ismissing(IS.display_units_arg(getter, typeof(c))) && continue
-        value = IS.unitful_variant(getter)(c, u"NU")
+        display_units = IS.display_units_arg(getter, typeof(c))
+        ismissing(display_units) && continue
+        # A bare `u"NU"` drops a rate's time residual; keep it from the display units.
+        natural = IS.resolve_per_unit(display_units, u"NU", u"NU", u"NU")
+        value = IS.unitful_variant(getter)(c, natural)
         isnothing(value) && continue
         push!(fields, getproperty(PowerSystems, Symbol("set_$(name)!")) => value)
     end
