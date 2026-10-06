@@ -1226,7 +1226,10 @@ function generate_structs(directory, data::Vector; print_results = true)
                     ),
                 )
             end
-            include_setter = !get(param, "exclude_setter", false)
+            # No generated `set_base_power!`: moving a base under stored per-unit values
+            # changes what they mean. The hand-written one points to `rebase_component!`.
+            include_setter =
+                !get(param, "exclude_setter", false) && param["name"] != "base_power"
             # The kwarg constructor calls these, so `exclude_setter` needs a hand-written one.
             if param["converts"]
                 push!(
