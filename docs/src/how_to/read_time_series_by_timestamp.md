@@ -25,7 +25,7 @@ using Dates
 using TimeSeries
 
 sys = System(100.0)
-bus = ACBus(; input_basis = CU,
+bus = ACBus(; input_basis = u"CU",
     available = true,
     number = 1,
     name = "bus1",
@@ -54,7 +54,7 @@ gens = [
         time_limits = nothing,
         prime_mover_type = PrimeMovers.CT,
         fuel = ThermalFuels.NATURAL_GAS,
-        input_basis = CU,
+        input_basis = u"CU",
     ) for i in 1:3
 ]
 for g in gens

@@ -43,7 +43,7 @@ Most often used in AC power flow studies as a control of voltage and, active and
 - `dynamic_injector::Union{Nothing, DynamicInjection}`: (default: `nothing`) Corresponding dynamic injection model for FACTS control device
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
-- `input_basis`: (keyword constructor only, required) `CU` or `NU`, the units of bare numbers on unit-bearing fields. Tagged values (`50.0u"MW"`) keep their own units
+- `input_basis`: (keyword constructor only, required) `u"CU"` or `u"NU"`, the units of bare numbers on unit-bearing fields. Tagged values (`50.0u"MW"`) keep their own units
 """
 mutable struct FACTSControlDevice <: StaticInjection
     "Name of the component. Components of the same type (e.g., `PowerLoad`) must have unique names, but components of different types (e.g., `PowerLoad` and `ACBus`) can have the same name"
@@ -82,7 +82,7 @@ function FACTSControlDevice(name, available, bus, control_mode, voltage_setpoint
     FACTSControlDevice(name, available, bus, control_mode, voltage_setpoint, max_shunt_current, max_reactive_power, shunt_control_type, regulated_bus_number, reactive_power_required, base_power, services, dynamic_injector, ext, InfrastructureSystemsInternal(), )
 end
 
-function FACTSControlDevice(; name, available, bus, control_mode, voltage_setpoint=1.0, max_shunt_current=9999.0, max_reactive_power=9999.0, shunt_control_type=FACTSShuntControlType.STATCOM, regulated_bus_number=0, reactive_power_required=0.0, base_power=100.0, services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Union{ComponentBaseUnit, NaturalUnit}, )
+function FACTSControlDevice(; name, available, bus, control_mode, voltage_setpoint=1.0, max_shunt_current=9999.0, max_reactive_power=9999.0, shunt_control_type=FACTSShuntControlType.STATCOM, regulated_bus_number=0, reactive_power_required=0.0, base_power=100.0, services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Unitful.Units, )
     value = FACTSControlDevice(name, available, bus, control_mode, voltage_setpoint, _placeholder(max_shunt_current), _placeholder(max_reactive_power), shunt_control_type, regulated_bus_number, reactive_power_required, base_power, services, dynamic_injector, ext, internal, )
     set_max_shunt_current!(value, _tag(max_shunt_current, input_basis, Val(:mva)))
     set_max_reactive_power!(value, _tag(max_reactive_power, input_basis, Val(:mvar)))
@@ -107,7 +107,7 @@ function FACTSControlDevice(::Nothing)
         services=Device[],
         dynamic_injector=nothing,
         ext=Dict{String, Any}(),
-        input_basis=CU,
+        input_basis=u"CU",
     )
 end
 
@@ -121,22 +121,22 @@ get_bus(value::FACTSControlDevice) = value.bus
 get_control_mode(value::FACTSControlDevice) = value.control_mode
 """Get [`FACTSControlDevice`](@ref) `voltage_setpoint`."""
 get_voltage_setpoint(value::FACTSControlDevice) = value.voltage_setpoint
-"""Get [`FACTSControlDevice`](@ref) `max_shunt_current` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_max_shunt_current_unitful`](@ref)."""
+"""Get [`FACTSControlDevice`](@ref) `max_shunt_current` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_max_shunt_current_unitful`](@ref)."""
 get_max_shunt_current(value::FACTSControlDevice, units) = InfrastructureSystems._strip_units(get_value(value, Val(:max_shunt_current), Val(:mva), units))
-"""Get [`FACTSControlDevice`](@ref) `max_shunt_current` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_max_shunt_current`](@ref)."""
+"""Get [`FACTSControlDevice`](@ref) `max_shunt_current` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_max_shunt_current`](@ref)."""
 get_max_shunt_current_unitful(value::FACTSControlDevice, units) = get_value(value, Val(:max_shunt_current), Val(:mva), units)
 get_max_shunt_current(value::FACTSControlDevice) = _units_arg_required(get_max_shunt_current, value, :max_shunt_current, Val(:mva))
 get_max_shunt_current_unitful(value::FACTSControlDevice) = _units_arg_required(get_max_shunt_current_unitful, value, :max_shunt_current, Val(:mva))
-InfrastructureSystems.display_units_arg(::typeof(get_max_shunt_current), ::Type{FACTSControlDevice}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_max_shunt_current_unitful), ::Type{FACTSControlDevice}) = InfrastructureSystems.SU
-"""Get [`FACTSControlDevice`](@ref) `max_reactive_power` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_max_reactive_power_unitful`](@ref)."""
+InfrastructureSystems.display_units_arg(::typeof(get_max_shunt_current), ::Type{FACTSControlDevice}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_max_shunt_current_unitful), ::Type{FACTSControlDevice}) = u"SU"
+"""Get [`FACTSControlDevice`](@ref) `max_reactive_power` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_max_reactive_power_unitful`](@ref)."""
 get_max_reactive_power(value::FACTSControlDevice, units) = InfrastructureSystems._strip_units(get_value(value, Val(:max_reactive_power), Val(:mvar), units))
-"""Get [`FACTSControlDevice`](@ref) `max_reactive_power` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_max_reactive_power`](@ref)."""
+"""Get [`FACTSControlDevice`](@ref) `max_reactive_power` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_max_reactive_power`](@ref)."""
 get_max_reactive_power_unitful(value::FACTSControlDevice, units) = get_value(value, Val(:max_reactive_power), Val(:mvar), units)
 get_max_reactive_power(value::FACTSControlDevice) = _units_arg_required(get_max_reactive_power, value, :max_reactive_power, Val(:mvar))
 get_max_reactive_power_unitful(value::FACTSControlDevice) = _units_arg_required(get_max_reactive_power_unitful, value, :max_reactive_power, Val(:mvar))
-InfrastructureSystems.display_units_arg(::typeof(get_max_reactive_power), ::Type{FACTSControlDevice}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_max_reactive_power_unitful), ::Type{FACTSControlDevice}) = InfrastructureSystems.SU
+InfrastructureSystems.display_units_arg(::typeof(get_max_reactive_power), ::Type{FACTSControlDevice}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_max_reactive_power_unitful), ::Type{FACTSControlDevice}) = u"SU"
 """Get [`FACTSControlDevice`](@ref) `shunt_control_type`."""
 get_shunt_control_type(value::FACTSControlDevice) = value.shunt_control_type
 """Get [`FACTSControlDevice`](@ref) `regulated_bus_number`."""

@@ -557,7 +557,7 @@ end
     # it, and importing that against another sidecar binds the cost to whichever series
     # holds that id there — silently, since the identity cross-check has nothing to match.
     sys = System(100.0)
-    bus = ACBus(; input_basis = CU,
+    bus = ACBus(; input_basis = u"CU",
         number = 1, name = "b", available = true, bustype = ACBusTypes.REF,
         angle = 0.0, magnitude = 1.0, voltage_limits = (min = 0.9, max = 1.1),
         base_voltage = 230.0,
@@ -571,7 +571,7 @@ end
         ramp_limits = nothing, operation_cost = ThermalGenerationCost(nothing),
         base_power = 100.0, time_limits = nothing,
         prime_mover_type = PrimeMovers.OT, fuel = ThermalFuels.OTHER,
-        input_basis = CU,
+        input_basis = u"CU",
     )
     add_component!(sys, gen)
 
@@ -579,7 +579,7 @@ end
         name = "S", available = true, bus = bus, active_power = 0.0,
         reactive_power = 0.0, R_th = 0.0, X_th = 1.0, internal_voltage = 1.0,
         internal_angle = 0.0,
-        input_basis = CU,
+        input_basis = u"CU",
     )
     add_component!(sys, src)
 

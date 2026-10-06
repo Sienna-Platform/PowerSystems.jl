@@ -31,7 +31,7 @@ Flow exchanged between Areas. This Interchange is agnostic to the lines connecti
 - `services::Vector{Service}`: (default: `Service[]`) Service interfaces that this device contributes to
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
-- `input_basis`: (keyword constructor only, required) `CU` or `NU`, the units of bare numbers on unit-bearing fields. Tagged values (`50.0u"MW"`) keep their own units
+- `input_basis`: (keyword constructor only, required) `u"CU"` or `u"NU"`, the units of bare numbers on unit-bearing fields. Tagged values (`50.0u"MW"`) keep their own units
 """
 mutable struct AreaInterchange <: Branch
     "Name of the component. Components of the same type (e.g., `PowerLoad`) must have unique names, but components of different types (e.g., `PowerLoad` and `ACBus`) can have the same name"
@@ -60,7 +60,7 @@ function AreaInterchange(name, available, active_power_flow, from_area, to_area,
     AreaInterchange(name, available, active_power_flow, from_area, to_area, flow_limits, base_power, services, ext, InfrastructureSystemsInternal(), )
 end
 
-function AreaInterchange(; name, available, active_power_flow, from_area, to_area, flow_limits, base_power=100.0, services=Service[], ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Union{ComponentBaseUnit, NaturalUnit}, )
+function AreaInterchange(; name, available, active_power_flow, from_area, to_area, flow_limits, base_power=100.0, services=Service[], ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Unitful.Units, )
     value = AreaInterchange(name, available, _placeholder(active_power_flow), from_area, to_area, _placeholder(flow_limits), base_power, services, ext, internal, )
     set_active_power_flow!(value, _tag(active_power_flow, input_basis, Val(:mw)))
     set_flow_limits!(value, _tag(flow_limits, input_basis, Val(:mw)))
@@ -80,7 +80,7 @@ function AreaInterchange(::Nothing)
         base_power=100.0,
         services=Service[],
         ext=Dict{String, Any}(),
-        input_basis=CU,
+        input_basis=u"CU",
     )
 end
 
@@ -88,26 +88,26 @@ end
 get_name(value::AreaInterchange) = value.name
 """Get [`AreaInterchange`](@ref) `available`."""
 get_available(value::AreaInterchange) = value.available
-"""Get [`AreaInterchange`](@ref) `active_power_flow` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_active_power_flow_unitful`](@ref)."""
+"""Get [`AreaInterchange`](@ref) `active_power_flow` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_active_power_flow_unitful`](@ref)."""
 get_active_power_flow(value::AreaInterchange, units) = InfrastructureSystems._strip_units(get_value(value, Val(:active_power_flow), Val(:mw), units))
-"""Get [`AreaInterchange`](@ref) `active_power_flow` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_active_power_flow`](@ref)."""
+"""Get [`AreaInterchange`](@ref) `active_power_flow` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_active_power_flow`](@ref)."""
 get_active_power_flow_unitful(value::AreaInterchange, units) = get_value(value, Val(:active_power_flow), Val(:mw), units)
 get_active_power_flow(value::AreaInterchange) = _units_arg_required(get_active_power_flow, value, :active_power_flow, Val(:mw))
 get_active_power_flow_unitful(value::AreaInterchange) = _units_arg_required(get_active_power_flow_unitful, value, :active_power_flow, Val(:mw))
-InfrastructureSystems.display_units_arg(::typeof(get_active_power_flow), ::Type{AreaInterchange}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_active_power_flow_unitful), ::Type{AreaInterchange}) = InfrastructureSystems.SU
+InfrastructureSystems.display_units_arg(::typeof(get_active_power_flow), ::Type{AreaInterchange}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_active_power_flow_unitful), ::Type{AreaInterchange}) = u"SU"
 """Get [`AreaInterchange`](@ref) `from_area`."""
 get_from_area(value::AreaInterchange) = value.from_area
 """Get [`AreaInterchange`](@ref) `to_area`."""
 get_to_area(value::AreaInterchange) = value.to_area
-"""Get [`AreaInterchange`](@ref) `flow_limits` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_flow_limits_unitful`](@ref)."""
+"""Get [`AreaInterchange`](@ref) `flow_limits` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_flow_limits_unitful`](@ref)."""
 get_flow_limits(value::AreaInterchange, units) = InfrastructureSystems._strip_units(get_value(value, Val(:flow_limits), Val(:mw), units))
-"""Get [`AreaInterchange`](@ref) `flow_limits` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_flow_limits`](@ref)."""
+"""Get [`AreaInterchange`](@ref) `flow_limits` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_flow_limits`](@ref)."""
 get_flow_limits_unitful(value::AreaInterchange, units) = get_value(value, Val(:flow_limits), Val(:mw), units)
 get_flow_limits(value::AreaInterchange) = _units_arg_required(get_flow_limits, value, :flow_limits, Val(:mw))
 get_flow_limits_unitful(value::AreaInterchange) = _units_arg_required(get_flow_limits_unitful, value, :flow_limits, Val(:mw))
-InfrastructureSystems.display_units_arg(::typeof(get_flow_limits), ::Type{AreaInterchange}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_flow_limits_unitful), ::Type{AreaInterchange}) = InfrastructureSystems.SU
+InfrastructureSystems.display_units_arg(::typeof(get_flow_limits), ::Type{AreaInterchange}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_flow_limits_unitful), ::Type{AreaInterchange}) = u"SU"
 
 _get_base_power(value::AreaInterchange) = value.base_power
 """Get [`AreaInterchange`](@ref) `services`."""
@@ -145,7 +145,7 @@ function from_openapi(po::PO.AreaInterchange, refs::OpenAPIRefs, ::ComponentBase
         to_area = resolve_ref(refs, po.to_area, Area),
         flow_limits = _fromto_tofrom_from_po(po.flow_limits),
         base_power = _or_default(po.base_power, 100.0),
-        input_basis = CU,
+        input_basis = u"CU",
     )
 end
 
@@ -158,7 +158,7 @@ function from_openapi(po::PO.AreaInterchange, refs::OpenAPIRefs, ::NaturalUnit)
         to_area = resolve_ref(refs, po.to_area, Area),
         flow_limits = _fromto_tofrom_from_po(po.flow_limits, (/), po.base_power),
         base_power = _or_default(po.base_power, 100.0),
-        input_basis = CU,
+        input_basis = u"CU",
     )
 end
 
@@ -171,10 +171,10 @@ function to_openapi(value::AreaInterchange, refs::OpenAPIRefs, ::ComponentBaseUn
         id = component_id(refs, value),
         name = get_name(value),
         available = get_available(value),
-        active_power_flow = get_active_power_flow(value, SU),
+        active_power_flow = get_active_power_flow(value, u"SU"),
         from_area = component_id(refs, get_from_area(value)),
         to_area = component_id(refs, get_to_area(value)),
-        flow_limits = _fromto_tofrom_po(get_flow_limits(value, SU)),
+        flow_limits = _fromto_tofrom_po(get_flow_limits(value, u"SU")),
         base_power = get_base_power(refs),
         power_units = _power_units_string(CU),
     )
@@ -185,10 +185,10 @@ function to_openapi(value::AreaInterchange, refs::OpenAPIRefs, ::NaturalUnit)
         id = component_id(refs, value),
         name = get_name(value),
         available = get_available(value),
-        active_power_flow = get_active_power_flow(value, SU) * get_base_power(refs),
+        active_power_flow = get_active_power_flow(value, u"SU") * get_base_power(refs),
         from_area = component_id(refs, get_from_area(value)),
         to_area = component_id(refs, get_to_area(value)),
-        flow_limits = _fromto_tofrom_po_scaled(get_flow_limits(value, SU), get_base_power(refs)),
+        flow_limits = _fromto_tofrom_po_scaled(get_flow_limits(value, u"SU"), get_base_power(refs)),
         base_power = get_base_power(refs),
         power_units = _power_units_string(NU),
     )

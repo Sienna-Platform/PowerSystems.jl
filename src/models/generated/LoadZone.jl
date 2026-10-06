@@ -25,7 +25,7 @@ The load zone can be specified when defining each [`ACBus`](@ref) or [`DCBus`](@
 - `base_power::Float64`: (default: `100.0`) System base power for per-unitization of this component's per-unit fields, recorded per component in lieu of a system-level table (MVA), validation range: `(0.0001, nothing)`
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
-- `input_basis`: (keyword constructor only, required) `CU` or `NU`, the units of bare numbers on unit-bearing fields. Tagged values (`50.0u"MW"`) keep their own units
+- `input_basis`: (keyword constructor only, required) `u"CU"` or `u"NU"`, the units of bare numbers on unit-bearing fields. Tagged values (`50.0u"MW"`) keep their own units
 """
 mutable struct LoadZone <: AggregationTopology
     "Name of the component. Components of the same type (e.g., `PowerLoad`) must have unique names, but components of different types (e.g., `PowerLoad` and `ACBus`) can have the same name"
@@ -46,7 +46,7 @@ function LoadZone(name, peak_active_power, peak_reactive_power, base_power=100.0
     LoadZone(name, peak_active_power, peak_reactive_power, base_power, ext, InfrastructureSystemsInternal(), )
 end
 
-function LoadZone(; name, peak_active_power, peak_reactive_power, base_power=100.0, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Union{ComponentBaseUnit, NaturalUnit}, )
+function LoadZone(; name, peak_active_power, peak_reactive_power, base_power=100.0, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Unitful.Units, )
     value = LoadZone(name, _placeholder(peak_active_power), _placeholder(peak_reactive_power), base_power, ext, internal, )
     set_peak_active_power!(value, _tag(peak_active_power, input_basis, Val(:mw)))
     set_peak_reactive_power!(value, _tag(peak_reactive_power, input_basis, Val(:mvar)))
@@ -62,28 +62,28 @@ function LoadZone(::Nothing)
         peak_reactive_power=0.0,
         base_power=100.0,
         ext=Dict{String, Any}(),
-        input_basis=CU,
+        input_basis=u"CU",
     )
 end
 
 """Get [`LoadZone`](@ref) `name`."""
 get_name(value::LoadZone) = value.name
-"""Get [`LoadZone`](@ref) `peak_active_power` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_peak_active_power_unitful`](@ref)."""
+"""Get [`LoadZone`](@ref) `peak_active_power` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_peak_active_power_unitful`](@ref)."""
 get_peak_active_power(value::LoadZone, units) = InfrastructureSystems._strip_units(get_value(value, Val(:peak_active_power), Val(:mw), units))
-"""Get [`LoadZone`](@ref) `peak_active_power` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_peak_active_power`](@ref)."""
+"""Get [`LoadZone`](@ref) `peak_active_power` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_peak_active_power`](@ref)."""
 get_peak_active_power_unitful(value::LoadZone, units) = get_value(value, Val(:peak_active_power), Val(:mw), units)
 get_peak_active_power(value::LoadZone) = _units_arg_required(get_peak_active_power, value, :peak_active_power, Val(:mw))
 get_peak_active_power_unitful(value::LoadZone) = _units_arg_required(get_peak_active_power_unitful, value, :peak_active_power, Val(:mw))
-InfrastructureSystems.display_units_arg(::typeof(get_peak_active_power), ::Type{LoadZone}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_peak_active_power_unitful), ::Type{LoadZone}) = InfrastructureSystems.SU
-"""Get [`LoadZone`](@ref) `peak_reactive_power` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_peak_reactive_power_unitful`](@ref)."""
+InfrastructureSystems.display_units_arg(::typeof(get_peak_active_power), ::Type{LoadZone}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_peak_active_power_unitful), ::Type{LoadZone}) = u"SU"
+"""Get [`LoadZone`](@ref) `peak_reactive_power` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_peak_reactive_power_unitful`](@ref)."""
 get_peak_reactive_power(value::LoadZone, units) = InfrastructureSystems._strip_units(get_value(value, Val(:peak_reactive_power), Val(:mvar), units))
-"""Get [`LoadZone`](@ref) `peak_reactive_power` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_peak_reactive_power`](@ref)."""
+"""Get [`LoadZone`](@ref) `peak_reactive_power` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_peak_reactive_power`](@ref)."""
 get_peak_reactive_power_unitful(value::LoadZone, units) = get_value(value, Val(:peak_reactive_power), Val(:mvar), units)
 get_peak_reactive_power(value::LoadZone) = _units_arg_required(get_peak_reactive_power, value, :peak_reactive_power, Val(:mvar))
 get_peak_reactive_power_unitful(value::LoadZone) = _units_arg_required(get_peak_reactive_power_unitful, value, :peak_reactive_power, Val(:mvar))
-InfrastructureSystems.display_units_arg(::typeof(get_peak_reactive_power), ::Type{LoadZone}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_peak_reactive_power_unitful), ::Type{LoadZone}) = InfrastructureSystems.SU
+InfrastructureSystems.display_units_arg(::typeof(get_peak_reactive_power), ::Type{LoadZone}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_peak_reactive_power_unitful), ::Type{LoadZone}) = u"SU"
 
 _get_base_power(value::LoadZone) = value.base_power
 """Get [`LoadZone`](@ref) `ext`."""

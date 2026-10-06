@@ -1,14 +1,12 @@
 import InfrastructureSystems
 import Unitful
-# PSY no longer exports `ustrip`; Unitful's generic handles both quantity kinds
-# (PSY extends it for `RelativeQuantity`).
+# PSY no longer exports `ustrip`; Unitful's strips every quantity, per-unit included.
 using Unitful: ustrip
 
 # Strip unit wrappers so accessor return values can be compared against the
 # raw struct field type. Compound values (NamedTuple of units) are unwrapped
 # element-wise.
 _unwrap_units(x) = x
-_unwrap_units(x::RelativeQuantity) = ustrip(x)
 _unwrap_units(x::Unitful.Quantity) = Unitful.ustrip(x)
 _unwrap_units(x::NamedTuple) = map(_unwrap_units, x)
 
@@ -30,7 +28,7 @@ struct NonexistentComponent <: StaticInjection end
 so unit-conversion tests don't depend on PSB-built fixtures."""
 function _sys_with_thermal(; system_base = 100.0, component_base = 250.0)
     sys = System(system_base)
-    bus = ACBus(; input_basis = CU,
+    bus = ACBus(; input_basis = u"CU",
         number = 1, name = "b1", available = true,
         bustype = ACBusTypes.REF, angle = 0.0, magnitude = 1.0,
         voltage_limits = (min = 0.9, max = 1.1), base_voltage = 138.0,
@@ -44,7 +42,7 @@ function _sys_with_thermal(; system_base = 100.0, component_base = 250.0)
         ramp_limits = nothing,
         operation_cost = ThermalGenerationCost(nothing),
         base_power = component_base,
-        input_basis = CU,
+        input_basis = u"CU",
     )
     add_component!(sys, gen)
     return sys, gen
@@ -147,17 +145,16 @@ function test_accessors(component)
         end
 
         # Unit-aware getters are tagged via `display_units_arg`. For unattached
-        # test components, call with `CU` (component base) so the SU conversion
-        # path — which needs system attachment — is skipped. Getters tagged `NU`
-        # (e.g. `get_base_power`, which is only meaningful in natural units and
-        # rejects `CU`/`SU`) are called with their own `NU` tag instead.
+        # test components, swap the tag's per-unit base for `u"CU"` (keeping a rate's
+        # time) so the SU path, which needs system attachment, is skipped. Getters
+        # tagged `u"NU"` (e.g. `get_base_power`, which rejects per-unit bases) keep it.
         units_arg = IS.display_units_arg(func, ps_type)
         val = if ismissing(units_arg)
             func(component)
-        elseif units_arg == NU
-            func(component, NU)
+        elseif units_arg == u"NU"
+            func(component, u"NU")
         else
-            func(component, CU)
+            func(component, PSY._with_generic(units_arg, u"CU"))
         end
         # Getters now wrap values (e.g. `0.5 SU` instead of raw `0.5`), so
         # compare the unwrapped value's type to `field_type`.
@@ -465,11 +462,11 @@ end
 named `western_hub` over both. Returns `(sys, b1, b2, hub)`."""
 function _market_hub_fixture()
     sys = System(100.0)
-    b1 = ACBus(; input_basis = CU, number = 1, name = "b1", available = true,
+    b1 = ACBus(; input_basis = u"CU", number = 1, name = "b1", available = true,
         bustype = ACBusTypes.REF,
         angle = 0.0, magnitude = 1.0, voltage_limits = (min = 0.9, max = 1.1),
         base_voltage = 230.0)
-    b2 = ACBus(; input_basis = CU, number = 2, name = "b2", available = true,
+    b2 = ACBus(; input_basis = u"CU", number = 2, name = "b2", available = true,
         bustype = ACBusTypes.PV,
         angle = 0.0, magnitude = 1.0, voltage_limits = (min = 0.9, max = 1.1),
         base_voltage = 230.0)

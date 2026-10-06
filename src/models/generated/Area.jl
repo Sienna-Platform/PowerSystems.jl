@@ -27,7 +27,7 @@ The `Area` can be specified when defining each [`ACBus`](@ref) or [`DCBus`](@ref
 - `base_power::Float64`: (default: `100.0`) System base power for per-unitization of this component's per-unit fields, recorded per component in lieu of a system-level table (MVA), validation range: `(0.0001, nothing)`
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
-- `input_basis`: (keyword constructor only, required) `CU` or `NU`, the units of bare numbers on unit-bearing fields. Tagged values (`50.0u"MW"`) keep their own units
+- `input_basis`: (keyword constructor only, required) `u"CU"` or `u"NU"`, the units of bare numbers on unit-bearing fields. Tagged values (`50.0u"MW"`) keep their own units
 """
 mutable struct Area <: AggregationTopology
     "Name of the component. Components of the same type (e.g., `PowerLoad`) must have unique names, but components of different types (e.g., `PowerLoad` and `ACBus`) can have the same name"
@@ -50,7 +50,7 @@ function Area(name, peak_active_power=0.0, peak_reactive_power=0.0, load_respons
     Area(name, peak_active_power, peak_reactive_power, load_response, base_power, ext, InfrastructureSystemsInternal(), )
 end
 
-function Area(; name, peak_active_power=0.0, peak_reactive_power=0.0, load_response=0.0, base_power=100.0, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Union{ComponentBaseUnit, NaturalUnit}, )
+function Area(; name, peak_active_power=0.0, peak_reactive_power=0.0, load_response=0.0, base_power=100.0, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Unitful.Units, )
     value = Area(name, _placeholder(peak_active_power), _placeholder(peak_reactive_power), load_response, base_power, ext, internal, )
     set_peak_active_power!(value, _tag(peak_active_power, input_basis, Val(:mw)))
     set_peak_reactive_power!(value, _tag(peak_reactive_power, input_basis, Val(:mvar)))
@@ -67,28 +67,28 @@ function Area(::Nothing)
         load_response=0.0,
         base_power=100.0,
         ext=Dict{String, Any}(),
-        input_basis=CU,
+        input_basis=u"CU",
     )
 end
 
 """Get [`Area`](@ref) `name`."""
 get_name(value::Area) = value.name
-"""Get [`Area`](@ref) `peak_active_power` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_peak_active_power_unitful`](@ref)."""
+"""Get [`Area`](@ref) `peak_active_power` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_peak_active_power_unitful`](@ref)."""
 get_peak_active_power(value::Area, units) = InfrastructureSystems._strip_units(get_value(value, Val(:peak_active_power), Val(:mw), units))
-"""Get [`Area`](@ref) `peak_active_power` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_peak_active_power`](@ref)."""
+"""Get [`Area`](@ref) `peak_active_power` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_peak_active_power`](@ref)."""
 get_peak_active_power_unitful(value::Area, units) = get_value(value, Val(:peak_active_power), Val(:mw), units)
 get_peak_active_power(value::Area) = _units_arg_required(get_peak_active_power, value, :peak_active_power, Val(:mw))
 get_peak_active_power_unitful(value::Area) = _units_arg_required(get_peak_active_power_unitful, value, :peak_active_power, Val(:mw))
-InfrastructureSystems.display_units_arg(::typeof(get_peak_active_power), ::Type{Area}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_peak_active_power_unitful), ::Type{Area}) = InfrastructureSystems.SU
-"""Get [`Area`](@ref) `peak_reactive_power` as a bare number in the requested `units` (e.g. `SU`, `CU`; domain-provided units such as `u"MW"` are also accepted when the owning domain package has registered a `_strip_units` method for the returned quantity type). Returns a bare number only when such a method is registered; otherwise returns the quantity wrapper. For the unit-bearing value see [`get_peak_reactive_power_unitful`](@ref)."""
+InfrastructureSystems.display_units_arg(::typeof(get_peak_active_power), ::Type{Area}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_peak_active_power_unitful), ::Type{Area}) = u"SU"
+"""Get [`Area`](@ref) `peak_reactive_power` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_peak_reactive_power_unitful`](@ref)."""
 get_peak_reactive_power(value::Area, units) = InfrastructureSystems._strip_units(get_value(value, Val(:peak_reactive_power), Val(:mvar), units))
-"""Get [`Area`](@ref) `peak_reactive_power` as a unit-bearing quantity in the requested `units` (e.g. `SU`, `CU`, `u"MW"`). For a bare number see [`get_peak_reactive_power`](@ref)."""
+"""Get [`Area`](@ref) `peak_reactive_power` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_peak_reactive_power`](@ref)."""
 get_peak_reactive_power_unitful(value::Area, units) = get_value(value, Val(:peak_reactive_power), Val(:mvar), units)
 get_peak_reactive_power(value::Area) = _units_arg_required(get_peak_reactive_power, value, :peak_reactive_power, Val(:mvar))
 get_peak_reactive_power_unitful(value::Area) = _units_arg_required(get_peak_reactive_power_unitful, value, :peak_reactive_power, Val(:mvar))
-InfrastructureSystems.display_units_arg(::typeof(get_peak_reactive_power), ::Type{Area}) = InfrastructureSystems.SU
-InfrastructureSystems.display_units_arg(::typeof(get_peak_reactive_power_unitful), ::Type{Area}) = InfrastructureSystems.SU
+InfrastructureSystems.display_units_arg(::typeof(get_peak_reactive_power), ::Type{Area}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_peak_reactive_power_unitful), ::Type{Area}) = u"SU"
 """Get [`Area`](@ref) `load_response`."""
 get_load_response(value::Area) = value.load_response
 

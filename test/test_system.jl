@@ -230,15 +230,15 @@ end
     @test get_active_power_unitful(gen, u"MW") isa Unitful.Quantity
     @test Unitful.ustrip(get_active_power_unitful(gen, u"MW")) ≈ raw_active * component_base
 
-    P_du = get_active_power(gen, CU)
+    P_du = get_active_power(gen, u"CU")
     @test P_du isa Float64
     @test P_du ≈ raw_active
-    @test get_active_power_unitful(gen, CU) isa RelativeQuantity
+    @test get_active_power_unitful(gen, u"CU") isa Unitful.Quantity
 
-    P_su = get_active_power(gen, SU)
+    P_su = get_active_power(gen, u"SU")
     @test P_su isa Float64
     @test P_su ≈ raw_active * component_base / system_base
-    @test get_active_power_unitful(gen, SU) isa RelativeQuantity
+    @test get_active_power_unitful(gen, u"SU") isa Unitful.Quantity
 end
 
 @testset "Test explicit units setters" begin
@@ -248,7 +248,7 @@ end
     set_active_power!(gen, 50.0 * u"MW")
     @test gen.active_power ≈ 50.0 / component_base
 
-    set_active_power!(gen, 0.6 * CU)
+    set_active_power!(gen, 0.6 * u"CU")
     @test gen.active_power ≈ 0.6
 end
 
@@ -812,7 +812,7 @@ end
     # Two independent builds mint their own UUIDs, so only field-by-field comparison is
     # meaningful here, not whole-system equality.
 
-    set_active_power!(gen1, (get_active_power(gen1, SU) + 0.1) * SU)
+    set_active_power!(gen1, (get_active_power(gen1, u"SU") + 0.1) * u"SU")
     @test(
         @test_logs(
             (:error, r"not match"),

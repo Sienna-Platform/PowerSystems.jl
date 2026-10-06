@@ -4,7 +4,7 @@
         name = "area1",
         peak_active_power = 0.0,
         peak_reactive_power = 0.0,
-        input_basis = CU,
+        input_basis = u"CU",
     )
     refs[1] = area
     @test refs[1] === area
@@ -19,13 +19,13 @@ end
         name = "a1",
         peak_active_power = 0.0,
         peak_reactive_power = 0.0,
-        input_basis = CU,
+        input_basis = u"CU",
     )
     area2 = Area(;
         name = "a2",
         peak_active_power = 0.0,
         peak_reactive_power = 0.0,
-        input_basis = CU,
+        input_basis = u"CU",
     )
     refs[1] = area1
     @test_throws ErrorException (refs[1] = area2)
@@ -38,13 +38,13 @@ end
         name = "a1",
         peak_active_power = 0.0,
         peak_reactive_power = 0.0,
-        input_basis = CU,
+        input_basis = u"CU",
     )
     other = Area(;
         name = "a2",
         peak_active_power = 0.0,
         peak_reactive_power = 0.0,
-        input_basis = CU,
+        input_basis = u"CU",
     )
     refs[7] = area
     @test PSY.component_id(refs, area) == 7

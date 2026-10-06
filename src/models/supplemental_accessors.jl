@@ -199,8 +199,8 @@ end
 
 """
 Get the [`TwoTerminalLCCLine`](@ref) `transfer_setpoint` in the specified `units`. In power mode
-(`power_mode = true`) it is converted from the component base like any power field (`SU`, `CU`,
-`NU` for MW); in current mode it is Amperes and is returned unchanged.
+(`power_mode = true`) it is converted from the component base like any power field (`u"SU"`, `u"CU"`,
+`u"NU"` for MW); in current mode it is Amperes and is returned unchanged.
 """
 function get_transfer_setpoint(lcc::TwoTerminalLCCLine, units::UnitArg)
     if get_power_mode(lcc)

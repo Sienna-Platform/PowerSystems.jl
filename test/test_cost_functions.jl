@@ -174,7 +174,7 @@ function build_iec_sys()
         internal_voltage = 1.0,
         internal_angle = 0.0,
         base_power = 100.0,
-        input_basis = CU,
+        input_basis = u"CU",
     )
 
     source2 = Source(;
@@ -190,7 +190,7 @@ function build_iec_sys()
         internal_voltage = 1.0,
         internal_angle = 0.0,
         base_power = 100.0,
-        input_basis = CU,
+        input_basis = u"CU",
     )
 
     import_curve = make_import_curve(
