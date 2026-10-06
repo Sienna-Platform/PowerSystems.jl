@@ -931,7 +931,9 @@ function to_openapi(lcc::TwoTerminalLCCLine, refs::OpenAPIRefs, ::ComponentBaseU
         active_power_flow = get_active_power_flow(lcc, u"SU"),
         parameter_units = PO.ImpedanceUnitBasis("NATURAL_UNITS"),
         r = _lcc_pu_to_ohm(get_r(lcc), dcv, base_power),
-        power_transfer_setpoint = _optional_to_wire(get_power_transfer_setpoint(lcc, u"SU")),
+        power_transfer_setpoint = _optional_to_wire(
+            get_power_transfer_setpoint(lcc, u"SU"),
+        ),
         current_transfer_setpoint = _optional_to_wire(get_current_transfer_setpoint(lcc)),
         dc_voltage_units = PO.VoltageUnitBasis("NATURAL_UNITS"),
         scheduled_dc_voltage = dcv,
