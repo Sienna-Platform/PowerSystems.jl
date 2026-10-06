@@ -787,18 +787,18 @@ end
 
     # NU -> CU: x_cu = x_mw / 50, so the slope picks up the base and the intercept
     # does not (an absolute USD/h quantity is untouched by a change of power base).
-    cu = get_variable_operation_cost(gen, CU)
+    cu = get_variable_operation_cost(gen, u"CU")
     @test get_power_units(cu) == CU
     fd = get_function_data(get_value_curve(cu))
     @test get_proportional_term(fd) ≈ 10.0 * 50.0
     @test get_constant_term(fd) ≈ 100.0
 
     # The same cost at the same physical output, whichever basis it is read in.
-    nu_fd = get_function_data(get_value_curve(get_variable_operation_cost(gen, NU)))
+    nu_fd = get_function_data(get_value_curve(get_variable_operation_cost(gen, u"NU")))
     @test get_proportional_term(nu_fd) ≈ 10.0
 
     # CU -> SU rides the base-power ratio only.
-    su = get_variable_operation_cost(gen, SU)
+    su = get_variable_operation_cost(gen, u"SU")
     su_fd = get_function_data(get_value_curve(su))
     @test get_power_units(su) == SU
     @test get_proportional_term(su_fd) ≈ 10.0 * 100.0
@@ -810,7 +810,7 @@ end
     # slope is base-invariant while the absolute intercept rebases.
     loss = LossCurve(LinearCurve(0.05, 2.0), NU)
     loss_fd = get_function_data(
-        get_value_curve(convert_power_units(gen, loss, CU)),
+        get_value_curve(convert_power_units(gen, loss, u"CU")),
     )
     @test get_proportional_term(loss_fd) ≈ 0.05
     @test get_constant_term(loss_fd) ≈ 2.0 / 50.0
@@ -824,10 +824,11 @@ end
     set_charge_variable_cost!(cost, CostCurve(LinearCurve(4.0, 40.0), NU))
     set_discharge_variable_cost!(cost, CostCurve(LinearCurve(6.0, 60.0), NU))
 
-    charge = get_function_data(get_value_curve(get_charge_variable_cost(store, CU)))
+    charge = get_function_data(get_value_curve(get_charge_variable_cost(store, u"CU")))
     @test get_proportional_term(charge) ≈ 4.0 * 50.0
     @test get_constant_term(charge) ≈ 40.0
-    discharge = get_function_data(get_value_curve(get_discharge_variable_cost(store, CU)))
+    discharge =
+        get_function_data(get_value_curve(get_discharge_variable_cost(store, u"CU")))
     @test get_proportional_term(discharge) ≈ 6.0 * 50.0
 
     # Loss curve on the component itself, not under an operation_cost. Its y-axis is
@@ -835,7 +836,7 @@ end
     conv = InterconnectingConverter(nothing)
     rebase_component!(conv, 200.0)
     set_loss_function!(conv, LossCurve(LinearCurve(0.02, 3.0), NU))
-    loss = get_function_data(get_value_curve(get_loss_function(conv, CU)))
+    loss = get_function_data(get_value_curve(get_loss_function(conv, u"CU")))
     @test get_proportional_term(loss) ≈ 0.02
     @test get_constant_term(loss) ≈ 3.0 / 200.0
 
@@ -843,7 +844,7 @@ end
     ren = RenewableDispatch(nothing)
     rebase_component!(ren, 25.0)
     set_curtailment_cost!(get_operation_cost(ren), CostCurve(LinearCurve(8.0, 0.0), NU))
-    curt = get_function_data(get_value_curve(get_curtailment_cost(ren, CU)))
+    curt = get_function_data(get_value_curve(get_curtailment_cost(ren, u"CU")))
     @test get_proportional_term(curt) ≈ 8.0 * 25.0
 end
 
@@ -854,5 +855,9 @@ end
     set_variable_operation_cost!(get_operation_cost(gen), curve)
     # Returned as-is, not reconstructed: a time-series-backed curve cannot be scaled at
     # all, so the identity case must not reach `scale_x`.
-    @test get_variable_operation_cost(gen, NU) === curve
+    @test get_variable_operation_cost(gen, u"NU") === curve
+    # `u"MW"` is what `u"NU"` resolves to; anything else is not a basis a curve carries.
+    @test get_variable_operation_cost(gen, u"MW") === curve
+    @test_throws ArgumentError get_variable_operation_cost(gen, u"kW")
+    @test_throws ArgumentError get_variable_operation_cost(gen, u"CU/hr")
 end

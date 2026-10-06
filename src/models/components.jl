@@ -582,11 +582,25 @@ _x_axis_base_value(_, ::NaturalUnit) = 1.0
 _x_axis_base_value(c, ::ComponentBaseUnit) = base_value(c, ACTIVE_POWER)
 _x_axis_base_value(c, ::SystemBaseUnit) = system_base_value(c, ACTIVE_POWER)
 
-"""
-    convert_power_units(component, curve, to) -> curve
+# A curve's basis is a marker (its `U`), but its getters take Unitful units like every
+# other unit-aware getter. Resolve them on the x-axis category, accepting only the three
+# bases a curve can carry: `u"CU"`, `u"SU"`, and `u"NU"` (or `u"MW"`, which it resolves to).
+_curve_basis(units::Unitful.Units) = _curve_basis(_conversion_plan(ACTIVE_POWER, units)...)
+_curve_basis(::Val{:component}, _) = CU
+_curve_basis(::Val{:system}, _) = SU
+_curve_basis(::Val{:natural}, t) = t == u"MW" ? NU : _curve_basis_error(t)
+_curve_basis(::Val{:mismatch}, t) = _curve_basis_error(t)
+_curve_basis_error(t) = throw(
+    ArgumentError(
+        "a curve can only be rebased to u\"CU\", u\"SU\", or u\"NU\" (MW); got $t",
+    ),
+)
 
-Rebase `curve`'s power axes onto the `to` unit system, resolving the base powers from
-`component`. The `to`-basis copy is returned; `curve` is unchanged.
+"""
+    convert_power_units(component, curve, to::Unitful.Units) -> curve
+
+Rebase `curve`'s power axes onto `to` (`u"CU"`, `u"SU"`, or `u"NU"`), resolving the base
+powers from `component`. The `to`-basis copy is returned; `curve` is unchanged.
 
 Works for any curve family: a [`CostCurve`](@ref) or `FuelCurve` has a currency or fuel
 y-axis and only its x-axis moves, while a `LossCurve`'s y-axis is power and moves with it.
@@ -595,8 +609,9 @@ That difference lives in `y_axis_power_dimension` downstream, not here.
 function IS.convert_power_units(
     c::Component,
     curve::IS.ValueCurveWithUnits,
-    to::IS.AbstractUnitSystem,
+    units::Unitful.Units,
 )
+    to = _curve_basis(units)
     from = IS.get_power_units(curve)
     # Asking for the basis the curve is already in changes nothing, and must not be
     # routed through `scale_x`: that rejects a time-series-backed curve outright, so
@@ -608,7 +623,7 @@ function IS.convert_power_units(
 end
 
 # The curve-bearing fields, by where the curve is reached from. Each name gets a
-# `get_<name>(component, to)` method returning the curve rebased onto `to`; the
+# `get_<name>(component, units)` method returning the curve rebased onto `units`; the
 # no-units getters are untouched. Listed rather than discovered so that adding a curve
 # field is a deliberate edit here, and so the names are greppable.
 
@@ -624,8 +639,8 @@ for field in (
     :export_offer_curves,         # ImportExportCost, ImportExportTimeSeriesCost
 )
     getter = Symbol(:get_, field)
-    @eval $getter(c::Component, to::IS.AbstractUnitSystem) =
-        IS.convert_power_units(c, $getter(get_operation_cost(c)), to)
+    @eval $getter(c::Component, units::Unitful.Units) =
+        IS.convert_power_units(c, $getter(get_operation_cost(c)), units)
 end
 
 # Loss curves are fields of the component itself, not of an `operation_cost`.
@@ -636,8 +651,8 @@ for field in (
     :converter_loss_to,           # TwoTerminalVSCLine
 )
     getter = Symbol(:get_, field)
-    @eval $getter(c::Component, to::IS.AbstractUnitSystem) =
-        IS.convert_power_units(c, $getter(c), to)
+    @eval $getter(c::Component, units::Unitful.Units) =
+        IS.convert_power_units(c, $getter(c), units)
 end
 
 #######################################################
