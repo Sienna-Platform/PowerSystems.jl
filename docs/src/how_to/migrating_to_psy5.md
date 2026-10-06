@@ -36,7 +36,6 @@ New parameters:
 Affected Types are:
 
   - [`Line`](@ref)
-  - [`MonitoredLine`](@ref)
   - `PhaseShiftingTransformer`
   - `TapTransformer`
   - `Transformer2W`

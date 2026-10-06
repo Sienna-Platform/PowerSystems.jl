@@ -28,6 +28,7 @@ struct NonexistentComponent <: StaticInjection end
 _circuit_with_base(base_power::Float64; base_voltage_primary = nothing) =
     TransformerCircuit(;
         available = false, arc = Arc(ACBus(nothing), ACBus(nothing)),
+        rating = 0.0,
         base_power = base_power, base_voltage_primary = base_voltage_primary,
         input_basis = u"CU",
     )

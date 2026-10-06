@@ -24,10 +24,6 @@ const DOCUMENT_PLAN = [
     (po_type = PO.Arc, psy_type = Arc, key = "Arc", addable = true),
     (po_type = PO.Line, psy_type = Line, key = "Line", addable = true),
     (
-        po_type = PO.MonitoredLine, psy_type = MonitoredLine, key = "MonitoredLine",
-        addable = true,
-    ),
-    (
         po_type = PO.GenericArcImpedance, psy_type = GenericArcImpedance,
         key = "GenericArcImpedance", addable = true,
     ),

@@ -21,6 +21,7 @@ This file is auto-generated. Do not edit.
         g::FromTo
         services::Vector{Service}
         base_power::Float64
+        operational_flow_limit::Union{Nothing, OperationalFlowLimit}
         ext::Dict{String, Any}
         internal::InfrastructureSystemsInternal
     end
@@ -43,6 +44,7 @@ An AC transmission line
 - `g::FromTo`: (default: `(from=0.0, to=0.0)`) Shunt conductance in pu ([`SYSTEM_BASE`](@ref per_unit)), specified both on the `from` and `to` ends of the line. These are commonly modeled with the same value, validation range: `(0, 100)`
 - `services::Vector{Service}`: (default: `Device[]`) Services that this device contributes to
 - `base_power::Float64`: (default: `100.0`) System base power for per-unitization of this component's per-unit fields, recorded per component in lieu of a system-level table (MVA), validation range: `(0.0001, nothing)`
+- `operational_flow_limit::Union{Nothing, OperationalFlowLimit}`: (default: `nothing`) Operator-set minimum and maximum flow (MW) in each direction, `from_to` and `to_from`, applied in addition to `rating`. `nothing` means no operational limit
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
 - `input_basis`: (keyword constructor only, required) `u"CU"` or `u"NU"`, the units of bare numbers on unit-bearing fields. Tagged values (`50.0u"MW"`) keep their own units
@@ -78,18 +80,20 @@ mutable struct Line <: ACTransmission
     services::Vector{Service}
     "System base power for per-unitization of this component's per-unit fields, recorded per component in lieu of a system-level table (MVA)"
     base_power::Float64
+    "Operator-set minimum and maximum flow (MW) in each direction, `from_to` and `to_from`, applied in addition to `rating`. `nothing` means no operational limit"
+    operational_flow_limit::Union{Nothing, OperationalFlowLimit}
     "An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation."
     ext::Dict{String, Any}
     "(**Do not modify.**) PowerSystems.jl internal reference"
     internal::InfrastructureSystemsInternal
 end
 
-function Line(name, available, active_power_flow, reactive_power_flow, arc, r, x, b, rating, angle_limits, rating_b=nothing, rating_c=nothing, g=(from=0.0, to=0.0), services=Device[], base_power=100.0, ext=Dict{String, Any}(), )
-    Line(name, available, active_power_flow, reactive_power_flow, arc, r, x, b, rating, angle_limits, rating_b, rating_c, g, services, base_power, ext, InfrastructureSystemsInternal(), )
+function Line(name, available, active_power_flow, reactive_power_flow, arc, r, x, b, rating, angle_limits, rating_b=nothing, rating_c=nothing, g=(from=0.0, to=0.0), services=Device[], base_power=100.0, operational_flow_limit=nothing, ext=Dict{String, Any}(), )
+    Line(name, available, active_power_flow, reactive_power_flow, arc, r, x, b, rating, angle_limits, rating_b, rating_c, g, services, base_power, operational_flow_limit, ext, InfrastructureSystemsInternal(), )
 end
 
-function Line(; name, available, active_power_flow, reactive_power_flow, arc, r, x, b, rating, angle_limits, rating_b=nothing, rating_c=nothing, g=(from=0.0, to=0.0), services=Device[], base_power=100.0, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Unitful.Units, )
-    value = Line(name, available, _placeholder(active_power_flow), _placeholder(reactive_power_flow), arc, _placeholder(r), _placeholder(x), _placeholder(b), _placeholder(rating), angle_limits, _placeholder(rating_b), _placeholder(rating_c), _placeholder(g), services, base_power, ext, internal, )
+function Line(; name, available, active_power_flow, reactive_power_flow, arc, r, x, b, rating, angle_limits, rating_b=nothing, rating_c=nothing, g=(from=0.0, to=0.0), services=Device[], base_power=100.0, operational_flow_limit=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Unitful.Units, )
+    value = Line(name, available, _placeholder(active_power_flow), _placeholder(reactive_power_flow), arc, _placeholder(r), _placeholder(x), _placeholder(b), _placeholder(rating), angle_limits, _placeholder(rating_b), _placeholder(rating_c), _placeholder(g), services, base_power, _placeholder(operational_flow_limit), ext, internal, )
     set_active_power_flow!(value, _tag(active_power_flow, input_basis, Val(:mw)))
     set_reactive_power_flow!(value, _tag(reactive_power_flow, input_basis, Val(:mvar)))
     set_r!(value, _tag(r, input_basis, Val(:ohm)))
@@ -99,6 +103,7 @@ function Line(; name, available, active_power_flow, reactive_power_flow, arc, r,
     set_rating_b!(value, _tag(rating_b, input_basis, Val(:mva)))
     set_rating_c!(value, _tag(rating_c, input_basis, Val(:mva)))
     set_g!(value, _tag(g, input_basis, Val(:siemens)))
+    set_operational_flow_limit!(value, _tag(operational_flow_limit, input_basis, Val(:mw)))
     return value
 end
 _takes_input_basis(::Type{<:Line}) = true
@@ -121,6 +126,7 @@ function Line(::Nothing)
         g=(from=0.0, to=0.0),
         services=Device[],
         base_power=100.0,
+        operational_flow_limit=nothing,
         ext=Dict{String, Any}(),
         input_basis=u"CU",
     )
@@ -210,6 +216,14 @@ InfrastructureSystems.display_units_arg(::typeof(get_g_unitful), ::Type{Line}) =
 get_services(value::Line) = value.services
 
 _get_base_power(value::Line) = value.base_power
+"""Get [`Line`](@ref) `operational_flow_limit` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_operational_flow_limit_unitful`](@ref)."""
+get_operational_flow_limit(value::Line, units) = InfrastructureSystems._strip_units(get_value(value, Val(:operational_flow_limit), Val(:mw), units))
+"""Get [`Line`](@ref) `operational_flow_limit` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_operational_flow_limit`](@ref)."""
+get_operational_flow_limit_unitful(value::Line, units) = get_value(value, Val(:operational_flow_limit), Val(:mw), units)
+get_operational_flow_limit(value::Line) = _units_arg_required(get_operational_flow_limit, value, :operational_flow_limit, Val(:mw))
+get_operational_flow_limit_unitful(value::Line) = _units_arg_required(get_operational_flow_limit_unitful, value, :operational_flow_limit, Val(:mw))
+InfrastructureSystems.display_units_arg(::typeof(get_operational_flow_limit), ::Type{Line}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_operational_flow_limit_unitful), ::Type{Line}) = u"SU"
 """Get [`Line`](@ref) `ext`."""
 get_ext(value::Line) = value.ext
 """Get [`Line`](@ref) `internal`."""
@@ -252,5 +266,8 @@ set_g!(value::Line, val::_UntaggedNumber) = _units_tag_required(set_g!, value, :
 set_g!(value::Line, val::NamedTuple{(:from, :to), <:Tuple{Vararg{_UntaggedNumber}}}) = _units_tag_required(set_g!, value, :g, Val(:siemens), val)
 """Set [`Line`](@ref) `services`."""
 set_services!(value::Line, val) = value.services = val
+"""Set [`Line`](@ref) `operational_flow_limit`."""
+set_operational_flow_limit!(value::Line, val) = value.operational_flow_limit = set_value(value, Val(:operational_flow_limit), val, Val(:mw))
+set_operational_flow_limit!(value::Line, val::_UntaggedNumber) = _units_tag_required(set_operational_flow_limit!, value, :operational_flow_limit, Val(:mw), val)
 """Set [`Line`](@ref) `ext`."""
 set_ext!(value::Line, val) = value.ext = val

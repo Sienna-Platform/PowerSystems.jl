@@ -5,6 +5,9 @@ const FromTo = NamedTuple{(:from, :to), Tuple{Float64, Float64}}
 const TurbinePump = NamedTuple{(:turbine, :pump), Tuple{Float64, Float64}}
 # Exception to CamelCase convention for aliases due to confusssing reading of FromToToFrom
 const FromTo_ToFrom = NamedTuple{(:from_to, :to_from), Tuple{Float64, Float64}}
+# Nested: each direction carries a `MinMax`, so the units engine converts it member-wise.
+const OperationalFlowLimit =
+    NamedTuple{(:from_to, :to_from), Tuple{MinMax, MinMax}}
 const StartUpStages = NamedTuple{(:hot, :warm, :cold), NTuple{3, Float64}}
 
 """

@@ -9,7 +9,6 @@ include("TransformerCircuit.jl")
 include("Line.jl")
 include("GenericArcImpedance.jl")
 include("DiscreteControlledACBranch.jl")
-include("MonitoredLine.jl")
 include("TwoWindingTransformer.jl")
 include("ThreeWindingTransformer.jl")
 include("TwoTerminalGenericHVDCLine.jl")
@@ -487,12 +486,8 @@ export get_active_power_flow_limits
 export get_active_power_flow_limits_unitful
 export get_active_power_flow_unitful
 export get_active_power_limits
-export get_active_power_limits_from
-export get_active_power_limits_from_unitful
 export get_active_power_limits_pump
 export get_active_power_limits_pump_unitful
-export get_active_power_limits_to
-export get_active_power_limits_to_unitful
 export get_active_power_limits_unitful
 export get_active_power_losses
 export get_active_power_losses_unitful
@@ -699,8 +694,6 @@ export get_max_dc_current_from
 export get_max_dc_current_to
 export get_max_dc_current_unitful
 export get_max_demand
-export get_max_flow
-export get_max_flow_unitful
 export get_max_impedance_active_power
 export get_max_impedance_active_power_unitful
 export get_max_impedance_reactive_power
@@ -722,6 +715,8 @@ export get_number_of_steps
 export get_number_of_tap_positions
 export get_operating_mode
 export get_operation_cost
+export get_operational_flow_limit
+export get_operational_flow_limit_unitful
 export get_outflow
 export get_outflow_limits
 export get_output_active_power_limits
@@ -1255,9 +1250,7 @@ export set_active_power!
 export set_active_power_flow!
 export set_active_power_flow_limits!
 export set_active_power_limits!
-export set_active_power_limits_from!
 export set_active_power_limits_pump!
-export set_active_power_limits_to!
 export set_active_power_losses!
 export set_active_power_pump!
 export set_angle!
@@ -1434,7 +1427,6 @@ export set_max_dc_current!
 export set_max_dc_current_from!
 export set_max_dc_current_to!
 export set_max_demand!
-export set_max_flow!
 export set_max_impedance_active_power!
 export set_max_impedance_reactive_power!
 export set_max_reactive_power!
@@ -1452,6 +1444,7 @@ export set_number_of_steps!
 export set_number_of_tap_positions!
 export set_operating_mode!
 export set_operation_cost!
+export set_operational_flow_limit!
 export set_outflow!
 export set_outflow_limits!
 export set_output_active_power_limits!

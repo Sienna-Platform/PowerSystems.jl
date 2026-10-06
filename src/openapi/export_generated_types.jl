@@ -18,6 +18,17 @@ _updown_po_optional(nt) = IC.UpDown(; up = nt.up, down = nt.down)
 _updown_po_scaled_optional(::Nothing, base) = IC.ABSENT
 _updown_po_scaled_optional(nt, base) = IC.UpDown(; up = nt.up * base, down = nt.down * base)
 
+_operational_flow_limit_po_optional(::Nothing) = IC.ABSENT
+_operational_flow_limit_po_optional(nt) =
+    _operational_flow_limit_po_scaled_optional(nt, 1.0)
+_operational_flow_limit_po_scaled_optional(::Nothing, base) = IC.ABSENT
+_operational_flow_limit_po_scaled_optional(nt, base) = PC.OperationalFlowLimit(;
+    from_to_min = nt.from_to.min * base,
+    from_to_max = nt.from_to.max * base,
+    to_from_min = nt.to_from.min * base,
+    to_from_max = nt.to_from.max * base,
+)
+
 _startup_shutdown_po_optional(::Nothing) = IC.ABSENT
 _startup_shutdown_po_optional(nt) =
     PC.StartUpShutDown(; startup = nt.startup, shutdown = nt.shutdown)

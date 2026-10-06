@@ -22,14 +22,14 @@ sets use different units systems by convention, such as:
 reactive, and apparent power read back distinctly even though all three share one
 per-unit base:
 
-| Quantity       | Natural unit | Example fields                                    |
-|:-------------- |:------------ |:------------------------------------------------- |
-| Active power   | `u"MW"`      | `active_power`, `active_power_limits`, `max_flow` |
-| Reactive power | `u"MVAr"`    | `reactive_power`, `reactive_power_limits`         |
-| Apparent power | `u"MVA"`     | `rating`, `rating_b`, `base_power`                |
-| Impedance      | `u"Ω"`       | `r`, `x`                                          |
-| Admittance     | `u"S"`       | `b`, `g`                                          |
-| Voltage        | `u"kV"`      | `magnitude`, `voltage_limits`, `internal_voltage` |
+| Quantity       | Natural unit | Example fields                                                  |
+|:-------------- |:------------ |:--------------------------------------------------------------- |
+| Active power   | `u"MW"`      | `active_power`, `active_power_limits`, `operational_flow_limit` |
+| Reactive power | `u"MVAr"`    | `reactive_power`, `reactive_power_limits`                       |
+| Apparent power | `u"MVA"`     | `rating`, `rating_b`, `base_power`                              |
+| Impedance      | `u"Ω"`       | `r`, `x`                                                        |
+| Admittance     | `u"S"`       | `b`, `g`                                                        |
+| Voltage        | `u"kV"`      | `magnitude`, `voltage_limits`, `internal_voltage`               |
 
 Natural units are written with Unitful's `u"..."` string macro, which `PowerSystems`
 re-exports — `using PowerSystems` is enough, no `using Unitful` needed. There are no

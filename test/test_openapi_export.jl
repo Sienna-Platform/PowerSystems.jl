@@ -44,8 +44,6 @@ _export_vsc(
 ) = TwoTerminalVSCLine(;
     name = "vsc1", available = true, arc = arc,
     active_power_flow = 0.5, rating = 2.0,
-    active_power_limits_from = (min = -2.0, max = 2.0),
-    active_power_limits_to = (min = -2.0, max = 2.0),
     g = 200.0, dc_current = 300.0, reactive_power_from = 0.1,
     dc_control_from = VSCDCControlModes.DC_POWER,
     ac_control_from = ac_control_from,
@@ -424,8 +422,7 @@ end
     arc = Arc(; from = bus1, to = bus2)
     hvdc = TwoTerminalGenericHVDCLine(;
         name = "hvdc1", available = true, active_power_flow = 0.5, arc = arc,
-        active_power_limits_from = (min = -1.0, max = 1.0),
-        active_power_limits_to = (min = -1.0, max = 1.0),
+        rating = 1.0,
         reactive_power_limits_from = (min = -0.5, max = 0.5),
         reactive_power_limits_to = (min = -0.5, max = 0.5),
         loss = LossCurve(LinearCurve(0.01, 0.0), NaturalUnit()),
@@ -445,19 +442,18 @@ end
 
     natural_po = PSY.to_openapi(hvdc, refs, NU)
     @test natural_po.active_power_flow == 50.0
-    @test natural_po.active_power_limits_from.min == -100.0
+    @test natural_po.rating == 100.0
     @test natural_po.reactive_power_limits_to.max == 50.0
     @test natural_po.loss.value_curve.value.function_data.value.proportional_term == 0.01
 
     device_po = PSY.to_openapi(hvdc, refs, CU)
     @test device_po.active_power_flow == 0.5
-    @test device_po.active_power_limits_from.min == -1.0
+    @test device_po.rating == 1.0
 
     # A loss authored on the component base is written on that basis, not refused.
     hvdc_cu = TwoTerminalGenericHVDCLine(;
         name = "hvdc_cu", available = true, active_power_flow = 0.5, arc = arc,
-        active_power_limits_from = (min = -1.0, max = 1.0),
-        active_power_limits_to = (min = -1.0, max = 1.0),
+        rating = 1.0,
         reactive_power_limits_from = (min = -0.5, max = 0.5),
         reactive_power_limits_to = (min = -0.5, max = 0.5),
         loss = LossCurve(LinearCurve(0.01, 0.0), ComponentBaseUnit()),
@@ -471,7 +467,7 @@ end
 end
 
 @testset "OpenAPI export converters: TModelHVDCLine" begin
-    # Exception among the branches: `active_power_flow`/`active_power_limits_from/to`
+    # Exception among the branches: `active_power_flow`/`operational_flow_limit`
     # declare x-unit "MW" outright, fixed natural units with no `power_units` discriminator
     # and no `base_power` field — same posture as reserves' `requirement`. Both export
     # methods multiply by `get_base_power(refs)` and are identical; `base_current` (not a
@@ -488,8 +484,9 @@ end
     tmodel = TModelHVDCLine(;
         name = "tmodel1", available = true, active_power_flow = 0.5, arc = arc,
         r = 0.01, l = 0.02, c = 0.03,
-        active_power_limits_from = (min = -1.0, max = 1.0),
-        active_power_limits_to = (min = -1.0, max = 1.0),
+        operational_flow_limit = (
+            from_to = (min = 0.0, max = 1.0), to_from = (min = 0.0, max = 1.0),
+        ),
         base_current = 200.0,
         input_basis = u"CU",
     )
@@ -509,13 +506,13 @@ end
     @test !hasfield(typeof(natural_po), :power_units)
     @test !hasfield(typeof(natural_po), :base_power)
     @test natural_po.active_power_flow == 125.0
-    @test natural_po.active_power_limits_from.min == -250.0
-    @test natural_po.active_power_limits_to.max == 250.0
+    @test natural_po.operational_flow_limit.from_to_max == 250.0
+    @test natural_po.operational_flow_limit.to_from_max == 250.0
     @test natural_po.base_current == 200.0
 
     device_po = PSY.to_openapi(tmodel, refs, CU)
     @test device_po.active_power_flow == 125.0
-    @test device_po.active_power_limits_from.min == -250.0
+    @test device_po.operational_flow_limit.from_to_max == 250.0
     @test device_po.base_current == 200.0
 end
 
@@ -1440,7 +1437,7 @@ end
     natural_po = PSY.to_openapi(vsc, refs, NU)
     @test natural_po.active_power_flow == 50.0
     @test natural_po.rating == 200.0
-    @test natural_po.active_power_limits_from.min == -200.0
+    @test natural_po.rating_from == 200.0
     @test natural_po.reactive_power_limits_to.max == 100.0
     # DC_POWER setpoint scales with the other power fields; the voltage-regulating ones are
     # written per-unit as stored, tagged by `setpoint_voltage_units`.
@@ -1463,7 +1460,7 @@ end
 
     device_po = PSY.to_openapi(vsc, refs, CU)
     @test device_po.active_power_flow == 0.5
-    @test device_po.active_power_limits_from.min == -2.0
+    @test device_po.rating_from == 2.0
     @test device_po.dc_power_setpoint_from == 0.4
     @test device_po.dc_voltage_setpoint_to == 1.02
     @test device_po.setpoint_voltage_units.value == "COMPONENT_BASE"

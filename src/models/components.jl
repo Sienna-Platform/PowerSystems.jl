@@ -12,7 +12,7 @@ Unitless component-base power (MVA). Fallback for components with no `base_power
 field: the component base equals the system base. This is also the path
 `TModelHVDCLine` resolves through — it has no `base_power` field at all (it
 per-unitizes against `base_current` instead), so its power-dimensioned fields
-(`active_power_flow`, `active_power_limits_from/to`) anchor on the system base.
+(`active_power_flow`, `operational_flow_limit`) anchor on the system base.
 """
 _get_base_power(c::Component) = _get_system_base_power(c)
 
@@ -38,7 +38,6 @@ base_power_kind(::FixedAdmittance) = SystemBasePower()
 base_power_kind(::GenericArcImpedance) = SystemBasePower()
 base_power_kind(::Line) = SystemBasePower()
 base_power_kind(::LoadZone) = SystemBasePower()
-base_power_kind(::MonitoredLine) = SystemBasePower()
 base_power_kind(::TransmissionInterface) = SystemBasePower()
 base_power_kind(::TwoTerminalGenericHVDCLine) = SystemBasePower()
 base_power_kind(::TwoTerminalLCCLine) = SystemBasePower()
@@ -393,6 +392,11 @@ _convert_from_component_base(base, v::UpDown, cu, u) = (
 )
 
 _convert_from_component_base(base, v::FromTo_ToFrom, cu, u) = (
+    from_to = _convert_from_component_base(base, v.from_to, cu, u),
+    to_from = _convert_from_component_base(base, v.to_from, cu, u),
+)
+
+_convert_from_component_base(base, v::OperationalFlowLimit, cu, u) = (
     from_to = _convert_from_component_base(base, v.from_to, cu, u),
     to_from = _convert_from_component_base(base, v.to_from, cu, u),
 )

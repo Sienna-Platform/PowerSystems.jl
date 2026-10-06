@@ -114,6 +114,7 @@
         circuit = TransformerCircuit(;
             available = true,
             arc = Arc(; from = bus_hi, to = bus_lo),
+            rating = 0.0,
             r = 0.01,
             x = 0.1,
             base_voltage_primary = 230.0,

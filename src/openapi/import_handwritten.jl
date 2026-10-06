@@ -29,7 +29,7 @@
 # always-natural-units contract even though the two branches are behaviorally identical.
 
 for T in (
-    :Area, :LoadZone, :TransmissionInterface, :Line, :MonitoredLine, :GenericArcImpedance,
+    :Area, :LoadZone, :TransmissionInterface, :Line, :GenericArcImpedance,
     :DiscreteControlledACBranch, :TransformerCircuit, :EnergyReservoirStorage,
     :TwoTerminalGenericHVDCLine, :TwoTerminalLCCLine, :TwoTerminalVSCLine, :Source,
     :InterconnectingConverter, :HybridSystem, :FACTSControlDevice,
@@ -253,6 +253,7 @@ function from_openapi(po::PO.Line, refs::OpenAPIRefs, ::ComponentBaseUnit)
         rating_c = _or_default(po.rating_c, nothing, /, 1.0),
         g = _or_default(po.g, (from = 0.0, to = 0.0)),
         base_power = _require_base_power("Line", po.id, po.base_power),
+        operational_flow_limit = _or_default(po.operational_flow_limit, nothing),
         input_basis = u"CU",
     )
 end
@@ -274,64 +275,7 @@ function from_openapi(po::PO.Line, refs::OpenAPIRefs, ::NaturalUnit)
         rating_c = _or_default(po.rating_c, nothing, /, sbp),
         g = _or_default(po.g, (from = 0.0, to = 0.0)),
         base_power = sbp,
-        input_basis = u"CU",
-    )
-end
-
-# ── MonitoredLine ───────────────────────────────────────────────────────────────
-# Same posture as `Line` directly above, field for field, plus `flow_limits`: `r`/`x`/`b`/`g`
-# are already pu on the line's base and pass through in both methods (no `base_voltage` to
-# build Zbase from), the MVA/MW fields divide by `_require_base_power`'s result, and
-# `angle_limits` is radians with no conversion. `flow_limits` is the one field `Line` does not
-# have — a `FromTo_ToFrom` of natural MVA, so it scales with the same base as `rating`.
-
-_fromto_toframe(m) = (from_to = Float64(m.from_to), to_from = Float64(m.to_from))
-_fromto_toframe(::Union{Nothing, IC.Absent}, default) = default
-_fromto_toframe(m, ::Any) = _fromto_toframe(m)
-_fromto_toframe_cu(m, base) =
-    (from_to = Float64(m.from_to) / base, to_from = Float64(m.to_from) / base)
-_fromto_toframe_cu(::Union{Nothing, IC.Absent}, default, base) = default
-_fromto_toframe_cu(m, ::Any, base) = _fromto_toframe_cu(m, base)
-
-function from_openapi(po::PO.MonitoredLine, refs::OpenAPIRefs, ::ComponentBaseUnit)
-    return MonitoredLine(;
-        name = po.name,
-        available = po.available,
-        active_power_flow = po.active_power_flow,
-        reactive_power_flow = po.reactive_power_flow,
-        arc = refs[po.arc],
-        r = po.r,
-        x = po.x,
-        b = _from_wire(po.b),
-        flow_limits = _fromto_toframe(po.flow_limits),
-        rating = po.rating,
-        angle_limits = _from_wire(po.angle_limits),
-        rating_b = _or_default(po.rating_b, nothing, /, 1.0),
-        rating_c = _or_default(po.rating_c, nothing, /, 1.0),
-        g = _or_default(po.g, (from = 0.0, to = 0.0)),
-        base_power = _require_base_power("MonitoredLine", po.id, po.base_power),
-        input_basis = u"CU",
-    )
-end
-
-function from_openapi(po::PO.MonitoredLine, refs::OpenAPIRefs, ::NaturalUnit)
-    sbp = _require_base_power("MonitoredLine", po.id, po.base_power)
-    return MonitoredLine(;
-        name = po.name,
-        available = po.available,
-        active_power_flow = po.active_power_flow / sbp,
-        reactive_power_flow = po.reactive_power_flow / sbp,
-        arc = refs[po.arc],
-        r = po.r,
-        x = po.x,
-        b = _from_wire(po.b),
-        flow_limits = _fromto_toframe_cu(po.flow_limits, sbp),
-        rating = po.rating / sbp,
-        angle_limits = _from_wire(po.angle_limits),
-        rating_b = _or_default(po.rating_b, nothing, /, sbp),
-        rating_c = _or_default(po.rating_c, nothing, /, sbp),
-        g = _or_default(po.g, (from = 0.0, to = 0.0)),
-        base_power = sbp,
+        operational_flow_limit = _or_default(po.operational_flow_limit, nothing, /, sbp),
         input_basis = u"CU",
     )
 end
@@ -361,11 +305,11 @@ function from_openapi(po::PO.GenericArcImpedance, refs::OpenAPIRefs, ::Component
         available = po.available,
         active_power_flow = po.active_power_flow,
         reactive_power_flow = po.reactive_power_flow,
-        max_flow = po.max_flow,
         arc = refs[po.arc],
         r = po.r,
         x = po.x,
         base_power = _require_base_power("GenericArcImpedance", po.id, po.base_power),
+        operational_flow_limit = _or_default(po.operational_flow_limit, nothing),
         input_basis = u"CU",
     )
 end
@@ -378,11 +322,11 @@ function from_openapi(po::PO.GenericArcImpedance, refs::OpenAPIRefs, ::NaturalUn
         available = po.available,
         active_power_flow = po.active_power_flow / sbp,
         reactive_power_flow = po.reactive_power_flow / sbp,
-        max_flow = po.max_flow / sbp,
         arc = refs[po.arc],
         r = po.r,
         x = po.x,
         base_power = sbp,
+        operational_flow_limit = _or_default(po.operational_flow_limit, nothing, /, sbp),
         input_basis = u"CU",
     )
 end
@@ -429,6 +373,7 @@ function from_openapi(
             po.id,
             po.base_power,
         ),
+        operational_flow_limit = _or_default(po.operational_flow_limit, nothing),
         input_basis = u"CU",
     )
 end
@@ -461,6 +406,7 @@ function from_openapi(
             DiscreteControlledBranchStatus.CLOSED,
         ),
         base_power = bp,
+        operational_flow_limit = _or_default(po.operational_flow_limit, nothing, /, bp),
         input_basis = u"CU",
     )
 end
@@ -542,7 +488,7 @@ function from_openapi(
         controlled_active_power_flow_limits =
         _or_default(po.controlled_active_power_flow_limits, nothing),
         number_of_tap_positions = _or_default(po.number_of_tap_positions, 33),
-        rating = _or_default(po.rating, nothing, /, 1.0),
+        rating = po.rating,
         rating_b = _or_default(po.rating_b, nothing, /, 1.0),
         rating_c = _or_default(po.rating_c, nothing, /, 1.0),
         active_power_flow = _or_default(po.active_power_flow, 0.0),
@@ -550,6 +496,7 @@ function from_openapi(
         base_power = po.base_power,
         base_voltage_primary = _or_default(po.base_voltage_primary, nothing),
         base_voltage_secondary = _or_default(po.base_voltage_secondary, nothing),
+        operational_flow_limit = _or_default(po.operational_flow_limit, nothing),
         input_basis = u"CU",
     )
 end
@@ -581,7 +528,7 @@ function from_openapi(
         controlled_active_power_flow_limits =
         _or_default(po.controlled_active_power_flow_limits, nothing, /, dbp),
         number_of_tap_positions = _or_default(po.number_of_tap_positions, 33),
-        rating = _or_default(po.rating, nothing, /, dbp),
+        rating = po.rating / dbp,
         rating_b = _or_default(po.rating_b, nothing, /, dbp),
         rating_c = _or_default(po.rating_c, nothing, /, dbp),
         active_power_flow = _or_default(po.active_power_flow, 0.0) / dbp,
@@ -589,6 +536,7 @@ function from_openapi(
         base_power = dbp,
         base_voltage_primary = _or_default(po.base_voltage_primary, nothing),
         base_voltage_secondary = _or_default(po.base_voltage_secondary, nothing),
+        operational_flow_limit = _or_default(po.operational_flow_limit, nothing, /, dbp),
         input_basis = u"CU",
     )
 end
@@ -1078,16 +1026,18 @@ function from_openapi(
         available = po.available,
         active_power_flow = po.active_power_flow,
         arc = refs[po.arc],
-        active_power_limits_from = _from_wire(po.active_power_limits_from),
-        active_power_limits_to = _from_wire(po.active_power_limits_to),
+        rating = po.rating,
         reactive_power_limits_from = _from_wire(po.reactive_power_limits_from),
         reactive_power_limits_to = _from_wire(po.reactive_power_limits_to),
+        rating_from = _or_default(po.rating_from, 1e8),
+        rating_to = _or_default(po.rating_to, 1e8),
         loss = _hvdc_loss(po.loss),
         base_power = _require_base_power(
             "TwoTerminalGenericHVDCLine",
             po.id,
             po.base_power,
         ),
+        operational_flow_limit = _or_default(po.operational_flow_limit, nothing),
         input_basis = u"CU",
     )
 end
@@ -1103,13 +1053,7 @@ function from_openapi(
         available = po.available,
         active_power_flow = po.active_power_flow / sbp,
         arc = refs[po.arc],
-        active_power_limits_from = _or_default(
-            po.active_power_limits_from,
-            nothing,
-            /,
-            sbp,
-        ),
-        active_power_limits_to = _or_default(po.active_power_limits_to, nothing, /, sbp),
+        rating = po.rating / sbp,
         reactive_power_limits_from = _or_default(
             po.reactive_power_limits_from,
             nothing,
@@ -1122,8 +1066,11 @@ function from_openapi(
             /,
             sbp,
         ),
+        rating_from = _or_default(po.rating_from, 1e8, /, sbp),
+        rating_to = _or_default(po.rating_to, 1e8, /, sbp),
         loss = _hvdc_loss(po.loss),
         base_power = sbp,
+        operational_flow_limit = _or_default(po.operational_flow_limit, nothing, /, sbp),
         input_basis = u"CU",
     )
 end
@@ -1174,6 +1121,7 @@ function from_openapi(po::PO.TwoTerminalLCCLine, refs::OpenAPIRefs, ::ComponentB
         available = po.available,
         arc = refs[po.arc],
         active_power_flow = po.active_power_flow,
+        rating = po.rating,
         r = _lcc_ohm_to_pu(po.r, po.scheduled_dc_voltage, base_power),
         power_transfer_setpoint = _or_default(po.power_transfer_setpoint, nothing),
         current_transfer_setpoint = _or_default(po.current_transfer_setpoint, nothing),
@@ -1225,18 +1173,15 @@ function from_openapi(po::PO.TwoTerminalLCCLine, refs::OpenAPIRefs, ::ComponentB
             po.inverter_base_voltage,
             base_power,
         ),
-        active_power_limits_from =
-        _or_default(po.active_power_limits_from, (min = 0.0, max = 0.0)),
-        active_power_limits_to = _or_default(
-            po.active_power_limits_to,
-            (min = 0.0, max = 0.0),
-        ),
         reactive_power_limits_from =
         _or_default(po.reactive_power_limits_from, (min = 0.0, max = 0.0)),
         reactive_power_limits_to =
         _or_default(po.reactive_power_limits_to, (min = 0.0, max = 0.0)),
+        rating_from = _or_default(po.rating_from, 1e8),
+        rating_to = _or_default(po.rating_to, 1e8),
         loss = _hvdc_loss(po.loss),
         base_power = base_power,
+        operational_flow_limit = _or_default(po.operational_flow_limit, nothing),
         input_basis = u"CU",
     )
 end
@@ -1250,6 +1195,7 @@ function from_openapi(po::PO.TwoTerminalLCCLine, refs::OpenAPIRefs, ::NaturalUni
         available = po.available,
         arc = refs[po.arc],
         active_power_flow = po.active_power_flow / base_power,
+        rating = po.rating / base_power,
         r = _lcc_ohm_to_pu(po.r, po.scheduled_dc_voltage, base_power),
         power_transfer_setpoint = _or_default(
             po.power_transfer_setpoint,
@@ -1306,18 +1252,6 @@ function from_openapi(po::PO.TwoTerminalLCCLine, refs::OpenAPIRefs, ::NaturalUni
             po.inverter_base_voltage,
             base_power,
         ),
-        active_power_limits_from = _or_default(
-            po.active_power_limits_from,
-            (min = 0.0, max = 0.0),
-            /,
-            base_power,
-        ),
-        active_power_limits_to = _or_default(
-            po.active_power_limits_to,
-            (min = 0.0, max = 0.0),
-            /,
-            base_power,
-        ),
         reactive_power_limits_from = _or_default(
             po.reactive_power_limits_from,
             (min = 0.0, max = 0.0),
@@ -1330,8 +1264,16 @@ function from_openapi(po::PO.TwoTerminalLCCLine, refs::OpenAPIRefs, ::NaturalUni
             /,
             base_power,
         ),
+        rating_from = _or_default(po.rating_from, 1e8, /, base_power),
+        rating_to = _or_default(po.rating_to, 1e8, /, base_power),
         loss = _hvdc_loss(po.loss),
         base_power = base_power,
+        operational_flow_limit = _or_default(
+            po.operational_flow_limit,
+            nothing,
+            /,
+            base_power,
+        ),
         input_basis = u"CU",
     )
 end
@@ -1451,18 +1393,6 @@ function from_openapi(
         arc = refs[po.arc],
         active_power_flow = po.active_power_flow / power_base,
         rating = po.rating / power_base,
-        active_power_limits_from = _or_default(
-            po.active_power_limits_from,
-            nothing,
-            /,
-            power_base,
-        ),
-        active_power_limits_to = _or_default(
-            po.active_power_limits_to,
-            nothing,
-            /,
-            power_base,
-        ),
         g = _vsc_siemens_to_pu(po, rated_dc_voltage, base_power),
         dc_current = _or_default(po.dc_current, 0.0),
         reactive_power_from = po.reactive_power_from / power_base,
@@ -1490,7 +1420,7 @@ function from_openapi(
         rated_ac_voltage_from = rated_ac_voltage_from,
         converter_loss_from = _vsc_loss(po.converter_loss_from),
         max_dc_current_from = _or_default(po.max_dc_current_from, 1e8),
-        rating_from = po.rating_from / power_base,
+        rating_from = _or_default(po.rating_from, 1e8, /, power_base),
         reactive_power_limits_from = _or_default(
             po.reactive_power_limits_from,
             (min = 0.0, max = 0.0),
@@ -1523,7 +1453,7 @@ function from_openapi(
         rated_ac_voltage_to = rated_ac_voltage_to,
         converter_loss_to = _vsc_loss(po.converter_loss_to),
         max_dc_current_to = _or_default(po.max_dc_current_to, 1e8),
-        rating_to = po.rating_to / power_base,
+        rating_to = _or_default(po.rating_to, 1e8, /, power_base),
         reactive_power_limits_to = _or_default(
             po.reactive_power_limits_to,
             (min = 0.0, max = 0.0),
@@ -1542,6 +1472,12 @@ function from_openapi(
         rmpct_from = _or_default(po.rmpct_from, 100.0),
         rmpct_to = _or_default(po.rmpct_to, 100.0),
         base_power = base_power,
+        operational_flow_limit = _or_default(
+            po.operational_flow_limit,
+            nothing,
+            /,
+            power_base,
+        ),
         input_basis = u"CU",
     )
 end
@@ -1641,14 +1577,8 @@ function from_openapi(po::PO.TModelHVDCLine, refs::OpenAPIRefs, ::ComponentBaseU
         r = po.r,
         l = po.l,
         c = po.c,
-        active_power_limits_from = _or_default(
-            po.active_power_limits_from,
-            nothing,
-            /,
-            sbp,
-        ),
-        active_power_limits_to = _or_default(po.active_power_limits_to, nothing, /, sbp),
         base_current = po.base_current,
+        operational_flow_limit = _or_default(po.operational_flow_limit, nothing, /, sbp),
         input_basis = u"CU",
     )
 end

@@ -26,9 +26,9 @@ _remove_aggregration_topology!(bus::ACBus, ::LoadZone) = bus.load_zone = nothing
 _remove_aggregration_topology!(bus::ACBus, ::Area) = bus.area = nothing
 
 """
-    get_base_voltage(line::Union{Line, MonitoredLine})
+    get_base_voltage(line::Line)
 
-Return the base voltage (kV) of a [`Line`](@ref) or [`MonitoredLine`](@ref) by reading the
+Return the base voltage (kV) of a [`Line`](@ref) by reading the
 `base_voltage` from both endpoints of the line's [`Arc`](@ref).
 
 If the two bus voltages are identical, that value is returned directly. If they differ but
@@ -36,7 +36,7 @@ are within `BRANCH_BUS_VOLTAGE_DIFFERENCE_TOL` (percent), the value with fewer s
 figures is returned (i.e., the rounder number). If the difference exceeds the tolerance, an
 error is thrown.
 """
-function get_base_voltage(line::Union{Line, MonitoredLine})
+function get_base_voltage(line::Line)
     v_from = get_base_voltage(get_from_bus(line))
     v_to = get_base_voltage(get_to_bus(line))
     v_from == v_to && return v_from

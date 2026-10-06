@@ -135,6 +135,9 @@ function to_openapi(line::Line, refs::OpenAPIRefs, ::ComponentBaseUnit)
         rating_c = _optional_to_wire(get_rating_c(line, u"SU")),
         angle_limits = _minmax_po(get_angle_limits(line)),
         g = _fromto_po(get_g(line, u"SU")),
+        operational_flow_limit = _operational_flow_limit_po_optional(
+            get_operational_flow_limit(line, u"SU"),
+        ),
         power_units = _power_units_string(CU),
     )
 end
@@ -157,6 +160,9 @@ function to_openapi(line::Line, refs::OpenAPIRefs, ::NaturalUnit)
         rating_c = _scale_optional_po(get_rating_c(line, u"SU"), sbp),
         angle_limits = _minmax_po(get_angle_limits(line)),
         g = _fromto_po(get_g(line, u"SU")),
+        operational_flow_limit = _operational_flow_limit_po_scaled_optional(
+            get_operational_flow_limit(line, u"SU"), sbp,
+        ),
         power_units = _power_units_string(NU),
     )
 end
@@ -293,7 +299,7 @@ function to_openapi(src::Source, refs::OpenAPIRefs, ::NaturalUnit)
 end
 
 # ── TModelHVDCLine ──────────────────────────────────────────────────────────────
-# `active_power_flow`/`active_power_limits_from`/`active_power_limits_to` declare x-unit "MW"
+# `active_power_flow`/`operational_flow_limit` declare x-unit "MW"
 # outright — fixed natural units, no `power_units` discriminator on this PO struct (see the
 # schema and import_handwritten.jl's header on this exact point) — so they multiply by
 # `get_base_power(refs)` in both methods, same posture as reserves' `requirement`. Both
@@ -313,11 +319,8 @@ function to_openapi(line::TModelHVDCLine, refs::OpenAPIRefs, ::ComponentBaseUnit
         r = get_r(line),
         l = get_l(line),
         c = get_c(line),
-        active_power_limits_from = _minmax_po_scaled(
-            get_active_power_limits_from(line, u"SU"), sbp,
-        ),
-        active_power_limits_to = _minmax_po_scaled(
-            get_active_power_limits_to(line, u"SU"), sbp,
+        operational_flow_limit = _operational_flow_limit_po_scaled_optional(
+            get_operational_flow_limit(line, u"SU"), sbp,
         ),
     )
 end
@@ -395,54 +398,6 @@ function to_openapi(conv::InterconnectingConverter, refs::OpenAPIRefs, ::Natural
     )
 end
 
-# ── MonitoredLine ───────────────────────────────────────────────────────────────
-# Mirrors `Line` above field for field, plus `flow_limits`, which scales with `rating`.
-
-function to_openapi(line::MonitoredLine, refs::OpenAPIRefs, ::ComponentBaseUnit)
-    return PO.MonitoredLine(;
-        id = component_id(refs, line),
-        name = get_name(line),
-        available = get_available(line),
-        active_power_flow = get_active_power_flow(line, u"SU"),
-        reactive_power_flow = get_reactive_power_flow(line, u"SU"),
-        arc = component_id(refs, get_arc(line)),
-        r = get_r(line, u"SU"),
-        x = get_x(line, u"SU"),
-        base_power = get_base_power(refs),
-        b = _fromto_po(get_b(line, u"SU")),
-        flow_limits = _fromto_tofrom_po(get_flow_limits(line, u"SU")),
-        rating = get_rating(line, u"SU"),
-        rating_b = _optional_to_wire(get_rating_b(line, u"SU")),
-        rating_c = _optional_to_wire(get_rating_c(line, u"SU")),
-        angle_limits = _minmax_po(get_angle_limits(line)),
-        g = _fromto_po(get_g(line, u"SU")),
-        power_units = _power_units_string(CU),
-    )
-end
-
-function to_openapi(line::MonitoredLine, refs::OpenAPIRefs, ::NaturalUnit)
-    sbp = get_base_power(refs)
-    return PO.MonitoredLine(;
-        id = component_id(refs, line),
-        name = get_name(line),
-        available = get_available(line),
-        active_power_flow = get_active_power_flow(line, u"SU") * sbp,
-        reactive_power_flow = get_reactive_power_flow(line, u"SU") * sbp,
-        arc = component_id(refs, get_arc(line)),
-        r = get_r(line, u"SU"),
-        x = get_x(line, u"SU"),
-        base_power = sbp,
-        b = _fromto_po(get_b(line, u"SU")),
-        flow_limits = _fromto_tofrom_po_scaled(get_flow_limits(line, u"SU"), sbp),
-        rating = get_rating(line, u"SU") * sbp,
-        rating_b = _scale_optional_po(get_rating_b(line, u"SU"), sbp),
-        rating_c = _scale_optional_po(get_rating_c(line, u"SU"), sbp),
-        angle_limits = _minmax_po(get_angle_limits(line)),
-        g = _fromto_po(get_g(line, u"SU")),
-        power_units = _power_units_string(NU),
-    )
-end
-
 # ── GenericArcImpedance ─────────────────────────────────────────────────────────
 # `parameter_units` is stated rather than derived: the import side only accepts
 # "COMPONENT_BASE", so that is what export writes.
@@ -454,7 +409,9 @@ function to_openapi(branch::GenericArcImpedance, refs::OpenAPIRefs, ::ComponentB
         available = get_available(branch),
         active_power_flow = get_active_power_flow(branch, u"SU"),
         reactive_power_flow = get_reactive_power_flow(branch, u"SU"),
-        max_flow = get_max_flow(branch, u"SU"),
+        operational_flow_limit = _operational_flow_limit_po_optional(
+            get_operational_flow_limit(branch, u"SU"),
+        ),
         arc = component_id(refs, get_arc(branch)),
         base_power = get_base_power(refs),
         parameter_units = PO.ImpedanceUnitBasis("COMPONENT_BASE"),
@@ -472,7 +429,9 @@ function to_openapi(branch::GenericArcImpedance, refs::OpenAPIRefs, ::NaturalUni
         available = get_available(branch),
         active_power_flow = get_active_power_flow(branch, u"SU") * sbp,
         reactive_power_flow = get_reactive_power_flow(branch, u"SU") * sbp,
-        max_flow = get_max_flow(branch, u"SU") * sbp,
+        operational_flow_limit = _operational_flow_limit_po_scaled_optional(
+            get_operational_flow_limit(branch, u"SU"), sbp,
+        ),
         arc = component_id(refs, get_arc(branch)),
         base_power = sbp,
         parameter_units = PO.ImpedanceUnitBasis("COMPONENT_BASE"),
@@ -517,6 +476,9 @@ function to_openapi(
                 branch,
             )),
         ),
+        operational_flow_limit = _operational_flow_limit_po_optional(
+            get_operational_flow_limit(branch, u"SU"),
+        ),
         power_units = _power_units_string(CU),
     )
 end
@@ -546,6 +508,9 @@ function to_openapi(branch::DiscreteControlledACBranch, refs::OpenAPIRefs, ::Nat
             string(get_normal_branch_status(
                 branch,
             )),
+        ),
+        operational_flow_limit = _operational_flow_limit_po_scaled_optional(
+            get_operational_flow_limit(branch, u"SU"), bp,
         ),
         power_units = _power_units_string(NU),
     )
@@ -585,7 +550,7 @@ function to_openapi(circuit::TransformerCircuit, refs::OpenAPIRefs, ::ComponentB
         controlled_active_power_flow_limits =
         _minmax_po_optional(get_controlled_active_power_flow_limits(circuit, u"CU")),
         number_of_tap_positions = get_number_of_tap_positions(circuit),
-        rating = _optional_to_wire(get_rating(circuit, u"CU")),
+        rating = get_rating(circuit, u"CU"),
         rating_b = _optional_to_wire(get_rating_b(circuit, u"CU")),
         rating_c = _optional_to_wire(get_rating_c(circuit, u"CU")),
         active_power_flow = get_active_power_flow(circuit, u"CU"),
@@ -593,6 +558,9 @@ function to_openapi(circuit::TransformerCircuit, refs::OpenAPIRefs, ::ComponentB
         base_power = get_base_power(circuit),
         base_voltage_primary = _optional_to_wire(get_base_voltage_primary(circuit)),
         base_voltage_secondary = _optional_to_wire(get_base_voltage_secondary(circuit)),
+        operational_flow_limit = _operational_flow_limit_po_optional(
+            get_operational_flow_limit(circuit, u"CU"),
+        ),
         power_units = _power_units_string(CU),
     )
 end
@@ -625,7 +593,7 @@ function to_openapi(circuit::TransformerCircuit, refs::OpenAPIRefs, ::NaturalUni
             get_controlled_active_power_flow_limits(circuit, u"CU"), dbp,
         ),
         number_of_tap_positions = get_number_of_tap_positions(circuit),
-        rating = _scale_optional_po(get_rating(circuit, u"CU"), dbp),
+        rating = get_rating(circuit, u"CU") * dbp,
         rating_b = _scale_optional_po(get_rating_b(circuit, u"CU"), dbp),
         rating_c = _scale_optional_po(get_rating_c(circuit, u"CU"), dbp),
         active_power_flow = get_active_power_flow(circuit, u"CU") * dbp,
@@ -633,6 +601,9 @@ function to_openapi(circuit::TransformerCircuit, refs::OpenAPIRefs, ::NaturalUni
         base_power = dbp,
         base_voltage_primary = _optional_to_wire(get_base_voltage_primary(circuit)),
         base_voltage_secondary = _optional_to_wire(get_base_voltage_secondary(circuit)),
+        operational_flow_limit = _operational_flow_limit_po_scaled_optional(
+            get_operational_flow_limit(circuit, u"CU"), dbp,
+        ),
         power_units = _power_units_string(NU),
     )
 end
@@ -861,14 +832,18 @@ function to_openapi(
         available = get_available(hvdc),
         active_power_flow = get_active_power_flow(hvdc, u"SU"),
         arc = component_id(refs, get_arc(hvdc)),
-        active_power_limits_from = _minmax_po(get_active_power_limits_from(hvdc, u"SU")),
-        active_power_limits_to = _minmax_po(get_active_power_limits_to(hvdc, u"SU")),
+        rating = get_rating(hvdc, u"SU"),
         reactive_power_limits_from = _minmax_po(
             get_reactive_power_limits_from(hvdc, u"SU"),
         ),
         reactive_power_limits_to = _minmax_po(get_reactive_power_limits_to(hvdc, u"SU")),
+        rating_from = get_rating_from(hvdc, u"SU"),
+        rating_to = get_rating_to(hvdc, u"SU"),
         loss = _hvdc_loss_to_openapi(get_loss(hvdc)),
         base_power = get_base_power(refs),
+        operational_flow_limit = _operational_flow_limit_po_optional(
+            get_operational_flow_limit(hvdc, u"SU"),
+        ),
         power_units = _power_units_string(CU),
     )
 end
@@ -885,22 +860,20 @@ function to_openapi(
         available = get_available(hvdc),
         active_power_flow = get_active_power_flow(hvdc, u"SU") * sbp,
         arc = component_id(refs, get_arc(hvdc)),
-        active_power_limits_from = _minmax_po_scaled(
-            get_active_power_limits_from(hvdc, u"SU"),
-            sbp,
-        ),
-        active_power_limits_to = _minmax_po_scaled(
-            get_active_power_limits_to(hvdc, u"SU"),
-            sbp,
-        ),
+        rating = get_rating(hvdc, u"SU") * sbp,
         reactive_power_limits_from =
         _minmax_po_scaled(get_reactive_power_limits_from(hvdc, u"SU"), sbp),
         reactive_power_limits_to = _minmax_po_scaled(
             get_reactive_power_limits_to(hvdc, u"SU"),
             sbp,
         ),
+        rating_from = get_rating_from(hvdc, u"SU") * sbp,
+        rating_to = get_rating_to(hvdc, u"SU") * sbp,
         loss = _hvdc_loss_to_openapi(get_loss(hvdc)),
         base_power = sbp,
+        operational_flow_limit = _operational_flow_limit_po_scaled_optional(
+            get_operational_flow_limit(hvdc, u"SU"), sbp,
+        ),
         power_units = _power_units_string(NU),
     )
 end
@@ -929,6 +902,7 @@ function to_openapi(lcc::TwoTerminalLCCLine, refs::OpenAPIRefs, ::ComponentBaseU
         available = get_available(lcc),
         arc = component_id(refs, get_arc(lcc)),
         active_power_flow = get_active_power_flow(lcc, u"SU"),
+        rating = get_rating(lcc, u"SU"),
         parameter_units = PO.ImpedanceUnitBasis("NATURAL_UNITS"),
         r = _lcc_pu_to_ohm(get_r(lcc), dcv, base_power),
         power_transfer_setpoint = _optional_to_wire(
@@ -973,12 +947,15 @@ function to_openapi(lcc::TwoTerminalLCCLine, refs::OpenAPIRefs, ::ComponentBaseU
         inverter_capacitor_reactance = _lcc_pu_to_ohm(
             get_inverter_capacitor_reactance(lcc), ibv, base_power,
         ),
-        active_power_limits_from = _minmax_po(get_active_power_limits_from(lcc, u"SU")),
-        active_power_limits_to = _minmax_po(get_active_power_limits_to(lcc, u"SU")),
         reactive_power_limits_from = _minmax_po(get_reactive_power_limits_from(lcc, u"SU")),
         reactive_power_limits_to = _minmax_po(get_reactive_power_limits_to(lcc, u"SU")),
+        rating_from = get_rating_from(lcc, u"SU"),
+        rating_to = get_rating_to(lcc, u"SU"),
         loss = _hvdc_loss_to_openapi(get_loss(lcc)),
         base_power = base_power,
+        operational_flow_limit = _operational_flow_limit_po_optional(
+            get_operational_flow_limit(lcc, u"SU"),
+        ),
         power_units = _power_units_string(CU),
     )
 end
@@ -994,6 +971,7 @@ function to_openapi(lcc::TwoTerminalLCCLine, refs::OpenAPIRefs, ::NaturalUnit)
         available = get_available(lcc),
         arc = component_id(refs, get_arc(lcc)),
         active_power_flow = get_active_power_flow(lcc, u"SU") * base_power,
+        rating = get_rating(lcc, u"SU") * base_power,
         parameter_units = PO.ImpedanceUnitBasis("NATURAL_UNITS"),
         r = _lcc_pu_to_ohm(get_r(lcc), dcv, base_power),
         power_transfer_setpoint =
@@ -1037,14 +1015,6 @@ function to_openapi(lcc::TwoTerminalLCCLine, refs::OpenAPIRefs, ::NaturalUnit)
         inverter_capacitor_reactance = _lcc_pu_to_ohm(
             get_inverter_capacitor_reactance(lcc), ibv, base_power,
         ),
-        active_power_limits_from = _minmax_po_scaled(
-            get_active_power_limits_from(lcc, u"SU"),
-            base_power,
-        ),
-        active_power_limits_to = _minmax_po_scaled(
-            get_active_power_limits_to(lcc, u"SU"),
-            base_power,
-        ),
         reactive_power_limits_from = _minmax_po_scaled(
             get_reactive_power_limits_from(lcc, u"SU"),
             base_power,
@@ -1053,8 +1023,13 @@ function to_openapi(lcc::TwoTerminalLCCLine, refs::OpenAPIRefs, ::NaturalUnit)
             get_reactive_power_limits_to(lcc, u"SU"),
             base_power,
         ),
+        rating_from = get_rating_from(lcc, u"SU") * base_power,
+        rating_to = get_rating_to(lcc, u"SU") * base_power,
         loss = _hvdc_loss_to_openapi(get_loss(lcc)),
         base_power = base_power,
+        operational_flow_limit = _operational_flow_limit_po_scaled_optional(
+            get_operational_flow_limit(lcc, u"SU"), base_power,
+        ),
         power_units = _power_units_string(NU),
     )
 end
@@ -1108,12 +1083,6 @@ function to_openapi(
         arc = component_id(refs, get_arc(vsc)),
         active_power_flow = get_active_power_flow(vsc, u"SU") * power_base,
         rating = get_rating(vsc, u"SU") * power_base,
-        active_power_limits_from = _minmax_po_scaled(
-            get_active_power_limits_from(vsc, u"SU"), power_base,
-        ),
-        active_power_limits_to = _minmax_po_scaled(
-            get_active_power_limits_to(vsc, u"SU"), power_base,
-        ),
         admittance_units = PO.AdmittanceUnitBasis("NATURAL_UNITS"),
         g = _vsc_pu_to_siemens(vsc, base_power),
         dc_current = get_dc_current(vsc),
@@ -1164,6 +1133,9 @@ function to_openapi(
         rmpct_from = get_rmpct_from(vsc),
         rmpct_to = get_rmpct_to(vsc),
         base_power = base_power,
+        operational_flow_limit = _operational_flow_limit_po_scaled_optional(
+            get_operational_flow_limit(vsc, u"SU"), power_base,
+        ),
         power_units = _power_units_string(unit),
     )
 end

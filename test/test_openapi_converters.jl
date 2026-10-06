@@ -46,8 +46,6 @@ function _vsc_po_minimal(; overrides...)
     defaults = (
         id = 20, name = "vsc1", available = true, arc = 10,
         active_power_flow = 50.0, rating = 200.0,
-        active_power_limits_from = PSY.IC.MinMax(; min = -200.0, max = 200.0),
-        active_power_limits_to = PSY.IC.MinMax(; min = -200.0, max = 200.0),
         admittance_units = PSY.PO.AdmittanceUnitBasis("NATURAL_UNITS"), g = 0.5,
         dc_current = 300.0, reactive_power_from = 10.0,
         dc_control_from = PSY.PO.VSCDCControlModes("DC_POWER"),
@@ -269,6 +267,10 @@ end
         rating = 175.0, rating_b = 175.0, rating_c = nothing,
         angle_limits = PSY.IC.MinMax(; min = -1.57, max = 1.57),
         g = PSY.IC.FromTo(; from = 0.0, to = 0.0),
+        operational_flow_limit = PSY.PC.OperationalFlowLimit(;
+            from_to_min = 10.0, from_to_max = 100.0, to_from_min = 20.0,
+            to_from_max = 120.0,
+        ),
         power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
     )
 
@@ -280,6 +282,12 @@ end
 
     line_natural = PSY.from_openapi(line_po, refs, NU)
     add_component!(sys, line_natural)
+    @test get_operational_flow_limit(line_natural, u"SU") ==
+          (from_to = (min = 0.1, max = 1.0), to_from = (min = 0.2, max = 1.2))
+    refs[20] = line_natural
+    line_po_back = PSY.to_openapi(line_natural, refs, NU)
+    @test line_po_back.operational_flow_limit.from_to_max ≈ 100.0
+    @test line_po_back.operational_flow_limit.to_from_min ≈ 20.0
     @test get_rating(line_natural, u"SU") == 1.75
     @test get_active_power_flow(line_natural, u"SU") == 0.1
     @test get_reactive_power_flow(line_natural, u"SU") == 0.02
@@ -311,6 +319,7 @@ end
     @test get_x(line_device, u"SU") == 0.1
     @test get_b(line_device, u"SU") == (from = 0.001, to = 0.002)
     @test get_base_power(line_device) == 100.0
+    @test isnothing(get_operational_flow_limit(line_device, u"SU"))
 
     # `base_power`/`power_units` are non-defaulted fields on the wire type itself —
     # omitting either fails at construction, not at `from_openapi`.
@@ -382,7 +391,7 @@ end
         control_objective = PSY.PO.TransformerControlObjective("UNDEFINED"),
         regulated_bus_number = 0,
         number_of_tap_positions = 33,
-        rating = nothing, rating_b = nothing, rating_c = nothing,
+        rating = 100.0, rating_b = nothing, rating_c = nothing,
         active_power_flow = 0.0, reactive_power_flow = 0.0,
         base_power = 50.0, base_voltage_primary = 138.0, base_voltage_secondary = 69.0,
         power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
@@ -1121,8 +1130,7 @@ end
 
     hvdc_po = PSY.PO.TwoTerminalGenericHVDCLine(;
         id = 20, name = "hvdc1", available = true, active_power_flow = 50.0, arc = 10,
-        active_power_limits_from = PSY.IC.MinMax(; min = -100.0, max = 100.0),
-        active_power_limits_to = PSY.IC.MinMax(; min = -100.0, max = 100.0),
+        rating = 100.0,
         reactive_power_limits_from = PSY.IC.MinMax(; min = -50.0, max = 50.0),
         reactive_power_limits_to = PSY.IC.MinMax(; min = -50.0, max = 50.0),
         loss = PSY.PC.LossCurve(;
@@ -1152,7 +1160,7 @@ end
         PSY.from_openapi(hvdc_po, refs, NU)
     add_component!(sys, hvdc_natural)
     @test get_active_power_flow(hvdc_natural, u"SU") == 0.5
-    @test get_active_power_limits_from(hvdc_natural, u"SU") == (min = -1.0, max = 1.0)
+    @test get_rating(hvdc_natural, u"SU") == 1.0
     @test get_reactive_power_limits_to(hvdc_natural, u"SU") == (min = -0.5, max = 0.5)
     @test get_loss(hvdc_natural) == LossCurve(LinearCurve(0.01, 0.0), NaturalUnit())
     @test get_base_power(hvdc_natural) == 100.0
@@ -1161,8 +1169,7 @@ end
     hvdc_po_cu_loss = PSY.PO.TwoTerminalGenericHVDCLine(;
         id = 22, name = "hvdc_cu_loss", available = true, active_power_flow = 50.0,
         arc = 10,
-        active_power_limits_from = PSY.IC.MinMax(; min = -100.0, max = 100.0),
-        active_power_limits_to = PSY.IC.MinMax(; min = -100.0, max = 100.0),
+        rating = 100.0,
         reactive_power_limits_from = PSY.IC.MinMax(; min = -50.0, max = 50.0),
         reactive_power_limits_to = PSY.IC.MinMax(; min = -50.0, max = 50.0),
         loss = _loss_curve_po(0.01, 0.0; power_units = "COMPONENT_BASE"),
@@ -1179,16 +1186,14 @@ end
     @test_throws UndefKeywordError PSY.PO.TwoTerminalGenericHVDCLine(;
         id = 25, name = "hvdc_missing_base", available = true, active_power_flow = 50.0,
         arc = 10,
-        active_power_limits_from = PSY.IC.MinMax(; min = -100.0, max = 100.0),
-        active_power_limits_to = PSY.IC.MinMax(; min = -100.0, max = 100.0),
+        rating = 100.0,
         reactive_power_limits_from = PSY.IC.MinMax(; min = -50.0, max = 50.0),
         reactive_power_limits_to = PSY.IC.MinMax(; min = -50.0, max = 50.0),
     )
 
     hvdc_po_device = PSY.PO.TwoTerminalGenericHVDCLine(;
         id = 21, name = "hvdc2", available = true, active_power_flow = 50.0, arc = 10,
-        active_power_limits_from = PSY.IC.MinMax(; min = -100.0, max = 100.0),
-        active_power_limits_to = PSY.IC.MinMax(; min = -100.0, max = 100.0),
+        rating = 100.0,
         reactive_power_limits_from = PSY.IC.MinMax(; min = -50.0, max = 50.0),
         reactive_power_limits_to = PSY.IC.MinMax(; min = -50.0, max = 50.0),
         loss = PSY.PC.LossCurve(;
@@ -1214,13 +1219,13 @@ end
     )
     add_component!(sys, hvdc_device)
     @test get_active_power_flow(hvdc_device, u"SU") == 50.0
-    @test get_active_power_limits_from(hvdc_device, u"SU") == (min = -100.0, max = 100.0)
+    @test get_rating(hvdc_device, u"SU") == 100.0
     @test get_base_power(hvdc_device) == 100.0
 end
 
 @testset "OpenAPI converters: TModelHVDCLine" begin
     # Exception among the branches: no `power_units` discriminator and no `base_power` at
-    # all — `active_power_flow`/`active_power_limits_from/to` are fixed natural units (MW),
+    # all — `active_power_flow`/`operational_flow_limit` are fixed natural units (MW),
     # same posture as reserves' `requirement`, so import always divides by
     # `get_base_power(refs)`; `base_current`, not a power base, is `r`/`l`/`c`'s own anchor.
     # Self-interpretability: the physical MW value must survive regardless of which system
@@ -1251,8 +1256,10 @@ end
         parameter_units = PSY.PO.ImpedanceUnitBasis("COMPONENT_BASE"),
         base_current = 200.0,
         r = 0.01, l = 0.02, c = 0.03,
-        active_power_limits_from = PSY.IC.MinMax(; min = -250.0, max = 250.0),
-        active_power_limits_to = PSY.IC.MinMax(; min = -250.0, max = 250.0),
+        operational_flow_limit = PSY.PC.OperationalFlowLimit(;
+            from_to_min = 0.0, from_to_max = 250.0, to_from_min = 0.0,
+            to_from_max = 250.0,
+        ),
     )
     @test !hasfield(PSY.PO.TModelHVDCLine, :power_units)
     @test !hasfield(PSY.PO.TModelHVDCLine, :base_power)
@@ -1264,7 +1271,8 @@ end
     tmodel_100 = PSY.from_openapi(tmodel_po, refs_100)
     add_component!(sys_100, tmodel_100)
     @test get_active_power_flow(tmodel_100, u"MW") == 125.0
-    @test get_active_power_limits_from(tmodel_100, u"MW") == (min = -250.0, max = 250.0)
+    @test get_operational_flow_limit(tmodel_100, u"MW") ==
+          (from_to = (min = 0.0, max = 250.0), to_from = (min = 0.0, max = 250.0))
     @test get_base_current(tmodel_100) == 200.0
 
     # Default import kwarg is 100.0 (see `from_openapi(::Type{System}, doc)`); a mismatched
@@ -1276,7 +1284,8 @@ end
     tmodel_250 = PSY.from_openapi(tmodel_po, refs_250)
     add_component!(sys_250, tmodel_250)
     @test get_active_power_flow(tmodel_250, u"MW") == 125.0
-    @test get_active_power_limits_to(tmodel_250, u"MW") == (min = -250.0, max = 250.0)
+    @test get_operational_flow_limit(tmodel_250, u"MW") ==
+          (from_to = (min = 0.0, max = 250.0), to_from = (min = 0.0, max = 250.0))
 
     # The schema default `NATURAL_UNITS` is unimplemented here, so omission errors.
     tmodel_po_no_units =
@@ -1349,13 +1358,13 @@ end
     arc_po = PSY.PO.Arc(; id = 10, from_id = 3, to_id = 4)
     refs[10] = PSY.from_openapi(arc_po, refs, NU)
 
-    # `rectifier_tap_limits`/`inverter_tap_limits`/`active_power_limits_from`/
-    # `active_power_limits_to`/`reactive_power_limits_from`/`reactive_power_limits_to` are all
+    # `rectifier_tap_limits`/`inverter_tap_limits`/`rating_from`/`rating_to`/
+    # `reactive_power_limits_from`/`reactive_power_limits_to` are all
     # `Absent`-by-omission but PSY declares a real default for each — a document omitting them
     # must still build rather than erroring on `Absent.min`.
     lcc_po = PSY.PO.TwoTerminalLCCLine(;
         id = 20, name = "lcc1", available = true, arc = 10,
-        active_power_flow = 50.0, r = 0.01,
+        active_power_flow = 50.0, rating = 100.0, r = 0.01,
         control_mode = PSY.PO.LCCControlMode("POWER"), power_transfer_setpoint = 50.0,
         scheduled_dc_voltage = 200.0,
         rectifier_bridges = 2, rectifier_rc = 0.001, rectifier_xc = 0.01,
@@ -1375,8 +1384,9 @@ end
         lcc = PSY.from_openapi(lcc_po, refs, val)
         @test get_rectifier_tap_limits(lcc) == (min = 0.51, max = 1.5)
         @test get_inverter_tap_limits(lcc) == (min = 0.51, max = 1.5)
-        @test get_active_power_limits_from(lcc, u"CU") == (min = 0.0, max = 0.0)
-        @test get_active_power_limits_to(lcc, u"CU") == (min = 0.0, max = 0.0)
+        @test get_rating_from(lcc, u"CU") == 1e8
+        @test get_rating_to(lcc, u"CU") == 1e8
+        @test isnothing(get_operational_flow_limit(lcc, u"CU"))
         @test get_reactive_power_limits_from(lcc, u"CU") == (min = 0.0, max = 0.0)
         @test get_reactive_power_limits_to(lcc, u"CU") == (min = 0.0, max = 0.0)
     end
@@ -1384,6 +1394,7 @@ end
     # POWER selects `power_transfer_setpoint`, a power field dividing by the base under
     # NaturalUnit only; `current_transfer_setpoint` stays nothing.
     lcc_power = PSY.from_openapi(lcc_po, refs, NU)
+    @test get_rating(lcc_power, u"CU") == 1.0
     @test get_control_mode(lcc_power) == LCCControlMode.POWER
     @test get_power_transfer_setpoint(lcc_power, u"CU") == 0.5
     @test get_power_transfer_setpoint(lcc_power, u"NU") ≈ 50.0
@@ -1397,7 +1408,7 @@ end
     # stay nothing.
     lcc_po_no_optional = PSY.PO.TwoTerminalLCCLine(;
         id = 21, name = "lcc2", available = true, arc = 10,
-        active_power_flow = 50.0, r = 0.01,
+        active_power_flow = 50.0, rating = 100.0, r = 0.01,
         scheduled_dc_voltage = 200.0,
         rectifier_bridges = 2, rectifier_rc = 0.001, rectifier_xc = 0.01,
         rectifier_base_voltage = 138.0,
@@ -1778,8 +1789,6 @@ end
     vsc_po = PSY.PO.TwoTerminalVSCLine(;
         id = 20, name = "vsc1", available = true, arc = 10,
         active_power_flow = 50.0, rating = 200.0,
-        active_power_limits_from = PSY.IC.MinMax(; min = -200.0, max = 200.0),
-        active_power_limits_to = PSY.IC.MinMax(; min = -200.0, max = 200.0),
         admittance_units = PSY.PO.AdmittanceUnitBasis("NATURAL_UNITS"), g = 0.5,
         dc_current = 300.0, reactive_power_from = 10.0,
         dc_control_from = PSY.PO.VSCDCControlModes("DC_POWER"),
@@ -1818,7 +1827,7 @@ end
     add_component!(sys, natural)
     @test get_active_power_flow(natural, u"SU") == 0.5
     @test get_rating(natural, u"SU") == 2.0
-    @test get_active_power_limits_from(natural, u"SU") == (min = -2.0, max = 2.0)
+    @test get_rating_from(natural, u"SU") == 2.0
     @test get_reactive_power_limits_to(natural, u"SU") == (min = -1.0, max = 1.0)
     # DC_POWER setpoint is a power field: divides under NaturalUnit only.
     @test get_dc_power_setpoint_from(natural, u"SU") == 0.4
@@ -1843,7 +1852,7 @@ end
     device = PSY.from_openapi(vsc_po2, refs, CU)
     add_component!(sys, device)
     @test get_active_power_flow(device, u"SU") == 50.0
-    @test get_active_power_limits_from(device, u"SU") == (min = -200.0, max = 200.0)
+    @test get_rating_from(device, u"SU") == 200.0
     @test get_dc_power_setpoint_from(device, u"SU") == 40.0
     @test get_dc_voltage_setpoint_to(device) == 1.02
     @test get_g(device) == 200.0

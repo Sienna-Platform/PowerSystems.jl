@@ -502,6 +502,15 @@
                     "data_type": "Arc"
                 },
                 {
+                    "name": "rating",
+                    "comment": "Thermal rating (MVA) stored in component base per unit on `base_power`",
+                    "null_value": "0.0",
+                    "data_type": "Float64",
+                    "needs_conversion": true,
+                    "conversion_unit": ":mva",
+                    "display_units": "CU"
+                },
+                {
                     "name": "tap",
                     "comment": "Normalized tap changer position for voltage control, varying between 0 and 2, with 1 centered at the nominal voltage",
                     "null_value": "1.0",
@@ -604,16 +613,6 @@
                     "default": "33"
                 },
                 {
-                    "name": "rating",
-                    "comment": "Thermal rating (MVA) stored in component base per unit on `base_power`",
-                    "null_value": "nothing",
-                    "data_type": "Union{Nothing, Float64}",
-                    "default": "nothing",
-                    "needs_conversion": true,
-                    "conversion_unit": ":mva",
-                    "display_units": "CU"
-                },
-                {
                     "name": "rating_b",
                     "comment": "Second current rating; entered in MVA.",
                     "null_value": "nothing",
@@ -679,6 +678,15 @@
                         "max": null
                     },
                     "default": "nothing"
+                },
+                {
+                    "name": "operational_flow_limit",
+                    "comment": "Operator-set minimum and maximum flow (MW) in each direction, `from_to` and `to_from`, applied in addition to `rating`. `nothing` means no operational limit",
+                    "null_value": "nothing",
+                    "data_type": "Union{Nothing, OperationalFlowLimit}",
+                    "default": "nothing",
+                    "needs_conversion": true,
+                    "conversion_unit": ":mw"
                 },
                 {
                     "name": "base_value",
@@ -838,6 +846,15 @@
                     "validation_action": "warn"
                 },
                 {
+                    "name": "operational_flow_limit",
+                    "comment": "Operator-set minimum and maximum flow (MW) in each direction, `from_to` and `to_from`, applied in addition to `rating`. `nothing` means no operational limit",
+                    "null_value": "nothing",
+                    "data_type": "Union{Nothing, OperationalFlowLimit}",
+                    "default": "nothing",
+                    "needs_conversion": true,
+                    "conversion_unit": ":mw"
+                },
+                {
                     "name": "ext",
                     "comment": "An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.",
                     "data_type": "Dict{String, Any}",
@@ -888,14 +905,6 @@
                     "conversion_unit": ":mvar"
                 },
                 {
-                    "null_value": "0.0",
-                    "name": "max_flow",
-                    "comment": "Maximum allowable flow on the generic impedance. When defining a GenericArcImpedance before it is attached to a `System`, `max_flow` must be in pu ([`SYSTEM_BASE`](@ref per_unit)) using the base power of the `System` it will be attached to",
-                    "data_type": "Float64",
-                    "needs_conversion": true,
-                    "conversion_unit": ":mw"
-                },
-                {
                     "null_value": "Arc(ACBus(nothing), ACBus(nothing))",
                     "name": "arc",
                     "comment": "An [`Arc`](@ref) defining this line `from` a bus `to` another bus",
@@ -930,6 +939,15 @@
                         "max": null
                     },
                     "validation_action": "warn"
+                },
+                {
+                    "name": "operational_flow_limit",
+                    "comment": "Operator-set minimum and maximum flow (MW) in each direction, `from_to` and `to_from`, applied in addition to `rating`. `nothing` means no operational limit",
+                    "null_value": "nothing",
+                    "data_type": "Union{Nothing, OperationalFlowLimit}",
+                    "default": "nothing",
+                    "needs_conversion": true,
+                    "conversion_unit": ":mw"
                 },
                 {
                     "name": "ext",
@@ -1061,175 +1079,13 @@
                     "validation_action": "warn"
                 },
                 {
-                    "name": "ext",
-                    "comment": "An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.",
-                    "data_type": "Dict{String, Any}",
-                    "null_value": "Dict{String, Any}()",
-                    "default": "Dict{String, Any}()"
-                },
-                {
-                    "name": "internal",
-                    "comment": "(**Do not modify.**) PowerSystems.jl internal reference",
-                    "data_type": "InfrastructureSystemsInternal",
-                    "internal_default": "InfrastructureSystemsInternal()",
-                    "exclude_setter": true
-                }
-            ],
-            "supertype": "ACTransmission"
-        },
-        {
-            "struct_name": "MonitoredLine",
-            "docstring": "An AC transmission line with additional power flow constraints specified by the system operator, more restrictive than the line's thermal limits.\n\nFor example, monitored lines can be used to restrict line flow following a contingency elsewhere in the network. See the `flow_limits` parameter. If monitoring is not needed, see [`Line`](@ref)",
-            "fields": [
-                {
-                    "null_value": "init",
-                    "name": "name",
-                    "comment": "Name of the component. Components of the same type (e.g., `PowerLoad`) must have unique names, but components of different types (e.g., `PowerLoad` and `ACBus`) can have the same name",
-                    "exclude_setter": true,
-                    "data_type": "String"
-                },
-                {
-                    "null_value": "false",
-                    "name": "available",
-                    "comment": "Indicator of whether the component is connected and online (`true`) or disconnected, offline, or down (`false`). Unavailable components are excluded during simulations",
-                    "data_type": "Bool"
-                },
-                {
-                    "name": "active_power_flow",
-                    "comment": "Initial condition of active power flow on the line (MW)",
-                    "null_value": "0.0",
-                    "data_type": "Float64",
+                    "name": "operational_flow_limit",
+                    "comment": "Operator-set minimum and maximum flow (MW) in each direction, `from_to` and `to_from`, applied in addition to `rating`. `nothing` means no operational limit",
+                    "null_value": "nothing",
+                    "data_type": "Union{Nothing, OperationalFlowLimit}",
+                    "default": "nothing",
                     "needs_conversion": true,
                     "conversion_unit": ":mw"
-                },
-                {
-                    "name": "reactive_power_flow",
-                    "comment": "Initial condition of reactive power flow on the line (MVAR)",
-                    "null_value": "0.0",
-                    "data_type": "Float64",
-                    "needs_conversion": true,
-                    "conversion_unit": ":mvar"
-                },
-                {
-                    "null_value": "Arc(ACBus(nothing), ACBus(nothing))",
-                    "name": "arc",
-                    "comment": "An [`Arc`](@ref) defining this line `from` a bus `to` another bus",
-                    "data_type": "Arc"
-                },
-                {
-                    "null_value": "0.0",
-                    "name": "r",
-                    "data_type": "Float64",
-                    "comment": "Resistance in pu ([`SYSTEM_BASE`](@ref per_unit))",
-                    "valid_range": {
-                        "min": 0,
-                        "max": 4
-                    },
-                    "validation_action": "warn",
-                    "needs_conversion": true,
-                    "conversion_unit": ":ohm"
-                },
-                {
-                    "null_value": "0.0",
-                    "name": "x",
-                    "data_type": "Float64",
-                    "comment": "Reactance in pu ([`SYSTEM_BASE`](@ref per_unit))",
-                    "valid_range": {
-                        "min": 0,
-                        "max": 4
-                    },
-                    "validation_action": "warn",
-                    "needs_conversion": true,
-                    "conversion_unit": ":ohm"
-                },
-                {
-                    "name": "b",
-                    "null_value": "(from=0.0, to=0.0)",
-                    "data_type": "FromTo",
-                    "comment": "Shunt susceptance in pu ([`SYSTEM_BASE`](@ref per_unit)), specified both on the `from` and `to` ends of the line. These are commonly modeled with the same value",
-                    "valid_range": {
-                        "min": 0,
-                        "max": 2
-                    },
-                    "validation_action": "warn",
-                    "needs_conversion": true,
-                    "conversion_unit": ":siemens"
-                },
-                {
-                    "name": "flow_limits",
-                    "null_value": "(from_to=0.0, to_from=0.0)",
-                    "comment": "Minimum and maximum permissable flow on the line (MVA), if different from the thermal rating defined in `rating`",
-                    "data_type": "FromTo_ToFrom",
-                    "needs_conversion": true,
-                    "conversion_unit": ":mw"
-                },
-                {
-                    "null_value": "0.0",
-                    "name": "rating",
-                    "data_type": "Float64",
-                    "comment": "Thermal rating (MVA). Flow on the line must be between -`rating` and `rating`. When defining a line before it is attached to a `System`, `rating` must be in pu ([`SYSTEM_BASE`](@ref per_unit)) using the base power of the `System` it will be attached to. Displays in component base ([`DEVICE_BASE`](@ref per_unit)) by default, unlike most converted fields which default to system base",
-                    "needs_conversion": true,
-                    "conversion_unit": ":mva",
-                    "display_units": "CU"
-                },
-                {
-                    "name": "angle_limits",
-                    "comment": "Minimum and maximum angle limits (radians)",
-                    "null_value": "(min=-3.1416, max=3.1416)",
-                    "data_type": "MinMax"
-                },
-                {
-                    "null_value": "0.0",
-                    "name": "rating_b",
-                    "comment": "Second current rating; entered in MVA.",
-                    "data_type": "Union{Nothing, Float64}",
-                    "needs_conversion": true,
-                    "conversion_unit": ":mva",
-                    "default": "nothing"
-                },
-                {
-                    "null_value": "0.0",
-                    "name": "rating_c",
-                    "comment": "Third current rating; entered in MVA.",
-                    "data_type": "Union{Nothing, Float64}",
-                    "needs_conversion": true,
-                    "conversion_unit": ":mva",
-                    "default": "nothing"
-                },
-                {
-                    "name": "g",
-                    "null_value": "(from=0.0, to=0.0)",
-                    "data_type": "FromTo",
-                    "comment": "Shunt conductance in pu ([`SYSTEM_BASE`](@ref per_unit)), specified both on the `from` and `to` ends of the line. These are commonly modeled with the same value",
-                    "valid_range": {
-                        "min": 0,
-                        "max": 100
-                    },
-                    "validation_action": "warn",
-                    "default": "(from=0.0, to=0.0)",
-                    "needs_conversion": true,
-                    "conversion_unit": ":siemens"
-                },
-                {
-                    "name": "services",
-                    "data_type": "Vector{Service}",
-                    "comment": "Services that this device contributes to",
-                    "null_value": "Device[]",
-                    "default": "Device[]"
-                },
-                {
-                    "name": "base_power",
-                    "comment": "System base power for per-unitization of this component's per-unit fields, recorded per component in lieu of a system-level table (MVA)",
-                    "null_value": "100.0",
-                    "data_type": "Float64",
-                    "default": "100.0",
-                    "exclude_getter": true,
-                    "exclude_setter": true,
-                    "valid_range": {
-                        "min": 0.0001,
-                        "max": null
-                    },
-                    "validation_action": "warn"
                 },
                 {
                     "name": "ext",
@@ -1544,20 +1400,18 @@
                     "data_type": "Arc"
                 },
                 {
-                    "name": "active_power_limits_from",
-                    "comment": "Minimum and maximum active power flows to the FROM node (MW)",
-                    "null_value": "(min=0.0, max=0.0)",
-                    "data_type": "MinMax",
+                    "name": "rating",
+                    "comment": "Transfer rating of the DC line (MVA), independent of the converter ratings at each end",
+                    "null_value": "0.0",
+                    "data_type": "Float64",
+                    "valid_range": {
+                        "min": 0,
+                        "max": null
+                    },
+                    "validation_action": "error",
                     "needs_conversion": true,
-                    "conversion_unit": ":mw"
-                },
-                {
-                    "name": "active_power_limits_to",
-                    "comment": "Minimum and maximum active power flows to the TO node (MW)",
-                    "null_value": "(min=0.0, max=0.0)",
-                    "data_type": "MinMax",
-                    "needs_conversion": true,
-                    "conversion_unit": ":mw"
+                    "conversion_unit": ":mva",
+                    "display_units": "CU"
                 },
                 {
                     "name": "reactive_power_limits_from",
@@ -1574,6 +1428,24 @@
                     "data_type": "MinMax",
                     "needs_conversion": true,
                     "conversion_unit": ":mvar"
+                },
+                {
+                    "name": "rating_from",
+                    "comment": "Converter rating in MVA in the `from` bus. The default is large enough that the converter imposes no limit beyond `rating`",
+                    "null_value": "0.0",
+                    "data_type": "Float64",
+                    "default": "1e8",
+                    "needs_conversion": true,
+                    "conversion_unit": ":mva"
+                },
+                {
+                    "name": "rating_to",
+                    "comment": "Converter rating in MVA in the `to` bus. The default is large enough that the converter imposes no limit beyond `rating`",
+                    "null_value": "0.0",
+                    "data_type": "Float64",
+                    "default": "1e8",
+                    "needs_conversion": true,
+                    "conversion_unit": ":mva"
                 },
                 {
                     "name": "loss",
@@ -1602,6 +1474,15 @@
                         "max": null
                     },
                     "validation_action": "warn"
+                },
+                {
+                    "name": "operational_flow_limit",
+                    "comment": "Operator-set minimum and maximum flow (MW) in each direction, `from_to` and `to_from`, applied in addition to `rating`. `nothing` means no operational limit",
+                    "null_value": "nothing",
+                    "data_type": "Union{Nothing, OperationalFlowLimit}",
+                    "default": "nothing",
+                    "needs_conversion": true,
+                    "conversion_unit": ":mw"
                 },
                 {
                     "name": "ext",
@@ -1653,7 +1534,7 @@
                 },
                 {
                     "name": "rating",
-                    "comment": "Maximum output power rating of the converter (MVA)",
+                    "comment": "Transfer rating of the DC line (MVA), independent of the converter ratings at each end",
                     "null_value": "0.0",
                     "data_type": "Float64",
                     "valid_range": {
@@ -1664,22 +1545,6 @@
                     "needs_conversion": true,
                     "conversion_unit": ":mva",
                     "display_units": "CU"
-                },
-                {
-                    "name": "active_power_limits_from",
-                    "comment": "Minimum and maximum active power flows to the FROM node (MW)",
-                    "null_value": "(min=0.0, max=0.0)",
-                    "data_type": "MinMax",
-                    "needs_conversion": true,
-                    "conversion_unit": ":mw"
-                },
-                {
-                    "name": "active_power_limits_to",
-                    "comment": "Minimum and maximum active power flows to the TO node (MW)",
-                    "null_value": "(min=0.0, max=0.0)",
-                    "data_type": "MinMax",
-                    "needs_conversion": true,
-                    "conversion_unit": ":mw"
                 },
                 {
                     "name": "dc_control_from",
@@ -1781,7 +1646,7 @@
                 },
                 {
                     "name": "rating_from",
-                    "comment": "Converter rating in MVA in the `from` bus.",
+                    "comment": "Converter rating in MVA in the `from` bus. The default is large enough that the converter imposes no limit beyond `rating`",
                     "null_value": "0.0",
                     "data_type": "Float64",
                     "default": "1e8",
@@ -1885,7 +1750,7 @@
                 },
                 {
                     "name": "rating_to",
-                    "comment": "Converter rating in MVA in the `to` bus.",
+                    "comment": "Converter rating in MVA in the `to` bus. The default is large enough that the converter imposes no limit beyond `rating`",
                     "null_value": "0.0",
                     "data_type": "Float64",
                     "default": "1e8",
@@ -1994,6 +1859,15 @@
                     "validation_action": "warn"
                 },
                 {
+                    "name": "operational_flow_limit",
+                    "comment": "Operator-set minimum and maximum flow (MW) in each direction, `from_to` and `to_from`, applied in addition to `rating`. `nothing` means no operational limit",
+                    "null_value": "nothing",
+                    "data_type": "Union{Nothing, OperationalFlowLimit}",
+                    "default": "nothing",
+                    "needs_conversion": true,
+                    "conversion_unit": ":mw"
+                },
+                {
                     "name": "ext",
                     "comment": "An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.",
                     "data_type": "Dict{String, Any}",
@@ -2040,6 +1914,20 @@
                     "data_type": "Float64",
                     "needs_conversion": true,
                     "conversion_unit": ":mw"
+                },
+                {
+                    "name": "rating",
+                    "comment": "Transfer rating of the DC line (MVA), independent of the converter ratings at each end",
+                    "null_value": "0.0",
+                    "data_type": "Float64",
+                    "valid_range": {
+                        "min": 0,
+                        "max": null
+                    },
+                    "validation_action": "error",
+                    "needs_conversion": true,
+                    "conversion_unit": ":mva",
+                    "display_units": "CU"
                 },
                 {
                     "null_value": "0.0",
@@ -2242,24 +2130,6 @@
                     "default": "0.0"
                 },
                 {
-                    "name": "active_power_limits_from",
-                    "comment": "Minimum and maximum active power flows to the FROM node (MW)",
-                    "null_value": "(min=0.0, max=0.0)",
-                    "data_type": "MinMax",
-                    "needs_conversion": true,
-                    "conversion_unit": ":mw",
-                    "default": "(min=0.0, max=0.0)"
-                },
-                {
-                    "name": "active_power_limits_to",
-                    "comment": "Minimum and maximum active power flows to the TO node (MW)",
-                    "null_value": "(min=0.0, max=0.0)",
-                    "data_type": "MinMax",
-                    "needs_conversion": true,
-                    "conversion_unit": ":mw",
-                    "default": "(min=0.0, max=0.0)"
-                },
-                {
                     "name": "reactive_power_limits_from",
                     "comment": "Minimum and maximum reactive power limits to the FROM node (MVAR)",
                     "null_value": "(min=0.0, max=0.0)",
@@ -2276,6 +2146,24 @@
                     "needs_conversion": true,
                     "conversion_unit": ":mvar",
                     "default": "(min=0.0, max=0.0)"
+                },
+                {
+                    "name": "rating_from",
+                    "comment": "Converter rating in MVA in the `from` bus. The default is large enough that the converter imposes no limit beyond `rating`",
+                    "null_value": "0.0",
+                    "data_type": "Float64",
+                    "default": "1e8",
+                    "needs_conversion": true,
+                    "conversion_unit": ":mva"
+                },
+                {
+                    "name": "rating_to",
+                    "comment": "Converter rating in MVA in the `to` bus. The default is large enough that the converter imposes no limit beyond `rating`",
+                    "null_value": "0.0",
+                    "data_type": "Float64",
+                    "default": "1e8",
+                    "needs_conversion": true,
+                    "conversion_unit": ":mva"
                 },
                 {
                     "name": "loss",
@@ -2304,6 +2192,15 @@
                         "max": null
                     },
                     "validation_action": "warn"
+                },
+                {
+                    "name": "operational_flow_limit",
+                    "comment": "Operator-set minimum and maximum flow (MW) in each direction, `from_to` and `to_from`, applied in addition to `rating`. `nothing` means no operational limit",
+                    "null_value": "nothing",
+                    "data_type": "Union{Nothing, OperationalFlowLimit}",
+                    "default": "nothing",
+                    "needs_conversion": true,
+                    "conversion_unit": ":mw"
                 },
                 {
                     "name": "ext",
@@ -2372,22 +2269,6 @@
                     "comment": "Shunt capacitance in p.u. ([`SYSTEM_BASE`](@ref per_unit))"
                 },
                 {
-                    "name": "active_power_limits_from",
-                    "comment": "Minimum and maximum active power flows to the FROM node (MW)",
-                    "null_value": "(min=0.0, max=0.0)",
-                    "data_type": "MinMax",
-                    "needs_conversion": true,
-                    "conversion_unit": ":mw"
-                },
-                {
-                    "name": "active_power_limits_to",
-                    "comment": "Minimum and maximum active power flows to the TO node (MW)",
-                    "null_value": "(min=0.0, max=0.0)",
-                    "data_type": "MinMax",
-                    "needs_conversion": true,
-                    "conversion_unit": ":mw"
-                },
-                {
                     "name": "base_current",
                     "comment": "Base current for per-unitization of this line's per-unit fields — this DC line per-unitizes against a current base, not a power base (A)",
                     "null_value": "100.0",
@@ -2404,6 +2285,15 @@
                     "comment": "Services that this device contributes to",
                     "null_value": "Device[]",
                     "default": "Device[]"
+                },
+                {
+                    "name": "operational_flow_limit",
+                    "comment": "Operator-set minimum and maximum flow (MW) in each direction, `from_to` and `to_from`, applied in addition to `rating`. `nothing` means no operational limit",
+                    "null_value": "nothing",
+                    "data_type": "Union{Nothing, OperationalFlowLimit}",
+                    "default": "nothing",
+                    "needs_conversion": true,
+                    "conversion_unit": ":mw"
                 },
                 {
                     "name": "ext",

@@ -33,6 +33,10 @@ omits fails here rather than reaching the component constructor."""
 # `IC.FromToToFrom`: the schema drops the underscore PSY's `FromTo_ToFrom` alias keeps.
 @inline _from_wire(x::IC.FromToToFrom) =
     (from_to = Float64(x.from_to), to_from = Float64(x.to_from))
+@inline _from_wire(x::PC.OperationalFlowLimit) = (
+    from_to = (min = Float64(x.from_to_min), max = Float64(x.from_to_max)),
+    to_from = (min = Float64(x.to_from_min), max = Float64(x.to_from_max)),
+)
 @inline _from_wire(x::PC.StartUpShutDown) =
     (startup = Float64(x.startup), shutdown = Float64(x.shutdown))
 @inline _from_wire(x::PC.TurbinePump) =
@@ -45,7 +49,7 @@ _from_wire(::_WireAbsent) = throw(ArgumentError("a required field is absent from
 
 """`op(member, base)` over every member of a decoded compound, or `op(x, base)` on a
 scalar."""
-@inline _rescale(op::F, x::NamedTuple, base) where {F} = map(m -> op(m, base), x)
+@inline _rescale(op::F, x::NamedTuple, base) where {F} = map(m -> _rescale(op, m, base), x)
 @inline _rescale(op::F, x, base) where {F} = op(x, base)
 
 """The decoded wire value, or `default` when the field is absent from the wire. `default`

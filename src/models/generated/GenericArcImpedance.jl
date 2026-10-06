@@ -10,11 +10,11 @@ This file is auto-generated. Do not edit.
         available::Bool
         active_power_flow::Float64
         reactive_power_flow::Float64
-        max_flow::Float64
         arc::Arc
         r::Float64
         x::Float64
         base_power::Float64
+        operational_flow_limit::Union{Nothing, OperationalFlowLimit}
         ext::Dict{String, Any}
         internal::InfrastructureSystemsInternal
     end
@@ -26,11 +26,11 @@ A virtual impedance between two buses that does not correspond to a physical com
 - `available::Bool`: Indicator of whether the component is connected and online (`true`) or disconnected, offline, or down (`false`). Unavailable components are excluded during simulations
 - `active_power_flow::Float64`: Initial condition of active power flow on the line (MW)
 - `reactive_power_flow::Float64`: Initial condition of reactive power flow on the line (MVAR)
-- `max_flow::Float64`: Maximum allowable flow on the generic impedance. When defining a GenericArcImpedance before it is attached to a `System`, `max_flow` must be in pu ([`SYSTEM_BASE`](@ref per_unit)) using the base power of the `System` it will be attached to
 - `arc::Arc`: An [`Arc`](@ref) defining this line `from` a bus `to` another bus
 - `r::Float64`: Resistance in pu ([`SYSTEM_BASE`](@ref per_unit))
 - `x::Float64`: Reactance in pu ([`SYSTEM_BASE`](@ref per_unit))
 - `base_power::Float64`: (default: `100.0`) System base power for per-unitization of this component's per-unit fields, recorded per component in lieu of a system-level table (MVA), validation range: `(0.0001, nothing)`
+- `operational_flow_limit::Union{Nothing, OperationalFlowLimit}`: (default: `nothing`) Operator-set minimum and maximum flow (MW) in each direction, `from_to` and `to_from`, applied in addition to `rating`. `nothing` means no operational limit
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
 - `input_basis`: (keyword constructor only, required) `u"CU"` or `u"NU"`, the units of bare numbers on unit-bearing fields. Tagged values (`50.0u"MW"`) keep their own units
@@ -44,8 +44,6 @@ mutable struct GenericArcImpedance <: ACTransmission
     active_power_flow::Float64
     "Initial condition of reactive power flow on the line (MVAR)"
     reactive_power_flow::Float64
-    "Maximum allowable flow on the generic impedance. When defining a GenericArcImpedance before it is attached to a `System`, `max_flow` must be in pu ([`SYSTEM_BASE`](@ref per_unit)) using the base power of the `System` it will be attached to"
-    max_flow::Float64
     "An [`Arc`](@ref) defining this line `from` a bus `to` another bus"
     arc::Arc
     "Resistance in pu ([`SYSTEM_BASE`](@ref per_unit))"
@@ -54,23 +52,25 @@ mutable struct GenericArcImpedance <: ACTransmission
     x::Float64
     "System base power for per-unitization of this component's per-unit fields, recorded per component in lieu of a system-level table (MVA)"
     base_power::Float64
+    "Operator-set minimum and maximum flow (MW) in each direction, `from_to` and `to_from`, applied in addition to `rating`. `nothing` means no operational limit"
+    operational_flow_limit::Union{Nothing, OperationalFlowLimit}
     "An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation."
     ext::Dict{String, Any}
     "(**Do not modify.**) PowerSystems.jl internal reference"
     internal::InfrastructureSystemsInternal
 end
 
-function GenericArcImpedance(name, available, active_power_flow, reactive_power_flow, max_flow, arc, r, x, base_power=100.0, ext=Dict{String, Any}(), )
-    GenericArcImpedance(name, available, active_power_flow, reactive_power_flow, max_flow, arc, r, x, base_power, ext, InfrastructureSystemsInternal(), )
+function GenericArcImpedance(name, available, active_power_flow, reactive_power_flow, arc, r, x, base_power=100.0, operational_flow_limit=nothing, ext=Dict{String, Any}(), )
+    GenericArcImpedance(name, available, active_power_flow, reactive_power_flow, arc, r, x, base_power, operational_flow_limit, ext, InfrastructureSystemsInternal(), )
 end
 
-function GenericArcImpedance(; name, available, active_power_flow, reactive_power_flow, max_flow, arc, r, x, base_power=100.0, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Unitful.Units, )
-    value = GenericArcImpedance(name, available, _placeholder(active_power_flow), _placeholder(reactive_power_flow), _placeholder(max_flow), arc, _placeholder(r), _placeholder(x), base_power, ext, internal, )
+function GenericArcImpedance(; name, available, active_power_flow, reactive_power_flow, arc, r, x, base_power=100.0, operational_flow_limit=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Unitful.Units, )
+    value = GenericArcImpedance(name, available, _placeholder(active_power_flow), _placeholder(reactive_power_flow), arc, _placeholder(r), _placeholder(x), base_power, _placeholder(operational_flow_limit), ext, internal, )
     set_active_power_flow!(value, _tag(active_power_flow, input_basis, Val(:mw)))
     set_reactive_power_flow!(value, _tag(reactive_power_flow, input_basis, Val(:mvar)))
-    set_max_flow!(value, _tag(max_flow, input_basis, Val(:mw)))
     set_r!(value, _tag(r, input_basis, Val(:ohm)))
     set_x!(value, _tag(x, input_basis, Val(:ohm)))
+    set_operational_flow_limit!(value, _tag(operational_flow_limit, input_basis, Val(:mw)))
     return value
 end
 _takes_input_basis(::Type{<:GenericArcImpedance}) = true
@@ -82,11 +82,11 @@ function GenericArcImpedance(::Nothing)
         available=false,
         active_power_flow=0.0,
         reactive_power_flow=0.0,
-        max_flow=0.0,
         arc=Arc(ACBus(nothing), ACBus(nothing)),
         r=0.0,
         x=0.0,
         base_power=100.0,
+        operational_flow_limit=nothing,
         ext=Dict{String, Any}(),
         input_basis=u"CU",
     )
@@ -112,14 +112,6 @@ get_reactive_power_flow(value::GenericArcImpedance) = _units_arg_required(get_re
 get_reactive_power_flow_unitful(value::GenericArcImpedance) = _units_arg_required(get_reactive_power_flow_unitful, value, :reactive_power_flow, Val(:mvar))
 InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_flow), ::Type{GenericArcImpedance}) = u"SU"
 InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_flow_unitful), ::Type{GenericArcImpedance}) = u"SU"
-"""Get [`GenericArcImpedance`](@ref) `max_flow` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_max_flow_unitful`](@ref)."""
-get_max_flow(value::GenericArcImpedance, units) = InfrastructureSystems._strip_units(get_value(value, Val(:max_flow), Val(:mw), units))
-"""Get [`GenericArcImpedance`](@ref) `max_flow` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_max_flow`](@ref)."""
-get_max_flow_unitful(value::GenericArcImpedance, units) = get_value(value, Val(:max_flow), Val(:mw), units)
-get_max_flow(value::GenericArcImpedance) = _units_arg_required(get_max_flow, value, :max_flow, Val(:mw))
-get_max_flow_unitful(value::GenericArcImpedance) = _units_arg_required(get_max_flow_unitful, value, :max_flow, Val(:mw))
-InfrastructureSystems.display_units_arg(::typeof(get_max_flow), ::Type{GenericArcImpedance}) = u"SU"
-InfrastructureSystems.display_units_arg(::typeof(get_max_flow_unitful), ::Type{GenericArcImpedance}) = u"SU"
 """Get [`GenericArcImpedance`](@ref) `arc`."""
 get_arc(value::GenericArcImpedance) = value.arc
 """Get [`GenericArcImpedance`](@ref) `r` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_r_unitful`](@ref)."""
@@ -140,6 +132,14 @@ InfrastructureSystems.display_units_arg(::typeof(get_x), ::Type{GenericArcImpeda
 InfrastructureSystems.display_units_arg(::typeof(get_x_unitful), ::Type{GenericArcImpedance}) = u"SU"
 
 _get_base_power(value::GenericArcImpedance) = value.base_power
+"""Get [`GenericArcImpedance`](@ref) `operational_flow_limit` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_operational_flow_limit_unitful`](@ref)."""
+get_operational_flow_limit(value::GenericArcImpedance, units) = InfrastructureSystems._strip_units(get_value(value, Val(:operational_flow_limit), Val(:mw), units))
+"""Get [`GenericArcImpedance`](@ref) `operational_flow_limit` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_operational_flow_limit`](@ref)."""
+get_operational_flow_limit_unitful(value::GenericArcImpedance, units) = get_value(value, Val(:operational_flow_limit), Val(:mw), units)
+get_operational_flow_limit(value::GenericArcImpedance) = _units_arg_required(get_operational_flow_limit, value, :operational_flow_limit, Val(:mw))
+get_operational_flow_limit_unitful(value::GenericArcImpedance) = _units_arg_required(get_operational_flow_limit_unitful, value, :operational_flow_limit, Val(:mw))
+InfrastructureSystems.display_units_arg(::typeof(get_operational_flow_limit), ::Type{GenericArcImpedance}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_operational_flow_limit_unitful), ::Type{GenericArcImpedance}) = u"SU"
 """Get [`GenericArcImpedance`](@ref) `ext`."""
 get_ext(value::GenericArcImpedance) = value.ext
 """Get [`GenericArcImpedance`](@ref) `internal`."""
@@ -153,9 +153,6 @@ set_active_power_flow!(value::GenericArcImpedance, val::_UntaggedNumber) = _unit
 """Set [`GenericArcImpedance`](@ref) `reactive_power_flow`."""
 set_reactive_power_flow!(value::GenericArcImpedance, val) = value.reactive_power_flow = set_value(value, Val(:reactive_power_flow), val, Val(:mvar))
 set_reactive_power_flow!(value::GenericArcImpedance, val::_UntaggedNumber) = _units_tag_required(set_reactive_power_flow!, value, :reactive_power_flow, Val(:mvar), val)
-"""Set [`GenericArcImpedance`](@ref) `max_flow`."""
-set_max_flow!(value::GenericArcImpedance, val) = value.max_flow = set_value(value, Val(:max_flow), val, Val(:mw))
-set_max_flow!(value::GenericArcImpedance, val::_UntaggedNumber) = _units_tag_required(set_max_flow!, value, :max_flow, Val(:mw), val)
 """Set [`GenericArcImpedance`](@ref) `arc`."""
 set_arc!(value::GenericArcImpedance, val) = value.arc = val
 """Set [`GenericArcImpedance`](@ref) `r`."""
@@ -164,5 +161,8 @@ set_r!(value::GenericArcImpedance, val::_UntaggedNumber) = _units_tag_required(s
 """Set [`GenericArcImpedance`](@ref) `x`."""
 set_x!(value::GenericArcImpedance, val) = value.x = set_value(value, Val(:x), val, Val(:ohm))
 set_x!(value::GenericArcImpedance, val::_UntaggedNumber) = _units_tag_required(set_x!, value, :x, Val(:ohm), val)
+"""Set [`GenericArcImpedance`](@ref) `operational_flow_limit`."""
+set_operational_flow_limit!(value::GenericArcImpedance, val) = value.operational_flow_limit = set_value(value, Val(:operational_flow_limit), val, Val(:mw))
+set_operational_flow_limit!(value::GenericArcImpedance, val::_UntaggedNumber) = _units_tag_required(set_operational_flow_limit!, value, :operational_flow_limit, Val(:mw), val)
 """Set [`GenericArcImpedance`](@ref) `ext`."""
 set_ext!(value::GenericArcImpedance, val) = value.ext = val

@@ -79,7 +79,6 @@ export TwoWindingTransformer
 export ThreeWindingTransformer
 export TwoTerminalHVDC
 export Line
-export MonitoredLine
 export GenericArcImpedance
 export DCBranch
 export TwoTerminalGenericHVDCLine

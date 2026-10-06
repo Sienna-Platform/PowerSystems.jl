@@ -11,8 +11,6 @@ This file is auto-generated. Do not edit.
         arc::Arc
         active_power_flow::Float64
         rating::Float64
-        active_power_limits_from::MinMax
-        active_power_limits_to::MinMax
         dc_control_from::VSCDCControlModes.Value
         ac_control_from::VSCACControlModes.Value
         dc_control_to::VSCDCControlModes.Value
@@ -52,6 +50,7 @@ This file is auto-generated. Do not edit.
         rmpct_to::Float64
         services::Vector{Service}
         base_power::Float64
+        operational_flow_limit::Union{Nothing, OperationalFlowLimit}
         ext::Dict{String, Any}
         internal::InfrastructureSystemsInternal
     end
@@ -65,9 +64,7 @@ This model is appropriate for operational simulations with a linearized DC power
 - `available::Bool`: Indicator of whether the component is connected and online (`true`) or disconnected, offline, or down (`false`). Unavailable components are excluded during simulations
 - `arc::Arc`: An [`Arc`](@ref) defining this line `from` a bus `to` another bus
 - `active_power_flow::Float64`: Initial condition of active power flowing from the from-bus to the to-bus in DC.
-- `rating::Float64`: Maximum output power rating of the converter (MVA), validation range: `(0, nothing)`
-- `active_power_limits_from::MinMax`: Minimum and maximum active power flows to the FROM node (MW)
-- `active_power_limits_to::MinMax`: Minimum and maximum active power flows to the TO node (MW)
+- `rating::Float64`: Transfer rating of the DC line (MVA), independent of the converter ratings at each end, validation range: `(0, nothing)`
 - `dc_control_from::VSCDCControlModes.Value`: DC-side control mode of the `from` converter; see [`VSCDCControlModes`](@ref). No default: an in-service converter always controls something on each side, so the mode is supplied explicitly. The `(::Nothing)` demo constructor is the one place a mode is asserted without a matching setpoint.
 - `ac_control_from::VSCACControlModes.Value`: AC-side control mode of the `from` converter; see [`VSCACControlModes`](@ref). No default: an in-service converter always controls something on each side, so the mode is supplied explicitly. The `(::Nothing)` demo constructor is the one place a mode is asserted without a matching setpoint.
 - `dc_control_to::VSCDCControlModes.Value`: DC-side control mode of the `to` converter; see [`VSCDCControlModes`](@ref). No default: an in-service converter always controls something on each side, so the mode is supplied explicitly. The `(::Nothing)` demo constructor is the one place a mode is asserted without a matching setpoint.
@@ -82,7 +79,7 @@ This model is appropriate for operational simulations with a linearized DC power
 - `rated_ac_voltage_from::Float64`: (default: `0.0`) Rated (base) AC voltage at the `from` converter's AC terminal in kV. Used as the AC voltage base for interpreting `ac_voltage_setpoint_from` when `ac_control_from` is `AC_VOLTAGE`; `0.0` means unspecified (the setpoint is taken as per-unit directly).
 - `converter_loss_from::Union{AnyLossCurve{LinearCurve}, AnyLossCurve{QuadraticCurve}}`: (default: `LossCurve(LinearCurve(0.0), NaturalUnit())`) Loss model coefficients in the `from` bus converter. It accepts a linear model or quadratic. Same converter data is used in both ends.
 - `max_dc_current_from::Float64`: (default: `1e8`) Maximum stable dc current limits (A).
-- `rating_from::Float64`: (default: `1e8`) Converter rating in MVA in the `from` bus.
+- `rating_from::Float64`: (default: `1e8`) Converter rating in MVA in the `from` bus. The default is large enough that the converter imposes no limit beyond `rating`
 - `reactive_power_limits_from::MinMax`: (default: `(min=0.0, max=0.0)`) Limits on the Reactive Power at the `from` side.
 - `power_factor_weighting_fraction_from::Float64`: (default: `1.0`) Power weighting factor fraction used in reducing the active power order and either the reactive power order when the converter rating is violated. When is 0.0, only the active power is reduced; when is 1.0, only the reactive power is reduced; otherwise, a weighted reduction of both active and reactive power is applied., validation range: `(0, 1)`
 - `voltage_limits_from::MinMax`: (default: `(min=0.0, max=999.9)`) Limits on the Voltage at the DC `from` Bus in [per unit](@ref per_unit.
@@ -95,7 +92,7 @@ This model is appropriate for operational simulations with a linearized DC power
 - `rated_ac_voltage_to::Float64`: (default: `0.0`) Rated (base) AC voltage at the `to` converter's AC terminal in kV. Used as the AC voltage base for interpreting `ac_voltage_setpoint_to` when `ac_control_to` is `AC_VOLTAGE`; `0.0` means unspecified (the setpoint is taken as per-unit directly).
 - `converter_loss_to::Union{AnyLossCurve{LinearCurve}, AnyLossCurve{QuadraticCurve}}`: (default: `LossCurve(LinearCurve(0.0), NaturalUnit())`) Loss model coefficients in the `to` bus converter. It accepts a linear model or quadratic. Same converter data is used in both ends.
 - `max_dc_current_to::Float64`: (default: `1e8`) Maximum stable dc current limits (A).
-- `rating_to::Float64`: (default: `1e8`) Converter rating in MVA in the `to` bus.
+- `rating_to::Float64`: (default: `1e8`) Converter rating in MVA in the `to` bus. The default is large enough that the converter imposes no limit beyond `rating`
 - `reactive_power_limits_to::MinMax`: (default: `(min=0.0, max=0.0)`) Limits on the Reactive Power at the `to` side.
 - `power_factor_weighting_fraction_to::Float64`: (default: `1.0`) Power weighting factor fraction used in reducing the active power order and either the reactive power order when the converter rating is violated. When is 0.0, only the active power is reduced; when is 1.0, only the reactive power is reduced; otherwise, a weighted reduction of both active and reactive power is applied., validation range: `(0, 1)`
 - `voltage_limits_to::MinMax`: (default: `(min=0.0, max=999.9)`) Limits on the Voltage at the DC `to` Bus.
@@ -107,6 +104,7 @@ This model is appropriate for operational simulations with a linearized DC power
 - `rmpct_to::Float64`: (default: `100.0`) Percent of the total MVAr required to hold the voltage at the bus regulated by the `to` converter that is contributed by this converter.
 - `services::Vector{Service}`: (default: `Device[]`) Services that this device contributes to
 - `base_power::Float64`: (default: `100.0`) System base power for per-unitization of this component's per-unit fields, recorded per component in lieu of a system-level table (MVA), validation range: `(0.0001, nothing)`
+- `operational_flow_limit::Union{Nothing, OperationalFlowLimit}`: (default: `nothing`) Operator-set minimum and maximum flow (MW) in each direction, `from_to` and `to_from`, applied in addition to `rating`. `nothing` means no operational limit
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
 - `input_basis`: (keyword constructor only, required) `u"CU"` or `u"NU"`, the units of bare numbers on unit-bearing fields. Tagged values (`50.0u"MW"`) keep their own units
@@ -120,12 +118,8 @@ mutable struct TwoTerminalVSCLine <: TwoTerminalHVDC
     arc::Arc
     "Initial condition of active power flowing from the from-bus to the to-bus in DC."
     active_power_flow::Float64
-    "Maximum output power rating of the converter (MVA)"
+    "Transfer rating of the DC line (MVA), independent of the converter ratings at each end"
     rating::Float64
-    "Minimum and maximum active power flows to the FROM node (MW)"
-    active_power_limits_from::MinMax
-    "Minimum and maximum active power flows to the TO node (MW)"
-    active_power_limits_to::MinMax
     "DC-side control mode of the `from` converter; see [`VSCDCControlModes`](@ref). No default: an in-service converter always controls something on each side, so the mode is supplied explicitly. The `(::Nothing)` demo constructor is the one place a mode is asserted without a matching setpoint."
     dc_control_from::VSCDCControlModes.Value
     "AC-side control mode of the `from` converter; see [`VSCACControlModes`](@ref). No default: an in-service converter always controls something on each side, so the mode is supplied explicitly. The `(::Nothing)` demo constructor is the one place a mode is asserted without a matching setpoint."
@@ -154,7 +148,7 @@ mutable struct TwoTerminalVSCLine <: TwoTerminalHVDC
     converter_loss_from::Union{AnyLossCurve{LinearCurve}, AnyLossCurve{QuadraticCurve}}
     "Maximum stable dc current limits (A)."
     max_dc_current_from::Float64
-    "Converter rating in MVA in the `from` bus."
+    "Converter rating in MVA in the `from` bus. The default is large enough that the converter imposes no limit beyond `rating`"
     rating_from::Float64
     "Limits on the Reactive Power at the `from` side."
     reactive_power_limits_from::MinMax
@@ -180,7 +174,7 @@ mutable struct TwoTerminalVSCLine <: TwoTerminalHVDC
     converter_loss_to::Union{AnyLossCurve{LinearCurve}, AnyLossCurve{QuadraticCurve}}
     "Maximum stable dc current limits (A)."
     max_dc_current_to::Float64
-    "Converter rating in MVA in the `to` bus."
+    "Converter rating in MVA in the `to` bus. The default is large enough that the converter imposes no limit beyond `rating`"
     rating_to::Float64
     "Limits on the Reactive Power at the `to` side."
     reactive_power_limits_to::MinMax
@@ -204,22 +198,22 @@ mutable struct TwoTerminalVSCLine <: TwoTerminalHVDC
     services::Vector{Service}
     "System base power for per-unitization of this component's per-unit fields, recorded per component in lieu of a system-level table (MVA)"
     base_power::Float64
+    "Operator-set minimum and maximum flow (MW) in each direction, `from_to` and `to_from`, applied in addition to `rating`. `nothing` means no operational limit"
+    operational_flow_limit::Union{Nothing, OperationalFlowLimit}
     "An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation."
     ext::Dict{String, Any}
     "(**Do not modify.**) PowerSystems.jl internal reference"
     internal::InfrastructureSystemsInternal
 end
 
-function TwoTerminalVSCLine(name, available, arc, active_power_flow, rating, active_power_limits_from, active_power_limits_to, dc_control_from, ac_control_from, dc_control_to, ac_control_to, g=0.0, dc_current=0.0, reactive_power_from=0.0, dc_power_setpoint_from=nothing, dc_voltage_setpoint_from=nothing, power_factor_setpoint_from=nothing, ac_voltage_setpoint_from=nothing, rated_ac_voltage_from=0.0, converter_loss_from=LossCurve(LinearCurve(0.0), NaturalUnit()), max_dc_current_from=1e8, rating_from=1e8, reactive_power_limits_from=(min=0.0, max=0.0), power_factor_weighting_fraction_from=1.0, voltage_limits_from=(min=0.0, max=999.9), dc_voltage_droop_from=0.0, reactive_power_to=0.0, dc_power_setpoint_to=nothing, dc_voltage_setpoint_to=nothing, power_factor_setpoint_to=nothing, ac_voltage_setpoint_to=nothing, rated_ac_voltage_to=0.0, converter_loss_to=LossCurve(LinearCurve(0.0), NaturalUnit()), max_dc_current_to=1e8, rating_to=1e8, reactive_power_limits_to=(min=0.0, max=0.0), power_factor_weighting_fraction_to=1.0, voltage_limits_to=(min=0.0, max=999.9), dc_voltage_droop_to=0.0, rated_dc_voltage=0.0, remote_bus_control_from=nothing, remote_bus_control_to=nothing, rmpct_from=100.0, rmpct_to=100.0, services=Device[], base_power=100.0, ext=Dict{String, Any}(), )
-    TwoTerminalVSCLine(name, available, arc, active_power_flow, rating, active_power_limits_from, active_power_limits_to, dc_control_from, ac_control_from, dc_control_to, ac_control_to, g, dc_current, reactive_power_from, dc_power_setpoint_from, dc_voltage_setpoint_from, power_factor_setpoint_from, ac_voltage_setpoint_from, rated_ac_voltage_from, converter_loss_from, max_dc_current_from, rating_from, reactive_power_limits_from, power_factor_weighting_fraction_from, voltage_limits_from, dc_voltage_droop_from, reactive_power_to, dc_power_setpoint_to, dc_voltage_setpoint_to, power_factor_setpoint_to, ac_voltage_setpoint_to, rated_ac_voltage_to, converter_loss_to, max_dc_current_to, rating_to, reactive_power_limits_to, power_factor_weighting_fraction_to, voltage_limits_to, dc_voltage_droop_to, rated_dc_voltage, remote_bus_control_from, remote_bus_control_to, rmpct_from, rmpct_to, services, base_power, ext, InfrastructureSystemsInternal(), )
+function TwoTerminalVSCLine(name, available, arc, active_power_flow, rating, dc_control_from, ac_control_from, dc_control_to, ac_control_to, g=0.0, dc_current=0.0, reactive_power_from=0.0, dc_power_setpoint_from=nothing, dc_voltage_setpoint_from=nothing, power_factor_setpoint_from=nothing, ac_voltage_setpoint_from=nothing, rated_ac_voltage_from=0.0, converter_loss_from=LossCurve(LinearCurve(0.0), NaturalUnit()), max_dc_current_from=1e8, rating_from=1e8, reactive_power_limits_from=(min=0.0, max=0.0), power_factor_weighting_fraction_from=1.0, voltage_limits_from=(min=0.0, max=999.9), dc_voltage_droop_from=0.0, reactive_power_to=0.0, dc_power_setpoint_to=nothing, dc_voltage_setpoint_to=nothing, power_factor_setpoint_to=nothing, ac_voltage_setpoint_to=nothing, rated_ac_voltage_to=0.0, converter_loss_to=LossCurve(LinearCurve(0.0), NaturalUnit()), max_dc_current_to=1e8, rating_to=1e8, reactive_power_limits_to=(min=0.0, max=0.0), power_factor_weighting_fraction_to=1.0, voltage_limits_to=(min=0.0, max=999.9), dc_voltage_droop_to=0.0, rated_dc_voltage=0.0, remote_bus_control_from=nothing, remote_bus_control_to=nothing, rmpct_from=100.0, rmpct_to=100.0, services=Device[], base_power=100.0, operational_flow_limit=nothing, ext=Dict{String, Any}(), )
+    TwoTerminalVSCLine(name, available, arc, active_power_flow, rating, dc_control_from, ac_control_from, dc_control_to, ac_control_to, g, dc_current, reactive_power_from, dc_power_setpoint_from, dc_voltage_setpoint_from, power_factor_setpoint_from, ac_voltage_setpoint_from, rated_ac_voltage_from, converter_loss_from, max_dc_current_from, rating_from, reactive_power_limits_from, power_factor_weighting_fraction_from, voltage_limits_from, dc_voltage_droop_from, reactive_power_to, dc_power_setpoint_to, dc_voltage_setpoint_to, power_factor_setpoint_to, ac_voltage_setpoint_to, rated_ac_voltage_to, converter_loss_to, max_dc_current_to, rating_to, reactive_power_limits_to, power_factor_weighting_fraction_to, voltage_limits_to, dc_voltage_droop_to, rated_dc_voltage, remote_bus_control_from, remote_bus_control_to, rmpct_from, rmpct_to, services, base_power, operational_flow_limit, ext, InfrastructureSystemsInternal(), )
 end
 
-function TwoTerminalVSCLine(; name, available, arc, active_power_flow, rating, active_power_limits_from, active_power_limits_to, dc_control_from, ac_control_from, dc_control_to, ac_control_to, g=0.0, dc_current=0.0, reactive_power_from=0.0, dc_power_setpoint_from=nothing, dc_voltage_setpoint_from=nothing, power_factor_setpoint_from=nothing, ac_voltage_setpoint_from=nothing, rated_ac_voltage_from=0.0, converter_loss_from=LossCurve(LinearCurve(0.0), NaturalUnit()), max_dc_current_from=1e8, rating_from=1e8, reactive_power_limits_from=(min=0.0, max=0.0), power_factor_weighting_fraction_from=1.0, voltage_limits_from=(min=0.0, max=999.9), dc_voltage_droop_from=0.0, reactive_power_to=0.0, dc_power_setpoint_to=nothing, dc_voltage_setpoint_to=nothing, power_factor_setpoint_to=nothing, ac_voltage_setpoint_to=nothing, rated_ac_voltage_to=0.0, converter_loss_to=LossCurve(LinearCurve(0.0), NaturalUnit()), max_dc_current_to=1e8, rating_to=1e8, reactive_power_limits_to=(min=0.0, max=0.0), power_factor_weighting_fraction_to=1.0, voltage_limits_to=(min=0.0, max=999.9), dc_voltage_droop_to=0.0, rated_dc_voltage=0.0, remote_bus_control_from=nothing, remote_bus_control_to=nothing, rmpct_from=100.0, rmpct_to=100.0, services=Device[], base_power=100.0, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Unitful.Units, )
-    value = TwoTerminalVSCLine(name, available, arc, _placeholder(active_power_flow), _placeholder(rating), _placeholder(active_power_limits_from), _placeholder(active_power_limits_to), dc_control_from, ac_control_from, dc_control_to, ac_control_to, g, dc_current, _placeholder(reactive_power_from), _placeholder(dc_power_setpoint_from), dc_voltage_setpoint_from, power_factor_setpoint_from, ac_voltage_setpoint_from, rated_ac_voltage_from, converter_loss_from, max_dc_current_from, _placeholder(rating_from), _placeholder(reactive_power_limits_from), power_factor_weighting_fraction_from, voltage_limits_from, dc_voltage_droop_from, _placeholder(reactive_power_to), _placeholder(dc_power_setpoint_to), dc_voltage_setpoint_to, power_factor_setpoint_to, ac_voltage_setpoint_to, rated_ac_voltage_to, converter_loss_to, max_dc_current_to, _placeholder(rating_to), _placeholder(reactive_power_limits_to), power_factor_weighting_fraction_to, voltage_limits_to, dc_voltage_droop_to, rated_dc_voltage, remote_bus_control_from, remote_bus_control_to, rmpct_from, rmpct_to, services, base_power, ext, internal, )
+function TwoTerminalVSCLine(; name, available, arc, active_power_flow, rating, dc_control_from, ac_control_from, dc_control_to, ac_control_to, g=0.0, dc_current=0.0, reactive_power_from=0.0, dc_power_setpoint_from=nothing, dc_voltage_setpoint_from=nothing, power_factor_setpoint_from=nothing, ac_voltage_setpoint_from=nothing, rated_ac_voltage_from=0.0, converter_loss_from=LossCurve(LinearCurve(0.0), NaturalUnit()), max_dc_current_from=1e8, rating_from=1e8, reactive_power_limits_from=(min=0.0, max=0.0), power_factor_weighting_fraction_from=1.0, voltage_limits_from=(min=0.0, max=999.9), dc_voltage_droop_from=0.0, reactive_power_to=0.0, dc_power_setpoint_to=nothing, dc_voltage_setpoint_to=nothing, power_factor_setpoint_to=nothing, ac_voltage_setpoint_to=nothing, rated_ac_voltage_to=0.0, converter_loss_to=LossCurve(LinearCurve(0.0), NaturalUnit()), max_dc_current_to=1e8, rating_to=1e8, reactive_power_limits_to=(min=0.0, max=0.0), power_factor_weighting_fraction_to=1.0, voltage_limits_to=(min=0.0, max=999.9), dc_voltage_droop_to=0.0, rated_dc_voltage=0.0, remote_bus_control_from=nothing, remote_bus_control_to=nothing, rmpct_from=100.0, rmpct_to=100.0, services=Device[], base_power=100.0, operational_flow_limit=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Unitful.Units, )
+    value = TwoTerminalVSCLine(name, available, arc, _placeholder(active_power_flow), _placeholder(rating), dc_control_from, ac_control_from, dc_control_to, ac_control_to, g, dc_current, _placeholder(reactive_power_from), _placeholder(dc_power_setpoint_from), dc_voltage_setpoint_from, power_factor_setpoint_from, ac_voltage_setpoint_from, rated_ac_voltage_from, converter_loss_from, max_dc_current_from, _placeholder(rating_from), _placeholder(reactive_power_limits_from), power_factor_weighting_fraction_from, voltage_limits_from, dc_voltage_droop_from, _placeholder(reactive_power_to), _placeholder(dc_power_setpoint_to), dc_voltage_setpoint_to, power_factor_setpoint_to, ac_voltage_setpoint_to, rated_ac_voltage_to, converter_loss_to, max_dc_current_to, _placeholder(rating_to), _placeholder(reactive_power_limits_to), power_factor_weighting_fraction_to, voltage_limits_to, dc_voltage_droop_to, rated_dc_voltage, remote_bus_control_from, remote_bus_control_to, rmpct_from, rmpct_to, services, base_power, _placeholder(operational_flow_limit), ext, internal, )
     set_active_power_flow!(value, _tag(active_power_flow, input_basis, Val(:mw)))
     set_rating!(value, _tag(rating, input_basis, Val(:mva)))
-    set_active_power_limits_from!(value, _tag(active_power_limits_from, input_basis, Val(:mw)))
-    set_active_power_limits_to!(value, _tag(active_power_limits_to, input_basis, Val(:mw)))
     set_reactive_power_from!(value, _tag(reactive_power_from, input_basis, Val(:mvar)))
     set_dc_power_setpoint_from!(value, _tag(dc_power_setpoint_from, input_basis, Val(:mw)))
     set_rating_from!(value, _tag(rating_from, input_basis, Val(:mva)))
@@ -228,6 +222,7 @@ function TwoTerminalVSCLine(; name, available, arc, active_power_flow, rating, a
     set_dc_power_setpoint_to!(value, _tag(dc_power_setpoint_to, input_basis, Val(:mw)))
     set_rating_to!(value, _tag(rating_to, input_basis, Val(:mva)))
     set_reactive_power_limits_to!(value, _tag(reactive_power_limits_to, input_basis, Val(:mvar)))
+    set_operational_flow_limit!(value, _tag(operational_flow_limit, input_basis, Val(:mw)))
     return value
 end
 _takes_input_basis(::Type{<:TwoTerminalVSCLine}) = true
@@ -240,8 +235,6 @@ function TwoTerminalVSCLine(::Nothing)
         arc=Arc(ACBus(nothing), ACBus(nothing)),
         active_power_flow=0.0,
         rating=0.0,
-        active_power_limits_from=(min=0.0, max=0.0),
-        active_power_limits_to=(min=0.0, max=0.0),
         dc_control_from=VSCDCControlModes.DC_VOLTAGE,
         ac_control_from=VSCACControlModes.AC_VOLTAGE,
         dc_control_to=VSCDCControlModes.DC_VOLTAGE,
@@ -281,6 +274,7 @@ function TwoTerminalVSCLine(::Nothing)
         rmpct_to=100.0,
         services=Device[],
         base_power=100.0,
+        operational_flow_limit=nothing,
         ext=Dict{String, Any}(),
         input_basis=u"CU",
     )
@@ -308,22 +302,6 @@ get_rating(value::TwoTerminalVSCLine) = _units_arg_required(get_rating, value, :
 get_rating_unitful(value::TwoTerminalVSCLine) = _units_arg_required(get_rating_unitful, value, :rating, Val(:mva))
 InfrastructureSystems.display_units_arg(::typeof(get_rating), ::Type{TwoTerminalVSCLine}) = u"CU"
 InfrastructureSystems.display_units_arg(::typeof(get_rating_unitful), ::Type{TwoTerminalVSCLine}) = u"CU"
-"""Get [`TwoTerminalVSCLine`](@ref) `active_power_limits_from` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_active_power_limits_from_unitful`](@ref)."""
-get_active_power_limits_from(value::TwoTerminalVSCLine, units) = InfrastructureSystems._strip_units(get_value(value, Val(:active_power_limits_from), Val(:mw), units))
-"""Get [`TwoTerminalVSCLine`](@ref) `active_power_limits_from` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_active_power_limits_from`](@ref)."""
-get_active_power_limits_from_unitful(value::TwoTerminalVSCLine, units) = get_value(value, Val(:active_power_limits_from), Val(:mw), units)
-get_active_power_limits_from(value::TwoTerminalVSCLine) = _units_arg_required(get_active_power_limits_from, value, :active_power_limits_from, Val(:mw))
-get_active_power_limits_from_unitful(value::TwoTerminalVSCLine) = _units_arg_required(get_active_power_limits_from_unitful, value, :active_power_limits_from, Val(:mw))
-InfrastructureSystems.display_units_arg(::typeof(get_active_power_limits_from), ::Type{TwoTerminalVSCLine}) = u"SU"
-InfrastructureSystems.display_units_arg(::typeof(get_active_power_limits_from_unitful), ::Type{TwoTerminalVSCLine}) = u"SU"
-"""Get [`TwoTerminalVSCLine`](@ref) `active_power_limits_to` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_active_power_limits_to_unitful`](@ref)."""
-get_active_power_limits_to(value::TwoTerminalVSCLine, units) = InfrastructureSystems._strip_units(get_value(value, Val(:active_power_limits_to), Val(:mw), units))
-"""Get [`TwoTerminalVSCLine`](@ref) `active_power_limits_to` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_active_power_limits_to`](@ref)."""
-get_active_power_limits_to_unitful(value::TwoTerminalVSCLine, units) = get_value(value, Val(:active_power_limits_to), Val(:mw), units)
-get_active_power_limits_to(value::TwoTerminalVSCLine) = _units_arg_required(get_active_power_limits_to, value, :active_power_limits_to, Val(:mw))
-get_active_power_limits_to_unitful(value::TwoTerminalVSCLine) = _units_arg_required(get_active_power_limits_to_unitful, value, :active_power_limits_to, Val(:mw))
-InfrastructureSystems.display_units_arg(::typeof(get_active_power_limits_to), ::Type{TwoTerminalVSCLine}) = u"SU"
-InfrastructureSystems.display_units_arg(::typeof(get_active_power_limits_to_unitful), ::Type{TwoTerminalVSCLine}) = u"SU"
 """Get [`TwoTerminalVSCLine`](@ref) `dc_control_from`."""
 get_dc_control_from(value::TwoTerminalVSCLine) = value.dc_control_from
 """Get [`TwoTerminalVSCLine`](@ref) `ac_control_from`."""
@@ -450,6 +428,14 @@ get_rmpct_to(value::TwoTerminalVSCLine) = value.rmpct_to
 get_services(value::TwoTerminalVSCLine) = value.services
 
 _get_base_power(value::TwoTerminalVSCLine) = value.base_power
+"""Get [`TwoTerminalVSCLine`](@ref) `operational_flow_limit` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_operational_flow_limit_unitful`](@ref)."""
+get_operational_flow_limit(value::TwoTerminalVSCLine, units) = InfrastructureSystems._strip_units(get_value(value, Val(:operational_flow_limit), Val(:mw), units))
+"""Get [`TwoTerminalVSCLine`](@ref) `operational_flow_limit` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_operational_flow_limit`](@ref)."""
+get_operational_flow_limit_unitful(value::TwoTerminalVSCLine, units) = get_value(value, Val(:operational_flow_limit), Val(:mw), units)
+get_operational_flow_limit(value::TwoTerminalVSCLine) = _units_arg_required(get_operational_flow_limit, value, :operational_flow_limit, Val(:mw))
+get_operational_flow_limit_unitful(value::TwoTerminalVSCLine) = _units_arg_required(get_operational_flow_limit_unitful, value, :operational_flow_limit, Val(:mw))
+InfrastructureSystems.display_units_arg(::typeof(get_operational_flow_limit), ::Type{TwoTerminalVSCLine}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_operational_flow_limit_unitful), ::Type{TwoTerminalVSCLine}) = u"SU"
 """Get [`TwoTerminalVSCLine`](@ref) `ext`."""
 get_ext(value::TwoTerminalVSCLine) = value.ext
 """Get [`TwoTerminalVSCLine`](@ref) `internal`."""
@@ -465,14 +451,6 @@ set_active_power_flow!(value::TwoTerminalVSCLine, val::_UntaggedNumber) = _units
 """Set [`TwoTerminalVSCLine`](@ref) `rating`."""
 set_rating!(value::TwoTerminalVSCLine, val) = value.rating = set_value(value, Val(:rating), val, Val(:mva))
 set_rating!(value::TwoTerminalVSCLine, val::_UntaggedNumber) = _units_tag_required(set_rating!, value, :rating, Val(:mva), val)
-"""Set [`TwoTerminalVSCLine`](@ref) `active_power_limits_from`."""
-set_active_power_limits_from!(value::TwoTerminalVSCLine, val) = value.active_power_limits_from = set_value(value, Val(:active_power_limits_from), val, Val(:mw))
-set_active_power_limits_from!(value::TwoTerminalVSCLine, val::_UntaggedNumber) = _units_tag_required(set_active_power_limits_from!, value, :active_power_limits_from, Val(:mw), val)
-set_active_power_limits_from!(value::TwoTerminalVSCLine, val::NamedTuple{(:min, :max), <:Tuple{Vararg{_UntaggedNumber}}}) = _units_tag_required(set_active_power_limits_from!, value, :active_power_limits_from, Val(:mw), val)
-"""Set [`TwoTerminalVSCLine`](@ref) `active_power_limits_to`."""
-set_active_power_limits_to!(value::TwoTerminalVSCLine, val) = value.active_power_limits_to = set_value(value, Val(:active_power_limits_to), val, Val(:mw))
-set_active_power_limits_to!(value::TwoTerminalVSCLine, val::_UntaggedNumber) = _units_tag_required(set_active_power_limits_to!, value, :active_power_limits_to, Val(:mw), val)
-set_active_power_limits_to!(value::TwoTerminalVSCLine, val::NamedTuple{(:min, :max), <:Tuple{Vararg{_UntaggedNumber}}}) = _units_tag_required(set_active_power_limits_to!, value, :active_power_limits_to, Val(:mw), val)
 """Set [`TwoTerminalVSCLine`](@ref) `dc_control_from`."""
 set_dc_control_from!(value::TwoTerminalVSCLine, val) = value.dc_control_from = val
 """Set [`TwoTerminalVSCLine`](@ref) `ac_control_from`."""
@@ -559,5 +537,8 @@ set_rmpct_from!(value::TwoTerminalVSCLine, val) = value.rmpct_from = val
 set_rmpct_to!(value::TwoTerminalVSCLine, val) = value.rmpct_to = val
 """Set [`TwoTerminalVSCLine`](@ref) `services`."""
 set_services!(value::TwoTerminalVSCLine, val) = value.services = val
+"""Set [`TwoTerminalVSCLine`](@ref) `operational_flow_limit`."""
+set_operational_flow_limit!(value::TwoTerminalVSCLine, val) = value.operational_flow_limit = set_value(value, Val(:operational_flow_limit), val, Val(:mw))
+set_operational_flow_limit!(value::TwoTerminalVSCLine, val::_UntaggedNumber) = _units_tag_required(set_operational_flow_limit!, value, :operational_flow_limit, Val(:mw), val)
 """Set [`TwoTerminalVSCLine`](@ref) `ext`."""
 set_ext!(value::TwoTerminalVSCLine, val) = value.ext = val

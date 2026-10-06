@@ -1,10 +1,10 @@
 
-function sanitize_component!(line::Union{MonitoredLine, Line}, sys::System)
+function sanitize_component!(line::Line, sys::System)
     sanitize_angle_limits!(line)
     return
 end
 
-function validate_component_with_system(line::Union{MonitoredLine, Line}, sys::System)
+function validate_component_with_system(line::Line, sys::System)
     is_valid = true
     if !check_endpoint_voltages(line)
         is_valid = false
@@ -14,7 +14,7 @@ function validate_component_with_system(line::Union{MonitoredLine, Line}, sys::S
     return is_valid
 end
 
-function sanitize_angle_limits!(line::Union{Line, MonitoredLine})
+function sanitize_angle_limits!(line::Line)
     max_limit = pi / 2
     min_limit = -pi / 2
 
@@ -85,7 +85,7 @@ const MVA_LIMITS_TRANSFORMERS = Dict(
     765.0 => (min = 2200.0, max = 6900.0), # This value is 3x the SIL value from https://neos-guide.org/wp-content/uploads/2022/04/line_flow_approximation.pdf
 )
 
-function check_rating_values(line::Union{Line, MonitoredLine})
+function check_rating_values(line::Line)
     arc = get_arc(line)
     vrated = get_base_voltage(get_to(arc))
     voltage_levels = collect(keys(MVA_LIMITS_LINES))
@@ -116,7 +116,7 @@ end
 """
 Calculates the line rating based on the formula for the maximum transfer limit over an impedance
 """
-function line_rating_calculation(l::Union{Line, MonitoredLine})
+function line_rating_calculation(l::Line)
     theta_max = max(abs(l.angle_limits.min), abs(l.angle_limits.max))
 
     g = l.r / (l.r^2 + l.x^2)
@@ -135,7 +135,7 @@ function line_rating_calculation(l::Union{Line, MonitoredLine})
     return new_rate
 end
 
-function correct_rate_limits!(branch::Union{Line, MonitoredLine})
+function correct_rate_limits!(branch::Line)
     theoretical_line_rate_pu = line_rating_calculation(branch)
     for field in [:rating, :rating_b, :rating_c]
         rating_value = getfield(branch, field)
@@ -160,7 +160,7 @@ function correct_rate_limits!(branch::Union{Line, MonitoredLine})
     return check_rating_values(branch)
 end
 
-function check_endpoint_voltages(line::Union{Line, MonitoredLine})
+function check_endpoint_voltages(line::Line)
     is_valid = true
     arc = get_arc(line)
     from_voltage = get_base_voltage(get_from(arc))

@@ -249,6 +249,7 @@ const OPENAPI_COMPOUND_MEMBERS = Dict(
     "FromTo" => ("from", "to"),
     "InOut" => ("in", "out"),
     "FromTo_ToFrom" => ("from_to", "to_from"),
+    "OperationalFlowLimit" => ("from_to", "to_from"),
     "StartUpShutDown" => ("startup", "shutdown"),
     "StartUpStages" => ("hot", "warm", "cold"),
     "TurbinePump" => ("turbine", "pump"),
@@ -296,6 +297,11 @@ const OPENAPI_EXPORT_COMPOUND_CTORS = Dict(
     "FromTo_ToFrom" => (
         required = "_fromto_tofrom_po", optional = nothing,
         required_scaled = "_fromto_tofrom_po_scaled", optional_scaled = nothing,
+    ),
+    "OperationalFlowLimit" => (
+        required = nothing, optional = "_operational_flow_limit_po_optional",
+        required_scaled = nothing,
+        optional_scaled = "_operational_flow_limit_po_scaled_optional",
     ),
     "StartUpShutDown" => (
         required = nothing, optional = "_startup_shutdown_po_optional",

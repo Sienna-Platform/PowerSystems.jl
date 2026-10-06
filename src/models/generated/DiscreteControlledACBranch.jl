@@ -18,6 +18,7 @@ This file is auto-generated. Do not edit.
         branch_status::DiscreteControlledBranchStatus.Value
         normal_branch_status::DiscreteControlledBranchStatus.Value
         base_power::Float64
+        operational_flow_limit::Union{Nothing, OperationalFlowLimit}
         ext::Dict{String, Any}
         internal::InfrastructureSystemsInternal
     end
@@ -37,6 +38,7 @@ Used to represent switches and breakers connecting AC Buses
 - `branch_status::DiscreteControlledBranchStatus.Value`: (default: `DiscreteControlledBranchStatus.CLOSED`) Open or Close status
 - `normal_branch_status::DiscreteControlledBranchStatus.Value`: (default: `DiscreteControlledBranchStatus.CLOSED`) Normal (as-designed) open or close status of the device
 - `base_power::Float64`: (default: `100.0`) System base power for per-unitization of this component's per-unit fields, recorded per component in lieu of a system-level table (MVA), validation range: `(0.0001, nothing)`
+- `operational_flow_limit::Union{Nothing, OperationalFlowLimit}`: (default: `nothing`) Operator-set minimum and maximum flow (MW) in each direction, `from_to` and `to_from`, applied in addition to `rating`. `nothing` means no operational limit
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
 - `input_basis`: (keyword constructor only, required) `u"CU"` or `u"NU"`, the units of bare numbers on unit-bearing fields. Tagged values (`50.0u"MW"`) keep their own units
@@ -66,23 +68,26 @@ mutable struct DiscreteControlledACBranch <: ACTransmission
     normal_branch_status::DiscreteControlledBranchStatus.Value
     "System base power for per-unitization of this component's per-unit fields, recorded per component in lieu of a system-level table (MVA)"
     base_power::Float64
+    "Operator-set minimum and maximum flow (MW) in each direction, `from_to` and `to_from`, applied in addition to `rating`. `nothing` means no operational limit"
+    operational_flow_limit::Union{Nothing, OperationalFlowLimit}
     "An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation."
     ext::Dict{String, Any}
     "(**Do not modify.**) PowerSystems.jl internal reference"
     internal::InfrastructureSystemsInternal
 end
 
-function DiscreteControlledACBranch(name, available, active_power_flow, reactive_power_flow, arc, r, x, rating, discrete_branch_type=DiscreteControlledBranchType.OTHER, branch_status=DiscreteControlledBranchStatus.CLOSED, normal_branch_status=DiscreteControlledBranchStatus.CLOSED, base_power=100.0, ext=Dict{String, Any}(), )
-    DiscreteControlledACBranch(name, available, active_power_flow, reactive_power_flow, arc, r, x, rating, discrete_branch_type, branch_status, normal_branch_status, base_power, ext, InfrastructureSystemsInternal(), )
+function DiscreteControlledACBranch(name, available, active_power_flow, reactive_power_flow, arc, r, x, rating, discrete_branch_type=DiscreteControlledBranchType.OTHER, branch_status=DiscreteControlledBranchStatus.CLOSED, normal_branch_status=DiscreteControlledBranchStatus.CLOSED, base_power=100.0, operational_flow_limit=nothing, ext=Dict{String, Any}(), )
+    DiscreteControlledACBranch(name, available, active_power_flow, reactive_power_flow, arc, r, x, rating, discrete_branch_type, branch_status, normal_branch_status, base_power, operational_flow_limit, ext, InfrastructureSystemsInternal(), )
 end
 
-function DiscreteControlledACBranch(; name, available, active_power_flow, reactive_power_flow, arc, r, x, rating, discrete_branch_type=DiscreteControlledBranchType.OTHER, branch_status=DiscreteControlledBranchStatus.CLOSED, normal_branch_status=DiscreteControlledBranchStatus.CLOSED, base_power=100.0, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Unitful.Units, )
-    value = DiscreteControlledACBranch(name, available, _placeholder(active_power_flow), _placeholder(reactive_power_flow), arc, _placeholder(r), _placeholder(x), _placeholder(rating), discrete_branch_type, branch_status, normal_branch_status, base_power, ext, internal, )
+function DiscreteControlledACBranch(; name, available, active_power_flow, reactive_power_flow, arc, r, x, rating, discrete_branch_type=DiscreteControlledBranchType.OTHER, branch_status=DiscreteControlledBranchStatus.CLOSED, normal_branch_status=DiscreteControlledBranchStatus.CLOSED, base_power=100.0, operational_flow_limit=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Unitful.Units, )
+    value = DiscreteControlledACBranch(name, available, _placeholder(active_power_flow), _placeholder(reactive_power_flow), arc, _placeholder(r), _placeholder(x), _placeholder(rating), discrete_branch_type, branch_status, normal_branch_status, base_power, _placeholder(operational_flow_limit), ext, internal, )
     set_active_power_flow!(value, _tag(active_power_flow, input_basis, Val(:mw)))
     set_reactive_power_flow!(value, _tag(reactive_power_flow, input_basis, Val(:mvar)))
     set_r!(value, _tag(r, input_basis, Val(:ohm)))
     set_x!(value, _tag(x, input_basis, Val(:ohm)))
     set_rating!(value, _tag(rating, input_basis, Val(:mva)))
+    set_operational_flow_limit!(value, _tag(operational_flow_limit, input_basis, Val(:mw)))
     return value
 end
 _takes_input_basis(::Type{<:DiscreteControlledACBranch}) = true
@@ -102,6 +107,7 @@ function DiscreteControlledACBranch(::Nothing)
         branch_status=DiscreteControlledBranchStatus.CLOSED,
         normal_branch_status=DiscreteControlledBranchStatus.CLOSED,
         base_power=100.0,
+        operational_flow_limit=nothing,
         ext=Dict{String, Any}(),
         input_basis=u"CU",
     )
@@ -161,6 +167,14 @@ get_branch_status(value::DiscreteControlledACBranch) = value.branch_status
 get_normal_branch_status(value::DiscreteControlledACBranch) = value.normal_branch_status
 
 _get_base_power(value::DiscreteControlledACBranch) = value.base_power
+"""Get [`DiscreteControlledACBranch`](@ref) `operational_flow_limit` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_operational_flow_limit_unitful`](@ref)."""
+get_operational_flow_limit(value::DiscreteControlledACBranch, units) = InfrastructureSystems._strip_units(get_value(value, Val(:operational_flow_limit), Val(:mw), units))
+"""Get [`DiscreteControlledACBranch`](@ref) `operational_flow_limit` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_operational_flow_limit`](@ref)."""
+get_operational_flow_limit_unitful(value::DiscreteControlledACBranch, units) = get_value(value, Val(:operational_flow_limit), Val(:mw), units)
+get_operational_flow_limit(value::DiscreteControlledACBranch) = _units_arg_required(get_operational_flow_limit, value, :operational_flow_limit, Val(:mw))
+get_operational_flow_limit_unitful(value::DiscreteControlledACBranch) = _units_arg_required(get_operational_flow_limit_unitful, value, :operational_flow_limit, Val(:mw))
+InfrastructureSystems.display_units_arg(::typeof(get_operational_flow_limit), ::Type{DiscreteControlledACBranch}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_operational_flow_limit_unitful), ::Type{DiscreteControlledACBranch}) = u"SU"
 """Get [`DiscreteControlledACBranch`](@ref) `ext`."""
 get_ext(value::DiscreteControlledACBranch) = value.ext
 """Get [`DiscreteControlledACBranch`](@ref) `internal`."""
@@ -191,5 +205,8 @@ set_discrete_branch_type!(value::DiscreteControlledACBranch, val) = value.discre
 set_branch_status!(value::DiscreteControlledACBranch, val) = value.branch_status = val
 """Set [`DiscreteControlledACBranch`](@ref) `normal_branch_status`."""
 set_normal_branch_status!(value::DiscreteControlledACBranch, val) = value.normal_branch_status = val
+"""Set [`DiscreteControlledACBranch`](@ref) `operational_flow_limit`."""
+set_operational_flow_limit!(value::DiscreteControlledACBranch, val) = value.operational_flow_limit = set_value(value, Val(:operational_flow_limit), val, Val(:mw))
+set_operational_flow_limit!(value::DiscreteControlledACBranch, val::_UntaggedNumber) = _units_tag_required(set_operational_flow_limit!, value, :operational_flow_limit, Val(:mw), val)
 """Set [`DiscreteControlledACBranch`](@ref) `ext`."""
 set_ext!(value::DiscreteControlledACBranch, val) = value.ext = val

@@ -2164,15 +2164,14 @@ function check_component(sys::System, component::Component)
 end
 
 """
-Check that all AC transmission [`Line`](@ref) and [`MonitoredLine`](@ref) components
+Check that all AC transmission [`Line`](@ref) components
 have valid rate values relative to their own component base power.
 
 Returns `true` if all values are valid, `false` otherwise.
 """
 function check_ac_transmission_rate_values(sys::System)
     is_valid = true
-    for line in
-        Iterators.flatten((get_components(Line, sys), get_components(MonitoredLine, sys)))
+    for line in get_components(Line, sys)
         if !check_rating_values(line)
             is_valid = false
         end
@@ -2773,92 +2772,6 @@ function _create_system_data_from_kwargs(;
         time_series_directory = time_series_directory,
         compression = compression,
     )
-end
-
-"""
-Converts a Line component to a MonitoredLine component and replaces the original in the
-system
-"""
-function convert_component!(
-    sys::System,
-    line::Line,
-    linetype::Type{MonitoredLine};
-    kwargs...,
-)
-    new_line = linetype(
-        line.name,
-        line.available,
-        line.active_power_flow,
-        line.reactive_power_flow,
-        line.arc,
-        line.r,
-        line.x,
-        line.b,
-        (from_to = line.rating, to_from = line.rating),
-        line.rating,
-        line.angle_limits,
-        line.rating_b,
-        line.rating_c,
-        line.g,
-        line.services,
-        line.base_power,
-        line.ext,
-        _copy_internal_for_conversion(line),
-    )
-    IS.assign_new_id!(sys, line)
-    add_component!(sys, new_line)
-    copy_time_series!(new_line, line)
-    # TODO: PSY4
-    # copy_supplemental_attibutes!(new_line, line)
-    remove_component!(sys, line)
-    return
-end
-
-"""
-Converts a MonitoredLine component to a Line component and replaces the original in the
-system.
-"""
-function convert_component!(
-    sys::System,
-    line::MonitoredLine,
-    linetype::Type{Line};
-    kwargs...,
-)
-    force = get(kwargs, :force, false)
-    if force
-        @warn("Possible data loss converting from $(typeof(line)) to $linetype")
-    else
-        error(
-            "Possible data loss converting from $(typeof(line)) to $linetype, add `force = true` to convert anyway.",
-        )
-    end
-
-    new_line = linetype(
-        line.name,
-        line.available,
-        line.active_power_flow,
-        line.reactive_power_flow,
-        line.arc,
-        line.r,
-        line.x,
-        line.b,
-        line.rating,
-        line.angle_limits,
-        line.rating_b,
-        line.rating_c,
-        line.g,
-        line.services,
-        line.base_power,
-        line.ext,
-        _copy_internal_for_conversion(line),
-    )
-    IS.assign_new_id!(sys, line)
-    add_component!(sys, new_line)
-    copy_time_series!(new_line, line)
-    # TODO: PSY4
-    # copy_supplemental_attibutes!(new_line, line)
-    remove_component!(sys, line)
-    return
 end
 
 """

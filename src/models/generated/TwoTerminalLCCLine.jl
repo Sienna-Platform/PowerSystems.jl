@@ -10,6 +10,7 @@ This file is auto-generated. Do not edit.
         available::Bool
         arc::Arc
         active_power_flow::Float64
+        rating::Float64
         r::Float64
         scheduled_dc_voltage::Float64
         rectifier_bridges::Int
@@ -40,13 +41,14 @@ This file is auto-generated. Do not edit.
         inverter_tap_step::Float64
         inverter_extinction_angle::Float64
         inverter_capacitor_reactance::Float64
-        active_power_limits_from::MinMax
-        active_power_limits_to::MinMax
         reactive_power_limits_from::MinMax
         reactive_power_limits_to::MinMax
+        rating_from::Float64
+        rating_to::Float64
         loss::Union{AnyLossCurve{LinearCurve}, AnyLossCurve{PiecewiseIncrementalCurve}}
         services::Vector{Service}
         base_power::Float64
+        operational_flow_limit::Union{Nothing, OperationalFlowLimit}
         ext::Dict{String, Any}
         internal::InfrastructureSystemsInternal
     end
@@ -60,6 +62,7 @@ As implemented in PSS/E.
 - `available::Bool`: Indicator of whether the component is connected and online (`true`) or disconnected, offline, or down (`false`). Unavailable components are excluded during simulations
 - `arc::Arc`: An [`Arc`](@ref) defining this line `from` a rectifier bus `to` an inverter bus. The rectifier bus must be specified in the `from` bus and inverter bus in the `to` bus.
 - `active_power_flow::Float64`: Initial condition of active power flow on the line (MW)
+- `rating::Float64`: Transfer rating of the DC line (MVA), independent of the converter ratings at each end, validation range: `(0, nothing)`
 - `r::Float64`: Series resistance of the DC line in pu ([`SYSTEM_BASE`](@ref per_unit))
 - `scheduled_dc_voltage::Float64`: Scheduled compounded DC voltage in kV. By default this parameter is the scheduled DC voltage in the inverter bus This parameter must not be specified in per-unit.
 - `rectifier_bridges::Int`: Number of bridges in series in the rectifier side.
@@ -90,13 +93,14 @@ As implemented in PSS/E.
 - `inverter_tap_step::Float64`: (default: `0.00625`) Inverter transformer tap step value.
 - `inverter_extinction_angle::Float64`: (default: `0.0`) Inverter extinction angle (γ).
 - `inverter_capacitor_reactance::Float64`: (default: `0.0`) Commutating inverter capacitor reactance magnitude per bridge, in system p.u. ([`SYSTEM_BASE`](@ref per_unit)).
-- `active_power_limits_from::MinMax`: (default: `(min=0.0, max=0.0)`) Minimum and maximum active power flows to the FROM node (MW)
-- `active_power_limits_to::MinMax`: (default: `(min=0.0, max=0.0)`) Minimum and maximum active power flows to the TO node (MW)
 - `reactive_power_limits_from::MinMax`: (default: `(min=0.0, max=0.0)`) Minimum and maximum reactive power limits to the FROM node (MVAR)
 - `reactive_power_limits_to::MinMax`: (default: `(min=0.0, max=0.0)`) Minimum and maximum reactive power limits to the TO node (MVAR)
+- `rating_from::Float64`: (default: `1e8`) Converter rating in MVA in the `from` bus. The default is large enough that the converter imposes no limit beyond `rating`
+- `rating_to::Float64`: (default: `1e8`) Converter rating in MVA in the `to` bus. The default is large enough that the converter imposes no limit beyond `rating`
 - `loss::Union{AnyLossCurve{LinearCurve}, AnyLossCurve{PiecewiseIncrementalCurve}}`: (default: `LossCurve(LinearCurve(0.0), NaturalUnit())`) A generic loss model coefficients. It accepts a linear model with a constant loss (MW) and a proportional loss rate (MW of loss per MW of flow). It also accepts a Piecewise loss, with N segments to specify different proportional losses for different segments.
 - `services::Vector{Service}`: (default: `Device[]`) Services that this device contributes to
 - `base_power::Float64`: (default: `100.0`) System base power for per-unitization of this component's per-unit fields, recorded per component in lieu of a system-level table (MVA), validation range: `(0.0001, nothing)`
+- `operational_flow_limit::Union{Nothing, OperationalFlowLimit}`: (default: `nothing`) Operator-set minimum and maximum flow (MW) in each direction, `from_to` and `to_from`, applied in addition to `rating`. `nothing` means no operational limit
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
 - `input_basis`: (keyword constructor only, required) `u"CU"` or `u"NU"`, the units of bare numbers on unit-bearing fields. Tagged values (`50.0u"MW"`) keep their own units
@@ -110,6 +114,8 @@ mutable struct TwoTerminalLCCLine <: TwoTerminalHVDC
     arc::Arc
     "Initial condition of active power flow on the line (MW)"
     active_power_flow::Float64
+    "Transfer rating of the DC line (MVA), independent of the converter ratings at each end"
+    rating::Float64
     "Series resistance of the DC line in pu ([`SYSTEM_BASE`](@ref per_unit))"
     r::Float64
     "Scheduled compounded DC voltage in kV. By default this parameter is the scheduled DC voltage in the inverter bus This parameter must not be specified in per-unit."
@@ -170,38 +176,42 @@ mutable struct TwoTerminalLCCLine <: TwoTerminalHVDC
     inverter_extinction_angle::Float64
     "Commutating inverter capacitor reactance magnitude per bridge, in system p.u. ([`SYSTEM_BASE`](@ref per_unit))."
     inverter_capacitor_reactance::Float64
-    "Minimum and maximum active power flows to the FROM node (MW)"
-    active_power_limits_from::MinMax
-    "Minimum and maximum active power flows to the TO node (MW)"
-    active_power_limits_to::MinMax
     "Minimum and maximum reactive power limits to the FROM node (MVAR)"
     reactive_power_limits_from::MinMax
     "Minimum and maximum reactive power limits to the TO node (MVAR)"
     reactive_power_limits_to::MinMax
+    "Converter rating in MVA in the `from` bus. The default is large enough that the converter imposes no limit beyond `rating`"
+    rating_from::Float64
+    "Converter rating in MVA in the `to` bus. The default is large enough that the converter imposes no limit beyond `rating`"
+    rating_to::Float64
     "A generic loss model coefficients. It accepts a linear model with a constant loss (MW) and a proportional loss rate (MW of loss per MW of flow). It also accepts a Piecewise loss, with N segments to specify different proportional losses for different segments."
     loss::Union{AnyLossCurve{LinearCurve}, AnyLossCurve{PiecewiseIncrementalCurve}}
     "Services that this device contributes to"
     services::Vector{Service}
     "System base power for per-unitization of this component's per-unit fields, recorded per component in lieu of a system-level table (MVA)"
     base_power::Float64
+    "Operator-set minimum and maximum flow (MW) in each direction, `from_to` and `to_from`, applied in addition to `rating`. `nothing` means no operational limit"
+    operational_flow_limit::Union{Nothing, OperationalFlowLimit}
     "An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation."
     ext::Dict{String, Any}
     "(**Do not modify.**) PowerSystems.jl internal reference"
     internal::InfrastructureSystemsInternal
 end
 
-function TwoTerminalLCCLine(name, available, arc, active_power_flow, r, scheduled_dc_voltage, rectifier_bridges, rectifier_delay_angle_limits, rectifier_rc, rectifier_xc, rectifier_base_voltage, inverter_bridges, inverter_extinction_angle_limits, inverter_rc, inverter_xc, inverter_base_voltage, control_mode=LCCControlMode.BLOCKED, power_transfer_setpoint=nothing, current_transfer_setpoint=nothing, switch_mode_voltage=0.0, compounding_resistance=0.0, min_compounding_voltage=0.0, rectifier_transformer_ratio=1.0, rectifier_tap_setting=1.0, rectifier_tap_limits=(min=0.51, max=1.5), rectifier_tap_step=0.00625, rectifier_delay_angle=0.0, rectifier_capacitor_reactance=0.0, inverter_transformer_ratio=1.0, inverter_tap_setting=1.0, inverter_tap_limits=(min=0.51, max=1.5), inverter_tap_step=0.00625, inverter_extinction_angle=0.0, inverter_capacitor_reactance=0.0, active_power_limits_from=(min=0.0, max=0.0), active_power_limits_to=(min=0.0, max=0.0), reactive_power_limits_from=(min=0.0, max=0.0), reactive_power_limits_to=(min=0.0, max=0.0), loss=LossCurve(LinearCurve(0.0), NaturalUnit()), services=Device[], base_power=100.0, ext=Dict{String, Any}(), )
-    TwoTerminalLCCLine(name, available, arc, active_power_flow, r, scheduled_dc_voltage, rectifier_bridges, rectifier_delay_angle_limits, rectifier_rc, rectifier_xc, rectifier_base_voltage, inverter_bridges, inverter_extinction_angle_limits, inverter_rc, inverter_xc, inverter_base_voltage, control_mode, power_transfer_setpoint, current_transfer_setpoint, switch_mode_voltage, compounding_resistance, min_compounding_voltage, rectifier_transformer_ratio, rectifier_tap_setting, rectifier_tap_limits, rectifier_tap_step, rectifier_delay_angle, rectifier_capacitor_reactance, inverter_transformer_ratio, inverter_tap_setting, inverter_tap_limits, inverter_tap_step, inverter_extinction_angle, inverter_capacitor_reactance, active_power_limits_from, active_power_limits_to, reactive_power_limits_from, reactive_power_limits_to, loss, services, base_power, ext, InfrastructureSystemsInternal(), )
+function TwoTerminalLCCLine(name, available, arc, active_power_flow, rating, r, scheduled_dc_voltage, rectifier_bridges, rectifier_delay_angle_limits, rectifier_rc, rectifier_xc, rectifier_base_voltage, inverter_bridges, inverter_extinction_angle_limits, inverter_rc, inverter_xc, inverter_base_voltage, control_mode=LCCControlMode.BLOCKED, power_transfer_setpoint=nothing, current_transfer_setpoint=nothing, switch_mode_voltage=0.0, compounding_resistance=0.0, min_compounding_voltage=0.0, rectifier_transformer_ratio=1.0, rectifier_tap_setting=1.0, rectifier_tap_limits=(min=0.51, max=1.5), rectifier_tap_step=0.00625, rectifier_delay_angle=0.0, rectifier_capacitor_reactance=0.0, inverter_transformer_ratio=1.0, inverter_tap_setting=1.0, inverter_tap_limits=(min=0.51, max=1.5), inverter_tap_step=0.00625, inverter_extinction_angle=0.0, inverter_capacitor_reactance=0.0, reactive_power_limits_from=(min=0.0, max=0.0), reactive_power_limits_to=(min=0.0, max=0.0), rating_from=1e8, rating_to=1e8, loss=LossCurve(LinearCurve(0.0), NaturalUnit()), services=Device[], base_power=100.0, operational_flow_limit=nothing, ext=Dict{String, Any}(), )
+    TwoTerminalLCCLine(name, available, arc, active_power_flow, rating, r, scheduled_dc_voltage, rectifier_bridges, rectifier_delay_angle_limits, rectifier_rc, rectifier_xc, rectifier_base_voltage, inverter_bridges, inverter_extinction_angle_limits, inverter_rc, inverter_xc, inverter_base_voltage, control_mode, power_transfer_setpoint, current_transfer_setpoint, switch_mode_voltage, compounding_resistance, min_compounding_voltage, rectifier_transformer_ratio, rectifier_tap_setting, rectifier_tap_limits, rectifier_tap_step, rectifier_delay_angle, rectifier_capacitor_reactance, inverter_transformer_ratio, inverter_tap_setting, inverter_tap_limits, inverter_tap_step, inverter_extinction_angle, inverter_capacitor_reactance, reactive_power_limits_from, reactive_power_limits_to, rating_from, rating_to, loss, services, base_power, operational_flow_limit, ext, InfrastructureSystemsInternal(), )
 end
 
-function TwoTerminalLCCLine(; name, available, arc, active_power_flow, r, scheduled_dc_voltage, rectifier_bridges, rectifier_delay_angle_limits, rectifier_rc, rectifier_xc, rectifier_base_voltage, inverter_bridges, inverter_extinction_angle_limits, inverter_rc, inverter_xc, inverter_base_voltage, control_mode=LCCControlMode.BLOCKED, power_transfer_setpoint=nothing, current_transfer_setpoint=nothing, switch_mode_voltage=0.0, compounding_resistance=0.0, min_compounding_voltage=0.0, rectifier_transformer_ratio=1.0, rectifier_tap_setting=1.0, rectifier_tap_limits=(min=0.51, max=1.5), rectifier_tap_step=0.00625, rectifier_delay_angle=0.0, rectifier_capacitor_reactance=0.0, inverter_transformer_ratio=1.0, inverter_tap_setting=1.0, inverter_tap_limits=(min=0.51, max=1.5), inverter_tap_step=0.00625, inverter_extinction_angle=0.0, inverter_capacitor_reactance=0.0, active_power_limits_from=(min=0.0, max=0.0), active_power_limits_to=(min=0.0, max=0.0), reactive_power_limits_from=(min=0.0, max=0.0), reactive_power_limits_to=(min=0.0, max=0.0), loss=LossCurve(LinearCurve(0.0), NaturalUnit()), services=Device[], base_power=100.0, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Unitful.Units, )
-    value = TwoTerminalLCCLine(name, available, arc, _placeholder(active_power_flow), r, scheduled_dc_voltage, rectifier_bridges, rectifier_delay_angle_limits, rectifier_rc, rectifier_xc, rectifier_base_voltage, inverter_bridges, inverter_extinction_angle_limits, inverter_rc, inverter_xc, inverter_base_voltage, control_mode, _placeholder(power_transfer_setpoint), current_transfer_setpoint, switch_mode_voltage, compounding_resistance, min_compounding_voltage, rectifier_transformer_ratio, rectifier_tap_setting, rectifier_tap_limits, rectifier_tap_step, rectifier_delay_angle, rectifier_capacitor_reactance, inverter_transformer_ratio, inverter_tap_setting, inverter_tap_limits, inverter_tap_step, inverter_extinction_angle, inverter_capacitor_reactance, _placeholder(active_power_limits_from), _placeholder(active_power_limits_to), _placeholder(reactive_power_limits_from), _placeholder(reactive_power_limits_to), loss, services, base_power, ext, internal, )
+function TwoTerminalLCCLine(; name, available, arc, active_power_flow, rating, r, scheduled_dc_voltage, rectifier_bridges, rectifier_delay_angle_limits, rectifier_rc, rectifier_xc, rectifier_base_voltage, inverter_bridges, inverter_extinction_angle_limits, inverter_rc, inverter_xc, inverter_base_voltage, control_mode=LCCControlMode.BLOCKED, power_transfer_setpoint=nothing, current_transfer_setpoint=nothing, switch_mode_voltage=0.0, compounding_resistance=0.0, min_compounding_voltage=0.0, rectifier_transformer_ratio=1.0, rectifier_tap_setting=1.0, rectifier_tap_limits=(min=0.51, max=1.5), rectifier_tap_step=0.00625, rectifier_delay_angle=0.0, rectifier_capacitor_reactance=0.0, inverter_transformer_ratio=1.0, inverter_tap_setting=1.0, inverter_tap_limits=(min=0.51, max=1.5), inverter_tap_step=0.00625, inverter_extinction_angle=0.0, inverter_capacitor_reactance=0.0, reactive_power_limits_from=(min=0.0, max=0.0), reactive_power_limits_to=(min=0.0, max=0.0), rating_from=1e8, rating_to=1e8, loss=LossCurve(LinearCurve(0.0), NaturalUnit()), services=Device[], base_power=100.0, operational_flow_limit=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Unitful.Units, )
+    value = TwoTerminalLCCLine(name, available, arc, _placeholder(active_power_flow), _placeholder(rating), r, scheduled_dc_voltage, rectifier_bridges, rectifier_delay_angle_limits, rectifier_rc, rectifier_xc, rectifier_base_voltage, inverter_bridges, inverter_extinction_angle_limits, inverter_rc, inverter_xc, inverter_base_voltage, control_mode, _placeholder(power_transfer_setpoint), current_transfer_setpoint, switch_mode_voltage, compounding_resistance, min_compounding_voltage, rectifier_transformer_ratio, rectifier_tap_setting, rectifier_tap_limits, rectifier_tap_step, rectifier_delay_angle, rectifier_capacitor_reactance, inverter_transformer_ratio, inverter_tap_setting, inverter_tap_limits, inverter_tap_step, inverter_extinction_angle, inverter_capacitor_reactance, _placeholder(reactive_power_limits_from), _placeholder(reactive_power_limits_to), _placeholder(rating_from), _placeholder(rating_to), loss, services, base_power, _placeholder(operational_flow_limit), ext, internal, )
     set_active_power_flow!(value, _tag(active_power_flow, input_basis, Val(:mw)))
+    set_rating!(value, _tag(rating, input_basis, Val(:mva)))
     set_power_transfer_setpoint!(value, _tag(power_transfer_setpoint, input_basis, Val(:mw)))
-    set_active_power_limits_from!(value, _tag(active_power_limits_from, input_basis, Val(:mw)))
-    set_active_power_limits_to!(value, _tag(active_power_limits_to, input_basis, Val(:mw)))
     set_reactive_power_limits_from!(value, _tag(reactive_power_limits_from, input_basis, Val(:mvar)))
     set_reactive_power_limits_to!(value, _tag(reactive_power_limits_to, input_basis, Val(:mvar)))
+    set_rating_from!(value, _tag(rating_from, input_basis, Val(:mva)))
+    set_rating_to!(value, _tag(rating_to, input_basis, Val(:mva)))
+    set_operational_flow_limit!(value, _tag(operational_flow_limit, input_basis, Val(:mw)))
     return value
 end
 _takes_input_basis(::Type{<:TwoTerminalLCCLine}) = true
@@ -213,6 +223,7 @@ function TwoTerminalLCCLine(::Nothing)
         available=false,
         arc=Arc(ACBus(nothing), ACBus(nothing)),
         active_power_flow=0.0,
+        rating=0.0,
         r=0.0,
         scheduled_dc_voltage=0.0,
         rectifier_bridges=0,
@@ -243,13 +254,14 @@ function TwoTerminalLCCLine(::Nothing)
         inverter_tap_step=0.0,
         inverter_extinction_angle=0.0,
         inverter_capacitor_reactance=0.0,
-        active_power_limits_from=(min=0.0, max=0.0),
-        active_power_limits_to=(min=0.0, max=0.0),
         reactive_power_limits_from=(min=0.0, max=0.0),
         reactive_power_limits_to=(min=0.0, max=0.0),
+        rating_from=0.0,
+        rating_to=0.0,
         loss=LossCurve(LinearCurve(0.0), NaturalUnit()),
         services=Device[],
         base_power=100.0,
+        operational_flow_limit=nothing,
         ext=Dict{String, Any}(),
         input_basis=u"CU",
     )
@@ -269,6 +281,14 @@ get_active_power_flow(value::TwoTerminalLCCLine) = _units_arg_required(get_activ
 get_active_power_flow_unitful(value::TwoTerminalLCCLine) = _units_arg_required(get_active_power_flow_unitful, value, :active_power_flow, Val(:mw))
 InfrastructureSystems.display_units_arg(::typeof(get_active_power_flow), ::Type{TwoTerminalLCCLine}) = u"SU"
 InfrastructureSystems.display_units_arg(::typeof(get_active_power_flow_unitful), ::Type{TwoTerminalLCCLine}) = u"SU"
+"""Get [`TwoTerminalLCCLine`](@ref) `rating` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_rating_unitful`](@ref)."""
+get_rating(value::TwoTerminalLCCLine, units) = InfrastructureSystems._strip_units(get_value(value, Val(:rating), Val(:mva), units))
+"""Get [`TwoTerminalLCCLine`](@ref) `rating` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_rating`](@ref)."""
+get_rating_unitful(value::TwoTerminalLCCLine, units) = get_value(value, Val(:rating), Val(:mva), units)
+get_rating(value::TwoTerminalLCCLine) = _units_arg_required(get_rating, value, :rating, Val(:mva))
+get_rating_unitful(value::TwoTerminalLCCLine) = _units_arg_required(get_rating_unitful, value, :rating, Val(:mva))
+InfrastructureSystems.display_units_arg(::typeof(get_rating), ::Type{TwoTerminalLCCLine}) = u"CU"
+InfrastructureSystems.display_units_arg(::typeof(get_rating_unitful), ::Type{TwoTerminalLCCLine}) = u"CU"
 """Get [`TwoTerminalLCCLine`](@ref) `r`."""
 get_r(value::TwoTerminalLCCLine) = value.r
 """Get [`TwoTerminalLCCLine`](@ref) `scheduled_dc_voltage`."""
@@ -335,22 +355,6 @@ get_inverter_tap_step(value::TwoTerminalLCCLine) = value.inverter_tap_step
 get_inverter_extinction_angle(value::TwoTerminalLCCLine) = value.inverter_extinction_angle
 """Get [`TwoTerminalLCCLine`](@ref) `inverter_capacitor_reactance`."""
 get_inverter_capacitor_reactance(value::TwoTerminalLCCLine) = value.inverter_capacitor_reactance
-"""Get [`TwoTerminalLCCLine`](@ref) `active_power_limits_from` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_active_power_limits_from_unitful`](@ref)."""
-get_active_power_limits_from(value::TwoTerminalLCCLine, units) = InfrastructureSystems._strip_units(get_value(value, Val(:active_power_limits_from), Val(:mw), units))
-"""Get [`TwoTerminalLCCLine`](@ref) `active_power_limits_from` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_active_power_limits_from`](@ref)."""
-get_active_power_limits_from_unitful(value::TwoTerminalLCCLine, units) = get_value(value, Val(:active_power_limits_from), Val(:mw), units)
-get_active_power_limits_from(value::TwoTerminalLCCLine) = _units_arg_required(get_active_power_limits_from, value, :active_power_limits_from, Val(:mw))
-get_active_power_limits_from_unitful(value::TwoTerminalLCCLine) = _units_arg_required(get_active_power_limits_from_unitful, value, :active_power_limits_from, Val(:mw))
-InfrastructureSystems.display_units_arg(::typeof(get_active_power_limits_from), ::Type{TwoTerminalLCCLine}) = u"SU"
-InfrastructureSystems.display_units_arg(::typeof(get_active_power_limits_from_unitful), ::Type{TwoTerminalLCCLine}) = u"SU"
-"""Get [`TwoTerminalLCCLine`](@ref) `active_power_limits_to` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_active_power_limits_to_unitful`](@ref)."""
-get_active_power_limits_to(value::TwoTerminalLCCLine, units) = InfrastructureSystems._strip_units(get_value(value, Val(:active_power_limits_to), Val(:mw), units))
-"""Get [`TwoTerminalLCCLine`](@ref) `active_power_limits_to` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_active_power_limits_to`](@ref)."""
-get_active_power_limits_to_unitful(value::TwoTerminalLCCLine, units) = get_value(value, Val(:active_power_limits_to), Val(:mw), units)
-get_active_power_limits_to(value::TwoTerminalLCCLine) = _units_arg_required(get_active_power_limits_to, value, :active_power_limits_to, Val(:mw))
-get_active_power_limits_to_unitful(value::TwoTerminalLCCLine) = _units_arg_required(get_active_power_limits_to_unitful, value, :active_power_limits_to, Val(:mw))
-InfrastructureSystems.display_units_arg(::typeof(get_active_power_limits_to), ::Type{TwoTerminalLCCLine}) = u"SU"
-InfrastructureSystems.display_units_arg(::typeof(get_active_power_limits_to_unitful), ::Type{TwoTerminalLCCLine}) = u"SU"
 """Get [`TwoTerminalLCCLine`](@ref) `reactive_power_limits_from` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_reactive_power_limits_from_unitful`](@ref)."""
 get_reactive_power_limits_from(value::TwoTerminalLCCLine, units) = InfrastructureSystems._strip_units(get_value(value, Val(:reactive_power_limits_from), Val(:mvar), units))
 """Get [`TwoTerminalLCCLine`](@ref) `reactive_power_limits_from` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_reactive_power_limits_from`](@ref)."""
@@ -367,12 +371,36 @@ get_reactive_power_limits_to(value::TwoTerminalLCCLine) = _units_arg_required(ge
 get_reactive_power_limits_to_unitful(value::TwoTerminalLCCLine) = _units_arg_required(get_reactive_power_limits_to_unitful, value, :reactive_power_limits_to, Val(:mvar))
 InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_limits_to), ::Type{TwoTerminalLCCLine}) = u"SU"
 InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_limits_to_unitful), ::Type{TwoTerminalLCCLine}) = u"SU"
+"""Get [`TwoTerminalLCCLine`](@ref) `rating_from` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_rating_from_unitful`](@ref)."""
+get_rating_from(value::TwoTerminalLCCLine, units) = InfrastructureSystems._strip_units(get_value(value, Val(:rating_from), Val(:mva), units))
+"""Get [`TwoTerminalLCCLine`](@ref) `rating_from` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_rating_from`](@ref)."""
+get_rating_from_unitful(value::TwoTerminalLCCLine, units) = get_value(value, Val(:rating_from), Val(:mva), units)
+get_rating_from(value::TwoTerminalLCCLine) = _units_arg_required(get_rating_from, value, :rating_from, Val(:mva))
+get_rating_from_unitful(value::TwoTerminalLCCLine) = _units_arg_required(get_rating_from_unitful, value, :rating_from, Val(:mva))
+InfrastructureSystems.display_units_arg(::typeof(get_rating_from), ::Type{TwoTerminalLCCLine}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_rating_from_unitful), ::Type{TwoTerminalLCCLine}) = u"SU"
+"""Get [`TwoTerminalLCCLine`](@ref) `rating_to` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_rating_to_unitful`](@ref)."""
+get_rating_to(value::TwoTerminalLCCLine, units) = InfrastructureSystems._strip_units(get_value(value, Val(:rating_to), Val(:mva), units))
+"""Get [`TwoTerminalLCCLine`](@ref) `rating_to` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_rating_to`](@ref)."""
+get_rating_to_unitful(value::TwoTerminalLCCLine, units) = get_value(value, Val(:rating_to), Val(:mva), units)
+get_rating_to(value::TwoTerminalLCCLine) = _units_arg_required(get_rating_to, value, :rating_to, Val(:mva))
+get_rating_to_unitful(value::TwoTerminalLCCLine) = _units_arg_required(get_rating_to_unitful, value, :rating_to, Val(:mva))
+InfrastructureSystems.display_units_arg(::typeof(get_rating_to), ::Type{TwoTerminalLCCLine}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_rating_to_unitful), ::Type{TwoTerminalLCCLine}) = u"SU"
 """Get [`TwoTerminalLCCLine`](@ref) `loss`."""
 get_loss(value::TwoTerminalLCCLine) = value.loss
 """Get [`TwoTerminalLCCLine`](@ref) `services`."""
 get_services(value::TwoTerminalLCCLine) = value.services
 
 _get_base_power(value::TwoTerminalLCCLine) = value.base_power
+"""Get [`TwoTerminalLCCLine`](@ref) `operational_flow_limit` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_operational_flow_limit_unitful`](@ref)."""
+get_operational_flow_limit(value::TwoTerminalLCCLine, units) = InfrastructureSystems._strip_units(get_value(value, Val(:operational_flow_limit), Val(:mw), units))
+"""Get [`TwoTerminalLCCLine`](@ref) `operational_flow_limit` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_operational_flow_limit`](@ref)."""
+get_operational_flow_limit_unitful(value::TwoTerminalLCCLine, units) = get_value(value, Val(:operational_flow_limit), Val(:mw), units)
+get_operational_flow_limit(value::TwoTerminalLCCLine) = _units_arg_required(get_operational_flow_limit, value, :operational_flow_limit, Val(:mw))
+get_operational_flow_limit_unitful(value::TwoTerminalLCCLine) = _units_arg_required(get_operational_flow_limit_unitful, value, :operational_flow_limit, Val(:mw))
+InfrastructureSystems.display_units_arg(::typeof(get_operational_flow_limit), ::Type{TwoTerminalLCCLine}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_operational_flow_limit_unitful), ::Type{TwoTerminalLCCLine}) = u"SU"
 """Get [`TwoTerminalLCCLine`](@ref) `ext`."""
 get_ext(value::TwoTerminalLCCLine) = value.ext
 """Get [`TwoTerminalLCCLine`](@ref) `internal`."""
@@ -385,6 +413,9 @@ set_arc!(value::TwoTerminalLCCLine, val) = value.arc = val
 """Set [`TwoTerminalLCCLine`](@ref) `active_power_flow`."""
 set_active_power_flow!(value::TwoTerminalLCCLine, val) = value.active_power_flow = set_value(value, Val(:active_power_flow), val, Val(:mw))
 set_active_power_flow!(value::TwoTerminalLCCLine, val::_UntaggedNumber) = _units_tag_required(set_active_power_flow!, value, :active_power_flow, Val(:mw), val)
+"""Set [`TwoTerminalLCCLine`](@ref) `rating`."""
+set_rating!(value::TwoTerminalLCCLine, val) = value.rating = set_value(value, Val(:rating), val, Val(:mva))
+set_rating!(value::TwoTerminalLCCLine, val::_UntaggedNumber) = _units_tag_required(set_rating!, value, :rating, Val(:mva), val)
 """Set [`TwoTerminalLCCLine`](@ref) `r`."""
 set_r!(value::TwoTerminalLCCLine, val) = value.r = val
 """Set [`TwoTerminalLCCLine`](@ref) `scheduled_dc_voltage`."""
@@ -446,14 +477,6 @@ set_inverter_tap_step!(value::TwoTerminalLCCLine, val) = value.inverter_tap_step
 set_inverter_extinction_angle!(value::TwoTerminalLCCLine, val) = value.inverter_extinction_angle = val
 """Set [`TwoTerminalLCCLine`](@ref) `inverter_capacitor_reactance`."""
 set_inverter_capacitor_reactance!(value::TwoTerminalLCCLine, val) = value.inverter_capacitor_reactance = val
-"""Set [`TwoTerminalLCCLine`](@ref) `active_power_limits_from`."""
-set_active_power_limits_from!(value::TwoTerminalLCCLine, val) = value.active_power_limits_from = set_value(value, Val(:active_power_limits_from), val, Val(:mw))
-set_active_power_limits_from!(value::TwoTerminalLCCLine, val::_UntaggedNumber) = _units_tag_required(set_active_power_limits_from!, value, :active_power_limits_from, Val(:mw), val)
-set_active_power_limits_from!(value::TwoTerminalLCCLine, val::NamedTuple{(:min, :max), <:Tuple{Vararg{_UntaggedNumber}}}) = _units_tag_required(set_active_power_limits_from!, value, :active_power_limits_from, Val(:mw), val)
-"""Set [`TwoTerminalLCCLine`](@ref) `active_power_limits_to`."""
-set_active_power_limits_to!(value::TwoTerminalLCCLine, val) = value.active_power_limits_to = set_value(value, Val(:active_power_limits_to), val, Val(:mw))
-set_active_power_limits_to!(value::TwoTerminalLCCLine, val::_UntaggedNumber) = _units_tag_required(set_active_power_limits_to!, value, :active_power_limits_to, Val(:mw), val)
-set_active_power_limits_to!(value::TwoTerminalLCCLine, val::NamedTuple{(:min, :max), <:Tuple{Vararg{_UntaggedNumber}}}) = _units_tag_required(set_active_power_limits_to!, value, :active_power_limits_to, Val(:mw), val)
 """Set [`TwoTerminalLCCLine`](@ref) `reactive_power_limits_from`."""
 set_reactive_power_limits_from!(value::TwoTerminalLCCLine, val) = value.reactive_power_limits_from = set_value(value, Val(:reactive_power_limits_from), val, Val(:mvar))
 set_reactive_power_limits_from!(value::TwoTerminalLCCLine, val::_UntaggedNumber) = _units_tag_required(set_reactive_power_limits_from!, value, :reactive_power_limits_from, Val(:mvar), val)
@@ -462,9 +485,18 @@ set_reactive_power_limits_from!(value::TwoTerminalLCCLine, val::NamedTuple{(:min
 set_reactive_power_limits_to!(value::TwoTerminalLCCLine, val) = value.reactive_power_limits_to = set_value(value, Val(:reactive_power_limits_to), val, Val(:mvar))
 set_reactive_power_limits_to!(value::TwoTerminalLCCLine, val::_UntaggedNumber) = _units_tag_required(set_reactive_power_limits_to!, value, :reactive_power_limits_to, Val(:mvar), val)
 set_reactive_power_limits_to!(value::TwoTerminalLCCLine, val::NamedTuple{(:min, :max), <:Tuple{Vararg{_UntaggedNumber}}}) = _units_tag_required(set_reactive_power_limits_to!, value, :reactive_power_limits_to, Val(:mvar), val)
+"""Set [`TwoTerminalLCCLine`](@ref) `rating_from`."""
+set_rating_from!(value::TwoTerminalLCCLine, val) = value.rating_from = set_value(value, Val(:rating_from), val, Val(:mva))
+set_rating_from!(value::TwoTerminalLCCLine, val::_UntaggedNumber) = _units_tag_required(set_rating_from!, value, :rating_from, Val(:mva), val)
+"""Set [`TwoTerminalLCCLine`](@ref) `rating_to`."""
+set_rating_to!(value::TwoTerminalLCCLine, val) = value.rating_to = set_value(value, Val(:rating_to), val, Val(:mva))
+set_rating_to!(value::TwoTerminalLCCLine, val::_UntaggedNumber) = _units_tag_required(set_rating_to!, value, :rating_to, Val(:mva), val)
 """Set [`TwoTerminalLCCLine`](@ref) `loss`."""
 set_loss!(value::TwoTerminalLCCLine, val) = value.loss = val
 """Set [`TwoTerminalLCCLine`](@ref) `services`."""
 set_services!(value::TwoTerminalLCCLine, val) = value.services = val
+"""Set [`TwoTerminalLCCLine`](@ref) `operational_flow_limit`."""
+set_operational_flow_limit!(value::TwoTerminalLCCLine, val) = value.operational_flow_limit = set_value(value, Val(:operational_flow_limit), val, Val(:mw))
+set_operational_flow_limit!(value::TwoTerminalLCCLine, val::_UntaggedNumber) = _units_tag_required(set_operational_flow_limit!, value, :operational_flow_limit, Val(:mw), val)
 """Set [`TwoTerminalLCCLine`](@ref) `ext`."""
 set_ext!(value::TwoTerminalLCCLine, val) = value.ext = val

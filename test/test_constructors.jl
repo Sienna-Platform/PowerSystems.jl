@@ -41,8 +41,6 @@ end
         arc = arc,
         active_power_flow = 0.1,
         rating = 2.0,
-        active_power_limits_from = (min = -2.0, max = 2.0),
-        active_power_limits_to = (min = -2.0, max = 2.0),
         dc_control_from = VSCDCControlModes.DC_POWER,
         ac_control_from = VSCACControlModes.AC_REACTIVE_POWER,
         dc_control_to = VSCDCControlModes.DC_VOLTAGE,
@@ -98,8 +96,6 @@ end
     arc = Arc(ACBus(nothing), ACBus(nothing))
     @test_throws UndefKeywordError TwoTerminalVSCLine(;
         name = "vsc", available = true, arc = arc, active_power_flow = 0.1, rating = 2.0,
-        active_power_limits_from = (min = -2.0, max = 2.0),
-        active_power_limits_to = (min = -2.0, max = 2.0),
         input_basis = u"CU",
     )
     @test_throws UndefKeywordError InterconnectingConverter(;

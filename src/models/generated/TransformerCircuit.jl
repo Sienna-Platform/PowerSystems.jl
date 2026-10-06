@@ -8,6 +8,7 @@ This file is auto-generated. Do not edit.
     mutable struct TransformerCircuit <: DeviceParameter
         available::Bool
         arc::Arc
+        rating::Float64
         tap::Float64
         α::Float64
         r::Float64
@@ -20,7 +21,6 @@ This file is auto-generated. Do not edit.
         controlled_reactive_power_flow_limits::Union{Nothing, MinMax}
         controlled_active_power_flow_limits::Union{Nothing, MinMax}
         number_of_tap_positions::Int
-        rating::Union{Nothing, Float64}
         rating_b::Union{Nothing, Float64}
         rating_c::Union{Nothing, Float64}
         active_power_flow::Float64
@@ -28,6 +28,7 @@ This file is auto-generated. Do not edit.
         base_power::Float64
         base_voltage_primary::Union{Nothing, Float64}
         base_voltage_secondary::Union{Nothing, Float64}
+        operational_flow_limit::Union{Nothing, OperationalFlowLimit}
         base_value::Union{Nothing, Float64}
     end
 
@@ -38,6 +39,7 @@ A [`TwoWindingTransformer`](@ref) has one circuit; a [`ThreeWindingTransformer`]
 # Arguments
 - `available::Bool`: Indicator of whether this circuit is connected and online. Circuit availability is the single source of truth; the owning transformer derives its availability from its circuits
 - `arc::Arc`: An [`Arc`](@ref) defining this circuit `from` a terminal bus `to` the transformer's other terminal or star bus
+- `rating::Float64`: Thermal rating (MVA) stored in component base per unit on `base_power`
 - `tap::Float64`: (default: `1.0`) Normalized tap changer position for voltage control, varying between 0 and 2, with 1 centered at the nominal voltage
 - `α::Float64`: (default: `0.0`) Initial condition of phase shift (radians) across this circuit
 - `r::Float64`: (default: `0.0`) Circuit resistance in pu (component base on `base_power`) referenced to `base_voltage_primary`. For a two-winding transformer this is the series impedance; for a three-winding transformer it is the star-leg equivalent, validation range: `(-2, 4)`
@@ -50,7 +52,6 @@ A [`TwoWindingTransformer`](@ref) has one circuit; a [`ThreeWindingTransformer`]
 - `controlled_reactive_power_flow_limits::Union{Nothing, MinMax}`: (default: `nothing`) Regulated reactive-power-flow target band (PSS/E VMA/VMI); `nothing` unless `control_objective` selects it.
 - `controlled_active_power_flow_limits::Union{Nothing, MinMax}`: (default: `nothing`) Regulated active-power-flow target band (PSS/E VMA/VMI); `nothing` unless `control_objective` selects it.
 - `number_of_tap_positions::Int`: (default: `33`) Number of tap positions
-- `rating::Union{Nothing, Float64}`: (default: `nothing`) Thermal rating (MVA) stored in component base per unit on `base_power`
 - `rating_b::Union{Nothing, Float64}`: (default: `nothing`) Second current rating; entered in MVA.
 - `rating_c::Union{Nothing, Float64}`: (default: `nothing`) Third current rating; entered in MVA.
 - `active_power_flow::Float64`: (default: `0.0`) Initial condition of active power flow through this circuit (MW)
@@ -58,6 +59,7 @@ A [`TwoWindingTransformer`](@ref) has one circuit; a [`ThreeWindingTransformer`]
 - `base_power::Float64`: (default: `100.0`) Base power (MVA) for [per unitization](@ref per_unit) of this circuit
 - `base_voltage_primary::Union{Nothing, Float64}`: (default: `nothing`) Primary (from) terminal-side base voltage in kV; the reference voltage for this circuit's per-unit impedance, validation range: `(0, nothing)`
 - `base_voltage_secondary::Union{Nothing, Float64}`: (default: `nothing`) Secondary (to) terminal-side base voltage in kV. For a three-winding transformer this defaults to the primary base voltage at parse time, validation range: `(0, nothing)`
+- `operational_flow_limit::Union{Nothing, OperationalFlowLimit}`: (default: `nothing`) Operator-set minimum and maximum flow (MW) in each direction, `from_to` and `to_from`, applied in addition to `rating`. `nothing` means no operational limit
 - `base_value::Union{Nothing, Float64}`: (**Do not modify.**) System base power (MVA) anchor for explicit-units conversion; populated when the owning transformer is attached to a System
 - `input_basis`: (keyword constructor only, required) `u"CU"` or `u"NU"`, the units of bare numbers on unit-bearing fields. Tagged values (`50.0u"MW"`) keep their own units
 """
@@ -66,6 +68,8 @@ mutable struct TransformerCircuit <: DeviceParameter
     available::Bool
     "An [`Arc`](@ref) defining this circuit `from` a terminal bus `to` the transformer's other terminal or star bus"
     arc::Arc
+    "Thermal rating (MVA) stored in component base per unit on `base_power`"
+    rating::Float64
     "Normalized tap changer position for voltage control, varying between 0 and 2, with 1 centered at the nominal voltage"
     tap::Float64
     "Initial condition of phase shift (radians) across this circuit"
@@ -90,8 +94,6 @@ mutable struct TransformerCircuit <: DeviceParameter
     controlled_active_power_flow_limits::Union{Nothing, MinMax}
     "Number of tap positions"
     number_of_tap_positions::Int
-    "Thermal rating (MVA) stored in component base per unit on `base_power`"
-    rating::Union{Nothing, Float64}
     "Second current rating; entered in MVA."
     rating_b::Union{Nothing, Float64}
     "Third current rating; entered in MVA."
@@ -106,25 +108,28 @@ mutable struct TransformerCircuit <: DeviceParameter
     base_voltage_primary::Union{Nothing, Float64}
     "Secondary (to) terminal-side base voltage in kV. For a three-winding transformer this defaults to the primary base voltage at parse time"
     base_voltage_secondary::Union{Nothing, Float64}
+    "Operator-set minimum and maximum flow (MW) in each direction, `from_to` and `to_from`, applied in addition to `rating`. `nothing` means no operational limit"
+    operational_flow_limit::Union{Nothing, OperationalFlowLimit}
     "(**Do not modify.**) System base power (MVA) anchor for explicit-units conversion; populated when the owning transformer is attached to a System"
     base_value::Union{Nothing, Float64}
 end
 
-function TransformerCircuit(available, arc, tap=1.0, α=0.0, r=0.0, x=0.0, control_objective=TransformerControlObjective.UNDEFINED, regulated_bus_number=0, tap_ratio_limits=nothing, phase_angle_limits=nothing, controlled_voltage_limits=nothing, controlled_reactive_power_flow_limits=nothing, controlled_active_power_flow_limits=nothing, number_of_tap_positions=33, rating=nothing, rating_b=nothing, rating_c=nothing, active_power_flow=0.0, reactive_power_flow=0.0, base_power=100.0, base_voltage_primary=nothing, base_voltage_secondary=nothing, )
-    TransformerCircuit(available, arc, tap, α, r, x, control_objective, regulated_bus_number, tap_ratio_limits, phase_angle_limits, controlled_voltage_limits, controlled_reactive_power_flow_limits, controlled_active_power_flow_limits, number_of_tap_positions, rating, rating_b, rating_c, active_power_flow, reactive_power_flow, base_power, base_voltage_primary, base_voltage_secondary, nothing, )
+function TransformerCircuit(available, arc, rating, tap=1.0, α=0.0, r=0.0, x=0.0, control_objective=TransformerControlObjective.UNDEFINED, regulated_bus_number=0, tap_ratio_limits=nothing, phase_angle_limits=nothing, controlled_voltage_limits=nothing, controlled_reactive_power_flow_limits=nothing, controlled_active_power_flow_limits=nothing, number_of_tap_positions=33, rating_b=nothing, rating_c=nothing, active_power_flow=0.0, reactive_power_flow=0.0, base_power=100.0, base_voltage_primary=nothing, base_voltage_secondary=nothing, operational_flow_limit=nothing, )
+    TransformerCircuit(available, arc, rating, tap, α, r, x, control_objective, regulated_bus_number, tap_ratio_limits, phase_angle_limits, controlled_voltage_limits, controlled_reactive_power_flow_limits, controlled_active_power_flow_limits, number_of_tap_positions, rating_b, rating_c, active_power_flow, reactive_power_flow, base_power, base_voltage_primary, base_voltage_secondary, operational_flow_limit, nothing, )
 end
 
-function TransformerCircuit(; available, arc, tap=1.0, α=0.0, r=0.0, x=0.0, control_objective=TransformerControlObjective.UNDEFINED, regulated_bus_number=0, tap_ratio_limits=nothing, phase_angle_limits=nothing, controlled_voltage_limits=nothing, controlled_reactive_power_flow_limits=nothing, controlled_active_power_flow_limits=nothing, number_of_tap_positions=33, rating=nothing, rating_b=nothing, rating_c=nothing, active_power_flow=0.0, reactive_power_flow=0.0, base_power=100.0, base_voltage_primary=nothing, base_voltage_secondary=nothing, base_value=nothing, input_basis::Unitful.Units, )
-    value = TransformerCircuit(available, arc, tap, α, _placeholder(r), _placeholder(x), control_objective, regulated_bus_number, tap_ratio_limits, phase_angle_limits, controlled_voltage_limits, _placeholder(controlled_reactive_power_flow_limits), _placeholder(controlled_active_power_flow_limits), number_of_tap_positions, _placeholder(rating), _placeholder(rating_b), _placeholder(rating_c), _placeholder(active_power_flow), _placeholder(reactive_power_flow), base_power, base_voltage_primary, base_voltage_secondary, base_value, )
+function TransformerCircuit(; available, arc, rating, tap=1.0, α=0.0, r=0.0, x=0.0, control_objective=TransformerControlObjective.UNDEFINED, regulated_bus_number=0, tap_ratio_limits=nothing, phase_angle_limits=nothing, controlled_voltage_limits=nothing, controlled_reactive_power_flow_limits=nothing, controlled_active_power_flow_limits=nothing, number_of_tap_positions=33, rating_b=nothing, rating_c=nothing, active_power_flow=0.0, reactive_power_flow=0.0, base_power=100.0, base_voltage_primary=nothing, base_voltage_secondary=nothing, operational_flow_limit=nothing, base_value=nothing, input_basis::Unitful.Units, )
+    value = TransformerCircuit(available, arc, _placeholder(rating), tap, α, _placeholder(r), _placeholder(x), control_objective, regulated_bus_number, tap_ratio_limits, phase_angle_limits, controlled_voltage_limits, _placeholder(controlled_reactive_power_flow_limits), _placeholder(controlled_active_power_flow_limits), number_of_tap_positions, _placeholder(rating_b), _placeholder(rating_c), _placeholder(active_power_flow), _placeholder(reactive_power_flow), base_power, base_voltage_primary, base_voltage_secondary, _placeholder(operational_flow_limit), base_value, )
+    set_rating!(value, _tag(rating, input_basis, Val(:mva)))
     set_r!(value, _tag(r, input_basis, Val(:ohm)))
     set_x!(value, _tag(x, input_basis, Val(:ohm)))
     set_controlled_reactive_power_flow_limits!(value, _tag(controlled_reactive_power_flow_limits, input_basis, Val(:mvar)))
     set_controlled_active_power_flow_limits!(value, _tag(controlled_active_power_flow_limits, input_basis, Val(:mw)))
-    set_rating!(value, _tag(rating, input_basis, Val(:mva)))
     set_rating_b!(value, _tag(rating_b, input_basis, Val(:mva)))
     set_rating_c!(value, _tag(rating_c, input_basis, Val(:mva)))
     set_active_power_flow!(value, _tag(active_power_flow, input_basis, Val(:mw)))
     set_reactive_power_flow!(value, _tag(reactive_power_flow, input_basis, Val(:mvar)))
+    set_operational_flow_limit!(value, _tag(operational_flow_limit, input_basis, Val(:mw)))
     return value
 end
 _takes_input_basis(::Type{<:TransformerCircuit}) = true
@@ -134,6 +139,7 @@ function TransformerCircuit(::Nothing)
     TransformerCircuit(;
         available=false,
         arc=Arc(ACBus(nothing), ACBus(nothing)),
+        rating=0.0,
         tap=1.0,
         α=0.0,
         r=0.0,
@@ -146,7 +152,6 @@ function TransformerCircuit(::Nothing)
         controlled_reactive_power_flow_limits=nothing,
         controlled_active_power_flow_limits=nothing,
         number_of_tap_positions=33,
-        rating=nothing,
         rating_b=nothing,
         rating_c=nothing,
         active_power_flow=0.0,
@@ -154,6 +159,7 @@ function TransformerCircuit(::Nothing)
         base_power=100.0,
         base_voltage_primary=nothing,
         base_voltage_secondary=nothing,
+        operational_flow_limit=nothing,
         input_basis=u"CU",
     )
 end
@@ -162,6 +168,14 @@ end
 get_available(value::TransformerCircuit) = value.available
 """Get [`TransformerCircuit`](@ref) `arc`."""
 get_arc(value::TransformerCircuit) = value.arc
+"""Get [`TransformerCircuit`](@ref) `rating` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_rating_unitful`](@ref)."""
+get_rating(value::TransformerCircuit, units) = InfrastructureSystems._strip_units(get_value(value, Val(:rating), Val(:mva), units))
+"""Get [`TransformerCircuit`](@ref) `rating` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_rating`](@ref)."""
+get_rating_unitful(value::TransformerCircuit, units) = get_value(value, Val(:rating), Val(:mva), units)
+get_rating(value::TransformerCircuit) = _units_arg_required(get_rating, value, :rating, Val(:mva))
+get_rating_unitful(value::TransformerCircuit) = _units_arg_required(get_rating_unitful, value, :rating, Val(:mva))
+InfrastructureSystems.display_units_arg(::typeof(get_rating), ::Type{TransformerCircuit}) = u"CU"
+InfrastructureSystems.display_units_arg(::typeof(get_rating_unitful), ::Type{TransformerCircuit}) = u"CU"
 """Get [`TransformerCircuit`](@ref) `tap`."""
 get_tap(value::TransformerCircuit) = value.tap
 """Get [`TransformerCircuit`](@ref) `α`."""
@@ -210,14 +224,6 @@ InfrastructureSystems.display_units_arg(::typeof(get_controlled_active_power_flo
 InfrastructureSystems.display_units_arg(::typeof(get_controlled_active_power_flow_limits_unitful), ::Type{TransformerCircuit}) = u"SU"
 """Get [`TransformerCircuit`](@ref) `number_of_tap_positions`."""
 get_number_of_tap_positions(value::TransformerCircuit) = value.number_of_tap_positions
-"""Get [`TransformerCircuit`](@ref) `rating` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_rating_unitful`](@ref)."""
-get_rating(value::TransformerCircuit, units) = InfrastructureSystems._strip_units(get_value(value, Val(:rating), Val(:mva), units))
-"""Get [`TransformerCircuit`](@ref) `rating` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_rating`](@ref)."""
-get_rating_unitful(value::TransformerCircuit, units) = get_value(value, Val(:rating), Val(:mva), units)
-get_rating(value::TransformerCircuit) = _units_arg_required(get_rating, value, :rating, Val(:mva))
-get_rating_unitful(value::TransformerCircuit) = _units_arg_required(get_rating_unitful, value, :rating, Val(:mva))
-InfrastructureSystems.display_units_arg(::typeof(get_rating), ::Type{TransformerCircuit}) = u"CU"
-InfrastructureSystems.display_units_arg(::typeof(get_rating_unitful), ::Type{TransformerCircuit}) = u"CU"
 """Get [`TransformerCircuit`](@ref) `rating_b` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_rating_b_unitful`](@ref)."""
 get_rating_b(value::TransformerCircuit, units) = InfrastructureSystems._strip_units(get_value(value, Val(:rating_b), Val(:mva), units))
 """Get [`TransformerCircuit`](@ref) `rating_b` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_rating_b`](@ref)."""
@@ -256,6 +262,14 @@ get_base_power(value::TransformerCircuit) = value.base_power
 get_base_voltage_primary(value::TransformerCircuit) = value.base_voltage_primary
 """Get [`TransformerCircuit`](@ref) `base_voltage_secondary`."""
 get_base_voltage_secondary(value::TransformerCircuit) = value.base_voltage_secondary
+"""Get [`TransformerCircuit`](@ref) `operational_flow_limit` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_operational_flow_limit_unitful`](@ref)."""
+get_operational_flow_limit(value::TransformerCircuit, units) = InfrastructureSystems._strip_units(get_value(value, Val(:operational_flow_limit), Val(:mw), units))
+"""Get [`TransformerCircuit`](@ref) `operational_flow_limit` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_operational_flow_limit`](@ref)."""
+get_operational_flow_limit_unitful(value::TransformerCircuit, units) = get_value(value, Val(:operational_flow_limit), Val(:mw), units)
+get_operational_flow_limit(value::TransformerCircuit) = _units_arg_required(get_operational_flow_limit, value, :operational_flow_limit, Val(:mw))
+get_operational_flow_limit_unitful(value::TransformerCircuit) = _units_arg_required(get_operational_flow_limit_unitful, value, :operational_flow_limit, Val(:mw))
+InfrastructureSystems.display_units_arg(::typeof(get_operational_flow_limit), ::Type{TransformerCircuit}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_operational_flow_limit_unitful), ::Type{TransformerCircuit}) = u"SU"
 
 _get_base_value(value::TransformerCircuit) = value.base_value
 
@@ -263,6 +277,9 @@ _get_base_value(value::TransformerCircuit) = value.base_value
 set_available!(value::TransformerCircuit, val) = value.available = val
 """Set [`TransformerCircuit`](@ref) `arc`."""
 set_arc!(value::TransformerCircuit, val) = value.arc = val
+"""Set [`TransformerCircuit`](@ref) `rating`."""
+set_rating!(value::TransformerCircuit, val) = value.rating = set_value(value, Val(:rating), val, Val(:mva))
+set_rating!(value::TransformerCircuit, val::_UntaggedNumber) = _units_tag_required(set_rating!, value, :rating, Val(:mva), val)
 """Set [`TransformerCircuit`](@ref) `tap`."""
 set_tap!(value::TransformerCircuit, val) = value.tap = val
 """Set [`TransformerCircuit`](@ref) `α`."""
@@ -293,9 +310,6 @@ set_controlled_active_power_flow_limits!(value::TransformerCircuit, val::_Untagg
 set_controlled_active_power_flow_limits!(value::TransformerCircuit, val::NamedTuple{(:min, :max), <:Tuple{Vararg{_UntaggedNumber}}}) = _units_tag_required(set_controlled_active_power_flow_limits!, value, :controlled_active_power_flow_limits, Val(:mw), val)
 """Set [`TransformerCircuit`](@ref) `number_of_tap_positions`."""
 set_number_of_tap_positions!(value::TransformerCircuit, val) = value.number_of_tap_positions = val
-"""Set [`TransformerCircuit`](@ref) `rating`."""
-set_rating!(value::TransformerCircuit, val) = value.rating = set_value(value, Val(:rating), val, Val(:mva))
-set_rating!(value::TransformerCircuit, val::_UntaggedNumber) = _units_tag_required(set_rating!, value, :rating, Val(:mva), val)
 """Set [`TransformerCircuit`](@ref) `rating_b`."""
 set_rating_b!(value::TransformerCircuit, val) = value.rating_b = set_value(value, Val(:rating_b), val, Val(:mva))
 set_rating_b!(value::TransformerCircuit, val::_UntaggedNumber) = _units_tag_required(set_rating_b!, value, :rating_b, Val(:mva), val)
@@ -312,3 +326,6 @@ set_reactive_power_flow!(value::TransformerCircuit, val::_UntaggedNumber) = _uni
 set_base_voltage_primary!(value::TransformerCircuit, val) = value.base_voltage_primary = val
 """Set [`TransformerCircuit`](@ref) `base_voltage_secondary`."""
 set_base_voltage_secondary!(value::TransformerCircuit, val) = value.base_voltage_secondary = val
+"""Set [`TransformerCircuit`](@ref) `operational_flow_limit`."""
+set_operational_flow_limit!(value::TransformerCircuit, val) = value.operational_flow_limit = set_value(value, Val(:operational_flow_limit), val, Val(:mw))
+set_operational_flow_limit!(value::TransformerCircuit, val::_UntaggedNumber) = _units_tag_required(set_operational_flow_limit!, value, :operational_flow_limit, Val(:mw), val)

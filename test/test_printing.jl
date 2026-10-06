@@ -226,7 +226,6 @@ end
     # "Test show units" testset below).
     rating_getters = [
         (Line, get_rating),
-        (MonitoredLine, get_rating),
         (TwoTerminalVSCLine, get_rating),
         (RenewableDispatch, get_rating),
         (ThermalStandard, get_rating),
