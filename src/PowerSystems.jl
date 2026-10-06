@@ -693,6 +693,7 @@ export UnitCategory, AbstractPowerCategory,
 export ACTIVE_POWER, REACTIVE_POWER, APPARENT_POWER
 export IMPEDANCE, ADMITTANCE, VOLTAGE, CURRENT
 export natural_unit, base_value, system_base_value, convert_units
+export convert_power_units
 # Hand-written unit-bearing companion for the `exclude_getter` `base_power`
 # descriptor entry (its bare-number counterpart gets exported via
 # generated/includes.jl). `base_power_12`/`_23`/`_31` on `ThreeWindingTransformer`
@@ -754,7 +755,7 @@ const IC = InfrastructureCoreOpenAPIModels
 const PC = PowerCoreOpenAPIModels
 const PO = PowerOperationsOpenAPIModels
 const PTS = InfrastructureTimeSeriesOpenAPIModels
-using Unitful: @u_str, @unit, Quantity, Units, uconvert, ustrip
+using Unitful: @u_str, @unit, @dimension, @refunit, Quantity, Units, uconvert, ustrip
 
 # Unit-system markers live in IS; PSY re-exports them for downstream packages.
 # `get_value`/`set_value` are IS's units-interface generics: PSY EXTENDS them
@@ -954,7 +955,8 @@ import InfrastructureSystems:
     get_startup_fuel_offtake,
     get_power_units,
     get_fuel_cost,
-    get_fuel_cost_time_series
+    get_fuel_cost_time_series,
+    convert_power_units
 
 #################################################################################
 
