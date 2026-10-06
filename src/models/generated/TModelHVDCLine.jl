@@ -29,10 +29,10 @@ This line must be connected to a [`DCBus`](@ref) on each end. It uses a T-Model 
 - `available::Bool`: Indicator of whether the component is connected and online (`true`) or disconnected, offline, or down (`false`). Unavailable components are excluded during simulations
 - `active_power_flow::Float64`: Initial condition of active power flow on the line (MW)
 - `arc::Arc`: An [`Arc`](@ref) defining this line `from` a bus `to` another bus
-- `r::Float64`: Total series Resistance in p.u. ([`SYSTEM_BASE`](@ref per_unit)), split equally on both sides of the shunt capacitance
-- `l::Float64`: Total series Inductance in p.u. ([`SYSTEM_BASE`](@ref per_unit)), split equally on both sides of the shunt capacitance
-- `c::Float64`: Shunt capacitance in p.u. ([`SYSTEM_BASE`](@ref per_unit))
-- `base_current::Float64`: Base current for per-unitization of this line's per-unit fields — this DC line per-unitizes against a current base, not a power base (A), validation range: `(0.0001, nothing)`
+- `r::Float64`: Total series resistance in ohm, split equally on both sides of the shunt capacitance
+- `l::Float64`: Total series inductance in H, split equally on both sides of the shunt capacitance
+- `c::Float64`: Shunt capacitance in F
+- `base_current::Float64`: Base current of the line as recorded by the source data (A). No field of this component is per-unit on it, validation range: `(0.0001, nothing)`
 - `services::Vector{Service}`: (default: `Device[]`) Services that this device contributes to
 - `operational_flow_limit::Union{Nothing, OperationalFlowLimit}`: (default: `nothing`) Operator-set minimum and maximum flow (MW) in each direction, `from_to` and `to_from`, applied in addition to `rating`. `nothing` means no operational limit
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
@@ -48,13 +48,13 @@ mutable struct TModelHVDCLine <: DCBranch
     active_power_flow::Float64
     "An [`Arc`](@ref) defining this line `from` a bus `to` another bus"
     arc::Arc
-    "Total series Resistance in p.u. ([`SYSTEM_BASE`](@ref per_unit)), split equally on both sides of the shunt capacitance"
+    "Total series resistance in ohm, split equally on both sides of the shunt capacitance"
     r::Float64
-    "Total series Inductance in p.u. ([`SYSTEM_BASE`](@ref per_unit)), split equally on both sides of the shunt capacitance"
+    "Total series inductance in H, split equally on both sides of the shunt capacitance"
     l::Float64
-    "Shunt capacitance in p.u. ([`SYSTEM_BASE`](@ref per_unit))"
+    "Shunt capacitance in F"
     c::Float64
-    "Base current for per-unitization of this line's per-unit fields — this DC line per-unitizes against a current base, not a power base (A)"
+    "Base current of the line as recorded by the source data (A). No field of this component is per-unit on it"
     base_current::Float64
     "Services that this device contributes to"
     services::Vector{Service}

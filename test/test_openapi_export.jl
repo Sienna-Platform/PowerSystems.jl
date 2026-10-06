@@ -44,7 +44,7 @@ _export_vsc(
 ) = TwoTerminalVSCLine(;
     name = "vsc1", available = true, arc = arc,
     active_power_flow = 0.5, rating = 2.0,
-    g = 200.0, dc_current = 300.0, reactive_power_from = 0.1,
+    g = 0.5, dc_current = 300.0, reactive_power_from = 0.1,
     dc_control_from = VSCDCControlModes.DC_POWER,
     ac_control_from = ac_control_from,
     dc_power_setpoint_from = 0.4,
@@ -68,7 +68,7 @@ _export_vsc(
     voltage_limits_to = (min = 0.9, max = 1.1),
     dc_voltage_droop_to = 0.0, rated_dc_voltage = rated_dc_voltage,
     remote_bus_control_from = nothing, remote_bus_control_to = 2,
-    rmpct_from = 100.0, rmpct_to = 100.0, base_power = 100.0,
+    base_power = 100.0,
     input_basis = u"CU",
 )
 
@@ -1253,6 +1253,7 @@ end
             energy_unit = PSY.PC.EnergyUnit("MMBTU"), gwp = 1.0, available = true,
         )
         doc = Dict{String, Any}(
+            "schema_version" => PSY.IC.READER_VERSION,
             "components" => Dict{String, Any}(
                 "Area" => [openapi_raw(area_po)],
                 "LoadZone" => [openapi_raw(lz_po)],
@@ -1439,19 +1440,16 @@ end
     @test natural_po.rating == 200.0
     @test natural_po.rating_from == 200.0
     @test natural_po.reactive_power_limits_to.max == 100.0
-    # DC_POWER setpoint scales with the other power fields; the voltage-regulating ones are
-    # written per-unit as stored, tagged by `setpoint_voltage_units`.
+    # DC_POWER setpoint scales with the other power fields; the voltage setpoints are stored
+    # per unit of the rated voltage and written in kV.
     @test natural_po.dc_power_setpoint_from == 40.0
     @test natural_po.dc_voltage_setpoint_from isa PSY.IC.Absent
-    @test natural_po.dc_voltage_setpoint_to == 1.02
+    @test natural_po.dc_voltage_setpoint_to ≈ 204.0
     @test natural_po.dc_power_setpoint_to isa PSY.IC.Absent
     @test natural_po.power_factor_setpoint_from == 0.95
     @test natural_po.ac_voltage_setpoint_from isa PSY.IC.Absent
-    @test natural_po.setpoint_voltage_units.value == "COMPONENT_BASE"
-    # pu → siemens against Ybase = 100 / 200^2.
     @test natural_po.g == 0.5
-    @test natural_po.admittance_units.value == "NATURAL_UNITS"
-    @test natural_po.voltage_units.value == "NATURAL_UNITS"
+    @test natural_po.voltage_limits_from.max == 1.1
     @test natural_po.dc_control_to.value == "DC_VOLTAGE"
     @test natural_po.ac_control_from.value == "AC_REACTIVE_POWER"
     @test natural_po.converter_loss_to.power_units.value == "NATURAL_UNITS"
@@ -1462,8 +1460,7 @@ end
     @test device_po.active_power_flow == 0.5
     @test device_po.rating_from == 2.0
     @test device_po.dc_power_setpoint_from == 0.4
-    @test device_po.dc_voltage_setpoint_to == 1.02
-    @test device_po.setpoint_voltage_units.value == "COMPONENT_BASE"
+    @test device_po.dc_voltage_setpoint_to ≈ 204.0
     @test device_po.g == 0.5
 end
 
@@ -1486,17 +1483,14 @@ end
     refs[3] = arc
     refs[4] = vsc
 
-    # The setpoint is written per unit and the basis declared, so no base is needed to
-    # export it; `rated_ac_voltage_from` rides along as the base an importer reading a
-    # natural-units document divides by. Neither depends on the unit system, since both
-    # are voltages, not power fields.
+    # The per-unit setpoint is written in kV (0.95 pu of 230 kV); `rated_ac_voltage_from` rides
+    # along as the base an importer divides by. Neither depends on the unit system.
     natural_po = PSY.to_openapi(vsc, refs, NU)
-    @test natural_po.ac_voltage_setpoint_from == 0.95
+    @test natural_po.ac_voltage_setpoint_from ≈ 0.95 * 230.0
     @test natural_po.power_factor_setpoint_from isa PSY.IC.Absent
-    @test natural_po.setpoint_voltage_units.value == "COMPONENT_BASE"
     @test natural_po.rated_ac_voltage_from == 230.0
     component_po = PSY.to_openapi(vsc, refs, CU)
-    @test component_po.ac_voltage_setpoint_from == 0.95
+    @test component_po.ac_voltage_setpoint_from ≈ 0.95 * 230.0
     @test component_po.rated_ac_voltage_from == 230.0
 end
 
@@ -1551,33 +1545,26 @@ end
     end
 end
 
-@testset "OpenAPI export: TwoTerminalVSCLine AC voltage setpoint needs no AC base" begin
+@testset "OpenAPI export: TwoTerminalVSCLine voltage setpoint needs its rated voltage" begin
     bus1 = _export_bus(; number = 1)
     bus2 = _export_bus(; number = 2, bustype = ACBusTypes.PQ)
     arc = Arc(; from = bus1, to = bus2)
     refs = PSY.OpenAPIRefs(100.0)
+    refs[1] = bus1
+    refs[2] = bus2
+    refs[3] = arc
 
-    # `ac_voltage_setpoint_*` is written per unit under `setpoint_voltage_units =
-    # COMPONENT_BASE`, so an unset `rated_ac_voltage_from` (the default 0.0) does not block
-    # export; only a later natural-units import of that value would need the base.
+    # A present AC setpoint with `rated_ac_voltage_from == 0.0` has no base: export errors.
     ac_voltage = _export_vsc(arc; ac_control_from = VSCACControlModes.AC_VOLTAGE)
     sys = System(100.0)
     for component in (bus1, bus2, arc, ac_voltage)
         add_component!(sys, component)
     end
-    refs[1] = bus1
-    refs[2] = bus2
-    refs[3] = arc
     refs[4] = ac_voltage
-    po = PSY.to_openapi(ac_voltage, refs, NU)
-    @test po.ac_voltage_setpoint_from == 0.95
-    @test po.rated_ac_voltage_from == 0.0
+    @test_throws ErrorException PSY.to_openapi(ac_voltage, refs, NU)
 end
 
-@testset "OpenAPI export: TwoTerminalVSCLine tolerates a missing DC voltage base" begin
-    # A non-zero `g` with `rated_dc_voltage == 0.0` has no DC voltage base to express it
-    # against. Export no longer errors on this: it falls back to a base of 1, mirroring
-    # import's own `_vsc_dc_base_voltage` fallback for `iszero(value)`.
+@testset "OpenAPI export: TwoTerminalVSCLine with no setpoint tolerates a missing DC voltage base" begin
     bus1 = _export_bus(; number = 1)
     bus2 = _export_bus(; number = 2, bustype = ACBusTypes.PQ)
     arc = Arc(; from = bus1, to = bus2)
@@ -1594,18 +1581,14 @@ end
     refs[3] = arc
     refs[4] = vsc
     po = PSY.to_openapi(vsc, refs, NU)
-    @test po.g isa Float64
+    @test po.g == 0.5
     @test po.rated_dc_voltage == 0.0
 
-    # NOT a lossless round trip: import's `_vsc_dc_base_voltage` only falls back to
-    # `one(rated)` when the INCOMING value is itself zero. Here the exported `g` is
-    # non-zero and `rated_dc_voltage` is still `0.0` in the document, so `from_file` still
-    # hits import's `error(...)` branch — unchanged, correct, and out of scope. The two
-    # fallbacks are symmetric only for the degenerate `g == 0.0` case, which never needed
-    # tolerating in the first place.
+    # `g` is natural, so the missing base does not block the round trip either.
     dir = mktempdir()
     PSY.to_file(sys, dir; units = NU, force = true)
-    @test_throws ErrorException PSY.from_file(dir)
+    restored = get_component(TwoTerminalVSCLine, PSY.from_file(dir), "vsc1")
+    @test get_g(restored) == 0.5
 end
 
 _export_thermal_gen(bus; name = "gen1") = ThermalStandard(;

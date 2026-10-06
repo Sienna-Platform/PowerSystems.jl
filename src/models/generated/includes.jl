@@ -556,7 +556,6 @@ export get_dc_control
 export get_dc_control_from
 export get_dc_control_to
 export get_dc_current
-export get_dc_current_unitful
 export get_dc_dc_inductor
 export get_dc_link_capacitance
 export get_dc_power_setpoint
@@ -692,7 +691,6 @@ export get_max_current_reactive_power_unitful
 export get_max_dc_current
 export get_max_dc_current_from
 export get_max_dc_current_to
-export get_max_dc_current_unitful
 export get_max_demand
 export get_max_impedance_active_power
 export get_max_impedance_active_power_unitful
@@ -808,9 +806,6 @@ export get_renewable_unit
 export get_reserves
 export get_rf
 export get_rg
-export get_rmpct
-export get_rmpct_from
-export get_rmpct_to
 export get_rrpwr
 export get_rv
 export get_saturation_coeffs
@@ -1514,9 +1509,6 @@ export set_renewable_unit!
 export set_reserves!
 export set_rf!
 export set_rg!
-export set_rmpct!
-export set_rmpct_from!
-export set_rmpct_to!
 export set_rrpwr!
 export set_rv!
 export set_saturation_coeffs!

@@ -63,36 +63,36 @@ As implemented in PSS/E.
 - `arc::Arc`: An [`Arc`](@ref) defining this line `from` a rectifier bus `to` an inverter bus. The rectifier bus must be specified in the `from` bus and inverter bus in the `to` bus.
 - `active_power_flow::Float64`: Initial condition of active power flow on the line (MW)
 - `rating::Float64`: Transfer rating of the DC line (MVA), independent of the converter ratings at each end, validation range: `(0, nothing)`
-- `r::Float64`: Series resistance of the DC line in pu ([`SYSTEM_BASE`](@ref per_unit))
-- `scheduled_dc_voltage::Float64`: Scheduled compounded DC voltage in kV. By default this parameter is the scheduled DC voltage in the inverter bus This parameter must not be specified in per-unit.
+- `r::Float64`: Series resistance of the DC line in ohm
+- `scheduled_dc_voltage::Float64`: Scheduled compounded DC voltage in kV. By default this parameter is the scheduled DC voltage in the inverter bus
 - `rectifier_bridges::Int`: Number of bridges in series in the rectifier side.
 - `rectifier_delay_angle_limits::MinMax`: Minimum and maximum rectifier firing delay angle (α) (radians)
-- `rectifier_rc::Float64`: Rectifier commutating transformer resistance per bridge in system p.u. ([`SYSTEM_BASE`](@ref per_unit))
-- `rectifier_xc::Float64`: Rectifier commutating transformer reactance per bridge in system p.u. ([`SYSTEM_BASE`](@ref per_unit))
+- `rectifier_rc::Float64`: Rectifier commutating transformer resistance per bridge in ohm
+- `rectifier_xc::Float64`: Rectifier commutating transformer reactance per bridge in ohm
 - `rectifier_base_voltage::Float64`: Rectifier primary base AC voltage in kV, entered in kV.
 - `inverter_bridges::Int`: Number of bridges in series in the inverter side.
 - `inverter_extinction_angle_limits::MinMax`: Minimum and maximum inverter extinction angle (γ) (radians)
-- `inverter_rc::Float64`: Inverter commutating transformer resistance per bridge in system p.u. ([`SYSTEM_BASE`](@ref per_unit))
-- `inverter_xc::Float64`: Inverter commutating transformer reactance per bridge in system p.u. ([`SYSTEM_BASE`](@ref per_unit))
+- `inverter_rc::Float64`: Inverter commutating transformer resistance per bridge in ohm
+- `inverter_xc::Float64`: Inverter commutating transformer reactance per bridge in ohm
 - `inverter_base_voltage::Float64`: Inverter primary base AC voltage in kV, entered in kV.
 - `control_mode::LCCControlMode.Value`: (default: `LCCControlMode.BLOCKED`) Control mode of the line (PSS/E MDC); see [`LCCControlMode`](@ref). `BLOCKED` holds no schedule, `POWER` holds `power_transfer_setpoint`, `CURRENT` holds `current_transfer_setpoint`.
 - `power_transfer_setpoint::Union{Nothing, Float64}`: (default: `nothing`) Scheduled power transfer, used when `control_mode` is `POWER`; `nothing` otherwise. Positive is the power consumed at the rectifier bus, negative the power delivered at the inverter bus (its absolute value is the generated power at the inverter bus).
 - `current_transfer_setpoint::Union{Nothing, Float64}`: (default: `nothing`) Scheduled current transfer in amperes, used when `control_mode` is `CURRENT`; `nothing` otherwise.
-- `switch_mode_voltage::Float64`: (default: `0.0`) Mode switch DC voltage, in kV. This parameter must not be added in per-unit. If LCC line is in power mode control, and DC voltage falls below this value, the line switch to current mode control.
+- `switch_mode_voltage::Float64`: (default: `0.0`) Mode switch DC voltage, in kV. If LCC line is in power mode control, and DC voltage falls below this value, the line switch to current mode control.
 - `compounding_resistance::Float64`: (default: `0.0`) Compounding Resistance, in ohms. This parameter is for control of the DC voltage in the rectifier or inverter end. For inverter DC voltage control, the paremeter is set to zero; for rectifier DC voltage control, the paremeter is set to the DC line resistance; otherwise, set to a fraction of the DC line resistance.
-- `min_compounding_voltage::Float64`: (default: `0.0`) Minimum compounded voltage, in kV. This parameter must not be added in per-unit. Only used in constant gamma operation (γ_min = γ_max), and the AC transformer is used to control the DC voltage.
+- `min_compounding_voltage::Float64`: (default: `0.0`) Minimum compounded voltage, in kV. Only used in constant gamma operation (γ_min = γ_max), and the AC transformer is used to control the DC voltage.
 - `rectifier_transformer_ratio::Float64`: (default: `1.0`) Rectifier transformer ratio between the primary and secondary side AC voltages.
 - `rectifier_tap_setting::Float64`: (default: `1.0`) Rectifier transformer tap setting.
 - `rectifier_tap_limits::MinMax`: (default: `(min=0.51, max=1.5)`) Minimum and maximum rectifier tap limits as a ratio between the primary and secondary side AC voltages.
 - `rectifier_tap_step::Float64`: (default: `0.00625`) Rectifier transformer tap step value
 - `rectifier_delay_angle::Float64`: (default: `0.0`) Rectifier firing delay angle (α).
-- `rectifier_capacitor_reactance::Float64`: (default: `0.0`) Commutating rectifier capacitor reactance magnitude per bridge, in system p.u. ([`SYSTEM_BASE`](@ref per_unit)).
+- `rectifier_capacitor_reactance::Float64`: (default: `0.0`) Commutating rectifier capacitor reactance magnitude per bridge, in ohm
 - `inverter_transformer_ratio::Float64`: (default: `1.0`) Inverter transformer ratio between the primary and secondary side AC voltages.
 - `inverter_tap_setting::Float64`: (default: `1.0`) Inverter transformer tap setting.
 - `inverter_tap_limits::MinMax`: (default: `(min=0.51, max=1.5)`) Minimum and maximum inverter tap limits as a ratio between the primary and secondary side AC voltages.
 - `inverter_tap_step::Float64`: (default: `0.00625`) Inverter transformer tap step value.
 - `inverter_extinction_angle::Float64`: (default: `0.0`) Inverter extinction angle (γ).
-- `inverter_capacitor_reactance::Float64`: (default: `0.0`) Commutating inverter capacitor reactance magnitude per bridge, in system p.u. ([`SYSTEM_BASE`](@ref per_unit)).
+- `inverter_capacitor_reactance::Float64`: (default: `0.0`) Commutating inverter capacitor reactance magnitude per bridge, in ohm
 - `reactive_power_limits_from::MinMax`: (default: `(min=0.0, max=0.0)`) Minimum and maximum reactive power limits to the FROM node (MVAR)
 - `reactive_power_limits_to::MinMax`: (default: `(min=0.0, max=0.0)`) Minimum and maximum reactive power limits to the TO node (MVAR)
 - `rating_from::Float64`: (default: `1e8`) Converter rating in MVA in the `from` bus. The default is large enough that the converter imposes no limit beyond `rating`
@@ -116,17 +116,17 @@ mutable struct TwoTerminalLCCLine <: TwoTerminalHVDC
     active_power_flow::Float64
     "Transfer rating of the DC line (MVA), independent of the converter ratings at each end"
     rating::Float64
-    "Series resistance of the DC line in pu ([`SYSTEM_BASE`](@ref per_unit))"
+    "Series resistance of the DC line in ohm"
     r::Float64
-    "Scheduled compounded DC voltage in kV. By default this parameter is the scheduled DC voltage in the inverter bus This parameter must not be specified in per-unit."
+    "Scheduled compounded DC voltage in kV. By default this parameter is the scheduled DC voltage in the inverter bus"
     scheduled_dc_voltage::Float64
     "Number of bridges in series in the rectifier side."
     rectifier_bridges::Int
     "Minimum and maximum rectifier firing delay angle (α) (radians)"
     rectifier_delay_angle_limits::MinMax
-    "Rectifier commutating transformer resistance per bridge in system p.u. ([`SYSTEM_BASE`](@ref per_unit))"
+    "Rectifier commutating transformer resistance per bridge in ohm"
     rectifier_rc::Float64
-    "Rectifier commutating transformer reactance per bridge in system p.u. ([`SYSTEM_BASE`](@ref per_unit))"
+    "Rectifier commutating transformer reactance per bridge in ohm"
     rectifier_xc::Float64
     "Rectifier primary base AC voltage in kV, entered in kV."
     rectifier_base_voltage::Float64
@@ -134,9 +134,9 @@ mutable struct TwoTerminalLCCLine <: TwoTerminalHVDC
     inverter_bridges::Int
     "Minimum and maximum inverter extinction angle (γ) (radians)"
     inverter_extinction_angle_limits::MinMax
-    "Inverter commutating transformer resistance per bridge in system p.u. ([`SYSTEM_BASE`](@ref per_unit))"
+    "Inverter commutating transformer resistance per bridge in ohm"
     inverter_rc::Float64
-    "Inverter commutating transformer reactance per bridge in system p.u. ([`SYSTEM_BASE`](@ref per_unit))"
+    "Inverter commutating transformer reactance per bridge in ohm"
     inverter_xc::Float64
     "Inverter primary base AC voltage in kV, entered in kV."
     inverter_base_voltage::Float64
@@ -146,11 +146,11 @@ mutable struct TwoTerminalLCCLine <: TwoTerminalHVDC
     power_transfer_setpoint::Union{Nothing, Float64}
     "Scheduled current transfer in amperes, used when `control_mode` is `CURRENT`; `nothing` otherwise."
     current_transfer_setpoint::Union{Nothing, Float64}
-    "Mode switch DC voltage, in kV. This parameter must not be added in per-unit. If LCC line is in power mode control, and DC voltage falls below this value, the line switch to current mode control."
+    "Mode switch DC voltage, in kV. If LCC line is in power mode control, and DC voltage falls below this value, the line switch to current mode control."
     switch_mode_voltage::Float64
     "Compounding Resistance, in ohms. This parameter is for control of the DC voltage in the rectifier or inverter end. For inverter DC voltage control, the paremeter is set to zero; for rectifier DC voltage control, the paremeter is set to the DC line resistance; otherwise, set to a fraction of the DC line resistance."
     compounding_resistance::Float64
-    "Minimum compounded voltage, in kV. This parameter must not be added in per-unit. Only used in constant gamma operation (γ_min = γ_max), and the AC transformer is used to control the DC voltage."
+    "Minimum compounded voltage, in kV. Only used in constant gamma operation (γ_min = γ_max), and the AC transformer is used to control the DC voltage."
     min_compounding_voltage::Float64
     "Rectifier transformer ratio between the primary and secondary side AC voltages."
     rectifier_transformer_ratio::Float64
@@ -162,7 +162,7 @@ mutable struct TwoTerminalLCCLine <: TwoTerminalHVDC
     rectifier_tap_step::Float64
     "Rectifier firing delay angle (α)."
     rectifier_delay_angle::Float64
-    "Commutating rectifier capacitor reactance magnitude per bridge, in system p.u. ([`SYSTEM_BASE`](@ref per_unit))."
+    "Commutating rectifier capacitor reactance magnitude per bridge, in ohm"
     rectifier_capacitor_reactance::Float64
     "Inverter transformer ratio between the primary and secondary side AC voltages."
     inverter_transformer_ratio::Float64
@@ -174,7 +174,7 @@ mutable struct TwoTerminalLCCLine <: TwoTerminalHVDC
     inverter_tap_step::Float64
     "Inverter extinction angle (γ)."
     inverter_extinction_angle::Float64
-    "Commutating inverter capacitor reactance magnitude per bridge, in system p.u. ([`SYSTEM_BASE`](@ref per_unit))."
+    "Commutating inverter capacitor reactance magnitude per bridge, in ohm"
     inverter_capacitor_reactance::Float64
     "Minimum and maximum reactive power limits to the FROM node (MVAR)"
     reactive_power_limits_from::MinMax

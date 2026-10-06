@@ -372,6 +372,7 @@ function make_openapi_test_doc(;
     # ones: a real producer always emits all of them, so a fixture that omits some would let
     # a reader regress into tolerating incomplete documents.
     return Dict{String, Any}(
+        "schema_version" => PSY.IC.READER_VERSION,
         "components" => components,
         "supplemental_attributes" => [],
         "supplemental_attribute_associations" => [],
