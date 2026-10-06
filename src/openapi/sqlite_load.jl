@@ -16,7 +16,7 @@ name the same pair — a plant is either a `PlantAssociation`-shaped plant or a
 `CombinedCycleBlock`, never both — and a unit's prime mover fixes its CT/CA role so the two
 roles never mix within one pair either, so one merged map stays unambiguous.
 """
-function _group_index_by_pair(doc::PD.SystemDocument)
+function _group_index_by_pair(doc::PC.SystemDocument)
     indices = Dict{Tuple{Int, Int}, Vector{Int}}()
     for a in doc.plant_associations
         key = (Int(a.plant_id), Int(a.entity_id))
@@ -88,7 +88,7 @@ actually resolved to. No silent skip.
 function load_supplemental_attribute_associations!(
     sys::System,
     refs::OpenAPIRefs,
-    doc::PD.SystemDocument,
+    doc::PC.SystemDocument,
 )
     attribute_rows = Dict{Int, Any}(
         Int(getproperty(attr, :id)) => attr for attr in doc.supplemental_attributes

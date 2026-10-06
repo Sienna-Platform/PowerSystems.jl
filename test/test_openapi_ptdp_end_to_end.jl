@@ -127,8 +127,8 @@ end
 """Per-type component counts of a document."""
 function _ptdp_e2e_doc_component_counts(doc)
     return Dict(
-        type_name => length(PSY.PD.get_components(doc, type_name))
-        for type_name in PSY.PD.component_type_names(doc)
+        type_name => length(PSY.PC.get_components(doc, type_name))
+        for type_name in PSY.PC.component_type_names(doc)
     )
 end
 
@@ -414,7 +414,7 @@ end
         # plus generator emissions and outages, so the document arrives with attributes. One
         # more is added by hand onto a component carrying none, which is the shape PSY's
         # import treats as authoritative: an attribute that exists only in the document.
-        doc = PSY.PD.read_document(document_path)
+        doc = PSY.PC.read_document(document_path)
         attribute_rows = length(doc.supplemental_attribute_associations)
         attributed =
             Set(Int(a.component_id) for a in doc.supplemental_attribute_associations)
@@ -424,7 +424,7 @@ end
         # own fanned-out time series — so the augmented attribute is unambiguously the one
         # asserted below.
         candidates = [
-            row for row in PSY.PD.get_components(doc, "PowerLoad") if
+            row for row in PSY.PC.get_components(doc, "PowerLoad") if
             !(Int(row.id) in attributed)
         ]
         @test !isempty(candidates)
@@ -437,8 +437,8 @@ end
                 "coordinates" => [-97.5, 35.25],
             ),
         )
-        attr_id = PSY.PD.next_id!(doc)
-        PSY.PD.add_supplemental_attribute!(
+        attr_id = PSY.PC.next_id!(doc)
+        PSY.PC.add_supplemental_attribute!(
             doc,
             PSY.IC.GeographicInfo(; id = attr_id, geo_json = geo_json),
             target_id,
@@ -454,8 +454,8 @@ end
         # also back it with a sidecar row (mirrored below by adding the matching
         # `TimeSeriesAssociation` to `doc` itself, read back off the store rather than
         # hand-built, so it is byte-for-byte what the store would produce on export).
-        ts_attr_id = PSY.PD.next_id!(doc)
-        PSY.PD.add_supplemental_attribute!(
+        ts_attr_id = PSY.PC.next_id!(doc)
+        PSY.PC.add_supplemental_attribute!(
             doc,
             PSY.PO.FixedForcedOutage(;
                 id = ts_attr_id, outage_status = 1.0, monitored_components = Int64[],
@@ -478,7 +478,7 @@ end
         for row in IS.openapi_time_series_association_rows(
             attr_store; owner_id = ts_attr_id,
         )
-            PSY.PD.add_time_series_association!(doc, row)
+            PSY.PC.add_time_series_association!(doc, row)
         end
         IS.serialize(attr_store, sidecar)
         staged_with_attr = merge(
@@ -489,10 +489,10 @@ end
             ),
         )
 
-        PSY.PD.validate_document(doc)
-        PSY.PD.write_document(doc, document_path; force = true)
+        PSY.PC.validate_document(doc)
+        PSY.PC.write_document(doc, document_path; force = true)
 
-        doc1 = PSY.PD.read_document(document_path)
+        doc1 = PSY.PC.read_document(document_path)
         # Two hand-added rows now: the GeographicInfo and the time-series-owning outage.
         @test length(doc1.supplemental_attribute_associations) == attribute_rows + 2
 
@@ -558,7 +558,7 @@ end
             @test isfile(joinpath(dir2, "system.json"))
 
             sys3 = from_file(dir2)
-            doc2 = PSY.PD.read_document(joinpath(dir2, "system.json"))
+            doc2 = PSY.PC.read_document(joinpath(dir2, "system.json"))
 
             # Same components, same attributes, same series — described by PSY this time.
             @test _ptdp_e2e_doc_component_counts(doc2) ==

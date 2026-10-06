@@ -13,9 +13,6 @@ JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
 Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
 OpenAPI = "d5e62ea6-ddf3-4d43-8e4c-ad5e6c8bfd7d"
 PowerCoreOpenAPIModels = "b7b40286-e793-417d-a9a0-b1583e4da1cb"
-PowerDynamicsOpenAPIModels = "044a0b22-31f8-4ef6-8282-c9a61b3013f6"
-PowerInvestmentsOpenAPIModels = "33cb4396-f4d9-4f59-8585-787ebb56cb1b"
-PowerOpenAPIModels = "0730f07c-cff6-4c3b-a9df-c546153be50a"
 PowerOperationsOpenAPIModels = "a372b6d7-45a2-44c2-8199-6a724b72e8ff"
 PrettyTables = "08abe8d2-0d0c-5749-adfa-8a2ac140af0d"
 TimeSeries = "9e3dc215-6440-5c97-bce1-76c03772f85e"
@@ -32,30 +29,20 @@ InfraStore = "6aee0376-896a-4a59-96ff-12f221c99746"
 # EnumX move this branch follows (IS #643, merged), and InfraStore 0.14 is registered with
 # its own native library - the co-dev pins are retired.
 InfrastructureSystems = {url = "https://github.com/Sienna-Platform/InfrastructureSystems.jl.git", rev = "IS4"}
-InfrastructureCoreOpenAPIModels = {url = "https://github.com/Sienna-Platform/PowerOpenAPIModels.git", rev = "main", subdir = "InfrastructureCoreOpenAPIModels.jl"}
-InfrastructureTimeSeriesOpenAPIModels = {url = "https://github.com/Sienna-Platform/PowerOpenAPIModels.git", rev = "main", subdir = "InfrastructureTimeSeriesOpenAPIModels.jl"}
-PowerCoreOpenAPIModels = {url = "https://github.com/Sienna-Platform/PowerOpenAPIModels.git", rev = "main", subdir = "PowerCoreOpenAPIModels.jl"}
-PowerDynamicsOpenAPIModels = {url = "https://github.com/Sienna-Platform/PowerOpenAPIModels.git", rev = "main", subdir = "PowerDynamicsOpenAPIModels.jl"}
-PowerInvestmentsOpenAPIModels = {url = "https://github.com/Sienna-Platform/PowerOpenAPIModels.git", rev = "main", subdir = "PowerInvestmentsOpenAPIModels.jl"}
-PowerOpenAPIModels = {url = "https://github.com/Sienna-Platform/PowerOpenAPIModels.git", rev = "main", subdir = "PowerOpenAPIModels.jl"}
-PowerOperationsOpenAPIModels = {url = "https://github.com/Sienna-Platform/PowerOpenAPIModels.git", rev = "main", subdir = "PowerOperationsOpenAPIModels.jl"}
 
 [compat]
 # For the `[extras]` entry; Aqua requires every extra to carry a compat bound.
 InfraStore = "0.14"
 Dates = "1"
 DocStringExtensions = "^0.9.2"
-InfrastructureCoreOpenAPIModels = "0.1"
+InfrastructureCoreOpenAPIModels = "0.2"
 InfrastructureSystems = "^3.4"
-InfrastructureTimeSeriesOpenAPIModels = "0.1"
+InfrastructureTimeSeriesOpenAPIModels = "0.2"
 JSON = "^1.5"
 Logging = "1"
 OpenAPI = "1"
-PowerCoreOpenAPIModels = "0.1"
-PowerDynamicsOpenAPIModels = "0.1"
-PowerInvestmentsOpenAPIModels = "0.1"
-PowerOpenAPIModels = "0.1"
-PowerOperationsOpenAPIModels = "0.1"
+PowerCoreOpenAPIModels = "0.2"
+PowerOperationsOpenAPIModels = "0.2"
 PrettyTables = "3.1"
 TimeSeries = "0.25"
 Unicode = "1"

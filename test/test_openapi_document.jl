@@ -541,8 +541,8 @@ end
 
     mktempdir() do dir
         to_file(sys, dir; force = true)
-        doc = PSY.PD.read_document(joinpath(dir, "system.json"))
-        gen_row = only(PSY.PD.get_components(doc, "ThermalStandard"))
+        doc = PSY.PC.read_document(joinpath(dir, "system.json"))
+        gen_row = only(PSY.PC.get_components(doc, "ThermalStandard"))
         @test PSY._unwrap_oneof(gen_row.operation_cost).ancillary_service_offers ==
               Int64[IS.get_id(svc)]
 
@@ -566,13 +566,13 @@ end
     mktempdir() do dir
         to_file(sys, dir; force = true)
         document_path = joinpath(dir, "system.json")
-        doc = PSY.PD.read_document(document_path)
-        thermal_rows = PSY.PD.get_components(doc, "ThermalStandard")
+        doc = PSY.PC.read_document(document_path)
+        thermal_rows = PSY.PC.get_components(doc, "ThermalStandard")
         gen_index = only(
             i for i in eachindex(thermal_rows) if Int(thermal_rows[i].id) == gen_id
         )
         gen_row = thermal_rows[gen_index]
-        # `PD.read_document` parses the oneOf wrapper (`PO.ThermalStandardOperationCost`),
+        # `PC.read_document` parses the oneOf wrapper (`PO.ThermalStandardOperationCost`),
         # not the bare cost `to_openapi`'s in-memory path hands back — set the field on the
         # unwrapped `.value`, exactly what `_load_market_bid_service_offers!` reads. Every PO
         # struct is immutable, so rebuild the cost, its wrapper, and the owning row rather
@@ -582,7 +582,7 @@ end
         )
         new_wrapper = typeof(gen_row.operation_cost)(new_cost)
         thermal_rows[gen_index] = PSY._po_with(gen_row; operation_cost = new_wrapper)
-        PSY.PD.write_document(doc, document_path; force = true)
+        PSY.PC.write_document(doc, document_path; force = true)
 
         sys2 = from_file(dir)
         gen2 = get_component(ThermalStandard, sys2, "gen1")

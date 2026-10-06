@@ -1111,7 +1111,7 @@ end
         set_all_power_units!(device_doc, "COMPONENT_BASE")
         sys = PSY.from_openapi(System, to_test_document(device_doc))
         out = PSY.to_openapi(sys; units = CU)
-        gen_out = only(PSY.PD.get_components(out, "ThermalStandard"))
+        gen_out = only(PSY.PC.get_components(out, "ThermalStandard"))
         @test gen_out.power_units.value == "COMPONENT_BASE"
         @test gen_out.active_power == 50.0
         @test gen_out.rating == 100.0
@@ -1123,12 +1123,12 @@ end
     @testset "NATURAL_UNITS -> PSY -> NATURAL_UNITS is approximate only" begin
         sys = PSY.from_openapi(System, to_test_document(doc))
         out = PSY.to_openapi(sys; units = NU)
-        gen_out = only(PSY.PD.get_components(out, "ThermalStandard"))
+        gen_out = only(PSY.PC.get_components(out, "ThermalStandard"))
         @test gen_out.power_units.value == "NATURAL_UNITS"
         gen_in = only(doc["components"]["ThermalStandard"])
         @test gen_out.active_power ≈ gen_in["active_power"] rtol = 1e-15
         @test gen_out.rating ≈ gen_in["rating"] rtol = 1e-15
-        load_out = only(PSY.PD.get_components(out, "PowerLoad"))
+        load_out = only(PSY.PC.get_components(out, "PowerLoad"))
         load_in = only(doc["components"]["PowerLoad"])
         @test load_out.active_power ≈ load_in["active_power"] rtol = 1e-15
     end
@@ -1136,7 +1136,7 @@ end
     @testset "bustype SLACK round-trips as SLACK" begin
         sys = PSY.from_openapi(System, to_test_document(doc))
         out = PSY.to_openapi(sys; units = NU)
-        bus1_out = first(b for b in PSY.PD.get_components(out, "ACBus") if b.number == 1)
+        bus1_out = first(b for b in PSY.PC.get_components(out, "ACBus") if b.number == 1)
         @test bus1_out.bustype.value == "SLACK"
     end
 
@@ -1163,7 +1163,7 @@ end
         )
         add_component!(sys, line)
         out = PSY.to_openapi(sys; units = NU)
-        line_out = only(PSY.PD.get_components(out, "Line"))
+        line_out = only(PSY.PC.get_components(out, "Line"))
         @test line_out.base_power == PSY.get_base_power(sys)
     end
 end
@@ -1181,12 +1181,12 @@ end
     add_component!(sys, load)
 
     out_device = PSY.to_openapi(sys; units = CU)
-    load_out = only(PSY.PD.get_components(out_device, "PowerLoad"))
+    load_out = only(PSY.PC.get_components(out_device, "PowerLoad"))
     @test load_out.power_units.value == "COMPONENT_BASE"
     @test load_out.active_power == 0.3
 
     out_natural = PSY.to_openapi(sys; units = NU)
-    load_out_nat = only(PSY.PD.get_components(out_natural, "PowerLoad"))
+    load_out_nat = only(PSY.PC.get_components(out_natural, "PowerLoad"))
     @test load_out_nat.power_units.value == "NATURAL_UNITS"
     @test load_out_nat.active_power == 30.0
 end
@@ -1301,10 +1301,10 @@ end
             time_series_storage_path = ts_out_path,
         )
 
-        @test only(PSY.PD.get_components(out, "Line")).power_units.value == "NATURAL_UNITS"
-        @test length(PSY.PD.get_components(out, "ACBus")) == 2
-        @test length(only(PSY.PD.get_components(out, "Line")) |> x -> [x]) == 1
-        @test length(PSY.PD.get_components(out, "OnlineReserve")) == 1
+        @test only(PSY.PC.get_components(out, "Line")).power_units.value == "NATURAL_UNITS"
+        @test length(PSY.PC.get_components(out, "ACBus")) == 2
+        @test length(only(PSY.PC.get_components(out, "Line")) |> x -> [x]) == 1
+        @test length(PSY.PC.get_components(out, "OnlineReserve")) == 1
         @test length(out.supplemental_attributes) == 1
         @test length(out.supplemental_attribute_associations) == 1
         assoc = only(out.supplemental_attribute_associations)
@@ -1973,7 +1973,7 @@ end
             sys; time_series_storage_path = sidecar, write_time_series_data = false,
             store_rows = store_rows, association_id_map = Dict(original_id => new_id),
         )
-        gen_out = only(PSY.PD.get_components(doc, "ThermalStandard"))
+        gen_out = only(PSY.PC.get_components(doc, "ThermalStandard"))
         @test gen_out.operation_cost.value.variable_operation_cost.value.fuel_cost_time_series ==
               new_id
 

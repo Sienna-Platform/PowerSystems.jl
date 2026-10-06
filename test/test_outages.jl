@@ -396,7 +396,7 @@ end
     sys = create_system_with_outages()
     dir = mktempdir()
     to_file(sys, dir; force = true)
-    doc = PSY.PD.read_document(joinpath(dir, "system.json"))
+    doc = PSY.PC.read_document(joinpath(dir, "system.json"))
 
     geo_json = PSY.IC.GeographicInfoGeoJson(;
         additional_properties = Dict{String, Any}(
@@ -404,12 +404,12 @@ end
             "coordinates" => [0.0, 0.0],
         ),
     )
-    geo = PSY.IC.GeographicInfo(; id = PSY.PD.next_id!(doc), geo_json = geo_json)
+    geo = PSY.IC.GeographicInfo(; id = PSY.PC.next_id!(doc), geo_json = geo_json)
     # A load carries none of the outage/GeographicInfo attributes the fixture attaches only
     # to the two generators and their buses, so it is unambiguously bare beforehand.
-    load_id = Int(first(PSY.PD.get_components(doc, "PowerLoad")).id)
-    PSY.PD.add_supplemental_attribute!(doc, geo, load_id)
-    PSY.PD.validate_document(doc)
+    load_id = Int(first(PSY.PC.get_components(doc, "PowerLoad")).id)
+    PSY.PC.add_supplemental_attribute!(doc, geo, load_id)
+    PSY.PC.validate_document(doc)
 
     sys2 = PSY.from_openapi(
         System, doc; time_series_storage_path = joinpath(dir, "time_series.h5"),
@@ -426,7 +426,7 @@ end
     sys = create_system_with_outages()
     dir = mktempdir()
     to_file(sys, dir; force = true)
-    doc = PSY.PD.read_document(joinpath(dir, "system.json"))
+    doc = PSY.PC.read_document(joinpath(dir, "system.json"))
     # PO structs are immutable, so rebuild the row rather than mutating it in place, and
     # replace it by index.
     doc.supplemental_attribute_associations[1] =
@@ -458,7 +458,7 @@ end
         write_catalog = true,
     )
     @test isfile(joinpath(dir, "time_series.h5.sqlite"))
-    doc = PSY.PD.read_document(joinpath(dir, "system.json"))
+    doc = PSY.PC.read_document(joinpath(dir, "system.json"))
     # PO structs are immutable, so rebuild the row and its oneOf wrapper rather than
     # mutating in place, and replace it by index.
     wrapper = doc.time_series_associations[1]

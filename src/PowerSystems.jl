@@ -750,13 +750,11 @@ import InfrastructureCoreOpenAPIModels
 import PowerCoreOpenAPIModels
 import PowerOperationsOpenAPIModels
 import InfrastructureTimeSeriesOpenAPIModels
-import PowerOpenAPIModels
 import OpenAPI
 const IC = InfrastructureCoreOpenAPIModels
 const PC = PowerCoreOpenAPIModels
 const PO = PowerOperationsOpenAPIModels
 const PTS = InfrastructureTimeSeriesOpenAPIModels
-const PD = PowerOpenAPIModels
 using Unitful: @u_str, @unit, Quantity, Units, uconvert, ustrip
 
 # Unit-system markers live in IS; PSY re-exports them for downstream packages.

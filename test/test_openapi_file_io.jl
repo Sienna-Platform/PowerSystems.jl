@@ -125,7 +125,7 @@ end
         document = joinpath(dir, "case.json")
         to_file(sys, document)
         @test readdir(dir) == ["case.json"]
-        @test isnothing(PSY.PD.get_time_series_storage_file(PSY.PD.read_document(document)))
+        @test isnothing(PSY.PC.get_time_series_storage_file(PSY.PC.read_document(document)))
     end
 end
 
@@ -144,8 +144,8 @@ end
         for marker in (CU, NU)
             document = joinpath(dir, "case.json")
             to_file(sys, document; units = marker, force = true)
-            doc = PSY.PD.read_document(document)
-            gen = only(PSY.PD.get_components(doc, "ThermalStandard"))
+            doc = PSY.PC.read_document(document)
+            gen = only(PSY.PC.get_components(doc, "ThermalStandard"))
             @test gen.power_units == PSY._power_units_string(marker)
         end
     end
@@ -380,8 +380,8 @@ end
 
         @test readdir(bundle) == ["system.json"]
         # The document must say so rather than name a file that is not there.
-        doc = PSY.PD.read_document(joinpath(bundle, "system.json"))
-        @test isnothing(PSY.PD.get_time_series_storage_file(doc))
+        doc = PSY.PC.read_document(joinpath(bundle, "system.json"))
+        @test isnothing(PSY.PC.get_time_series_storage_file(doc))
 
         sys2 = from_file(bundle)
         @test isempty(collect(get_components(ThermalStandard, sys2))) == false
@@ -442,8 +442,8 @@ end
     doc = to_openapi(sys; units = CU)
 
     component_ids = Int[]
-    for type_name in PSY.PD.component_type_names(doc)
-        for row in PSY.PD.get_components(doc, type_name)
+    for type_name in PSY.PC.component_type_names(doc)
+        for row in PSY.PC.get_components(doc, type_name)
             push!(component_ids, Int(row.id))
         end
     end
@@ -479,15 +479,15 @@ end
     # And back out again, unchanged. A component's document id is its IS component id, which
     # import set from the document, so bus1 is id 3 on the way out as well.
     exported = to_openapi(sys; units = NU)
-    @test PSY.PD.get_ext(exported, 3) == extras
-    @test isempty(PSY.PD.get_ext(exported, 4))
+    @test PSY.PC.get_ext(exported, 3) == extras
+    @test isempty(PSY.PC.get_ext(exported, 4))
 end
 
 """The `power_units` stamp on the sole exported `ThermalStandard` blob, the regression guard
 for [`to_openapi`](@ref)'s uniform per-export stamp (no document-level `unit_system` exists to
 assert against instead)."""
 _gen_power_units(doc) =
-    only(PSY.PD.get_components(doc, "ThermalStandard")).power_units.value
+    only(PSY.PC.get_components(doc, "ThermalStandard")).power_units.value
 
 @testset "export needs no ledger: a hand-built System serializes" begin
     # The unit-system assertions use the time-series-free fixture so that `to_openapi` needs
@@ -534,7 +534,7 @@ _gen_power_units(doc) =
         again = joinpath(dir, "handbuilt2")
         to_file(sys2, again)
         @test isfile(joinpath(again, "system.json"))
-        @test _gen_power_units(PSY.PD.read_document(joinpath(again, "system.json"))) ==
+        @test _gen_power_units(PSY.PC.read_document(joinpath(again, "system.json"))) ==
               "COMPONENT_BASE"
     end
 end
@@ -565,7 +565,7 @@ end
         to_file(sys, bundle)
 
         assoc = only(
-            PSY.PD.read_document(joinpath(bundle, "system.json")).time_series_associations,
+            PSY.PC.read_document(joinpath(bundle, "system.json")).time_series_associations,
         )
         # `TimeSeriesAssociation` is the oneOf wrapper; the discriminator picks the concrete
         # row type on read, so getting the right type back is itself the assertion that the

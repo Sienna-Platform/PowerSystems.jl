@@ -284,7 +284,7 @@ function _write_bundle(
         time_series_storage_path = storage_path,
         write_catalog = write_catalog,
     )
-    PD.write_document(doc, document_path; pretty = pretty, force = force)
+    PC.write_document(doc, document_path; pretty = pretty, force = force)
     return nothing
 end
 
@@ -372,7 +372,7 @@ function _read_bundle(document_path::AbstractString; system_kwargs...)
     if !isfile(document_path)
         throw(IS.DataFormatError("$document_path is not a serialized System document"))
     end
-    doc = PD.read_document(document_path)
+    doc = PC.read_document(document_path)
     dir = dirname(document_path)
     if isempty(dir)
         dir = "."
@@ -391,8 +391,8 @@ Absolute path of the sidecar the document names, or `nothing` when it names none
 Errors when the document names a file that is absent: the alternative is a `System` quietly
 missing every time series the document declared.
 """
-function _resolve_sidecar(doc::PD.SystemDocument, dir::AbstractString)
-    named = PD.get_time_series_storage_file(doc)
+function _resolve_sidecar(doc::PC.SystemDocument, dir::AbstractString)
+    named = PC.get_time_series_storage_file(doc)
     return _resolve_sidecar(named, dir)
 end
 

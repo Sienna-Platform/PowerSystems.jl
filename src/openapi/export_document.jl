@@ -139,12 +139,12 @@ end
 # `Arc`/`TransformerCircuit`/`TransmissionInterface` carry no `ext` field at all — nothing to
 # write, so those overloads are no-ops rather than an error about a missing getter.
 
-_export_ext!(::PD.SystemDocument, ::Int, ::Arc) = nothing
-_export_ext!(::PD.SystemDocument, ::Int, ::TransformerCircuit) = nothing
-_export_ext!(::PD.SystemDocument, ::Int, ::TransmissionInterface) = nothing
+_export_ext!(::PC.SystemDocument, ::Int, ::Arc) = nothing
+_export_ext!(::PC.SystemDocument, ::Int, ::TransformerCircuit) = nothing
+_export_ext!(::PC.SystemDocument, ::Int, ::TransmissionInterface) = nothing
 
-function _export_ext!(doc::PD.SystemDocument, id::Int, component)
-    PD.set_ext!(doc, id, get_ext(component))
+function _export_ext!(doc::PC.SystemDocument, id::Int, component)
+    PC.set_ext!(doc, id, get_ext(component))
     return nothing
 end
 
@@ -265,14 +265,14 @@ Convert every component in [`DOCUMENT_PLAN`](@ref) order and add it to `doc`.
 the document's `components` map needs no key bookkeeping here.
 """
 function _export_components!(
-    doc::PD.SystemDocument,
+    doc::PC.SystemDocument,
     refs::OpenAPIRefs,
     sys::System,
     val::IS.AbstractUnitSystem,
 )
     for (_po_type, psy_type, key, addable) in DOCUMENT_PLAN
         for c in _plan_components(sys, psy_type)
-            PD.add_component!(doc, to_openapi(c, refs, val))
+            PC.add_component!(doc, to_openapi(c, refs, val))
             _export_ext!(doc, component_id(refs, c), c)
         end
     end
@@ -605,7 +605,7 @@ A dataset in that state has a broken relationship -- a cost pointing at somethin
 document does not contain -- so this errors rather than dropping the reference. Dropping it
 would change the model on the way out, and quietly.
 """
-function _check_costs_reference_declared_series!(doc::PD.SystemDocument, emitted::Set{Int})
+function _check_costs_reference_declared_series!(doc::PC.SystemDocument, emitted::Set{Int})
     isempty(emitted) && return nothing
     declared = Set{Int}(
         _unwrap_oneof(row).association_id for row in doc.time_series_associations
@@ -747,7 +747,7 @@ function to_openapi(
     _check_export_units(units)
     refs = _build_export_refs(sys)
 
-    doc = PD.SystemDocument(;
+    doc = PC.SystemDocument(;
         name = get_name(sys),
         description = get_description(sys),
         frequency = sys.frequency,
@@ -785,7 +785,7 @@ function to_openapi(
     end
 
     _check_costs_reference_declared_series!(doc, context.emitted_ids)
-    PD.validate_document(doc)
+    PC.validate_document(doc)
     return doc
 end
 
@@ -798,7 +798,7 @@ Fill `ancillary_service_offers` on each exported `MarketBidCost` and
 `_export_components!` so every service already has an id; the per-cost converters export the
 list empty because they have no id registry.
 """
-function _export_market_bid_service_offers!(doc::PD.SystemDocument, refs::OpenAPIRefs)
+function _export_market_bid_service_offers!(doc::PC.SystemDocument, refs::OpenAPIRefs)
     for po_components in values(doc.components)
         for i in eachindex(po_components)
             po = po_components[i]
@@ -843,10 +843,10 @@ end
 """Reserve `doc`'s own id counter above every id already assigned, so it cannot reissue one
 that collides. Components and supplemental attributes share one id stream, and `refs`
 registers both kinds by the time this runs."""
-function _reserve_ids!(doc::PD.SystemDocument, refs::OpenAPIRefs)
+function _reserve_ids!(doc::PC.SystemDocument, refs::OpenAPIRefs)
     if isempty(refs.by_id)
         return nothing
     end
-    PD.reserve_ids!(doc, maximum(keys(refs.by_id)))
+    PC.reserve_ids!(doc, maximum(keys(refs.by_id)))
     return nothing
 end

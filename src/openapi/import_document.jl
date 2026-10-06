@@ -540,10 +540,10 @@ so [`_system_with_sidecar`](@ref) applies it there, via [`_frequency_kwarg`](@re
 `supplied` is the set of keywords the caller passed; a field named in it is left alone, so a
 caller's `name = ...` is not silently overwritten by the document's.
 """
-function _apply_document_metadata!(sys::System, doc::PD.SystemDocument, supplied)
-    :name in supplied || _apply_metadata_field!(set_name!, sys, PD.get_name(doc))
+function _apply_document_metadata!(sys::System, doc::PC.SystemDocument, supplied)
+    :name in supplied || _apply_metadata_field!(set_name!, sys, PC.get_name(doc))
     :description in supplied ||
-        _apply_metadata_field!(set_description!, sys, PD.get_description(doc))
+        _apply_metadata_field!(set_description!, sys, PC.get_description(doc))
     return nothing
 end
 
@@ -596,7 +596,7 @@ this builds (e.g. `time_series_in_memory`, `time_series_directory`, `time_series
 """
 function from_openapi(
     ::Type{System},
-    doc::PD.SystemDocument;
+    doc::PC.SystemDocument;
     base_power::Float64 = 100.0,
     time_series_storage_path = nothing,
     system_kwargs...,
@@ -620,7 +620,7 @@ function from_openapi(
     # directly and never need this ambient path.
     _with_import_store(store) do
         for (_po_type, psy_type, key, addable) in DOCUMENT_PLAN
-            for po in PD.get_components(doc, key)
+            for po in PC.get_components(doc, key)
                 component = from_openapi(po, refs)
                 extras = get(doc.ext, Int(po.id), nothing)
                 isnothing(extras) || _merge_doc_ext!(component, extras)
@@ -649,20 +649,20 @@ end
 Replay the document's `time_series_associations` rows into an empty catalog, or validate them
 against one the store already brought — which depends on what the sidecar carried, not on which
 form wrote it. An adopted sidecar's catalog is authoritative and is checked against the document by
-`PD.validate_time_series_catalog`.
+`PC.validate_time_series_catalog`.
 
 Runs before the component pass: a `MarketBidTimeSeriesCost` or time-series `FuelCurve` resolves
 its `association_id` against the store while its owner is being built.
 """
-_load_time_series_associations!(::System, ::PD.SystemDocument, ::Nothing) = nothing
+_load_time_series_associations!(::System, ::PC.SystemDocument, ::Nothing) = nothing
 
-function _load_time_series_associations!(sys::System, doc::PD.SystemDocument, store)
+function _load_time_series_associations!(sys::System, doc::PC.SystemDocument, store)
     isempty(doc.time_series_associations) && return nothing
     if _catalog_is_authoritative(store)
         catalog = IS.openapi_time_series_association_json(sys.data)
-        return PD.validate_time_series_catalog(doc, catalog)
+        return PC.validate_time_series_catalog(doc, catalog)
     end
-    IS.import_time_series_association_rows!(store, PD.time_series_association_json(doc))
+    IS.import_time_series_association_rows!(store, PC.time_series_association_json(doc))
     return nothing
 end
 
@@ -670,10 +670,10 @@ end
 The adopted sidecar's store, which resolves a cost's `association_id`, or `nothing` when the
 document names no series at all.
 """
-_import_store(sys::System, ::PD.SystemDocument, ::AbstractString) =
+_import_store(sys::System, ::PC.SystemDocument, ::AbstractString) =
     IS.get_data_store(sys.data)
 
-function _import_store(::System, doc::PD.SystemDocument, ::Nothing)
+function _import_store(::System, doc::PC.SystemDocument, ::Nothing)
     isempty(doc.time_series_associations) && return nothing
     throw(
         IS.DataFormatError(
@@ -699,14 +699,14 @@ are left as they are — `load_supplemental_attribute_associations!` reads them.
 """
 function _system_with_sidecar(
     base_power,
-    doc::PD.SystemDocument,
+    doc::PC.SystemDocument,
     time_series_storage_path;
     system_kwargs...,
 )
     # The document's own frequency first, the caller's keywords second, so an explicit
     # `frequency =` still wins. This is the only place it can be applied: `System` is
     # immutable and takes it at construction.
-    kwargs = (; _frequency_kwarg(PD.get_frequency(doc))..., system_kwargs...)
+    kwargs = (; _frequency_kwarg(PC.get_frequency(doc))..., system_kwargs...)
     isnothing(time_series_storage_path) && return System(base_power; kwargs...)
     isfile(time_series_storage_path) || error(
         "from_openapi(System, doc): time_series_storage_path " *
@@ -753,7 +753,7 @@ component pass. Errors on an unresolved id rather than dropping the offer.
 not the bare concrete cost `to_openapi`'s own in-memory construction path hands back — the
 same reason every other oneOf field in this file is unwrapped before use.
 """
-function _load_market_bid_service_offers!(refs::OpenAPIRefs, doc::PD.SystemDocument)
+function _load_market_bid_service_offers!(refs::OpenAPIRefs, doc::PC.SystemDocument)
     for po_components in values(doc.components), po in po_components
         hasproperty(po, :operation_cost) || continue
         po_cost = _unwrap_oneof(po.operation_cost)
