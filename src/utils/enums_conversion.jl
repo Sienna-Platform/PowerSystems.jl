@@ -16,6 +16,7 @@ const ENUMS = (
     LoadConformity.Value,
     HydroTurbineType.Value,
     TransformerControlObjective.Value,
+    LCCControlMode.Value,
     OperationalStates.Value,
     CommitmentModes.Value,
 )

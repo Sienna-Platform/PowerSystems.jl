@@ -600,43 +600,24 @@ function openapi_scalar_exprs(field_name, conversion, nullable, bases, default_e
     return (device, scaled)
 end
 
-"""
-Import-direction extraction helper for each compound alias
-(`src/openapi/import_generated_types.jl`).
-
-One name per alias, unlike [`OPENAPI_EXPORT_COMPOUND_CTORS`](@ref)'s four: the
-required/optional split is dispatch on `::Nothing` and the natural-units split is the
-`op`/`base` arity, so the four shapes collapse into one symbol here.
-"""
-const OPENAPI_IMPORT_COMPOUND_EXTRACTORS = Dict(
-    "MinMax" => "_minmax_from_po",
-    "UpDown" => "_updown_from_po",
-    "FromTo" => "_fromto_from_po",
-    "InOut" => "_inout_from_po",
-    "FromTo_ToFrom" => "_fromto_tofrom_from_po",
-    "StartUpShutDown" => "_startup_shutdown_from_po",
-    "StartUpStages" => "_startup_stages_from_po",
-    "TurbinePump" => "_turbinepump_from_po",
-)
-
 """Compound fields always get member-rebuilt in both methods — the PO struct's compound
 type is never PSY's `NamedTuple` alias, so even component-base is not a bare `po.<name>`
 passthrough (mirrors `minmax`/`updown`/`fromto` in the reference).
 
-The rebuild goes through the alias' extraction helper rather than inline `po.<name>.<m>`
-member access: the PO struct declares every compound field as bare `Any`, so inline
-access is a dynamic `getproperty` chain. The helper dispatches on the `PC` struct once
-and reads concrete fields after that. Its `::Nothing` methods also absorb the
-nothing-guard a nullable compound used to need in *both* directions, so `nullable` no
-longer changes the emitted expression."""
+The rebuild goes through `_or_default` (`src/openapi/import_generated_types.jl`) rather
+than inline `po.<name>.<m>` member access: the PO struct declares every compound field as
+bare `Any`, so inline access is a dynamic `getproperty` chain. `_from_wire` dispatches on
+the wire struct once and reads concrete fields after that, so every alias in
+[`OPENAPI_COMPOUND_MEMBERS`](@ref) needs a `_from_wire` method. Absent decodes to
+`nothing`, which absorbs the nothing-guard a nullable compound used to need in *both*
+directions, so `nullable` does not change the emitted expression."""
 function openapi_compound_exprs(field_name, bare, members, conversion, nullable, bases)
-    extractor = OPENAPI_IMPORT_COMPOUND_EXTRACTORS[bare]
-    device = "$extractor(po.$field_name)"
+    device = openapi_default_wrap(field_name, "nothing")
     if conversion in (:none, :voltage)
         return (device, device)
     end
     op, base = openapi_conversion_op_base(conversion, bases)
-    return (device, "$extractor(po.$field_name, ($op), $base)")
+    return (device, openapi_default_wrap_scaled(field_name, "nothing", op, base))
 end
 
 """
@@ -702,7 +683,7 @@ function compute_openapi_converter!(item, struct_names)
             # than dereferencing Absent's `.value`.
             present = "$bare(po.$po_name.value)"
             expr = if haskey(field, "default")
-                "_or_default_enum(po.$po_name, $(field["default"]))"
+                openapi_default_wrap(po_name, field["default"])
             else
                 present
             end
