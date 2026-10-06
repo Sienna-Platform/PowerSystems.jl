@@ -495,6 +495,31 @@ function _switched_shunt(name, bus, mode; bands...)
     return shunt
 end
 
+@testset "TModelHVDCLine DC buses must share one base voltage" begin
+    dcbus(number, base_voltage) = DCBus(; input_basis = u"CU",
+        number = number, name = "dcbus$number", available = true,
+        magnitude = 1.0, voltage_limits = (min = 0.9, max = 1.1),
+        base_voltage = base_voltage,
+    )
+    tmodel(name, arc) = TModelHVDCLine(;
+        name = name, available = true, active_power_flow = 0.0, arc = arc,
+        r = 0.01, l = 0.0, c = 0.0, base_current = 200.0, input_basis = u"CU",
+    )
+    sys = System(100.0)
+    b1, b2, b3 = dcbus(1, 500.0), dcbus(2, 500.0), dcbus(3, 320.0)
+    foreach(b -> add_component!(sys, b), (b1, b2, b3))
+    same = Arc(; from = b1, to = b2)
+    mixed = Arc(; from = b1, to = b3)
+    add_component!(sys, same)
+    add_component!(sys, mixed)
+    add_component!(sys, tmodel("same_base", same))
+    @test !isnothing(get_component(TModelHVDCLine, sys, "same_base"))
+    test_logger = IS.MultiLogger([ConsoleLogger(devnull, Logging.Error)])
+    Logging.with_logger(test_logger) do
+        @test_throws IS.InvalidValue add_component!(sys, tmodel("mixed_base", mixed))
+    end
+end
+
 @testset "SwitchedAdmittance control_mode selects its band on add_component!" begin
     bus_from, _ = _circuit_check_buses()
     sys = System(100.0)

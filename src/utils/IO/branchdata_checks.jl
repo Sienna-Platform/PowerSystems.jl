@@ -380,6 +380,21 @@ function validate_component_with_system(vsc::TwoTerminalVSCLine, ::System)
     return from_ok && to_ok
 end
 
+# A DC line has one voltage base: its impedances and flows convert on it at both ends.
+_same_base_voltage(from_kv::Real, to_kv::Real) = isapprox(from_kv, to_kv)
+_same_base_voltage(from_kv, to_kv) = from_kv === to_kv
+
+function validate_component_with_system(line::TModelHVDCLine, ::System)
+    arc = get_arc(line)
+    from_kv = get_base_voltage(get_from(arc))
+    to_kv = get_base_voltage(get_to(arc))
+    _same_base_voltage(from_kv, to_kv) && return true
+    @error "TModelHVDCLine $(get_name(line)) connects DC buses with different base " *
+           "voltages ($(from_kv) kV and $(to_kv) kV); both ends of a DC line must " *
+           "share one base voltage." _group = IS.LOG_GROUP_PARSING
+    return false
+end
+
 validate_component_with_system(conv::InterconnectingConverter, ::System) =
     _check_converter_terminal("InterconnectingConverter $(get_name(conv))", conv, "")
 
