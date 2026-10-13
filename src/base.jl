@@ -1525,7 +1525,6 @@ _can_contribute(::TransmissionInterface, ::Branch) = true
 Returns a ServiceContributingDevices object from a precomputed `_devices_by_service` index.
 """
 function _get_contributing_devices(
-    sys::System,
     service::Service,
     index::Dict{Base.UUID, Vector{Device}},
 )
@@ -1556,7 +1555,7 @@ function get_contributing_device_mapping(sys::System)
     services = ServiceContributingDevicesMapping()
     for service in get_components(Service, sys)
         key = ServiceContributingDevicesKey((typeof(service), get_name(service)))
-        services[key] = _get_contributing_devices(sys, service, index)
+        services[key] = _get_contributing_devices(service, index)
     end
 
     return services
