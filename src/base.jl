@@ -1557,10 +1557,20 @@ end
 Return an instance of ServiceContributingDevicesMapping.
 """
 function get_contributing_device_mapping(sys::System)
+    # One pass over the devices rather than a scan of every device per service.
+    by_uuid = Dict{Base.UUID, Vector{Device}}()
+    for device in get_components(supports_services, Device, sys)
+        for service in get_services(device)
+            push!(get!(by_uuid, IS.get_uuid(service), Device[]), device)
+        end
+    end
     services = ServiceContributingDevicesMapping()
     for service in get_components(Service, sys)
+        devices = get(by_uuid, IS.get_uuid(service), Device[])
+        # Transmission interfaces are contributed to by branches only.
+        service isa TransmissionInterface && (devices = filter(d -> d isa Branch, devices))
         key = ServiceContributingDevicesKey((typeof(service), get_name(service)))
-        services[key] = _get_contributing_devices(sys, service)
+        services[key] = ServiceContributingDevices(service, devices)
     end
 
     return services

@@ -222,6 +222,12 @@ end
     sort!(mapping[key2].contributing_devices; by = x -> get_name(x))
     @test mapping[key1].contributing_devices == expected_contributing_devices1
     @test mapping[key2].contributing_devices == expected_contributing_devices2
+
+    for service in services
+        key = ServiceContributingDevicesKey((typeof(service), get_name(service)))
+        @test Set(get_name.(mapping[key].contributing_devices)) ==
+              Set(get_name.(get_contributing_devices(sys, service)))
+    end
 end
 
 @testset "Test get_component combinations" begin
