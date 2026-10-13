@@ -1516,29 +1516,24 @@ function _devices_by_service(sys::System)
     return index
 end
 
-"""
-Returns a ServiceContributingDevices object from a precomputed `_devices_by_service` index.
-"""
-function _get_contributing_devices(
-    sys::System,
-    service::T,
-    index::Dict{Base.UUID, Vector{Device}},
-) where {T <: Service}
-    devices = get(index, IS.get_uuid(service), Device[])
-    return ServiceContributingDevices(service, devices)
-end
+# Whether `device` can contribute to `service`; only branches contribute to a transmission interface.
+_can_contribute(::Service, ::Device) = true
+_can_contribute(::TransmissionInterface, ::Device) = false
+_can_contribute(::TransmissionInterface, ::Branch) = true
 
 """
 Returns a ServiceContributingDevices object from a precomputed `_devices_by_service` index.
-Only branches contribute to a transmission interface.
 """
 function _get_contributing_devices(
     sys::System,
-    service::TransmissionInterface,
+    service::Service,
     index::Dict{Base.UUID, Vector{Device}},
 )
     devices = get(index, IS.get_uuid(service), Device[])
-    return ServiceContributingDevices(service, filter(d -> d isa Branch, devices))
+    return ServiceContributingDevices(
+        service,
+        filter(d -> _can_contribute(service, d), devices),
+    )
 end
 
 """
