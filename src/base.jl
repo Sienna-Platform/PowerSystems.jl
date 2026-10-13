@@ -1563,7 +1563,7 @@ function _get_contributing_devices(
     index::Dict{Base.UUID, Vector{Device}},
 ) where {T <: Service}
     devices = get(index, IS.get_uuid(service), Device[])
-    return ServiceContributingDevices(service, copy(devices))
+    return ServiceContributingDevices(service, devices)
 end
 
 """
