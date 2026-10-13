@@ -422,6 +422,12 @@ end
     for br in get_contributing_devices(sys, interface3)
         @test br ∈ lines_and_transformers
     end
+    mapping = get_contributing_device_mapping(sys)
+    for interface in (interface1, interface2, interface3)
+        key = ServiceContributingDevicesKey((TransmissionInterface, get_name(interface)))
+        @test Set(get_name.(mapping[key].contributing_devices)) ==
+              Set(get_name.(get_contributing_devices(sys, interface)))
+    end
     tmp_path = joinpath(mktempdir(), "sys_with_interfaces.json")
     to_json(sys, tmp_path)
     sys = System(tmp_path)

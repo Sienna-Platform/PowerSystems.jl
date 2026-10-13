@@ -1542,6 +1542,44 @@ function _get_contributing_devices(sys::System, service::TransmissionInterface)
 end
 
 """
+Returns the devices attached to each service, keyed by service UUID, in one pass over the devices.
+"""
+function _devices_by_service(sys::System)
+    index = Dict{Base.UUID, Vector{Device}}()
+    for device in get_components(supports_services, Device, sys)
+        for service in get_services(device)
+            push!(get!(index, IS.get_uuid(service), Device[]), device)
+        end
+    end
+    return index
+end
+
+"""
+Returns a ServiceContributingDevices object from a precomputed `_devices_by_service` index.
+"""
+function _get_contributing_devices(
+    sys::System,
+    service::T,
+    index::Dict{Base.UUID, Vector{Device}},
+) where {T <: Service}
+    devices = get(index, IS.get_uuid(service), Device[])
+    return ServiceContributingDevices(service, copy(devices))
+end
+
+"""
+Returns a ServiceContributingDevices object from a precomputed `_devices_by_service` index.
+Only branches contribute to a transmission interface.
+"""
+function _get_contributing_devices(
+    sys::System,
+    service::TransmissionInterface,
+    index::Dict{Base.UUID, Vector{Device}},
+)
+    devices = get(index, IS.get_uuid(service), Device[])
+    return ServiceContributingDevices(service, filter(d -> d isa Branch, devices))
+end
+
+"""
 Return an instance of AGCContributingReservesMapping.
 """
 function get_contributing_reserve_mapping(sys::System)
@@ -1557,20 +1595,11 @@ end
 Return an instance of ServiceContributingDevicesMapping.
 """
 function get_contributing_device_mapping(sys::System)
-    # One pass over the devices rather than a scan of every device per service.
-    by_uuid = Dict{Base.UUID, Vector{Device}}()
-    for device in get_components(supports_services, Device, sys)
-        for service in get_services(device)
-            push!(get!(by_uuid, IS.get_uuid(service), Device[]), device)
-        end
-    end
+    index = _devices_by_service(sys)
     services = ServiceContributingDevicesMapping()
     for service in get_components(Service, sys)
-        devices = get(by_uuid, IS.get_uuid(service), Device[])
-        # Transmission interfaces are contributed to by branches only.
-        service isa TransmissionInterface && (devices = filter(d -> d isa Branch, devices))
         key = ServiceContributingDevicesKey((typeof(service), get_name(service)))
-        services[key] = ServiceContributingDevices(service, devices)
+        services[key] = _get_contributing_devices(sys, service, index)
     end
 
     return services
