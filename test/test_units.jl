@@ -833,12 +833,13 @@ end
 
     # Loss curve on the component itself, not under an operation_cost. Its y-axis is
     # power, so the slope is base-invariant and the intercept rebases.
-    conv = InterconnectingConverter(nothing)
-    rebase_component!(conv, 200.0)
-    set_loss_function!(conv, LossCurve(LinearCurve(0.02, 3.0), NU))
-    loss = get_function_data(get_value_curve(get_loss_function(conv, u"CU")))
+    line = TwoTerminalGenericHVDCLine(nothing)
+    set_loss!(line, LossCurve(LinearCurve(0.02, 3.0), NU))
+    loss = get_function_data(get_value_curve(get_loss(line, u"CU")))
     @test get_proportional_term(loss) ≈ 0.02
-    @test get_constant_term(loss) ≈ 3.0 / 200.0
+    @test get_constant_term(loss) ≈ 3.0 / get_base_power(line, u"NU")
+    # Current-axis loss curves have no units getter until their x-axis can be rebased.
+    @test !hasmethod(get_loss_function, Tuple{InterconnectingConverter, Unitful.Units})
 
     # Renewable curtailment_cost, the second curve on its cost struct.
     ren = RenewableDispatch(nothing)

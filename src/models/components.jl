@@ -644,11 +644,11 @@ for field in (
 end
 
 # Loss curves are fields of the component itself, not of an `operation_cost`.
+# Only the power-vs-power ones: `InterconnectingConverter.loss_function` and
+# `TwoTerminalVSCLine.converter_loss_from`/`_to` are functions of converter current, whose
+# natural-units base depends on the DC voltage, which `_x_axis_base_value` doesn't know.
 for field in (
-    :loss_function,               # InterconnectingConverter
     :loss,                        # TwoTerminalGenericHVDCLine, TwoTerminalLCCLine
-    :converter_loss_from,         # TwoTerminalVSCLine
-    :converter_loss_to,           # TwoTerminalVSCLine
 )
     getter = Symbol(:get_, field)
     @eval $getter(c::Component, units::Unitful.Units) =
