@@ -878,6 +878,22 @@ end
     # ...but NU needs it
     @test_throws ErrorException get_loss_function(attached, u"NU")
 
+    # Units the data format doesn't carry are refused rather than read as base-free,
+    # even when no conversion would be needed.
+    set_loss!(line, LossCurve(LinearCurve(0.02, 3.0), NU, u"A"))
+    @test_throws ArgumentError get_loss(line, u"CU")
+    @test_throws ArgumentError get_loss(line, u"NU")
+    # Fuel in `u"MW*hr"` simplifies to MW per hour; it must not be rebased as power.
+    op = get_operation_cost(gen)
+    set_variable_operation_cost!(op, FuelCurve(LinearCurve(7.0), NU, u"MW*hr", 2.0))
+    @test_throws ArgumentError get_variable_operation_cost(gen, u"CU")
+    for fuel in (u"MMBtu", u"GJ")
+        set_variable_operation_cost!(op, FuelCurve(LinearCurve(7.0, 1.0), NU, fuel, 2.0))
+        fd = get_function_data(get_value_curve(get_variable_operation_cost(gen, u"CU")))
+        @test get_proportional_term(fd) ≈ 7.0 * 50.0
+        @test get_constant_term(fd) ≈ 1.0
+    end
+
     # A power-axis curve can't be stored there
     @test_throws MethodError set_loss_function!(conv, LossCurve(LinearCurve(0.02), NU))
     # VSC losses are current-driven too, but the line has no DC base voltage yet

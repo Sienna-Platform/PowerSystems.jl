@@ -579,12 +579,29 @@ _unit_category(::Val{:mw_per_minute}) = ACTIVE_POWER_CHANGE_RATE
 # write, and no setter counterpart to these getters.
 #######################################################
 
-# The category a curve axis per-unitizes as, from the axis's natural unit: power axes are
-# MW and a converter's current axis kA. Currency and fuel axes (`USD/hr`, `MMBtu/hr`) have
-# no per-unit base, so they get no category and every basis reads them the same.
-_axis_category(::typeof(u"MW")) = ACTIVE_POWER
-_axis_category(::typeof(u"kA")) = CURRENT
-_axis_category(::Unitful.Units) = nothing
+# The (x, y) categories a curve's axes per-unitize as, decided by its family; `nothing`
+# is an axis with no per-unit base (currency, fuel), which every basis reads the same. The
+# unit is consulted only where the family leaves it open, and only the units the data
+# format carries are accepted: anything else would otherwise be read as base-free and
+# rebased wrongly.
+_axis_categories(::IS.CostCurve) = (ACTIVE_POWER, nothing)
+_axis_categories(curve::IS.FuelCurve) =
+    (ACTIVE_POWER, _fuel_category(get_fuel_units(curve)))
+_axis_categories(curve::IS.LossCurve) = (_loss_x_category(get_x_units(curve)), ACTIVE_POWER)
+
+_loss_x_category(::typeof(u"MW")) = ACTIVE_POWER
+_loss_x_category(::typeof(u"kA")) = CURRENT
+_loss_x_category(units) = throw(
+    ArgumentError("a LossCurve's x-axis must be u\"MW\" or u\"kA\" to rebase; got $units"),
+)
+
+# Fuel has no per-unit base whatever its unit; checked only so `u"MW*hr"` fuel can't pass.
+_fuel_category(::Union{typeof(MMBtu), typeof(u"GJ")}) = nothing
+_fuel_category(units) = throw(
+    ArgumentError(
+        "a FuelCurve's fuel_units must be u\"MMBtu\" or u\"GJ\" to rebase; got $units",
+    ),
+)
 
 # `NU` needs no component: its base is 1.0 by definition.
 _axis_base_value(_, ::UnitCategory, ::NaturalUnit) = 1.0
@@ -592,8 +609,6 @@ _axis_base_value(c, cat::UnitCategory, ::ComponentBaseUnit) = base_value(c, cat)
 _axis_base_value(c, cat::UnitCategory, ::SystemBaseUnit) = system_base_value(c, cat)
 
 # `x_U = q / base_U`, so `x_from = (base_to / base_from) * x_to`.
-_axis_ratio(c, axis_units::Unitful.Units, from, to) =
-    _category_ratio(c, _axis_category(axis_units), from, to)
 _category_ratio(_, ::Nothing, _, _) = 1.0
 # Between the two per-unit bases only base power differs, so a current axis needs no
 # base voltage here; it may be unset.
@@ -624,11 +639,11 @@ _curve_basis_error(t) = throw(
 Rebase `curve` onto `to` (`u"CU"`, `u"SU"`, or `u"NU"`), resolving each axis's bases from
 `component`. The `to`-basis copy is returned; `curve` is unchanged.
 
-Works for any curve family, because each axis's base follows from its natural unit
-(`IS.get_x_units`/`IS.get_y_units`): a [`CostCurve`](@ref) or `FuelCurve` has a currency or
-fuel y-axis that no basis touches, a `LossCurve`'s y-axis is power, and a converter's
+Works for any curve family: a [`CostCurve`](@ref) or `FuelCurve` has a currency or fuel
+y-axis that no basis touches, a `LossCurve`'s y-axis is power, and a converter's
 `LossCurve` has a current x-axis whose base is the component's base power over its base
-voltage.
+voltage. Throws an `ArgumentError` for a `LossCurve` x-axis other than `u"MW"`/`u"kA"` or
+a `FuelCurve` fuel unit other than `u"MMBtu"`/`u"GJ"`.
 """
 function IS.convert_power_units(
     c::Component,
@@ -637,12 +652,13 @@ function IS.convert_power_units(
 )
     to = _curve_basis(units)
     from = IS.get_power_units(curve)
+    x_cat, y_cat = _axis_categories(curve)
     # Asking for the basis the curve is already in changes nothing, and must not be
     # routed through `scale_x`: that rejects a time-series-backed curve outright, so
     # the identity conversion would throw rather than hand back what it was given.
     from === to && return curve
-    x_ratio = _axis_ratio(c, IS.get_x_units(curve), from, to)
-    y_ratio = _axis_ratio(c, IS.get_y_units(curve), from, to)
+    x_ratio = _category_ratio(c, x_cat, from, to)
+    y_ratio = _category_ratio(c, y_cat, from, to)
     return IS.convert_power_units(curve, to, x_ratio, y_ratio)
 end
 
