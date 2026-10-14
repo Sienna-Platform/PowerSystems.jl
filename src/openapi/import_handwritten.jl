@@ -1076,7 +1076,7 @@ function from_openapi(
 end
 
 # ── TwoTerminalLCCLine ────────────────────────────────────────────────────────────
-# Impedances (ohm), voltages (kV) and `current_transfer_setpoint` (A) are stored natural and
+# Impedances (ohm), voltages (kV) and `current_transfer_setpoint` (kA) are stored natural and
 # pass straight through in both unit-system methods; only the power fields (`active_power_flow`,
 # `rating*`, the `reactive_power_limits_*`, `power_transfer_setpoint`, `operational_flow_limit`)
 # differ between them. Attach-time validation enforces which setpoint `control_mode` selects.
@@ -1218,7 +1218,7 @@ end
 # present (`_vsc_optional_voltage`).
 #
 # Passed through: `g` (S), `voltage_limits_*` (kV; `(0.0, 999.9)` is a no-limit sentinel),
-# `dc_voltage_droop_*` (kV/MW), the current fields (A), the weighting fractions
+# `dc_voltage_droop_*` (kV/MW), the current fields (kA), the weighting fractions
 # (dimensionless), and the rated voltages (kV).
 
 """`converter_loss_*` restricted to the two curve shapes the PSY field admits, so a piecewise
@@ -1425,7 +1425,7 @@ end
 
 # ── TModelHVDCLine ──────────────────────────────────────────────────────────────
 # The cable exception. This type carries no `base_power` at all — its anchor is
-# `base_current` (A), recorded as source data only: `r`/`l`/`c` (ohm/H/F) are natural. The MW
+# `base_current` (kA), recorded as source data only: `r`/`l`/`c` (ohm/H/F) are natural. The MW
 # fields have no `power_units` discriminator either (see the schema): they declare x-unit
 # "MW" outright, fixed natural units, same posture as reserves' `requirement` field (see
 # that header). So they always divide by `get_base_power(refs)` (the System's own
@@ -1454,7 +1454,7 @@ end
 
 # ── InterconnectingConverter ────────────────────────────────────────────────────
 # Another genuine component base: every MVA/MW-rated field divides by the converter's own
-# `base_power`. `dc_current`/`max_dc_current` (A), the voltage fields (kV) and `dc_voltage_droop`
+# `base_power`. `dc_current`/`max_dc_current` (kA), the voltage fields (kV) and `dc_voltage_droop`
 # (kV/MW) are natural and pass through. `remote_bus_control` is a bus *number*, not a component
 # reference — `Union{Nothing, Int}` in PSY — so it passes through rather than resolving.
 # `loss_function` reuses the `TwoTerminalVSCLine` guard: the PSY field admits only the linear

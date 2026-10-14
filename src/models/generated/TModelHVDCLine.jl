@@ -32,7 +32,7 @@ This line must be connected to a [`DCBus`](@ref) on each end. It uses a T-Model 
 - `r::Float64`: Total series resistance in ohm, split equally on both sides of the shunt capacitance
 - `l::Float64`: Total series inductance in H, split equally on both sides of the shunt capacitance
 - `c::Float64`: Shunt capacitance in F
-- `base_current::Float64`: Base current of the line as recorded by the source data (A). No field of this component is per-unit on it, validation range: `(0.0001, nothing)`
+- `base_current::Float64`: Base current of the line as recorded by the source data (kA). No field of this component is per-unit on it, validation range: `(0.0001, nothing)`
 - `services::Vector{Service}`: (default: `Device[]`) Services that this device contributes to
 - `operational_flow_limit::Union{Nothing, OperationalFlowLimit}`: (default: `nothing`) Operator-set minimum and maximum flow (MW) in each direction, `from_to` and `to_from`, applied in addition to `rating`. `nothing` means no operational limit
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
@@ -54,7 +54,7 @@ mutable struct TModelHVDCLine <: DCBranch
     l::Float64
     "Shunt capacitance in F"
     c::Float64
-    "Base current of the line as recorded by the source data (A). No field of this component is per-unit on it"
+    "Base current of the line as recorded by the source data (kA). No field of this component is per-unit on it"
     base_current::Float64
     "Services that this device contributes to"
     services::Vector{Service}

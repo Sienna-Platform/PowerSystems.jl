@@ -304,7 +304,7 @@ end
 # schema and import_handwritten.jl's header on this exact point) — so they multiply by
 # `get_base_power(refs)` in both methods, same posture as reserves' `requirement`. Both
 # methods are therefore identical, hence the trivial `CU` delegate below. `r`/`l`/`c` are
-# stored in ohm/H/F and `base_current` in A, so all pass through.
+# stored in ohm/H/F and `base_current` in kA, so all pass through.
 
 function to_openapi(line::TModelHVDCLine, refs::OpenAPIRefs, ::ComponentBaseUnit)
     sbp = get_base_power(refs)
@@ -329,7 +329,7 @@ function to_openapi(line::TModelHVDCLine, refs::OpenAPIRefs, ::NaturalUnit)
 end
 
 # ── InterconnectingConverter ────────────────────────────────────────────────────
-# Component base for the power fields. `dc_current`/`max_dc_current` (A), the voltage fields (kV)
+# Component base for the power fields. `dc_current`/`max_dc_current` (kA), the voltage fields (kV)
 # and `dc_voltage_droop` (kV/MW) are natural and pass through in both methods.
 
 function to_openapi(conv::InterconnectingConverter, refs::OpenAPIRefs, ::ComponentBaseUnit)
@@ -874,7 +874,7 @@ function to_openapi(
 end
 
 # ── TwoTerminalLCCLine ────────────────────────────────────────────────────────────
-# Impedances (ohm), voltages (kV) and `current_transfer_setpoint` (A) are stored natural and pass
+# Impedances (ohm), voltages (kV) and `current_transfer_setpoint` (kA) are stored natural and pass
 # through in both methods. Only `active_power_flow`/`rating*`/`reactive_power_limits_*`/
 # `power_transfer_setpoint`/`operational_flow_limit` are discriminated by `power_units`,
 # multiplying by `base_power` under `NaturalUnit`.
@@ -998,7 +998,7 @@ end
 
 # ── TwoTerminalVSCLine ──────────────────────────────────────────────────────────
 # The power-family fields and `dc_power_setpoint_*` multiply by `base_power` under `NaturalUnit`
-# only. `g` (S), `voltage_limits_*` (kV), the currents (A) and `dc_voltage_droop_*` (kV/MW) are
+# only. `g` (S), `voltage_limits_*` (kV), the currents (kA) and `dc_voltage_droop_*` (kV/MW) are
 # stored natural and pass through. The voltage setpoints are stored per unit of the rated
 # voltage the wire does not carry, so they multiply back to kV (`_vsc_setpoint_to_wire`).
 

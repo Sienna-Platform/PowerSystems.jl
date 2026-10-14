@@ -220,11 +220,11 @@ tap changer, which can be used to determine the tap position during power flow c
 `LCCControlMode` selects which schedule a `TwoTerminalLCCLine` holds (PSS/E `MDC`). The
 mode names the populated setpoint; the other setpoint is `nothing`.
 
-| Name      | Description                                                          |
-|:--------- |:-------------------------------------------------------------------- |
-| `BLOCKED` | The line is blocked and holds no schedule                            |
-| `POWER`   | The line holds a power schedule in `power_transfer_setpoint` (MW)    |
-| `CURRENT` | The line holds a current schedule in `current_transfer_setpoint` (A) |
+| Name      | Description                                                           |
+|:--------- |:--------------------------------------------------------------------- |
+| `BLOCKED` | The line is blocked and holds no schedule                             |
+| `POWER`   | The line holds a power schedule in `power_transfer_setpoint` (MW)     |
+| `CURRENT` | The line holds a current schedule in `current_transfer_setpoint` (kA) |
 
 ## [Market Bid Curve Styles](@id curvestyles_list)
 

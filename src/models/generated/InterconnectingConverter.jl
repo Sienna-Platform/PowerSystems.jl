@@ -48,8 +48,8 @@ Interconnecting Power Converter (IPC) for transforming power from an ACBus to a 
 - `dc_control::VSCDCControlModes.Value`: DC-side control mode of the converter; see [`VSCDCControlModes`](@ref). No default: an in-service converter always controls something on each side, so the mode is supplied explicitly. The `(::Nothing)` demo constructor is the one place a mode is asserted without a matching setpoint.
 - `ac_control::VSCACControlModes.Value`: AC-side control mode of the converter; see [`VSCACControlModes`](@ref). No default: an in-service converter always controls something on each side, so the mode is supplied explicitly. The `(::Nothing)` demo constructor is the one place a mode is asserted without a matching setpoint.
 - `reactive_power_limits::Union{Nothing, MinMax}`: (default: `nothing`) Minimum and maximum reactive power limits. Set to `Nothing` if not applicable
-- `dc_current::Float64`: (default: `0.0`) DC current on the converter in A
-- `max_dc_current::Float64`: (default: `1e8`) Maximum stable DC current limit in A
+- `dc_current::Float64`: (default: `0.0`) DC current on the converter in kA
+- `max_dc_current::Float64`: (default: `1e8`) Maximum stable DC current limit in kA
 - `loss_function::Union{AnyLossCurve{LinearCurve}, AnyLossCurve{QuadraticCurve}}`: (default: `LossCurve(LinearCurve(0.0), NaturalUnit())`) Linear or quadratic loss function with respect to the converter current
 - `dc_power_setpoint::Union{Nothing, Float64}`: (default: `nothing`) Active-power order of the converter, used when `dc_control` is `DC_POWER`; `nothing` otherwise. Positive means the converter supplies power to the AC network, negative means it withdraws.
 - `dc_voltage_setpoint::Union{Nothing, Float64}`: (default: `nothing`) DC-side voltage target of the converter in kV, used when `dc_control` is `DC_VOLTAGE` or `DC_VOLTAGE_DROOP`; `nothing` otherwise.
@@ -88,9 +88,9 @@ mutable struct InterconnectingConverter <: StaticInjection
     ac_control::VSCACControlModes.Value
     "Minimum and maximum reactive power limits. Set to `Nothing` if not applicable"
     reactive_power_limits::Union{Nothing, MinMax}
-    "DC current on the converter in A"
+    "DC current on the converter in kA"
     dc_current::Float64
-    "Maximum stable DC current limit in A"
+    "Maximum stable DC current limit in kA"
     max_dc_current::Float64
     "Linear or quadratic loss function with respect to the converter current"
     loss_function::Union{AnyLossCurve{LinearCurve}, AnyLossCurve{QuadraticCurve}}
