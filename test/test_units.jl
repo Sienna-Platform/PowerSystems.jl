@@ -838,8 +838,22 @@ end
     loss = get_function_data(get_value_curve(get_loss(line, u"CU")))
     @test get_proportional_term(loss) ≈ 0.02
     @test get_constant_term(loss) ≈ 3.0 / get_base_power(line, u"NU")
-    # Current-axis loss curves have no units getter until their x-axis can be rebased.
-    @test !hasmethod(get_loss_function, Tuple{InterconnectingConverter, Unitful.Units})
+
+    # A converter's loss is a function of DC current, whose base is the converter's base
+    # power over its DC bus's base voltage: 200 MVA / 10 kV = 20 kA.
+    conv = InterconnectingConverter(nothing)
+    rebase_component!(conv, 200.0)
+    dc_bus = DCBus(nothing)
+    set_base_voltage!(dc_bus, 10.0)
+    set_dc_bus!(conv, dc_bus)
+    set_loss_function!(conv, LossCurve(LinearCurve(0.02, 3.0), NU, u"kA"))
+    loss = get_function_data(get_value_curve(get_loss_function(conv, u"CU")))
+    @test get_proportional_term(loss) ≈ 0.02 * 20.0 / 200.0
+    @test get_constant_term(loss) ≈ 3.0 / 200.0
+    # A power-axis curve can't be stored there
+    @test_throws MethodError set_loss_function!(conv, LossCurve(LinearCurve(0.02), NU))
+    # VSC losses are current-driven too, but the line has no DC base voltage yet
+    @test !hasmethod(get_converter_loss_from, Tuple{TwoTerminalVSCLine, Unitful.Units})
 
     # Renewable curtailment_cost, the second curve on its cost struct.
     ren = RenewableDispatch(nothing)

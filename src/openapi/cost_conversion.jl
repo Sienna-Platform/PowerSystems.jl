@@ -259,6 +259,11 @@ _fuel_cost_fields(::Any, ::Real, ::Integer) = error(
     "one is expected",
 )
 
+# ponytail: SiennaSchemas' `FuelCurve` has no fuel-unit field yet, so the wire is read as
+# MMBtu and export refuses any other unit rather than mislabel it. Replace with the schema
+# field once it exists.
+const _WIRE_FUEL_UNITS = MMBtu
+
 function convert_cost(f::PC.FuelCurve, store)
     value_curve = convert_cost(_require(f.value_curve, "FuelCurve.value_curve"), store)
     vom_cost = _vom_cost(f.vom_cost)
@@ -271,6 +276,7 @@ function convert_cost(f::PC.FuelCurve, store)
         FuelCurve(;
             value_curve = value_curve,
             power_units = units,
+            fuel_units = _WIRE_FUEL_UNITS,
             fuel_cost = fuel_cost,
             fuel_cost_time_series = fuel_cost_time_series,
             vom_cost = vom_cost,
@@ -310,6 +316,7 @@ function convert_cost(f::PC.FuelCurve)
         FuelCurve(;
             value_curve = value_curve,
             power_units = units,
+            fuel_units = _WIRE_FUEL_UNITS,
             fuel_cost = fuel_cost,
             fuel_cost_time_series = fuel_cost_time_series,
             vom_cost = vom_cost,
@@ -604,11 +611,16 @@ convert_reserve_variable(po::Union{Nothing, IC.Absent, PC.CostCurve}) =
 # ── LossCurve ⇄ OpenAPI ────────────────────────────────────────────────────────
 # The schemas' `LossCurve` records the basis its curve is expressed in (`power_units`,
 # governing both axes), the same enum every power-bearing component records. Import keeps that
-# basis and export writes PSY's `get_power_units`; neither side assumes natural units.
+# basis and export writes PSY's `get_power_units`; neither side assumes natural units. What
+# the x-axis *is* (power flow, or converter current) is not on the wire: the field decides it.
 
-"""Wrap a document's loss curve as a `LossCurve` on the unit system it states."""
-loss_curve_from_openapi(curve::ValueCurve, units::IS.AbstractUnitSystem) =
-    LossCurve(curve, units)
+"""Wrap a document's loss curve as a `LossCurve` on the unit system it states, with the
+x-axis the receiving field takes."""
+loss_curve_from_openapi(
+    curve::ValueCurve,
+    units::IS.AbstractUnitSystem,
+    x_units::Unitful.Units = u"MW",
+) = LossCurve(curve, units, x_units)
 
 """
 Unwrap a `LossCurve` to the bare curve the document's `value_curve` holds. The caller

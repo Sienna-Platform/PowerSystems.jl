@@ -223,7 +223,7 @@ function _ptdp_e2e_attach_ts_costs!(sys::System)
     set_operation_cost!(market_bid_gen, market_bid_cost)
 
     old_variable = get_variable_operation_cost(get_operation_cost(fuel_gen))
-    new_variable = FuelCurve(;
+    new_variable = FuelCurve(; fuel_units = u"MMBtu",
         value_curve = get_value_curve(old_variable),
         power_units = get_power_units(old_variable),
         fuel_cost_time_series = fuel_key,

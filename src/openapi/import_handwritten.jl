@@ -1223,21 +1223,23 @@ end
 
 """`converter_loss_*` restricted to the two curve shapes the PSY field admits, so a piecewise
 document curve is named here rather than surfacing as a constructor `MethodError`."""
-_vsc_converter_loss(curve::InputOutputCurve{LinearFunctionData}, units) =
-    loss_curve_from_openapi(curve, units)
-_vsc_converter_loss(curve::InputOutputCurve{QuadraticFunctionData}, units) =
-    loss_curve_from_openapi(curve, units)
-_vsc_converter_loss(curve, ::Any) = error(
+_vsc_converter_loss(curve::InputOutputCurve{LinearFunctionData}, units, x_units) =
+    loss_curve_from_openapi(curve, units, x_units)
+_vsc_converter_loss(curve::InputOutputCurve{QuadraticFunctionData}, units, x_units) =
+    loss_curve_from_openapi(curve, units, x_units)
+_vsc_converter_loss(curve, ::Any, ::Any) = error(
     "TwoTerminalVSCLine converter_loss must be a LINEAR or QUADRATIC InputOutputCurve, got " *
     "InputOutputCurve{$(typeof(get_function_data(curve)))}",
 )
 
-"""A `LossCurve` unwrapped like `_hvdc_loss`, keeping its stated unit system; absent falls
-back to the descriptor default (a zero linear loss curve)."""
-_vsc_loss(::Union{Nothing, IC.Absent}) = LossCurve(LinearCurve(0.0), NaturalUnit())
-function _vsc_loss(l::PC.LossCurve)
+"""A `LossCurve` unwrapped like `_hvdc_loss`, keeping its stated unit system, on the x-axis
+`x_units` the receiving field takes (`u"kA"` for a converter's current-driven loss); absent
+falls back to the descriptor default (a zero linear loss curve)."""
+_vsc_loss(::Union{Nothing, IC.Absent}, x_units::Unitful.Units = u"MW") =
+    LossCurve(LinearCurve(0.0), NaturalUnit(), x_units)
+function _vsc_loss(l::PC.LossCurve, x_units::Unitful.Units = u"MW")
     units = _power_units_marker("LossCurve", "", l.power_units.value)
-    return _vsc_converter_loss(convert_cost(_unwrap_oneof(l.value_curve)), units)
+    return _vsc_converter_loss(convert_cost(_unwrap_oneof(l.value_curve)), units, x_units)
 end
 
 """A voltage setpoint: `nothing` stays `nothing`; kV divides by `rated` to the stored per-unit
@@ -1478,7 +1480,7 @@ function from_openapi(
         reactive_power_limits = _or_default(po.reactive_power_limits, nothing),
         dc_current = _or_default(po.dc_current, 0.0),
         max_dc_current = _or_default(po.max_dc_current, 1e8),
-        loss_function = _vsc_loss(po.loss_function),
+        loss_function = _vsc_loss(po.loss_function, u"kA"),
         dc_control = _required_enum(
             po.dc_control, VSCDCControlModes.Value,
             "InterconnectingConverter \"$(po.name)\"", "dc_control",
@@ -1516,7 +1518,7 @@ function from_openapi(po::PO.InterconnectingConverter, refs::OpenAPIRefs, ::Natu
         reactive_power_limits = _or_default(po.reactive_power_limits, nothing, /, dbp),
         dc_current = _or_default(po.dc_current, 0.0),
         max_dc_current = _or_default(po.max_dc_current, 1e8),
-        loss_function = _vsc_loss(po.loss_function),
+        loss_function = _vsc_loss(po.loss_function, u"kA"),
         dc_control = _required_enum(
             po.dc_control, VSCDCControlModes.Value,
             "InterconnectingConverter \"$(po.name)\"", "dc_control",

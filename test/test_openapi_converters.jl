@@ -1515,7 +1515,7 @@ end
     )
     for val in (CU, NU)
         ic = PSY.from_openapi(ic_po, refs, val)
-        @test get_loss_function(ic) == LossCurve(LinearCurve(0.0), NaturalUnit())
+        @test get_loss_function(ic) == LossCurve(LinearCurve(0.0), NaturalUnit(), u"kA")
         @test isnothing(get_remote_bus_control(ic))
         @test get_voltage_limits(ic) == (min = 0.0, max = 999.9)
         @test get_dc_voltage_setpoint(ic) == 1.0
@@ -1565,7 +1565,7 @@ end
         ),
     )
     @test get_loss_function(PSY.from_openapi(ic_po_cu_loss, refs, NU)) ==
-          LossCurve(QuadraticCurve(0.01, 0.01, 0.0), ComponentBaseUnit())
+          LossCurve(QuadraticCurve(0.01, 0.01, 0.0), ComponentBaseUnit(), u"kA")
 
     # Currents (A) and `dc_voltage_droop` (kV/MW) pass through in both unit systems.
     ic_po_current = _po_with(

@@ -4344,10 +4344,10 @@
                 },
                 {
                     "name": "loss_function",
-                    "comment": "Linear or quadratic loss function with respect to the converter current",
-                    "null_value": "LossCurve(LinearCurve(0.0), NaturalUnit())",
-                    "data_type": "Union{AnyLossCurve{LinearCurve}, AnyLossCurve{QuadraticCurve}}",
-                    "default": "LossCurve(LinearCurve(0.0), NaturalUnit())"
+                    "comment": "Linear or quadratic loss (MW) as a function of the converter current (kA)",
+                    "null_value": "LossCurve(LinearCurve(0.0), NaturalUnit(), Unitful.kA)",
+                    "data_type": "Union{CurrentLossCurve{LinearCurve}, CurrentLossCurve{QuadraticCurve}}",
+                    "default": "LossCurve(LinearCurve(0.0), NaturalUnit(), Unitful.kA)"
                 },
                 {
                     "name": "dc_power_setpoint",
