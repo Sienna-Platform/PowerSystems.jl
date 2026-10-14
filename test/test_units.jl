@@ -833,12 +833,71 @@ end
 
     # Loss curve on the component itself, not under an operation_cost. Its y-axis is
     # power, so the slope is base-invariant and the intercept rebases.
+    line = TwoTerminalGenericHVDCLine(nothing)
+    set_loss!(line, LossCurve(LinearCurve(0.02, 3.0), NU))
+    loss = get_function_data(get_value_curve(get_loss(line, u"CU")))
+    @test get_proportional_term(loss) ≈ 0.02
+    @test get_constant_term(loss) ≈ 3.0 / get_base_power(line, u"NU")
+
+    # A converter's loss is a function of DC current, whose base is the converter's base
+    # power over its DC bus's base voltage: 200 MVA / 10 kV = 20 kA.
     conv = InterconnectingConverter(nothing)
     rebase_component!(conv, 200.0)
-    set_loss_function!(conv, LossCurve(LinearCurve(0.02, 3.0), NU))
+    dc_bus = DCBus(nothing)
+    set_base_voltage!(dc_bus, 10.0)
+    set_dc_bus!(conv, dc_bus)
+    set_loss_function!(conv, LossCurve(LinearCurve(0.02, 3.0), NU, u"kA"))
     loss = get_function_data(get_value_curve(get_loss_function(conv, u"CU")))
-    @test get_proportional_term(loss) ≈ 0.02
+    @test get_proportional_term(loss) ≈ 0.02 * 20.0 / 200.0
     @test get_constant_term(loss) ≈ 3.0 / 200.0
+    # CU <-> SU needs no base voltage, since it cancels, so an unset one is fine there.
+    sys, gen = _sys_with_thermal(; system_base = 100.0, component_base = 50.0)
+    bare_dc_bus = DCBus(nothing)
+    set_number!(bare_dc_bus, 2)
+    set_name!(bare_dc_bus, "dc")
+    add_component!(sys, bare_dc_bus)
+    attached = InterconnectingConverter(nothing)
+    set_name!(attached, "ic")
+    set_bus!(attached, get_bus(gen))
+    set_dc_bus!(attached, bare_dc_bus)
+    set_dc_voltage_setpoint!(attached, 1.0)
+    set_power_factor_setpoint!(attached, 1.0)
+    rebase_component!(attached, 200.0)
+    add_component!(sys, attached)
+    @test isnothing(get_base_voltage(bare_dc_bus))
+    set_loss_function!(attached, LossCurve(LinearCurve(0.02, 3.0), CU, u"kA"))
+    su = get_function_data(get_value_curve(get_loss_function(attached, u"SU")))
+    # x_cu = 2 x_su on both axes (200 MVA over 100 MVA): slope unchanged, intercept doubled
+    @test get_proportional_term(su) ≈ 0.02
+    @test get_constant_term(su) ≈ 6.0
+    su_curve = convert_power_units(attached, get_loss_function(attached), u"SU")
+    back =
+        get_function_data(get_value_curve(convert_power_units(attached, su_curve, u"CU")))
+    @test get_proportional_term(back) ≈ 0.02
+    @test get_constant_term(back) ≈ 3.0
+    # ...but NU needs it
+    @test_throws ErrorException get_loss_function(attached, u"NU")
+
+    # Units the data format doesn't carry are refused rather than read as base-free,
+    # even when no conversion would be needed.
+    set_loss!(line, LossCurve(LinearCurve(0.02, 3.0), NU, u"A"))
+    @test_throws ArgumentError get_loss(line, u"CU")
+    @test_throws ArgumentError get_loss(line, u"NU")
+    # Fuel in `u"MW*hr"` simplifies to MW per hour; it must not be rebased as power.
+    op = get_operation_cost(gen)
+    set_variable_operation_cost!(op, FuelCurve(LinearCurve(7.0), NU, u"MW*hr", 2.0))
+    @test_throws ArgumentError get_variable_operation_cost(gen, u"CU")
+    for fuel in (u"MMBtu", u"GJ")
+        set_variable_operation_cost!(op, FuelCurve(LinearCurve(7.0, 1.0), NU, fuel, 2.0))
+        fd = get_function_data(get_value_curve(get_variable_operation_cost(gen, u"CU")))
+        @test get_proportional_term(fd) ≈ 7.0 * 50.0
+        @test get_constant_term(fd) ≈ 1.0
+    end
+
+    # A power-axis curve can't be stored there
+    @test_throws MethodError set_loss_function!(conv, LossCurve(LinearCurve(0.02), NU))
+    # VSC losses are current-driven too, but the line has no DC base voltage yet
+    @test !hasmethod(get_converter_loss_from, Tuple{TwoTerminalVSCLine, Unitful.Units})
 
     # Renewable curtailment_cost, the second curve on its cost struct.
     ren = RenewableDispatch(nothing)

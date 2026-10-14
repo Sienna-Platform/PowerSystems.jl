@@ -93,6 +93,10 @@ const UnitsBearer = Union{Component, TransformerCircuit}
 
 get_base_voltage(c::Branch) = get_base_voltage(get_arc(c).from)
 
+# A converter's only voltage-based quantity is the DC current its `loss_function` is a
+# function of, so its base voltage is the DC side's.
+get_base_voltage(c::InterconnectingConverter) = get_base_voltage(get_dc_bus(c))
+
 # TwoWindingTransformer has no `arc` field of its own (the arc lives on its
 # TransformerCircuit); delegate the generic Branch interface (get_arc, set_arc!)
 # to the circuit so that check_component_addition/check_attached_buses/
@@ -567,20 +571,53 @@ _unit_category(::Val{:mw_per_minute}) = ACTIVE_POWER_CHANGE_RATE
 #######################################################
 # Component-aware curve rebasing
 #
-# `IS.convert_power_units(curve, to, ratio)` does the curve arithmetic but takes the
-# x-axis base ratio as a number: `InfrastructureSystems` has no component to derive it
-# from. This is the layer its docstring defers to.
+# `IS.convert_power_units(curve, to, x_ratio, y_ratio)` does the curve arithmetic; this
+# layer derives the ratios from the component, which IS has no notion of.
 #
 # Unlike a scalar field, a curve is self-describing -- it carries its power basis in its
 # own `U` type parameter -- so there is no canonical storage basis to convert *to* on
 # write, and no setter counterpart to these getters.
 #######################################################
 
-# The x-axis of every `ValueCurveWithUnits` is active power, so one category covers all
-# the families. `NU` needs no component: its base is 1.0 by definition.
-_x_axis_base_value(_, ::NaturalUnit) = 1.0
-_x_axis_base_value(c, ::ComponentBaseUnit) = base_value(c, ACTIVE_POWER)
-_x_axis_base_value(c, ::SystemBaseUnit) = system_base_value(c, ACTIVE_POWER)
+# The (x, y) categories a curve's axes per-unitize as, decided by its family; `nothing`
+# is an axis with no per-unit base (currency, fuel), which every basis reads the same. The
+# unit is consulted only where the family leaves it open, and only the units the data
+# format carries are accepted: anything else would otherwise be read as base-free and
+# rebased wrongly.
+_axis_categories(::IS.CostCurve) = (ACTIVE_POWER, nothing)
+_axis_categories(curve::IS.FuelCurve) =
+    (ACTIVE_POWER, _fuel_category(get_fuel_units(curve)))
+_axis_categories(curve::IS.LossCurve) = (_loss_x_category(get_x_units(curve)), ACTIVE_POWER)
+
+_loss_x_category(::typeof(u"MW")) = ACTIVE_POWER
+_loss_x_category(::typeof(u"kA")) = CURRENT
+_loss_x_category(units) = throw(
+    ArgumentError("a LossCurve's x-axis must be u\"MW\" or u\"kA\" to rebase; got $units"),
+)
+
+# Fuel has no per-unit base whatever its unit; checked only so `u"MW*hr"` fuel can't pass.
+_fuel_category(::Union{typeof(MMBtu), typeof(u"GJ")}) = nothing
+_fuel_category(units) = throw(
+    ArgumentError(
+        "a FuelCurve's fuel_units must be u\"MMBtu\" or u\"GJ\" to rebase; got $units",
+    ),
+)
+
+# `NU` needs no component: its base is 1.0 by definition.
+_axis_base_value(_, ::UnitCategory, ::NaturalUnit) = 1.0
+_axis_base_value(c, cat::UnitCategory, ::ComponentBaseUnit) = base_value(c, cat)
+_axis_base_value(c, cat::UnitCategory, ::SystemBaseUnit) = system_base_value(c, cat)
+
+# `x_U = q / base_U`, so `x_from = (base_to / base_from) * x_to`.
+_category_ratio(_, ::Nothing, _, _) = 1.0
+# Between the two per-unit bases only base power differs, so a current axis needs no
+# base voltage here; it may be unset.
+_category_ratio(c, cat::UnitCategory, ::ComponentBaseUnit, ::SystemBaseUnit) =
+    inv(_cu_to_su_ratio(c, cat))
+_category_ratio(c, cat::UnitCategory, ::SystemBaseUnit, ::ComponentBaseUnit) =
+    _cu_to_su_ratio(c, cat)
+_category_ratio(c, cat::UnitCategory, from, to) =
+    _axis_base_value(c, cat, to) / _axis_base_value(c, cat, from)
 
 # A curve's basis is a marker (its `U`), but its getters take Unitful units like every
 # other unit-aware getter. Resolve them on the x-axis category, accepting only the three
@@ -599,12 +636,14 @@ _curve_basis_error(t) = throw(
 """
     convert_power_units(component, curve, to::Unitful.Units) -> curve
 
-Rebase `curve`'s power axes onto `to` (`u"CU"`, `u"SU"`, or `u"NU"`), resolving the base
-powers from `component`. The `to`-basis copy is returned; `curve` is unchanged.
+Rebase `curve` onto `to` (`u"CU"`, `u"SU"`, or `u"NU"`), resolving each axis's bases from
+`component`. The `to`-basis copy is returned; `curve` is unchanged.
 
 Works for any curve family: a [`CostCurve`](@ref) or `FuelCurve` has a currency or fuel
-y-axis and only its x-axis moves, while a `LossCurve`'s y-axis is power and moves with it.
-That difference lives in `y_axis_power_dimension` downstream, not here.
+y-axis that no basis touches, a `LossCurve`'s y-axis is power, and a converter's
+`LossCurve` has a current x-axis whose base is the component's base power over its base
+voltage. Throws an `ArgumentError` for a `LossCurve` x-axis other than `u"MW"`/`u"kA"` or
+a `FuelCurve` fuel unit other than `u"MMBtu"`/`u"GJ"`.
 """
 function IS.convert_power_units(
     c::Component,
@@ -613,13 +652,14 @@ function IS.convert_power_units(
 )
     to = _curve_basis(units)
     from = IS.get_power_units(curve)
+    x_cat, y_cat = _axis_categories(curve)
     # Asking for the basis the curve is already in changes nothing, and must not be
     # routed through `scale_x`: that rejects a time-series-backed curve outright, so
     # the identity conversion would throw rather than hand back what it was given.
     from === to && return curve
-    # `x_U = P / base_U`, so `x_from = (base_to / base_from) * x_to`.
-    ratio = _x_axis_base_value(c, to) / _x_axis_base_value(c, from)
-    return IS.convert_power_units(curve, to, ratio)
+    x_ratio = _category_ratio(c, x_cat, from, to)
+    y_ratio = _category_ratio(c, y_cat, from, to)
+    return IS.convert_power_units(curve, to, x_ratio, y_ratio)
 end
 
 # The curve-bearing fields, by where the curve is reached from. Each name gets a
@@ -644,11 +684,11 @@ for field in (
 end
 
 # Loss curves are fields of the component itself, not of an `operation_cost`.
+# `TwoTerminalVSCLine.converter_loss_from`/`_to` are left out: their x-axis is converter
+# current, whose base needs a DC base voltage the line does not record yet.
 for field in (
     :loss_function,               # InterconnectingConverter
     :loss,                        # TwoTerminalGenericHVDCLine, TwoTerminalLCCLine
-    :converter_loss_from,         # TwoTerminalVSCLine
-    :converter_loss_to,           # TwoTerminalVSCLine
 )
     getter = Symbol(:get_, field)
     @eval $getter(c::Component, units::Unitful.Units) =

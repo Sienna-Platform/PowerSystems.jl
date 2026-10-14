@@ -19,7 +19,7 @@ This file is auto-generated. Do not edit.
         reactive_power_limits::Union{Nothing, MinMax}
         dc_current::Float64
         max_dc_current::Float64
-        loss_function::Union{AnyLossCurve{LinearCurve}, AnyLossCurve{QuadraticCurve}}
+        loss_function::Union{CurrentLossCurve{LinearCurve}, CurrentLossCurve{QuadraticCurve}}
         dc_power_setpoint::Union{Nothing, Float64}
         dc_voltage_setpoint::Union{Nothing, Float64}
         power_factor_setpoint::Union{Nothing, Float64}
@@ -50,7 +50,7 @@ Interconnecting Power Converter (IPC) for transforming power from an ACBus to a 
 - `reactive_power_limits::Union{Nothing, MinMax}`: (default: `nothing`) Minimum and maximum reactive power limits. Set to `Nothing` if not applicable
 - `dc_current::Float64`: (default: `0.0`) DC current on the converter in A
 - `max_dc_current::Float64`: (default: `1e8`) Maximum stable DC current limit in A
-- `loss_function::Union{AnyLossCurve{LinearCurve}, AnyLossCurve{QuadraticCurve}}`: (default: `LossCurve(LinearCurve(0.0), NaturalUnit())`) Linear or quadratic loss function with respect to the converter current
+- `loss_function::Union{CurrentLossCurve{LinearCurve}, CurrentLossCurve{QuadraticCurve}}`: (default: `LossCurve(LinearCurve(0.0), NaturalUnit(), Unitful.kA)`) Linear or quadratic loss (MW) as a function of the converter current (kA)
 - `dc_power_setpoint::Union{Nothing, Float64}`: (default: `nothing`) Active-power order of the converter, used when `dc_control` is `DC_POWER`; `nothing` otherwise. Positive means the converter supplies power to the AC network, negative means it withdraws.
 - `dc_voltage_setpoint::Union{Nothing, Float64}`: (default: `nothing`) DC-side voltage target of the converter in kV, used when `dc_control` is `DC_VOLTAGE` or `DC_VOLTAGE_DROOP`; `nothing` otherwise.
 - `power_factor_setpoint::Union{Nothing, Float64}`: (default: `nothing`) Power-factor setpoint of the converter, used when `ac_control` is `AC_REACTIVE_POWER`; `nothing` otherwise.
@@ -92,8 +92,8 @@ mutable struct InterconnectingConverter <: StaticInjection
     dc_current::Float64
     "Maximum stable DC current limit in A"
     max_dc_current::Float64
-    "Linear or quadratic loss function with respect to the converter current"
-    loss_function::Union{AnyLossCurve{LinearCurve}, AnyLossCurve{QuadraticCurve}}
+    "Linear or quadratic loss (MW) as a function of the converter current (kA)"
+    loss_function::Union{CurrentLossCurve{LinearCurve}, CurrentLossCurve{QuadraticCurve}}
     "Active-power order of the converter, used when `dc_control` is `DC_POWER`; `nothing` otherwise. Positive means the converter supplies power to the AC network, negative means it withdraws."
     dc_power_setpoint::Union{Nothing, Float64}
     "DC-side voltage target of the converter in kV, used when `dc_control` is `DC_VOLTAGE` or `DC_VOLTAGE_DROOP`; `nothing` otherwise."
@@ -120,11 +120,11 @@ mutable struct InterconnectingConverter <: StaticInjection
     internal::InfrastructureSystemsInternal
 end
 
-function InterconnectingConverter(name, available, bus, dc_bus, active_power, rating, active_power_limits, base_power, dc_control, ac_control, reactive_power_limits=nothing, dc_current=0.0, max_dc_current=1e8, loss_function=LossCurve(LinearCurve(0.0), NaturalUnit()), dc_power_setpoint=nothing, dc_voltage_setpoint=nothing, power_factor_setpoint=nothing, ac_voltage_setpoint=nothing, dc_voltage_droop=0.0, remote_bus_control=nothing, power_factor_weighting_fraction=1.0, voltage_limits=(min=0.0, max=999.9), services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), )
+function InterconnectingConverter(name, available, bus, dc_bus, active_power, rating, active_power_limits, base_power, dc_control, ac_control, reactive_power_limits=nothing, dc_current=0.0, max_dc_current=1e8, loss_function=LossCurve(LinearCurve(0.0), NaturalUnit(), Unitful.kA), dc_power_setpoint=nothing, dc_voltage_setpoint=nothing, power_factor_setpoint=nothing, ac_voltage_setpoint=nothing, dc_voltage_droop=0.0, remote_bus_control=nothing, power_factor_weighting_fraction=1.0, voltage_limits=(min=0.0, max=999.9), services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), )
     InterconnectingConverter(name, available, bus, dc_bus, active_power, rating, active_power_limits, base_power, dc_control, ac_control, reactive_power_limits, dc_current, max_dc_current, loss_function, dc_power_setpoint, dc_voltage_setpoint, power_factor_setpoint, ac_voltage_setpoint, dc_voltage_droop, remote_bus_control, power_factor_weighting_fraction, voltage_limits, services, dynamic_injector, ext, InfrastructureSystemsInternal(), )
 end
 
-function InterconnectingConverter(; name, available, bus, dc_bus, active_power, rating, active_power_limits, base_power, dc_control, ac_control, reactive_power_limits=nothing, dc_current=0.0, max_dc_current=1e8, loss_function=LossCurve(LinearCurve(0.0), NaturalUnit()), dc_power_setpoint=nothing, dc_voltage_setpoint=nothing, power_factor_setpoint=nothing, ac_voltage_setpoint=nothing, dc_voltage_droop=0.0, remote_bus_control=nothing, power_factor_weighting_fraction=1.0, voltage_limits=(min=0.0, max=999.9), services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Unitful.Units, )
+function InterconnectingConverter(; name, available, bus, dc_bus, active_power, rating, active_power_limits, base_power, dc_control, ac_control, reactive_power_limits=nothing, dc_current=0.0, max_dc_current=1e8, loss_function=LossCurve(LinearCurve(0.0), NaturalUnit(), Unitful.kA), dc_power_setpoint=nothing, dc_voltage_setpoint=nothing, power_factor_setpoint=nothing, ac_voltage_setpoint=nothing, dc_voltage_droop=0.0, remote_bus_control=nothing, power_factor_weighting_fraction=1.0, voltage_limits=(min=0.0, max=999.9), services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Unitful.Units, )
     value = InterconnectingConverter(name, available, bus, dc_bus, _placeholder(active_power), _placeholder(rating), _placeholder(active_power_limits), base_power, dc_control, ac_control, _placeholder(reactive_power_limits), dc_current, max_dc_current, loss_function, _placeholder(dc_power_setpoint), dc_voltage_setpoint, power_factor_setpoint, ac_voltage_setpoint, dc_voltage_droop, remote_bus_control, power_factor_weighting_fraction, voltage_limits, services, dynamic_injector, ext, internal, )
     set_active_power!(value, _tag(active_power, input_basis, Val(:mw)))
     set_rating!(value, _tag(rating, input_basis, Val(:mva)))
@@ -151,7 +151,7 @@ function InterconnectingConverter(::Nothing)
         reactive_power_limits=nothing,
         dc_current=0.0,
         max_dc_current=0.0,
-        loss_function=LossCurve(LinearCurve(0.0), NaturalUnit()),
+        loss_function=LossCurve(LinearCurve(0.0), NaturalUnit(), Unitful.kA),
         dc_power_setpoint=nothing,
         dc_voltage_setpoint=nothing,
         power_factor_setpoint=nothing,

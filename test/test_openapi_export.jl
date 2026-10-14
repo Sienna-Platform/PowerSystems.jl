@@ -1867,7 +1867,7 @@ end
         set_operation_cost!(
             gen,
             ThermalGenerationCost(
-                FuelCurve(LinearCurve(1.0), key), 0.0, 0.0, 0.0,
+                FuelCurve(LinearCurve(1.0), u"MMBtu", key), 0.0, 0.0, 0.0,
             ),
         )
 
@@ -1912,7 +1912,7 @@ end
         set_operation_cost!(
             gen,
             ThermalGenerationCost(
-                FuelCurve(LinearCurve(1.0), original_key), 0.0, 0.0, 0.0,
+                FuelCurve(LinearCurve(1.0), u"MMBtu", original_key), 0.0, 0.0, 0.0,
             ),
         )
 

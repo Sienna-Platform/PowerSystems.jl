@@ -599,7 +599,7 @@ end
     set_operation_cost!(
         gen,
         ThermalGenerationCost(;
-            variable_operation_cost = FuelCurve(LinearCurve(1.0), key),
+            variable_operation_cost = FuelCurve(LinearCurve(1.0), u"MMBtu", key),
             fixed = 0.0, start_up = 0.0, shut_down = 0.0,
         ),
     )

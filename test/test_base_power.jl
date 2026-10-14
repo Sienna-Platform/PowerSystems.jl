@@ -721,7 +721,7 @@ end
 
     # So can a converter whose loss curve is stated in component base.
     ic = InterconnectingConverter(nothing)
-    set_loss_function!(ic, LossCurve(LinearCurve(0.01), CU))
+    set_loss_function!(ic, LossCurve(LinearCurve(0.01), CU, u"kA"))
     @test_throws ArgumentError rebase_component!(ic, 50.0)
 
     # A base shared with the system can't be moved at all.
