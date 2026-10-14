@@ -586,18 +586,23 @@ _axis_category(::typeof(u"MW")) = ACTIVE_POWER
 _axis_category(::typeof(u"kA")) = CURRENT
 _axis_category(::Unitful.Units) = nothing
 
-# `NU` needs no component: its base is 1.0 by definition, as is any base of a
-# category-free axis.
-_axis_base_value(_, ::Nothing, ::IS.AbstractUnitSystem) = 1.0
+# `NU` needs no component: its base is 1.0 by definition.
 _axis_base_value(_, ::UnitCategory, ::NaturalUnit) = 1.0
 _axis_base_value(c, cat::UnitCategory, ::ComponentBaseUnit) = base_value(c, cat)
 _axis_base_value(c, cat::UnitCategory, ::SystemBaseUnit) = system_base_value(c, cat)
 
 # `x_U = q / base_U`, so `x_from = (base_to / base_from) * x_to`.
-function _axis_ratio(c, axis_units::Unitful.Units, from, to)
-    cat = _axis_category(axis_units)
-    return _axis_base_value(c, cat, to) / _axis_base_value(c, cat, from)
-end
+_axis_ratio(c, axis_units::Unitful.Units, from, to) =
+    _category_ratio(c, _axis_category(axis_units), from, to)
+_category_ratio(_, ::Nothing, _, _) = 1.0
+# Between the two per-unit bases only base power differs, so a current axis needs no
+# base voltage here; it may be unset.
+_category_ratio(c, cat::UnitCategory, ::ComponentBaseUnit, ::SystemBaseUnit) =
+    inv(_cu_to_su_ratio(c, cat))
+_category_ratio(c, cat::UnitCategory, ::SystemBaseUnit, ::ComponentBaseUnit) =
+    _cu_to_su_ratio(c, cat)
+_category_ratio(c, cat::UnitCategory, from, to) =
+    _axis_base_value(c, cat, to) / _axis_base_value(c, cat, from)
 
 # A curve's basis is a marker (its `U`), but its getters take Unitful units like every
 # other unit-aware getter. Resolve them on the x-axis category, accepting only the three

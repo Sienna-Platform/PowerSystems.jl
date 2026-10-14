@@ -850,6 +850,34 @@ end
     loss = get_function_data(get_value_curve(get_loss_function(conv, u"CU")))
     @test get_proportional_term(loss) ≈ 0.02 * 20.0 / 200.0
     @test get_constant_term(loss) ≈ 3.0 / 200.0
+    # CU <-> SU needs no base voltage, since it cancels, so an unset one is fine there.
+    sys, gen = _sys_with_thermal(; system_base = 100.0, component_base = 50.0)
+    bare_dc_bus = DCBus(nothing)
+    set_number!(bare_dc_bus, 2)
+    set_name!(bare_dc_bus, "dc")
+    add_component!(sys, bare_dc_bus)
+    attached = InterconnectingConverter(nothing)
+    set_name!(attached, "ic")
+    set_bus!(attached, get_bus(gen))
+    set_dc_bus!(attached, bare_dc_bus)
+    set_dc_voltage_setpoint!(attached, 1.0)
+    set_power_factor_setpoint!(attached, 1.0)
+    rebase_component!(attached, 200.0)
+    add_component!(sys, attached)
+    @test isnothing(get_base_voltage(bare_dc_bus))
+    set_loss_function!(attached, LossCurve(LinearCurve(0.02, 3.0), CU, u"kA"))
+    su = get_function_data(get_value_curve(get_loss_function(attached, u"SU")))
+    # x_cu = 2 x_su on both axes (200 MVA over 100 MVA): slope unchanged, intercept doubled
+    @test get_proportional_term(su) ≈ 0.02
+    @test get_constant_term(su) ≈ 6.0
+    su_curve = convert_power_units(attached, get_loss_function(attached), u"SU")
+    back =
+        get_function_data(get_value_curve(convert_power_units(attached, su_curve, u"CU")))
+    @test get_proportional_term(back) ≈ 0.02
+    @test get_constant_term(back) ≈ 3.0
+    # ...but NU needs it
+    @test_throws ErrorException get_loss_function(attached, u"NU")
+
     # A power-axis curve can't be stored there
     @test_throws MethodError set_loss_function!(conv, LossCurve(LinearCurve(0.02), NU))
     # VSC losses are current-driven too, but the line has no DC base voltage yet
