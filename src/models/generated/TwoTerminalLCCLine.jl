@@ -77,7 +77,7 @@ As implemented in PSS/E.
 - `inverter_base_voltage::Float64`: Inverter primary base AC voltage in kV, entered in kV.
 - `control_mode::LCCControlMode.Value`: (default: `LCCControlMode.BLOCKED`) Control mode of the line (PSS/E MDC); see [`LCCControlMode`](@ref). `BLOCKED` holds no schedule, `POWER` holds `power_transfer_setpoint`, `CURRENT` holds `current_transfer_setpoint`.
 - `power_transfer_setpoint::Union{Nothing, Float64}`: (default: `nothing`) Scheduled power transfer, used when `control_mode` is `POWER`; `nothing` otherwise. Positive is the power consumed at the rectifier bus, negative the power delivered at the inverter bus (its absolute value is the generated power at the inverter bus).
-- `current_transfer_setpoint::Union{Nothing, Float64}`: (default: `nothing`) Scheduled current transfer in amperes, used when `control_mode` is `CURRENT`; `nothing` otherwise.
+- `current_transfer_setpoint::Union{Nothing, Float64}`: (default: `nothing`) Scheduled current transfer in kA, used when `control_mode` is `CURRENT`; `nothing` otherwise.
 - `switch_mode_voltage::Float64`: (default: `0.0`) Mode switch DC voltage, in kV. If LCC line is in power mode control, and DC voltage falls below this value, the line switch to current mode control.
 - `compounding_resistance::Float64`: (default: `0.0`) Compounding Resistance, in ohms. This parameter is for control of the DC voltage in the rectifier or inverter end. For inverter DC voltage control, the paremeter is set to zero; for rectifier DC voltage control, the paremeter is set to the DC line resistance; otherwise, set to a fraction of the DC line resistance.
 - `min_compounding_voltage::Float64`: (default: `0.0`) Minimum compounded voltage, in kV. Only used in constant gamma operation (γ_min = γ_max), and the AC transformer is used to control the DC voltage.
@@ -144,7 +144,7 @@ mutable struct TwoTerminalLCCLine <: TwoTerminalHVDC
     control_mode::LCCControlMode.Value
     "Scheduled power transfer, used when `control_mode` is `POWER`; `nothing` otherwise. Positive is the power consumed at the rectifier bus, negative the power delivered at the inverter bus (its absolute value is the generated power at the inverter bus)."
     power_transfer_setpoint::Union{Nothing, Float64}
-    "Scheduled current transfer in amperes, used when `control_mode` is `CURRENT`; `nothing` otherwise."
+    "Scheduled current transfer in kA, used when `control_mode` is `CURRENT`; `nothing` otherwise."
     current_transfer_setpoint::Union{Nothing, Float64}
     "Mode switch DC voltage, in kV. If LCC line is in power mode control, and DC voltage falls below this value, the line switch to current mode control."
     switch_mode_voltage::Float64

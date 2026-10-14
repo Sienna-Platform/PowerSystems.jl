@@ -226,7 +226,7 @@ holds; the other setpoint is `nothing`.
 |:--------- |:---------------------------------------------------------------------- |
 | `BLOCKED` | The line is blocked and holds no schedule                              |
 | `POWER`   | The line holds a power schedule in `power_transfer_setpoint` (MW)      |
-| `CURRENT` | The line holds a current schedule in `current_transfer_setpoint` (A)   |
+| `CURRENT` | The line holds a current schedule in `current_transfer_setpoint` (kA)  |
 " LCCControlMode
 
 IS.@scoped_enum(

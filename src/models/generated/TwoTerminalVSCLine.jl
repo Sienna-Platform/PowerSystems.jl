@@ -68,7 +68,7 @@ This model is appropriate for operational simulations with a linearized DC power
 - `dc_control_to::VSCDCControlModes.Value`: DC-side control mode of the `to` converter; see [`VSCDCControlModes`](@ref). No default: an in-service converter always controls something on each side, so the mode is supplied explicitly. The `(::Nothing)` demo constructor is the one place a mode is asserted without a matching setpoint.
 - `ac_control_to::VSCACControlModes.Value`: AC-side control mode of the `to` converter; see [`VSCACControlModes`](@ref). No default: an in-service converter always controls something on each side, so the mode is supplied explicitly. The `(::Nothing)` demo constructor is the one place a mode is asserted without a matching setpoint.
 - `g::Float64`: (default: `0.0`) Series conductance of the DC line in S
-- `dc_current::Float64`: (default: `0.0`) DC current (A) on the converter flowing in the DC line, from `from` bus to `to` bus.
+- `dc_current::Float64`: (default: `0.0`) DC current (kA) on the converter flowing in the DC line, from `from` bus to `to` bus.
 - `reactive_power_from::Float64`: (default: `0.0`) Initial condition of reactive power flowing into the from-bus.
 - `dc_power_setpoint_from::Union{Nothing, Float64}`: (default: `nothing`) Active-power order of the `from` bus converter, used when `dc_control_from` is `DC_POWER`; `nothing` otherwise. Positive means the converter supplies power to the AC network at the `from` bus, negative means it withdraws.
 - `dc_voltage_setpoint_from::Union{Nothing, Float64}`: (default: `nothing`) DC-side voltage target of the `from` bus converter in per-unit of `rated_dc_voltage`, used when `dc_control_from` is `DC_VOLTAGE` or `DC_VOLTAGE_DROOP`; `nothing` otherwise.
@@ -76,7 +76,7 @@ This model is appropriate for operational simulations with a linearized DC power
 - `ac_voltage_setpoint_from::Union{Nothing, Float64}`: (default: `nothing`) AC-side voltage magnitude target of the `from` bus converter in per-unit of `rated_ac_voltage_from`, used when `ac_control_from` is `AC_VOLTAGE`; `nothing` otherwise.
 - `rated_ac_voltage_from::Float64`: (default: `0.0`) Rated (base) AC voltage at the `from` converter's AC terminal in kV. Base of `ac_voltage_setpoint_from`, which is per-unit of it; `0.0` means unspecified, and a present setpoint then raises an error.
 - `converter_loss_from::Union{AnyLossCurve{LinearCurve}, AnyLossCurve{QuadraticCurve}}`: (default: `LossCurve(LinearCurve(0.0), NaturalUnit())`) Loss model coefficients in the `from` bus converter. It accepts a linear model or quadratic. Same converter data is used in both ends.
-- `max_dc_current_from::Float64`: (default: `1e8`) Maximum stable dc current limits (A).
+- `max_dc_current_from::Float64`: (default: `1e8`) Maximum stable dc current limits (kA).
 - `rating_from::Float64`: (default: `1e8`) Converter rating in MVA in the `from` bus. The default is large enough that the converter imposes no limit beyond `rating`
 - `reactive_power_limits_from::MinMax`: (default: `(min=0.0, max=0.0)`) Limits on the Reactive Power at the `from` side.
 - `power_factor_weighting_fraction_from::Float64`: (default: `1.0`) Power weighting factor fraction used in reducing the active power order and either the reactive power order when the converter rating is violated. When is 0.0, only the active power is reduced; when is 1.0, only the reactive power is reduced; otherwise, a weighted reduction of both active and reactive power is applied., validation range: `(0, 1)`
@@ -89,7 +89,7 @@ This model is appropriate for operational simulations with a linearized DC power
 - `ac_voltage_setpoint_to::Union{Nothing, Float64}`: (default: `nothing`) AC-side voltage magnitude target of the `to` bus converter in per-unit of `rated_ac_voltage_to`, used when `ac_control_to` is `AC_VOLTAGE`; `nothing` otherwise.
 - `rated_ac_voltage_to::Float64`: (default: `0.0`) Rated (base) AC voltage at the `to` converter's AC terminal in kV. Base of `ac_voltage_setpoint_to`, which is per-unit of it; `0.0` means unspecified, and a present setpoint then raises an error.
 - `converter_loss_to::Union{AnyLossCurve{LinearCurve}, AnyLossCurve{QuadraticCurve}}`: (default: `LossCurve(LinearCurve(0.0), NaturalUnit())`) Loss model coefficients in the `to` bus converter. It accepts a linear model or quadratic. Same converter data is used in both ends.
-- `max_dc_current_to::Float64`: (default: `1e8`) Maximum stable dc current limits (A).
+- `max_dc_current_to::Float64`: (default: `1e8`) Maximum stable dc current limits (kA).
 - `rating_to::Float64`: (default: `1e8`) Converter rating in MVA in the `to` bus. The default is large enough that the converter imposes no limit beyond `rating`
 - `reactive_power_limits_to::MinMax`: (default: `(min=0.0, max=0.0)`) Limits on the Reactive Power at the `to` side.
 - `power_factor_weighting_fraction_to::Float64`: (default: `1.0`) Power weighting factor fraction used in reducing the active power order and either the reactive power order when the converter rating is violated. When is 0.0, only the active power is reduced; when is 1.0, only the reactive power is reduced; otherwise, a weighted reduction of both active and reactive power is applied., validation range: `(0, 1)`
@@ -126,7 +126,7 @@ mutable struct TwoTerminalVSCLine <: TwoTerminalHVDC
     ac_control_to::VSCACControlModes.Value
     "Series conductance of the DC line in S"
     g::Float64
-    "DC current (A) on the converter flowing in the DC line, from `from` bus to `to` bus."
+    "DC current (kA) on the converter flowing in the DC line, from `from` bus to `to` bus."
     dc_current::Float64
     "Initial condition of reactive power flowing into the from-bus."
     reactive_power_from::Float64
@@ -142,7 +142,7 @@ mutable struct TwoTerminalVSCLine <: TwoTerminalHVDC
     rated_ac_voltage_from::Float64
     "Loss model coefficients in the `from` bus converter. It accepts a linear model or quadratic. Same converter data is used in both ends."
     converter_loss_from::Union{AnyLossCurve{LinearCurve}, AnyLossCurve{QuadraticCurve}}
-    "Maximum stable dc current limits (A)."
+    "Maximum stable dc current limits (kA)."
     max_dc_current_from::Float64
     "Converter rating in MVA in the `from` bus. The default is large enough that the converter imposes no limit beyond `rating`"
     rating_from::Float64
@@ -168,7 +168,7 @@ mutable struct TwoTerminalVSCLine <: TwoTerminalHVDC
     rated_ac_voltage_to::Float64
     "Loss model coefficients in the `to` bus converter. It accepts a linear model or quadratic. Same converter data is used in both ends."
     converter_loss_to::Union{AnyLossCurve{LinearCurve}, AnyLossCurve{QuadraticCurve}}
-    "Maximum stable dc current limits (A)."
+    "Maximum stable dc current limits (kA)."
     max_dc_current_to::Float64
     "Converter rating in MVA in the `to` bus. The default is large enough that the converter imposes no limit beyond `rating`"
     rating_to::Float64
