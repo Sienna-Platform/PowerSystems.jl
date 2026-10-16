@@ -1504,41 +1504,35 @@ const AGCContributingReservesMapping =
     Dict{AGCContributingReservesKey, AGCContributingReserves}
 
 """
-Returns a ServiceContributingDevices object.
+Returns the devices attached to each service, keyed by service UUID, in one pass over the devices.
 """
-function _get_contributing_devices(sys::System, service::T) where {T <: Service}
-    uuid = IS.get_uuid(service)
-    devices = ServiceContributingDevices(service, Vector{Device}())
-    for device in get_components(Device, sys)
-        if supports_services(device)
-            for _service in get_services(device)
-                if IS.get_uuid(_service) == uuid
-                    push!(devices.contributing_devices, device)
-                    break
-                end
-            end
+function _devices_by_service(sys::System)
+    index = Dict{Base.UUID, Vector{Device}}()
+    for device in get_components(supports_services, Device, sys)
+        for service in get_services(device)
+            push!(get!(index, IS.get_uuid(service), Device[]), device)
         end
     end
-    return devices
+    return index
 end
 
+# Whether `device` can contribute to `service`; only branches contribute to a transmission interface.
+_can_contribute(::Service, ::Device) = true
+_can_contribute(::TransmissionInterface, ::Device) = false
+_can_contribute(::TransmissionInterface, ::Branch) = true
+
 """
-Returns a ServiceContributingDevices object.
+Returns a ServiceContributingDevices object from a precomputed `_devices_by_service` index.
 """
-function _get_contributing_devices(sys::System, service::TransmissionInterface)
-    uuid = IS.get_uuid(service)
-    devices = ServiceContributingDevices(service, Vector{Device}())
-    for device in get_components(Branch, sys)
-        if supports_services(device)
-            for _service in get_services(device)
-                if IS.get_uuid(_service) == uuid
-                    push!(devices.contributing_devices, device)
-                    break
-                end
-            end
-        end
-    end
-    return devices
+function _get_contributing_devices(
+    service::Service,
+    index::Dict{Base.UUID, Vector{Device}},
+)
+    devices = get(index, IS.get_uuid(service), Device[])
+    return ServiceContributingDevices(
+        service,
+        filter(d -> _can_contribute(service, d), devices),
+    )
 end
 
 """
@@ -1557,10 +1551,11 @@ end
 Return an instance of ServiceContributingDevicesMapping.
 """
 function get_contributing_device_mapping(sys::System)
+    index = _devices_by_service(sys)
     services = ServiceContributingDevicesMapping()
     for service in get_components(Service, sys)
         key = ServiceContributingDevicesKey((typeof(service), get_name(service)))
-        services[key] = _get_contributing_devices(sys, service)
+        services[key] = _get_contributing_devices(service, index)
     end
 
     return services
