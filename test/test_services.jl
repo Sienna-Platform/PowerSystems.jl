@@ -221,6 +221,12 @@ end
     sort!(mapping[key2].contributing_devices; by = x -> get_name(x))
     @test mapping[key1].contributing_devices == expected_contributing_devices1
     @test mapping[key2].contributing_devices == expected_contributing_devices2
+
+    for service in services
+        key = ServiceContributingDevicesKey((typeof(service), get_name(service)))
+        @test Set(get_name.(mapping[key].contributing_devices)) ==
+              Set(get_name.(get_contributing_devices(sys, service)))
+    end
 end
 
 @testset "Test get_component combinations" begin
@@ -438,6 +444,12 @@ end
     end
     for br in get_contributing_devices(sys, interface3)
         @test br ∈ lines_and_transformers
+    end
+    mapping = get_contributing_device_mapping(sys)
+    for interface in (interface1, interface2, interface3)
+        key = ServiceContributingDevicesKey((TransmissionInterface, get_name(interface)))
+        @test Set(get_name.(mapping[key].contributing_devices)) ==
+              Set(get_name.(get_contributing_devices(sys, interface)))
     end
     @test length(get_components(TransmissionInterface, sys)) == 3
 
