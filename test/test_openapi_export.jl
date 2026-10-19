@@ -44,14 +44,14 @@ _export_vsc(
 ) = TwoTerminalVSCLine(;
     name = "vsc1", available = true, arc = arc,
     active_power_flow = 0.5, rating = 2.0,
-    g = 0.5, dc_current = 300.0, reactive_power_from = 0.1,
+    g = 0.5, dc_current = 0.3, reactive_power_from = 0.1,
     dc_control_from = VSCDCControlModes.DC_POWER,
     ac_control_from = ac_control_from,
     dc_power_setpoint_from = 0.4,
     _ac_setpoint_kwarg(ac_control_from, "from", 0.95)...,
     rated_ac_voltage_from = rated_ac_voltage_from,
     converter_loss_from = LossCurve(LinearCurve(1.2, 0.5), NaturalUnit()),
-    max_dc_current_from = 1000.0, rating_from = 2.0,
+    max_dc_current_from = 1.0, rating_from = 2.0,
     reactive_power_limits_from = (min = -1.0, max = 1.0),
     power_factor_weighting_fraction_from = 0.5,
     voltage_limits_from = (min = 0.9, max = 1.1),
@@ -62,7 +62,7 @@ _export_vsc(
     _ac_setpoint_kwarg(ac_control_to, "to", 0.98)...,
     rated_ac_voltage_to = rated_ac_voltage_to,
     converter_loss_to = LossCurve(QuadraticCurve(0.01, 1.1, 0.4), NaturalUnit()),
-    max_dc_current_to = 1000.0, rating_to = 2.0,
+    max_dc_current_to = 1.0, rating_to = 2.0,
     reactive_power_limits_to = (min = -1.0, max = 1.0),
     power_factor_weighting_fraction_to = 0.5,
     voltage_limits_to = (min = 0.9, max = 1.1),
@@ -487,7 +487,7 @@ end
         operational_flow_limit = (
             from_to = (min = 0.0, max = 1.0), to_from = (min = 0.0, max = 1.0),
         ),
-        base_current = 200.0,
+        base_current = 0.2,
         input_basis = u"CU",
     )
     sys = System(250.0)
@@ -508,12 +508,12 @@ end
     @test natural_po.active_power_flow == 125.0
     @test natural_po.operational_flow_limit.from_to_max == 250.0
     @test natural_po.operational_flow_limit.to_from_max == 250.0
-    @test natural_po.base_current == 200.0
+    @test natural_po.base_current == 0.2
 
     device_po = PSY.to_openapi(tmodel, refs, CU)
     @test device_po.active_power_flow == 125.0
     @test device_po.operational_flow_limit.from_to_max == 250.0
-    @test device_po.base_current == 200.0
+    @test device_po.base_current == 0.2
 end
 
 @testset "OpenAPI export converters: AreaInterchange (generated import, hand-written export)" begin

@@ -503,7 +503,7 @@ end
     )
     tmodel(name, arc) = TModelHVDCLine(;
         name = name, available = true, active_power_flow = 0.0, arc = arc,
-        r = 0.01, l = 0.0, c = 0.0, base_current = 200.0, input_basis = u"CU",
+        r = 0.01, l = 0.0, c = 0.0, base_current = 0.2, input_basis = u"CU",
     )
     sys = System(100.0)
     b1, b2, b3 = dcbus(1, 500.0), dcbus(2, 500.0), dcbus(3, 320.0)

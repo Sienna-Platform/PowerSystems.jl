@@ -47,12 +47,12 @@ function _vsc_po_minimal(; overrides...)
         id = 20, name = "vsc1", available = true, arc = 10,
         active_power_flow = 50.0, rating = 200.0,
         g = 0.5,
-        dc_current = 300.0, reactive_power_from = 10.0,
+        dc_current = 0.3, reactive_power_from = 10.0,
         dc_control_from = PSY.PO.VSCDCControlModes("DC_POWER"),
         ac_control_from = PSY.PO.VSCACControlModes("AC_REACTIVE_POWER"),
         dc_power_setpoint_from = 40.0, power_factor_setpoint_from = 0.95,
         converter_loss_from = _loss_curve_po(1.2, 0.5),
-        max_dc_current_from = 1000.0, rating_from = 200.0,
+        max_dc_current_from = 1.0, rating_from = 200.0,
         reactive_power_limits_from = PSY.IC.MinMax(; min = -100.0, max = 100.0),
         power_factor_weighting_fraction_from = 0.5,
         voltage_limits_from = PSY.IC.MinMax(; min = 0.9, max = 1.1),
@@ -61,7 +61,7 @@ function _vsc_po_minimal(; overrides...)
         ac_control_to = PSY.PO.VSCACControlModes("AC_REACTIVE_POWER"),
         dc_power_setpoint_to = 40.0, power_factor_setpoint_to = 0.98,
         converter_loss_to = _loss_curve_po(1.1, 0.4),
-        max_dc_current_to = 1000.0, rating_to = 200.0,
+        max_dc_current_to = 1.0, rating_to = 200.0,
         reactive_power_limits_to = PSY.IC.MinMax(; min = -100.0, max = 100.0),
         power_factor_weighting_fraction_to = 0.5,
         voltage_limits_to = PSY.IC.MinMax(; min = 0.9, max = 1.1),
@@ -1251,7 +1251,7 @@ end
     tmodel_po = PSY.PO.TModelHVDCLine(;
         id = 33, name = "tmodel1", available = true, active_power_flow = 125.0,
         arc = 32,
-        base_current = 200.0,
+        base_current = 0.2,
         r = 0.01, l = 0.02, c = 0.03,
         operational_flow_limit = PSY.PC.OperationalFlowLimit(;
             from_to_min = 0.0, from_to_max = 250.0, to_from_min = 0.0,
@@ -1270,7 +1270,7 @@ end
     @test get_active_power_flow(tmodel_100, u"MW") == 125.0
     @test get_operational_flow_limit(tmodel_100, u"MW") ==
           (from_to = (min = 0.0, max = 250.0), to_from = (min = 0.0, max = 250.0))
-    @test get_base_current(tmodel_100) == 200.0
+    @test get_base_current(tmodel_100) == 0.2
     @test (get_r(tmodel_100), get_l(tmodel_100), get_c(tmodel_100)) == (0.01, 0.02, 0.03)
 
     # Default import kwarg is 100.0 (see `from_openapi(::Type{System}, doc)`); a mismatched
@@ -1431,13 +1431,13 @@ end
             lcc_po_no_optional;
             id = 23, name = "lcc_current",
             control_mode = PSY.PO.LCCControlMode("CURRENT"),
-            current_transfer_setpoint = 1200.0,
+            current_transfer_setpoint = 1.2,
         ),
         refs,
         NU,
     )
     @test get_control_mode(lcc_current) == LCCControlMode.CURRENT
-    @test get_current_transfer_setpoint(lcc_current) == 1200.0
+    @test get_current_transfer_setpoint(lcc_current) == 1.2
     @test isnothing(get_power_transfer_setpoint(lcc_current, u"CU"))
 
     # Impedances (ohm) pass through unchanged in both unit systems.
@@ -1567,15 +1567,15 @@ end
     @test get_loss_function(PSY.from_openapi(ic_po_cu_loss, refs, NU)) ==
           LossCurve(QuadraticCurve(0.01, 0.01, 0.0), ComponentBaseUnit())
 
-    # Currents (A) and `dc_voltage_droop` (kV/MW) pass through in both unit systems.
+    # Currents (kA) and `dc_voltage_droop` (kV/MW) pass through in both unit systems.
     ic_po_current = _po_with(
-        ic_po; id = 25, name = "ic_current", dc_current = 300.0, max_dc_current = 900.0,
+        ic_po; id = 25, name = "ic_current", dc_current = 0.3, max_dc_current = 0.9,
         dc_voltage_droop = 0.5,
     )
     for val in (CU, NU)
         ic_current = PSY.from_openapi(ic_po_current, refs, val)
-        @test get_dc_current(ic_current) == 300.0
-        @test get_max_dc_current(ic_current) == 900.0
+        @test get_dc_current(ic_current) == 0.3
+        @test get_max_dc_current(ic_current) == 0.9
         @test get_dc_voltage_droop(ic_current) == 0.5
     end
 end
@@ -1778,12 +1778,12 @@ end
         id = 20, name = "vsc1", available = true, arc = 10,
         active_power_flow = 50.0, rating = 200.0,
         g = 0.5,
-        dc_current = 300.0, reactive_power_from = 10.0,
+        dc_current = 0.3, reactive_power_from = 10.0,
         dc_control_from = PSY.PO.VSCDCControlModes("DC_POWER"),
         ac_control_from = PSY.PO.VSCACControlModes("AC_REACTIVE_POWER"),
         dc_power_setpoint_from = 40.0, power_factor_setpoint_from = 0.95,
         converter_loss_from = _loss_curve_po(1.2, 0.5),
-        max_dc_current_from = 1000.0, rating_from = 200.0,
+        max_dc_current_from = 1.0, rating_from = 200.0,
         reactive_power_limits_from = PSY.IC.MinMax(; min = -100.0, max = 100.0),
         power_factor_weighting_fraction_from = 0.5,
         # `dc_voltage_setpoint_to` below is kV, divided by `rated_dc_voltage`.
@@ -1793,7 +1793,7 @@ end
         ac_control_to = PSY.PO.VSCACControlModes("AC_REACTIVE_POWER"),
         dc_voltage_setpoint_to = 204.0, power_factor_setpoint_to = 0.98,
         converter_loss_to = _loss_curve_po(1.1, 0.4),
-        max_dc_current_to = 1000.0, rating_to = 200.0,
+        max_dc_current_to = 1.0, rating_to = 200.0,
         reactive_power_limits_to = PSY.IC.MinMax(; min = -100.0, max = 100.0),
         power_factor_weighting_fraction_to = 0.5,
         voltage_limits_to = PSY.IC.MinMax(; min = 0.9, max = 1.1),
@@ -1823,7 +1823,7 @@ end
     @test isnothing(get_dc_power_setpoint_to(natural, u"SU"))
     @test get_g(natural) == 0.5
     # Amperes, dimensionless, and kV fields have no base to convert against.
-    @test get_dc_current(natural) == 300.0
+    @test get_dc_current(natural) == 0.3
     @test get_power_factor_setpoint_from(natural) == 0.95
     @test isnothing(get_ac_voltage_setpoint_from(natural))
     @test get_voltage_limits_from(natural) == (min = 0.9, max = 1.1)

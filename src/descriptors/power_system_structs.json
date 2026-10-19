@@ -1579,7 +1579,7 @@
                 },
                 {
                     "name": "dc_current",
-                    "comment": "DC current (A) on the converter flowing in the DC line, from `from` bus to `to` bus.",
+                    "comment": "DC current (kA) on the converter flowing in the DC line, from `from` bus to `to` bus.",
                     "null_value": "0.0",
                     "data_type": "Float64",
                     "default": "0.0"
@@ -1639,10 +1639,10 @@
                 },
                 {
                     "name": "max_dc_current_from",
-                    "comment": "Maximum stable dc current limits (A).",
+                    "comment": "Maximum stable dc current limits (kA). INFINITE_CURRENT means no limit.",
                     "null_value": "0.0",
                     "data_type": "Float64",
-                    "default": "1e8"
+                    "default": "INFINITE_CURRENT"
                 },
                 {
                     "name": "rating_from",
@@ -1743,10 +1743,10 @@
                 },
                 {
                     "name": "max_dc_current_to",
-                    "comment": "Maximum stable dc current limits (A).",
+                    "comment": "Maximum stable dc current limits (kA). INFINITE_CURRENT means no limit.",
                     "null_value": "0.0",
                     "data_type": "Float64",
-                    "default": "1e8"
+                    "default": "INFINITE_CURRENT"
                 },
                 {
                     "name": "rating_to",
@@ -2005,7 +2005,7 @@
                 },
                 {
                     "name": "current_transfer_setpoint",
-                    "comment": "Scheduled current transfer in amperes, used when `control_mode` is `CURRENT`; `nothing` otherwise.",
+                    "comment": "Scheduled current transfer in kA, used when `control_mode` is `CURRENT`; `nothing` otherwise.",
                     "null_value": "nothing",
                     "data_type": "Union{Nothing, Float64}",
                     "default": "nothing"
@@ -2256,7 +2256,7 @@
                 },
                 {
                     "name": "base_current",
-                    "comment": "Base current of the line as recorded by the source data (A). No field of this component is per-unit on it",
+                    "comment": "Base current of the line as recorded by the source data (kA). No field of this component is per-unit on it",
                     "null_value": "100.0",
                     "data_type": "Float64",
                     "valid_range": {
@@ -4330,17 +4330,17 @@
                 },
                 {
                     "name": "dc_current",
-                    "comment": "DC current on the converter in A",
+                    "comment": "DC current on the converter in kA",
                     "null_value": "0.0",
                     "data_type": "Float64",
                     "default": "0.0"
                 },
                 {
                     "name": "max_dc_current",
-                    "comment": "Maximum stable DC current limit in A",
+                    "comment": "Maximum stable DC current limit in kA. INFINITE_CURRENT means no limit.",
                     "null_value": "0.0",
                     "data_type": "Float64",
-                    "default": "1e8"
+                    "default": "INFINITE_CURRENT"
                 },
                 {
                     "name": "loss_function",
