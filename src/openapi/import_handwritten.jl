@@ -1297,7 +1297,7 @@ function from_openapi(
         ),
         rated_ac_voltage_from = rated_ac_voltage_from,
         converter_loss_from = _vsc_loss(po.converter_loss_from),
-        max_dc_current_from = _or_default(po.max_dc_current_from, 1e8),
+        max_dc_current_from = _or_default(po.max_dc_current_from, INFINITE_CURRENT),
         rating_from = _or_default(po.rating_from, 1e8, /, power_base),
         reactive_power_limits_from = _or_default(
             po.reactive_power_limits_from,
@@ -1330,7 +1330,7 @@ function from_openapi(
         ),
         rated_ac_voltage_to = rated_ac_voltage_to,
         converter_loss_to = _vsc_loss(po.converter_loss_to),
-        max_dc_current_to = _or_default(po.max_dc_current_to, 1e8),
+        max_dc_current_to = _or_default(po.max_dc_current_to, INFINITE_CURRENT),
         rating_to = _or_default(po.rating_to, 1e8, /, power_base),
         reactive_power_limits_to = _or_default(
             po.reactive_power_limits_to,
@@ -1477,7 +1477,7 @@ function from_openapi(
         base_power = _require_base_power("InterconnectingConverter", po.id, po.base_power),
         reactive_power_limits = _or_default(po.reactive_power_limits, nothing),
         dc_current = _or_default(po.dc_current, 0.0),
-        max_dc_current = _or_default(po.max_dc_current, 1e8),
+        max_dc_current = _or_default(po.max_dc_current, INFINITE_CURRENT),
         loss_function = _vsc_loss(po.loss_function),
         dc_control = _required_enum(
             po.dc_control, VSCDCControlModes.Value,
@@ -1515,7 +1515,7 @@ function from_openapi(po::PO.InterconnectingConverter, refs::OpenAPIRefs, ::Natu
         base_power = dbp,
         reactive_power_limits = _or_default(po.reactive_power_limits, nothing, /, dbp),
         dc_current = _or_default(po.dc_current, 0.0),
-        max_dc_current = _or_default(po.max_dc_current, 1e8),
+        max_dc_current = _or_default(po.max_dc_current, INFINITE_CURRENT),
         loss_function = _vsc_loss(po.loss_function),
         dc_control = _required_enum(
             po.dc_control, VSCDCControlModes.Value,

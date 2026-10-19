@@ -1639,10 +1639,10 @@
                 },
                 {
                     "name": "max_dc_current_from",
-                    "comment": "Maximum stable dc current limits (kA).",
+                    "comment": "Maximum stable dc current limits (kA). INFINITE_CURRENT means no limit.",
                     "null_value": "0.0",
                     "data_type": "Float64",
-                    "default": "1e8"
+                    "default": "INFINITE_CURRENT"
                 },
                 {
                     "name": "rating_from",
@@ -1743,10 +1743,10 @@
                 },
                 {
                     "name": "max_dc_current_to",
-                    "comment": "Maximum stable dc current limits (kA).",
+                    "comment": "Maximum stable dc current limits (kA). INFINITE_CURRENT means no limit.",
                     "null_value": "0.0",
                     "data_type": "Float64",
-                    "default": "1e8"
+                    "default": "INFINITE_CURRENT"
                 },
                 {
                     "name": "rating_to",
@@ -4337,10 +4337,10 @@
                 },
                 {
                     "name": "max_dc_current",
-                    "comment": "Maximum stable DC current limit in kA",
+                    "comment": "Maximum stable DC current limit in kA. INFINITE_CURRENT means no limit.",
                     "null_value": "0.0",
                     "data_type": "Float64",
-                    "default": "1e8"
+                    "default": "INFINITE_CURRENT"
                 },
                 {
                     "name": "loss_function",

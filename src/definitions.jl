@@ -713,6 +713,9 @@ const MW_ACCUMULATOR_TYPE = Float64
 # Sentinel for `time_at_status`: "has been in this state indefinitely". Carried
 # in minutes, matching the operational-duration convention.
 const INFINITE_TIME = 6e5
+# Sentinel for the DC current limits: "no limit". Carried in kA; never binds at
+# realistic voltages, and matches the PSS/E "no limit" constant used when parsing.
+const INFINITE_CURRENT = 9999.0
 const START_COST = 1e8
 const INFINITE_COST = 1e8
 const INFINITE_BOUND = 1e6
