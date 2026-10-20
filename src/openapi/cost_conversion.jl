@@ -50,8 +50,8 @@ end
 store is available for this call."""
 convert_cost(po, ::Any) = convert_cost(po)
 
-"""A required PO field read as `nothing` is malformed input."""
-_require(::Nothing, context::AbstractString) =
+"""A required PO field read as `nothing`, or `Absent` (never on the wire), is malformed input."""
+_require(::Union{Nothing, IC.Absent}, context::AbstractString) =
     error("convert_cost: $context is required and missing")
 _require(x, ::AbstractString) = x
 
@@ -332,8 +332,9 @@ _as_piecewise_incremental(cost::CostCurve, context::AbstractString) = error(
     "got CostCurve{$(typeof(get_value_curve(cost)))}",
 )
 
-"""An unoffered side is written as an absent curve; `ZERO_OFFER_CURVE` is how PSY spells it."""
-_offer_curve(::Nothing, ::AbstractString) = ZERO_OFFER_CURVE
+"""An unoffered side is written as an absent curve (`Absent`, or an explicit `null`);
+`ZERO_OFFER_CURVE` is how PSY spells it."""
+_offer_curve(::Union{Nothing, IC.Absent}, ::AbstractString) = ZERO_OFFER_CURVE
 _offer_curve(c::PC.CostCurve, context::AbstractString) =
     _as_piecewise_incremental(convert_cost(c), context)
 

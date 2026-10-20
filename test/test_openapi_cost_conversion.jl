@@ -282,6 +282,23 @@ end
     @test get_export_offer_curves(cost) === PSY.ZERO_OFFER_CURVE
 end
 
+@testset "convert_cost: ImportExportCost with absent offer curves" begin
+    # A producer that omits an unoffered side leaves the field `Absent`, not `nothing`.
+    po = PSY.PC.ImportExportCost(;
+        energy_import_weekly_limit = 1000.0,
+        energy_export_weekly_limit = 2000.0,
+    )
+    @test po.import_offer_curves isa PSY.IC.Absent
+    cost = PSY.convert_cost(po)
+    @test get_import_offer_curves(cost) === PSY.ZERO_OFFER_CURVE
+    @test get_export_offer_curves(cost) === PSY.ZERO_OFFER_CURVE
+end
+
+@testset "convert_cost: an absent required field" begin
+    # Fails with the same message as an explicit null, not on a later field access.
+    @test_throws "is required and missing" PSY._require(PSY.IC.Absent(), "X.y")
+end
+
 @testset "convert_cost: ImportExportCost offer curves must be piecewise incremental" begin
     po = PSY.PC.ImportExportCost(;
         import_offer_curves = _po_cost_curve(),
