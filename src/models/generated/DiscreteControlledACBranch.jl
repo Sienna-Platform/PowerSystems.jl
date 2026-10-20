@@ -36,8 +36,8 @@ Used to represent switches and breakers connecting AC Buses
 - `r::Float64`: Resistance in pu ([`SYSTEM_BASE`](@ref per_unit)), validation range: `(0, 4)`
 - `x::Float64`: Reactance in pu ([`SYSTEM_BASE`](@ref per_unit)), validation range: `(0, 4)`
 - `rating::Float64`: Thermal rating (MVA). Flow on the branch must be between -`rating` and `rating`. When defining a branch before it is attached to a `System`, `rating` must be in pu ([`SYSTEM_BASE`](@ref per_unit)) using the base power of the `System` it will be attached to. Displays in component base ([`DEVICE_BASE`](@ref per_unit)) by default, unlike most converted fields which default to system base
-- `rating_b::Union{Nothing, Float64}`: (default: `nothing`) Second current rating; entered in MVA.
-- `rating_c::Union{Nothing, Float64}`: (default: `nothing`) Third current rating; entered in MVA.
+- `rating_b::Union{Nothing, Float64}`: (default: `nothing`) Short-term thermal rating (MVA): Rate B in PSS/E, the flow allowed for a limited time, such as after a contingency. `nothing` when not set.
+- `rating_c::Union{Nothing, Float64}`: (default: `nothing`) Emergency thermal rating (MVA): Rate C in PSS/E, the highest flow allowed for a brief period. `nothing` when not set.
 - `discrete_branch_type::DiscreteControlledBranchType.Value`: (default: `DiscreteControlledBranchType.OTHER`) Type of discrete control
 - `branch_status::DiscreteControlledBranchStatus.Value`: (default: `DiscreteControlledBranchStatus.CLOSED`) Open or Close status
 - `normal_branch_status::DiscreteControlledBranchStatus.Value`: (default: `DiscreteControlledBranchStatus.CLOSED`) Normal (as-designed) open or close status of the device
@@ -64,9 +64,9 @@ mutable struct DiscreteControlledACBranch <: ACTransmission
     x::Float64
     "Thermal rating (MVA). Flow on the branch must be between -`rating` and `rating`. When defining a branch before it is attached to a `System`, `rating` must be in pu ([`SYSTEM_BASE`](@ref per_unit)) using the base power of the `System` it will be attached to. Displays in component base ([`DEVICE_BASE`](@ref per_unit)) by default, unlike most converted fields which default to system base"
     rating::Float64
-    "Second current rating; entered in MVA."
+    "Short-term thermal rating (MVA): Rate B in PSS/E, the flow allowed for a limited time, such as after a contingency. `nothing` when not set."
     rating_b::Union{Nothing, Float64}
-    "Third current rating; entered in MVA."
+    "Emergency thermal rating (MVA): Rate C in PSS/E, the highest flow allowed for a brief period. `nothing` when not set."
     rating_c::Union{Nothing, Float64}
     "Type of discrete control"
     discrete_branch_type::DiscreteControlledBranchType.Value
