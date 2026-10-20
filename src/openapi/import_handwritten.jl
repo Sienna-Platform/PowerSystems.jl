@@ -339,7 +339,7 @@ end
 # both methods. `base_power` on this type is documented as "System base power ... recorded per
 # component in lieu of a system-level table" — the same schema pattern as `Line`/`Area`/
 # `LoadZone`/`TwoTerminalGenericHVDCLine`, not a genuine per-device rating — so
-# `active_power_flow`/`reactive_power_flow`/`rating` divide by `_require_base_power`'s result
+# `active_power_flow`/`reactive_power_flow`/`rating`/`rating_b`/`rating_c` divide by `_require_base_power`'s result
 # exactly like Line.
 
 function from_openapi(
@@ -356,6 +356,8 @@ function from_openapi(
         r = po.r,
         x = po.x,
         rating = po.rating,
+        rating_b = _or_default(po.rating_b, nothing, /, 1.0),
+        rating_c = _or_default(po.rating_c, nothing, /, 1.0),
         discrete_branch_type = _or_default(
             po.discrete_branch_type,
             DiscreteControlledBranchType.OTHER,
@@ -393,6 +395,8 @@ function from_openapi(
         r = po.r,
         x = po.x,
         rating = po.rating / bp,
+        rating_b = _or_default(po.rating_b, nothing, /, bp),
+        rating_c = _or_default(po.rating_c, nothing, /, bp),
         discrete_branch_type = _or_default(
             po.discrete_branch_type,
             DiscreteControlledBranchType.OTHER,

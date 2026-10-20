@@ -160,6 +160,23 @@ function correct_rate_limits!(branch::Line)
     return check_rating_values(branch)
 end
 
+function validate_component_with_system(switch::DiscreteControlledACBranch, ::System)
+    for field in (:rating, :rating_b, :rating_c)
+        rating_value = getfield(switch, field)
+        if isnothing(rating_value) || !iszero(rating_value)
+            continue
+        end
+        hint = if field === :rating
+            "for an unrated switch use a large value such as INFINITE_BOUND, as the parser does"
+        else
+            "leave $(field) as nothing when it is not specified"
+        end
+        @warn "$(summary(switch)) has $(field) = 0. A zero rating is treated as a real \
+            limit that forces the flow to 0; $(hint)." maxlog = PS_MAX_LOG
+    end
+    return true
+end
+
 function check_endpoint_voltages(line::Line)
     is_valid = true
     arc = get_arc(line)

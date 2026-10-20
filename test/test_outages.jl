@@ -3,7 +3,8 @@
     gens = collect(get_components(ThermalStandard, sys))
     gen1 = gens[1]
     gen2 = gens[2]
-    @test length(get_supplemental_attributes(Outage, sys)) == 4
+    @test length(get_supplemental_attributes(UnplannedOutage, sys)) == 2
+    @test length(get_supplemental_attributes(PlannedOutage, sys)) == 2
     forced_outages =
         collect(get_supplemental_attributes(GeometricDistributionForcedOutage, sys))
     @test length(forced_outages) == 2
@@ -152,7 +153,7 @@ end
           geo_attr2 in thermal_geo_attrs
 end
 
-@testset "Test monitored_components on Outage subtypes" begin
+@testset "Test monitored_components on UnplannedOutage subtypes" begin
     sys = create_system_with_outages()
     gens = collect(get_components(ThermalStandard, sys))
     gen1, gen2 = gens[1], gens[2]
@@ -167,7 +168,6 @@ end
             ),
         ),
     )
-    @test isempty(get_monitored_components(PlannedOutage(; outage_schedule = "x")))
     @test isempty(get_monitored_components(FixedForcedOutage(; outage_status = 0.0)))
 
     # Construct with UUIDs
@@ -202,9 +202,7 @@ end
     )
     @test get_monitored_components(fo_dup) == Set([uuid1, uuid2])
 
-    # Same for PlannedOutage and FixedForcedOutage
-    po = PlannedOutage(; outage_schedule = "1", monitored_components = [gen1])
-    @test get_monitored_components(po) == Set([uuid1])
+    # Same for FixedForcedOutage
     ff = FixedForcedOutage(; outage_status = 1.0, monitored_components = [uuid2])
     @test get_monitored_components(ff) == Set([uuid2])
 
@@ -283,7 +281,7 @@ end
     @test_throws ArgumentError add_supplemental_attribute!(sys2, gen_for_attach, bad_kind)
 end
 
-@testset "Test identifier on Outage subtypes" begin
+@testset "Test identifier on outage attributes" begin
     # Default is nothing for all three concrete types.
     @test isnothing(
         get_identifier(
@@ -313,7 +311,10 @@ end
     tagged = PlannedOutage(; outage_schedule = "3", identifier = "block_12")
     add_supplemental_attribute!(sys, gens[1], tagged)
     sys2 = roundtrip_system(sys)
-    outages2 = collect(get_supplemental_attributes(Outage, sys2))
+    outages2 = vcat(
+        collect(get_supplemental_attributes(UnplannedOutage, sys2)),
+        collect(get_supplemental_attributes(PlannedOutage, sys2)),
+    )
     @test length(outages2) == 5
     identifiers = Set(get_identifier(x) for x in outages2)
     @test identifiers == Set(Union{Nothing, String}["block_12", nothing])
@@ -332,7 +333,7 @@ end
     gens = collect(get_components(ThermalStandard, sys))
     # Tag each existing outage with a non-empty monitored_components list so the
     # field has values to round-trip.
-    for outage in get_supplemental_attributes(Outage, sys)
+    for outage in get_supplemental_attributes(UnplannedOutage, sys)
         set_monitored_components!(outage, gens)
     end
 
@@ -348,7 +349,7 @@ end
                         IS.get_time_series_key(only(IS.list_time_series_metadata(outage))),
                     ),
                 ),
-            ) for outage in get_supplemental_attributes(Outage, sys)
+            ) for outage in get_supplemental_attributes(UnplannedOutage, sys)
     )
 
     sys2 = roundtrip_system(sys)
@@ -360,8 +361,8 @@ end
     # original `gens` ids do not carry over. What must hold is that each outage still points
     # at the same *set of components*, resolvable in the system it came back in.
     expected_uuids = Set(IS.get_id.(collect(get_components(ThermalStandard, sys2))))
-    outages2 = collect(get_supplemental_attributes(Outage, sys2))
-    @test length(outages2) == 4
+    outages2 = collect(get_supplemental_attributes(UnplannedOutage, sys2))
+    @test length(outages2) == 2
     for outage in outages2
         uuids = get_monitored_components(outage)
         @test uuids isa Set{Int}
@@ -383,7 +384,7 @@ end
     # Default (empty) monitored_components also round-trips without error.
     sys_empty = create_system_with_outages()
     sys_empty2 = roundtrip_system(sys_empty)
-    for outage in get_supplemental_attributes(Outage, sys_empty2)
+    for outage in get_supplemental_attributes(UnplannedOutage, sys_empty2)
         @test isempty(get_monitored_components(outage))
     end
 end
@@ -495,4 +496,19 @@ end
     # Remove all GeographicInfo attributes
     remove_supplemental_attributes!(GeographicInfo, sys)
     @test length(get_supplemental_attributes(GeographicInfo, sys)) == 0
+end
+
+@testset "Test supplemental attribute hierarchy for outages" begin
+    @test GeometricDistributionForcedOutage <: UnplannedOutage
+    @test FixedForcedOutage <: UnplannedOutage
+    @test UnplannedOutage <: Contingency
+    @test !(PlannedOutage <: Contingency)
+    @test PlannedOutage <: IS.SupplementalAttribute
+    @test !isdefined(PowerSystems, :Outage)
+    @test supports_time_series(PlannedOutage(; outage_schedule = "x"))
+    @test fieldnames(PlannedOutage) == (:outage_schedule, :identifier, :internal)
+    @test_throws MethodError PlannedOutage(;
+        outage_schedule = "x",
+        monitored_components = Int[],
+    )
 end

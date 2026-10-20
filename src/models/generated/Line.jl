@@ -39,8 +39,8 @@ An AC transmission line
 - `b::FromTo`: Shunt susceptance in pu ([`SYSTEM_BASE`](@ref per_unit)), specified both on the `from` and `to` ends of the line. These are commonly modeled with the same value, validation range: `(0, 100)`
 - `rating::Float64`: Thermal rating (MVA). Flow on the line must be between -`rating` and `rating`. When defining a line before it is attached to a `System`, `rating` must be in pu ([`SYSTEM_BASE`](@ref per_unit)) using the base power of the `System` it will be attached to. Displays in component base ([`DEVICE_BASE`](@ref per_unit)) by default, unlike most converted fields which default to system base
 - `angle_limits::MinMax`: Minimum and maximum angle limits (radians)
-- `rating_b::Union{Nothing, Float64}`: (default: `nothing`) Second current rating; entered in MVA.
-- `rating_c::Union{Nothing, Float64}`: (default: `nothing`) Third current rating; entered in MVA.
+- `rating_b::Union{Nothing, Float64}`: (default: `nothing`) Short-term thermal rating (MVA): Rate B in PSS/E, the flow allowed for a limited time, such as after a contingency. `nothing` when not set.
+- `rating_c::Union{Nothing, Float64}`: (default: `nothing`) Emergency thermal rating (MVA): Rate C in PSS/E, the highest flow allowed for a brief period. `nothing` when not set.
 - `g::FromTo`: (default: `(from=0.0, to=0.0)`) Shunt conductance in pu ([`SYSTEM_BASE`](@ref per_unit)), specified both on the `from` and `to` ends of the line. These are commonly modeled with the same value, validation range: `(0, 100)`
 - `services::Vector{Service}`: (default: `Device[]`) Services that this device contributes to
 - `base_power::Float64`: (default: `100.0`) System base power for per-unitization of this component's per-unit fields, recorded per component in lieu of a system-level table (MVA), validation range: `(0.0001, nothing)`
@@ -70,9 +70,9 @@ mutable struct Line <: ACTransmission
     rating::Float64
     "Minimum and maximum angle limits (radians)"
     angle_limits::MinMax
-    "Second current rating; entered in MVA."
+    "Short-term thermal rating (MVA): Rate B in PSS/E, the flow allowed for a limited time, such as after a contingency. `nothing` when not set."
     rating_b::Union{Nothing, Float64}
-    "Third current rating; entered in MVA."
+    "Emergency thermal rating (MVA): Rate C in PSS/E, the highest flow allowed for a brief period. `nothing` when not set."
     rating_c::Union{Nothing, Float64}
     "Shunt conductance in pu ([`SYSTEM_BASE`](@ref per_unit)), specified both on the `from` and `to` ends of the line. These are commonly modeled with the same value"
     g::FromTo
@@ -121,8 +121,8 @@ function Line(::Nothing)
         b=(from=0.0, to=0.0),
         rating=0.0,
         angle_limits=(min=-3.1416, max=3.1416),
-        rating_b=0.0,
-        rating_c=0.0,
+        rating_b=nothing,
+        rating_c=nothing,
         g=(from=0.0, to=0.0),
         services=Device[],
         base_power=100.0,

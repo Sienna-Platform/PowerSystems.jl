@@ -275,7 +275,7 @@ end
     @test isnothing(get_identifier(fixed))
 
     planned_po = PSY.PO.PlannedOutage(;
-        id = 5, outage_schedule = "maintenance_2024", monitored_components = [1],
+        id = 5, outage_schedule = "maintenance_2024",
         identifier = "block_12",
     )
     planned = PSY.from_openapi(planned_po, refs)

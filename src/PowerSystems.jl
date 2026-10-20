@@ -315,10 +315,12 @@ export PeriodicVariableSource
 export Contingency
 
 # Outages
-export Outage
+export UnplannedOutage
 export GeometricDistributionForcedOutage
 export PlannedOutage
 export FixedForcedOutage
+export SwitchingSchedule
+export get_status_schedule
 
 export get_mean_time_to_recovery
 export get_outage_transition_probability
@@ -416,6 +418,7 @@ export ThermalFuels
 export OperationalStates
 export CommitmentModes
 export StorageTech
+export HydroPumpTurbineStatus
 export StateTypes
 export ReservoirDataType
 export MotorLoadTechnology
@@ -1099,6 +1102,7 @@ include("emissions_data.jl")
 
 # Definitions of PowerSystem
 include("base.jl")
+include("switching_schedule.jl")
 
 include("plant_attribute.jl")
 

@@ -62,10 +62,15 @@ function to_openapi(outage::PlannedOutage, refs::OpenAPIRefs)
     return PO.PlannedOutage(;
         id = component_id(refs, outage),
         outage_schedule = get_outage_schedule(outage),
-        monitored_components = _monitored_component_ids(
-            refs, get_monitored_components(outage),
-        ),
         identifier = get_identifier(outage),
+    )
+end
+
+function to_openapi(schedule::SwitchingSchedule, refs::OpenAPIRefs)
+    return PO.SwitchingSchedule(;
+        id = component_id(refs, schedule),
+        status_schedule = get_status_schedule(schedule),
+        identifier = get_identifier(schedule),
     )
 end
 
@@ -361,7 +366,7 @@ end
 # `SupplementalAttributeAssociation` row (for type resolution, like any other attribute) and
 # an additional `PlantAssociation`/`CombinedCycleAssociation` row recording the group: the
 # reverse of the plant-family `_attach_attribute!` dispatch on import. A plain attribute
-# (`EmissionsData`, `GeographicInfo`, the `Outage` types) gets no group row at all, which is
+# (`EmissionsData`, `GeographicInfo`, the outage types) gets no group row at all, which is
 # why this dispatches on the attribute type rather than on some separate "has a group" flag.
 # `_group_indices` is used rather than the public reverse-map getters, which build a whole
 # dict per call and would make this walk quadratic.

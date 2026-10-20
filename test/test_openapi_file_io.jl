@@ -489,6 +489,55 @@ assert against instead)."""
 _gen_power_units(doc) =
     only(PSY.PC.get_components(doc, "ThermalStandard")).power_units.value
 
+@testset "to_file/from_file: switch secondary ratings round trip" begin
+    sys = System(100.0)
+    bus1 = ACBus(
+        1, "sw_from", true, ACBusTypes.REF, 0, 1.0, (min = 0.9, max = 1.05), 230,
+        nothing, nothing,
+    )
+    bus2 = ACBus(
+        2, "sw_to", true, ACBusTypes.PQ, 0, 1.0, (min = 0.9, max = 1.05), 230,
+        nothing, nothing,
+    )
+    add_component!(sys, bus1)
+    add_component!(sys, bus2)
+    arc = Arc(; from = bus1, to = bus2)
+    add_component!(sys, arc)
+    for (name, rating_b, rating_c) in
+        (("sw_rated", 2.5, 2.0), ("sw_unrated", nothing, nothing))
+        add_component!(
+            sys,
+            DiscreteControlledACBranch(;
+                name = name, available = true, active_power_flow = 0.0,
+                reactive_power_flow = 0.0, arc = arc, r = 0.0, x = 0.0001,
+                rating = 3.0, rating_b = rating_b, rating_c = rating_c,
+                input_basis = u"CU",
+            ),
+        )
+    end
+    placeholder = DiscreteControlledACBranch(nothing)
+    set_name!(placeholder, "sw_placeholder")
+    set_arc!(placeholder, arc)
+    set_rating!(placeholder, 3.0u"CU")
+    add_component!(sys, placeholder)
+    mktempdir() do dir
+        for units in (CU, NU)
+            document = joinpath(dir, "switch_$(units).json")
+            to_file(sys, document; units = units)
+            sys2 = from_file(document)
+            rated = get_component(DiscreteControlledACBranch, sys2, "sw_rated")
+            @test get_rating(rated, u"MVA") ≈ 300.0
+            @test get_rating_b(rated, u"MVA") ≈ 250.0
+            @test get_rating_c(rated, u"MVA") ≈ 200.0
+            for name in ("sw_unrated", "sw_placeholder")
+                unrated = get_component(DiscreteControlledACBranch, sys2, name)
+                @test isnothing(get_rating_b(unrated, u"MVA"))
+                @test isnothing(get_rating_c(unrated, u"MVA"))
+            end
+        end
+    end
+end
+
 @testset "export needs no ledger: a hand-built System serializes" begin
     # The unit-system assertions use the time-series-free fixture so that `to_openapi` needs
     # no sidecar path; the bundle round trip below covers the time-series case.

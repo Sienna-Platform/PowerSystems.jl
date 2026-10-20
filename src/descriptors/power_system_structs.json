@@ -614,7 +614,7 @@
                 },
                 {
                     "name": "rating_b",
-                    "comment": "Second current rating; entered in MVA.",
+                    "comment": "Short-term thermal rating (MVA): Rate B in PSS/E, the flow allowed for a limited time, such as after a contingency. `nothing` when not set.",
                     "null_value": "nothing",
                     "data_type": "Union{Nothing, Float64}",
                     "default": "nothing",
@@ -624,7 +624,7 @@
                 },
                 {
                     "name": "rating_c",
-                    "comment": "Third current rating; entered in MVA.",
+                    "comment": "Emergency thermal rating (MVA): Rate C in PSS/E, the highest flow allowed for a brief period. `nothing` when not set.",
                     "null_value": "nothing",
                     "data_type": "Union{Nothing, Float64}",
                     "default": "nothing",
@@ -793,18 +793,18 @@
                     "data_type": "MinMax"
                 },
                 {
-                    "null_value": "0.0",
+                    "null_value": "nothing",
                     "name": "rating_b",
-                    "comment": "Second current rating; entered in MVA.",
+                    "comment": "Short-term thermal rating (MVA): Rate B in PSS/E, the flow allowed for a limited time, such as after a contingency. `nothing` when not set.",
                     "data_type": "Union{Nothing, Float64}",
                     "needs_conversion": true,
                     "conversion_unit": ":mva",
                     "default": "nothing"
                 },
                 {
-                    "null_value": "0.0",
+                    "null_value": "nothing",
                     "name": "rating_c",
-                    "comment": "Third current rating; entered in MVA.",
+                    "comment": "Emergency thermal rating (MVA): Rate C in PSS/E, the highest flow allowed for a brief period. `nothing` when not set.",
                     "data_type": "Union{Nothing, Float64}",
                     "needs_conversion": true,
                     "conversion_unit": ":mva",
@@ -1039,6 +1039,24 @@
                     "needs_conversion": true,
                     "conversion_unit": ":mva",
                     "display_units": "CU"
+                },
+                {
+                    "null_value": "nothing",
+                    "name": "rating_b",
+                    "comment": "Short-term thermal rating (MVA): Rate B in PSS/E, the flow allowed for a limited time, such as after a contingency. `nothing` when not set.",
+                    "data_type": "Union{Nothing, Float64}",
+                    "needs_conversion": true,
+                    "conversion_unit": ":mva",
+                    "default": "nothing"
+                },
+                {
+                    "null_value": "nothing",
+                    "name": "rating_c",
+                    "comment": "Emergency thermal rating (MVA): Rate C in PSS/E, the highest flow allowed for a brief period. `nothing` when not set.",
+                    "data_type": "Union{Nothing, Float64}",
+                    "needs_conversion": true,
+                    "conversion_unit": ":mva",
+                    "default": "nothing"
                 },
                 {
                     "name": "discrete_branch_type",

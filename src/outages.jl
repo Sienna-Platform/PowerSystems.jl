@@ -1,8 +1,9 @@
 """
-Supertype for outage contingencies representing planned or unplanned equipment outages.
+Supertype for unplanned equipment outages, the contingencies that downstream packages
+simulate at runtime or secure against.
 
-Concrete subtypes include [`GeometricDistributionForcedOutage`](@ref),
-[`PlannedOutage`](@ref), and [`FixedForcedOutage`](@ref).
+Concrete subtypes include [`GeometricDistributionForcedOutage`](@ref) and
+[`FixedForcedOutage`](@ref).
 
 # Interface for custom subtypes
 
@@ -20,18 +21,16 @@ accessors via multiple dispatch:
 The default [`supports_time_series`](@ref) returns `true`; override for custom
 outage types that do not support time series.
 """
-abstract type Outage <: Contingency end
-
-abstract type UnplannedOutage <: Outage end
+abstract type UnplannedOutage <: Contingency end
 
 """
-All PowerSystems [Outage](@ref) types support time series. This can be overridden for custom
-outage types that do not support time series.
+All PowerSystems [`UnplannedOutage`](@ref) types support time series. This can be overridden
+for custom outage types that do not support time series.
 """
-supports_time_series(::Outage) = true
+supports_time_series(::UnplannedOutage) = true
 
 """Get `internal`."""
-get_internal(x::Outage) = x.internal
+get_internal(x::UnplannedOutage) = x.internal
 
 # Public API for monitored_components accepts integer ids or Devices interchangeably.
 # During JSON deserialization an id arrives as a plain integer.
@@ -44,23 +43,23 @@ when this outage occurs. PowerSystems does not assign meaning to an empty set;
 downstream consumers (e.g., PowerSimulations) decide whether empty means "monitor
 nothing" or "monitor everything".
 """
-get_monitored_components(value::Outage) = value.monitored_components
+get_monitored_components(value::UnplannedOutage) = value.monitored_components
 
 """
-Get the optional user-supplied identifier of an [`Outage`](@ref), such as a name or a
+Get the optional user-supplied identifier of an [`UnplannedOutage`](@ref), such as a name or a
 block id. Returns `nothing` when none was set.
 """
-get_identifier(value::Outage) = value.identifier
+get_identifier(value::UnplannedOutage) = value.identifier
 
 """
-Replace the monitored-components set for an [`Outage`](@ref) with the contents
+Replace the monitored-components set for an [`UnplannedOutage`](@ref) with the contents
 of `items`. Accepts any iterable whose elements are `Int` ids or
 [`Device`](@ref) (e.g., a `Vector`, a generator, or the iterator returned by
 [`get_components`](@ref)). Devices are converted to their ids internally.
 Pass an empty iterable (or call [`clear_monitored_components!`](@ref)) to
 clear the set.
 """
-function set_monitored_components!(value::Outage, items)
+function set_monitored_components!(value::UnplannedOutage, items)
     empty!(value.monitored_components)
     for x in items
         push!(value.monitored_components, _as_id(x))
@@ -69,29 +68,29 @@ function set_monitored_components!(value::Outage, items)
 end
 
 """
-Empty the monitored-components set of an [`Outage`](@ref). Returns the (now empty)
+Empty the monitored-components set of an [`UnplannedOutage`](@ref). Returns the (now empty)
 underlying set.
 """
-function clear_monitored_components!(value::Outage)
+function clear_monitored_components!(value::UnplannedOutage)
     empty!(value.monitored_components)
     return value.monitored_components
 end
 
 """
 Add an `Int` id or [`Device`](@ref) to the monitored-components set of
-an [`Outage`](@ref). Adding an existing id is a no-op.
+an [`UnplannedOutage`](@ref). Adding an existing id is a no-op.
 """
-function add_monitored_component!(value::Outage, x::Union{Int, Device})
+function add_monitored_component!(value::UnplannedOutage, x::Union{Int, Device})
     push!(value.monitored_components, _as_id(x))
     return value.monitored_components
 end
 
 """
 Add every element of `items` (each an `Int` id or [`Device`](@ref)) to
-the monitored-components set of an [`Outage`](@ref). Accepts any iterable, including
+the monitored-components set of an [`UnplannedOutage`](@ref). Accepts any iterable, including
 the iterator returned by [`get_components`](@ref). Adding an existing id is a no-op.
 """
-function add_monitored_components!(value::Outage, items)
+function add_monitored_components!(value::UnplannedOutage, items)
     for x in items
         add_monitored_component!(value, x)
     end
@@ -100,18 +99,18 @@ end
 
 """
 Remove an `Int` id or [`Device`](@ref) from the monitored-components set
-of an [`Outage`](@ref). No-op when the entry is not present.
+of an [`UnplannedOutage`](@ref). No-op when the entry is not present.
 """
-function remove_monitored_component!(value::Outage, x::Union{Int, Device})
+function remove_monitored_component!(value::UnplannedOutage, x::Union{Int, Device})
     delete!(value.monitored_components, _as_id(x))
     return
 end
 
 """
 Remove every element of `items` (each an `Int` id or [`Device`](@ref)) from
-the monitored-components set of an [`Outage`](@ref). Accepts any iterable.
+the monitored-components set of an [`UnplannedOutage`](@ref). Accepts any iterable.
 """
-function remove_monitored_components!(value::Outage, items)
+function remove_monitored_components!(value::UnplannedOutage, items)
     for x in items
         remove_monitored_component!(value, x)
     end
@@ -174,48 +173,56 @@ get_outage_transition_probability(value::GeometricDistributionForcedOutage) =
     value.outage_transition_probability
 
 """
-Attribute that contains information regarding planned outages.
+Attribute that schedules planned outages of the components it is attached to.
+
+A planned outage is known in advance, so it changes the network topology a model uses at
+each time step rather than acting as a contingency. It is therefore not a
+[`Contingency`](@ref) and carries no `monitored_components`.
 
 # Arguments
-- `outage_schedule::String`: String name of the time series used for the scheduled outages
-- `monitored_components::Set{Int}`: ids of devices whose post-contingency state should be modeled when this outage occurs. Empty by default; semantics of an empty set are decided by the downstream consumer.
+- `outage_schedule::String`: Name of the time series, stored on this attribute, that carries
+  the schedule. Values: 1 = out of service, 0 = in service.
 - `identifier::Union{Nothing, String}`: Optional user-supplied identifier for the outage, such as a name or a block id. `nothing` when not set.
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems internal reference
 """
-struct PlannedOutage <: Outage
+struct PlannedOutage <: SupplementalAttribute
     outage_schedule::String
-    monitored_components::Set{Int}
     identifier::Union{Nothing, String}
     internal::InfrastructureSystemsInternal
 end
 
 """
-    PlannedOutage(; outage_schedule, monitored_components, identifier, internal)
+    PlannedOutage(; outage_schedule, identifier, internal)
 
 Construct a [`PlannedOutage`](@ref).
 
 # Arguments
-- `outage_schedule::String`: String name of the time series used for the scheduled outages
-- `monitored_components`: (default: `Int[]`) Any iterable of `Int` ids or [`Device`](@ref). Devices are converted to their ids internally; duplicates are collapsed.
+- `outage_schedule::String`: Name of the time series, stored on this attribute, that carries
+  the schedule. Values: 1 = out of service, 0 = in service.
 - `identifier::Union{Nothing, String}`: (default: `nothing`) Optional user-supplied identifier for the outage, such as a name or a block id.
 - `internal::InfrastructureSystemsInternal`: (default: `InfrastructureSystemsInternal()`) (**Do not modify.**) PowerSystems internal reference
 """
 function PlannedOutage(;
     outage_schedule,
-    monitored_components = Int[],
     identifier = nothing,
     internal = InfrastructureSystemsInternal(),
 )
-    return PlannedOutage(
-        outage_schedule,
-        Set{Int}(_as_id(x) for x in monitored_components),
-        identifier,
-        internal,
-    )
+    return PlannedOutage(outage_schedule, identifier, internal)
 end
+
+supports_time_series(::PlannedOutage) = true
+
+"""Get `internal`."""
+get_internal(x::PlannedOutage) = x.internal
 
 """Get [`PlannedOutage`](@ref) `outage_schedule`."""
 get_outage_schedule(value::PlannedOutage) = value.outage_schedule
+
+"""
+Get the optional user-supplied identifier of a [`PlannedOutage`](@ref). Returns `nothing`
+when none was set.
+"""
+get_identifier(value::PlannedOutage) = value.identifier
 
 """
 Attribute that contains the representation of the status of the component forced outage.
