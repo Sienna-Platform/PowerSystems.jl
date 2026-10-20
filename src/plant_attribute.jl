@@ -548,7 +548,7 @@ get_components_in_pcc(sys::System, plant::RenewablePowerPlant, pcc_number::Int) 
     _get_components_in_group(sys, plant, pcc_number)
 
 """No group index: the plain attribute path (`EmissionsData`, `GeographicInfo`, the
-`Outage` types, ...) needs no map update."""
+`UnplannedOutage` types, ...) needs no map update."""
 _push_group_index!(::Any, ::SupplementalAttribute, ::Nothing) = nothing
 
 _push_group_index!(component, attribute::ThermalPowerPlant, group_index::Integer) =

@@ -446,7 +446,7 @@ end
 
         # A second hand-added attribute, of a type that actually supports time series
         # (`supports_time_series(::GeographicInfo)` is the `SupplementalAttribute` default,
-        # `false` — only `Outage` and its subtypes opt in, `src/outages.jl`), to exercise an
+        # `false` — only the outage attributes opt in, `src/outages.jl`), to exercise an
         # attribute-owned series. The attribute is a bare document row here, never
         # round-tripped through a System of its own, so its series is staged straight into
         # the sidecar rather than through `add_time_series!` on a component. This is the

@@ -437,8 +437,8 @@ function to_openapi(branch::GenericArcImpedance, refs::OpenAPIRefs, ::NaturalUni
 end
 
 # ── DiscreteControlledACBranch ───────────────────────────────────────────────────
-# `active_power_flow`/`reactive_power_flow`/`r`/`x` are declared `SU` (system base), `rating`
-# is declared `CU` — numerically identical for this type since `add_component!` keeps its
+# `active_power_flow`/`reactive_power_flow`/`r`/`x`/`rating_b`/`rating_c` are declared `SU`
+# (system base), `rating` is declared `CU` — numerically identical for this type since `add_component!` keeps its
 # `base_power` synced to the System's, but the identity accessor for each field must still
 # match its own declared tier.
 
@@ -458,6 +458,8 @@ function to_openapi(
         r = get_r(branch, u"SU"),
         x = get_x(branch, u"SU"),
         rating = get_rating(branch, u"CU"),
+        rating_b = _optional_to_wire(get_rating_b(branch, u"SU")),
+        rating_c = _optional_to_wire(get_rating_c(branch, u"SU")),
         discrete_branch_type = PO.DiscreteControlledACBranchDiscreteBranchType(
             string(get_discrete_branch_type(
                 branch,
@@ -491,6 +493,8 @@ function to_openapi(branch::DiscreteControlledACBranch, refs::OpenAPIRefs, ::Nat
         r = get_r(branch, u"SU"),
         x = get_x(branch, u"SU"),
         rating = get_rating(branch, u"CU") * bp,
+        rating_b = _scale_optional_po(get_rating_b(branch, u"SU"), bp),
+        rating_c = _scale_optional_po(get_rating_c(branch, u"SU"), bp),
         discrete_branch_type = PO.DiscreteControlledACBranchDiscreteBranchType(
             string(get_discrete_branch_type(
                 branch,

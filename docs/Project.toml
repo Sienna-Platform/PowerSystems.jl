@@ -31,6 +31,7 @@ InfrastructureSystems = {url = "https://github.com/Sienna-Platform/Infrastructur
 PowerFlowFileParser = {url = "https://github.com/Sienna-Platform/PowerFlowFileParser.jl.git", rev = "psy6"}
 PowerSystemCaseBuilder = {url = "https://github.com/Sienna-Platform/PowerSystemCaseBuilder.jl.git", rev = "psy6"}
 PowerSystems = {path = ".."}
+PowerOperationsOpenAPIModels = {path = "/Users/mbossart/sienna/psy6/time-varying-network/PowerOpenAPIModels/PowerOperationsOpenAPIModels.jl"}  # DEV-ONLY
 PowerTableDataParser = {url = "https://github.com/NLR-Sienna/PowerTableDataParser.jl.git", rev = "psy6"}
 
 [compat]

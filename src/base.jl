@@ -1810,7 +1810,7 @@ end
 function add_supplemental_attribute!(
     sys::System,
     component::Component,
-    outage::Outage,
+    outage::UnplannedOutage,
 )
     if get_runchecks(sys)
         for id in get_monitored_components(outage)
@@ -1875,7 +1875,7 @@ Call collect on the result if an array is desired.
 # Examples
 ```julia
 iter = get_supplemental_attributes(GeometricDistributionForcedOutage, sys)
-iter = get_supplemental_attributes(Outage, sys)
+iter = get_supplemental_attributes(UnplannedOutage, sys)
 iter = get_supplemental_attributes(x -> get_mean_time_to_recovery(x) ==  >= 0.5, GeometricDistributionForcedOutage, sys)
 outages = get_supplemental_attributes(GeometricDistributionForcedOutage, sys) do outage
     get_mean_time_to_recovery(x) ==  >= 0.5

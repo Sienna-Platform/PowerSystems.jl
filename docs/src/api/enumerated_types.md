@@ -119,8 +119,20 @@ Availability is not one of these values: a unit on outage is `available = false`
 `OFFLINE` unit that is `available = true` is in service and eligible for re-commitment.
 
 [`HydroPumpTurbine`](@ref) keeps its pumping/generating mode in a separate
-`operating_mode::HydroPumpTurbineStatus` field; `status` there is the same lifecycle as
-everywhere else.
+`operating_mode::HydroPumpTurbineStatus` field, listed [here](@ref pumpturbine_list); `status`
+there is the same lifecycle as everywhere else.
+
+## [Pumped-Storage Operating Modes](@id pumpturbine_list)
+
+Each [`HydroPumpTurbine`](@ref) has a field for `operating_mode::HydroPumpTurbineStatus`, the
+mode the unit runs in. The sign of the value is the direction of net active power.
+`HydroPumpTurbineStatus` has the options:
+
+| Name   | Value | Description                                     |
+|:------ |:----- |:----------------------------------------------- |
+| `OFF`  | 0     | Idle, neither generating nor pumping            |
+| `GEN`  | 1     | Generating (turbine operation)                  |
+| `PUMP` | -1    | Pumping, consuming active power to store energy |
 
 ## [Commitment Modes](@id commit_list)
 

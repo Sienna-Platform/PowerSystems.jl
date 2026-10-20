@@ -251,6 +251,55 @@ end
     )
 end
 
+@testset "OpenAPI converters: DiscreteControlledACBranch ratings" begin
+    refs = _refs_with_area_bus()
+    arc_po = PSY.PO.Arc(; id = 10, from_id = 3, to_id = 4)
+    refs[10] = PSY.from_openapi(arc_po, refs, NU)
+
+    switch_po = PSY.PO.DiscreteControlledACBranch(;
+        id = 30, name = "sw1", available = true,
+        active_power_flow = 10.0, reactive_power_flow = 2.0, arc = 10,
+        r = 0.0, x = 0.0001, base_power = 100.0,
+        rating = 300.0, rating_b = 250.0, rating_c = nothing,
+        power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
+    )
+    switch_natural = PSY.from_openapi(switch_po, refs, NU)
+    @test get_rating(switch_natural, u"CU") == 3.0
+    @test get_rating_b(switch_natural, u"CU") == 2.5
+    @test isnothing(get_rating_c(switch_natural, u"CU"))
+
+    switch_device = PSY.from_openapi(
+        PSY.PO.DiscreteControlledACBranch(;
+            id = 31, name = "sw2", available = true,
+            active_power_flow = 0.1, reactive_power_flow = 0.02, arc = 10,
+            r = 0.0, x = 0.0001, base_power = 100.0,
+            rating = 3.0, rating_b = 2.5, rating_c = 2.0,
+            power_units = PSY.IC.UnitSystem("COMPONENT_BASE"),
+        ),
+        refs,
+        CU,
+    )
+    @test get_rating_b(switch_device, u"CU") == 2.5
+    @test get_rating_c(switch_device, u"CU") == 2.0
+
+    sys = System(100.0)
+    foreach(i -> add_component!(sys, refs[i]), (1, 2, 3, 4, 10))
+    add_component!(sys, switch_natural)
+    add_component!(sys, switch_device)
+    refs[30] = switch_natural
+    refs[31] = switch_device
+
+    natural_back = PSY.to_openapi(switch_natural, refs, NU)
+    @test natural_back.rating == 300.0
+    @test natural_back.rating_b == 250.0
+    @test natural_back.rating_c isa PSY.IC.Absent
+
+    device_back = PSY.to_openapi(switch_device, refs, CU)
+    @test device_back.rating == 3.0
+    @test device_back.rating_b == 2.5
+    @test device_back.rating_c == 2.0
+end
+
 @testset "OpenAPI converters: Line" begin
     refs = _refs_with_area_bus()
     arc_po = PSY.PO.Arc(; id = 10, from_id = 3, to_id = 4)

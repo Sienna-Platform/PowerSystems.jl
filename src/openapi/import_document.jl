@@ -347,7 +347,7 @@ end
 # ── Supplemental attributes ─────────────────────────────────────────────────────
 # Per-type converters below exist for every attribute PSY hand-writes a constructor for
 # AND that has a PO analogue: EmissionsData, GeometricDistributionForcedOutage,
-# FixedForcedOutage, PlannedOutage, ThermalPowerPlant, HydroPowerPlant,
+# FixedForcedOutage, PlannedOutage, SwitchingSchedule, ThermalPowerPlant, HydroPowerPlant,
 # RenewablePowerPlant, CombinedCycleBlock, CombinedCycleFractional, ImpedanceCorrectionData,
 # and the Core GeographicInfo. `Substation`'s converter pair lives next to its hand-written
 # struct in `src/substation.jl`.
@@ -361,10 +361,10 @@ end
 # converters they take no `::ComponentBaseUnit`/`::NaturalUnit` marker argument. Every method
 # takes `refs` so the attribute walk (`load_supplemental_attribute_associations!` in
 # sqlite_load.jl) can call one
-# signature uniformly; only the three `Outage` types read it, to resolve document-id
+# signature uniformly; only the `UnplannedOutage` types read it, to resolve document-id
 # `monitored_components` into the UUIDs PSY stores.
 
-"""Resolve document ids to UUIDs for an `Outage`'s `monitored_components`; an
+"""Resolve document ids to UUIDs for an `UnplannedOutage`'s `monitored_components`; an
 absent/omitted field means none declared and maps to an empty vector, matching the PSY
 constructors' own default — not an error to guard against."""
 function _monitored_component_uuids(refs::OpenAPIRefs, ids::Union{Nothing, IC.Absent})
@@ -397,10 +397,16 @@ function from_openapi(po::PO.GeometricDistributionForcedOutage, refs::OpenAPIRef
     )
 end
 
-function from_openapi(po::PO.PlannedOutage, refs::OpenAPIRefs)
+function from_openapi(po::PO.PlannedOutage, ::OpenAPIRefs)
     return PlannedOutage(;
         outage_schedule = po.outage_schedule,
-        monitored_components = _monitored_component_uuids(refs, po.monitored_components),
+        identifier = _or_default(po.identifier, nothing),
+    )
+end
+
+function from_openapi(po::PO.SwitchingSchedule, ::OpenAPIRefs)
+    return SwitchingSchedule(;
+        status_schedule = po.status_schedule,
         identifier = _or_default(po.identifier, nothing),
     )
 end
