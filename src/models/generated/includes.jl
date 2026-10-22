@@ -9,6 +9,7 @@ include("TransformerCircuit.jl")
 include("Line.jl")
 include("GenericArcImpedance.jl")
 include("DiscreteControlledACBranch.jl")
+include("SeriesCompensator.jl")
 include("TwoWindingTransformer.jl")
 include("ThreeWindingTransformer.jl")
 include("TwoTerminalGenericHVDCLine.jl")
@@ -484,6 +485,8 @@ export get_active_power
 export get_active_power_flow
 export get_active_power_flow_limits
 export get_active_power_flow_limits_unitful
+export get_active_power_flow_setpoint
+export get_active_power_flow_setpoint_unitful
 export get_active_power_flow_unitful
 export get_active_power_limits
 export get_active_power_limits_pump
@@ -768,6 +771,8 @@ export get_rating_to
 export get_rating_to_unitful
 export get_rating_unitful
 export get_rc_rfd
+export get_reactance_limits
+export get_reactance_limits_unitful
 export get_reactive_power
 export get_reactive_power_flow
 export get_reactive_power_flow_unitful
@@ -1244,6 +1249,7 @@ export set_ac_voltage_setpoint_to!
 export set_active_power!
 export set_active_power_flow!
 export set_active_power_flow_limits!
+export set_active_power_flow_setpoint!
 export set_active_power_limits!
 export set_active_power_limits_pump!
 export set_active_power_losses!
@@ -1478,6 +1484,7 @@ export set_rating_c!
 export set_rating_from!
 export set_rating_to!
 export set_rc_rfd!
+export set_reactance_limits!
 export set_reactive_power!
 export set_reactive_power_flow!
 export set_reactive_power_from!

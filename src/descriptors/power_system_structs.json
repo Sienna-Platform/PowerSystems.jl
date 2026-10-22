@@ -1105,6 +1105,170 @@
             "supertype": "ACTransmission"
         },
         {
+            "struct_name": "SeriesCompensator",
+            "docstring": "A series compensator: a series capacitor or reactor, or a thyristor-controlled or static synchronous series compensator, with one series reactance on an [`Arc`](@ref). Out of service is `available = false`; a bypassed compensator is `control_mode = BYPASSED`",
+            "fields": [
+                {
+                    "null_value": "init",
+                    "name": "name",
+                    "comment": "Name of the component. Components of the same type (e.g., `PowerLoad`) must have unique names, but components of different types (e.g., `PowerLoad` and `ACBus`) can have the same name",
+                    "exclude_setter": true,
+                    "data_type": "String"
+                },
+                {
+                    "null_value": "false",
+                    "name": "available",
+                    "comment": "Indicator of whether the component is connected and online (`true`) or disconnected, offline, or down (`false`). Unavailable components are excluded during simulations",
+                    "data_type": "Bool"
+                },
+                {
+                    "name": "active_power_flow",
+                    "comment": "Initial condition of active power flow through the compensator (MW)",
+                    "null_value": "0.0",
+                    "data_type": "Float64",
+                    "needs_conversion": true,
+                    "conversion_unit": ":mw"
+                },
+                {
+                    "name": "reactive_power_flow",
+                    "comment": "Initial condition of reactive power flow through the compensator (MVAR)",
+                    "null_value": "0.0",
+                    "data_type": "Float64",
+                    "needs_conversion": true,
+                    "conversion_unit": ":mvar"
+                },
+                {
+                    "null_value": "Arc(ACBus(nothing), ACBus(nothing))",
+                    "name": "arc",
+                    "comment": "An [`Arc`](@ref) defining this compensator `from` a bus `to` another bus",
+                    "data_type": "Arc"
+                },
+                {
+                    "null_value": "0.0",
+                    "name": "r",
+                    "data_type": "Float64",
+                    "comment": "Resistance in pu ([`SYSTEM_BASE`](@ref per_unit))",
+                    "valid_range": {
+                        "min": 0,
+                        "max": 4
+                    },
+                    "validation_action": "warn",
+                    "needs_conversion": true,
+                    "conversion_unit": ":ohm"
+                },
+                {
+                    "null_value": "0.0",
+                    "name": "x",
+                    "data_type": "Float64",
+                    "comment": "Series reactance in pu ([`SYSTEM_BASE`](@ref per_unit)); negative for a capacitor. Under `DISPATCHABLE` and `ACTIVE_POWER_FLOW`, the present value",
+                    "valid_range": {
+                        "min": -4,
+                        "max": 4
+                    },
+                    "validation_action": "warn",
+                    "needs_conversion": true,
+                    "conversion_unit": ":ohm"
+                },
+                {
+                    "null_value": "0.0",
+                    "name": "rating",
+                    "comment": "Thermal rating (MVA). Flow through the compensator must be between -`rating` and `rating`. When defining a compensator before it is attached to a `System`, `rating` must be in pu ([`SYSTEM_BASE`](@ref per_unit)) using the base power of the `System` it will be attached to. Displays in component base ([`DEVICE_BASE`](@ref per_unit)) by default, unlike most converted fields which default to system base",
+                    "data_type": "Float64",
+                    "needs_conversion": true,
+                    "conversion_unit": ":mva",
+                    "display_units": "CU"
+                },
+                {
+                    "name": "control_mode",
+                    "comment": "How the series reactance is set; see [`SeriesCompensatorControlMode`](@ref). `DISPATCHABLE` and `ACTIVE_POWER_FLOW` use `reactance_limits`; `ACTIVE_POWER_FLOW` also uses `active_power_flow_setpoint`",
+                    "data_type": "SeriesCompensatorControlMode.Value",
+                    "null_value": "SeriesCompensatorControlMode.FIXED",
+                    "default": "SeriesCompensatorControlMode.FIXED"
+                },
+                {
+                    "name": "reactance_limits",
+                    "comment": "Minimum and maximum series reactance in pu ([`SYSTEM_BASE`](@ref per_unit)), for `DISPATCHABLE` and `ACTIVE_POWER_FLOW`. `nothing` if not applicable",
+                    "null_value": "nothing",
+                    "data_type": "Union{Nothing, MinMax}",
+                    "default": "nothing",
+                    "needs_conversion": true,
+                    "conversion_unit": ":ohm"
+                },
+                {
+                    "name": "active_power_flow_setpoint",
+                    "comment": "Active power flow (MW), from the `from` bus to the `to` bus, held under `ACTIVE_POWER_FLOW`. `nothing` if not applicable",
+                    "null_value": "nothing",
+                    "data_type": "Union{Nothing, Float64}",
+                    "default": "nothing",
+                    "needs_conversion": true,
+                    "conversion_unit": ":mw"
+                },
+                {
+                    "null_value": "0.0",
+                    "name": "rating_b",
+                    "comment": "Second current rating; entered in MVA.",
+                    "data_type": "Union{Nothing, Float64}",
+                    "needs_conversion": true,
+                    "conversion_unit": ":mva",
+                    "default": "nothing"
+                },
+                {
+                    "null_value": "0.0",
+                    "name": "rating_c",
+                    "comment": "Third current rating; entered in MVA.",
+                    "data_type": "Union{Nothing, Float64}",
+                    "needs_conversion": true,
+                    "conversion_unit": ":mva",
+                    "default": "nothing"
+                },
+                {
+                    "name": "services",
+                    "data_type": "Vector{Service}",
+                    "comment": "Services that this device contributes to",
+                    "null_value": "Device[]",
+                    "default": "Device[]"
+                },
+                {
+                    "name": "base_power",
+                    "comment": "System base power for per-unitization of this component's per-unit fields, recorded per component in lieu of a system-level table (MVA)",
+                    "null_value": "100.0",
+                    "data_type": "Float64",
+                    "default": "100.0",
+                    "exclude_getter": true,
+                    "exclude_setter": true,
+                    "valid_range": {
+                        "min": 0.0001,
+                        "max": null
+                    },
+                    "validation_action": "warn"
+                },
+                {
+                    "name": "operational_flow_limit",
+                    "comment": "Operator-set minimum and maximum flow (MW) in each direction, `from_to` and `to_from`, applied in addition to `rating`. `nothing` means no operational limit",
+                    "null_value": "nothing",
+                    "data_type": "Union{Nothing, OperationalFlowLimit}",
+                    "default": "nothing",
+                    "needs_conversion": true,
+                    "conversion_unit": ":mw"
+                },
+                {
+                    "name": "ext",
+                    "comment": "An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.",
+                    "data_type": "Dict{String, Any}",
+                    "null_value": "Dict{String, Any}()",
+                    "default": "Dict{String, Any}()"
+                },
+                {
+                    "name": "internal",
+                    "comment": "(**Do not modify.**) PowerSystems.jl internal reference",
+                    "data_type": "InfrastructureSystemsInternal",
+                    "internal_default": "InfrastructureSystemsInternal()",
+                    "exclude_setter": true
+                }
+            ],
+            "supertype": "ACTransmission"
+        },
+        {
             "struct_name": "TwoWindingTransformer",
             "docstring": "A two-winding transformer connecting two buses.\n\nAll series electrical data — the modeled arc, tap, phase shift, series impedance `r`/`x`, ratings, per-winding base power, base voltages, and control — lives on the single [`TransformerCircuit`](@ref) obtained with [`get_circuit`](@ref); availability is circuit-level (see [`get_available`](@ref)). The `magnetizing_shunt` admittance and its `shunt_location` are transformer-level. The model uses an equivalent circuit assuming the impedance is on the high-voltage side and allocates iron losses and magnetizing susceptance according to `shunt_location`. The transformer's component base is the circuit's `base_power`.",
             "fields": [

@@ -32,6 +32,10 @@ const DOCUMENT_PLAN = [
         key = "DiscreteControlledACBranch", addable = true,
     ),
     (
+        po_type = PO.SeriesCompensator, psy_type = SeriesCompensator,
+        key = "SeriesCompensator", addable = true,
+    ),
+    (
         po_type = PO.TransformerCircuit, psy_type = TransformerCircuit,
         key = "TransformerCircuit", addable = false,
     ),

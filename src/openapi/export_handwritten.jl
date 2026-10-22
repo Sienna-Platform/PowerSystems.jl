@@ -436,6 +436,51 @@ function to_openapi(branch::GenericArcImpedance, refs::OpenAPIRefs, ::NaturalUni
     )
 end
 
+# ── SeriesCompensator ──────────────────────────────────────────────────────────
+# As `GenericArcImpedance`: export writes the "COMPONENT_BASE" `parameter_units` the import
+# side accepts; `r`/`x`/`reactance_limits` are system-base pu in both methods.
+
+function to_openapi(branch::SeriesCompensator, refs::OpenAPIRefs, ::ComponentBaseUnit)
+    return _series_compensator_to_openapi(branch, refs, 1.0, CU)
+end
+
+function to_openapi(branch::SeriesCompensator, refs::OpenAPIRefs, ::NaturalUnit)
+    return _series_compensator_to_openapi(branch, refs, get_base_power(refs), NU)
+end
+
+# `power_base` scales the system-base pu power fields: 1.0 for pu, the system base for natural.
+function _series_compensator_to_openapi(
+    branch::SeriesCompensator,
+    refs::OpenAPIRefs,
+    power_base::Float64,
+    units,
+)
+    return PO.SeriesCompensator(;
+        id = component_id(refs, branch),
+        name = get_name(branch),
+        available = get_available(branch),
+        active_power_flow = get_active_power_flow(branch, u"SU") * power_base,
+        reactive_power_flow = get_reactive_power_flow(branch, u"SU") * power_base,
+        arc = component_id(refs, get_arc(branch)),
+        r = get_r(branch, u"SU"),
+        x = get_x(branch, u"SU"),
+        rating = get_rating(branch, u"SU") * power_base,
+        control_mode = PO.SeriesCompensatorControlMode(string(get_control_mode(branch))),
+        reactance_limits = _minmax_po_optional(get_reactance_limits(branch, u"SU")),
+        active_power_flow_setpoint = _scale_optional_po(
+            get_active_power_flow_setpoint(branch, u"SU"), power_base,
+        ),
+        rating_b = _scale_optional_po(get_rating_b(branch, u"SU"), power_base),
+        rating_c = _scale_optional_po(get_rating_c(branch, u"SU"), power_base),
+        operational_flow_limit = _operational_flow_limit_po_scaled_optional(
+            get_operational_flow_limit(branch, u"SU"), power_base,
+        ),
+        base_power = get_base_power(refs),
+        parameter_units = PO.ImpedanceUnitBasis("COMPONENT_BASE"),
+        power_units = _power_units_string(units),
+    )
+end
+
 # ── DiscreteControlledACBranch ───────────────────────────────────────────────────
 # `active_power_flow`/`reactive_power_flow`/`r`/`x` are declared `SU` (system base), `rating`
 # is declared `CU` — numerically identical for this type since `add_component!` keeps its
