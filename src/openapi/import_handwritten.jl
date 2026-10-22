@@ -30,7 +30,8 @@
 
 for T in (
     :Area, :LoadZone, :TransmissionInterface, :Line, :GenericArcImpedance,
-    :DiscreteControlledACBranch, :TransformerCircuit, :EnergyReservoirStorage,
+    :DiscreteControlledACBranch, :SeriesCompensator, :TransformerCircuit,
+    :EnergyReservoirStorage,
     :TwoTerminalGenericHVDCLine, :TwoTerminalLCCLine, :TwoTerminalVSCLine, :Source,
     :InterconnectingConverter, :HybridSystem, :FACTSControlDevice,
 )
@@ -327,6 +328,57 @@ function from_openapi(po::PO.GenericArcImpedance, refs::OpenAPIRefs, ::NaturalUn
         x = po.x,
         base_power = sbp,
         operational_flow_limit = _or_default(po.operational_flow_limit, nothing, /, sbp),
+        input_basis = u"CU",
+    )
+end
+
+# ── SeriesCompensator ──────────────────────────────────────────────────────────
+# As `GenericArcImpedance`: `r`/`x`/`reactance_limits` pass through as system-base pu, and
+# only the "COMPONENT_BASE" `parameter_units` is accepted. Power fields divide by the
+# system base under `NaturalUnit`.
+
+const SERIES_COMPENSATOR_PARAM_UNITS_IMPLEMENTED = Set(["COMPONENT_BASE"])
+
+_check_series_compensator_param_units(po) = _check_unit_basis(
+    po.parameter_units,
+    SERIES_COMPENSATOR_PARAM_UNITS_IMPLEMENTED,
+    "SeriesCompensator.parameter_units",
+    " for $(po.name)",
+    "COMPONENT_BASE",
+)
+
+function from_openapi(po::PO.SeriesCompensator, refs::OpenAPIRefs, ::ComponentBaseUnit)
+    return _series_compensator_from_openapi(po, refs, 1.0)
+end
+
+function from_openapi(po::PO.SeriesCompensator, refs::OpenAPIRefs, ::NaturalUnit)
+    sbp = _require_base_power("SeriesCompensator", po.id, po.base_power)
+    return _series_compensator_from_openapi(po, refs, sbp)
+end
+
+# `power_base` is 1.0 when the power fields are already pu, the system base when natural.
+function _series_compensator_from_openapi(po, refs::OpenAPIRefs, power_base::Float64)
+    _check_series_compensator_param_units(po)
+    return SeriesCompensator(;
+        name = po.name,
+        available = po.available,
+        active_power_flow = po.active_power_flow / power_base,
+        reactive_power_flow = po.reactive_power_flow / power_base,
+        arc = refs[po.arc],
+        r = po.r,
+        x = po.x,
+        rating = po.rating / power_base,
+        control_mode = _or_default(po.control_mode, SeriesCompensatorControlMode.FIXED),
+        reactance_limits = _or_default(po.reactance_limits, nothing),
+        active_power_flow_setpoint = _or_default(
+            po.active_power_flow_setpoint, nothing, /, power_base,
+        ),
+        rating_b = _or_default(po.rating_b, nothing, /, power_base),
+        rating_c = _or_default(po.rating_c, nothing, /, power_base),
+        base_power = _require_base_power("SeriesCompensator", po.id, po.base_power),
+        operational_flow_limit = _or_default(
+            po.operational_flow_limit, nothing, /, power_base,
+        ),
         input_basis = u"CU",
     )
 end
