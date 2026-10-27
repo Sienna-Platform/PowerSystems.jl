@@ -27,11 +27,11 @@ TimeSeries = "9e3dc215-6440-5c97-bce1-76c03772f85e"
 TypeTree = "04da0e3b-1cad-4b2c-a963-fc1602baf1af"
 
 [sources]
-InfrastructureSystems = {url = "https://github.com/Sienna-Platform/InfrastructureSystems.jl.git", rev = "IS4"}
-PowerFlowFileParser = {url = "https://github.com/Sienna-Platform/PowerFlowFileParser.jl.git", rev = "psy6"}
-PowerSystemCaseBuilder = {url = "https://github.com/Sienna-Platform/PowerSystemCaseBuilder.jl.git", rev = "psy6"}
+InfrastructureSystems = {url = "https://github.com/Sienna-Platform/InfrastructureSystems.jl.git", rev = "jd/sdk-0.3"}
+PowerFlowFileParser = {url = "https://github.com/Sienna-Platform/PowerFlowFileParser.jl.git", rev = "jd/sdk-0.3"}
+PowerSystemCaseBuilder = {url = "https://github.com/Sienna-Platform/PowerSystemCaseBuilder.jl.git", rev = "jd/sdk-0.3"}
 PowerSystems = {path = ".."}
-PowerTableDataParser = {url = "https://github.com/NLR-Sienna/PowerTableDataParser.jl.git", rev = "psy6"}
+PowerTableDataParser = {url = "https://github.com/NLR-Sienna/PowerTableDataParser.jl.git", rev = "jd/sdk-0.3"}
 
 [compat]
 CSV = "~0.10"

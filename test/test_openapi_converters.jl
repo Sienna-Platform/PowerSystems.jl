@@ -1548,7 +1548,7 @@ end
         ac_control = PSY.PO.VSCACControlModes("AC_REACTIVE_POWER"),
         power_factor_setpoint = 1.0,
         power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
-        loss_function = PSY.PC.LossCurve(;
+        loss_function = PSY.PC.CurrentLossCurve(;
             power_units = PSY.IC.UnitSystem("COMPONENT_BASE"),
             value_curve = PSY.PC.LossValueCurve(
                 PSY.PC.InputOutputCurve(;
