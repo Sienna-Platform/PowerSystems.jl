@@ -346,7 +346,7 @@ function to_openapi(conv::InterconnectingConverter, refs::OpenAPIRefs, ::Compone
         reactive_power_limits = _minmax_po_optional(get_reactive_power_limits(conv, u"CU")),
         dc_current = get_dc_current(conv),
         max_dc_current = get_max_dc_current(conv),
-        loss_function = _hvdc_loss_to_openapi(get_loss_function(conv)),
+        loss_function = _converter_loss_to_openapi(get_loss_function(conv)),
         dc_control = PO.VSCDCControlModes(string(get_dc_control(conv))),
         ac_control = PO.VSCACControlModes(string(get_ac_control(conv))),
         dc_power_setpoint = _optional_to_wire(get_dc_power_setpoint(conv, u"CU")),
@@ -378,7 +378,7 @@ function to_openapi(conv::InterconnectingConverter, refs::OpenAPIRefs, ::Natural
         ),
         dc_current = get_dc_current(conv),
         max_dc_current = get_max_dc_current(conv),
-        loss_function = _hvdc_loss_to_openapi(get_loss_function(conv)),
+        loss_function = _converter_loss_to_openapi(get_loss_function(conv)),
         dc_control = PO.VSCDCControlModes(string(get_dc_control(conv))),
         ac_control = PO.VSCACControlModes(string(get_ac_control(conv))),
         dc_power_setpoint = _scale_optional_po(get_dc_power_setpoint(conv, u"CU"), dbp),
@@ -807,14 +807,20 @@ end
 
 # The schemas' `LossCurve` records the basis in its own required `power_units`, so the curve
 # travels on whatever basis PSY holds it and import reads the same field back (`_hvdc_loss`).
-function _hvdc_loss_to_openapi(loss::AnyLossCurve)
-    return PC.LossCurve(;
+function _loss_curve_to_openapi(::Type{T}, loss::AnyLossCurve) where {T}
+    return T(;
         power_units = _power_units_string(get_power_units(loss)),
         value_curve = PC.LossValueCurve(
             convert_cost_to_openapi(loss_curve_to_openapi(loss)),
         ),
     )
 end
+
+_hvdc_loss_to_openapi(loss::AnyLossCurve) = _loss_curve_to_openapi(PC.LossCurve, loss)
+
+# A converter's loss is a function of its DC current: the schemas type it `CurrentLossCurve`.
+_converter_loss_to_openapi(loss::AnyLossCurve) =
+    _loss_curve_to_openapi(PC.CurrentLossCurve, loss)
 
 function to_openapi(
     hvdc::TwoTerminalGenericHVDCLine,

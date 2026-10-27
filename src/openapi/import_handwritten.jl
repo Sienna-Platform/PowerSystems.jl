@@ -1235,7 +1235,7 @@ _vsc_converter_loss(curve, ::Any) = error(
 """A `LossCurve` unwrapped like `_hvdc_loss`, keeping its stated unit system; absent falls
 back to the descriptor default (a zero linear loss curve)."""
 _vsc_loss(::Union{Nothing, IC.Absent}) = LossCurve(LinearCurve(0.0), NaturalUnit())
-function _vsc_loss(l::PC.LossCurve)
+function _vsc_loss(l::Union{PC.LossCurve, PC.CurrentLossCurve})
     units = _power_units_marker("LossCurve", "", l.power_units.value)
     return _vsc_converter_loss(convert_cost(_unwrap_oneof(l.value_curve)), units)
 end

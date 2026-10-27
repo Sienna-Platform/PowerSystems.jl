@@ -88,7 +88,7 @@ convert_cost(fd::IC.QuadraticFunctionData) =
     QuadraticFunctionData(fd.quadratic_term, fd.proportional_term, fd.constant_term)
 # `points` is generated as a bare `Vector`, so converting once restores inference for the loop.
 function convert_cost(fd::IC.PiecewiseLinearData)
-    points = convert(Vector{IC.XYCoords}, fd.points)
+    points = convert(Vector{IC.TwoDimensionalFunctionPoint}, fd.points)
     return PiecewiseLinearData([(x = p.x, y = p.y) for p in points])
 end
 convert_cost(fd::IC.PiecewiseStepData) = PiecewiseStepData(fd.x_coords, fd.y_coords)
@@ -246,6 +246,21 @@ function convert_cost(c::PC.CostCurve, store)
     end
 end
 
+# PSY's FuelCurve records no fuel unit, so a document must state its fuel in MMBtu.
+const WIRE_FUEL_UNITS = "MMBTU"
+
+function _require_wire_fuel_units(f::PC.FuelCurve)
+    units = f.fuel_units.value
+    if units != WIRE_FUEL_UNITS
+        throw(
+            ArgumentError(
+                "convert_cost: FuelCurve.fuel_units is $units; only $WIRE_FUEL_UNITS is supported",
+            ),
+        )
+    end
+    return
+end
+
 """Resolve `FuelCurve`'s two mutually exclusive fields. `store` is unused on the
 scalar branch, so a plain `fuel_cost` converts with no active import at all."""
 _fuel_cost_fields(::Any, fuel_cost::Real, ::Nothing) = (Float64(fuel_cost), nothing)
@@ -260,6 +275,7 @@ _fuel_cost_fields(::Any, ::Real, ::Integer) = error(
 )
 
 function convert_cost(f::PC.FuelCurve, store)
+    _require_wire_fuel_units(f)
     value_curve = convert_cost(_require(f.value_curve, "FuelCurve.value_curve"), store)
     vom_cost = _vom_cost(f.vom_cost)
     fuel_cost, fuel_cost_time_series = _fuel_cost_fields(
@@ -300,6 +316,7 @@ variant pulls the ambient store itself via its own 1-arg method, regardless of w
 only fetched when `fuel_cost_time_series` is actually present, so a scalar `fuel_cost` with a
 non-time-series value curve still converts with no active import bound at all."""
 function convert_cost(f::PC.FuelCurve)
+    _require_wire_fuel_units(f)
     value_curve = convert_cost(_require(f.value_curve, "FuelCurve.value_curve"))
     vom_cost = _vom_cost(f.vom_cost)
     fuel_cost, fuel_cost_time_series = _fuel_cost_fields_ambient(

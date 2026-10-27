@@ -29,8 +29,8 @@ _po_cost_curve(; power_units = "NATURAL_UNITS", vom_cost = _po_linear_io(0.0, 0.
     @test PSY.convert_cost(
         PSY.IC.PiecewiseLinearData(;
             points = [
-                PSY.IC.XYCoords(; x = 0.0, y = 0.0),
-                PSY.IC.XYCoords(; x = 10.0, y = 100.0),
+                PSY.IC.TwoDimensionalFunctionPoint(; x = 0.0, y = 0.0),
+                PSY.IC.TwoDimensionalFunctionPoint(; x = 10.0, y = 100.0),
             ],
         ),
     ) == PiecewiseLinearData([(x = 0.0, y = 0.0), (x = 10.0, y = 100.0)])
@@ -108,6 +108,7 @@ end
 
     fc = PSY.convert_cost(
         PSY.PC.FuelCurve(;
+            fuel_units = PSY.PC.FuelUnit("MMBTU"),
             power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
             value_curve = PSY.PC.ValueCurve(
                 PSY.PC.IncrementalCurve(;
@@ -127,6 +128,17 @@ end
     @test fc isa FuelCurve
     @test get_fuel_cost(fc) == 3.5
     @test get_vom_cost(fc) == LinearCurve(0.0)
+
+    # PSY records no fuel unit: a document in another unit is refused, not reinterpreted.
+    @test_throws ArgumentError PSY.convert_cost(
+        PSY.PC.FuelCurve(;
+            fuel_units = PSY.PC.FuelUnit("GJ"),
+            power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
+            value_curve = PSY.PC.ValueCurve(_po_linear_io(1.0, 0.0)),
+            fuel_cost = 3.5,
+            vom_cost = _po_linear_io(0.0, 0.0),
+        ),
+    )
 end
 
 @testset "convert_cost: vom_cost must be LINEAR" begin
@@ -334,6 +346,7 @@ end
     # Neither set.
     @test_throws ErrorException PSY.convert_cost(
         PSY.PC.FuelCurve(;
+            fuel_units = PSY.PC.FuelUnit("MMBTU"),
             power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
             value_curve = PSY.PC.ValueCurve(_po_linear_io(1.0, 0.0)),
             vom_cost = _po_linear_io(0.0, 0.0),
@@ -343,6 +356,7 @@ end
     # resolves, so this errors before ever touching a store.
     @test_throws ErrorException PSY.convert_cost(
         PSY.PC.FuelCurve(;
+            fuel_units = PSY.PC.FuelUnit("MMBTU"),
             power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
             value_curve = PSY.PC.ValueCurve(_po_linear_io(1.0, 0.0)),
             fuel_cost = 3.5,
@@ -389,6 +403,7 @@ end
         fc = PSY._with_import_store(store) do
             PSY.convert_cost(
                 PSY.PC.FuelCurve(;
+                    fuel_units = PSY.PC.FuelUnit("MMBTU"),
                     power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
                     value_curve = PSY.PC.ValueCurve(
                         PSY.PC.TimeSeriesIncrementalCurve(;
@@ -419,6 +434,7 @@ end
     # the 1-arg ambient form errors rather than silently treating it as absent.
     @test_throws ErrorException PSY.convert_cost(
         PSY.PC.FuelCurve(;
+            fuel_units = PSY.PC.FuelUnit("MMBTU"),
             power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
             value_curve = PSY.PC.ValueCurve(_po_linear_io(1.0, 0.0)),
             fuel_cost_time_series = 7,
