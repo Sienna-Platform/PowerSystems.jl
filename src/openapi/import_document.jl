@@ -637,6 +637,7 @@ function from_openapi(
     end
 
     load_supplemental_attribute_associations!(sys, refs, doc)
+    _check_all_time_series_labels(sys)
 
     return sys
 end
