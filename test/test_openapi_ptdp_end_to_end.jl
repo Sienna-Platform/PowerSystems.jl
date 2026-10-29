@@ -391,8 +391,8 @@ end
     @test isfile(descriptors)
 
     # (1) BUILD, entirely inside PowerTableDataParser.
-    # PSB's filter drops the fixture's known-bad rows (reservoir series on a reservoir-less
-    # unit), which the parser rejects.
+    # PSB's filter drops the test system data's known-bad rows (reservoir series on a
+    # reservoir-less unit), which the parser rejects.
     table_data = PSB.fix_known_stale_time_series_data(
         PDP.PowerSystemTableData(rts_dir, 100.0, descriptors),
     )
