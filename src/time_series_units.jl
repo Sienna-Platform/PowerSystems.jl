@@ -231,10 +231,11 @@ _reserve_mw(r, u) =
         ustrip(u"MW", convert_units(r, 1.0 * u, ACTIVE_POWER, u"MW"))
     end
 
-function _capacity_conversion_factor(c, from, to)
-    (_is_per_unit(from) && !_is_per_unit(to)) || return ustrip(to, 1.0 * from)
-    return ustrip(to, _cu_capacity(c) * (1.0 * from / u"CU"))
-end
+# Both sides go through natural units, CU (or CU/hr) being that much of the capacity.
+_capacity_conversion_factor(c, from, to) =
+    Unitful.uconvert(Unitful.NoUnits, _in_natural_units(c, from) / _in_natural_units(c, to))
+
+_in_natural_units(c, u) = _is_per_unit(u) ? _cu_capacity(c) * (1.0 * u / u"CU") : 1.0 * u
 
 """
     get_time_series_values(T, component, name, units; quantity = nothing, kwargs...)
@@ -275,6 +276,13 @@ function get_time_series_values(
     isnothing(quantity) || _quantity_symbol(quantity) === q ||
         throw(
             ArgumentError("time series \"$name\" is $q, not $quantity"),
+        )
+    _is_per_unit(units) && isnothing(_cu_rule(component, q)) &&
+        throw(
+            ArgumentError(
+                "$(summary(component)) has no CU base for $q, so \"$name\" cannot be read " *
+                "in $units; read it in natural units",
+            ),
         )
     values = IS.get_time_series_values(
         T,

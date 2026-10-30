@@ -125,6 +125,15 @@ end
 
     add_time_series!(sys, battery, energy; base_field = :storage_capacity)
     @test read_ts(battery, "energy", u"MW*hr") ≈ [80.0, 160.0, 320.0]
+
+    # Stored in natural units, read in CU: a fraction of the capacity (500 MWh; 400 MWh).
+    mwh = SingleTimeSeries("mwh", ta .* 1000.0; unit_system = IS.NU, units = "MW*hr",
+        quantity_kind = "energy")
+    add_time_series!(sys, reservoir, mwh)
+    @test read_ts(reservoir, "mwh", u"CU") ≈ [0.4, 0.8, 1.6]
+    @test read_ts(reservoir, "mwh", u"MW*hr") ≈ [200.0, 400.0, 800.0]
+    add_time_series!(sys, battery, mwh)
+    @test read_ts(battery, "mwh", u"CU") ≈ [0.5, 1.0, 2.0]
 end
 
 @testset "Time series units labels: power on generators, fluids on reservoirs" begin
@@ -169,6 +178,21 @@ end
     )
     @test get_time_series_values(SingleTimeSeries, energy_reservoir, "inflow", u"MW") ≈
           [100.0, 200.0, 400.0]
+    # Stored in MW, read in CU/hr: a fraction of the 500 MWh capacity per hour.
+    add_time_series!(
+        sys,
+        energy_reservoir,
+        series(
+            "inflow_mw";
+            unit_system = IS.NU,
+            units = "MW",
+            quantity_kind = "ActivePower",
+        ),
+    )
+    @test get_time_series_values(
+        SingleTimeSeries, energy_reservoir, "inflow_mw", u"CU/hr") ≈ [0.2, 0.4, 0.8] ./ 500
+    @test_throws Unitful.DimensionError get_time_series_values(
+        SingleTimeSeries, energy_reservoir, "inflow_mw", u"CU")
     @test_throws ArgumentError add_time_series!(
         sys,
         energy_reservoir,
@@ -197,6 +221,11 @@ end
     add_time_series!(sys, head_reservoir, inflow)
     @test get_time_series_values(SingleTimeSeries, head_reservoir, "inflow", u"m^3/hr") ≈
           [0.2, 0.4, 0.8] .* 3600
+    # No CU base on a head reservoir, so a natural head is not read as a fraction of 300 m.
+    @test_throws ArgumentError get_time_series_values(
+        SingleTimeSeries, head_reservoir, "target", u"CU")
+    @test_throws ArgumentError get_time_series_values(
+        SingleTimeSeries, head_reservoir, "inflow", u"CU/hr")
 
     # Series loaded without `add_time_series!` (the document import path) are checked too.
     IS.add_time_series!(
