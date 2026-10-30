@@ -218,12 +218,18 @@ _ts_conversion_factor(c, ::Unitful.Units, from, to) =
     _capacity_conversion_factor(c, from, to)
 _ts_conversion_factor(c::HydroReservoir, ::UnitCategory, from, to) =
     _capacity_conversion_factor(c, from, to)
-# A reserve's CU is a fraction of its `requirement`, which the field getter reads in `to`.
-function _ts_conversion_factor(r::_RequirementReserve, cat::UnitCategory, from, to)
-    _is_per_unit(from) || return ustrip(to, convert_units(r, 1.0 * from, cat, to))
-    _is_per_unit(to) && return ustrip(to, 1.0 * from)
-    return get_requirement(r, to)
-end
+# A reserve's CU is a fraction of its `requirement`, but the units engine reads CU as a
+# fraction of `base_power`. So CU is resolved here and only natural units and SU reach the
+# engine; both sides go through MW.
+_ts_conversion_factor(r::_RequirementReserve, ::ActivePowerCategory, from, to) =
+    _reserve_mw(r, from) / _reserve_mw(r, to)
+
+_reserve_mw(r, u) =
+    if _is_per_unit(u)
+        get_requirement(r, u"MW")
+    else
+        ustrip(u"MW", convert_units(r, 1.0 * u, ACTIVE_POWER, u"MW"))
+    end
 
 function _capacity_conversion_factor(c, from, to)
     (_is_per_unit(from) && !_is_per_unit(to)) || return ustrip(to, 1.0 * from)

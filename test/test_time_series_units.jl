@@ -228,6 +228,19 @@ end
     @test read_ts(u"MW") ≈ [10.0, 20.0, 40.0]
     @test read_ts(u"SU") ≈ [0.1, 0.2, 0.4]
     @test read_ts(u"CU") ≈ [0.2, 0.4, 0.8]
+
+    # Stored in natural units, CU still means a fraction of the 50 MW requirement.
+    add_time_series!(
+        sys,
+        reserve,
+        SingleTimeSeries("mw", ta .* 100.0; unit_system = IS.NU, units = "MW",
+            quantity_kind = "active_power"),
+    )
+    read_mw(units) = get_time_series_values(SingleTimeSeries, reserve, "mw", units)
+    @test read_mw(u"MW") ≈ [20.0, 40.0, 80.0]
+    @test read_mw(u"CU") ≈ [0.4, 0.8, 1.6]
+    @test read_mw(u"SU") ≈ [0.2, 0.4, 0.8]
+
     @test_throws ArgumentError add_time_series!(
         sys,
         reserve,
