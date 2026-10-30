@@ -1581,7 +1581,8 @@ get_forecast_interval(sys::System; kwargs...) =
 Build a `ForecastReader` over every forecast in the system of `time_series_type`.
 `resolution` is required and pins the reader to one forecast resolution; `name` and
 `features` further narrow the match. `lazy = true` hands back multi-dimensional windows
-as `PermutedDimsArray`s over the stored values rather than reordered copies; see
+that need no element decoding as `PermutedDimsArray`s over the stored values rather than
+reordered copies; a window whose element type is decoded is built fresh either way. See
 `InfrastructureSystems.build_forecast_reader`.
 
 Drive the reader with `read_forecast_window!` and read each entry with
