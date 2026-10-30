@@ -231,11 +231,22 @@ _reserve_mw(r, u) =
         ustrip(u"MW", convert_units(r, 1.0 * u, ACTIVE_POWER, u"MW"))
     end
 
-# Both sides go through natural units, CU (or CU/hr) being that much of the capacity.
+# Both sides go through natural units: CU (or CU/hr) is that much of the capacity, and SU
+# (SU*hr for energy) that much of the system base in MW. Water quantities have no SU, so
+# reading one in SU fails on its dimension.
 _capacity_conversion_factor(c, from, to) =
     Unitful.uconvert(Unitful.NoUnits, _in_natural_units(c, from) / _in_natural_units(c, to))
 
-_in_natural_units(c, u) = _is_per_unit(u) ? _cu_capacity(c) * (1.0 * u / u"CU") : 1.0 * u
+function _in_natural_units(c, u)
+    _is_per_unit(u) && return _cu_capacity(c) * (1.0 * u / u"CU")
+    _is_system_base(u) && return _get_system_base_power(c) * u"MW" * (1.0 * u / u"SU")
+    return 1.0 * u
+end
+
+_is_system_base(u::Unitful.Units) = any(
+    d -> typeof(d).parameters[1] === :GenericSystemBase,
+    typeof(Unitful.dimension(u)).parameters[1],
+)
 
 """
     get_time_series_values(T, component, name, units; quantity = nothing, kwargs...)

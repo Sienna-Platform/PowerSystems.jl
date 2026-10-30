@@ -134,6 +134,11 @@ end
     @test read_ts(reservoir, "mwh", u"MW*hr") ≈ [200.0, 400.0, 800.0]
     add_time_series!(sys, battery, mwh)
     @test read_ts(battery, "mwh", u"CU") ≈ [0.5, 1.0, 2.0]
+
+    # Energy reads in SU*hr, on the 100 MVA system base; plain SU is a power.
+    @test read_ts(reservoir, "energy", u"SU*hr") ≈ [1.0, 2.0, 4.0]
+    @test read_ts(reservoir, "mwh", u"SU*hr") ≈ [2.0, 4.0, 8.0]
+    @test read_ts(battery, "energy", u"SU*hr") ≈ [0.8, 1.6, 3.2]
 end
 
 @testset "Time series units labels: power on generators, fluids on reservoirs" begin
@@ -193,6 +198,11 @@ end
         SingleTimeSeries, energy_reservoir, "inflow_mw", u"CU/hr") ≈ [0.2, 0.4, 0.8] ./ 500
     @test_throws Unitful.DimensionError get_time_series_values(
         SingleTimeSeries, energy_reservoir, "inflow_mw", u"CU")
+    # An energy reservoir's flows read in SU, on the 100 MVA system base.
+    @test get_time_series_values(SingleTimeSeries, energy_reservoir, "inflow", u"SU") ≈
+          [1.0, 2.0, 4.0]
+    @test get_time_series_values(SingleTimeSeries, energy_reservoir, "inflow_mw", u"SU") ≈
+          [0.2, 0.4, 0.8] ./ 100
     @test_throws ArgumentError add_time_series!(
         sys,
         energy_reservoir,
@@ -226,6 +236,9 @@ end
         SingleTimeSeries, head_reservoir, "target", u"CU")
     @test_throws ArgumentError get_time_series_values(
         SingleTimeSeries, head_reservoir, "inflow", u"CU/hr")
+    # Water has no system base.
+    @test_throws Unitful.DimensionError get_time_series_values(
+        SingleTimeSeries, head_reservoir, "inflow", u"SU")
 
     # Series loaded without `add_time_series!` (the document import path) are checked too.
     IS.add_time_series!(
