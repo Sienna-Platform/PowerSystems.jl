@@ -1427,7 +1427,9 @@ of the same type with the same name but with different data.
 
 Returns a key that can later be used to retrieve the time series data.
 
-Throws ArgumentError if the component is not stored in the system.
+Throws ArgumentError if the component is not stored in the system, or if the series' units
+labels do not fit the component. A series stored in CU must pass `base_field`, the
+component field its values are a fraction of (`:base_power` for power).
 
 # Examples
 ```julia
@@ -1457,7 +1459,9 @@ function add_time_series!(
     component::Component,
     time_series::TimeSeriesData;
     features::Union{Nothing, Dict} = nothing,
+    base_field::Union{Nothing, Symbol} = nothing,
 )
+    _validate_time_series_labels(component, time_series, base_field)
     return IS.add_time_series!(sys.data, component, time_series; features = features)
 end
 
@@ -1494,7 +1498,11 @@ function add_time_series!(
     components,
     time_series::TimeSeriesData;
     features::Union{Nothing, Dict} = nothing,
+    base_field::Union{Nothing, Symbol} = nothing,
 )
+    for component in components
+        _validate_time_series_labels(component, time_series, base_field)
+    end
     return IS.add_time_series!(sys.data, components, time_series; features = features)
 end
 

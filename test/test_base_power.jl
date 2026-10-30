@@ -707,8 +707,9 @@ end
         TimeArray(collect(DateTime("2024-01-01"):Hour(1):DateTime("2024-01-01T02:00")),
             [0.5, 0.6, 0.7]);
         unit_system = CU,
+        quantity_kind = "active_power",
     )
-    add_time_series!(sys, gen, ts)
+    add_time_series!(sys, gen, ts; base_field = :base_power)
     @test_throws ArgumentError rebase_component!(gen, 500.0)
     @test get_base_power(gen) == 250.0  # untouched
 

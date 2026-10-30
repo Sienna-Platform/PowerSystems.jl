@@ -34,9 +34,11 @@ Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 [sources]
 InfrastructureSystems = {rev = "IS4", url = "https://github.com/Sienna-Platform/InfrastructureSystems.jl.git"}
 PowerFlowFileParser = {rev = "psy6", url = "https://github.com/Sienna-Platform/PowerFlowFileParser.jl.git"}
-PowerSystemCaseBuilder = {rev = "psy6", url = "https://github.com/Sienna-Platform/PowerSystemCaseBuilder.jl.git"}
+# TODO: revert to rev = "psy6" once the PowerSystemCaseBuilder time series PR merges.
+PowerSystemCaseBuilder = {rev = "lk/ts-base-field", url = "https://github.com/Sienna-Platform/PowerSystemCaseBuilder.jl.git"}
 PowerSystems = {path = ".."}
-PowerTableDataParser = {url = "https://github.com/NLR-Sienna/PowerTableDataParser.jl.git", rev = "psy6"}
+# TODO: revert to NLR-Sienna rev = "psy6" once PowerTableDataParser.jl#18 merges.
+PowerTableDataParser = {url = "https://github.com/luke-kiernan/PowerTableDataParser.jl.git", rev = "lk/ts-translate-multipliers"}
 
 [compat]
 InfrastructureSystems = "3"
