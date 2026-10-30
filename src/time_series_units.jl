@@ -49,14 +49,21 @@ _is_per_unit(u::Unitful.Units) = any(
 )
 
 # A `units` string names the units outright (`"CU hr^-1"` for a CU flow). Without one,
-# `unit_system = CU` means plain `u"CU"`, and so does a natural label beside it (`"MW"` with
-# `CU`, which names the quantity's natural unit rather than the stored one).
+# `unit_system = CU` means plain `u"CU"`. With one, `CU` requires it to be per unit: a
+# natural label beside `CU` would contradict it.
 function _ts_source_units(labels)
     is_cu = IS.get_unit_system(labels) isa IS.ComponentBaseUnit
     s = IS.get_units(labels)
     isnothing(s) && return is_cu ? u"CU" : nothing
     units = get(() -> Unitful.uparse(s), STRING_TO_UNIT, s)
-    return (is_cu && !_is_per_unit(units)) ? u"CU" : units
+    is_cu && !_is_per_unit(units) &&
+        throw(
+            ArgumentError(
+                "time series \"$(IS.get_name(labels))\" declares unit_system CU but units " *
+                "$units; with CU, units must be per unit (CU, or CU hr^-1 for a flow) or unset",
+            ),
+        )
+    return units
 end
 
 """

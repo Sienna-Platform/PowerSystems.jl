@@ -18,6 +18,32 @@
     @test read_ts("cu", u"CU"; quantity = :ActivePower) ≈ [0.2, 0.4, 0.8]
     @test_throws ArgumentError read_ts("cu", u"CU"; quantity = :ReactivePower)
 
+    # With CU, `units` may only restate the per-unit basis; a natural label contradicts it.
+    for units in ("MW", "m^3/s", "kg")
+        @test_throws ArgumentError add_time_series!(
+            sys,
+            gen,
+            series("cu_$units"; unit_system = IS.CU, units = units,
+                quantity_kind = "active_power");
+            base_field = :base_power,
+        )
+    end
+    add_time_series!(
+        sys,
+        gen,
+        series("cu_explicit"; unit_system = IS.CU, units = "CU",
+            quantity_kind = "active_power");
+        base_field = :base_power,
+    )
+    @test read_ts("cu_explicit", u"MW") ≈ [50.0, 100.0, 200.0]
+    @test_throws ArgumentError add_time_series!(
+        sys,
+        gen,
+        series("cu_rate"; unit_system = IS.CU, units = "CU hr^-1",
+            quantity_kind = "active_power");
+        base_field = :base_power,
+    )
+
     # Natural units: the dimension must match the quantity.
     add_time_series!(sys, gen, series("mw"; units = "MW", quantity_kind = "ActivePower"))
     @test read_ts("mw", u"CU") ≈ [0.2, 0.4, 0.8] ./ 250.0
