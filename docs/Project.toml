@@ -1,4 +1,6 @@
 [deps]
+# Listed only so its [sources] pin applies, until InfraStore releases the readers' `lazy` option.
+InfraStore = "6aee0376-896a-4a59-96ff-12f221c99746"
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
@@ -28,6 +30,7 @@ TypeTree = "04da0e3b-1cad-4b2c-a963-fc1602baf1af"
 
 [sources]
 InfrastructureSystems = {url = "https://github.com/Sienna-Platform/InfrastructureSystems.jl.git", rev = "IS4"}
+InfraStore = {url = "https://github.com/NatLabRockies/infrastore.git", rev = "main", subdir = "julia/InfraStore.jl"}
 PowerFlowFileParser = {url = "https://github.com/Sienna-Platform/PowerFlowFileParser.jl.git", rev = "psy6"}
 PowerSystemCaseBuilder = {url = "https://github.com/Sienna-Platform/PowerSystemCaseBuilder.jl.git", rev = "psy6"}
 PowerSystems = {path = ".."}
@@ -37,6 +40,3 @@ PowerTableDataParser = {url = "https://github.com/NLR-Sienna/PowerTableDataParse
 CSV = "~0.10"
 Documenter = "=1.15.0"
 julia = "^1.10"
-
-[extras]
-InfraStore = "6aee0376-896a-4a59-96ff-12f221c99746"

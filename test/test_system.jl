@@ -423,6 +423,57 @@ end
     end
 end
 
+@testset "Test lazy readers match copying readers" begin
+    sys = System(100.0)
+    bus = ACBus(nothing)
+    bus.bustype = ACBusTypes.REF
+    add_component!(sys, bus)
+    gens = ThermalStandard[]
+    for i in 1:2
+        gen = ThermalStandard(nothing)
+        gen.name = string(i)
+        gen.bus = bus
+        add_component!(sys, gen)
+        push!(gens, gen)
+    end
+
+    # N-D values need no element decoding, so a lazy read hands back views over them.
+    initial_time = Dates.DateTime("2020-01-01T00:00:00")
+    resolution = Dates.Hour(1)
+    cube_axes = [IS.TimeSeriesAxis("zone", ["a", "b"]), IS.TimeSeriesAxis("bus", [1, 2, 3])]
+    add_time_series!(
+        sys,
+        gens,
+        SingleTimeSeries("cube", initial_time, resolution, rand(24, 2, 3);
+            value_axes = cube_axes),
+    )
+    transform_single_time_series!(sys, Dates.Hour(6), Dates.Hour(6))
+
+    copying = build_forecast_reader(sys, DeterministicSingleTimeSeries;
+        resolution = resolution)
+    lazy = build_forecast_reader(sys, DeterministicSingleTimeSeries;
+        resolution = resolution, lazy = true)
+    t = get_forecast_reader_timeline(lazy).initial_timestamp
+    read_forecast_window!(copying, t)
+    read_forecast_window!(lazy, t)
+    @test length(lazy) == 2
+    for i in 1:length(lazy)
+        @test get_forecast_window(lazy, i) isa PermutedDimsArray
+        @test get_forecast_window(lazy, i) == get_forecast_window(copying, i)
+    end
+
+    copying = build_static_time_series_reader(sys; resolution = resolution)
+    lazy = build_static_time_series_reader(sys; resolution = resolution, lazy = true)
+    read_static_time_series_values!(copying, initial_time + Dates.Hour(3))
+    read_static_time_series_values!(lazy, initial_time + Dates.Hour(3))
+    @test get_num_static_time_series_groups(lazy) == 1
+    for g in 1:get_num_static_time_series_groups(lazy)
+        @test IS.get_static_time_series_group_values(lazy, g) isa PermutedDimsArray
+        @test IS.get_static_time_series_group_values(lazy, g) ==
+              IS.get_static_time_series_group_values(copying, g)
+    end
+end
+
 @testset "Test bulk add of time series" begin
     sys = System(100.0)
     bus = ACBus(nothing)

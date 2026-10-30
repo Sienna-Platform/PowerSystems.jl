@@ -1580,7 +1580,10 @@ get_forecast_interval(sys::System; kwargs...) =
 """
 Build a `ForecastReader` over every forecast in the system of `time_series_type`.
 `resolution` is required and pins the reader to one forecast resolution; `name` and
-`features` further narrow the match.
+`features` further narrow the match. `lazy = true` hands back multi-dimensional windows
+that need no element decoding as `PermutedDimsArray`s over the stored values rather than
+reordered copies; a window whose element type is decoded is built fresh either way. See
+`InfrastructureSystems.build_forecast_reader`.
 
 Drive the reader with `read_forecast_window!` and read each entry with
 `get_forecast_window`. Forecasts that share an underlying array are read from storage
@@ -1593,6 +1596,7 @@ build_forecast_reader(
     resolution::Dates.Period,
     name::Union{Nothing, AbstractString} = nothing,
     features::Union{Nothing, Dict} = nothing,
+    lazy::Bool = false,
 ) where {T <: Forecast} =
     IS.build_forecast_reader(
         sys.data,
@@ -1600,12 +1604,13 @@ build_forecast_reader(
         resolution = resolution,
         name = name,
         features = features,
+        lazy = lazy,
     )
 
 """
 Build a `StaticTimeSeriesReader` over every `SingleTimeSeries` in the system.
 `resolution` is required and pins the reader to one resolution; `name` and
-`features` further narrow the match.
+`features` further narrow the match. `lazy` is as for [`build_forecast_reader`](@ref).
 
 Drive the reader with `read_static_time_series_values!` and read each entry with
 `get_static_time_series_value`. Series with the same element type are packed into one
@@ -1616,12 +1621,14 @@ build_static_time_series_reader(
     resolution::Dates.Period,
     name::Union{Nothing, AbstractString} = nothing,
     features::Union{Nothing, Dict} = nothing,
+    lazy::Bool = false,
 ) =
     IS.build_static_time_series_reader(
         sys.data;
         resolution = resolution,
         name = name,
         features = features,
+        lazy = lazy,
     )
 
 """
