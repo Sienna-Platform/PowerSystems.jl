@@ -25,11 +25,11 @@ Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 InfraStore = "6aee0376-896a-4a59-96ff-12f221c99746"
 
 [sources]
-# IS4 carries the association-id keys and the arrays-only sidecar (IS #632, merged), the
-# EnumX move this branch follows (IS #643, merged), and InfraStore 0.14 is registered with
-# its own native library - the co-dev pins are retired.
-InfrastructureSystems = {url = "https://github.com/Sienna-Platform/InfrastructureSystems.jl.git", rev = "lk/lazy-reader-windows"}
-InfraStore = {url = "https://github.com/NatLabRockies/infrastore.git", rev = "lk/lazy-permute-reader-values", subdir = "julia/InfraStore.jl"}
+# IS4 carries the association-id keys and the arrays-only sidecar (IS #632, merged) and the
+# EnumX move this branch follows (IS #643, merged). InfraStore tracks main until a release
+# includes the readers' `lazy` option (infrastore #117).
+InfrastructureSystems = {url = "https://github.com/Sienna-Platform/InfrastructureSystems.jl.git", rev = "IS4"}
+InfraStore = {url = "https://github.com/NatLabRockies/infrastore.git", rev = "main", subdir = "julia/InfraStore.jl"}
 
 [compat]
 # For the `[extras]` entry; Aqua requires every extra to carry a compat bound.
