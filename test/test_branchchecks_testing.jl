@@ -604,3 +604,68 @@ end
     end
     @test get_component(TwoWindingTransformer, sys, "badntp") === nothing
 end
+
+@testset "Zero switch ratings warn on add_component!" begin
+    sys = System(100.0)
+    bus_from = ACBus(
+        1, "swfrom", true, ACBusTypes.REF, 0, 1.0, (min = 0.9, max = 1.05), 230,
+        nothing, nothing,
+    )
+    bus_to = ACBus(
+        2, "swto", true, ACBusTypes.PQ, 0, 1.0, (min = 0.9, max = 1.05), 230,
+        nothing, nothing,
+    )
+    add_component!(sys, bus_from)
+    add_component!(sys, bus_to)
+    arc = Arc(; from = bus_from, to = bus_to)
+    add_component!(sys, arc)
+    make_switch(name, rating, rating_b) = DiscreteControlledACBranch(;
+        name = name, available = true, active_power_flow = 0.0,
+        reactive_power_flow = 0.0, arc = arc, r = 0.0, x = 0.0001,
+        rating = rating, rating_b = rating_b, input_basis = u"CU",
+    )
+
+    @test_logs (
+        :warn,
+        r"rating = 0\. A zero rating is treated as a real limit.*INFINITE_BOUND",
+    ) match_mode =
+        :any add_component!(sys, make_switch("zero", 0.0, nothing))
+    @test_logs (:warn, r"rating_b = 0\..*leave rating_b as nothing") match_mode = :any add_component!(
+        sys,
+        make_switch("zero_b", 1.0, 0.0),
+    )
+    @test_logs min_level = Logging.Warn add_component!(sys, make_switch("rated", 1.0, 0.8))
+    @test_logs min_level = Logging.Warn add_component!(
+        sys,
+        make_switch("unbounded", PSY.INFINITE_BOUND, nothing),
+    )
+end
+
+@testset "Placeholder branches leave optional ratings unset" begin
+    for T in (Line, DiscreteControlledACBranch)
+        branch = T(nothing)
+        @test get_rating(branch, u"CU") == 0.0
+        @test isnothing(get_rating_b(branch, u"CU"))
+        @test isnothing(get_rating_c(branch, u"CU"))
+    end
+
+    sys = System(100.0)
+    bus_from = ACBus(
+        1, "phfrom", true, ACBusTypes.REF, 0, 1.0, (min = 0.9, max = 1.05), 230,
+        nothing, nothing,
+    )
+    bus_to = ACBus(
+        2, "phto", true, ACBusTypes.PQ, 0, 1.0, (min = 0.9, max = 1.05), 230,
+        nothing, nothing,
+    )
+    add_component!(sys, bus_from)
+    add_component!(sys, bus_to)
+    arc = Arc(; from = bus_from, to = bus_to)
+    add_component!(sys, arc)
+    switch = DiscreteControlledACBranch(nothing)
+    set_arc!(switch, arc)
+    @test_logs (:warn, r"has rating = 0\. A zero rating") min_level = Logging.Warn add_component!(
+        sys,
+        switch,
+    )
+end
