@@ -52,8 +52,8 @@ A [`TwoWindingTransformer`](@ref) has one circuit; a [`ThreeWindingTransformer`]
 - `controlled_reactive_power_flow_limits::Union{Nothing, MinMax}`: (default: `nothing`) Regulated reactive-power-flow target band (PSS/E VMA/VMI); `nothing` unless `control_objective` selects it.
 - `controlled_active_power_flow_limits::Union{Nothing, MinMax}`: (default: `nothing`) Regulated active-power-flow target band (PSS/E VMA/VMI); `nothing` unless `control_objective` selects it.
 - `number_of_tap_positions::Int`: (default: `33`) Number of tap positions
-- `rating_b::Union{Nothing, Float64}`: (default: `nothing`) Second current rating; entered in MVA.
-- `rating_c::Union{Nothing, Float64}`: (default: `nothing`) Third current rating; entered in MVA.
+- `rating_b::Union{Nothing, Float64}`: (default: `nothing`) Short-term thermal rating (MVA): Rate B in PSS/E, the flow allowed for a limited time, such as after a contingency. `nothing` when not set.
+- `rating_c::Union{Nothing, Float64}`: (default: `nothing`) Emergency thermal rating (MVA): Rate C in PSS/E, the highest flow allowed for a brief period. `nothing` when not set.
 - `active_power_flow::Float64`: (default: `0.0`) Initial condition of active power flow through this circuit (MW)
 - `reactive_power_flow::Float64`: (default: `0.0`) Initial condition of reactive power flow through this circuit (MVAR)
 - `base_power::Float64`: (default: `100.0`) Base power (MVA) for [per unitization](@ref per_unit) of this circuit
@@ -94,9 +94,9 @@ mutable struct TransformerCircuit <: DeviceParameter
     controlled_active_power_flow_limits::Union{Nothing, MinMax}
     "Number of tap positions"
     number_of_tap_positions::Int
-    "Second current rating; entered in MVA."
+    "Short-term thermal rating (MVA): Rate B in PSS/E, the flow allowed for a limited time, such as after a contingency. `nothing` when not set."
     rating_b::Union{Nothing, Float64}
-    "Third current rating; entered in MVA."
+    "Emergency thermal rating (MVA): Rate C in PSS/E, the highest flow allowed for a brief period. `nothing` when not set."
     rating_c::Union{Nothing, Float64}
     "Initial condition of active power flow through this circuit (MW)"
     active_power_flow::Float64

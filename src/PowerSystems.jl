@@ -419,6 +419,7 @@ export ThermalFuels
 export OperationalStates
 export CommitmentModes
 export StorageTech
+export HydroPumpTurbineStatus
 export StateTypes
 export ReservoirDataType
 export MotorLoadTechnology

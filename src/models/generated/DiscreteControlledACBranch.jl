@@ -14,6 +14,8 @@ This file is auto-generated. Do not edit.
         r::Float64
         x::Float64
         rating::Float64
+        rating_b::Union{Nothing, Float64}
+        rating_c::Union{Nothing, Float64}
         discrete_branch_type::DiscreteControlledBranchType.Value
         branch_status::DiscreteControlledBranchStatus.Value
         normal_branch_status::DiscreteControlledBranchStatus.Value
@@ -34,6 +36,8 @@ Used to represent switches and breakers connecting AC Buses
 - `r::Float64`: Resistance in pu ([`SYSTEM_BASE`](@ref per_unit)), validation range: `(0, 4)`
 - `x::Float64`: Reactance in pu ([`SYSTEM_BASE`](@ref per_unit)), validation range: `(0, 4)`
 - `rating::Float64`: Thermal rating (MVA). Flow on the branch must be between -`rating` and `rating`. When defining a branch before it is attached to a `System`, `rating` must be in pu ([`SYSTEM_BASE`](@ref per_unit)) using the base power of the `System` it will be attached to. Displays in component base ([`DEVICE_BASE`](@ref per_unit)) by default, unlike most converted fields which default to system base
+- `rating_b::Union{Nothing, Float64}`: (default: `nothing`) Short-term thermal rating (MVA): Rate B in PSS/E, the flow allowed for a limited time, such as after a contingency. `nothing` when not set.
+- `rating_c::Union{Nothing, Float64}`: (default: `nothing`) Emergency thermal rating (MVA): Rate C in PSS/E, the highest flow allowed for a brief period. `nothing` when not set.
 - `discrete_branch_type::DiscreteControlledBranchType.Value`: (default: `DiscreteControlledBranchType.OTHER`) Type of discrete control
 - `branch_status::DiscreteControlledBranchStatus.Value`: (default: `DiscreteControlledBranchStatus.CLOSED`) Open or Close status
 - `normal_branch_status::DiscreteControlledBranchStatus.Value`: (default: `DiscreteControlledBranchStatus.CLOSED`) Normal (as-designed) open or close status of the device
@@ -60,6 +64,10 @@ mutable struct DiscreteControlledACBranch <: ACTransmission
     x::Float64
     "Thermal rating (MVA). Flow on the branch must be between -`rating` and `rating`. When defining a branch before it is attached to a `System`, `rating` must be in pu ([`SYSTEM_BASE`](@ref per_unit)) using the base power of the `System` it will be attached to. Displays in component base ([`DEVICE_BASE`](@ref per_unit)) by default, unlike most converted fields which default to system base"
     rating::Float64
+    "Short-term thermal rating (MVA): Rate B in PSS/E, the flow allowed for a limited time, such as after a contingency. `nothing` when not set."
+    rating_b::Union{Nothing, Float64}
+    "Emergency thermal rating (MVA): Rate C in PSS/E, the highest flow allowed for a brief period. `nothing` when not set."
+    rating_c::Union{Nothing, Float64}
     "Type of discrete control"
     discrete_branch_type::DiscreteControlledBranchType.Value
     "Open or Close status"
@@ -76,17 +84,19 @@ mutable struct DiscreteControlledACBranch <: ACTransmission
     internal::InfrastructureSystemsInternal
 end
 
-function DiscreteControlledACBranch(name, available, active_power_flow, reactive_power_flow, arc, r, x, rating, discrete_branch_type=DiscreteControlledBranchType.OTHER, branch_status=DiscreteControlledBranchStatus.CLOSED, normal_branch_status=DiscreteControlledBranchStatus.CLOSED, base_power=100.0, operational_flow_limit=nothing, ext=Dict{String, Any}(), )
-    DiscreteControlledACBranch(name, available, active_power_flow, reactive_power_flow, arc, r, x, rating, discrete_branch_type, branch_status, normal_branch_status, base_power, operational_flow_limit, ext, InfrastructureSystemsInternal(), )
+function DiscreteControlledACBranch(name, available, active_power_flow, reactive_power_flow, arc, r, x, rating, rating_b=nothing, rating_c=nothing, discrete_branch_type=DiscreteControlledBranchType.OTHER, branch_status=DiscreteControlledBranchStatus.CLOSED, normal_branch_status=DiscreteControlledBranchStatus.CLOSED, base_power=100.0, operational_flow_limit=nothing, ext=Dict{String, Any}(), )
+    DiscreteControlledACBranch(name, available, active_power_flow, reactive_power_flow, arc, r, x, rating, rating_b, rating_c, discrete_branch_type, branch_status, normal_branch_status, base_power, operational_flow_limit, ext, InfrastructureSystemsInternal(), )
 end
 
-function DiscreteControlledACBranch(; name, available, active_power_flow, reactive_power_flow, arc, r, x, rating, discrete_branch_type=DiscreteControlledBranchType.OTHER, branch_status=DiscreteControlledBranchStatus.CLOSED, normal_branch_status=DiscreteControlledBranchStatus.CLOSED, base_power=100.0, operational_flow_limit=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Unitful.Units, )
-    value = DiscreteControlledACBranch(name, available, _placeholder(active_power_flow), _placeholder(reactive_power_flow), arc, _placeholder(r), _placeholder(x), _placeholder(rating), discrete_branch_type, branch_status, normal_branch_status, base_power, _placeholder(operational_flow_limit), ext, internal, )
+function DiscreteControlledACBranch(; name, available, active_power_flow, reactive_power_flow, arc, r, x, rating, rating_b=nothing, rating_c=nothing, discrete_branch_type=DiscreteControlledBranchType.OTHER, branch_status=DiscreteControlledBranchStatus.CLOSED, normal_branch_status=DiscreteControlledBranchStatus.CLOSED, base_power=100.0, operational_flow_limit=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Unitful.Units, )
+    value = DiscreteControlledACBranch(name, available, _placeholder(active_power_flow), _placeholder(reactive_power_flow), arc, _placeholder(r), _placeholder(x), _placeholder(rating), _placeholder(rating_b), _placeholder(rating_c), discrete_branch_type, branch_status, normal_branch_status, base_power, _placeholder(operational_flow_limit), ext, internal, )
     set_active_power_flow!(value, _tag(active_power_flow, input_basis, Val(:mw)))
     set_reactive_power_flow!(value, _tag(reactive_power_flow, input_basis, Val(:mvar)))
     set_r!(value, _tag(r, input_basis, Val(:ohm)))
     set_x!(value, _tag(x, input_basis, Val(:ohm)))
     set_rating!(value, _tag(rating, input_basis, Val(:mva)))
+    set_rating_b!(value, _tag(rating_b, input_basis, Val(:mva)))
+    set_rating_c!(value, _tag(rating_c, input_basis, Val(:mva)))
     set_operational_flow_limit!(value, _tag(operational_flow_limit, input_basis, Val(:mw)))
     return value
 end
@@ -103,6 +113,8 @@ function DiscreteControlledACBranch(::Nothing)
         r=0.0,
         x=0.0,
         rating=0.0,
+        rating_b=nothing,
+        rating_c=nothing,
         discrete_branch_type=DiscreteControlledBranchType.BREAKER,
         branch_status=DiscreteControlledBranchStatus.CLOSED,
         normal_branch_status=DiscreteControlledBranchStatus.CLOSED,
@@ -159,6 +171,22 @@ get_rating(value::DiscreteControlledACBranch) = _units_arg_required(get_rating, 
 get_rating_unitful(value::DiscreteControlledACBranch) = _units_arg_required(get_rating_unitful, value, :rating, Val(:mva))
 InfrastructureSystems.display_units_arg(::typeof(get_rating), ::Type{DiscreteControlledACBranch}) = u"CU"
 InfrastructureSystems.display_units_arg(::typeof(get_rating_unitful), ::Type{DiscreteControlledACBranch}) = u"CU"
+"""Get [`DiscreteControlledACBranch`](@ref) `rating_b` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_rating_b_unitful`](@ref)."""
+get_rating_b(value::DiscreteControlledACBranch, units) = InfrastructureSystems._strip_units(get_value(value, Val(:rating_b), Val(:mva), units))
+"""Get [`DiscreteControlledACBranch`](@ref) `rating_b` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_rating_b`](@ref)."""
+get_rating_b_unitful(value::DiscreteControlledACBranch, units) = get_value(value, Val(:rating_b), Val(:mva), units)
+get_rating_b(value::DiscreteControlledACBranch) = _units_arg_required(get_rating_b, value, :rating_b, Val(:mva))
+get_rating_b_unitful(value::DiscreteControlledACBranch) = _units_arg_required(get_rating_b_unitful, value, :rating_b, Val(:mva))
+InfrastructureSystems.display_units_arg(::typeof(get_rating_b), ::Type{DiscreteControlledACBranch}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_rating_b_unitful), ::Type{DiscreteControlledACBranch}) = u"SU"
+"""Get [`DiscreteControlledACBranch`](@ref) `rating_c` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_rating_c_unitful`](@ref)."""
+get_rating_c(value::DiscreteControlledACBranch, units) = InfrastructureSystems._strip_units(get_value(value, Val(:rating_c), Val(:mva), units))
+"""Get [`DiscreteControlledACBranch`](@ref) `rating_c` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_rating_c`](@ref)."""
+get_rating_c_unitful(value::DiscreteControlledACBranch, units) = get_value(value, Val(:rating_c), Val(:mva), units)
+get_rating_c(value::DiscreteControlledACBranch) = _units_arg_required(get_rating_c, value, :rating_c, Val(:mva))
+get_rating_c_unitful(value::DiscreteControlledACBranch) = _units_arg_required(get_rating_c_unitful, value, :rating_c, Val(:mva))
+InfrastructureSystems.display_units_arg(::typeof(get_rating_c), ::Type{DiscreteControlledACBranch}) = u"SU"
+InfrastructureSystems.display_units_arg(::typeof(get_rating_c_unitful), ::Type{DiscreteControlledACBranch}) = u"SU"
 """Get [`DiscreteControlledACBranch`](@ref) `discrete_branch_type`."""
 get_discrete_branch_type(value::DiscreteControlledACBranch) = value.discrete_branch_type
 """Get [`DiscreteControlledACBranch`](@ref) `branch_status`."""
@@ -199,6 +227,12 @@ set_x!(value::DiscreteControlledACBranch, val::_UntaggedNumber) = _units_tag_req
 """Set [`DiscreteControlledACBranch`](@ref) `rating`."""
 set_rating!(value::DiscreteControlledACBranch, val) = value.rating = set_value(value, Val(:rating), val, Val(:mva))
 set_rating!(value::DiscreteControlledACBranch, val::_UntaggedNumber) = _units_tag_required(set_rating!, value, :rating, Val(:mva), val)
+"""Set [`DiscreteControlledACBranch`](@ref) `rating_b`."""
+set_rating_b!(value::DiscreteControlledACBranch, val) = value.rating_b = set_value(value, Val(:rating_b), val, Val(:mva))
+set_rating_b!(value::DiscreteControlledACBranch, val::_UntaggedNumber) = _units_tag_required(set_rating_b!, value, :rating_b, Val(:mva), val)
+"""Set [`DiscreteControlledACBranch`](@ref) `rating_c`."""
+set_rating_c!(value::DiscreteControlledACBranch, val) = value.rating_c = set_value(value, Val(:rating_c), val, Val(:mva))
+set_rating_c!(value::DiscreteControlledACBranch, val::_UntaggedNumber) = _units_tag_required(set_rating_c!, value, :rating_c, Val(:mva), val)
 """Set [`DiscreteControlledACBranch`](@ref) `discrete_branch_type`."""
 set_discrete_branch_type!(value::DiscreteControlledACBranch, val) = value.discrete_branch_type = val
 """Set [`DiscreteControlledACBranch`](@ref) `branch_status`."""

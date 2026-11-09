@@ -16,6 +16,33 @@
     @test PowerSystems.get_bustype(bus) == ACBusTypes.SLACK
 end
 
+@testset "Supplemental positional constructors forward to the generated field order" begin
+    arc = Arc(ACBus(nothing), ACBus(nothing))
+    line = Line("l", true, 0.1, 0.2, arc, 0.01, 0.02, (from = 0.0, to = 0.0), 1.5, 0.5)
+    @test get_arc(line) === arc
+    @test get_active_power_flow(line, u"CU") == 0.1
+    @test get_reactive_power_flow(line, u"CU") == 0.2
+    @test get_rating(line, u"CU") == 1.5
+    @test get_angle_limits(line) == (min = -0.5, max = 0.5)
+
+    bus = ACBus(
+        7,
+        "b7",
+        true,
+        "PV",
+        0.1,
+        1.02,
+        (min = 0.9, max = 1.1),
+        230.0,
+        nothing,
+        nothing,
+    )
+    @test get_bustype(bus) == ACBusTypes.PV
+    @test get_angle(bus) == 0.1
+    @test get_magnitude(bus, u"CU") == 1.02
+    @test get_base_voltage(bus) == 230.0
+end
+
 @testset "OperationalCost demo constructors" begin
     for T in InteractiveUtils.subtypes(PSY.OperationalCost)
         isabstracttype(T) || (@test T(nothing) isa IS.InfrastructureSystemsType)
