@@ -171,18 +171,21 @@ end
 
 #### Narrowing post-contingency monitoring
 
-Every concrete [`Outage`](@ref) carries a `monitored_components` field of type `Set{Int}`.
-It holds the ids of the [`Device`](@ref)s whose post-contingency state a downstream simulation package (e.g., PowerSimulations) should model when this outage occurs.
-Limiting the set reduces the number of post-outage variables and constraints in security-constrained models.
+Every concrete [`Outage`](@ref) carries a `monitored_components` field of type
+`Vector{Base.UUID}`. It identifies the [`Device`](@ref)s whose post-contingency
+state a downstream simulation package (e.g., PowerSimulations) should model when
+this outage occurs. Limiting the list reduces the number of post-outage variables
+and constraints in security-constrained models.
 
-PowerSystems itself does not attach meaning to the contents of the set.
-In particular, an empty `monitored_components` is left for the consumer to interpret.
-Typical conventions are "monitor nothing" (skip post-contingency modeling) or "monitor everything" (preserve full N-1 behavior).
-Pick the policy that matches your downstream model.
+PowerSystems itself does not attach meaning to the contents of the list. In
+particular, an empty `monitored_components` is left for the consumer to
+interpret — typical conventions are "monitor nothing" (skip post-contingency
+modeling) or "monitor everything" (preserve full N-1 behavior). Pick the policy
+that matches your downstream model.
 
-The constructor accepts any iterable whose elements are `Int` ids or
+The constructor accepts any iterable whose elements are `Base.UUID` or
 `Device` — for example a `Vector`, a generator expression, or the iterator
-returned by [`get_components`](@ref). Devices are converted to ids
+returned by [`get_components`](@ref). Devices are converted to UUIDs
 internally:
 
 ```julia
@@ -201,15 +204,16 @@ outage_all = FixedForcedOutage(;
 )
 ```
 
-Use the dedicated accessors to inspect or update the set at any time. The
-singular `add_/remove_*!` methods take one `Int` id or `Device`; the plural
+Use the dedicated accessors to inspect or update the list at any time. The
+singular `add_/remove_*!` methods take one `UUID` or `Device`; the plural
 `add_/remove_*s!` and `set_` methods take any iterable of either.
-`set_monitored_components!` replaces the existing set:
+`set_monitored_components!` requires the list to be empty — call
+`clear_monitored_components!` first to replace an existing list:
 
 ```julia
-get_monitored_components(outage)                                  # → Set{Int}
+get_monitored_components(outage)                                  # → Vector{UUID}
 clear_monitored_components!(outage)                               # wipe
-set_monitored_components!(outage, get_components(Line, system))   # populate
+set_monitored_components!(outage, get_components(Line, system))   # populate (must be empty)
 add_monitored_component!(outage, gen2)                            # append one (deduped)
 add_monitored_components!(outage, [gen1, gen2])                   # append many
 remove_monitored_component!(outage, gen1)                         # remove one
@@ -217,8 +221,8 @@ remove_monitored_components!(outage, [gen1, gen2])                # remove many
 ```
 
 When `system.runchecks == true`, `add_supplemental_attribute!` resolves each
-id against the parent system and raises an `ArgumentError` for any id that
-does not point to a `Device` in the system. With `runchecks = false`, ids are
+UUID against the parent system and raises an `ArgumentError` for any UUID that
+does not point to a `Device` in the system. With `runchecks = false`, UUIDs are
 accepted as-is and resolution is deferred to the consumer.
 
 ### Plant Attributes

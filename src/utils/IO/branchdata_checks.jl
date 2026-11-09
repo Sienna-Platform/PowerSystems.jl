@@ -167,7 +167,7 @@ function validate_component_with_system(switch::DiscreteControlledACBranch, ::Sy
             continue
         end
         hint = if field === :rating
-            "for an unrated switch use a large value such as INFINITE_BOUND, as the parser does"
+            "for an unrated switch use a large value such as INFINITE_BOUND"
         else
             "leave $(field) as nothing when it is not specified"
         end
