@@ -790,7 +790,8 @@ end
     @test storage_natural.energy_units.value == "MWH"
 
     storage_device = PSY.to_openapi(storage, refs, CU)
-    @test storage_device.storage_capacity == 2.0
+    # MWh under either unit system (`energy_units`).
+    @test storage_device.storage_capacity == 400.0
     @test storage_device.rating == 0.5
 end
 

@@ -891,9 +891,10 @@ end
 
 # ── EnergyReservoirStorage ──────────────────────────────────────────────────────
 # `storage_capacity` is energy (MWh when `energy_units == "MWH"`, the only basis
-# implemented) but still divides by `base_power` under `NaturalUnit` — the
-# duration-in-hours convention PSY documents for this field, same rule as every other
-# `:mva`-tagged field. `storage_level_limits`, `initial_storage_capacity_level`,
+# implemented) under either document unit system: the schema selects its unit by
+# `energy_units` alone, not by `power_units`. PSY stores it per unit on `base_power` (the
+# duration-in-hours convention PSY documents for this field), so both methods divide by
+# `base_power`. `storage_level_limits`, `initial_storage_capacity_level`,
 # `efficiency`, `conversion_factor`, `storage_target`, `self_discharge` are dimensionless
 # ratios and pass through in both methods.
 const ENERGY_UNITS_IMPLEMENTED = Set(["MWH"])
@@ -912,13 +913,14 @@ function from_openapi(
     ::ComponentBaseUnit,
 )
     _check_energy_units(po)
+    dbp = _require_base_power("EnergyReservoirStorage", po.id, po.base_power)
     return EnergyReservoirStorage(;
         name = po.name,
         available = po.available,
         bus = refs[po.bus],
         prime_mover_type = PrimeMovers.Value(po.prime_mover_type.value),
         storage_technology_type = StorageTech.Value(po.storage_technology_type.value),
-        storage_capacity = po.storage_capacity,
+        storage_capacity = po.storage_capacity / dbp,
         storage_level_limits = _from_wire(po.storage_level_limits),
         initial_storage_capacity_level = po.initial_storage_capacity_level,
         rating = po.rating,
@@ -928,7 +930,7 @@ function from_openapi(
         efficiency = _from_wire(po.efficiency),
         reactive_power = po.reactive_power,
         reactive_power_limits = _or_default(po.reactive_power_limits, nothing),
-        base_power = _require_base_power("EnergyReservoirStorage", po.id, po.base_power),
+        base_power = dbp,
         operation_cost = convert_cost(po.operation_cost),
         conversion_factor = _or_default(po.conversion_factor, 1.0),
         storage_target = _or_default(po.storage_target, 0.0),

@@ -1154,14 +1154,15 @@ function to_openapi(res::HydroReservoir, refs::OpenAPIRefs, ::NaturalUnit)
 end
 
 # ── EnergyReservoirStorage ──────────────────────────────────────────────────────
-# `storage_capacity` scales like any other component-base field even though it is an energy
-# quantity (MWh), matching import's own rule for uniform division. `storage_level_limits`,
+# `storage_capacity` is written in MWh under either document unit system, since the schema
+# selects its unit by `energy_units` alone (import divides by `base_power` in both methods). `storage_level_limits`,
 # `initial_storage_capacity_level`, `efficiency`, `conversion_factor`, `storage_target`,
 # `self_discharge` are dimensionless and pass through in both methods. `energy_units` is always
 # emitted as "MWH" (the only basis implemented on either side, per import's
 # `_check_energy_units`).
 
 function to_openapi(storage::EnergyReservoirStorage, refs::OpenAPIRefs, ::ComponentBaseUnit)
+    base = _get_base_power(storage)
     return PO.EnergyReservoirStorage(;
         id = component_id(refs, storage),
         name = get_name(storage),
@@ -1173,7 +1174,7 @@ function to_openapi(storage::EnergyReservoirStorage, refs::OpenAPIRefs, ::Compon
                 storage,
             )),
         ),
-        storage_capacity = get_storage_capacity(storage, u"CU"),
+        storage_capacity = get_storage_capacity(storage, u"CU") * base,
         energy_units = PO.EnergyUnitBasis("MWH"),
         storage_level_limits = _minmax_po(get_storage_level_limits(storage)),
         initial_storage_capacity_level = get_initial_storage_capacity_level(storage),

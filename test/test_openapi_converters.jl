@@ -1086,7 +1086,9 @@ end
 
     storage_device =
         PSY.from_openapi(storage_po, refs, CU)
-    @test get_storage_capacity(storage_device, u"CU") == 400.0
+    # MWh under either unit system (`energy_units`), so 400 MWh on a 200 MVA base is 2 pu here
+    # too; the power fields stay per unit.
+    @test get_storage_capacity(storage_device, u"CU") == 2.0
     @test get_rating(storage_device, u"CU") == 100.0
 
     # An omitted basis selector takes the schema default.
