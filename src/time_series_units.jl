@@ -221,25 +221,17 @@ _is_system_base(u::Unitful.Units) = any(
     typeof(Unitful.dimension(u)).parameters[1],
 )
 
-"""
-    get_time_series_values(T, component, name, units; quantity = nothing, kwargs...)
-
-Return the values of a time series converted to `units`: `u"CU"`, `u"SU"`, or a natural unit
-such as `u"MW"`. The series must carry units labels. `quantity` (e.g. `:ActivePower`), when
-given, must match the series' own, so a generic `u"CU"` read cannot mistake reactive power
-for active power. The remaining keywords are those of the unitless method.
-"""
-function get_time_series_values(
+# Check that the series named `name` can be read in `units`, and return the factor that
+# converts its stored values there.
+function _ts_read_factor(
     ::Type{T},
     component::Component,
     name::AbstractString,
-    units::Unitful.Units;
-    quantity::Union{Nothing, Symbol, AbstractString} = nothing,
-    resolution::Union{Nothing, Dates.Period} = nothing,
-    interval::Union{Nothing, Dates.Period} = nothing,
-    start_time::Union{Nothing, Dates.DateTime} = nothing,
-    len::Union{Nothing, Int} = nothing,
-    features::Union{Nothing, Dict} = nothing,
+    units::Unitful.Units,
+    quantity,
+    resolution,
+    interval,
+    features,
 ) where {T <: TimeSeriesData}
     md = get_time_series_metadata(
         T,
@@ -268,6 +260,36 @@ function get_time_series_values(
                 "in $units; read it in natural units",
             ),
         )
+    return _ts_conversion_factor(
+        component,
+        TIME_SERIES_QUANTITIES[q],
+        source,
+        units,
+    )::Float64
+end
+
+"""
+    get_time_series_values(T, component, name, units; quantity = nothing, kwargs...)
+
+Return the values of a time series converted to `units`: `u"CU"`, `u"SU"`, or a natural unit
+such as `u"MW"`. The series must carry units labels. `quantity` (e.g. `:ActivePower`), when
+given, must match the series' own, so a generic `u"CU"` read cannot mistake reactive power
+for active power. The remaining keywords are those of the unitless method.
+"""
+function get_time_series_values(
+    ::Type{T},
+    component::Component,
+    name::AbstractString,
+    units::Unitful.Units;
+    quantity::Union{Nothing, Symbol, AbstractString} = nothing,
+    resolution::Union{Nothing, Dates.Period} = nothing,
+    interval::Union{Nothing, Dates.Period} = nothing,
+    start_time::Union{Nothing, Dates.DateTime} = nothing,
+    len::Union{Nothing, Int} = nothing,
+    features::Union{Nothing, Dict} = nothing,
+) where {T <: TimeSeriesData}
+    factor = _ts_read_factor(
+        T, component, name, units, quantity, resolution, interval, features)
     values = IS.get_time_series_values(
         T,
         component,
@@ -278,11 +300,38 @@ function get_time_series_values(
         len = len,
         features = features,
     )
-    return values .*
-           _ts_conversion_factor(
+    return values .* factor
+end
+
+"""
+    get_time_series_array(T, component, name, units; quantity = nothing, kwargs...)
+
+Return a time series as a `TimeArray` with its values converted to `units`, as
+[`get_time_series_values`](@ref) does with the same arguments.
+"""
+function get_time_series_array(
+    ::Type{T},
+    component::Component,
+    name::AbstractString,
+    units::Unitful.Units;
+    quantity::Union{Nothing, Symbol, AbstractString} = nothing,
+    resolution::Union{Nothing, Dates.Period} = nothing,
+    interval::Union{Nothing, Dates.Period} = nothing,
+    start_time::Union{Nothing, Dates.DateTime} = nothing,
+    len::Union{Nothing, Int} = nothing,
+    features::Union{Nothing, Dict} = nothing,
+) where {T <: TimeSeriesData}
+    factor = _ts_read_factor(
+        T, component, name, units, quantity, resolution, interval, features)
+    ta = IS.get_time_series_array(
+        T,
         component,
-        TIME_SERIES_QUANTITIES[q],
-        source,
-        units,
-    )::Float64
+        name;
+        resolution = resolution,
+        interval = interval,
+        start_time = start_time,
+        len = len,
+        features = features,
+    )
+    return TimeSeries.TimeArray(TimeSeries.timestamp(ta), TimeSeries.values(ta) .* factor)
 end

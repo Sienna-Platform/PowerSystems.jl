@@ -25,6 +25,11 @@
     @test read_ts("cu", u"MW") ≈ [50.0, 100.0, 200.0]
     @test read_ts("cu", u"SU") ≈ [0.5, 1.0, 2.0]
     @test read_ts("cu", u"CU"; quantity = :ActivePower) ≈ [0.2, 0.4, 0.8]
+    ta_mw = get_time_series_array(SingleTimeSeries, gen, "cu", u"MW")
+    @test TimeSeries.timestamp(ta_mw) == collect(stamps)
+    @test TimeSeries.values(ta_mw) ≈ [50.0, 100.0, 200.0]
+    @test_throws ArgumentError get_time_series_array(
+        SingleTimeSeries, gen, "cu", u"CU"; quantity = :ReactivePower)
     @test_throws ArgumentError read_ts("cu", u"CU"; quantity = :ReactivePower)
     # The label is stored with the series.
     @test IS.get_per_unit_of(get_time_series(SingleTimeSeries, gen, "cu")) == "base_power"
