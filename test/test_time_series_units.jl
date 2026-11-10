@@ -4,8 +4,8 @@
     stamps = range(DateTime("2020-01-01"); step = Hour(1), length = 3)
     ta = TimeSeries.TimeArray(stamps, [0.2, 0.4, 0.8])
     series(name; kwargs...) = SingleTimeSeries(name, ta; kwargs...)
-    cu_series(name; kwargs...) = series(name; unit_system = IS.CU,
-        quantity_kind = "active_power", per_unit_of = "base_power", kwargs...)
+    cu_series(name; kwargs...) =
+        series(name; quantity_kind = "active_power", per_unit_of = "base_power", kwargs...)
     read_ts(name, units; kwargs...) =
         get_time_series_values(SingleTimeSeries, gen, name, units; kwargs...)
 
@@ -35,16 +35,11 @@
     end
     add_time_series!(sys, gen, cu_series("cu_explicit"; units = "CU"))
     @test read_ts("cu_explicit", u"MW") ≈ [50.0, 100.0, 200.0]
-    # NU takes natural units only, and SU is not a stored basis.
+    # Per-unit units without per_unit_of name no base.
     @test_throws ArgumentError add_time_series!(
         sys,
         gen,
-        series("nu_cu"; unit_system = IS.NU, units = "CU", quantity_kind = "active_power"),
-    )
-    @test_throws ArgumentError add_time_series!(
-        sys,
-        gen,
-        series("su_mw"; unit_system = IS.SU, units = "MW", quantity_kind = "active_power"),
+        series("nu_cu"; units = "CU", quantity_kind = "active_power"),
     )
     @test_throws ArgumentError add_time_series!(
         sys,
@@ -65,9 +60,6 @@
     @test_throws ArgumentError add_time_series!(sys, shunt, cu_series("cu"))
     add_time_series!(sys, shunt, series("mw"; units = "MW", quantity_kind = "ActivePower"))
     @test_throws ArgumentError get_time_series_values(SingleTimeSeries, shunt, "mw", u"CU")
-    # Declaring NU means declaring units too.
-    @test_throws ArgumentError add_time_series!(sys, gen,
-        series("nu_bare"; unit_system = IS.NU))
     @test_throws ArgumentError add_time_series!(
         sys,
         gen,
@@ -150,8 +142,8 @@ end
     ta = TimeSeries.TimeArray(stamps, [0.2, 0.4, 0.8])
     read_ts(name, units) = get_time_series_values(SingleTimeSeries, battery, name, units)
 
-    energy(per_unit_of) = SingleTimeSeries("energy", ta; unit_system = IS.CU,
-        quantity_kind = "energy", per_unit_of = per_unit_of)
+    energy(per_unit_of) =
+        SingleTimeSeries("energy", ta; quantity_kind = "energy", per_unit_of = per_unit_of)
     @test_throws ArgumentError add_time_series!(sys, battery, energy("base_power"))
     add_time_series!(sys, battery, energy("storage_capacity"))
     @test read_ts("energy", u"MW*hr") ≈ [80.0, 160.0, 320.0]
@@ -160,7 +152,7 @@ end
     @test read_ts("energy", u"SU*hr") ≈ [0.8, 1.6, 3.2]
 
     # Stored in natural units, read in CU: a fraction of the 400 MWh capacity.
-    mwh = SingleTimeSeries("mwh", ta .* 1000.0; unit_system = IS.NU, units = "MW*hr",
+    mwh = SingleTimeSeries("mwh", ta .* 1000.0; units = "MW*hr",
         quantity_kind = "energy")
     add_time_series!(sys, battery, mwh)
     @test read_ts("mwh", u"CU") ≈ [0.5, 1.0, 2.0]
@@ -170,14 +162,14 @@ end
     add_time_series!(
         sys,
         battery,
-        SingleTimeSeries("p", ta; unit_system = IS.CU, quantity_kind = "active_power",
+        SingleTimeSeries("p", ta; quantity_kind = "active_power",
             per_unit_of = "base_power"),
     )
     @test read_ts("p", u"MW") ≈ [0.2, 0.4, 0.8] .* battery_base
     add_time_series!(
         sys,
         battery,
-        SingleTimeSeries("p_mw", ta; unit_system = IS.NU, units = "MW",
+        SingleTimeSeries("p_mw", ta; units = "MW",
             quantity_kind = "active_power"),
     )
     @test read_ts("p_mw", u"CU") ≈ [0.2, 0.4, 0.8] ./ battery_base
@@ -212,7 +204,7 @@ end
     add_time_series!(
         sys,
         hydro,
-        series("max_active_power"; unit_system = IS.CU, quantity_kind = "active_power",
+        series("max_active_power"; quantity_kind = "active_power",
             per_unit_of = "base_power"),
     )
 
@@ -221,7 +213,7 @@ end
         ((energy_reservoir, "energy"), (energy_reservoir, "ActivePower"),
         (head_reservoir, "head"), (head_reservoir, "VolumeFlowRate"))
         for per_unit_of in (nothing, "storage_level_limits", "base_power")
-            cu = series("cu_$quantity"; unit_system = IS.CU, quantity_kind = quantity,
+            cu = series("cu_$quantity"; quantity_kind = quantity,
                 per_unit_of = per_unit_of)
             @test_throws ArgumentError add_time_series!(sys, owner, cu)
         end
@@ -229,9 +221,9 @@ end
 
     # An energy reservoir's levels are energy and its flows power.
     add_time_series!(sys, energy_reservoir,
-        series("level"; unit_system = IS.NU, units = "MW*hr", quantity_kind = "energy"))
+        series("level"; units = "MW*hr", quantity_kind = "energy"))
     add_time_series!(sys, energy_reservoir,
-        series("inflow"; unit_system = IS.NU, units = "MW", quantity_kind = "ActivePower"))
+        series("inflow"; units = "MW", quantity_kind = "ActivePower"))
     @test read_ts(energy_reservoir, "level", u"MW*hr") ≈ [0.2, 0.4, 0.8]
     @test read_ts(energy_reservoir, "inflow", u"kW") ≈ [200.0, 400.0, 800.0]
     # On the 100 MVA system base: SU*hr for the level, SU for the flow.
@@ -276,15 +268,19 @@ end
     read_ts(units) = get_time_series_values(SingleTimeSeries, reserve, "requirement", units)
 
     for per_unit_of in (nothing, "requirement", "base_power")
-        cu = SingleTimeSeries("requirement", ta; unit_system = IS.CU,
-            quantity_kind = "active_power", per_unit_of = per_unit_of)
+        cu = SingleTimeSeries(
+            "requirement",
+            ta;
+            quantity_kind = "active_power",
+            per_unit_of = per_unit_of,
+        )
         @test_throws ArgumentError add_time_series!(sys, reserve, cu)
     end
 
     add_time_series!(
         sys,
         reserve,
-        SingleTimeSeries("requirement", ta .* 100.0; unit_system = IS.NU, units = "MW",
+        SingleTimeSeries("requirement", ta .* 100.0; units = "MW",
             quantity_kind = "active_power"),
     )
     @test read_ts(u"MW") ≈ [20.0, 40.0, 80.0]
@@ -300,7 +296,7 @@ end
         sys,
         gen,
         SingleTimeSeries("cu", TimeSeries.TimeArray(stamps, [0.2, 0.4, 0.8]);
-            unit_system = IS.CU, quantity_kind = "active_power", per_unit_of = "base_power",
+            quantity_kind = "active_power", per_unit_of = "base_power",
         ),
     )
     mktempdir() do dir

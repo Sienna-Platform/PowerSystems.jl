@@ -1,8 +1,9 @@
 #=
 Units labels on time series (prototype for PowerSystems.jl#1807).
 
-InfrastructureSystems stores a series' `units`, `quantity_kind`, `unit_system` and
-`per_unit_of` labels without interpreting them. This file gives them meaning: a closed quantity vocabulary,
+InfrastructureSystems stores a series' `units`, `quantity_kind` and `per_unit_of` labels
+without interpreting them, and derives `unit_system` from them (CU with `per_unit_of`, NU
+with only `units`). This file gives them meaning: a closed quantity vocabulary,
 validation when a series is attached, and a getter that converts to the caller's units the
 way the generated field getters do.
 =#
@@ -40,45 +41,32 @@ function _ts_quantity(labels)
     return q
 end
 
-_is_per_unit(u::Unitful.Units) = any(
+_is_per_unit(u::Unitful.Units)::Bool = any(
     d -> typeof(d).parameters[1] === :GenericComponentBase,
     typeof(Unitful.dimension(u)).parameters[1],
 )
 
-# A `units` string names the units outright. Without one,
-# `unit_system = CU` means plain `u"CU"`. The basis and the units must agree: `CU` takes
-# per-unit units, `NU` natural ones. `SU` is not a stored basis.
-function _ts_source_units(labels)
+# A `units` string names the units outright. Without one, a series with `per_unit_of` (IS
+# derives CU from it) is plain `u"CU"`. The basis and the units must agree: CU takes
+# per-unit units, NU natural ones.
+function _ts_source_units(labels::Union{TimeSeriesData, IS.TimeSeriesMetadata})
     name = IS.get_name(labels)
-    system = IS.get_unit_system(labels)
-    system isa IS.SystemBaseUnit && throw(
+    is_cu = IS.get_unit_system(labels) isa IS.ComponentBaseUnit
+    s = IS.get_units(labels)
+    isnothing(s) && return is_cu ? u"CU" : nothing
+    units = get(() -> Unitful.uparse(s), STRING_TO_UNIT, s)::Unitful.Units
+    is_cu == _is_per_unit(units) && return units
+    is_cu && throw(
         ArgumentError(
-            "time series \"$name\" declares unit_system SU, which is not supported for " *
-            "stored values; store it in CU or NU",
+            "time series \"$name\" declares per_unit_of but units $units; with " *
+            "per_unit_of, units must be CU or unset",
         ),
     )
-    is_cu = system isa IS.ComponentBaseUnit
-    s = IS.get_units(labels)
-    system isa IS.NaturalUnit && isnothing(s) &&
-        throw(
-            ArgumentError("time series \"$name\" declares unit_system NU but no units"),
-        )
-    isnothing(s) && return is_cu ? u"CU" : nothing
-    units = get(() -> Unitful.uparse(s), STRING_TO_UNIT, s)
-    is_cu && !_is_per_unit(units) &&
-        throw(
-            ArgumentError(
-                "time series \"$name\" declares unit_system CU but units $units; with CU, " *
-                "units must be CU or unset",
-            ),
-        )
-    system isa IS.NaturalUnit && _is_per_unit(units) &&
-        throw(
-            ArgumentError(
-                "time series \"$name\" declares unit_system NU but per-unit units $units",
-            ),
-        )
-    return units
+    throw(
+        ArgumentError(
+            "time series \"$name\" declares per-unit units $units but no per_unit_of",
+        ),
+    )
 end
 
 """
@@ -127,20 +115,16 @@ _ts_natural_unit(u::Unitful.Units) = u
 
 """
 Check a series' units labels (a series or its metadata) against `owner`, when it is attached
-and again when a system is read back. A CU series must declare `per_unit_of`, the field
-`_per_unit_of` says it is a fraction of; it is redundant with that rule, but makes
-the stored series say what it is a fraction of without anyone knowing the rule.
+and again when a system is read back. A CU series (one with `per_unit_of`) must name the
+field `_per_unit_of` says it is a fraction of; it is redundant with that rule, but makes the
+stored series say what it is a fraction of without anyone knowing the rule.
 """
-function _check_time_series_labels(owner::Component, labels)
+function _check_time_series_labels(
+    owner::Component,
+    labels::Union{TimeSeriesData, IS.TimeSeriesMetadata},
+)
     name = IS.get_name(labels)
     per_unit_of = IS.get_per_unit_of(labels)
-    isnothing(per_unit_of) || IS.get_unit_system(labels) isa IS.ComponentBaseUnit ||
-        throw(
-            ArgumentError(
-                "time series \"$name\" declares per_unit_of = \"$per_unit_of\"; that applies " *
-                "to CU series only",
-            ),
-        )
     units = _ts_source_units(labels)
     q = _ts_quantity(labels)
     # ponytail: unlabeled series pass unchecked so PSB keeps building; require labels once
@@ -179,12 +163,6 @@ function _check_time_series_labels(owner::Component, labels)
         ),
     )
     per_unit_of == string(field) && return
-    isnothing(per_unit_of) && throw(
-        ArgumentError(
-            "CU time series \"$name\" on $(summary(owner)) must declare " *
-            "per_unit_of = \"$field\"",
-        ),
-    )
     throw(
         ArgumentError(
             "time series \"$name\" on $(summary(owner)) is a fraction of `$field`, not " *
@@ -301,5 +279,10 @@ function get_time_series_values(
         features = features,
     )
     return values .*
-           _ts_conversion_factor(component, TIME_SERIES_QUANTITIES[q], source, units)
+           _ts_conversion_factor(
+        component,
+        TIME_SERIES_QUANTITIES[q],
+        source,
+        units,
+    )::Float64
 end
