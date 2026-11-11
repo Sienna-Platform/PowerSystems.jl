@@ -1110,6 +1110,7 @@ include("emissions_data.jl")
 
 # Definitions of PowerSystem
 include("base.jl")
+include("time_series_units.jl")
 
 include("plant_attribute.jl")
 
