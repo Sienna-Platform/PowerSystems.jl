@@ -260,7 +260,51 @@ end
     @test_throws ArgumentError IS.add_time_series!(sys.data, hydro, bad_inflow)
     # Series loaded straight into the store (the document import path) are checked too.
     IS.infrastore_add_time_series!(sys.data.time_series_manager, hydro, bad_inflow)
-    @test_throws ArgumentError PSY._check_all_time_series_labels(sys)
+    @test occursin("VolumeFlowRate", only(check_time_series_labels(sys)))
+end
+
+@testset "Time series units labels: a load lists every inconsistent series" begin
+    sys, gen = _sys_with_thermal()
+    stamps = range(DateTime("2020-01-01"); step = Hour(1), length = 3)
+    ta = TimeSeries.TimeArray(stamps, [0.2, 0.4, 0.8])
+    cu_series(name; per_unit_of = "base_power") = SingleTimeSeries(
+        name, ta; quantity_kind = "active_power", per_unit_of = per_unit_of,
+    )
+    add_time_series!(sys, gen, cu_series("good"))
+    add_time_series!(sys, gen, cu_series("recorded"))
+    # Loaded straight into the store, as another client might, past the owner check.
+    IS.infrastore_add_time_series!(
+        sys.data.time_series_manager, gen, cu_series("unfit"; per_unit_of = "rating"),
+    )
+    dir = mktempdir()
+    document = joinpath(dir, "case.json")
+    to_file(sys, document; force = true)
+    # Another client recorded the wrong basis for one series.
+    raw = JSON.parsefile(document)
+    for row in raw["time_series_associations"]
+        row["name"] == "recorded" && (row["unit_system"] = "NATURAL_UNITS")
+    end
+    write(document, JSON.json(raw))
+
+    @test_throws "ignore_time_series_label_errors" from_file(document)
+    sys2 =
+        @test_logs (:warn, r"\"recorded\"") (:warn, r"\"unfit\"") match_mode = :any from_file(
+            document; ignore_time_series_label_errors = true,
+        )
+    errors = check_time_series_labels(sys2)
+    @test length(errors) == 2
+    @test any(e -> occursin("\"recorded\"", e), errors)
+    @test any(e -> occursin("\"unfit\"", e), errors)
+
+    # Repaired by removing and re-adding the listed series.
+    gen2 = get_component(ThermalStandard, sys2, get_name(gen))
+    remove_time_series!(sys2, SingleTimeSeries, gen2, "recorded")
+    remove_time_series!(sys2, SingleTimeSeries, gen2, "unfit")
+    add_time_series!(sys2, gen2, cu_series("recorded"))
+    @test isempty(check_time_series_labels(sys2))
+    fixed = joinpath(dir, "fixed.json")
+    to_file(sys2, fixed; force = true)
+    @test isempty(check_time_series_labels(from_file(fixed)))
 end
 
 @testset "Time series units labels: a reserve requirement is natural units only" begin
