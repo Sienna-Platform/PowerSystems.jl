@@ -28,6 +28,26 @@
     ta_mw = get_time_series_array(SingleTimeSeries, gen, "cu", u"MW")
     @test TimeSeries.timestamp(ta_mw) == collect(stamps)
     @test TimeSeries.values(ta_mw) ≈ [50.0, 100.0, 200.0]
+
+    # A forecast reads one window, converted the same way.
+    t0 = first(stamps)
+    fc = Deterministic(
+        "fc", Dict(t0 => [0.1, 0.2], t0 + Hour(1) => [0.3, 0.4]), Hour(1);
+        quantity_kind = "active_power", per_unit_of = "base_power",
+    )
+    add_time_series!(sys, gen, fc)
+    @test get_time_series_values(
+        Deterministic,
+        gen,
+        "fc",
+        u"MW";
+        start_time = t0 + Hour(1),
+    ) ≈
+          [75.0, 100.0]
+    fc_mw = get_time_series_array(Deterministic, gen, "fc", u"MW";
+        start_time = t0 + Hour(1), len = 1)
+    @test TimeSeries.timestamp(fc_mw) == [t0 + Hour(1)]
+    @test TimeSeries.values(fc_mw) ≈ [75.0]
     @test_throws ArgumentError get_time_series_array(
         SingleTimeSeries, gen, "cu", u"CU"; quantity = :ReactivePower)
     @test_throws ArgumentError read_ts("cu", u"CU"; quantity = :ReactivePower)

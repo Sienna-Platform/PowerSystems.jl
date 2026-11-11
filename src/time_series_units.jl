@@ -46,6 +46,19 @@ _is_per_unit(u::Unitful.Units)::Bool = any(
     typeof(Unitful.dimension(u)).parameters[1],
 )
 
+# `uparse` costs ~50 µs, more than a store add, and runs on every add, unit-aware read and
+# load-time check; a system holds only a handful of distinct strings, so parse each once.
+# ponytail: unbounded, keyed on user strings; bound it if a caller ever feeds many distinct ones.
+const _PARSED_TS_UNITS = Dict{String, Unitful.Units}()
+const _PARSED_TS_UNITS_LOCK = ReentrantLock()
+
+_parse_ts_units(s::AbstractString) =
+    get(STRING_TO_UNIT, s) do
+        lock(_PARSED_TS_UNITS_LOCK) do
+            get!(() -> Unitful.uparse(s), _PARSED_TS_UNITS, String(s))
+        end
+    end::Unitful.Units
+
 # A `units` string names the units outright. Without one, a series with `per_unit_of` (IS
 # derives CU from it) is plain `u"CU"`. The basis and the units must agree: CU takes
 # per-unit units, NU natural ones.
@@ -54,7 +67,7 @@ function _ts_source_units(labels::Union{TimeSeriesData, IS.TimeSeriesMetadata})
     is_cu = IS.get_unit_system(labels) isa IS.ComponentBaseUnit
     s = IS.get_units(labels)
     isnothing(s) && return is_cu ? u"CU" : nothing
-    units = get(() -> Unitful.uparse(s), STRING_TO_UNIT, s)::Unitful.Units
+    units = _parse_ts_units(s)
     is_cu == _is_per_unit(units) && return units
     is_cu && throw(
         ArgumentError(
@@ -221,28 +234,17 @@ _is_system_base(u::Unitful.Units) = any(
     typeof(Unitful.dimension(u)).parameters[1],
 )
 
-# Check that the series named `name` can be read in `units`, and return the factor that
-# converts its stored values there.
+# Check that `ts` can be read in `units`, and return the factor that converts its stored
+# values there.
 function _ts_read_factor(
-    ::Type{T},
     component::Component,
-    name::AbstractString,
+    ts::TimeSeriesData,
     units::Unitful.Units,
     quantity,
-    resolution,
-    interval,
-    features,
-) where {T <: TimeSeriesData}
-    md = get_time_series_metadata(
-        T,
-        component,
-        name;
-        resolution = resolution,
-        interval = interval,
-        features = features,
-    )
-    q = _ts_quantity(md)
-    source = _ts_source_units(md)
+)
+    name = IS.get_name(ts)
+    q = _ts_quantity(ts)
+    source = _ts_source_units(ts)
     (isnothing(q) || isnothing(source)) && throw(
         ArgumentError(
             "time series \"$name\" on $(summary(component)) has no units labels, so it " *
@@ -268,6 +270,41 @@ function _ts_read_factor(
     )::Float64
 end
 
+# Read the series once, as IS's by-name getters do, and take the labels off what came back:
+# a separate metadata lookup would be a second store query on every read.
+function _ts_read_converted(
+    ::Type{T},
+    component::Component,
+    name::AbstractString,
+    units::Unitful.Units,
+    quantity,
+    resolution,
+    interval,
+    start_time,
+    len,
+    features,
+) where {T <: TimeSeriesData}
+    ts = IS.get_time_series(
+        T,
+        component,
+        name;
+        resolution = resolution,
+        interval = interval,
+        start_time = start_time,
+        len = len,
+        count = 1,
+        features = features,
+    )
+    factor = _ts_read_factor(component, ts, units, quantity)
+    ta = IS.get_time_series_array(
+        component,
+        ts;
+        start_time = something(start_time, IS.get_initial_timestamp(ts)),
+        len = len,
+    )
+    return ta, factor
+end
+
 """
     get_time_series_values(T, component, name, units; quantity = nothing, kwargs...)
 
@@ -288,19 +325,9 @@ function get_time_series_values(
     len::Union{Nothing, Int} = nothing,
     features::Union{Nothing, Dict} = nothing,
 ) where {T <: TimeSeriesData}
-    factor = _ts_read_factor(
-        T, component, name, units, quantity, resolution, interval, features)
-    values = IS.get_time_series_values(
-        T,
-        component,
-        name;
-        resolution = resolution,
-        interval = interval,
-        start_time = start_time,
-        len = len,
-        features = features,
-    )
-    return values .* factor
+    ta, factor = _ts_read_converted(T, component, name, units, quantity,
+        resolution, interval, start_time, len, features)
+    return TimeSeries.values(ta) .* factor
 end
 
 """
@@ -321,17 +348,7 @@ function get_time_series_array(
     len::Union{Nothing, Int} = nothing,
     features::Union{Nothing, Dict} = nothing,
 ) where {T <: TimeSeriesData}
-    factor = _ts_read_factor(
-        T, component, name, units, quantity, resolution, interval, features)
-    ta = IS.get_time_series_array(
-        T,
-        component,
-        name;
-        resolution = resolution,
-        interval = interval,
-        start_time = start_time,
-        len = len,
-        features = features,
-    )
+    ta, factor = _ts_read_converted(T, component, name, units, quantity,
+        resolution, interval, start_time, len, features)
     return TimeSeries.TimeArray(TimeSeries.timestamp(ta), TimeSeries.values(ta) .* factor)
 end
