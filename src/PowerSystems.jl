@@ -544,7 +544,6 @@ export supports_reactive_power
 export supports_voltage_control
 export get_time_series_timestamps
 export get_time_series_values
-export check_time_series_labels
 export get_time_series_counts
 export get_time_series_hash
 export get_time_series_array_groups

@@ -589,12 +589,6 @@ self-interpretable via its own `power_units`/`base_power`. It defaults to the sa
 A caller's `name`, `description` or `frequency` outranks the document's; every other
 document field is applied unconditionally.
 
-A time series with inconsistent units labels fails the load with a `DataFormatError` that
-lists every such series: one whose recorded `unit_system` disagrees with its `units`/
-`per_unit_of`, or whose labels do not fit its owner. `ignore_time_series_label_errors = true`
-logs them instead and loads the system, which is repaired by removing and re-adding those
-series; [`check_time_series_labels`](@ref) confirms the repair.
-
 `system_kwargs` pass straight through to the fresh `System(base_power; system_kwargs...)`
 this builds (e.g. `time_series_in_memory`, `time_series_directory`, `time_series_read_only`,
 `runchecks` — `System`'s own `SYSTEM_KWARGS`); an unsupported key still errors, from
@@ -605,19 +599,15 @@ function from_openapi(
     doc::PC.SystemDocument;
     base_power::Float64 = 100.0,
     time_series_storage_path = nothing,
-    ignore_time_series_label_errors::Bool = false,
     system_kwargs...,
 )
     _check_no_unconverted_component_types(doc.components)
 
-    ignore = ignore_time_series_label_errors
-    sys = _system_with_sidecar(
-        base_power, doc, time_series_storage_path, ignore; system_kwargs...,
-    )
+    sys = _system_with_sidecar(base_power, doc, time_series_storage_path; system_kwargs...)
     _apply_document_metadata!(sys, doc, keys(system_kwargs))
 
     store = _import_store(sys, doc, time_series_storage_path)
-    _load_time_series_associations!(sys, doc, store, ignore)
+    _load_time_series_associations!(sys, doc, store)
     refs = OpenAPIRefs(base_power; store = store)
 
     # Bound for the whole component pass: a `MarketBidTimeSeriesCost`/time-series-backed
@@ -651,7 +641,7 @@ function from_openapi(
     end
 
     load_supplemental_attribute_associations!(sys, refs, doc)
-    IS.report_time_series_label_errors(_time_series_label_errors(sys), ignore)
+    _check_all_time_series_labels(sys)
 
     return sys
 end
@@ -665,22 +655,15 @@ form wrote it. An adopted sidecar's catalog is authoritative and is checked agai
 Runs before the component pass: a `MarketBidTimeSeriesCost` or time-series `FuelCurve` resolves
 its `association_id` against the store while its owner is being built.
 """
-_load_time_series_associations!(::System, ::PC.SystemDocument, ::Nothing, ::Bool) = nothing
+_load_time_series_associations!(::System, ::PC.SystemDocument, ::Nothing) = nothing
 
-function _load_time_series_associations!(
-    sys::System,
-    doc::PC.SystemDocument,
-    store,
-    ignore_label_errors::Bool,
-)
+function _load_time_series_associations!(sys::System, doc::PC.SystemDocument, store)
     isempty(doc.time_series_associations) && return nothing
     if _catalog_is_authoritative(store)
         catalog = IS.openapi_time_series_association_json(sys.data)
         return PC.validate_time_series_catalog(doc, catalog)
     end
-    IS.import_time_series_association_rows!(
-        store, PC.time_series_association_json(doc), ignore_label_errors,
-    )
+    IS.import_time_series_association_rows!(store, PC.time_series_association_json(doc))
     return nothing
 end
 
@@ -718,8 +701,7 @@ are left as they are — `load_supplemental_attribute_associations!` reads them.
 function _system_with_sidecar(
     base_power,
     doc::PC.SystemDocument,
-    time_series_storage_path,
-    ignore_label_errors::Bool;
+    time_series_storage_path;
     system_kwargs...,
 )
     # The document's own frequency first, the caller's keywords second, so an explicit
@@ -734,7 +716,7 @@ function _system_with_sidecar(
     read_only = get(kwargs, :time_series_read_only, false)
     directory = get(kwargs, :time_series_directory, nothing)
     store = IS.open_deserialized_infrastore_store(
-        String(time_series_storage_path), directory, read_only, ignore_label_errors,
+        String(time_series_storage_path), directory, read_only,
     )
     attribute_manager = IS.SupplementalAttributeManager(store)
     # Positional: IS's keyword `SystemData` constructor opens its own store and cannot adopt

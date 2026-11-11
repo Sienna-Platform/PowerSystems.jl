@@ -178,39 +178,19 @@ IS.check_time_series_owner(
     labels::Union{TimeSeriesData, IS.TimeSeriesMetadata},
 ) = _check_time_series_labels(owner, labels)
 
-# Every series in `sys` that fails `_check_time_series_labels`, one line each. The document
-# import path bulk-loads its associations without `add_time_series!`, so it runs this once
-# its components are built.
-function _time_series_label_errors(sys::System)
-    errors = String[]
+"""
+Check the units labels of every series in `sys`. The document import path bulk-loads its
+associations without `add_time_series!`, so it runs this once its components are built.
+"""
+function _check_all_time_series_labels(sys::System)
     for component in get_components(Component, sys)
         has_time_series(component) || continue
         for md in list_time_series_metadata(component)
-            try
-                _check_time_series_labels(component, md)
-            catch e
-                e isa ArgumentError || rethrow()
-                push!(errors, "$(summary(component)): $(e.msg)")
-            end
+            _check_time_series_labels(component, md)
         end
     end
-    return errors
+    return
 end
-
-"""
-    check_time_series_labels(sys::System) -> Vector{String}
-
-Describe every time series in `sys` whose units labels are inconsistent, one line each;
-empty when all pass. It covers both checks a load runs: a recorded `unit_system` that
-disagrees with the series' `units`/`per_unit_of`, and labels that do not fit the owner (the
-check [`add_time_series!`](@ref) runs).
-
-A system loaded with `ignore_time_series_label_errors = true` (see [`from_file`](@ref)) is
-repaired by removing the listed series and re-adding them with consistent labels; run this
-to confirm the repair before serializing it again.
-"""
-check_time_series_labels(sys::System) =
-    vcat(IS.unit_system_mismatches(sys.data), _time_series_label_errors(sys))
 
 # Every quantity in the vocabulary converts linearly, so one factor covers the whole series.
 # `convert_units` resolves a generic `u"NU"` to the natural unit, so strip what it returns
