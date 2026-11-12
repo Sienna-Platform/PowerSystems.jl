@@ -28,6 +28,16 @@ end
 
 function _collect_time_series_keys!(
     keys::Vector{IS.TimeSeriesKey},
+    curve::IS.TwoTierFuelCurve,
+)
+    _collect_time_series_keys!(keys, IS.get_first_tier_curve(curve))
+    _collect_time_series_keys!(keys, IS.get_second_tier_curve(curve))
+    _collect_time_series_keys!(keys, IS.get_second_tier_fuel_cost_time_series(curve))
+    return nothing
+end
+
+function _collect_time_series_keys!(
+    keys::Vector{IS.TimeSeriesKey},
     curve::IS.TimeSeriesInputOutputCurve,
 )
     push!(keys, IS.get_time_series_key(IS.get_function_data(curve)))

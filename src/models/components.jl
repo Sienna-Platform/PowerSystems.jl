@@ -588,6 +588,8 @@ _unit_category(::Val{:mw_per_minute}) = ACTIVE_POWER_CHANGE_RATE
 _axis_categories(::IS.CostCurve) = (ACTIVE_POWER, nothing)
 _axis_categories(curve::IS.FuelCurve) =
     (ACTIVE_POWER, _fuel_category(get_fuel_units(curve)))
+_axis_categories(curve::IS.TwoTierFuelCurve) =
+    (ACTIVE_POWER, _fuel_category(get_fuel_units(curve)))
 _axis_categories(curve::IS.LossCurve) = (_loss_x_category(get_x_units(curve)), ACTIVE_POWER)
 
 _loss_x_category(::typeof(u"MW")) = ACTIVE_POWER

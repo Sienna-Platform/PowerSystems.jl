@@ -113,6 +113,9 @@ export InputOutputCurve, IncrementalCurve, AverageRateCurve
 export LinearCurve, QuadraticCurve
 export PiecewisePointCurve, PiecewiseIncrementalCurve, PiecewiseAverageCurve
 export ProductionVariableCostCurve, CostCurve, FuelCurve
+export TwoTierFuelCurve
+export get_first_tier_curve, get_second_tier_curve, get_tier_threshold
+export get_first_tier_fuel_cost, get_second_tier_fuel_cost, is_first_tier_priced
 export LossCurve, AnyLossCurve, CurrentLossCurve
 export get_function_data, get_initial_input, get_input_at_zero
 export get_value_curve, get_power_units
@@ -956,6 +959,14 @@ import InfrastructureSystems:
     ProductionVariableCostCurve,
     CostCurve,
     FuelCurve,
+    TwoTierFuelCurve,
+    get_first_tier_curve,
+    get_second_tier_curve,
+    get_tier_threshold,
+    get_first_tier_fuel_cost,
+    get_second_tier_fuel_cost,
+    get_second_tier_fuel_cost_time_series,
+    is_first_tier_priced,
     get_value_curve,
     get_vom_cost,
     get_startup_fuel_offtake,
