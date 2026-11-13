@@ -5,7 +5,7 @@ This file is auto-generated. Do not edit.
 #! format: off
 
 """
-    mutable struct TGSimple <: TurbineGov
+    mutable struct TGSimple <: TurbineGovernorDynamics
         d_t::Float64
         Tm::Float64
         P_ref::Float64
@@ -27,7 +27,7 @@ Parameters of a Simple one-state Turbine Governor
 - `n_states::Int`: (**Do not modify.**) TGSimple has 1 state
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
 """
-mutable struct TGSimple <: TurbineGov
+mutable struct TGSimple <: TurbineGovernorDynamics
     "Inverse Droop parameter"
     d_t::Float64
     "Turbine Governor Low-Pass Time Constant [s]"
@@ -86,3 +86,22 @@ set_Tm!(value::TGSimple, val) = value.Tm = val
 set_P_ref!(value::TGSimple, val) = value.P_ref = val
 """Set [`TGSimple`](@ref) `ext`."""
 set_ext!(value::TGSimple, val) = value.ext = val
+
+
+
+function from_openapi(po::PD.TGSimple, refs::OpenAPIRefs)
+    return TGSimple(;
+        d_t = _wire_required(po.d_t, "TGSimple", "d_t"),
+        Tm = _wire_required(po.tm, "TGSimple", "Tm"),
+        P_ref = _or_default(po.p_ref, 1.0),
+    )
+end
+
+function to_openapi(value::TGSimple, refs::OpenAPIRefs)
+    return PD.TGSimple(;
+        id = component_id(refs, value),
+        d_t = get_d_t(value),
+        tm = get_Tm(value),
+        p_ref = get_P_ref(value),
+    )
+end

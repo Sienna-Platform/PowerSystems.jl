@@ -10,6 +10,8 @@
         H = 0.5,
         A = 0.2,
         B = 0.0,
+        torque_ref = 1.0,
+        B_shunt = 0.0,
         base_power = 100.0,
     )
 
@@ -24,6 +26,8 @@
         H = 0.5,
         A = 0.2,
         B = 0.9,
+        torque_ref = 1.0,
+        B_shunt = 0.0,
         base_power = 100.0,
     )
 
@@ -47,6 +51,8 @@
         H = 0.5,
         A = 0.2,
         B = 0.0,
+        torque_ref = 1.0,
+        B_shunt = 0.0,
         base_power = 100.0,
     )
 
@@ -61,6 +67,8 @@
         H = 0.5,
         A = 0.2,
         B = 0.9,
+        torque_ref = 1.0,
+        B_shunt = 0.0,
         base_power = 100.0,
     )
 
@@ -92,6 +100,11 @@ end
         kiv = 150.0,
         kpc = 15.0,
         kic = 30000.0,
+        P_ref = 1.0,
+        Q_ref = 1.0,
+        V_ref = 1.0,
+        frequency_ref = 60.0,
+        is_filter_differential = true,
         base_power = 100.0,
     )
 
@@ -112,10 +125,11 @@ end
         name = "init",
         a = 1.0,
         b = 1.0,
-        α = 1.2,
-        β = 1.2,
+        alpha = 1.2,
+        beta = 1.2,
         T_p = 3.0,
         T_q = 3.0,
+        base_power = 100.0,
     )
 
     sys = System(100.0)

@@ -167,3 +167,40 @@ set_kii!(value::ZeroOrderBESS, val) = value.kii = val
 set_Vdc_ref!(value::ZeroOrderBESS, val) = value.Vdc_ref = val
 """Set [`ZeroOrderBESS`](@ref) `ext`."""
 set_ext!(value::ZeroOrderBESS, val) = value.ext = val
+
+
+
+function from_openapi(po::PD.ZeroOrderBESS, refs::OpenAPIRefs)
+    return ZeroOrderBESS(;
+        rated_voltage = _wire_required(po.rated_voltage, "ZeroOrderBESS", "rated_voltage"),
+        rated_current = _wire_required(po.rated_current, "ZeroOrderBESS", "rated_current"),
+        battery_voltage = _wire_required(po.battery_voltage, "ZeroOrderBESS", "battery_voltage"),
+        battery_resistance = _wire_required(po.battery_resistance, "ZeroOrderBESS", "battery_resistance"),
+        dc_dc_inductor = _wire_required(po.dc_dc_inductor, "ZeroOrderBESS", "dc_dc_inductor"),
+        dc_link_capacitance = _wire_required(po.dc_link_capacitance, "ZeroOrderBESS", "dc_link_capacitance"),
+        fs = _wire_required(po.fs, "ZeroOrderBESS", "fs"),
+        kpv = _wire_required(po.kpv, "ZeroOrderBESS", "kpv"),
+        kiv = _wire_required(po.kiv, "ZeroOrderBESS", "kiv"),
+        kpi = _wire_required(po.kpi, "ZeroOrderBESS", "kpi"),
+        kii = _wire_required(po.kii, "ZeroOrderBESS", "kii"),
+        Vdc_ref = _or_default(po.vdc_ref, 1.1),
+    )
+end
+
+function to_openapi(value::ZeroOrderBESS, refs::OpenAPIRefs)
+    return PD.ZeroOrderBESS(;
+        id = component_id(refs, value),
+        rated_voltage = get_rated_voltage(value),
+        rated_current = get_rated_current(value),
+        battery_voltage = get_battery_voltage(value),
+        battery_resistance = get_battery_resistance(value),
+        dc_dc_inductor = get_dc_dc_inductor(value),
+        dc_link_capacitance = get_dc_link_capacitance(value),
+        fs = get_fs(value),
+        kpv = get_kpv(value),
+        kiv = get_kiv(value),
+        kpi = get_kpi(value),
+        kii = get_kii(value),
+        vdc_ref = get_Vdc_ref(value),
+    )
+end

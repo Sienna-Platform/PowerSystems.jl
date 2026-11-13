@@ -62,8 +62,6 @@ end
     types = vcat(
         IS.get_all_concrete_subtypes(Component),
         IS.get_all_concrete_subtypes(DynamicComponent),
-        IS.get_all_concrete_subtypes(PowerSystems.ActivePowerControl),
-        IS.get_all_concrete_subtypes(PowerSystems.ReactivePowerControl),
     )
     sort!(types; by = x -> string(x))
     for ps_type in types

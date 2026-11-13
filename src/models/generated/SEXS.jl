@@ -5,7 +5,7 @@ This file is auto-generated. Do not edit.
 #! format: off
 
 """
-    mutable struct SEXS <: AVR
+    mutable struct SEXS <: ExcitationSystemDynamics
         Ta_Tb::Float64
         Tb::Float64
         K::Float64
@@ -23,7 +23,7 @@ Parameters of Simplified Excitation System Model - SEXS in PSSE
 
 # Arguments
 - `Ta_Tb::Float64`: Ratio of lead and lag time constants, validation range: `(0, nothing)`
-- `Tb::Float64`: Lag time constant, validation range: `(eps(), nothing)`
+- `Tb::Float64`: Lag time constant, validation range: `(0.0001, nothing)`
 - `K::Float64`: Gain, validation range: `(0, nothing)`
 - `Te::Float64`: Field circuit time constant in s, validation range: `(0, nothing)`
 - `V_lim::MinMax`: Field voltage limits
@@ -34,7 +34,7 @@ Parameters of Simplified Excitation System Model - SEXS in PSSE
 - `states_types::Vector{StateTypes.Value}`: (**Do not modify.**) SEXS has 2 [differential](@ref states_list) [states](@ref S)
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
 """
-mutable struct SEXS <: AVR
+mutable struct SEXS <: ExcitationSystemDynamics
     "Ratio of lead and lag time constants"
     Ta_Tb::Float64
     "Lag time constant"
@@ -119,3 +119,28 @@ set_V_ref!(value::SEXS, val) = value.V_ref = val
 set_ext!(value::SEXS, val) = value.ext = val
 """Set [`SEXS`](@ref) `states_types`."""
 set_states_types!(value::SEXS, val) = value.states_types = val
+
+
+
+function from_openapi(po::PD.SEXS, refs::OpenAPIRefs)
+    return SEXS(;
+        Ta_Tb = _wire_required(po.ta_tb, "SEXS", "Ta_Tb"),
+        Tb = _wire_required(po.tb, "SEXS", "Tb"),
+        K = _wire_required(po.k, "SEXS", "K"),
+        Te = _wire_required(po.te, "SEXS", "Te"),
+        V_lim = _or_default(po.v_lim, nothing),
+        V_ref = _or_default(po.v_ref, 1.0),
+    )
+end
+
+function to_openapi(value::SEXS, refs::OpenAPIRefs)
+    return PD.SEXS(;
+        id = component_id(refs, value),
+        ta_tb = get_Ta_Tb(value),
+        tb = get_Tb(value),
+        k = get_K(value),
+        te = get_Te(value),
+        v_lim = _minmax_po(get_V_lim(value)),
+        v_ref = get_V_ref(value),
+    )
+end

@@ -5,7 +5,7 @@ This file is auto-generated. Do not edit.
 #! format: off
 
 """
-    mutable struct DEGOV <: TurbineGov
+    mutable struct DEGOV <: TurbineGovernorDynamics
         T1::Float64
         T2::Float64
         T3::Float64
@@ -25,14 +25,14 @@ This file is auto-generated. Do not edit.
 Parameters Woodward Diesel Governor Model. DEGOV in PowerWorld
 
 # Arguments
-- `T1::Float64`: Governor mechanism time constant, validation range: `(eps(), 100.0)`
-- `T2::Float64`: Turbine power time constant, validation range: `(eps(), 100.0)`
-- `T3::Float64`: Turbine exhaust temperature time constant, validation range: `(eps(), 100.0)`
-- `K::Float64`: Governor gain (reciprocal of droop), validation range: `(eps(), 100.0)`
-- `T4::Float64`: Governor lead time constant, validation range: `(eps(), 100.0)`
-- `T5::Float64`: Governor lag time constant, validation range: `(eps(), 100.0)`
-- `T6::Float64`: Actuator time constant, validation range: `(eps(), 100.0)`
-- `Td::Float64`: Engine time delay, validation range: `(eps(), 100.0)`
+- `T1::Float64`: Governor mechanism time constant, validation range: `(0.0001, 100.0)`
+- `T2::Float64`: Turbine power time constant, validation range: `(0.0001, 100.0)`
+- `T3::Float64`: Turbine exhaust temperature time constant, validation range: `(0.0001, 100.0)`
+- `K::Float64`: Governor gain (reciprocal of droop), validation range: `(0.0001, 100.0)`
+- `T4::Float64`: Governor lead time constant, validation range: `(0.0001, 100.0)`
+- `T5::Float64`: Governor lag time constant, validation range: `(0.0001, 100.0)`
+- `T6::Float64`: Actuator time constant, validation range: `(0.0001, 100.0)`
+- `Td::Float64`: Engine time delay, validation range: `(0.0001, 100.0)`
 - `P_ref::Float64`: (default: `1.0`) Reference Load Set-point (pu), validation range: `(0, nothing)`
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
 - `states::Vector{Symbol}`: (**Do not modify.**) The [states](@ref S) of the DEGOV model are:
@@ -45,7 +45,7 @@ Parameters Woodward Diesel Governor Model. DEGOV in PowerWorld
 - `states_types::Vector{StateTypes.Value}`: (**Do not modify.**) DEGOV has 5 [differential](@ref states_list) [states](@ref S)
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
 """
-mutable struct DEGOV <: TurbineGov
+mutable struct DEGOV <: TurbineGovernorDynamics
     "Governor mechanism time constant"
     T1::Float64
     "Turbine power time constant"
@@ -156,3 +156,34 @@ set_P_ref!(value::DEGOV, val) = value.P_ref = val
 set_ext!(value::DEGOV, val) = value.ext = val
 """Set [`DEGOV`](@ref) `states_types`."""
 set_states_types!(value::DEGOV, val) = value.states_types = val
+
+
+
+function from_openapi(po::PD.DEGOV, refs::OpenAPIRefs)
+    return DEGOV(;
+        T1 = _wire_required(po.t1, "DEGOV", "T1"),
+        T2 = _wire_required(po.t2, "DEGOV", "T2"),
+        T3 = _wire_required(po.t3, "DEGOV", "T3"),
+        K = _wire_required(po.k, "DEGOV", "K"),
+        T4 = _wire_required(po.t4, "DEGOV", "T4"),
+        T5 = _wire_required(po.t5, "DEGOV", "T5"),
+        T6 = _wire_required(po.t6, "DEGOV", "T6"),
+        Td = _wire_required(po.td, "DEGOV", "Td"),
+        P_ref = _or_default(po.p_ref, 1.0),
+    )
+end
+
+function to_openapi(value::DEGOV, refs::OpenAPIRefs)
+    return PD.DEGOV(;
+        id = component_id(refs, value),
+        t1 = get_T1(value),
+        t2 = get_T2(value),
+        t3 = get_T3(value),
+        k = get_K(value),
+        t4 = get_T4(value),
+        t5 = get_T5(value),
+        t6 = get_T6(value),
+        td = get_Td(value),
+        p_ref = get_P_ref(value),
+    )
+end

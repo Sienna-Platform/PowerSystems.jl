@@ -5,7 +5,7 @@ This file is auto-generated. Do not edit.
 #! format: off
 
 """
-    mutable struct EX4VSA <: AVR
+    mutable struct EX4VSA <: ExcitationSystemDynamics
         Iflim::Float64
         d::Float64
         f::Float64
@@ -49,7 +49,7 @@ IEEE Excitation System for Voltage Security Assesment
 - `n_states::Int`: (**Do not modify.**) The EX4VSA has 3 states
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
 """
-mutable struct EX4VSA <: AVR
+mutable struct EX4VSA <: ExcitationSystemDynamics
     "OEL Field current limit"
     Iflim::Float64
     "OEL parameter d"
@@ -180,3 +180,42 @@ set_E_lim!(value::EX4VSA, val) = value.E_lim = val
 set_V_ref!(value::EX4VSA, val) = value.V_ref = val
 """Set [`EX4VSA`](@ref) `ext`."""
 set_ext!(value::EX4VSA, val) = value.ext = val
+
+
+
+function from_openapi(po::PD.EX4VSA, refs::OpenAPIRefs)
+    return EX4VSA(;
+        Iflim = _wire_required(po.iflim, "EX4VSA", "Iflim"),
+        d = _wire_required(po.d, "EX4VSA", "d"),
+        f = _wire_required(po.f, "EX4VSA", "f"),
+        Spar = _wire_required(po.spar, "EX4VSA", "Spar"),
+        K1 = _wire_required(po.k1, "EX4VSA", "K1"),
+        K2 = _wire_required(po.k2, "EX4VSA", "K2"),
+        Oel_lim = _or_default(po.oel_lim, nothing),
+        G = _wire_required(po.g, "EX4VSA", "G"),
+        Ta = _wire_required(po.ta, "EX4VSA", "Ta"),
+        Tb = _wire_required(po.tb, "EX4VSA", "Tb"),
+        Te = _wire_required(po.te, "EX4VSA", "Te"),
+        E_lim = _or_default(po.e_lim, nothing),
+        V_ref = _or_default(po.v_ref, 1.0),
+    )
+end
+
+function to_openapi(value::EX4VSA, refs::OpenAPIRefs)
+    return PD.EX4VSA(;
+        id = component_id(refs, value),
+        iflim = get_Iflim(value),
+        d = get_d(value),
+        f = get_f(value),
+        spar = get_Spar(value),
+        k1 = get_K1(value),
+        k2 = get_K2(value),
+        oel_lim = _minmax_po(get_Oel_lim(value)),
+        g = get_G(value),
+        ta = get_Ta(value),
+        tb = get_Tb(value),
+        te = get_Te(value),
+        e_lim = _minmax_po(get_E_lim(value)),
+        v_ref = get_V_ref(value),
+    )
+end

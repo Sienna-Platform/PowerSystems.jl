@@ -5,7 +5,7 @@ This file is auto-generated. Do not edit.
 #! format: off
 
 """
-    mutable struct FixedFrequency <: FrequencyEstimator
+    mutable struct FixedFrequency <: ReferenceFrameRotation
         frequency::Float64
         ext::Dict{String, Any}
         states::Vector{Symbol}
@@ -20,7 +20,7 @@ Parameters of a Fixed Frequency Estimator (i.e. no PLL)
 - `states::Vector{Symbol}`: (**Do not modify.**) FixedFrequency has no [states](@ref S)
 - `n_states::Int`: (**Do not modify.**) FixedFrequency has no states
 """
-mutable struct FixedFrequency <: FrequencyEstimator
+mutable struct FixedFrequency <: ReferenceFrameRotation
     "Reference Frequency (pu)"
     frequency::Float64
     "An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation."
@@ -57,3 +57,18 @@ get_n_states(value::FixedFrequency) = value.n_states
 set_frequency!(value::FixedFrequency, val) = value.frequency = val
 """Set [`FixedFrequency`](@ref) `ext`."""
 set_ext!(value::FixedFrequency, val) = value.ext = val
+
+
+
+function from_openapi(po::PD.FixedFrequency, refs::OpenAPIRefs)
+    return FixedFrequency(;
+        frequency = _or_default(po.frequency, 1.0),
+    )
+end
+
+function to_openapi(value::FixedFrequency, refs::OpenAPIRefs)
+    return PD.FixedFrequency(;
+        id = component_id(refs, value),
+        frequency = get_frequency(value),
+    )
+end

@@ -5,7 +5,7 @@ This file is auto-generated. Do not edit.
 #! format: off
 
 """
-    mutable struct STAB1 <: PSS
+    mutable struct STAB1 <: PowerSystemStabilizerDynamics
         KT::Float64
         T::Float64
         T1T3::Float64
@@ -39,7 +39,7 @@ Speed-Sensitive Stabilizing Model
 - `states_types::Vector{StateTypes.Value}`: (**Do not modify.**) STAB1 has 3 [differential](@ref states_list) [states](@ref S)
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
 """
-mutable struct STAB1 <: PSS
+mutable struct STAB1 <: PowerSystemStabilizerDynamics
     "K/T for washout filter"
     KT::Float64
     "Time constant for washout filter"
@@ -134,3 +134,30 @@ set_H_lim!(value::STAB1, val) = value.H_lim = val
 set_ext!(value::STAB1, val) = value.ext = val
 """Set [`STAB1`](@ref) `states_types`."""
 set_states_types!(value::STAB1, val) = value.states_types = val
+
+
+
+function from_openapi(po::PD.STAB1, refs::OpenAPIRefs)
+    return STAB1(;
+        KT = _wire_required(po.kt, "STAB1", "KT"),
+        T = _wire_required(po.t, "STAB1", "T"),
+        T1T3 = _wire_required(po.t1t3, "STAB1", "T1T3"),
+        T3 = _wire_required(po.t3, "STAB1", "T3"),
+        T2T4 = _wire_required(po.t2t4, "STAB1", "T2T4"),
+        T4 = _wire_required(po.t4, "STAB1", "T4"),
+        H_lim = _wire_required(po.h_lim, "STAB1", "H_lim"),
+    )
+end
+
+function to_openapi(value::STAB1, refs::OpenAPIRefs)
+    return PD.STAB1(;
+        id = component_id(refs, value),
+        kt = get_KT(value),
+        t = get_T(value),
+        t1t3 = get_T1T3(value),
+        t3 = get_T3(value),
+        t2t4 = get_T2T4(value),
+        t4 = get_T4(value),
+        h_lim = get_H_lim(value),
+    )
+end

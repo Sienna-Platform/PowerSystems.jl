@@ -566,12 +566,7 @@ end
     end
 end
 
-@testset "to_openapi refuses a cost referencing a series the document omits" begin
-    # A cost may reference a series owned by a *different* component, and a component with
-    # no OpenAPI converter is omitted from the document along with its association rows.
-    # The document would then carry a bare association id with no declared identity beside
-    # it, and importing that against another sidecar binds the cost to whichever series
-    # holds that id there — silently, since the identity cross-check has nothing to match.
+@testset "to_openapi describes a cost's series owned by a dynamic injection" begin
     sys = System(100.0)
     bus = ACBus(; input_basis = u"CU",
         number = 1, name = "b", available = true, bustype = ACBusTypes.REF,
@@ -599,10 +594,10 @@ end
     )
     add_component!(sys, src)
 
-    # No dynamic type has a converter yet, so this owner cannot be described.
+    # A dynamic injection is described by the document, so the series it owns is too.
     dyn = PeriodicVariableSource(; name = "S", R_th = 0.0, X_th = 1.0)
     add_component!(sys, dyn, src)
-    @test !PowerSystems.is_document_exportable(dyn)
+    @test PowerSystems.is_document_exportable(dyn)
 
     series = SingleTimeSeries(;
         name = "fuel_price",
@@ -621,7 +616,8 @@ end
     )
 
     dir = mktempdir()
-    @test_throws IS.DataFormatError to_openapi(
-        sys; time_series_storage_path = joinpath(dir, "sidecar.h5"),
+    doc = to_openapi(sys; time_series_storage_path = joinpath(dir, "sidecar.h5"))
+    @test any(
+        row.value.owner_id == IS.get_id(dyn) for row in doc.time_series_associations
     )
 end

@@ -177,7 +177,7 @@ end
 
 const TYPICAL_XFRM_REACTANCE = (min = 0.05, max = 0.2) # per-unit
 
-# `valid_range`s for `tap`/`α`/`base_voltage`. These fields live on
+# `valid_range`s for `tap`/`alpha`/`base_voltage`. These fields live on
 # `TransformerCircuit`, which is not a `Component` added to the system's `Components`
 # container, so IS's generic `validate_fields` (which only recurses into
 # `Union{Nothing, InfrastructureSystemsType}`-typed fields, not sub-structs stored
@@ -196,9 +196,9 @@ function check_circuit_values(circuit::TransformerCircuit, xfrm_name::AbstractSt
         is_valid = false
     end
 
-    α = get_α(circuit)
-    if α < CIRCUIT_ANGLE_LIMITS.min || α > CIRCUIT_ANGLE_LIMITS.max
-        @warn "Circuit phase shift α $(α) (radians) for transformer $(xfrm_name) is outside the typical range $(CIRCUIT_ANGLE_LIMITS)." _group =
+    alpha = get_alpha(circuit)
+    if alpha < CIRCUIT_ANGLE_LIMITS.min || alpha > CIRCUIT_ANGLE_LIMITS.max
+        @warn "Circuit phase shift alpha $(alpha) (radians) for transformer $(xfrm_name) is outside the typical range $(CIRCUIT_ANGLE_LIMITS)." _group =
             IS.LOG_GROUP_PARSING maxlog = PS_MAX_LOG
     end
 
@@ -257,7 +257,7 @@ const VSC_DC_SETPOINT_FIELDS = _mode_fields(
 const VSC_AC_SETPOINT_FIELDS = _mode_fields(
     VSCACControlModes.Value,
     VSCACControlModes.AC_REACTIVE_POWER => (:power_factor_setpoint,),
-    VSCACControlModes.AC_VOLTAGE => (:ac_voltage_setpoint,),
+    VSCACControlModes.AC_VOLTAGE => (),
 )
 const SWITCHED_ADMITTANCE_BAND_FIELDS = _mode_fields(
     SwitchedAdmittanceControlMode.Value,

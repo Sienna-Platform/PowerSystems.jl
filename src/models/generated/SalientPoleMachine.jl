@@ -5,7 +5,7 @@ This file is auto-generated. Do not edit.
 #! format: off
 
 """
-    mutable struct SalientPoleMachine <: Machine
+    mutable struct SalientPoleMachine <: SynchronousMachineDynamics
         R::Float64
         Td0_p::Float64
         Td0_pp::Float64
@@ -50,7 +50,7 @@ IEEE Std 1110 §5.3.1 (Model 2.1). GENSAL or GENSAE model in PSSE and PSLF
 - `n_states::Int`: (**Do not modify.**) SalientPoleMachine has 3 states
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
 """
-mutable struct SalientPoleMachine <: Machine
+mutable struct SalientPoleMachine <: SynchronousMachineDynamics
     "Armature resistance"
     R::Float64
     "Time constant of transient d-axis voltage"
@@ -178,3 +178,36 @@ set_γ_d1!(value::SalientPoleMachine, val) = value.γ_d1 = val
 set_γ_q1!(value::SalientPoleMachine, val) = value.γ_q1 = val
 """Set [`SalientPoleMachine`](@ref) `γ_d2`."""
 set_γ_d2!(value::SalientPoleMachine, val) = value.γ_d2 = val
+
+
+
+function from_openapi(po::PD.SalientPoleMachine, refs::OpenAPIRefs)
+    return SalientPoleMachine(;
+        R = _wire_required(po.r, "SalientPoleMachine", "R"),
+        Td0_p = _wire_required(po.td0_p, "SalientPoleMachine", "Td0_p"),
+        Td0_pp = _wire_required(po.td0_pp, "SalientPoleMachine", "Td0_pp"),
+        Tq0_pp = _wire_required(po.tq0_pp, "SalientPoleMachine", "Tq0_pp"),
+        Xd = _wire_required(po.xd, "SalientPoleMachine", "Xd"),
+        Xq = _wire_required(po.xq, "SalientPoleMachine", "Xq"),
+        Xd_p = _wire_required(po.xd_p, "SalientPoleMachine", "Xd_p"),
+        Xd_pp = _wire_required(po.xd_pp, "SalientPoleMachine", "Xd_pp"),
+        Xl = _wire_required(po.xl, "SalientPoleMachine", "Xl"),
+        Se = _wire_to_psy(Tuple{Float64, Float64}, po.se),
+    )
+end
+
+function to_openapi(value::SalientPoleMachine, refs::OpenAPIRefs)
+    return PD.SalientPoleMachine(;
+        id = component_id(refs, value),
+        r = get_R(value),
+        td0_p = get_Td0_p(value),
+        td0_pp = get_Td0_pp(value),
+        tq0_pp = get_Tq0_pp(value),
+        xd = get_Xd(value),
+        xq = get_Xq(value),
+        xd_p = get_Xd_p(value),
+        xd_pp = get_Xd_pp(value),
+        xl = get_Xl(value),
+        se = _psy_to_wire(get_Se(value)),
+    )
+end

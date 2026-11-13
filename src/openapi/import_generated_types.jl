@@ -82,3 +82,56 @@ _required_enum(
     ::AbstractString,
 ) where {T} =
     T(v.value)
+
+# ── dynamics wire shapes ────────────────────────────────────────────────────────
+# A dynamics type holds tuples, `NamedTuple`s and vectors that the wire spells as arrays or
+# point structs. The generated `from_openapi` passes the field's own PSY type as the first
+# argument, so these methods dispatch on it and on the wire value.
+
+"""The wire value, or an error naming the field when it is absent. For a property the schema
+marks optional and the PSY struct requires, with no default to fall back to."""
+_wire_required(::_WireAbsent, owner::AbstractString, field::AbstractString) =
+    error("from_openapi: $owner.$field is absent from the document and has no default")
+_wire_required(v, ::AbstractString, ::AbstractString) = v
+
+function _wire_tuple(v::AbstractVector, ::Val{N}) where {N}
+    length(v) == N || throw(
+        ArgumentError("a wire array must hold $N values, got $(length(v))"),
+    )
+    return ntuple(i -> Float64(v[i]), Val(N))
+end
+
+_wire_to_psy(::Type{T}, ::_WireAbsent) where {T} =
+    error("from_openapi: a required $T field is absent from the document")
+_wire_to_psy(::Type{T}, ::_WireAbsent, default) where {T} = default
+_wire_to_psy(::Type{T}, v, ::Any) where {T} = _wire_to_psy(T, v)
+
+_wire_to_psy(::Type{Tuple{Float64, Float64}}, v::AbstractVector) = _wire_tuple(v, Val(2))
+_wire_to_psy(::Type{Tuple{Float64, Float64, Float64}}, v::AbstractVector) =
+    _wire_tuple(v, Val(3))
+_wire_to_psy(::Type{Vector{Float64}}, v::AbstractVector) = Float64[x for x in v]
+_wire_to_psy(::Type{Vector{Tuple{Float64, Float64}}}, v::AbstractVector) =
+    Tuple{Float64, Float64}[_wire_tuple(p, Val(2)) for p in v]
+
+_wire_to_psy(::Type{Tuple{Float64, Float64}}, x::PC.DbdPnts) = (
+    Float64(_wire_required(x.dbd1, "DbdPnts", "dbd1")),
+    Float64(_wire_required(x.dbd2, "DbdPnts", "dbd2")),
+)
+_wire_to_psy(::Type{Tuple{Float64, Float64}}, x::PC.FdbdPnts) = (
+    Float64(_wire_required(x.fdbd1, "FdbdPnts", "fdbd1")),
+    Float64(_wire_required(x.fdbd2, "FdbdPnts", "fdbd2")),
+)
+_wire_to_psy(::Type{<:NamedTuple}, x::PC.FdbdPnts) = (
+    fdbd1 = Float64(_wire_required(x.fdbd1, "FdbdPnts", "fdbd1")),
+    fdbd2 = Float64(_wire_required(x.fdbd2, "FdbdPnts", "fdbd2")),
+)
+_wire_to_psy(::Type{<:NamedTuple}, x::PD.VoltVarPnts) =
+    (V1 = x.v1, V2 = x.v2, V3 = x.v3, V4 = x.v4)
+_wire_to_psy(::Type{<:NamedTuple}, x::PD.VoltageRideThroughPnts) =
+    (vrt1 = x.vrt1, vrt2 = x.vrt2, vrt3 = x.vrt3, vrt4 = x.vrt4, vrt5 = x.vrt5)
+_wire_to_psy(::Type{<:NamedTuple}, x::PD.VoltageRideThroughTimePnts) =
+    (tvrt1 = x.tvrt1, tvrt2 = x.tvrt2, tvrt3 = x.tvrt3)
+_wire_to_psy(::Type{<:NamedTuple}, x::PD.FrequencyRideThroughPnts) =
+    (frt1 = x.frt1, frt2 = x.frt2, frt3 = x.frt3, frt4 = x.frt4)
+_wire_to_psy(::Type{<:NamedTuple}, x::PD.FrequencyRideThroughTimePnts) =
+    (tfrt1 = x.tfrt1, tfrt2 = x.tfrt2)

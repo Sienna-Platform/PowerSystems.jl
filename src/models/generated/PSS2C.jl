@@ -5,7 +5,7 @@ This file is auto-generated. Do not edit.
 #! format: off
 
 """
-    mutable struct PSS2C <: PSS
+    mutable struct PSS2C <: PowerSystemStabilizerDynamics
         input_code_1::Int
         remote_bus_control_1::Int
         input_code_2::Int
@@ -54,16 +54,16 @@ IEEE 421.5 2016 PSS2C IEEE Dual-Input Stabilizer Model
 - `remote_bus_control_2::Int`: Second Input remote bus identification [`number`](@ref ACBus) for control. `0` identifies the local bus connected to this component
 - `M_rtf::Int`: M parameter for ramp tracking filter, validation range: `(0, 8)`
 - `N_rtf::Int`: N parameter for ramp tracking filter, validation range: `(0, 8)`
-- `Tw1::Float64`: Time constant for first washout filter for first input, validation range: `(eps(), nothing)`
+- `Tw1::Float64`: Time constant for first washout filter for first input, validation range: `(0.0001, nothing)`
 - `Tw2::Float64`: Time constant for second washout filter for first input, validation range: `(0, nothing)`
 - `T6::Float64`: Time constant for low-pass filter for first input, validation range: `(0, nothing)`
-- `Tw3::Float64`: Time constant for first washout filter for second input, validation range: `(eps(), nothing)`
+- `Tw3::Float64`: Time constant for first washout filter for second input, validation range: `(0.0001, nothing)`
 - `Tw4::Float64`: Time constant for second washout filter for second input, validation range: `(0, nothing)`
 - `T7::Float64`: Time constant for low-pass filter for second input, validation range: `(0, nothing)`
 - `Ks2::Float64`: Gain for low-pass filter for second input, validation range: `(0, nothing)`
 - `Ks3::Float64`: Gain for second input, validation range: `(0, nothing)`
 - `T8::Float64`: Time constant for ramp tracking filter, validation range: `(0, nothing)`
-- `T9::Float64`: Time constant for ramp tracking filter, validation range: `(eps(), nothing)`
+- `T9::Float64`: Time constant for ramp tracking filter, validation range: `(0.0001, nothing)`
 - `Ks1::Float64`: Gain before lead-lag blocks, validation range: `(0, nothing)`
 - `T1::Float64`: Time constant for first lead-lag block, validation range: `(0, nothing)`
 - `T2::Float64`: Time constant for first lead-lag block, validation range: `(0, nothing)`
@@ -78,7 +78,7 @@ IEEE 421.5 2016 PSS2C IEEE Dual-Input Stabilizer Model
 - `T13::Float64`: Time constant for fourth lead-lag block, validation range: `(0, nothing)`
 - `PSS_Hysteresis_param::Tuple{Float64, Float64}`: PSS output hysteresis parameters `(PSSOFF, PSSON)`
 - `Xcomp::Float64`: Stator Leakage Reactance, validation range: `(0, nothing)`
-- `Tcomp::Float64`: Time measured with compensated frequency, validation range: `(eps(), nothing)`
+- `Tcomp::Float64`: Time measured with compensated frequency, validation range: `(0.0001, nothing)`
 - `hysteresis_binary_logic::Int`: (default: `1`) Hysteresis memory variable
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
 - `states::Vector{Symbol}`: (**Do not modify.**) The [states](@ref S) are:
@@ -105,7 +105,7 @@ IEEE 421.5 2016 PSS2C IEEE Dual-Input Stabilizer Model
 - `states_types::Vector{StateTypes.Value}`: (**Do not modify.**) IEEEST has 19 [differential](@ref states_list) [states](@ref S)
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
 """
-mutable struct PSS2C <: PSS
+mutable struct PSS2C <: PowerSystemStabilizerDynamics
     "First Input Code for stabilizer"
     input_code_1::Int
     "First Input remote bus identification [`number`](@ref ACBus) for control. `0` identifies the local bus connected to this component"
@@ -391,3 +391,80 @@ set_hysteresis_binary_logic!(value::PSS2C, val) = value.hysteresis_binary_logic 
 set_ext!(value::PSS2C, val) = value.ext = val
 """Set [`PSS2C`](@ref) `states_types`."""
 set_states_types!(value::PSS2C, val) = value.states_types = val
+
+
+
+function from_openapi(po::PD.PSS2C, refs::OpenAPIRefs)
+    return PSS2C(;
+        input_code_1 = _wire_required(po.input_code_1, "PSS2C", "input_code_1"),
+        remote_bus_control_1 = _wire_required(po.remote_bus_control_1, "PSS2C", "remote_bus_control_1"),
+        input_code_2 = _wire_required(po.input_code_2, "PSS2C", "input_code_2"),
+        remote_bus_control_2 = _wire_required(po.remote_bus_control_2, "PSS2C", "remote_bus_control_2"),
+        M_rtf = _wire_required(po.m_rtf, "PSS2C", "M_rtf"),
+        N_rtf = _wire_required(po.n_rtf, "PSS2C", "N_rtf"),
+        Tw1 = _wire_required(po.tw1, "PSS2C", "Tw1"),
+        Tw2 = _wire_required(po.tw2, "PSS2C", "Tw2"),
+        T6 = _wire_required(po.t6, "PSS2C", "T6"),
+        Tw3 = _wire_required(po.tw3, "PSS2C", "Tw3"),
+        Tw4 = _wire_required(po.tw4, "PSS2C", "Tw4"),
+        T7 = _wire_required(po.t7, "PSS2C", "T7"),
+        Ks2 = _wire_required(po.ks2, "PSS2C", "Ks2"),
+        Ks3 = _wire_required(po.ks3, "PSS2C", "Ks3"),
+        T8 = _wire_required(po.t8, "PSS2C", "T8"),
+        T9 = _wire_required(po.t9, "PSS2C", "T9"),
+        Ks1 = _wire_required(po.ks1, "PSS2C", "Ks1"),
+        T1 = _wire_required(po.t1, "PSS2C", "T1"),
+        T2 = _wire_required(po.t2, "PSS2C", "T2"),
+        T3 = _wire_required(po.t3, "PSS2C", "T3"),
+        T4 = _wire_required(po.t4, "PSS2C", "T4"),
+        T10 = _wire_required(po.t10, "PSS2C", "T10"),
+        T11 = _wire_required(po.t11, "PSS2C", "T11"),
+        Vs1_lim = _wire_to_psy(Tuple{Float64, Float64}, po.vs1_lim),
+        Vs2_lim = _wire_to_psy(Tuple{Float64, Float64}, po.vs2_lim),
+        Vst_lim = _wire_to_psy(Tuple{Float64, Float64}, po.vst_lim),
+        T12 = _wire_required(po.t12, "PSS2C", "T12"),
+        T13 = _wire_required(po.t13, "PSS2C", "T13"),
+        PSS_Hysteresis_param = _wire_to_psy(Tuple{Float64, Float64}, po.pss_hysteresis_param),
+        Xcomp = _wire_required(po.xcomp, "PSS2C", "Xcomp"),
+        Tcomp = _wire_required(po.tcomp, "PSS2C", "Tcomp"),
+        hysteresis_binary_logic = _or_default(po.hysteresis_binary_logic, 1),
+    )
+end
+
+function to_openapi(value::PSS2C, refs::OpenAPIRefs)
+    return PD.PSS2C(;
+        id = component_id(refs, value),
+        input_code_1 = get_input_code_1(value),
+        remote_bus_control_1 = get_remote_bus_control_1(value),
+        input_code_2 = get_input_code_2(value),
+        remote_bus_control_2 = get_remote_bus_control_2(value),
+        m_rtf = get_M_rtf(value),
+        n_rtf = get_N_rtf(value),
+        tw1 = get_Tw1(value),
+        tw2 = get_Tw2(value),
+        t6 = get_T6(value),
+        tw3 = get_Tw3(value),
+        tw4 = get_Tw4(value),
+        t7 = get_T7(value),
+        ks2 = get_Ks2(value),
+        ks3 = get_Ks3(value),
+        t8 = get_T8(value),
+        t9 = get_T9(value),
+        ks1 = get_Ks1(value),
+        t1 = get_T1(value),
+        t2 = get_T2(value),
+        t3 = get_T3(value),
+        t4 = get_T4(value),
+        t10 = get_T10(value),
+        t11 = get_T11(value),
+        vs1_lim = _psy_to_wire(get_Vs1_lim(value)),
+        vs2_lim = _psy_to_wire(get_Vs2_lim(value)),
+        vst_lim = _psy_to_wire(get_Vst_lim(value)),
+        t12 = get_T12(value),
+        t13 = get_T13(value),
+        pss_hysteresis_param = _psy_to_wire(get_PSS_Hysteresis_param(value)),
+        xcomp = get_Xcomp(value),
+        tcomp = get_Tcomp(value),
+        hysteresis_binary_logic = get_hysteresis_binary_logic(value),
+    )
+end

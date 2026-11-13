@@ -215,6 +215,18 @@ tap changer, which can be used to determine the tap position during power flow c
 | `CONTROL_OF_DC_LINE`                    | Control of a DC line quantity                                             |
 | `ASYMMETRIC_ACTIVE_POWER_FLOW`          | Asymmetric active power flow control                                      |
 
+## [Transformer Regulation Orientations](@id xtf_regulation_orientation)
+
+`TransformerRegulationOrientation` states on which side of the `arc` of a
+[`TransformerCircuit`](@ref) the tap adjustment treats the regulated bus. It applies only
+when `regulated_bus` is not an end of the `arc`.
+
+| Name        | Description                                                            |
+|:----------- |:---------------------------------------------------------------------- |
+| `UNDEFINED` | The regulated bus is an end of the `arc`, or there is no regulated bus |
+| `FROM`      | Adjust the tap as if the regulated bus is on the `from` side           |
+| `TO`        | Adjust the tap as if the regulated bus is on the `to` side             |
+
 ## [LCC Control Modes](@id lcc_control_mode)
 
 `LCCControlMode` selects which schedule a `TwoTerminalLCCLine` holds (PSS/E `MDC`). The

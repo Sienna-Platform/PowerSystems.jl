@@ -1,5 +1,5 @@
 """
-    mutable struct RoundRotorExponential <: Machine
+    mutable struct RoundRotorExponential <: SynchronousMachineDynamics
         base_machine::RoundRotorMachine
         saturation_coeffs::Tuple{Float64, Float64}
 
@@ -10,7 +10,7 @@ IEEE Std 1110 §5.3.2 (Model 2.2). GENROE model in PSSE and PSLF.
 - `base_machine::RoundRotorMachine`: Round Rotor Machine model.
 - `saturation_coeffs::Tuple{Float64, Float64}``: Saturation coefficients for exponential model.
 """
-mutable struct RoundRotorExponential <: Machine
+mutable struct RoundRotorExponential <: SynchronousMachineDynamics
     base_machine::RoundRotorMachine
     saturation_coeffs::Tuple{Float64, Float64}
 end

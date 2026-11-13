@@ -5,7 +5,7 @@ This file is auto-generated. Do not edit.
 #! format: off
 
 """
-    mutable struct AVRSimple <: AVR
+    mutable struct AVRSimple <: ExcitationSystemDynamics
         Kv::Float64
         V_ref::Float64
         ext::Dict{String, Any}
@@ -28,7 +28,7 @@ i.e. an integrator controller on EMF
 - `states_types::Vector{StateTypes.Value}`: (**Do not modify.**) Simple AVR has 1 [differential](@ref states_list) [states](@ref S)
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
 """
-mutable struct AVRSimple <: AVR
+mutable struct AVRSimple <: ExcitationSystemDynamics
     "Proportional Gain"
     Kv::Float64
     "Reference Voltage Set-point (pu)"
@@ -86,3 +86,20 @@ set_V_ref!(value::AVRSimple, val) = value.V_ref = val
 set_ext!(value::AVRSimple, val) = value.ext = val
 """Set [`AVRSimple`](@ref) `states_types`."""
 set_states_types!(value::AVRSimple, val) = value.states_types = val
+
+
+
+function from_openapi(po::PD.AVRSimple, refs::OpenAPIRefs)
+    return AVRSimple(;
+        Kv = _wire_required(po.kv, "AVRSimple", "Kv"),
+        V_ref = _or_default(po.v_ref, 1.0),
+    )
+end
+
+function to_openapi(value::AVRSimple, refs::OpenAPIRefs)
+    return PD.AVRSimple(;
+        id = component_id(refs, value),
+        kv = get_Kv(value),
+        v_ref = get_V_ref(value),
+    )
+end

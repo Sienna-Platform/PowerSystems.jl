@@ -20,13 +20,13 @@ This file is auto-generated. Do not edit.
         kiv::Float64
         kpc::Float64
         kic::Float64
-        base_power::Float64
-        ext::Dict{String, Any}
         P_ref::Float64
         Q_ref::Float64
         V_ref::Float64
-        ω_ref::Float64
-        is_filter_differential::Int
+        frequency_ref::Float64
+        is_filter_differential::Bool
+        base_power::Float64
+        ext::Dict{String, Any}
         states::Vector{Symbol}
         n_states::Int
         internal::InfrastructureSystemsInternal
@@ -49,13 +49,13 @@ Parameters of 12-[states](@ref S) active power load based on the paper, ["Dynami
 - `kiv::Float64`: Integral constant for Voltage Control block, validation range: `(0, nothing)`
 - `kpc::Float64`: Proportional constant for Current Control block, validation range: `(0, nothing)`
 - `kic::Float64`: Integral constant for Current Control block, validation range: `(0, nothing)`
-- `base_power::Float64`: Base power of the unit (MVA) for [per unitization](@ref per_unit), validation range: `(0.0001, nothing)`
-- `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
 - `P_ref::Float64`: Reference active power (pu)
 - `Q_ref::Float64`: Reference reactive power (pu)
 - `V_ref::Float64`: Reference voltage (pu)
-- `ω_ref::Float64`: Reference frequency (pu)
-- `is_filter_differential::Int`: Boolean to decide if filter [states](@ref S) are differential or algebraic
+- `frequency_ref::Float64`: Reference frequency in Hz
+- `is_filter_differential::Bool`: Boolean to decide if filter [states](@ref S) are differential or algebraic
+- `base_power::Float64`: Base power of the unit (MVA) for [per unitization](@ref per_unit), validation range: `(0.0001, nothing)`
+- `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
 - `states::Vector{Symbol}`: (**Do not modify.**) The [states](@ref S) are:
 	θ_pll: PLL deviation angle, 
 	ϵ_pll: PLL integrator state, 
@@ -101,20 +101,20 @@ mutable struct ActiveConstantPowerLoad <: DynamicInjection
     kpc::Float64
     "Integral constant for Current Control block"
     kic::Float64
-    "Base power of the unit (MVA) for [per unitization](@ref per_unit)"
-    base_power::Float64
-    "An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation."
-    ext::Dict{String, Any}
     "Reference active power (pu)"
     P_ref::Float64
     "Reference reactive power (pu)"
     Q_ref::Float64
     "Reference voltage (pu)"
     V_ref::Float64
-    "Reference frequency (pu)"
-    ω_ref::Float64
+    "Reference frequency in Hz"
+    frequency_ref::Float64
     "Boolean to decide if filter [states](@ref S) are differential or algebraic"
-    is_filter_differential::Int
+    is_filter_differential::Bool
+    "Base power of the unit (MVA) for [per unitization](@ref per_unit)"
+    base_power::Float64
+    "An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation."
+    ext::Dict{String, Any}
     "(**Do not modify.**) The [states](@ref S) are:
 	θ_pll: PLL deviation angle, 
 	ϵ_pll: PLL integrator state, 
@@ -135,12 +135,12 @@ mutable struct ActiveConstantPowerLoad <: DynamicInjection
     internal::InfrastructureSystemsInternal
 end
 
-function ActiveConstantPowerLoad(name, r_load, c_dc, rf, lf, cf, rg, lg, kp_pll, ki_pll, kpv, kiv, kpc, kic, base_power, ext=Dict{String, Any}(), )
-    ActiveConstantPowerLoad(name, r_load, c_dc, rf, lf, cf, rg, lg, kp_pll, ki_pll, kpv, kiv, kpc, kic, base_power, ext, 1.0, 1.0, 1.0, 1.0, 1, [:θ_pll, :ϵ_pll, :η, :v_dc, :γd, :γq, :ir_cnv, :ii_cnv, :vr_filter, :vi_filter, :ir_filter, :ii_filter], 12, InfrastructureSystemsInternal(), )
+function ActiveConstantPowerLoad(name, r_load, c_dc, rf, lf, cf, rg, lg, kp_pll, ki_pll, kpv, kiv, kpc, kic, P_ref, Q_ref, V_ref, frequency_ref, is_filter_differential, base_power, ext=Dict{String, Any}(), )
+    ActiveConstantPowerLoad(name, r_load, c_dc, rf, lf, cf, rg, lg, kp_pll, ki_pll, kpv, kiv, kpc, kic, P_ref, Q_ref, V_ref, frequency_ref, is_filter_differential, base_power, ext, [:θ_pll, :ϵ_pll, :η, :v_dc, :γd, :γq, :ir_cnv, :ii_cnv, :vr_filter, :vi_filter, :ir_filter, :ii_filter], 12, InfrastructureSystemsInternal(), )
 end
 
-function ActiveConstantPowerLoad(; name, r_load, c_dc, rf, lf, cf, rg, lg, kp_pll, ki_pll, kpv, kiv, kpc, kic, base_power, ext=Dict{String, Any}(), P_ref=1.0, Q_ref=1.0, V_ref=1.0, ω_ref=1.0, is_filter_differential=1, states=[:θ_pll, :ϵ_pll, :η, :v_dc, :γd, :γq, :ir_cnv, :ii_cnv, :vr_filter, :vi_filter, :ir_filter, :ii_filter], n_states=12, internal=InfrastructureSystemsInternal(), )
-    ActiveConstantPowerLoad(name, r_load, c_dc, rf, lf, cf, rg, lg, kp_pll, ki_pll, kpv, kiv, kpc, kic, base_power, ext, P_ref, Q_ref, V_ref, ω_ref, is_filter_differential, states, n_states, internal, )
+function ActiveConstantPowerLoad(; name, r_load, c_dc, rf, lf, cf, rg, lg, kp_pll, ki_pll, kpv, kiv, kpc, kic, P_ref, Q_ref, V_ref, frequency_ref, is_filter_differential, base_power, ext=Dict{String, Any}(), states=[:θ_pll, :ϵ_pll, :η, :v_dc, :γd, :γq, :ir_cnv, :ii_cnv, :vr_filter, :vi_filter, :ir_filter, :ii_filter], n_states=12, internal=InfrastructureSystemsInternal(), )
+    ActiveConstantPowerLoad(name, r_load, c_dc, rf, lf, cf, rg, lg, kp_pll, ki_pll, kpv, kiv, kpc, kic, P_ref, Q_ref, V_ref, frequency_ref, is_filter_differential, base_power, ext, states, n_states, internal, )
 end
 
 # Constructor for demo purposes; non-functional.
@@ -160,6 +160,11 @@ function ActiveConstantPowerLoad(::Nothing)
         kiv=0,
         kpc=0,
         kic=0,
+        P_ref=0,
+        Q_ref=0,
+        V_ref=0,
+        frequency_ref=0,
+        is_filter_differential=false,
         base_power=100.0,
         ext=Dict{String, Any}(),
     )
@@ -193,20 +198,20 @@ get_kiv(value::ActiveConstantPowerLoad) = value.kiv
 get_kpc(value::ActiveConstantPowerLoad) = value.kpc
 """Get [`ActiveConstantPowerLoad`](@ref) `kic`."""
 get_kic(value::ActiveConstantPowerLoad) = value.kic
-
-_get_base_power(value::ActiveConstantPowerLoad) = value.base_power
-"""Get [`ActiveConstantPowerLoad`](@ref) `ext`."""
-get_ext(value::ActiveConstantPowerLoad) = value.ext
 """Get [`ActiveConstantPowerLoad`](@ref) `P_ref`."""
 get_P_ref(value::ActiveConstantPowerLoad) = value.P_ref
 """Get [`ActiveConstantPowerLoad`](@ref) `Q_ref`."""
 get_Q_ref(value::ActiveConstantPowerLoad) = value.Q_ref
 """Get [`ActiveConstantPowerLoad`](@ref) `V_ref`."""
 get_V_ref(value::ActiveConstantPowerLoad) = value.V_ref
-"""Get [`ActiveConstantPowerLoad`](@ref) `ω_ref`."""
-get_ω_ref(value::ActiveConstantPowerLoad) = value.ω_ref
+"""Get [`ActiveConstantPowerLoad`](@ref) `frequency_ref`."""
+get_frequency_ref(value::ActiveConstantPowerLoad) = value.frequency_ref
 """Get [`ActiveConstantPowerLoad`](@ref) `is_filter_differential`."""
 get_is_filter_differential(value::ActiveConstantPowerLoad) = value.is_filter_differential
+
+_get_base_power(value::ActiveConstantPowerLoad) = value.base_power
+"""Get [`ActiveConstantPowerLoad`](@ref) `ext`."""
+get_ext(value::ActiveConstantPowerLoad) = value.ext
 """Get [`ActiveConstantPowerLoad`](@ref) `states`."""
 get_states(value::ActiveConstantPowerLoad) = value.states
 """Get [`ActiveConstantPowerLoad`](@ref) `n_states`."""
@@ -240,15 +245,68 @@ set_kiv!(value::ActiveConstantPowerLoad, val) = value.kiv = val
 set_kpc!(value::ActiveConstantPowerLoad, val) = value.kpc = val
 """Set [`ActiveConstantPowerLoad`](@ref) `kic`."""
 set_kic!(value::ActiveConstantPowerLoad, val) = value.kic = val
-"""Set [`ActiveConstantPowerLoad`](@ref) `ext`."""
-set_ext!(value::ActiveConstantPowerLoad, val) = value.ext = val
 """Set [`ActiveConstantPowerLoad`](@ref) `P_ref`."""
 set_P_ref!(value::ActiveConstantPowerLoad, val) = value.P_ref = val
 """Set [`ActiveConstantPowerLoad`](@ref) `Q_ref`."""
 set_Q_ref!(value::ActiveConstantPowerLoad, val) = value.Q_ref = val
 """Set [`ActiveConstantPowerLoad`](@ref) `V_ref`."""
 set_V_ref!(value::ActiveConstantPowerLoad, val) = value.V_ref = val
-"""Set [`ActiveConstantPowerLoad`](@ref) `ω_ref`."""
-set_ω_ref!(value::ActiveConstantPowerLoad, val) = value.ω_ref = val
+"""Set [`ActiveConstantPowerLoad`](@ref) `frequency_ref`."""
+set_frequency_ref!(value::ActiveConstantPowerLoad, val) = value.frequency_ref = val
 """Set [`ActiveConstantPowerLoad`](@ref) `is_filter_differential`."""
 set_is_filter_differential!(value::ActiveConstantPowerLoad, val) = value.is_filter_differential = val
+"""Set [`ActiveConstantPowerLoad`](@ref) `ext`."""
+set_ext!(value::ActiveConstantPowerLoad, val) = value.ext = val
+
+
+
+function from_openapi(po::PD.ActiveConstantPowerLoad, refs::OpenAPIRefs)
+    return ActiveConstantPowerLoad(;
+        name = _wire_required(po.name, "ActiveConstantPowerLoad", "name"),
+        r_load = _wire_required(po.r_load, "ActiveConstantPowerLoad", "r_load"),
+        c_dc = _wire_required(po.c_dc, "ActiveConstantPowerLoad", "c_dc"),
+        rf = _wire_required(po.rf, "ActiveConstantPowerLoad", "rf"),
+        lf = _wire_required(po.lf, "ActiveConstantPowerLoad", "lf"),
+        cf = _wire_required(po.cf, "ActiveConstantPowerLoad", "cf"),
+        rg = _wire_required(po.rg, "ActiveConstantPowerLoad", "rg"),
+        lg = _wire_required(po.lg, "ActiveConstantPowerLoad", "lg"),
+        kp_pll = _wire_required(po.kp_pll, "ActiveConstantPowerLoad", "kp_pll"),
+        ki_pll = _wire_required(po.ki_pll, "ActiveConstantPowerLoad", "ki_pll"),
+        kpv = _wire_required(po.kpv, "ActiveConstantPowerLoad", "kpv"),
+        kiv = _wire_required(po.kiv, "ActiveConstantPowerLoad", "kiv"),
+        kpc = _wire_required(po.kpc, "ActiveConstantPowerLoad", "kpc"),
+        kic = _wire_required(po.kic, "ActiveConstantPowerLoad", "kic"),
+        P_ref = _wire_required(po.p_ref, "ActiveConstantPowerLoad", "P_ref"),
+        Q_ref = _wire_required(po.q_ref, "ActiveConstantPowerLoad", "Q_ref"),
+        V_ref = _wire_required(po.v_ref, "ActiveConstantPowerLoad", "V_ref"),
+        frequency_ref = _wire_required(po.frequency_ref, "ActiveConstantPowerLoad", "frequency_ref"),
+        is_filter_differential = _wire_required(po.is_filter_differential, "ActiveConstantPowerLoad", "is_filter_differential"),
+        base_power = _wire_required(po.base_power, "ActiveConstantPowerLoad", "base_power"),
+    )
+end
+
+function to_openapi(value::ActiveConstantPowerLoad, refs::OpenAPIRefs)
+    return PD.ActiveConstantPowerLoad(;
+        id = component_id(refs, value),
+        name = get_name(value),
+        r_load = get_r_load(value),
+        c_dc = get_c_dc(value),
+        rf = get_rf(value),
+        lf = get_lf(value),
+        cf = get_cf(value),
+        rg = get_rg(value),
+        lg = get_lg(value),
+        kp_pll = get_kp_pll(value),
+        ki_pll = get_ki_pll(value),
+        kpv = get_kpv(value),
+        kiv = get_kiv(value),
+        kpc = get_kpc(value),
+        kic = get_kic(value),
+        p_ref = get_P_ref(value),
+        q_ref = get_Q_ref(value),
+        v_ref = get_V_ref(value),
+        frequency_ref = get_frequency_ref(value),
+        is_filter_differential = get_is_filter_differential(value),
+        base_power = _get_base_power(value),
+    )
+end

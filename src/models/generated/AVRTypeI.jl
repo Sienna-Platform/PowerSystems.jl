@@ -5,7 +5,7 @@ This file is auto-generated. Do not edit.
 #! format: off
 
 """
-    mutable struct AVRTypeI <: AVR
+    mutable struct AVRTypeI <: ExcitationSystemDynamics
         Ka::Float64
         Ke::Float64
         Kf::Float64
@@ -48,7 +48,7 @@ Parameters of an Automatic Voltage Regulator Type I - Resembles IEEE Type DC1
 - `states_types::Vector{StateTypes.Value}`: (**Do not modify.**) AVR Type I has 4 [differential](@ref states_list) [states](@ref S)
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
 """
-mutable struct AVRTypeI <: AVR
+mutable struct AVRTypeI <: ExcitationSystemDynamics
     "Amplifier Gain"
     Ka::Float64
     "Field circuit integral deviation"
@@ -172,3 +172,38 @@ set_V_ref!(value::AVRTypeI, val) = value.V_ref = val
 set_ext!(value::AVRTypeI, val) = value.ext = val
 """Set [`AVRTypeI`](@ref) `states_types`."""
 set_states_types!(value::AVRTypeI, val) = value.states_types = val
+
+
+
+function from_openapi(po::PD.AVRTypeI, refs::OpenAPIRefs)
+    return AVRTypeI(;
+        Ka = _wire_required(po.ka, "AVRTypeI", "Ka"),
+        Ke = _wire_required(po.ke, "AVRTypeI", "Ke"),
+        Kf = _wire_required(po.kf, "AVRTypeI", "Kf"),
+        Ta = _wire_required(po.ta, "AVRTypeI", "Ta"),
+        Te = _wire_required(po.te, "AVRTypeI", "Te"),
+        Tf = _wire_required(po.tf, "AVRTypeI", "Tf"),
+        Tr = _wire_required(po.tr, "AVRTypeI", "Tr"),
+        Va_lim = _or_default(po.va_lim, nothing),
+        Ae = _wire_required(po.ae, "AVRTypeI", "Ae"),
+        Be = _wire_required(po.be, "AVRTypeI", "Be"),
+        V_ref = _or_default(po.v_ref, 1.0),
+    )
+end
+
+function to_openapi(value::AVRTypeI, refs::OpenAPIRefs)
+    return PD.AVRTypeI(;
+        id = component_id(refs, value),
+        ka = get_Ka(value),
+        ke = get_Ke(value),
+        kf = get_Kf(value),
+        ta = get_Ta(value),
+        te = get_Te(value),
+        tf = get_Tf(value),
+        tr = get_Tr(value),
+        va_lim = _minmax_po(get_Va_lim(value)),
+        ae = get_Ae(value),
+        be = get_Be(value),
+        v_ref = get_V_ref(value),
+    )
+end

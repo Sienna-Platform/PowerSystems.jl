@@ -143,3 +143,36 @@ set_internal_angle_frequencies!(value::PeriodicVariableSource, val) = value.inte
 set_internal_angle_coefficients!(value::PeriodicVariableSource, val) = value.internal_angle_coefficients = val
 """Set [`PeriodicVariableSource`](@ref) `ext`."""
 set_ext!(value::PeriodicVariableSource, val) = value.ext = val
+
+
+
+function from_openapi(po::PD.PeriodicVariableSource, refs::OpenAPIRefs)
+    return PeriodicVariableSource(;
+        name = _wire_required(po.name, "PeriodicVariableSource", "name"),
+        R_th = _wire_required(po.r_th, "PeriodicVariableSource", "R_th"),
+        X_th = _wire_required(po.x_th, "PeriodicVariableSource", "X_th"),
+        internal_voltage_bias = _or_default(po.internal_voltage_bias, 0.0),
+        internal_voltage_frequencies = _wire_to_psy(Vector{Float64}, po.internal_voltage_frequencies, [0.0]),
+        internal_voltage_coefficients = _wire_to_psy(Vector{Tuple{Float64,Float64}}, po.internal_voltage_coefficients, [(0.0, 0.0)]),
+        internal_angle_bias = _or_default(po.internal_angle_bias, 0.0),
+        internal_angle_frequencies = _wire_to_psy(Vector{Float64}, po.internal_angle_frequencies, [0.0]),
+        internal_angle_coefficients = _wire_to_psy(Vector{Tuple{Float64,Float64}}, po.internal_angle_coefficients, [(0.0, 0.0)]),
+        base_power = _or_default(po.base_power, 100.0),
+    )
+end
+
+function to_openapi(value::PeriodicVariableSource, refs::OpenAPIRefs)
+    return PD.PeriodicVariableSource(;
+        id = component_id(refs, value),
+        name = get_name(value),
+        r_th = get_R_th(value),
+        x_th = get_X_th(value),
+        internal_voltage_bias = get_internal_voltage_bias(value),
+        internal_voltage_frequencies = _psy_to_wire(get_internal_voltage_frequencies(value)),
+        internal_voltage_coefficients = _psy_to_wire(get_internal_voltage_coefficients(value)),
+        internal_angle_bias = get_internal_angle_bias(value),
+        internal_angle_frequencies = _psy_to_wire(get_internal_angle_frequencies(value)),
+        internal_angle_coefficients = _psy_to_wire(get_internal_angle_coefficients(value)),
+        base_power = _get_base_power(value),
+    )
+end

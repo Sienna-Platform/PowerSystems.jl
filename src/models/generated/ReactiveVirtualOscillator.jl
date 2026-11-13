@@ -80,3 +80,22 @@ set_V_ref!(value::ReactiveVirtualOscillator, val) = value.V_ref = val
 set_Q_ref!(value::ReactiveVirtualOscillator, val) = value.Q_ref = val
 """Set [`ReactiveVirtualOscillator`](@ref) `ext`."""
 set_ext!(value::ReactiveVirtualOscillator, val) = value.ext = val
+
+
+
+function from_openapi(po::PD.ReactiveVirtualOscillator, refs::OpenAPIRefs)
+    return ReactiveVirtualOscillator(;
+        k2 = _wire_required(po.k2, "ReactiveVirtualOscillator", "k2"),
+        V_ref = _or_default(po.v_ref, 1.0),
+        Q_ref = _or_default(po.q_ref, 1.0),
+    )
+end
+
+function to_openapi(value::ReactiveVirtualOscillator, refs::OpenAPIRefs)
+    return PD.ReactiveVirtualOscillator(;
+        id = component_id(refs, value),
+        k2 = get_k2(value),
+        v_ref = get_V_ref(value),
+        q_ref = get_Q_ref(value),
+    )
+end

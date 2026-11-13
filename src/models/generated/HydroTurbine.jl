@@ -28,6 +28,7 @@ This file is auto-generated. Do not edit.
         conversion_factor::Float64
         prime_mover_type::PrimeMovers.Value
         travel_time::Union{Nothing, Float64}
+        remote_regulated_bus::Union{Nothing, ACBus}
         services::Vector{Service}
         dynamic_injector::Union{Nothing, DynamicInjection}
         ext::Dict{String, Any}
@@ -59,6 +60,7 @@ A hydropower generator that must have a [`HydroReservoir`](@ref) attached, suita
 - `conversion_factor::Float64`: (default: `1.0`) Conversion factor from flow/volume to energy: m^3 -> p.u-hr
 - `prime_mover_type::PrimeMovers.Value`: (default: `PrimeMovers.HY`) Prime mover technology according to EIA 923. Options are listed [here](@ref pm_list)
 - `travel_time::Union{Nothing, Float64}`: (default: `nothing`) Downstream (from reservoir into turbine) travel time in minutes.
+- `remote_regulated_bus::Union{Nothing, ACBus}`: (default: `nothing`) Bus whose voltage this device regulates, to the `voltage_setpoint` of that bus. `nothing` regulates the bus of this device. The bus must not be the same as `bus`.
 - `services::Vector{Service}`: (default: `Device[]`) Services that this device contributes to
 - `dynamic_injector::Union{Nothing, DynamicInjection}`: (default: `nothing`) corresponding dynamic injection device
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
@@ -110,6 +112,8 @@ mutable struct HydroTurbine <: HydroUnit
     prime_mover_type::PrimeMovers.Value
     "Downstream (from reservoir into turbine) travel time in minutes."
     travel_time::Union{Nothing, Float64}
+    "Bus whose voltage this device regulates, to the `voltage_setpoint` of that bus. `nothing` regulates the bus of this device. The bus must not be the same as `bus`."
+    remote_regulated_bus::Union{Nothing, ACBus}
     "Services that this device contributes to"
     services::Vector{Service}
     "corresponding dynamic injection device"
@@ -120,12 +124,12 @@ mutable struct HydroTurbine <: HydroUnit
     internal::InfrastructureSystemsInternal
 end
 
-function HydroTurbine(name, available, bus, active_power, reactive_power, rating, active_power_limits, reactive_power_limits, base_power, status=OperationalStates.OFFLINE, time_at_status=INFINITE_TIME, commitment_mode=CommitmentModes.COMMITTED, operation_cost=HydroGenerationCost(nothing), powerhouse_elevation=0.0, ramp_limits=nothing, time_limits=nothing, outflow_limits=nothing, efficiency=1.0, turbine_type=HydroTurbineType.UNKNOWN, conversion_factor=1.0, prime_mover_type=PrimeMovers.HY, travel_time=nothing, services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), )
-    HydroTurbine(name, available, bus, active_power, reactive_power, rating, active_power_limits, reactive_power_limits, base_power, status, time_at_status, commitment_mode, operation_cost, powerhouse_elevation, ramp_limits, time_limits, outflow_limits, efficiency, turbine_type, conversion_factor, prime_mover_type, travel_time, services, dynamic_injector, ext, InfrastructureSystemsInternal(), )
+function HydroTurbine(name, available, bus, active_power, reactive_power, rating, active_power_limits, reactive_power_limits, base_power, status=OperationalStates.OFFLINE, time_at_status=INFINITE_TIME, commitment_mode=CommitmentModes.COMMITTED, operation_cost=HydroGenerationCost(nothing), powerhouse_elevation=0.0, ramp_limits=nothing, time_limits=nothing, outflow_limits=nothing, efficiency=1.0, turbine_type=HydroTurbineType.UNKNOWN, conversion_factor=1.0, prime_mover_type=PrimeMovers.HY, travel_time=nothing, remote_regulated_bus=nothing, services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), )
+    HydroTurbine(name, available, bus, active_power, reactive_power, rating, active_power_limits, reactive_power_limits, base_power, status, time_at_status, commitment_mode, operation_cost, powerhouse_elevation, ramp_limits, time_limits, outflow_limits, efficiency, turbine_type, conversion_factor, prime_mover_type, travel_time, remote_regulated_bus, services, dynamic_injector, ext, InfrastructureSystemsInternal(), )
 end
 
-function HydroTurbine(; name, available, bus, active_power, reactive_power, rating, active_power_limits, reactive_power_limits, base_power, status=OperationalStates.OFFLINE, time_at_status=INFINITE_TIME, commitment_mode=CommitmentModes.COMMITTED, operation_cost=HydroGenerationCost(nothing), powerhouse_elevation=0.0, ramp_limits=nothing, time_limits=nothing, outflow_limits=nothing, efficiency=1.0, turbine_type=HydroTurbineType.UNKNOWN, conversion_factor=1.0, prime_mover_type=PrimeMovers.HY, travel_time=nothing, services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Unitful.Units, )
-    value = HydroTurbine(name, available, bus, _placeholder(active_power), _placeholder(reactive_power), _placeholder(rating), _placeholder(active_power_limits), _placeholder(reactive_power_limits), base_power, status, time_at_status, commitment_mode, operation_cost, powerhouse_elevation, _placeholder(ramp_limits), time_limits, outflow_limits, efficiency, turbine_type, conversion_factor, prime_mover_type, travel_time, services, dynamic_injector, ext, internal, )
+function HydroTurbine(; name, available, bus, active_power, reactive_power, rating, active_power_limits, reactive_power_limits, base_power, status=OperationalStates.OFFLINE, time_at_status=INFINITE_TIME, commitment_mode=CommitmentModes.COMMITTED, operation_cost=HydroGenerationCost(nothing), powerhouse_elevation=0.0, ramp_limits=nothing, time_limits=nothing, outflow_limits=nothing, efficiency=1.0, turbine_type=HydroTurbineType.UNKNOWN, conversion_factor=1.0, prime_mover_type=PrimeMovers.HY, travel_time=nothing, remote_regulated_bus=nothing, services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Unitful.Units, )
+    value = HydroTurbine(name, available, bus, _placeholder(active_power), _placeholder(reactive_power), _placeholder(rating), _placeholder(active_power_limits), _placeholder(reactive_power_limits), base_power, status, time_at_status, commitment_mode, operation_cost, powerhouse_elevation, _placeholder(ramp_limits), time_limits, outflow_limits, efficiency, turbine_type, conversion_factor, prime_mover_type, travel_time, remote_regulated_bus, services, dynamic_injector, ext, internal, )
     set_active_power!(value, _tag(active_power, input_basis, Val(:mw)))
     set_reactive_power!(value, _tag(reactive_power, input_basis, Val(:mvar)))
     set_rating!(value, _tag(rating, input_basis, Val(:mva)))
@@ -161,6 +165,7 @@ function HydroTurbine(::Nothing)
         conversion_factor=1.0,
         prime_mover_type=PrimeMovers.OT,
         travel_time=nothing,
+        remote_regulated_bus=nothing,
         services=Device[],
         dynamic_injector=nothing,
         ext=Dict{String, Any}(),
@@ -248,6 +253,8 @@ get_conversion_factor(value::HydroTurbine) = value.conversion_factor
 get_prime_mover_type(value::HydroTurbine) = value.prime_mover_type
 """Get [`HydroTurbine`](@ref) `travel_time`."""
 get_travel_time(value::HydroTurbine) = value.travel_time
+"""Get [`HydroTurbine`](@ref) `remote_regulated_bus`."""
+get_remote_regulated_bus(value::HydroTurbine) = value.remote_regulated_bus
 """Get [`HydroTurbine`](@ref) `services`."""
 get_services(value::HydroTurbine) = value.services
 """Get [`HydroTurbine`](@ref) `dynamic_injector`."""
@@ -306,6 +313,8 @@ set_conversion_factor!(value::HydroTurbine, val) = value.conversion_factor = val
 set_prime_mover_type!(value::HydroTurbine, val) = value.prime_mover_type = val
 """Set [`HydroTurbine`](@ref) `travel_time`."""
 set_travel_time!(value::HydroTurbine, val) = value.travel_time = val
+"""Set [`HydroTurbine`](@ref) `remote_regulated_bus`."""
+set_remote_regulated_bus!(value::HydroTurbine, val) = value.remote_regulated_bus = val
 """Set [`HydroTurbine`](@ref) `services`."""
 set_services!(value::HydroTurbine, val) = value.services = val
 """Set [`HydroTurbine`](@ref) `ext`."""
@@ -336,6 +345,7 @@ function from_openapi(po::PO.HydroTurbine, refs::OpenAPIRefs, ::ComponentBaseUni
         conversion_factor = _or_default(po.conversion_factor, 1.0),
         prime_mover_type = _or_default(po.prime_mover_type, PrimeMovers.HY),
         travel_time = _or_default(po.travel_time, nothing),
+        remote_regulated_bus = resolve_ref(refs, po.remote_regulated_bus, ACBus),
         input_basis = u"CU",
     )
 end
@@ -364,6 +374,7 @@ function from_openapi(po::PO.HydroTurbine, refs::OpenAPIRefs, ::NaturalUnit)
         conversion_factor = _or_default(po.conversion_factor, 1.0),
         prime_mover_type = _or_default(po.prime_mover_type, PrimeMovers.HY),
         travel_time = _or_default(po.travel_time, nothing),
+        remote_regulated_bus = resolve_ref(refs, po.remote_regulated_bus, ACBus),
         input_basis = u"CU",
     )
 end
@@ -397,6 +408,7 @@ function to_openapi(value::HydroTurbine, refs::OpenAPIRefs, ::ComponentBaseUnit)
         conversion_factor = get_conversion_factor(value),
         prime_mover_type = PO.PrimeMovers(string(get_prime_mover_type(value))),
         travel_time = _optional_to_wire(get_travel_time(value)),
+        remote_regulated_bus = _component_id_optional(refs, get_remote_regulated_bus(value)),
         power_units = _power_units_string(CU),
     )
 end
@@ -426,6 +438,7 @@ function to_openapi(value::HydroTurbine, refs::OpenAPIRefs, ::NaturalUnit)
         conversion_factor = get_conversion_factor(value),
         prime_mover_type = PO.PrimeMovers(string(get_prime_mover_type(value))),
         travel_time = _optional_to_wire(get_travel_time(value)),
+        remote_regulated_bus = _component_id_optional(refs, get_remote_regulated_bus(value)),
         power_units = _power_units_string(NU),
     )
 end

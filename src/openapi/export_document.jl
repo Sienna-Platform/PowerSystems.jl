@@ -62,9 +62,6 @@ function to_openapi(outage::PlannedOutage, refs::OpenAPIRefs)
     return PO.PlannedOutage(;
         id = component_id(refs, outage),
         outage_schedule = get_outage_schedule(outage),
-        monitored_components = _monitored_component_ids(
-            refs, get_monitored_components(outage),
-        ),
         identifier = get_identifier(outage),
     )
 end
@@ -153,14 +150,10 @@ end
 """
 Warn, naming each type and how many of it, when `sys` holds components no converter covers.
 
-Those components are omitted from the document. This is accepted for now since dynamics is
-deferred, so no dynamic type has a converter and a dynamics-bearing system cannot round-trip
-through a document — but it is reported on every export rather than left silent, so a consumer
-of the document knows what is not in it.
-
-Warns rather than errors: blocking would make the document unusable as a cache format for
-systems that carry dynamics, and dynamics is not going to production on this line yet. When a
-converter is added to [`DOCUMENT_PLAN`](@ref), its type drops out of this warning automatically.
+Those components are omitted from the document and will not survive a round trip. It is
+reported on every export rather than left silent, so a consumer of the document knows what is
+not in it. When a converter is added to [`DOCUMENT_PLAN`](@ref), its type drops out of this
+warning automatically. Dynamic injections have converters, so they never appear here.
 """
 function warn_unexportable_components(sys::System)
     counts = Dict{Symbol, Int}()
@@ -248,13 +241,108 @@ function _build_export_refs(sys::System)
     for attr in IS.iterate_supplemental_attributes(sys.data)
         highest = max(highest, IS.get_id(attr))
     end
+    for dyn in get_components(DynamicInjection, sys)
+        id = IS.get_id(dyn)
+        highest = max(highest, id)
+        refs[id] = dyn
+    end
     next_id = highest + 1
     for circuit in circuits
         refs[next_id] = circuit
         next_id += 1
     end
+    # A dynamic injection is a component with its own id. Its function blocks are not
+    # components, so, like a circuit, each draws a fresh one.
+    for dyn in get_components(DynamicInjection, sys)
+        next_id = _register_dynamic_blocks!(refs, _dynamic_blocks(dyn), next_id)
+    end
     return refs
 end
+
+# ── dynamics ─────────────────────────────────────────────────────────────────────
+
+"""The function blocks an injection names: none for a leaf injection."""
+_dynamic_blocks(::DynamicInjection) = ()
+_dynamic_blocks(dyn::DynamicGenerator) = (
+    get_synchronous_machine_dynamics(dyn),
+    get_shaft(dyn),
+    get_excitation_system_dynamics(dyn),
+    get_turbine_governor_dynamics(dyn),
+    get_power_system_stabilizer_dynamics(dyn),
+)
+_dynamic_blocks(dyn::DynamicInverter) = (
+    get_converter(dyn),
+    get_active_power_control(dyn),
+    get_reactive_power_control(dyn),
+    get_inner_control(dyn),
+    get_dc_source(dyn),
+    get_reference_frame_rotation(dyn),
+    get_filter(dyn),
+    _optional_block(get_current_limitation(dyn))...,
+)
+
+_optional_block(::Nothing) = ()
+_optional_block(block) = (block,)
+
+"""The blocks a block itself names: a saturation machine names its base machine."""
+_nested_blocks(::DynamicComponent) = ()
+for saturation_type in (
+    :RoundRotorQuadratic,
+    :RoundRotorExponential,
+    :SalientPoleQuadratic,
+    :SalientPoleExponential,
+)
+    @eval _nested_blocks(block::$saturation_type) = (get_base_machine(block),)
+end
+
+"""Register `blocks`, nested blocks first, each under a fresh id from `next_id`, and return
+the next unused id. A block already registered (one object shared by two injections) keeps
+its id."""
+function _register_dynamic_blocks!(refs::OpenAPIRefs, blocks, next_id::Int)
+    for block in blocks
+        next_id = _register_dynamic_blocks!(refs, _nested_blocks(block), next_id)
+        if !has_component_id(refs, block)
+            refs[next_id] = block
+            next_id += 1
+        end
+    end
+    return next_id
+end
+
+"""Append `blocks` to `out`, nested blocks first, each once."""
+function _collect_dynamic_blocks!(out::Vector, seen::Base.IdSet, blocks)
+    for block in blocks
+        _collect_dynamic_blocks!(out, seen, _nested_blocks(block))
+        if !(block in seen)
+            push!(seen, block)
+            push!(out, block)
+        end
+    end
+    return out
+end
+
+"""Export every dynamic injection with the function blocks it names, blocks first."""
+function _export_dynamics!(doc::PC.SystemDocument, refs::OpenAPIRefs, sys::System)
+    seen = Base.IdSet{Any}()
+    for dyn in get_components(DynamicInjection, sys)
+        blocks = _collect_dynamic_blocks!(Any[], seen, _dynamic_blocks(dyn))
+        for component in Iterators.flatten((blocks, (dyn,)))
+            PC.add_component!(doc, to_openapi(component, refs))
+            _export_ext!(doc, component_id(refs, component), component)
+        end
+    end
+    return nothing
+end
+
+"""The injector a static device names; `nothing` for any other component."""
+_dynamic_injector_of(::Any) = nothing
+_dynamic_injector_of(c::StaticInjection) = get_dynamic_injector(c)
+
+"""Name the injector in the static device's wire struct: the generated converter leaves
+`dynamic_injector` alone."""
+_with_dynamic_injector(po, ::Nothing, ::OpenAPIRefs) = po
+_with_dynamic_injector(po, dyn, refs::OpenAPIRefs) =
+    _po_with(po; dynamic_injector = component_id(refs, dyn))
 
 # ── component pass ───────────────────────────────────────────────────────────────
 
@@ -272,10 +360,14 @@ function _export_components!(
 )
     for (_po_type, psy_type, key, addable) in DOCUMENT_PLAN
         for c in _plan_components(sys, psy_type)
-            PC.add_component!(doc, to_openapi(c, refs, val))
+            po = _with_dynamic_injector(
+                to_openapi(c, refs, val), _dynamic_injector_of(c), refs,
+            )
+            PC.add_component!(doc, po)
             _export_ext!(doc, component_id(refs, c), c)
         end
     end
+    _export_dynamics!(doc, refs, sys)
     return nothing
 end
 

@@ -5,7 +5,7 @@ This file is auto-generated. Do not edit.
 #! format: off
 
 """
-    mutable struct GeneralGovModel <: TurbineGov
+    mutable struct GeneralGovModel <: TurbineGovernorDynamics
         Rselect::Int
         fuel_flag::Int
         R::Float64
@@ -51,8 +51,8 @@ GE General Governor/Turbine Model. The GeneralGovModel (GGOV1) model is a genera
 # Arguments
 - `Rselect::Int`: Feedback signal for governor droop, validation range: `(-2, 1)`
 - `fuel_flag::Int`: Flag Switch for fuel source characteristic, validation range: `(0, 1)`
-- `R::Float64`: Speed droop parameter, validation range: `(eps(), nothing)`
-- `Tpelec::Float64`: Electrical power transducer time constant, seconds, validation range: `(eps(), nothing)`
+- `R::Float64`: Speed droop parameter, validation range: `(0.0001, nothing)`
+- `Tpelec::Float64`: Electrical power transducer time constant, seconds, validation range: `(0.0001, nothing)`
 - `speed_error_signal::MinMax`: Speed error signal limits
 - `Kp_gov::Float64`: Governor proportional gain, validation range: `(0, nothing)`
 - `Ki_gov::Float64`: Governor integral gain, validation range: `(0, nothing)`
@@ -75,7 +75,7 @@ GE General Governor/Turbine Model. The GeneralGovModel (GGOV1) model is a genera
 - `Ki_mw::Float64`: Power controller (reset) gain, validation range: `(0, nothing)`
 - `A_set::Float64`: Acceleration limiter setpoint, pu/sec, validation range: `(0, nothing)`
 - `Ka::Float64`: Acceleration limiter gain, validation range: `(0, nothing)`
-- `Ta::Float64`: Acceleration limiter time constant , validation range: `(eps(), nothing)`
+- `Ta::Float64`: Acceleration limiter time constant , validation range: `(0.0001, nothing)`
 - `T_rate::Float64`: Turbine rating, validation range: `(0, nothing)`
 - `db::Float64`: Speed governor deadband, validation range: `(0, nothing)`
 - `Tsa::Float64`: Temperature detection lead time constant, validation range: `(0, nothing)`
@@ -98,7 +98,7 @@ GE General Governor/Turbine Model. The GeneralGovModel (GGOV1) model is a genera
 - `states_types::Vector{StateTypes.Value}`: (**Do not modify.**) GGOV1 has 10 [differential](@ref states_list) [states](@ref S)
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
 """
-mutable struct GeneralGovModel <: TurbineGov
+mutable struct GeneralGovModel <: TurbineGovernorDynamics
     "Feedback signal for governor droop"
     Rselect::Int
     "Flag Switch for fuel source characteristic"
@@ -382,3 +382,82 @@ set_P_ref!(value::GeneralGovModel, val) = value.P_ref = val
 set_ext!(value::GeneralGovModel, val) = value.ext = val
 """Set [`GeneralGovModel`](@ref) `states_types`."""
 set_states_types!(value::GeneralGovModel, val) = value.states_types = val
+
+
+
+function from_openapi(po::PD.GeneralGovModel, refs::OpenAPIRefs)
+    return GeneralGovModel(;
+        Rselect = _wire_required(po.rselect, "GeneralGovModel", "Rselect"),
+        fuel_flag = _wire_required(po.fuel_flag, "GeneralGovModel", "fuel_flag"),
+        R = _wire_required(po.r, "GeneralGovModel", "R"),
+        Tpelec = _wire_required(po.tpelec, "GeneralGovModel", "Tpelec"),
+        speed_error_signal = _or_default(po.speed_error_signal, nothing),
+        Kp_gov = _wire_required(po.kp_gov, "GeneralGovModel", "Kp_gov"),
+        Ki_gov = _wire_required(po.ki_gov, "GeneralGovModel", "Ki_gov"),
+        Kd_gov = _wire_required(po.kd_gov, "GeneralGovModel", "Kd_gov"),
+        Td_gov = _wire_required(po.td_gov, "GeneralGovModel", "Td_gov"),
+        valve_position_limits = _or_default(po.valve_position_limits, nothing),
+        T_act = _wire_required(po.t_act, "GeneralGovModel", "T_act"),
+        K_turb = _wire_required(po.k_turb, "GeneralGovModel", "K_turb"),
+        Wf_nl = _wire_required(po.wf_nl, "GeneralGovModel", "Wf_nl"),
+        Tb = _wire_required(po.tb, "GeneralGovModel", "Tb"),
+        Tc = _wire_required(po.tc, "GeneralGovModel", "Tc"),
+        T_eng = _wire_required(po.t_eng, "GeneralGovModel", "T_eng"),
+        Tf_load = _wire_required(po.tf_load, "GeneralGovModel", "Tf_load"),
+        Kp_load = _wire_required(po.kp_load, "GeneralGovModel", "Kp_load"),
+        Ki_load = _wire_required(po.ki_load, "GeneralGovModel", "Ki_load"),
+        Ld_ref = _wire_required(po.ld_ref, "GeneralGovModel", "Ld_ref"),
+        Dm = _wire_required(po.dm, "GeneralGovModel", "Dm"),
+        R_open = _wire_required(po.r_open, "GeneralGovModel", "R_open"),
+        R_close = _wire_required(po.r_close, "GeneralGovModel", "R_close"),
+        Ki_mw = _wire_required(po.ki_mw, "GeneralGovModel", "Ki_mw"),
+        A_set = _wire_required(po.a_set, "GeneralGovModel", "A_set"),
+        Ka = _wire_required(po.ka, "GeneralGovModel", "Ka"),
+        Ta = _wire_required(po.ta, "GeneralGovModel", "Ta"),
+        T_rate = _wire_required(po.t_rate, "GeneralGovModel", "T_rate"),
+        db = _wire_required(po.db, "GeneralGovModel", "db"),
+        Tsa = _wire_required(po.tsa, "GeneralGovModel", "Tsa"),
+        Tsb = _wire_required(po.tsb, "GeneralGovModel", "Tsb"),
+        R_lim = _or_default(po.r_lim, nothing),
+        P_ref = _or_default(po.p_ref, 1.0),
+    )
+end
+
+function to_openapi(value::GeneralGovModel, refs::OpenAPIRefs)
+    return PD.GeneralGovModel(;
+        id = component_id(refs, value),
+        rselect = get_Rselect(value),
+        fuel_flag = get_fuel_flag(value),
+        r = get_R(value),
+        tpelec = get_Tpelec(value),
+        speed_error_signal = _minmax_po(get_speed_error_signal(value)),
+        kp_gov = get_Kp_gov(value),
+        ki_gov = get_Ki_gov(value),
+        kd_gov = get_Kd_gov(value),
+        td_gov = get_Td_gov(value),
+        valve_position_limits = _minmax_po(get_valve_position_limits(value)),
+        t_act = get_T_act(value),
+        k_turb = get_K_turb(value),
+        wf_nl = get_Wf_nl(value),
+        tb = get_Tb(value),
+        tc = get_Tc(value),
+        t_eng = get_T_eng(value),
+        tf_load = get_Tf_load(value),
+        kp_load = get_Kp_load(value),
+        ki_load = get_Ki_load(value),
+        ld_ref = get_Ld_ref(value),
+        dm = get_Dm(value),
+        r_open = get_R_open(value),
+        r_close = get_R_close(value),
+        ki_mw = get_Ki_mw(value),
+        a_set = get_A_set(value),
+        ka = get_Ka(value),
+        ta = get_Ta(value),
+        t_rate = get_T_rate(value),
+        db = get_db(value),
+        tsa = get_Tsa(value),
+        tsb = get_Tsb(value),
+        r_lim = _updown_po(get_R_lim(value)),
+        p_ref = get_P_ref(value),
+    )
+end

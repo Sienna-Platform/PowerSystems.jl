@@ -241,3 +241,52 @@ set_K_lp!(value::FiveMassShaft, val) = value.K_lp = val
 set_K_ex!(value::FiveMassShaft, val) = value.K_ex = val
 """Set [`FiveMassShaft`](@ref) `ext`."""
 set_ext!(value::FiveMassShaft, val) = value.ext = val
+
+
+
+function from_openapi(po::PD.FiveMassShaft, refs::OpenAPIRefs)
+    return FiveMassShaft(;
+        H = _wire_required(po.h, "FiveMassShaft", "H"),
+        H_hp = _wire_required(po.h_hp, "FiveMassShaft", "H_hp"),
+        H_ip = _wire_required(po.h_ip, "FiveMassShaft", "H_ip"),
+        H_lp = _wire_required(po.h_lp, "FiveMassShaft", "H_lp"),
+        H_ex = _wire_required(po.h_ex, "FiveMassShaft", "H_ex"),
+        D = _wire_required(po.d, "FiveMassShaft", "D"),
+        D_hp = _wire_required(po.d_hp, "FiveMassShaft", "D_hp"),
+        D_ip = _wire_required(po.d_ip, "FiveMassShaft", "D_ip"),
+        D_lp = _wire_required(po.d_lp, "FiveMassShaft", "D_lp"),
+        D_ex = _wire_required(po.d_ex, "FiveMassShaft", "D_ex"),
+        D_12 = _wire_required(po.d_12, "FiveMassShaft", "D_12"),
+        D_23 = _wire_required(po.d_23, "FiveMassShaft", "D_23"),
+        D_34 = _wire_required(po.d_34, "FiveMassShaft", "D_34"),
+        D_45 = _wire_required(po.d_45, "FiveMassShaft", "D_45"),
+        K_hp = _wire_required(po.k_hp, "FiveMassShaft", "K_hp"),
+        K_ip = _wire_required(po.k_ip, "FiveMassShaft", "K_ip"),
+        K_lp = _wire_required(po.k_lp, "FiveMassShaft", "K_lp"),
+        K_ex = _wire_required(po.k_ex, "FiveMassShaft", "K_ex"),
+    )
+end
+
+function to_openapi(value::FiveMassShaft, refs::OpenAPIRefs)
+    return PD.FiveMassShaft(;
+        id = component_id(refs, value),
+        h = get_H(value),
+        h_hp = get_H_hp(value),
+        h_ip = get_H_ip(value),
+        h_lp = get_H_lp(value),
+        h_ex = get_H_ex(value),
+        d = get_D(value),
+        d_hp = get_D_hp(value),
+        d_ip = get_D_ip(value),
+        d_lp = get_D_lp(value),
+        d_ex = get_D_ex(value),
+        d_12 = get_D_12(value),
+        d_23 = get_D_23(value),
+        d_34 = get_D_34(value),
+        d_45 = get_D_45(value),
+        k_hp = get_K_hp(value),
+        k_ip = get_K_ip(value),
+        k_lp = get_K_lp(value),
+        k_ex = get_K_ex(value),
+    )
+end

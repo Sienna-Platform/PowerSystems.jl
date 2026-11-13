@@ -8,10 +8,10 @@ This file is auto-generated. Do not edit.
     mutable struct GenericDER <: DynamicInjection
         name::String
         Qref_Flag::Int
-        PQ_Flag::Int
-        Gen_Flag::Int
-        PerOp_Flag::Int
-        Recon_Flag::Int
+        PQ_Flag::Bool
+        Gen_Flag::Bool
+        PerOp_Flag::Bool
+        Recon_Flag::Bool
         Trv::Float64
         VV_pnts::NamedTuple{(:V1, :V2, :V3, :V4), Tuple{Float64, Float64, Float64, Float64}}
         Q_lim::MinMax
@@ -59,10 +59,10 @@ Parameters of a Generic Distributed Energy Resource Model. Based on ["Modeling F
 # Arguments
 - `name::String`: Name of the component. Components of the same type (e.g., `PowerLoad`) must have unique names, but components of different types (e.g., `PowerLoad` and `ACBus`) can have the same name
 - `Qref_Flag::Int`: Reactive Power Control Mode. 1 VoltVar Control, 2 Constant Q Control, 3 Constant PF Control, validation range: `(1, 3)`
-- `PQ_Flag::Int`: Active and reactive power priority mode. 0 for Q priority, 1 for P priority, validation range: `(0, 1)`
-- `Gen_Flag::Int`: Define generator or storage system. 0 unit is a storage device, 1 unit is a generator, validation range: `(0, 1)`
-- `PerOp_Flag::Int`: Defines operation of permisible region in VRT characteristic. 0 for cease, 1 for continuous operation, validation range: `(0, 1)`
-- `Recon_Flag::Int`: Defines if DER can reconnect after voltage ride-through disconnection, validation range: `(0, 1)`
+- `PQ_Flag::Bool`: Active and reactive power priority mode. `false` for Q priority, `true` for P priority
+- `Gen_Flag::Bool`: Define generator or storage system. `false` for a storage device, `true` for a generator
+- `PerOp_Flag::Bool`: Defines operation of permisible region in VRT characteristic. `false` for cease, `true` for continuous operation
+- `Recon_Flag::Bool`: Defines if DER can reconnect after voltage ride-through disconnection
 - `Trv::Float64`: Voltage measurement transducer's time constant, in s, validation range: `(0, nothing)`
 - `VV_pnts::NamedTuple{(:V1, :V2, :V3, :V4), Tuple{Float64, Float64, Float64, Float64}}`: Y-axis Volt-var curve points (V1,V2,V3,V4)
 - `Q_lim::MinMax`: Reactive power limits in pu (Q_min, Q_max)
@@ -109,14 +109,14 @@ mutable struct GenericDER <: DynamicInjection
     name::String
     "Reactive Power Control Mode. 1 VoltVar Control, 2 Constant Q Control, 3 Constant PF Control"
     Qref_Flag::Int
-    "Active and reactive power priority mode. 0 for Q priority, 1 for P priority"
-    PQ_Flag::Int
-    "Define generator or storage system. 0 unit is a storage device, 1 unit is a generator"
-    Gen_Flag::Int
-    "Defines operation of permisible region in VRT characteristic. 0 for cease, 1 for continuous operation"
-    PerOp_Flag::Int
+    "Active and reactive power priority mode. `false` for Q priority, `true` for P priority"
+    PQ_Flag::Bool
+    "Define generator or storage system. `false` for a storage device, `true` for a generator"
+    Gen_Flag::Bool
+    "Defines operation of permisible region in VRT characteristic. `false` for cease, `true` for continuous operation"
+    PerOp_Flag::Bool
     "Defines if DER can reconnect after voltage ride-through disconnection"
-    Recon_Flag::Int
+    Recon_Flag::Bool
     "Voltage measurement transducer's time constant, in s"
     Trv::Float64
     "Y-axis Volt-var curve points (V1,V2,V3,V4)"
@@ -212,10 +212,10 @@ function GenericDER(::Nothing)
     GenericDER(;
         name="init",
         Qref_Flag=1,
-        PQ_Flag=0,
-        Gen_Flag=0,
-        PerOp_Flag=0,
-        Recon_Flag=0,
+        PQ_Flag=false,
+        Gen_Flag=false,
+        PerOp_Flag=false,
+        Recon_Flag=false,
         Trv=0,
         VV_pnts=(V1=0.0, V2=0.0, V3=0.0, V4=0.0),
         Q_lim=(min=0.0, max=0.0),
@@ -431,3 +431,100 @@ set_Q_ref!(value::GenericDER, val) = value.Q_ref = val
 set_P_ref!(value::GenericDER, val) = value.P_ref = val
 """Set [`GenericDER`](@ref) `ext`."""
 set_ext!(value::GenericDER, val) = value.ext = val
+
+
+
+function from_openapi(po::PD.GenericDER, refs::OpenAPIRefs)
+    return GenericDER(;
+        name = _wire_required(po.name, "GenericDER", "name"),
+        Qref_Flag = _wire_required(po.qref_flag, "GenericDER", "Qref_Flag"),
+        PQ_Flag = _wire_required(po.pq_flag, "GenericDER", "PQ_Flag"),
+        Gen_Flag = _wire_required(po.gen_flag, "GenericDER", "Gen_Flag"),
+        PerOp_Flag = _wire_required(po.perop_flag, "GenericDER", "PerOp_Flag"),
+        Recon_Flag = _wire_required(po.recon_flag, "GenericDER", "Recon_Flag"),
+        Trv = _wire_required(po.trv, "GenericDER", "Trv"),
+        VV_pnts = _wire_to_psy(NamedTuple{(:V1, :V2, :V3, :V4), Tuple{Float64, Float64, Float64, Float64}}, po.vv_pnts),
+        Q_lim = _or_default(po.q_lim, nothing),
+        Tp = _wire_required(po.tp, "GenericDER", "Tp"),
+        e_lim = _or_default(po.e_lim, nothing),
+        Kpq = _wire_required(po.kpq, "GenericDER", "Kpq"),
+        Kiq = _wire_required(po.kiq, "GenericDER", "Kiq"),
+        Iqr_lim = _or_default(po.iqr_lim, nothing),
+        I_max = _wire_required(po.i_max, "GenericDER", "I_max"),
+        Tg = _wire_required(po.tg, "GenericDER", "Tg"),
+        kWh_Cap = _wire_required(po.kwh_cap, "GenericDER", "kWh_Cap"),
+        SOC_ini = _wire_required(po.soc_ini, "GenericDER", "SOC_ini"),
+        SOC_lim = _or_default(po.soc_lim, nothing),
+        Trf = _wire_required(po.trf, "GenericDER", "Trf"),
+        fdbd_pnts = _wire_to_psy(NamedTuple{(:fdbd1, :fdbd2), Tuple{Float64, Float64}}, po.fdbd_pnts),
+        D_dn = _wire_required(po.d_dn, "GenericDER", "D_dn"),
+        D_up = _wire_required(po.d_up, "GenericDER", "D_up"),
+        fe_lim = _or_default(po.fe_lim, nothing),
+        Kpp = _wire_required(po.kpp, "GenericDER", "Kpp"),
+        Kip = _wire_required(po.kip, "GenericDER", "Kip"),
+        P_lim = _or_default(po.p_lim, nothing),
+        dP_lim = _or_default(po.dp_lim, nothing),
+        T_pord = _wire_required(po.t_pord, "GenericDER", "T_pord"),
+        rrpwr = _wire_required(po.rrpwr, "GenericDER", "rrpwr"),
+        VRT_pnts = _wire_to_psy(NamedTuple{(:vrt1, :vrt2, :vrt3, :vrt4, :vrt5), Tuple{Float64, Float64, Float64, Float64, Float64}}, po.vrt_pnts),
+        TVRT_pnts = _wire_to_psy(NamedTuple{(:tvrt1, :tvrt2, :tvrt3), Tuple{Float64, Float64, Float64}}, po.tvrt_pnts),
+        tV_delay = _wire_required(po.tv_delay, "GenericDER", "tV_delay"),
+        VES_lim = _or_default(po.ves_lim, nothing),
+        FRT_pnts = _wire_to_psy(NamedTuple{(:frt1, :frt2, :frt3, :frt4), Tuple{Float64, Float64, Float64, Float64}}, po.frt_pnts),
+        TFRT_pnts = _wire_to_psy(NamedTuple{(:tfrt1, :tfrt2), Tuple{Float64, Float64}}, po.tfrt_pnts),
+        tF_delay = _wire_required(po.tf_delay, "GenericDER", "tF_delay"),
+        FES_lim = _or_default(po.fes_lim, nothing),
+        Pfa_ref = _or_default(po.pfa_ref, 0.0),
+        Q_ref = _or_default(po.q_ref, 0.0),
+        P_ref = _or_default(po.p_ref, 1.0),
+        base_power = _or_default(po.base_power, 100.0),
+    )
+end
+
+function to_openapi(value::GenericDER, refs::OpenAPIRefs)
+    return PD.GenericDER(;
+        id = component_id(refs, value),
+        name = get_name(value),
+        qref_flag = get_Qref_Flag(value),
+        pq_flag = get_PQ_Flag(value),
+        gen_flag = get_Gen_Flag(value),
+        perop_flag = get_PerOp_Flag(value),
+        recon_flag = get_Recon_Flag(value),
+        trv = get_Trv(value),
+        vv_pnts = _psy_to_wire(get_VV_pnts(value)),
+        q_lim = _minmax_po(get_Q_lim(value)),
+        tp = get_Tp(value),
+        e_lim = _minmax_po(get_e_lim(value)),
+        kpq = get_Kpq(value),
+        kiq = get_Kiq(value),
+        iqr_lim = _minmax_po(get_Iqr_lim(value)),
+        i_max = get_I_max(value),
+        tg = get_Tg(value),
+        kwh_cap = get_kWh_Cap(value),
+        soc_ini = get_SOC_ini(value),
+        soc_lim = _minmax_po(get_SOC_lim(value)),
+        trf = get_Trf(value),
+        fdbd_pnts = _psy_to_wire(get_fdbd_pnts(value)),
+        d_dn = get_D_dn(value),
+        d_up = get_D_up(value),
+        fe_lim = _minmax_po(get_fe_lim(value)),
+        kpp = get_Kpp(value),
+        kip = get_Kip(value),
+        p_lim = _minmax_po(get_P_lim(value)),
+        dp_lim = _minmax_po(get_dP_lim(value)),
+        t_pord = get_T_pord(value),
+        rrpwr = get_rrpwr(value),
+        vrt_pnts = _psy_to_wire(get_VRT_pnts(value)),
+        tvrt_pnts = _psy_to_wire(get_TVRT_pnts(value)),
+        tv_delay = get_tV_delay(value),
+        ves_lim = _minmax_po(get_VES_lim(value)),
+        frt_pnts = _psy_to_wire(get_FRT_pnts(value)),
+        tfrt_pnts = _psy_to_wire(get_TFRT_pnts(value)),
+        tf_delay = get_tF_delay(value),
+        fes_lim = _minmax_po(get_FES_lim(value)),
+        pfa_ref = get_Pfa_ref(value),
+        q_ref = get_Q_ref(value),
+        p_ref = get_P_ref(value),
+        base_power = _get_base_power(value),
+    )
+end
