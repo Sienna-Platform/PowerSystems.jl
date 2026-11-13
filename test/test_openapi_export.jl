@@ -19,12 +19,12 @@ _dc_setpoint_kwarg(mode, side, value) =
         (Symbol("dc_voltage_setpoint_", side) => value,)
     end
 
-"""The setpoint keyword one terminal's AC mode selects, as a splattable pair."""
+"""The setpoint keyword one terminal's AC mode selects, as a splattable tuple: `AC_VOLTAGE` has none."""
 _ac_setpoint_kwarg(mode, side, value) =
     if mode == VSCACControlModes.AC_REACTIVE_POWER
         (Symbol("power_factor_setpoint_", side) => value,)
     else
-        (Symbol("ac_voltage_setpoint_", side) => value,)
+        ()
     end
 
 """
@@ -67,7 +67,7 @@ _export_vsc(
     power_factor_weighting_fraction_to = 0.5,
     voltage_limits_to = (min = 0.9, max = 1.1),
     dc_voltage_droop_to = 0.0, rated_dc_voltage = rated_dc_voltage,
-    remote_bus_control_from = nothing, remote_bus_control_to = 2,
+    remote_regulated_bus_from = nothing, remote_regulated_bus_to = get_from(arc),
     base_power = 100.0,
     input_basis = u"CU",
 )
@@ -179,9 +179,8 @@ end
     bus2 = _export_bus(; number = 2, bustype = ACBusTypes.PQ)
     arc = Arc(; from = bus1, to = bus2)
     circuit = TransformerCircuit(;
-        available = true, arc = arc, tap = 1.0, α = 0.05, r = 0.01, x = 0.1,
+        available = true, arc = arc, tap = 1.0, alpha = 0.05, r = 0.01, x = 0.1,
         control_objective = TransformerControlObjective.UNDEFINED,
-        regulated_bus_number = 0,
         number_of_tap_positions = 33, rating = 2.0, rating_b = nothing,
         rating_c = nothing,
         active_power_flow = 0.1, reactive_power_flow = 0.02, base_power = 50.0,
@@ -1447,7 +1446,8 @@ end
     @test natural_po.dc_voltage_setpoint_to ≈ 204.0
     @test natural_po.dc_power_setpoint_to isa PSY.IC.Absent
     @test natural_po.power_factor_setpoint_from == 0.95
-    @test natural_po.ac_voltage_setpoint_from isa PSY.IC.Absent
+    @test natural_po.remote_regulated_bus_from isa PSY.IC.Absent
+    @test natural_po.remote_regulated_bus_to == 1
     @test natural_po.g == 0.5
     @test natural_po.voltage_limits_from.max == 1.1
     @test natural_po.dc_control_to.value == "DC_VOLTAGE"
@@ -1464,7 +1464,7 @@ end
     @test device_po.g == 0.5
 end
 
-@testset "OpenAPI export converters: TwoTerminalVSCLine AC_VOLTAGE setpoint" begin
+@testset "OpenAPI export converters: TwoTerminalVSCLine AC_VOLTAGE mode" begin
     bus1 = _export_bus(; number = 1)
     bus2 = _export_bus(; number = 2, bustype = ACBusTypes.PQ)
     arc = Arc(; from = bus1, to = bus2)
@@ -1483,14 +1483,12 @@ end
     refs[3] = arc
     refs[4] = vsc
 
-    # The per-unit setpoint is written in kV (0.95 pu of 230 kV); `rated_ac_voltage_from` rides
-    # along as the base an importer divides by. Neither depends on the unit system.
+    # The regulated voltage is the `voltage_setpoint` of the regulated bus; the converter
+    # writes no setpoint, and `rated_ac_voltage_from` is independent of the unit system.
     natural_po = PSY.to_openapi(vsc, refs, NU)
-    @test natural_po.ac_voltage_setpoint_from ≈ 0.95 * 230.0
     @test natural_po.power_factor_setpoint_from isa PSY.IC.Absent
     @test natural_po.rated_ac_voltage_from == 230.0
     component_po = PSY.to_openapi(vsc, refs, CU)
-    @test component_po.ac_voltage_setpoint_from ≈ 0.95 * 230.0
     @test component_po.rated_ac_voltage_from == 230.0
 end
 
@@ -1510,8 +1508,11 @@ end
         restored = get_component(TwoTerminalVSCLine, PSY.from_file(dir), "vsc1")
         for field in fieldnames(TwoTerminalVSCLine)
             field in (:internal, :arc, :services) && continue
+            field in (:remote_regulated_bus_from, :remote_regulated_bus_to) && continue
             @test getfield(restored, field) == getfield(vsc, field)
         end
+        @test isnothing(get_remote_regulated_bus_from(restored))
+        @test get_name(get_remote_regulated_bus_to(restored)) == get_name(bus1)
     end
 end
 
@@ -1540,12 +1541,15 @@ end
         restored = get_component(TwoTerminalVSCLine, PSY.from_file(dir), "vsc1")
         for field in fieldnames(TwoTerminalVSCLine)
             field in (:internal, :arc, :services) && continue
+            field in (:remote_regulated_bus_from, :remote_regulated_bus_to) && continue
             @test getfield(restored, field) == getfield(vsc, field)
         end
+        @test isnothing(get_remote_regulated_bus_from(restored))
+        @test get_name(get_remote_regulated_bus_to(restored)) == get_name(bus1)
     end
 end
 
-@testset "OpenAPI export: TwoTerminalVSCLine voltage setpoint needs its rated voltage" begin
+@testset "OpenAPI export: TwoTerminalVSCLine DC voltage setpoint needs its rated voltage" begin
     bus1 = _export_bus(; number = 1)
     bus2 = _export_bus(; number = 2, bustype = ACBusTypes.PQ)
     arc = Arc(; from = bus1, to = bus2)
@@ -1554,14 +1558,14 @@ end
     refs[2] = bus2
     refs[3] = arc
 
-    # A present AC setpoint with `rated_ac_voltage_from == 0.0` has no base: export errors.
-    ac_voltage = _export_vsc(arc; ac_control_from = VSCACControlModes.AC_VOLTAGE)
+    # A present DC setpoint with `rated_dc_voltage == 0.0` has no base: export errors.
+    dc_voltage = _export_vsc(arc; rated_dc_voltage = 0.0)
     sys = System(100.0)
-    for component in (bus1, bus2, arc, ac_voltage)
+    for component in (bus1, bus2, arc, dc_voltage)
         add_component!(sys, component)
     end
-    refs[4] = ac_voltage
-    @test_throws ErrorException PSY.to_openapi(ac_voltage, refs, NU)
+    refs[4] = dc_voltage
+    @test_throws ErrorException PSY.to_openapi(dc_voltage, refs, NU)
 end
 
 @testset "OpenAPI export: TwoTerminalVSCLine with no setpoint tolerates a missing DC voltage base" begin
@@ -1602,6 +1606,32 @@ _export_thermal_gen(bus; name = "gen1") = ThermalStandard(;
     base_power = 100.0,
     input_basis = u"CU",
 )
+
+@testset "OpenAPI export: remote_regulated_bus and ACBus.voltage_setpoint round trip" begin
+    for units in (NU, CU)
+        bus1 = _export_bus(; number = 1)
+        bus2 = _export_bus(; number = 2, bustype = ACBusTypes.PQ)
+        set_voltage_setpoint!(bus2, 1.02)
+        gen = _export_thermal_gen(bus1)
+        set_remote_regulated_bus!(gen, bus2)
+        local_gen = _export_thermal_gen(bus1; name = "gen2")
+        sys = System(100.0)
+        for component in (bus1, bus2, gen, local_gen)
+            add_component!(sys, component)
+        end
+
+        dir = mktempdir()
+        PSY.to_file(sys, dir; units = units, force = true)
+        sys2 = PSY.from_file(dir)
+        @test isnothing(get_voltage_setpoint(get_component(ACBus, sys2, "bus1")))
+        @test get_voltage_setpoint(get_component(ACBus, sys2, "bus2")) == 1.02
+        gen2 = get_component(ThermalStandard, sys2, "gen1")
+        @test get_remote_regulated_bus(gen2) === get_component(ACBus, sys2, "bus2")
+        @test isnothing(
+            get_remote_regulated_bus(get_component(ThermalStandard, sys2, "gen2")),
+        )
+    end
+end
 
 @testset "OpenAPI export: time series owned by a supplemental attribute round-trips" begin
     # An attribute's document id is its own IS id, exactly like a component's, so the
@@ -1645,18 +1675,22 @@ _export_thermal_gen(bus; name = "gen1") = ThermalStandard(;
     end
 end
 
-@testset "OpenAPI export: time series on an unexportable (dynamics) owner warns and is dropped" begin
+@testset "OpenAPI export: time series on a dynamics owner is described" begin
     mktempdir() do dir
         bus = _export_bus(; number = 1)
         static_gen = _export_thermal_gen(bus)
         dyn_gen = DynamicGenerator(;
             name = get_name(static_gen),
-            ω_ref = 1.0,
-            machine = BaseMachine(; R = 0.0, Xd_p = 0.2995, eq_p = 1.05),
+            frequency_ref = 60.0,
+            synchronous_machine_dynamics = BaseMachine(;
+                R = 0.0,
+                Xd_p = 0.2995,
+                eq_p = 1.05,
+            ),
             shaft = SingleMass(; H = 5.148, D = 2.0),
-            avr = AVRFixed(; Vf = 1.05, V_ref = 1.0),
-            prime_mover = TGFixed(; efficiency = 1.0),
-            pss = PSSFixed(; V_pss = 0.0),
+            excitation_system_dynamics = AVRFixed(; Vf = 1.05, V_ref = 1.0),
+            turbine_governor_dynamics = TGFixed(; efficiency = 1.0),
+            power_system_stabilizer_dynamics = PSSFixed(; V_pss = 0.0),
         )
 
         sys = System(100.0)
@@ -1673,20 +1707,13 @@ end
         )
 
         ts_out_path = joinpath(dir, "dynamics_owner.h5")
-        out = @test_logs(
-            (:warn, r"omitting component type"),
-            (:warn, r"omitting 1 time series row"),
-            match_mode = :any,
-            PSY.to_openapi(
-                sys; units = CU,
-                time_series_storage_path = ts_out_path,
-            ),
+        out = PSY.to_openapi(
+            sys; units = CU,
+            time_series_storage_path = ts_out_path,
         )
-        # The sidecar still holds both series — only the document's description of the
-        # dynamics-owned one is dropped, so the write itself is not blocked.
         @test isfile(ts_out_path)
-        @test length(out.time_series_associations) == 1
-        @test only(out.time_series_associations).value.name == "static_series"
+        @test sort([r.value.name for r in out.time_series_associations]) ==
+              ["dyn_series", "static_series"]
     end
 end
 

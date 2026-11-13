@@ -10,11 +10,12 @@ This file is auto-generated. Do not edit.
         arc::Arc
         rating::Float64
         tap::Float64
-        α::Float64
+        alpha::Float64
         r::Float64
         x::Float64
         control_objective::TransformerControlObjective.Value
-        regulated_bus_number::Int
+        regulated_bus::Union{Nothing, ACBus}
+        regulated_bus_orientation::TransformerRegulationOrientation.Value
         tap_ratio_limits::Union{Nothing, MinMax}
         phase_angle_limits::Union{Nothing, MinMax}
         controlled_voltage_limits::Union{Nothing, MinMax}
@@ -41,11 +42,12 @@ A [`TwoWindingTransformer`](@ref) has one circuit; a [`ThreeWindingTransformer`]
 - `arc::Arc`: An [`Arc`](@ref) defining this circuit `from` a terminal bus `to` the transformer's other terminal or star bus
 - `rating::Float64`: Thermal rating (MVA) stored in component base per unit on `base_power`
 - `tap::Float64`: (default: `1.0`) Normalized tap changer position for voltage control, varying between 0 and 2, with 1 centered at the nominal voltage
-- `α::Float64`: (default: `0.0`) Initial condition of phase shift (radians) across this circuit
+- `alpha::Float64`: (default: `0.0`) Initial condition of phase shift (radians) across this circuit
 - `r::Float64`: (default: `0.0`) Circuit resistance in pu (component base on `base_power`) referenced to `base_voltage_primary`. For a two-winding transformer this is the series impedance; for a three-winding transformer it is the star-leg equivalent, validation range: `(-2, 4)`
 - `x::Float64`: (default: `0.0`) Circuit reactance in pu (component base on `base_power`) referenced to `base_voltage_primary`. For a two-winding transformer this is the series impedance; for a three-winding transformer it is the star-leg equivalent, validation range: `(-2, 4)`
 - `control_objective::TransformerControlObjective.Value`: (default: `TransformerControlObjective.UNDEFINED`) Tap-changer / phase-shifter control objective. `UNDEFINED` means this circuit has no control block. See [`TransformerControlObjective`](@ref)
-- `regulated_bus_number::Int`: (default: `0`) Controlled bus number; the sign indicates the regulation side
+- `regulated_bus::Union{Nothing, ACBus}`: (default: `nothing`) Bus whose voltage the tap changer of this circuit regulates, within `controlled_voltage_limits`. The bus can be an end of `arc` or a remote bus. Used only when `control_objective` is `VOLTAGE` or `VOLTAGE_DISABLED`.
+- `regulated_bus_orientation::TransformerRegulationOrientation.Value`: (default: `TransformerRegulationOrientation.UNDEFINED`) Direction that the tap adjustment assumes for `regulated_bus`. Set it only when `regulated_bus` is not an end of `arc`. Otherwise it is `UNDEFINED`, because the connections give the direction.
 - `tap_ratio_limits::Union{Nothing, MinMax}`: (default: `nothing`) Tap-ratio actuator band (PSS/E RMA/RMI) when `control_objective` moves the tap; `nothing` otherwise. Dimensionless.
 - `phase_angle_limits::Union{Nothing, MinMax}`: (default: `nothing`) Phase-shift actuator band (PSS/E RMA/RMI, rad) when `control_objective` moves the angle; `nothing` otherwise.
 - `controlled_voltage_limits::Union{Nothing, MinMax}`: (default: `nothing`) Regulated-voltage target band (PSS/E VMA/VMI), per unit of the regulated bus's base voltage; `nothing` unless `control_objective` selects it.
@@ -73,15 +75,17 @@ mutable struct TransformerCircuit <: DeviceParameter
     "Normalized tap changer position for voltage control, varying between 0 and 2, with 1 centered at the nominal voltage"
     tap::Float64
     "Initial condition of phase shift (radians) across this circuit"
-    α::Float64
+    alpha::Float64
     "Circuit resistance in pu (component base on `base_power`) referenced to `base_voltage_primary`. For a two-winding transformer this is the series impedance; for a three-winding transformer it is the star-leg equivalent"
     r::Float64
     "Circuit reactance in pu (component base on `base_power`) referenced to `base_voltage_primary`. For a two-winding transformer this is the series impedance; for a three-winding transformer it is the star-leg equivalent"
     x::Float64
     "Tap-changer / phase-shifter control objective. `UNDEFINED` means this circuit has no control block. See [`TransformerControlObjective`](@ref)"
     control_objective::TransformerControlObjective.Value
-    "Controlled bus number; the sign indicates the regulation side"
-    regulated_bus_number::Int
+    "Bus whose voltage the tap changer of this circuit regulates, within `controlled_voltage_limits`. The bus can be an end of `arc` or a remote bus. Used only when `control_objective` is `VOLTAGE` or `VOLTAGE_DISABLED`."
+    regulated_bus::Union{Nothing, ACBus}
+    "Direction that the tap adjustment assumes for `regulated_bus`. Set it only when `regulated_bus` is not an end of `arc`. Otherwise it is `UNDEFINED`, because the connections give the direction."
+    regulated_bus_orientation::TransformerRegulationOrientation.Value
     "Tap-ratio actuator band (PSS/E RMA/RMI) when `control_objective` moves the tap; `nothing` otherwise. Dimensionless."
     tap_ratio_limits::Union{Nothing, MinMax}
     "Phase-shift actuator band (PSS/E RMA/RMI, rad) when `control_objective` moves the angle; `nothing` otherwise."
@@ -114,12 +118,12 @@ mutable struct TransformerCircuit <: DeviceParameter
     base_value::Union{Nothing, Float64}
 end
 
-function TransformerCircuit(available, arc, rating, tap=1.0, α=0.0, r=0.0, x=0.0, control_objective=TransformerControlObjective.UNDEFINED, regulated_bus_number=0, tap_ratio_limits=nothing, phase_angle_limits=nothing, controlled_voltage_limits=nothing, controlled_reactive_power_flow_limits=nothing, controlled_active_power_flow_limits=nothing, number_of_tap_positions=33, rating_b=nothing, rating_c=nothing, active_power_flow=0.0, reactive_power_flow=0.0, base_power=100.0, base_voltage_primary=nothing, base_voltage_secondary=nothing, operational_flow_limit=nothing, )
-    TransformerCircuit(available, arc, rating, tap, α, r, x, control_objective, regulated_bus_number, tap_ratio_limits, phase_angle_limits, controlled_voltage_limits, controlled_reactive_power_flow_limits, controlled_active_power_flow_limits, number_of_tap_positions, rating_b, rating_c, active_power_flow, reactive_power_flow, base_power, base_voltage_primary, base_voltage_secondary, operational_flow_limit, nothing, )
+function TransformerCircuit(available, arc, rating, tap=1.0, alpha=0.0, r=0.0, x=0.0, control_objective=TransformerControlObjective.UNDEFINED, regulated_bus=nothing, regulated_bus_orientation=TransformerRegulationOrientation.UNDEFINED, tap_ratio_limits=nothing, phase_angle_limits=nothing, controlled_voltage_limits=nothing, controlled_reactive_power_flow_limits=nothing, controlled_active_power_flow_limits=nothing, number_of_tap_positions=33, rating_b=nothing, rating_c=nothing, active_power_flow=0.0, reactive_power_flow=0.0, base_power=100.0, base_voltage_primary=nothing, base_voltage_secondary=nothing, operational_flow_limit=nothing, )
+    TransformerCircuit(available, arc, rating, tap, alpha, r, x, control_objective, regulated_bus, regulated_bus_orientation, tap_ratio_limits, phase_angle_limits, controlled_voltage_limits, controlled_reactive_power_flow_limits, controlled_active_power_flow_limits, number_of_tap_positions, rating_b, rating_c, active_power_flow, reactive_power_flow, base_power, base_voltage_primary, base_voltage_secondary, operational_flow_limit, nothing, )
 end
 
-function TransformerCircuit(; available, arc, rating, tap=1.0, α=0.0, r=0.0, x=0.0, control_objective=TransformerControlObjective.UNDEFINED, regulated_bus_number=0, tap_ratio_limits=nothing, phase_angle_limits=nothing, controlled_voltage_limits=nothing, controlled_reactive_power_flow_limits=nothing, controlled_active_power_flow_limits=nothing, number_of_tap_positions=33, rating_b=nothing, rating_c=nothing, active_power_flow=0.0, reactive_power_flow=0.0, base_power=100.0, base_voltage_primary=nothing, base_voltage_secondary=nothing, operational_flow_limit=nothing, base_value=nothing, input_basis::Unitful.Units, )
-    value = TransformerCircuit(available, arc, _placeholder(rating), tap, α, _placeholder(r), _placeholder(x), control_objective, regulated_bus_number, tap_ratio_limits, phase_angle_limits, controlled_voltage_limits, _placeholder(controlled_reactive_power_flow_limits), _placeholder(controlled_active_power_flow_limits), number_of_tap_positions, _placeholder(rating_b), _placeholder(rating_c), _placeholder(active_power_flow), _placeholder(reactive_power_flow), base_power, base_voltage_primary, base_voltage_secondary, _placeholder(operational_flow_limit), base_value, )
+function TransformerCircuit(; available, arc, rating, tap=1.0, alpha=0.0, r=0.0, x=0.0, control_objective=TransformerControlObjective.UNDEFINED, regulated_bus=nothing, regulated_bus_orientation=TransformerRegulationOrientation.UNDEFINED, tap_ratio_limits=nothing, phase_angle_limits=nothing, controlled_voltage_limits=nothing, controlled_reactive_power_flow_limits=nothing, controlled_active_power_flow_limits=nothing, number_of_tap_positions=33, rating_b=nothing, rating_c=nothing, active_power_flow=0.0, reactive_power_flow=0.0, base_power=100.0, base_voltage_primary=nothing, base_voltage_secondary=nothing, operational_flow_limit=nothing, base_value=nothing, input_basis::Unitful.Units, )
+    value = TransformerCircuit(available, arc, _placeholder(rating), tap, alpha, _placeholder(r), _placeholder(x), control_objective, regulated_bus, regulated_bus_orientation, tap_ratio_limits, phase_angle_limits, controlled_voltage_limits, _placeholder(controlled_reactive_power_flow_limits), _placeholder(controlled_active_power_flow_limits), number_of_tap_positions, _placeholder(rating_b), _placeholder(rating_c), _placeholder(active_power_flow), _placeholder(reactive_power_flow), base_power, base_voltage_primary, base_voltage_secondary, _placeholder(operational_flow_limit), base_value, )
     set_rating!(value, _tag(rating, input_basis, Val(:mva)))
     set_r!(value, _tag(r, input_basis, Val(:ohm)))
     set_x!(value, _tag(x, input_basis, Val(:ohm)))
@@ -141,11 +145,12 @@ function TransformerCircuit(::Nothing)
         arc=Arc(ACBus(nothing), ACBus(nothing)),
         rating=0.0,
         tap=1.0,
-        α=0.0,
+        alpha=0.0,
         r=0.0,
         x=0.0,
         control_objective=TransformerControlObjective.UNDEFINED,
-        regulated_bus_number=0,
+        regulated_bus=nothing,
+        regulated_bus_orientation=TransformerRegulationOrientation.UNDEFINED,
         tap_ratio_limits=nothing,
         phase_angle_limits=nothing,
         controlled_voltage_limits=nothing,
@@ -178,8 +183,8 @@ InfrastructureSystems.display_units_arg(::typeof(get_rating), ::Type{Transformer
 InfrastructureSystems.display_units_arg(::typeof(get_rating_unitful), ::Type{TransformerCircuit}) = u"CU"
 """Get [`TransformerCircuit`](@ref) `tap`."""
 get_tap(value::TransformerCircuit) = value.tap
-"""Get [`TransformerCircuit`](@ref) `α`."""
-get_α(value::TransformerCircuit) = value.α
+"""Get [`TransformerCircuit`](@ref) `alpha`."""
+get_alpha(value::TransformerCircuit) = value.alpha
 """Get [`TransformerCircuit`](@ref) `r` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_r_unitful`](@ref)."""
 get_r(value::TransformerCircuit, units) = InfrastructureSystems._strip_units(get_value(value, Val(:r), Val(:ohm), units))
 """Get [`TransformerCircuit`](@ref) `r` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_r`](@ref)."""
@@ -198,8 +203,10 @@ InfrastructureSystems.display_units_arg(::typeof(get_x), ::Type{TransformerCircu
 InfrastructureSystems.display_units_arg(::typeof(get_x_unitful), ::Type{TransformerCircuit}) = u"SU"
 """Get [`TransformerCircuit`](@ref) `control_objective`."""
 get_control_objective(value::TransformerCircuit) = value.control_objective
-"""Get [`TransformerCircuit`](@ref) `regulated_bus_number`."""
-get_regulated_bus_number(value::TransformerCircuit) = value.regulated_bus_number
+"""Get [`TransformerCircuit`](@ref) `regulated_bus`."""
+get_regulated_bus(value::TransformerCircuit) = value.regulated_bus
+"""Get [`TransformerCircuit`](@ref) `regulated_bus_orientation`."""
+get_regulated_bus_orientation(value::TransformerCircuit) = value.regulated_bus_orientation
 """Get [`TransformerCircuit`](@ref) `tap_ratio_limits`."""
 get_tap_ratio_limits(value::TransformerCircuit) = value.tap_ratio_limits
 """Get [`TransformerCircuit`](@ref) `phase_angle_limits`."""
@@ -282,8 +289,8 @@ set_rating!(value::TransformerCircuit, val) = value.rating = set_value(value, Va
 set_rating!(value::TransformerCircuit, val::_UntaggedNumber) = _units_tag_required(set_rating!, value, :rating, Val(:mva), val)
 """Set [`TransformerCircuit`](@ref) `tap`."""
 set_tap!(value::TransformerCircuit, val) = value.tap = val
-"""Set [`TransformerCircuit`](@ref) `α`."""
-set_α!(value::TransformerCircuit, val) = value.α = val
+"""Set [`TransformerCircuit`](@ref) `alpha`."""
+set_alpha!(value::TransformerCircuit, val) = value.alpha = val
 """Set [`TransformerCircuit`](@ref) `r`."""
 set_r!(value::TransformerCircuit, val) = value.r = set_value(value, Val(:r), val, Val(:ohm))
 set_r!(value::TransformerCircuit, val::_UntaggedNumber) = _units_tag_required(set_r!, value, :r, Val(:ohm), val)
@@ -292,8 +299,10 @@ set_x!(value::TransformerCircuit, val) = value.x = set_value(value, Val(:x), val
 set_x!(value::TransformerCircuit, val::_UntaggedNumber) = _units_tag_required(set_x!, value, :x, Val(:ohm), val)
 """Set [`TransformerCircuit`](@ref) `control_objective`."""
 set_control_objective!(value::TransformerCircuit, val) = value.control_objective = val
-"""Set [`TransformerCircuit`](@ref) `regulated_bus_number`."""
-set_regulated_bus_number!(value::TransformerCircuit, val) = value.regulated_bus_number = val
+"""Set [`TransformerCircuit`](@ref) `regulated_bus`."""
+set_regulated_bus!(value::TransformerCircuit, val) = value.regulated_bus = val
+"""Set [`TransformerCircuit`](@ref) `regulated_bus_orientation`."""
+set_regulated_bus_orientation!(value::TransformerCircuit, val) = value.regulated_bus_orientation = val
 """Set [`TransformerCircuit`](@ref) `tap_ratio_limits`."""
 set_tap_ratio_limits!(value::TransformerCircuit, val) = value.tap_ratio_limits = val
 """Set [`TransformerCircuit`](@ref) `phase_angle_limits`."""

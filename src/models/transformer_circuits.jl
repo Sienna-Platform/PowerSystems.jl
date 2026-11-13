@@ -17,7 +17,7 @@ const _PHASE_SHIFT_OBJECTIVES = (
 This is the canonical predicate; downstream packages must not re-derive it from raw fields.
 """
 function is_phase_shifting(w::TransformerCircuit)
-    !iszero(get_α(w)) && return true
+    !iszero(get_alpha(w)) && return true
     return get_control_objective(w) in _PHASE_SHIFT_OBJECTIVES
 end
 

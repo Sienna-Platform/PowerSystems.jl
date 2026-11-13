@@ -220,6 +220,32 @@ end
 
 const DOCUMENT_PLAN_KEYS = _document_plan_keys(DOCUMENT_PLAN)
 
+"""
+The dynamics function block types, base machines before the saturation machines that name
+them. Derived from the type hierarchy, not listed: a new block type is converted (or fails
+loudly for lack of a converter) with no edit here. `DynamicGenerator` and `DynamicInverter`
+are parametric, so `get_all_concrete_subtypes` omits them; they are named in
+[`DYNAMIC_INJECTION_TYPES`](@ref).
+"""
+const DYNAMIC_BLOCK_TYPES = let types = IS.get_all_concrete_subtypes(DynamicComponent)
+    vcat(
+        filter(T -> !hasfield(T, :base_machine), types),
+        filter(T -> hasfield(T, :base_machine), types),
+    )
+end
+
+"""The dynamic injection types: the two parametric ones plus every concrete leaf."""
+const DYNAMIC_INJECTION_TYPES = vcat(
+    [DynamicGenerator, DynamicInverter],
+    IS.get_all_concrete_subtypes(DynamicInjection),
+)
+
+"""Document keys of every dynamics type, which share their PSY type's name."""
+const DYNAMICS_PLAN_KEYS = Set(
+    string(nameof(T)) for
+    T in Iterators.flatten((DYNAMIC_BLOCK_TYPES, DYNAMIC_INJECTION_TYPES))
+)
+
 # `from_openapi` dispatches on the PO type alone, so `psy_type` no longer reaches the
 # import call — its only remaining consumer is the `is_document_exportable` loop below.
 # Nothing at run time would notice an entry naming the wrong one, so the pairing is checked
@@ -241,11 +267,11 @@ that makes a type exportable.
 A trait rather than a membership test against a list of types, so the check dispatches and stays
 extensible: a package adding its own converter adds its own method.
 
-Used by [`warn_unexportable_components`](@ref) on the export path. Dynamic components are the
-main `false` case today (dynamics is deferred, so no dynamic type has a converter) and their loss
-on export is accepted for now — but it is reported rather than silent.
+Used by [`warn_unexportable_components`](@ref) on the export path. Dynamic injections are
+exportable, with their function blocks: see [`DYNAMIC_INJECTION_TYPES`](@ref).
 """
 is_document_exportable(::Component) = false
+is_document_exportable(::DynamicInjection) = true
 
 for (_po_type, psy_type, _key, _addable) in DOCUMENT_PLAN
     @eval is_document_exportable(::$psy_type) = true
@@ -255,7 +281,10 @@ end
 no registered `from_openapi` converter — psy6 forbids silently skipping unconverted
 types."""
 function _check_no_unconverted_component_types(components::AbstractDict)
-    unconverted = sort([k for k in keys(components) if !(k in DOCUMENT_PLAN_KEYS)])
+    unconverted = sort([
+        k for k in keys(components) if
+        !(k in DOCUMENT_PLAN_KEYS) && !(k in DYNAMICS_PLAN_KEYS)
+    ])
     isempty(unconverted) || error(
         "from_openapi(System, doc): document declares component type(s) with no " *
         "registered from_openapi converter: $(join(unconverted, ", ")) — every " *
@@ -404,7 +433,6 @@ end
 function from_openapi(po::PO.PlannedOutage, refs::OpenAPIRefs)
     return PlannedOutage(;
         outage_schedule = po.outage_schedule,
-        monitored_components = _monitored_component_uuids(refs, po.monitored_components),
         identifier = _or_default(po.identifier, nothing),
     )
 end
@@ -523,6 +551,86 @@ function _attach_attribute!(
     return nothing
 end
 
+# ── dynamics ────────────────────────────────────────────────────────────────────
+# Blocks and injections convert before the static devices, into `refs` only: an injection
+# cannot join the System until the static device that names it in `dynamic_injector` is
+# attached. `_attach_dynamic_injector!` then adds it, from the main component pass.
+
+"""Convert every dynamics function block and injection in `doc` and register each in `refs`
+under its document id. Nothing is added to a System here."""
+function _convert_dynamics!(refs::OpenAPIRefs, doc::PC.SystemDocument)
+    for psy_type in Iterators.flatten((DYNAMIC_BLOCK_TYPES, DYNAMIC_INJECTION_TYPES))
+        for po in PC.get_components(doc, string(nameof(psy_type)))
+            component = from_openapi(po, refs)
+            extras = get(doc.ext, Int(po.id), nothing)
+            isnothing(extras) || _merge_doc_ext!(component, extras)
+            refs[Int(po.id)] = component
+        end
+    end
+    return nothing
+end
+
+"""The `dynamic_injector` a static device's wire type carries; `nothing` for a type with no
+such property."""
+function _po_dynamic_injector(po)
+    if hasproperty(po, :dynamic_injector)
+        return po.dynamic_injector
+    end
+    return nothing
+end
+
+"""No injector named: nothing to attach."""
+_attach_dynamic_injector!(::System, ::OpenAPIRefs, ::Set{Int}, static, ::Nothing) = nothing
+_attach_dynamic_injector!(::System, ::OpenAPIRefs, ::Set{Int}, static, ::IC.Absent) =
+    nothing
+
+"""
+Attach the injection `id` names to `static`, which is already in `sys`.
+
+`add_component!` resets the injection's `base_power` to the static device's, since PSY holds
+one base for both. A document stating two bases cannot be represented, so it is refused
+rather than imported with function block values on the wrong base.
+"""
+function _attach_dynamic_injector!(
+    sys::System,
+    refs::OpenAPIRefs,
+    attached::Set{Int},
+    static,
+    id::Integer,
+)
+    dyn = resolve_ref(refs, id, DynamicInjection)
+    static_base = _get_base_power(static)
+    if !isapprox(get_base_power(dyn), static_base)
+        error(
+            "from_openapi(System, doc): dynamic injection id=$id " *
+            "\"$(get_name(dyn))\" has base_power=$(get_base_power(dyn)) but its static " *
+            "device has base_power=$static_base; PowerSystems holds one base for both",
+        )
+    end
+    IS.set_id!(dyn, Int(id))
+    add_component!(sys, dyn, static)
+    push!(attached, Int(id))
+    return nothing
+end
+
+"""Error, naming each, when the document holds an injection no static device names."""
+function _check_all_dynamic_injections_attached(
+    doc::PC.SystemDocument,
+    attached::Set{Int},
+)
+    orphans = String[]
+    for psy_type in DYNAMIC_INJECTION_TYPES
+        for po in PC.get_components(doc, string(nameof(psy_type)))
+            Int(po.id) in attached || push!(orphans, "$(nameof(psy_type)) id=$(po.id)")
+        end
+    end
+    isempty(orphans) || error(
+        "from_openapi(System, doc): dynamic injection(s) $(join(orphans, ", ")) named by " *
+        "no static device in `dynamic_injector`",
+    )
+    return nothing
+end
+
 # ── Document-level entry point ──────────────────────────────────────────────────
 
 """Apply one optional document metadata field, dispatching on presence rather than
@@ -618,7 +726,9 @@ function from_openapi(
     # the adopted store reachable from there via `_current_import_store()` instead. Hand-written
     # converters that DO receive `refs` (e.g. `Source`) resolve the store from `get_store(refs)`
     # directly and never need this ambient path.
+    attached = Set{Int}()
     _with_import_store(store) do
+        _convert_dynamics!(refs, doc)
         for (_po_type, psy_type, key, addable) in DOCUMENT_PLAN
             for po in PC.get_components(doc, key)
                 component = from_openapi(po, refs)
@@ -630,12 +740,16 @@ function from_openapi(
                     # the adopted sidecar's owner ids resolve — they are these same document ids.
                     IS.set_id!(component, Int(po.id))
                     add_component!(sys, component)
+                    _attach_dynamic_injector!(
+                        sys, refs, attached, component, _po_dynamic_injector(po),
+                    )
                 end
                 refs[Int(po.id)] = component
             end
         end
 
         resolve_deferred_refs!(refs)
+        _check_all_dynamic_injections_attached(doc, attached)
 
         _load_market_bid_service_offers!(refs, doc)
     end

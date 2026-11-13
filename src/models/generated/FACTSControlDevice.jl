@@ -10,11 +10,10 @@ This file is auto-generated. Do not edit.
         available::Bool
         bus::ACBus
         control_mode::Union{Nothing, FACTSOperationModes.Value}
-        voltage_setpoint::Float64
         max_shunt_current::Float64
         max_reactive_power::Float64
         shunt_control_type::FACTSShuntControlType.Value
-        regulated_bus_number::Int
+        remote_regulated_bus::Union{Nothing, ACBus}
         reactive_power_required::Float64
         base_power::Float64
         services::Vector{Service}
@@ -32,11 +31,10 @@ Most often used in AC power flow studies as a control of voltage and, active and
 - `available::Bool`: Indicator of whether the component is connected and online (`true`) or disconnected, offline, or down (`false`). Unavailable components are excluded during simulations
 - `bus::ACBus`: Sending end bus number
 - `control_mode::Union{Nothing, FACTSOperationModes.Value}`: Control mode. Used to describe the behavior of the control device. [Options are listed here.](@ref factsmodes_list)
-- `voltage_setpoint::Float64`: (default: `1.0`) Voltage setpoint at the sending end bus, it has to be a [`PV`](@ref ACBusTypes) bus, in p.u. ([`SYSTEM_BASE`](@ref per_unit)).
 - `max_shunt_current::Float64`: (default: `9999.0`) Maximum shunt current at unity voltage, MVA; the STATCOM current limit and SVC susceptance base.
 - `max_reactive_power::Float64`: (default: `9999.0`) Independent maximum reactive power ceiling (MVA); the device reactive limit is min(the current/susceptance law on max_shunt_current, this value). Non-binding at the 9999.0 default.
 - `shunt_control_type::FACTSShuntControlType.Value`: (default: `FACTSShuntControlType.STATCOM`) Device class selecting the reactive-limit law (SVC vs STATCOM)
-- `regulated_bus_number::Int`: (default: `0`) Bus whose voltage this device regulates; 0 ⇒ local (sending) bus
+- `remote_regulated_bus::Union{Nothing, ACBus}`: (default: `nothing`) Bus whose voltage this device regulates, to the `voltage_setpoint` of that bus. `nothing` regulates the sending end bus. The bus must not be the same as `bus`.
 - `reactive_power_required::Float64`: (default: `0.0`) Solver-populated: delivered reactive power after solve (output; not parsed from input)
 - `base_power::Float64`: (default: `100.0`) System base power for per-unitization of this component's per-unit fields, recorded per component in lieu of a system-level table (MVA), validation range: `(0.0001, nothing)`
 - `services::Vector{Service}`: (default: `Device[]`) Services that this device contributes to
@@ -54,16 +52,14 @@ mutable struct FACTSControlDevice <: StaticInjection
     bus::ACBus
     "Control mode. Used to describe the behavior of the control device. [Options are listed here.](@ref factsmodes_list)"
     control_mode::Union{Nothing, FACTSOperationModes.Value}
-    "Voltage setpoint at the sending end bus, it has to be a [`PV`](@ref ACBusTypes) bus, in p.u. ([`SYSTEM_BASE`](@ref per_unit))."
-    voltage_setpoint::Float64
     "Maximum shunt current at unity voltage, MVA; the STATCOM current limit and SVC susceptance base."
     max_shunt_current::Float64
     "Independent maximum reactive power ceiling (MVA); the device reactive limit is min(the current/susceptance law on max_shunt_current, this value). Non-binding at the 9999.0 default."
     max_reactive_power::Float64
     "Device class selecting the reactive-limit law (SVC vs STATCOM)"
     shunt_control_type::FACTSShuntControlType.Value
-    "Bus whose voltage this device regulates; 0 ⇒ local (sending) bus"
-    regulated_bus_number::Int
+    "Bus whose voltage this device regulates, to the `voltage_setpoint` of that bus. `nothing` regulates the sending end bus. The bus must not be the same as `bus`."
+    remote_regulated_bus::Union{Nothing, ACBus}
     "Solver-populated: delivered reactive power after solve (output; not parsed from input)"
     reactive_power_required::Float64
     "System base power for per-unitization of this component's per-unit fields, recorded per component in lieu of a system-level table (MVA)"
@@ -78,12 +74,12 @@ mutable struct FACTSControlDevice <: StaticInjection
     internal::InfrastructureSystemsInternal
 end
 
-function FACTSControlDevice(name, available, bus, control_mode, voltage_setpoint=1.0, max_shunt_current=9999.0, max_reactive_power=9999.0, shunt_control_type=FACTSShuntControlType.STATCOM, regulated_bus_number=0, reactive_power_required=0.0, base_power=100.0, services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), )
-    FACTSControlDevice(name, available, bus, control_mode, voltage_setpoint, max_shunt_current, max_reactive_power, shunt_control_type, regulated_bus_number, reactive_power_required, base_power, services, dynamic_injector, ext, InfrastructureSystemsInternal(), )
+function FACTSControlDevice(name, available, bus, control_mode, max_shunt_current=9999.0, max_reactive_power=9999.0, shunt_control_type=FACTSShuntControlType.STATCOM, remote_regulated_bus=nothing, reactive_power_required=0.0, base_power=100.0, services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), )
+    FACTSControlDevice(name, available, bus, control_mode, max_shunt_current, max_reactive_power, shunt_control_type, remote_regulated_bus, reactive_power_required, base_power, services, dynamic_injector, ext, InfrastructureSystemsInternal(), )
 end
 
-function FACTSControlDevice(; name, available, bus, control_mode, voltage_setpoint=1.0, max_shunt_current=9999.0, max_reactive_power=9999.0, shunt_control_type=FACTSShuntControlType.STATCOM, regulated_bus_number=0, reactive_power_required=0.0, base_power=100.0, services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Unitful.Units, )
-    value = FACTSControlDevice(name, available, bus, control_mode, voltage_setpoint, _placeholder(max_shunt_current), _placeholder(max_reactive_power), shunt_control_type, regulated_bus_number, reactive_power_required, base_power, services, dynamic_injector, ext, internal, )
+function FACTSControlDevice(; name, available, bus, control_mode, max_shunt_current=9999.0, max_reactive_power=9999.0, shunt_control_type=FACTSShuntControlType.STATCOM, remote_regulated_bus=nothing, reactive_power_required=0.0, base_power=100.0, services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Unitful.Units, )
+    value = FACTSControlDevice(name, available, bus, control_mode, _placeholder(max_shunt_current), _placeholder(max_reactive_power), shunt_control_type, remote_regulated_bus, reactive_power_required, base_power, services, dynamic_injector, ext, internal, )
     set_max_shunt_current!(value, _tag(max_shunt_current, input_basis, Val(:mva)))
     set_max_reactive_power!(value, _tag(max_reactive_power, input_basis, Val(:mvar)))
     return value
@@ -97,11 +93,10 @@ function FACTSControlDevice(::Nothing)
         available=false,
         bus=ACBus(nothing),
         control_mode=nothing,
-        voltage_setpoint=1.0,
         max_shunt_current=0.0,
         max_reactive_power=0.0,
         shunt_control_type=FACTSShuntControlType.STATCOM,
-        regulated_bus_number=0,
+        remote_regulated_bus=nothing,
         reactive_power_required=0.0,
         base_power=100.0,
         services=Device[],
@@ -119,8 +114,6 @@ get_available(value::FACTSControlDevice) = value.available
 get_bus(value::FACTSControlDevice) = value.bus
 """Get [`FACTSControlDevice`](@ref) `control_mode`."""
 get_control_mode(value::FACTSControlDevice) = value.control_mode
-"""Get [`FACTSControlDevice`](@ref) `voltage_setpoint`."""
-get_voltage_setpoint(value::FACTSControlDevice) = value.voltage_setpoint
 """Get [`FACTSControlDevice`](@ref) `max_shunt_current` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_max_shunt_current_unitful`](@ref)."""
 get_max_shunt_current(value::FACTSControlDevice, units) = InfrastructureSystems._strip_units(get_value(value, Val(:max_shunt_current), Val(:mva), units))
 """Get [`FACTSControlDevice`](@ref) `max_shunt_current` as a unit-bearing quantity in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"MW"`). For a bare number see [`get_max_shunt_current`](@ref)."""
@@ -139,8 +132,8 @@ InfrastructureSystems.display_units_arg(::typeof(get_max_reactive_power), ::Type
 InfrastructureSystems.display_units_arg(::typeof(get_max_reactive_power_unitful), ::Type{FACTSControlDevice}) = u"SU"
 """Get [`FACTSControlDevice`](@ref) `shunt_control_type`."""
 get_shunt_control_type(value::FACTSControlDevice) = value.shunt_control_type
-"""Get [`FACTSControlDevice`](@ref) `regulated_bus_number`."""
-get_regulated_bus_number(value::FACTSControlDevice) = value.regulated_bus_number
+"""Get [`FACTSControlDevice`](@ref) `remote_regulated_bus`."""
+get_remote_regulated_bus(value::FACTSControlDevice) = value.remote_regulated_bus
 """Get [`FACTSControlDevice`](@ref) `reactive_power_required`."""
 get_reactive_power_required(value::FACTSControlDevice) = value.reactive_power_required
 
@@ -160,8 +153,6 @@ set_available!(value::FACTSControlDevice, val) = value.available = val
 set_bus!(value::FACTSControlDevice, val) = value.bus = val
 """Set [`FACTSControlDevice`](@ref) `control_mode`."""
 set_control_mode!(value::FACTSControlDevice, val) = value.control_mode = val
-"""Set [`FACTSControlDevice`](@ref) `voltage_setpoint`."""
-set_voltage_setpoint!(value::FACTSControlDevice, val) = value.voltage_setpoint = val
 """Set [`FACTSControlDevice`](@ref) `max_shunt_current`."""
 set_max_shunt_current!(value::FACTSControlDevice, val) = value.max_shunt_current = set_value(value, Val(:max_shunt_current), val, Val(:mva))
 set_max_shunt_current!(value::FACTSControlDevice, val::_UntaggedNumber) = _units_tag_required(set_max_shunt_current!, value, :max_shunt_current, Val(:mva), val)
@@ -170,8 +161,8 @@ set_max_reactive_power!(value::FACTSControlDevice, val) = value.max_reactive_pow
 set_max_reactive_power!(value::FACTSControlDevice, val::_UntaggedNumber) = _units_tag_required(set_max_reactive_power!, value, :max_reactive_power, Val(:mvar), val)
 """Set [`FACTSControlDevice`](@ref) `shunt_control_type`."""
 set_shunt_control_type!(value::FACTSControlDevice, val) = value.shunt_control_type = val
-"""Set [`FACTSControlDevice`](@ref) `regulated_bus_number`."""
-set_regulated_bus_number!(value::FACTSControlDevice, val) = value.regulated_bus_number = val
+"""Set [`FACTSControlDevice`](@ref) `remote_regulated_bus`."""
+set_remote_regulated_bus!(value::FACTSControlDevice, val) = value.remote_regulated_bus = val
 """Set [`FACTSControlDevice`](@ref) `reactive_power_required`."""
 set_reactive_power_required!(value::FACTSControlDevice, val) = value.reactive_power_required = val
 """Set [`FACTSControlDevice`](@ref) `services`."""

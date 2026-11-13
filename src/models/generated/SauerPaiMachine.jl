@@ -5,7 +5,7 @@ This file is auto-generated. Do not edit.
 #! format: off
 
 """
-    mutable struct SauerPaiMachine <: Machine
+    mutable struct SauerPaiMachine <: SynchronousMachineDynamics
         R::Float64
         Xd::Float64
         Xq::Float64
@@ -58,7 +58,7 @@ Parameters of synchronous machine: Sauer Pai model
 - `n_states::Int`: (**Do not modify.**) SauerPaiMachine has 6 states
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
 """
-mutable struct SauerPaiMachine <: Machine
+mutable struct SauerPaiMachine <: SynchronousMachineDynamics
     "Resistance after EMF in machine per unit"
     R::Float64
     "Reactance after EMF in d-axis per unit"
@@ -209,3 +209,40 @@ set_γ_q1!(value::SauerPaiMachine, val) = value.γ_q1 = val
 set_γ_d2!(value::SauerPaiMachine, val) = value.γ_d2 = val
 """Set [`SauerPaiMachine`](@ref) `γ_q2`."""
 set_γ_q2!(value::SauerPaiMachine, val) = value.γ_q2 = val
+
+
+
+function from_openapi(po::PD.SauerPaiMachine, refs::OpenAPIRefs)
+    return SauerPaiMachine(;
+        R = _wire_required(po.r, "SauerPaiMachine", "R"),
+        Xd = _wire_required(po.xd, "SauerPaiMachine", "Xd"),
+        Xq = _wire_required(po.xq, "SauerPaiMachine", "Xq"),
+        Xd_p = _wire_required(po.xd_p, "SauerPaiMachine", "Xd_p"),
+        Xq_p = _wire_required(po.xq_p, "SauerPaiMachine", "Xq_p"),
+        Xd_pp = _wire_required(po.xd_pp, "SauerPaiMachine", "Xd_pp"),
+        Xq_pp = _wire_required(po.xq_pp, "SauerPaiMachine", "Xq_pp"),
+        Xl = _wire_required(po.xl, "SauerPaiMachine", "Xl"),
+        Td0_p = _wire_required(po.td0_p, "SauerPaiMachine", "Td0_p"),
+        Tq0_p = _wire_required(po.tq0_p, "SauerPaiMachine", "Tq0_p"),
+        Td0_pp = _wire_required(po.td0_pp, "SauerPaiMachine", "Td0_pp"),
+        Tq0_pp = _wire_required(po.tq0_pp, "SauerPaiMachine", "Tq0_pp"),
+    )
+end
+
+function to_openapi(value::SauerPaiMachine, refs::OpenAPIRefs)
+    return PD.SauerPaiMachine(;
+        id = component_id(refs, value),
+        r = get_R(value),
+        xd = get_Xd(value),
+        xq = get_Xq(value),
+        xd_p = get_Xd_p(value),
+        xq_p = get_Xq_p(value),
+        xd_pp = get_Xd_pp(value),
+        xq_pp = get_Xq_pp(value),
+        xl = get_Xl(value),
+        td0_p = get_Td0_p(value),
+        tq0_p = get_Tq0_p(value),
+        td0_pp = get_Td0_pp(value),
+        tq0_pp = get_Tq0_pp(value),
+    )
+end

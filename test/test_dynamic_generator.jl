@@ -237,7 +237,8 @@ end
     )
     @test get_frequency_droop(typeI_tg) == 0.02
 
-    typeII_tg = TGTypeII(; R = 0.05, T1 = 0.3, T2 = 0.1, τ_limits = (min = 0.1, max = 1.0))
+    typeII_tg =
+        TGTypeII(; R = 0.05, T1 = 0.3, T2 = 0.1, tau_limits = (min = 0.1, max = 1.0))
     @test get_frequency_droop(typeII_tg) == 0.05
 
     gast_tg = GasTG(;
@@ -390,61 +391,61 @@ end
 
     Gen1AVR = DynamicGenerator(;
         name = get_name(static_gen),
-        ω_ref = 1.0,
-        machine = Basic,
+        frequency_ref = 60.0,
+        synchronous_machine_dynamics = Basic,
         shaft = BaseShaft,
-        avr = proportional_avr,
-        prime_mover = fixed_tg,
-        pss = no_pss,
+        excitation_system_dynamics = proportional_avr,
+        turbine_governor_dynamics = fixed_tg,
+        power_system_stabilizer_dynamics = no_pss,
     )
     Gen1AVRnoAVR = DynamicGenerator(;
         name = get_name(static_gen),
-        ω_ref = 1.0,
-        machine = Basic,
+        frequency_ref = 60.0,
+        synchronous_machine_dynamics = Basic,
         shaft = BaseShaft,
-        avr = fixed_avr,
-        prime_mover = fixed_tg,
-        pss = no_pss,
+        excitation_system_dynamics = fixed_avr,
+        turbine_governor_dynamics = fixed_tg,
+        power_system_stabilizer_dynamics = no_pss,
     )
 
     Gen2AVRnoAVR = DynamicGenerator(;
         name = get_name(static_gen),
-        ω_ref = 1.0,
-        machine = oneDoneQ,
+        frequency_ref = 60.0,
+        synchronous_machine_dynamics = oneDoneQ,
         shaft = BaseShaft,
-        avr = fixed_avr,
-        prime_mover = fixed_tg,
-        pss = no_pss,
+        excitation_system_dynamics = fixed_avr,
+        turbine_governor_dynamics = fixed_tg,
+        power_system_stabilizer_dynamics = no_pss,
     )
 
     Gen2AVR = DynamicGenerator(;
         name = get_name(static_gen),
-        ω_ref = 1.0,
-        machine = oneDoneQ,
+        frequency_ref = 60.0,
+        synchronous_machine_dynamics = oneDoneQ,
         shaft = BaseShaft,
-        avr = proportional_avr,
-        prime_mover = fixed_tg,
-        pss = no_pss,
+        excitation_system_dynamics = proportional_avr,
+        turbine_governor_dynamics = fixed_tg,
+        power_system_stabilizer_dynamics = no_pss,
     )
 
     Gen3AVR = DynamicGenerator(;
         name = get_name(static_gen),
-        ω_ref = 1.0,
-        machine = oneDoneQ,
+        frequency_ref = 60.0,
+        synchronous_machine_dynamics = oneDoneQ,
         shaft = BaseShaft,
-        avr = sexs_avr,
-        prime_mover = fixed_tg,
-        pss = no_pss,
+        excitation_system_dynamics = sexs_avr,
+        turbine_governor_dynamics = fixed_tg,
+        power_system_stabilizer_dynamics = no_pss,
     )
 
     Gen4AVR = DynamicGenerator(;
         name = get_name(static_gen),
-        ω_ref = 1.0,
-        machine = oneDoneQ,
+        frequency_ref = 60.0,
+        synchronous_machine_dynamics = oneDoneQ,
         shaft = BaseShaft,
-        avr = sexs_avr,
-        prime_mover = typeI_tg,
-        pss = no_pss,
+        excitation_system_dynamics = sexs_avr,
+        turbine_governor_dynamics = typeI_tg,
+        power_system_stabilizer_dynamics = no_pss,
     )
     @test get_frequency_droop(Gen4AVR) == 0.02
 
@@ -596,22 +597,22 @@ end
 
     Gen1 = DynamicGenerator(;
         name = get_name(static),
-        ω_ref = 1.0,
-        machine = Basic,
+        frequency_ref = 60.0,
+        synchronous_machine_dynamics = Basic,
         shaft = BaseShaft,
-        avr = proportional_avr,
-        prime_mover = fixed_tg,
-        pss = no_pss,
+        excitation_system_dynamics = proportional_avr,
+        turbine_governor_dynamics = fixed_tg,
+        power_system_stabilizer_dynamics = no_pss,
     )
 
     Gen2 = DynamicGenerator(;
         name = get_name(static),
-        ω_ref = 1.0,
-        machine = oneDoneQ,
+        frequency_ref = 60.0,
+        synchronous_machine_dynamics = oneDoneQ,
         shaft = BaseShaft,
-        avr = fixed_avr,
-        prime_mover = fixed_tg,
-        pss = no_pss,
+        excitation_system_dynamics = fixed_avr,
+        turbine_governor_dynamics = fixed_tg,
+        power_system_stabilizer_dynamics = no_pss,
     )
 
     sys = System(100.0)
@@ -643,12 +644,12 @@ end
     add_component!(sys, Gen1, static)
     bad_name_gen = DynamicGenerator(;
         name = "wrong_name",
-        ω_ref = 1.0,
-        machine = BaseMachine(; R = 0.0, Xd_p = 0.2995, eq_p = 1.05),
+        frequency_ref = 60.0,
+        synchronous_machine_dynamics = BaseMachine(; R = 0.0, Xd_p = 0.2995, eq_p = 1.05),
         shaft = SingleMass(; H = 5.148, D = 2.0),
-        avr = AVRSimple(; Kv = 5000.0),
-        prime_mover = TGFixed(; efficiency = 1.0),
-        pss = PSSFixed(; V_pss = 0.0),
+        excitation_system_dynamics = AVRSimple(; Kv = 5000.0),
+        turbine_governor_dynamics = TGFixed(; efficiency = 1.0),
+        power_system_stabilizer_dynamics = PSSFixed(; V_pss = 0.0),
     )
     @test_throws ArgumentError replace_dynamic_injector!(sys, static, bad_name_gen)
 end
@@ -658,10 +659,10 @@ end
     derd = GenericDER(;
         name = "init",
         Qref_Flag = 2,
-        PQ_Flag = 0,
-        Gen_Flag = 0,
-        PerOp_Flag = 0,
-        Recon_Flag = 0,
+        PQ_Flag = false,
+        Gen_Flag = false,
+        PerOp_Flag = false,
+        Recon_Flag = false,
         Trv = 0,
         VV_pnts = (V1 = 0.0, V2 = 0.0, V3 = 0.0, V4 = 0.0),
         Q_lim = (min = 0.0, max = 0.0),
@@ -705,10 +706,10 @@ end
     @test_throws ErrorException GenericDER(
         name = "init",
         Qref_Flag = 4,
-        PQ_Flag = 0,
-        Gen_Flag = 0,
-        PerOp_Flag = 0,
-        Recon_Flag = 0,
+        PQ_Flag = false,
+        Gen_Flag = false,
+        PerOp_Flag = false,
+        Recon_Flag = false,
         Trv = 0,
         VV_pnts = (V1 = 0.0, V2 = 0.0, V3 = 0.0, V4 = 0.0),
         Q_lim = (min = 0.0, max = 0.0),
@@ -763,57 +764,12 @@ end
     #valid (non-default) Freq_Flag
     dera = AggregateDistributedGenerationA(;
         name = "init",
-        Pf_Flag = 0,
-        Freq_Flag = 1,
-        PQ_Flag = 0,
-        Gen_Flag = 0,
-        Vtrip_Flag = 0,
-        Ftrip_Flag = 0,
-        T_rv = 0,
-        Trf = 0,
-        dbd_pnts = (0.0, 0.0),
-        K_qv = 0,
-        Tp = 0,
-        T_iq = 0,
-        D_dn = 0,
-        D_up = 0,
-        fdbd_pnts = (0.0, 0.0),
-        fe_lim = (min = 0.0, max = 0.0),
-        P_lim = (min = 0.0, max = 0.0),
-        dP_lim = (min = 0.0, max = 0.0),
-        Tpord = 0,
-        Kpg = 0,
-        Kig = 0,
-        I_max = 0,
-        vl_pnts = [(0.0, 0.0), (0.0, 0.0)],
-        vh_pnts = [(0.0, 0.0), (0.0, 0.0)],
-        Vrfrac = 0,
-        fl = 0,
-        fh = 0,
-        tfl = 0,
-        tfh = 0,
-        Tg = 0,
-        rrpwr = 0,
-        Tv = 0,
-        Vpr = 0,
-        Iq_lim = (min = 0.0, max = 0.0),
-        V_ref = 0,
-        Pfa_ref = 0,
-        Q_ref = 0,
-        P_ref = 0,
-        base_power = 0,
-        ext = Dict{String, Any}(),
-    )
-
-    #invalid Freq_Flag
-    @test_throws ErrorException AggregateDistributedGenerationA(
-        name = "init",
-        Pf_Flag = 0,
-        Freq_Flag = 2,
-        PQ_Flag = 0,
-        Gen_Flag = 0,
-        Vtrip_Flag = 0,
-        Ftrip_Flag = 0,
+        Pf_Flag = false,
+        Freq_Flag = true,
+        PQ_Flag = false,
+        Gen_Flag = false,
+        Vtrip_Flag = false,
+        Ftrip_Flag = false,
         T_rv = 0,
         Trf = 0,
         dbd_pnts = (0.0, 0.0),

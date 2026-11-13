@@ -5,7 +5,7 @@ This file is auto-generated. Do not edit.
 #! format: off
 
 """
-    mutable struct OneDOneQMachine <: Machine
+    mutable struct OneDOneQMachine <: SynchronousMachineDynamics
         R::Float64
         Xd::Float64
         Xq::Float64
@@ -39,7 +39,7 @@ Parameters of 4-[states](@ref S) synchronous machine: Simplified Marconato model
 - `n_states::Int`: (**Do not modify.**) OneDOneQMachine has 2 states
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
 """
-mutable struct OneDOneQMachine <: Machine
+mutable struct OneDOneQMachine <: SynchronousMachineDynamics
     "Resistance after EMF in machine per unit"
     R::Float64
     "Reactance after EMF in d-axis per unit"
@@ -127,3 +127,30 @@ set_Td0_p!(value::OneDOneQMachine, val) = value.Td0_p = val
 set_Tq0_p!(value::OneDOneQMachine, val) = value.Tq0_p = val
 """Set [`OneDOneQMachine`](@ref) `ext`."""
 set_ext!(value::OneDOneQMachine, val) = value.ext = val
+
+
+
+function from_openapi(po::PD.OneDOneQMachine, refs::OpenAPIRefs)
+    return OneDOneQMachine(;
+        R = _wire_required(po.r, "OneDOneQMachine", "R"),
+        Xd = _wire_required(po.xd, "OneDOneQMachine", "Xd"),
+        Xq = _wire_required(po.xq, "OneDOneQMachine", "Xq"),
+        Xd_p = _wire_required(po.xd_p, "OneDOneQMachine", "Xd_p"),
+        Xq_p = _wire_required(po.xq_p, "OneDOneQMachine", "Xq_p"),
+        Td0_p = _wire_required(po.td0_p, "OneDOneQMachine", "Td0_p"),
+        Tq0_p = _wire_required(po.tq0_p, "OneDOneQMachine", "Tq0_p"),
+    )
+end
+
+function to_openapi(value::OneDOneQMachine, refs::OpenAPIRefs)
+    return PD.OneDOneQMachine(;
+        id = component_id(refs, value),
+        r = get_R(value),
+        xd = get_Xd(value),
+        xq = get_Xq(value),
+        xd_p = get_Xd_p(value),
+        xq_p = get_Xq_p(value),
+        td0_p = get_Td0_p(value),
+        tq0_p = get_Tq0_p(value),
+    )
+end

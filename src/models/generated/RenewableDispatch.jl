@@ -17,6 +17,7 @@ This file is auto-generated. Do not edit.
         power_factor::Float64
         operation_cost::OperationalCost
         base_power::Float64
+        remote_regulated_bus::Union{Nothing, ACBus}
         services::Vector{Service}
         dynamic_injector::Union{Nothing, DynamicInjection}
         ext::Dict{String, Any}
@@ -41,6 +42,7 @@ Renewable generators do not have a `max_active_power` parameter, which is instea
 - `power_factor::Float64`: Power factor [0, 1] set-point, used in some production cost modeling and in load flow if the unit is connected to a [`PQ`](@ref acbustypes_list) bus, validation range: `(0, 1)`
 - `operation_cost::OperationalCost`: [`OperationalCost`](@ref) of generation
 - `base_power::Float64`: Base power of the unit (MVA) for [per unitization](@ref per_unit), validation range: `(0.0001, nothing)`
+- `remote_regulated_bus::Union{Nothing, ACBus}`: (default: `nothing`) Bus whose voltage this device regulates, to the `voltage_setpoint` of that bus. `nothing` regulates the bus of this device. The bus must not be the same as `bus`.
 - `services::Vector{Service}`: (default: `Device[]`) Services that this device contributes to
 - `dynamic_injector::Union{Nothing, DynamicInjection}`: (default: `nothing`) corresponding dynamic injection device
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
@@ -70,6 +72,8 @@ mutable struct RenewableDispatch <: RenewableGen
     operation_cost::OperationalCost
     "Base power of the unit (MVA) for [per unitization](@ref per_unit)"
     base_power::Float64
+    "Bus whose voltage this device regulates, to the `voltage_setpoint` of that bus. `nothing` regulates the bus of this device. The bus must not be the same as `bus`."
+    remote_regulated_bus::Union{Nothing, ACBus}
     "Services that this device contributes to"
     services::Vector{Service}
     "corresponding dynamic injection device"
@@ -80,12 +84,12 @@ mutable struct RenewableDispatch <: RenewableGen
     internal::InfrastructureSystemsInternal
 end
 
-function RenewableDispatch(name, available, bus, active_power, reactive_power, rating, prime_mover_type, reactive_power_limits, power_factor, operation_cost, base_power, services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), )
-    RenewableDispatch(name, available, bus, active_power, reactive_power, rating, prime_mover_type, reactive_power_limits, power_factor, operation_cost, base_power, services, dynamic_injector, ext, InfrastructureSystemsInternal(), )
+function RenewableDispatch(name, available, bus, active_power, reactive_power, rating, prime_mover_type, reactive_power_limits, power_factor, operation_cost, base_power, remote_regulated_bus=nothing, services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), )
+    RenewableDispatch(name, available, bus, active_power, reactive_power, rating, prime_mover_type, reactive_power_limits, power_factor, operation_cost, base_power, remote_regulated_bus, services, dynamic_injector, ext, InfrastructureSystemsInternal(), )
 end
 
-function RenewableDispatch(; name, available, bus, active_power, reactive_power, rating, prime_mover_type, reactive_power_limits, power_factor, operation_cost, base_power, services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Unitful.Units, )
-    value = RenewableDispatch(name, available, bus, _placeholder(active_power), _placeholder(reactive_power), _placeholder(rating), prime_mover_type, _placeholder(reactive_power_limits), power_factor, operation_cost, base_power, services, dynamic_injector, ext, internal, )
+function RenewableDispatch(; name, available, bus, active_power, reactive_power, rating, prime_mover_type, reactive_power_limits, power_factor, operation_cost, base_power, remote_regulated_bus=nothing, services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Unitful.Units, )
+    value = RenewableDispatch(name, available, bus, _placeholder(active_power), _placeholder(reactive_power), _placeholder(rating), prime_mover_type, _placeholder(reactive_power_limits), power_factor, operation_cost, base_power, remote_regulated_bus, services, dynamic_injector, ext, internal, )
     set_active_power!(value, _tag(active_power, input_basis, Val(:mw)))
     set_reactive_power!(value, _tag(reactive_power, input_basis, Val(:mvar)))
     set_rating!(value, _tag(rating, input_basis, Val(:mva)))
@@ -108,6 +112,7 @@ function RenewableDispatch(::Nothing)
         power_factor=1.0,
         operation_cost=RenewableGenerationCost(nothing),
         base_power=100.0,
+        remote_regulated_bus=nothing,
         services=Device[],
         dynamic_injector=nothing,
         ext=Dict{String, Any}(),
@@ -161,6 +166,8 @@ get_power_factor(value::RenewableDispatch) = value.power_factor
 get_operation_cost(value::RenewableDispatch) = value.operation_cost
 
 _get_base_power(value::RenewableDispatch) = value.base_power
+"""Get [`RenewableDispatch`](@ref) `remote_regulated_bus`."""
+get_remote_regulated_bus(value::RenewableDispatch) = value.remote_regulated_bus
 """Get [`RenewableDispatch`](@ref) `services`."""
 get_services(value::RenewableDispatch) = value.services
 """Get [`RenewableDispatch`](@ref) `dynamic_injector`."""
@@ -193,6 +200,8 @@ set_reactive_power_limits!(value::RenewableDispatch, val::NamedTuple{(:min, :max
 set_power_factor!(value::RenewableDispatch, val) = value.power_factor = val
 """Set [`RenewableDispatch`](@ref) `operation_cost`."""
 set_operation_cost!(value::RenewableDispatch, val) = value.operation_cost = val
+"""Set [`RenewableDispatch`](@ref) `remote_regulated_bus`."""
+set_remote_regulated_bus!(value::RenewableDispatch, val) = value.remote_regulated_bus = val
 """Set [`RenewableDispatch`](@ref) `services`."""
 set_services!(value::RenewableDispatch, val) = value.services = val
 """Set [`RenewableDispatch`](@ref) `ext`."""
@@ -212,6 +221,7 @@ function from_openapi(po::PO.RenewableDispatch, refs::OpenAPIRefs, ::ComponentBa
         power_factor = po.power_factor,
         operation_cost = convert_cost(po.operation_cost.value)::OperationalCost,
         base_power = po.base_power,
+        remote_regulated_bus = resolve_ref(refs, po.remote_regulated_bus, ACBus),
         input_basis = u"CU",
     )
 end
@@ -229,6 +239,7 @@ function from_openapi(po::PO.RenewableDispatch, refs::OpenAPIRefs, ::NaturalUnit
         power_factor = po.power_factor,
         operation_cost = convert_cost(po.operation_cost.value)::OperationalCost,
         base_power = po.base_power,
+        remote_regulated_bus = resolve_ref(refs, po.remote_regulated_bus, ACBus),
         input_basis = u"CU",
     )
 end
@@ -251,6 +262,7 @@ function to_openapi(value::RenewableDispatch, refs::OpenAPIRefs, ::ComponentBase
         power_factor = get_power_factor(value),
         operation_cost = PO.RenewableDispatchOperationCost(convert_cost_to_openapi(get_operation_cost(value))),
         base_power = _get_base_power(value),
+        remote_regulated_bus = _component_id_optional(refs, get_remote_regulated_bus(value)),
         power_units = _power_units_string(CU),
     )
 end
@@ -269,6 +281,7 @@ function to_openapi(value::RenewableDispatch, refs::OpenAPIRefs, ::NaturalUnit)
         power_factor = get_power_factor(value),
         operation_cost = PO.RenewableDispatchOperationCost(convert_cost_to_openapi(get_operation_cost(value))),
         base_power = _get_base_power(value),
+        remote_regulated_bus = _component_id_optional(refs, get_remote_regulated_bus(value)),
         power_units = _power_units_string(NU),
     )
 end

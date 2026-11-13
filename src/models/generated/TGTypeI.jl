@@ -5,7 +5,7 @@ This file is auto-generated. Do not edit.
 #! format: off
 
 """
-    mutable struct TGTypeI <: TurbineGov
+    mutable struct TGTypeI <: TurbineGovernorDynamics
         R::Float64
         Ts::Float64
         Tc::Float64
@@ -39,7 +39,7 @@ Parameters of a Turbine Governor Type I
 - `n_states::Int`: (**Do not modify.**) TGTypeI has 3 states
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
 """
-mutable struct TGTypeI <: TurbineGov
+mutable struct TGTypeI <: TurbineGovernorDynamics
     "Droop parameter"
     R::Float64
     "Governor time constant"
@@ -135,3 +135,32 @@ set_valve_position_limits!(value::TGTypeI, val) = value.valve_position_limits = 
 set_P_ref!(value::TGTypeI, val) = value.P_ref = val
 """Set [`TGTypeI`](@ref) `ext`."""
 set_ext!(value::TGTypeI, val) = value.ext = val
+
+
+
+function from_openapi(po::PD.TGTypeI, refs::OpenAPIRefs)
+    return TGTypeI(;
+        R = _wire_required(po.r, "TGTypeI", "R"),
+        Ts = _wire_required(po.ts, "TGTypeI", "Ts"),
+        Tc = _wire_required(po.tc, "TGTypeI", "Tc"),
+        T3 = _wire_required(po.t3, "TGTypeI", "T3"),
+        T4 = _wire_required(po.t4, "TGTypeI", "T4"),
+        T5 = _wire_required(po.t5, "TGTypeI", "T5"),
+        valve_position_limits = _or_default(po.valve_position_limits, nothing),
+        P_ref = _or_default(po.p_ref, 1.0),
+    )
+end
+
+function to_openapi(value::TGTypeI, refs::OpenAPIRefs)
+    return PD.TGTypeI(;
+        id = component_id(refs, value),
+        r = get_R(value),
+        ts = get_Ts(value),
+        tc = get_Tc(value),
+        t3 = get_T3(value),
+        t4 = get_T4(value),
+        t5 = get_T5(value),
+        valve_position_limits = _minmax_po(get_valve_position_limits(value)),
+        p_ref = get_P_ref(value),
+    )
+end

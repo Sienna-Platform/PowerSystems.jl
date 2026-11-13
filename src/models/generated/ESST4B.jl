@@ -5,7 +5,7 @@ This file is auto-generated. Do not edit.
 #! format: off
 
 """
-    mutable struct ESST4B <: AVR
+    mutable struct ESST4B <: ExcitationSystemDynamics
         Tr::Float64
         K_pr::Float64
         K_ir::Float64
@@ -20,9 +20,9 @@ This file is auto-generated. Do not edit.
         VB_max::Float64
         Kc::Float64
         Xl::Float64
-        θp::Float64
+        thetap::Float64
         V_ref::Float64
-        θp_rad::Float64
+        thetap_rad::Float64
         ext::Dict{String, Any}
         states::Vector{Symbol}
         n_states::Int
@@ -48,9 +48,9 @@ Parameters of IEEE Std 421.5 Type ST4B Excitacion System. ESST4B in PSSE and PSL
 - `VB_max::Float64`: Maximum available exciter voltage, validation range: `(1, 20)`
 - `Kc::Float64`: Rectifier loading factor proportional to commutating reactance, validation range: `(0, 1)`
 - `Xl::Float64`: Reactance associated with potential source, validation range: `(0, 0.5)`
-- `θp::Float64`: Potential circuit phase angle (degrees), validation range: `(-90, 90)`
+- `thetap::Float64`: Potential circuit phase angle (degrees), validation range: `(-90, 90)`
 - `V_ref::Float64`: (default: `1.0`) Reference Voltage Set-point (pu), validation range: `(0, nothing)`
-- `θp_rad::Float64`: (default: `θp*π*inv(180)`) (**Do not modify.**) Potential circuit phase angle (radians)
+- `thetap_rad::Float64`: (**Do not modify.**) Potential circuit phase angle (radians)
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
 - `states::Vector{Symbol}`: (**Do not modify.**) The [states](@ref S) are:
 	Vm: Sensed terminal voltage,
@@ -62,7 +62,7 @@ Parameters of IEEE Std 421.5 Type ST4B Excitacion System. ESST4B in PSSE and PSL
 - `states_types::Vector{StateTypes.Value}`: (**Do not modify.**) ST4B has 4 states
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
 """
-mutable struct ESST4B <: AVR
+mutable struct ESST4B <: ExcitationSystemDynamics
     "Regulator input filter time constant in s"
     Tr::Float64
     "Regulator propotional gain"
@@ -92,11 +92,11 @@ mutable struct ESST4B <: AVR
     "Reactance associated with potential source"
     Xl::Float64
     "Potential circuit phase angle (degrees)"
-    θp::Float64
+    thetap::Float64
     "Reference Voltage Set-point (pu)"
     V_ref::Float64
     "(**Do not modify.**) Potential circuit phase angle (radians)"
-    θp_rad::Float64
+    thetap_rad::Float64
     "An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation."
     ext::Dict{String, Any}
     "(**Do not modify.**) The [states](@ref S) are:
@@ -114,12 +114,12 @@ mutable struct ESST4B <: AVR
     internal::InfrastructureSystemsInternal
 end
 
-function ESST4B(Tr, K_pr, K_ir, Vr_lim, Ta, K_pm, K_im, Vm_lim, Kg, Kp, Ki, VB_max, Kc, Xl, θp, V_ref=1.0, θp_rad=θp*π*inv(180), ext=Dict{String, Any}(), )
-    ESST4B(Tr, K_pr, K_ir, Vr_lim, Ta, K_pm, K_im, Vm_lim, Kg, Kp, Ki, VB_max, Kc, Xl, θp, V_ref, θp_rad, ext, [:Vt, :Vr1, :Vr2, :Vm], 4, [StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid], InfrastructureSystemsInternal(), )
+function ESST4B(Tr, K_pr, K_ir, Vr_lim, Ta, K_pm, K_im, Vm_lim, Kg, Kp, Ki, VB_max, Kc, Xl, thetap, V_ref=1.0, ext=Dict{String, Any}(), )
+    ESST4B(Tr, K_pr, K_ir, Vr_lim, Ta, K_pm, K_im, Vm_lim, Kg, Kp, Ki, VB_max, Kc, Xl, thetap, V_ref, ext, thetap*π*inv(180), [:Vt, :Vr1, :Vr2, :Vm], 4, [StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid], InfrastructureSystemsInternal(), )
 end
 
-function ESST4B(; Tr, K_pr, K_ir, Vr_lim, Ta, K_pm, K_im, Vm_lim, Kg, Kp, Ki, VB_max, Kc, Xl, θp, V_ref=1.0, θp_rad=θp*π*inv(180), ext=Dict{String, Any}(), states=[:Vt, :Vr1, :Vr2, :Vm], n_states=4, states_types=[StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid], internal=InfrastructureSystemsInternal(), )
-    ESST4B(Tr, K_pr, K_ir, Vr_lim, Ta, K_pm, K_im, Vm_lim, Kg, Kp, Ki, VB_max, Kc, Xl, θp, V_ref, θp_rad, ext, states, n_states, states_types, internal, )
+function ESST4B(; Tr, K_pr, K_ir, Vr_lim, Ta, K_pm, K_im, Vm_lim, Kg, Kp, Ki, VB_max, Kc, Xl, thetap, V_ref=1.0, thetap_rad=thetap*π*inv(180), ext=Dict{String, Any}(), states=[:Vt, :Vr1, :Vr2, :Vm], n_states=4, states_types=[StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid], internal=InfrastructureSystemsInternal(), )
+    ESST4B(Tr, K_pr, K_ir, Vr_lim, Ta, K_pm, K_im, Vm_lim, Kg, Kp, Ki, VB_max, Kc, Xl, thetap, V_ref, thetap_rad, ext, states, n_states, states_types, internal, )
 end
 
 # Constructor for demo purposes; non-functional.
@@ -139,9 +139,8 @@ function ESST4B(::Nothing)
         VB_max=0,
         Kc=0,
         Xl=0,
-        θp=0,
+        thetap=0,
         V_ref=0,
-        θp_rad=0,
         ext=Dict{String, Any}(),
     )
 end
@@ -174,12 +173,12 @@ get_VB_max(value::ESST4B) = value.VB_max
 get_Kc(value::ESST4B) = value.Kc
 """Get [`ESST4B`](@ref) `Xl`."""
 get_Xl(value::ESST4B) = value.Xl
-"""Get [`ESST4B`](@ref) `θp`."""
-get_θp(value::ESST4B) = value.θp
+"""Get [`ESST4B`](@ref) `thetap`."""
+get_thetap(value::ESST4B) = value.thetap
 """Get [`ESST4B`](@ref) `V_ref`."""
 get_V_ref(value::ESST4B) = value.V_ref
-"""Get [`ESST4B`](@ref) `θp_rad`."""
-get_θp_rad(value::ESST4B) = value.θp_rad
+"""Get [`ESST4B`](@ref) `thetap_rad`."""
+get_thetap_rad(value::ESST4B) = value.thetap_rad
 """Get [`ESST4B`](@ref) `ext`."""
 get_ext(value::ESST4B) = value.ext
 """Get [`ESST4B`](@ref) `states`."""
@@ -219,13 +218,58 @@ set_VB_max!(value::ESST4B, val) = value.VB_max = val
 set_Kc!(value::ESST4B, val) = value.Kc = val
 """Set [`ESST4B`](@ref) `Xl`."""
 set_Xl!(value::ESST4B, val) = value.Xl = val
-"""Set [`ESST4B`](@ref) `θp`."""
-set_θp!(value::ESST4B, val) = value.θp = val
+"""Set [`ESST4B`](@ref) `thetap`."""
+set_thetap!(value::ESST4B, val) = value.thetap = val
 """Set [`ESST4B`](@ref) `V_ref`."""
 set_V_ref!(value::ESST4B, val) = value.V_ref = val
-"""Set [`ESST4B`](@ref) `θp_rad`."""
-set_θp_rad!(value::ESST4B, val) = value.θp_rad = val
+"""Set [`ESST4B`](@ref) `thetap_rad`."""
+set_thetap_rad!(value::ESST4B, val) = value.thetap_rad = val
 """Set [`ESST4B`](@ref) `ext`."""
 set_ext!(value::ESST4B, val) = value.ext = val
 """Set [`ESST4B`](@ref) `states_types`."""
 set_states_types!(value::ESST4B, val) = value.states_types = val
+
+
+
+function from_openapi(po::PD.ESST4B, refs::OpenAPIRefs)
+    return ESST4B(;
+        Tr = _wire_required(po.tr, "ESST4B", "Tr"),
+        K_pr = _wire_required(po.k_pr, "ESST4B", "K_pr"),
+        K_ir = _wire_required(po.k_ir, "ESST4B", "K_ir"),
+        Vr_lim = _or_default(po.vr_lim, nothing),
+        Ta = _wire_required(po.ta, "ESST4B", "Ta"),
+        K_pm = _wire_required(po.k_pm, "ESST4B", "K_pm"),
+        K_im = _wire_required(po.k_im, "ESST4B", "K_im"),
+        Vm_lim = _or_default(po.vm_lim, nothing),
+        Kg = _wire_required(po.kg, "ESST4B", "Kg"),
+        Kp = _wire_required(po.kp, "ESST4B", "Kp"),
+        Ki = _wire_required(po.ki, "ESST4B", "Ki"),
+        VB_max = _wire_required(po.vb_max, "ESST4B", "VB_max"),
+        Kc = _wire_required(po.kc, "ESST4B", "Kc"),
+        Xl = _wire_required(po.xl, "ESST4B", "Xl"),
+        thetap = _wire_required(po.thetap, "ESST4B", "thetap"),
+        V_ref = _or_default(po.v_ref, 1.0),
+    )
+end
+
+function to_openapi(value::ESST4B, refs::OpenAPIRefs)
+    return PD.ESST4B(;
+        id = component_id(refs, value),
+        tr = get_Tr(value),
+        k_pr = get_K_pr(value),
+        k_ir = get_K_ir(value),
+        vr_lim = _minmax_po(get_Vr_lim(value)),
+        ta = get_Ta(value),
+        k_pm = get_K_pm(value),
+        k_im = get_K_im(value),
+        vm_lim = _minmax_po(get_Vm_lim(value)),
+        kg = get_Kg(value),
+        kp = get_Kp(value),
+        ki = get_Ki(value),
+        vb_max = get_VB_max(value),
+        kc = get_Kc(value),
+        xl = get_Xl(value),
+        thetap = get_thetap(value),
+        v_ref = get_V_ref(value),
+    )
+end

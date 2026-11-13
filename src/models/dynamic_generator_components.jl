@@ -1,14 +1,14 @@
 abstract type DynamicGeneratorComponent <: DynamicComponent end
 
 """
-Supertype for all Automatic Voltage Regulator (AVR) models for
+Supertype for all excitation system (automatic voltage regulator) models for
 [`DynamicGenerator`](@ref) components.
 
 Concrete subtypes include [`AVRFixed`](@ref), [`AVRSimple`](@ref), [`AVRTypeI`](@ref),
 [`AVRTypeII`](@ref), [`IEEET1`](@ref), [`ESDC1A`](@ref), [`ESAC1A`](@ref),
 [`SEXS`](@ref), [`SCRX`](@ref), and others.
 """
-abstract type AVR <: DynamicGeneratorComponent end
+abstract type ExcitationSystemDynamics <: DynamicGeneratorComponent end
 
 """
 Supertype for all synchronous machine models for [`DynamicGenerator`](@ref) components.
@@ -18,16 +18,16 @@ Concrete subtypes include [`BaseMachine`](@ref), [`OneDOneQMachine`](@ref),
 [`SalientPoleMachine`](@ref), [`AndersonFouadMachine`](@ref), [`FullMachine`](@ref),
 and others.
 """
-abstract type Machine <: DynamicGeneratorComponent end
+abstract type SynchronousMachineDynamics <: DynamicGeneratorComponent end
 
 """
-Supertype for all Power System Stabilizer (PSS) models for
+Supertype for all power system stabilizer models for
 [`DynamicGenerator`](@ref) components.
 
 Concrete subtypes include [`PSSFixed`](@ref), [`PSSSimple`](@ref), [`IEEEST`](@ref),
 [`PSS2A`](@ref), [`PSS2B`](@ref), [`PSS2C`](@ref), [`STAB1`](@ref), and [`CSVGN1`](@ref).
 """
-abstract type PSS <: DynamicGeneratorComponent end
+abstract type PowerSystemStabilizerDynamics <: DynamicGeneratorComponent end
 
 """
 Supertype for all shaft and rotor models for [`DynamicGenerator`](@ref) components.
@@ -44,7 +44,7 @@ Concrete subtypes include [`TGFixed`](@ref), [`TGTypeI`](@ref), [`TGTypeII`](@re
 [`IEEETurbineGov1`](@ref), [`SteamTurbineGov1`](@ref), [`DEGOV`](@ref),
 [`DEGOV1`](@ref), and others.
 """
-abstract type TurbineGov <: DynamicGeneratorComponent end
+abstract type TurbineGovernorDynamics <: DynamicGeneratorComponent end
 
 """
 Obtain coefficients (A, B) of the function Se(x) = B(x - A)^2/x for

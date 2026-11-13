@@ -5,7 +5,7 @@ This file is auto-generated. Do not edit.
 #! format: off
 
 """
-    mutable struct ST8C <: AVR
+    mutable struct ST8C <: ExcitationSystemDynamics
         OEL_Flag::Int
         UEL_Flag::Int
         SCL_Flag::Int
@@ -26,7 +26,7 @@ This file is auto-generated. Do not edit.
         K_p::Float64
         K_i1::Float64
         X_l::Float64
-        θ_p::Float64
+        theta_p::Float64
         VB1_max::Float64
         K_c2::Float64
         K_i2::Float64
@@ -64,7 +64,7 @@ Parameters of IEEE Std 421.5 Type ST8C Excitacion System. ST8C in PSSE and PSLF
 - `K_p::Float64`: Potential circuit (voltage) gain coefficient (pu), validation range: `(0, nothing)`
 - `K_i1::Float64`: Potential circuit (current) gain coefficient (pu), validation range: `(0, nothing)`
 - `X_l::Float64`: Reactance associated with potential source (pu), validation range: `(0, nothing)`
-- `θ_p::Float64`: Potential circuit phase angle (degrees), validation range: `(0, nothing)`
+- `theta_p::Float64`: Potential circuit phase angle (degrees), validation range: `(0, nothing)`
 - `VB1_max::Float64`: Maximum available exciter voltage (pu), validation range: `(0, nothing)`
 - `K_c2::Float64`: Rectifier loading factor proportional to commutating reactance (pu), validation range: `(0, nothing)`
 - `K_i2::Float64`: Potential circuit (current) gain coefficient (pu), validation range: `(0, nothing)`
@@ -82,7 +82,7 @@ Parameters of IEEE Std 421.5 Type ST8C Excitacion System. ST8C in PSSE and PSLF
 - `states_types::Vector{StateTypes.Value}`: (**Do not modify.**) ST8C has 5 states
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
 """
-mutable struct ST8C <: AVR
+mutable struct ST8C <: ExcitationSystemDynamics
     "OEL Flag for ST8C: <2: Summation at Voltage Error, 2: OEL takeover at gate"
     OEL_Flag::Int
     "UEL Flag for ST8C: <2: Summation at Voltage Error, 2: UEL takeover at gate"
@@ -124,7 +124,7 @@ mutable struct ST8C <: AVR
     "Reactance associated with potential source (pu)"
     X_l::Float64
     "Potential circuit phase angle (degrees)"
-    θ_p::Float64
+    theta_p::Float64
     "Maximum available exciter voltage (pu)"
     VB1_max::Float64
     "Rectifier loading factor proportional to commutating reactance (pu)"
@@ -154,12 +154,12 @@ mutable struct ST8C <: AVR
     internal::InfrastructureSystemsInternal
 end
 
-function ST8C(OEL_Flag, UEL_Flag, SCL_Flag, SW1_Flag, Tr, K_pr, K_ir, Vpi_lim, K_pa, K_ia, Va_lim, K_a, T_a, Vr_lim, K_f, T_f, K_c1, K_p, K_i1, X_l, θ_p, VB1_max, K_c2, K_i2, VB2_max, V_ref=1.0, Ifd_ref=1.0, ext=Dict{String, Any}(), )
-    ST8C(OEL_Flag, UEL_Flag, SCL_Flag, SW1_Flag, Tr, K_pr, K_ir, Vpi_lim, K_pa, K_ia, Va_lim, K_a, T_a, Vr_lim, K_f, T_f, K_c1, K_p, K_i1, X_l, θ_p, VB1_max, K_c2, K_i2, VB2_max, V_ref, Ifd_ref, ext, [:Vm, :x_a1, :x_a2, :x_a3, :x_a4], 5, [StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid], InfrastructureSystemsInternal(), )
+function ST8C(OEL_Flag, UEL_Flag, SCL_Flag, SW1_Flag, Tr, K_pr, K_ir, Vpi_lim, K_pa, K_ia, Va_lim, K_a, T_a, Vr_lim, K_f, T_f, K_c1, K_p, K_i1, X_l, theta_p, VB1_max, K_c2, K_i2, VB2_max, V_ref=1.0, Ifd_ref=1.0, ext=Dict{String, Any}(), )
+    ST8C(OEL_Flag, UEL_Flag, SCL_Flag, SW1_Flag, Tr, K_pr, K_ir, Vpi_lim, K_pa, K_ia, Va_lim, K_a, T_a, Vr_lim, K_f, T_f, K_c1, K_p, K_i1, X_l, theta_p, VB1_max, K_c2, K_i2, VB2_max, V_ref, Ifd_ref, ext, [:Vm, :x_a1, :x_a2, :x_a3, :x_a4], 5, [StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid], InfrastructureSystemsInternal(), )
 end
 
-function ST8C(; OEL_Flag, UEL_Flag, SCL_Flag, SW1_Flag, Tr, K_pr, K_ir, Vpi_lim, K_pa, K_ia, Va_lim, K_a, T_a, Vr_lim, K_f, T_f, K_c1, K_p, K_i1, X_l, θ_p, VB1_max, K_c2, K_i2, VB2_max, V_ref=1.0, Ifd_ref=1.0, ext=Dict{String, Any}(), states=[:Vm, :x_a1, :x_a2, :x_a3, :x_a4], n_states=5, states_types=[StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid], internal=InfrastructureSystemsInternal(), )
-    ST8C(OEL_Flag, UEL_Flag, SCL_Flag, SW1_Flag, Tr, K_pr, K_ir, Vpi_lim, K_pa, K_ia, Va_lim, K_a, T_a, Vr_lim, K_f, T_f, K_c1, K_p, K_i1, X_l, θ_p, VB1_max, K_c2, K_i2, VB2_max, V_ref, Ifd_ref, ext, states, n_states, states_types, internal, )
+function ST8C(; OEL_Flag, UEL_Flag, SCL_Flag, SW1_Flag, Tr, K_pr, K_ir, Vpi_lim, K_pa, K_ia, Va_lim, K_a, T_a, Vr_lim, K_f, T_f, K_c1, K_p, K_i1, X_l, theta_p, VB1_max, K_c2, K_i2, VB2_max, V_ref=1.0, Ifd_ref=1.0, ext=Dict{String, Any}(), states=[:Vm, :x_a1, :x_a2, :x_a3, :x_a4], n_states=5, states_types=[StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid], internal=InfrastructureSystemsInternal(), )
+    ST8C(OEL_Flag, UEL_Flag, SCL_Flag, SW1_Flag, Tr, K_pr, K_ir, Vpi_lim, K_pa, K_ia, Va_lim, K_a, T_a, Vr_lim, K_f, T_f, K_c1, K_p, K_i1, X_l, theta_p, VB1_max, K_c2, K_i2, VB2_max, V_ref, Ifd_ref, ext, states, n_states, states_types, internal, )
 end
 
 # Constructor for demo purposes; non-functional.
@@ -185,7 +185,7 @@ function ST8C(::Nothing)
         K_p=0,
         K_i1=0,
         X_l=0,
-        θ_p=0,
+        theta_p=0,
         VB1_max=0,
         K_c2=0,
         K_i2=0,
@@ -236,8 +236,8 @@ get_K_p(value::ST8C) = value.K_p
 get_K_i1(value::ST8C) = value.K_i1
 """Get [`ST8C`](@ref) `X_l`."""
 get_X_l(value::ST8C) = value.X_l
-"""Get [`ST8C`](@ref) `θ_p`."""
-get_θ_p(value::ST8C) = value.θ_p
+"""Get [`ST8C`](@ref) `theta_p`."""
+get_theta_p(value::ST8C) = value.theta_p
 """Get [`ST8C`](@ref) `VB1_max`."""
 get_VB1_max(value::ST8C) = value.VB1_max
 """Get [`ST8C`](@ref) `K_c2`."""
@@ -301,8 +301,8 @@ set_K_p!(value::ST8C, val) = value.K_p = val
 set_K_i1!(value::ST8C, val) = value.K_i1 = val
 """Set [`ST8C`](@ref) `X_l`."""
 set_X_l!(value::ST8C, val) = value.X_l = val
-"""Set [`ST8C`](@ref) `θ_p`."""
-set_θ_p!(value::ST8C, val) = value.θ_p = val
+"""Set [`ST8C`](@ref) `theta_p`."""
+set_theta_p!(value::ST8C, val) = value.theta_p = val
 """Set [`ST8C`](@ref) `VB1_max`."""
 set_VB1_max!(value::ST8C, val) = value.VB1_max = val
 """Set [`ST8C`](@ref) `K_c2`."""
@@ -319,3 +319,70 @@ set_Ifd_ref!(value::ST8C, val) = value.Ifd_ref = val
 set_ext!(value::ST8C, val) = value.ext = val
 """Set [`ST8C`](@ref) `states_types`."""
 set_states_types!(value::ST8C, val) = value.states_types = val
+
+
+
+function from_openapi(po::PD.ST8C, refs::OpenAPIRefs)
+    return ST8C(;
+        OEL_Flag = _wire_required(po.oel_flag, "ST8C", "OEL_Flag"),
+        UEL_Flag = _wire_required(po.uel_flag, "ST8C", "UEL_Flag"),
+        SCL_Flag = _wire_required(po.scl_flag, "ST8C", "SCL_Flag"),
+        SW1_Flag = _wire_required(po.sw1_flag, "ST8C", "SW1_Flag"),
+        Tr = _wire_required(po.tr, "ST8C", "Tr"),
+        K_pr = _wire_required(po.k_pr, "ST8C", "K_pr"),
+        K_ir = _wire_required(po.k_ir, "ST8C", "K_ir"),
+        Vpi_lim = _or_default(po.vpi_lim, nothing),
+        K_pa = _wire_required(po.k_pa, "ST8C", "K_pa"),
+        K_ia = _wire_required(po.k_ia, "ST8C", "K_ia"),
+        Va_lim = _or_default(po.va_lim, nothing),
+        K_a = _wire_required(po.k_a, "ST8C", "K_a"),
+        T_a = _wire_required(po.t_a, "ST8C", "T_a"),
+        Vr_lim = _or_default(po.vr_lim, nothing),
+        K_f = _wire_required(po.k_f, "ST8C", "K_f"),
+        T_f = _wire_required(po.t_f, "ST8C", "T_f"),
+        K_c1 = _wire_required(po.k_c1, "ST8C", "K_c1"),
+        K_p = _wire_required(po.k_p, "ST8C", "K_p"),
+        K_i1 = _wire_required(po.k_i1, "ST8C", "K_i1"),
+        X_l = _wire_required(po.x_l, "ST8C", "X_l"),
+        theta_p = _wire_required(po.theta_p, "ST8C", "theta_p"),
+        VB1_max = _wire_required(po.vb1_max, "ST8C", "VB1_max"),
+        K_c2 = _wire_required(po.k_c2, "ST8C", "K_c2"),
+        K_i2 = _wire_required(po.k_i2, "ST8C", "K_i2"),
+        VB2_max = _wire_required(po.vb2_max, "ST8C", "VB2_max"),
+        V_ref = _or_default(po.v_ref, 1.0),
+        Ifd_ref = _or_default(po.ifd_ref, 1.0),
+    )
+end
+
+function to_openapi(value::ST8C, refs::OpenAPIRefs)
+    return PD.ST8C(;
+        id = component_id(refs, value),
+        oel_flag = get_OEL_Flag(value),
+        uel_flag = get_UEL_Flag(value),
+        scl_flag = get_SCL_Flag(value),
+        sw1_flag = get_SW1_Flag(value),
+        tr = get_Tr(value),
+        k_pr = get_K_pr(value),
+        k_ir = get_K_ir(value),
+        vpi_lim = _minmax_po(get_Vpi_lim(value)),
+        k_pa = get_K_pa(value),
+        k_ia = get_K_ia(value),
+        va_lim = _minmax_po(get_Va_lim(value)),
+        k_a = get_K_a(value),
+        t_a = get_T_a(value),
+        vr_lim = _minmax_po(get_Vr_lim(value)),
+        k_f = get_K_f(value),
+        t_f = get_T_f(value),
+        k_c1 = get_K_c1(value),
+        k_p = get_K_p(value),
+        k_i1 = get_K_i1(value),
+        x_l = get_X_l(value),
+        theta_p = get_theta_p(value),
+        vb1_max = get_VB1_max(value),
+        k_c2 = get_K_c2(value),
+        k_i2 = get_K_i2(value),
+        vb2_max = get_VB2_max(value),
+        v_ref = get_V_ref(value),
+        ifd_ref = get_Ifd_ref(value),
+    )
+end

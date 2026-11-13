@@ -275,7 +275,7 @@ end
     @test isnothing(get_identifier(fixed))
 
     planned_po = PSY.PO.PlannedOutage(;
-        id = 5, outage_schedule = "maintenance_2024", monitored_components = [1],
+        id = 5, outage_schedule = "maintenance_2024",
         identifier = "block_12",
     )
     planned = PSY.from_openapi(planned_po, refs)
@@ -741,7 +741,7 @@ end
     end
 end
 
-@testset "SeriesCompensator round trip: control modes and optional fields" begin
+@testset "SeriesCompensator round trip: bypassed flag and optional fields" begin
     sys = System(100.0)
     buses = map(1:2) do n
         bus = ACBus(nothing)
@@ -754,32 +754,21 @@ end
     end
     arc = Arc(; from = buses[1], to = buses[2])
     add_component!(sys, arc)
-    compensator(name, mode; kwargs...) = SeriesCompensator(;
+    compensator(name; kwargs...) = SeriesCompensator(;
         name = name, available = true, active_power_flow = 0.0,
         reactive_power_flow = 0.0,
-        arc = arc, r = 0.0, x = -0.0125, rating = 17.0, control_mode = mode,
+        arc = arc, r = 0.0, x = -0.0125, rating = 17.0,
         input_basis = u"CU", kwargs...,
     )
-    limits = (min = -0.02, max = 0.0)
     add_component!(
         sys,
-        compensator("fixed", SeriesCompensatorControlMode.FIXED;
+        compensator("fixed";
             rating_b = 20.0,
             operational_flow_limit = (
                 from_to = (min = 0.0, max = 15.0), to_from = (min = 0.0, max = 12.0)),
         ),
     )
-    add_component!(sys, compensator("bypassed", SeriesCompensatorControlMode.BYPASSED))
-    add_component!(
-        sys,
-        compensator("dispatchable", SeriesCompensatorControlMode.DISPATCHABLE;
-            reactance_limits = limits),
-    )
-    add_component!(
-        sys,
-        compensator("flow", SeriesCompensatorControlMode.ACTIVE_POWER_FLOW;
-            reactance_limits = limits, active_power_flow_setpoint = 5.0),
-    )
+    add_component!(sys, compensator("bypassed"; bypassed = true))
 
     function check(sys2)
         unit(name) = get_component(SeriesCompensator, sys2, name)
@@ -791,14 +780,9 @@ end
         @test isnothing(get_rating_c(fixed, u"SU"))
         @test get_operational_flow_limit(fixed, u"SU") ==
               (from_to = (min = 0.0, max = 15.0), to_from = (min = 0.0, max = 12.0))
-        @test get_control_mode(fixed) == SeriesCompensatorControlMode.FIXED
-        @test isnothing(get_reactance_limits(fixed, u"SU"))
-        @test get_control_mode(unit("bypassed")) == SeriesCompensatorControlMode.BYPASSED
-        @test get_reactance_limits(unit("dispatchable"), u"SU") == limits
-        flow = unit("flow")
-        @test get_control_mode(flow) == SeriesCompensatorControlMode.ACTIVE_POWER_FLOW
-        @test get_active_power_flow_setpoint(flow, u"SU") == 5.0
-        @test get_name(get_from(get_arc(flow))) == "bus1"
+        @test !get_bypassed(fixed)
+        @test get_bypassed(unit("bypassed"))
+        @test get_name(get_from(get_arc(fixed))) == "bus1"
     end
 
     for units in (CU, NU)

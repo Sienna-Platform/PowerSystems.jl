@@ -5,7 +5,7 @@ This file is auto-generated. Do not edit.
 #! format: off
 
 """
-    mutable struct TGFixed <: TurbineGov
+    mutable struct TGFixed <: TurbineGovernorDynamics
         efficiency::Float64
         P_ref::Float64
         ext::Dict{String, Any}
@@ -25,7 +25,7 @@ Parameters of a fixed Turbine Governor that returns a fixed mechanical torque
 - `n_states::Int`: (**Do not modify.**) TGFixed has no states
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
 """
-mutable struct TGFixed <: TurbineGov
+mutable struct TGFixed <: TurbineGovernorDynamics
     "Efficiency factor that multiplies `P_ref`"
     efficiency::Float64
     "Reference Power Set-point (pu)"
@@ -76,3 +76,20 @@ set_efficiency!(value::TGFixed, val) = value.efficiency = val
 set_P_ref!(value::TGFixed, val) = value.P_ref = val
 """Set [`TGFixed`](@ref) `ext`."""
 set_ext!(value::TGFixed, val) = value.ext = val
+
+
+
+function from_openapi(po::PD.TGFixed, refs::OpenAPIRefs)
+    return TGFixed(;
+        efficiency = _wire_required(po.efficiency, "TGFixed", "efficiency"),
+        P_ref = _or_default(po.p_ref, 1.0),
+    )
+end
+
+function to_openapi(value::TGFixed, refs::OpenAPIRefs)
+    return PD.TGFixed(;
+        id = component_id(refs, value),
+        efficiency = get_efficiency(value),
+        p_ref = get_P_ref(value),
+    )
+end

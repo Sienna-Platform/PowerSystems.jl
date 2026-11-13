@@ -5,7 +5,7 @@ This file is auto-generated. Do not edit.
 #! format: off
 
 """
-    mutable struct DEGOV1 <: TurbineGov
+    mutable struct DEGOV1 <: TurbineGovernorDynamics
         droop_flag::Int
         T1::Float64
         T2::Float64
@@ -46,7 +46,7 @@ Parameters Woodward Diesel Governor Model. DEGOV1 in PSSE
 - `n_states::Int`: (**Do not modify.**) The number of [states](@ref S) of the DEGOV1 model depends on the droop flag
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
 """
-mutable struct DEGOV1 <: TurbineGov
+mutable struct DEGOV1 <: TurbineGovernorDynamics
     "Droop control Flag. 0 for throttle feedback and 1 for electric power feedback"
     droop_flag::Int
     "Governor mechanism time constant in s"
@@ -174,3 +174,42 @@ set_Te!(value::DEGOV1, val) = value.Te = val
 set_P_ref!(value::DEGOV1, val) = value.P_ref = val
 """Set [`DEGOV1`](@ref) `ext`."""
 set_ext!(value::DEGOV1, val) = value.ext = val
+
+
+
+function from_openapi(po::PD.DEGOV1, refs::OpenAPIRefs)
+    return DEGOV1(;
+        droop_flag = _wire_required(po.droop_flag, "DEGOV1", "droop_flag"),
+        T1 = _wire_required(po.t1, "DEGOV1", "T1"),
+        T2 = _wire_required(po.t2, "DEGOV1", "T2"),
+        T3 = _wire_required(po.t3, "DEGOV1", "T3"),
+        K = _wire_required(po.k, "DEGOV1", "K"),
+        T4 = _wire_required(po.t4, "DEGOV1", "T4"),
+        T5 = _wire_required(po.t5, "DEGOV1", "T5"),
+        T6 = _wire_required(po.t6, "DEGOV1", "T6"),
+        Td = _wire_required(po.td, "DEGOV1", "Td"),
+        T_lim = _wire_to_psy(Tuple{Float64, Float64}, po.t_lim),
+        R = _wire_required(po.r, "DEGOV1", "R"),
+        Te = _wire_required(po.te, "DEGOV1", "Te"),
+        P_ref = _or_default(po.p_ref, 1.0),
+    )
+end
+
+function to_openapi(value::DEGOV1, refs::OpenAPIRefs)
+    return PD.DEGOV1(;
+        id = component_id(refs, value),
+        droop_flag = get_droop_flag(value),
+        t1 = get_T1(value),
+        t2 = get_T2(value),
+        t3 = get_T3(value),
+        k = get_K(value),
+        t4 = get_T4(value),
+        t5 = get_T5(value),
+        t6 = get_T6(value),
+        td = get_Td(value),
+        t_lim = _psy_to_wire(get_T_lim(value)),
+        r = get_R(value),
+        te = get_Te(value),
+        p_ref = get_P_ref(value),
+    )
+end

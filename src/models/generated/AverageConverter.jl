@@ -69,3 +69,20 @@ set_rated_voltage!(value::AverageConverter, val) = value.rated_voltage = val
 set_rated_current!(value::AverageConverter, val) = value.rated_current = val
 """Set [`AverageConverter`](@ref) `ext`."""
 set_ext!(value::AverageConverter, val) = value.ext = val
+
+
+
+function from_openapi(po::PD.AverageConverter, refs::OpenAPIRefs)
+    return AverageConverter(;
+        rated_voltage = _wire_required(po.rated_voltage, "AverageConverter", "rated_voltage"),
+        rated_current = _wire_required(po.rated_current, "AverageConverter", "rated_current"),
+    )
+end
+
+function to_openapi(value::AverageConverter, refs::OpenAPIRefs)
+    return PD.AverageConverter(;
+        id = component_id(refs, value),
+        rated_voltage = get_rated_voltage(value),
+        rated_current = get_rated_current(value),
+    )
+end

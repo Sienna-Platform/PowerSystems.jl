@@ -5,7 +5,7 @@ This file is auto-generated. Do not edit.
 #! format: off
 
 """
-    mutable struct RoundRotorMachine <: Machine
+    mutable struct RoundRotorMachine <: SynchronousMachineDynamics
         R::Float64
         Td0_p::Float64
         Td0_pp::Float64
@@ -59,7 +59,7 @@ IEEE Std 1110 §5.3.2 (Model 2.2). GENROU or GENROE model in PSSE and PSLF
 - `n_states::Int`: (**Do not modify.**) RoundRotorMachine has 4 states
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
 """
-mutable struct RoundRotorMachine <: Machine
+mutable struct RoundRotorMachine <: SynchronousMachineDynamics
     "Armature resistance"
     R::Float64
     "Time constant of transient d-axis voltage"
@@ -214,3 +214,40 @@ set_γ_d2!(value::RoundRotorMachine, val) = value.γ_d2 = val
 set_γ_q2!(value::RoundRotorMachine, val) = value.γ_q2 = val
 """Set [`RoundRotorMachine`](@ref) `γ_qd`."""
 set_γ_qd!(value::RoundRotorMachine, val) = value.γ_qd = val
+
+
+
+function from_openapi(po::PD.RoundRotorMachine, refs::OpenAPIRefs)
+    return RoundRotorMachine(;
+        R = _wire_required(po.r, "RoundRotorMachine", "R"),
+        Td0_p = _wire_required(po.td0_p, "RoundRotorMachine", "Td0_p"),
+        Td0_pp = _wire_required(po.td0_pp, "RoundRotorMachine", "Td0_pp"),
+        Tq0_p = _wire_required(po.tq0_p, "RoundRotorMachine", "Tq0_p"),
+        Tq0_pp = _wire_required(po.tq0_pp, "RoundRotorMachine", "Tq0_pp"),
+        Xd = _wire_required(po.xd, "RoundRotorMachine", "Xd"),
+        Xq = _wire_required(po.xq, "RoundRotorMachine", "Xq"),
+        Xd_p = _wire_required(po.xd_p, "RoundRotorMachine", "Xd_p"),
+        Xq_p = _wire_required(po.xq_p, "RoundRotorMachine", "Xq_p"),
+        Xd_pp = _wire_required(po.xd_pp, "RoundRotorMachine", "Xd_pp"),
+        Xl = _wire_required(po.xl, "RoundRotorMachine", "Xl"),
+        Se = _wire_to_psy(Tuple{Float64, Float64}, po.se),
+    )
+end
+
+function to_openapi(value::RoundRotorMachine, refs::OpenAPIRefs)
+    return PD.RoundRotorMachine(;
+        id = component_id(refs, value),
+        r = get_R(value),
+        td0_p = get_Td0_p(value),
+        td0_pp = get_Td0_pp(value),
+        tq0_p = get_Tq0_p(value),
+        tq0_pp = get_Tq0_pp(value),
+        xd = get_Xd(value),
+        xq = get_Xq(value),
+        xd_p = get_Xd_p(value),
+        xq_p = get_Xq_p(value),
+        xd_pp = get_Xd_pp(value),
+        xl = get_Xl(value),
+        se = _psy_to_wire(get_Se(value)),
+    )
+end

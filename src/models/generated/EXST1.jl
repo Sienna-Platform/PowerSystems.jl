@@ -5,7 +5,7 @@ This file is auto-generated. Do not edit.
 #! format: off
 
 """
-    mutable struct EXST1 <: AVR
+    mutable struct EXST1 <: ExcitationSystemDynamics
         Tr::Float64
         Vi_lim::MinMax
         Tc::Float64
@@ -34,8 +34,8 @@ IEEE Type ST1 Excitation System (PTI version)
 - `Ta::Float64`: Amplifier Time Constant in s, validation range: `(0, nothing)`
 - `Vr_lim::MinMax`: Voltage regulator limits (regulator output) (Vr_min, Vr_max)
 - `Kc::Float64`: Current field constant limiter multiplier, validation range: `(0, nothing)`
-- `Kf::Float64`: Excitation control system stabilizer gain, validation range: `(eps(), 0.3)`
-- `Tf::Float64`: Excitation control system stabilizer time constant, validation range: `(eps(), nothing)`
+- `Kf::Float64`: Excitation control system stabilizer gain, validation range: `(0.0001, 0.3)`
+- `Tf::Float64`: Excitation control system stabilizer time constant, validation range: `(0.0001, nothing)`
 - `V_ref::Float64`: (default: `1.0`) Reference Voltage Set-point (pu), validation range: `(0, nothing)`
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
 - `states::Vector{Symbol}`: (**Do not modify.**) The [states](@ref S) are:
@@ -46,7 +46,7 @@ IEEE Type ST1 Excitation System (PTI version)
 - `n_states::Int`: (**Do not modify.**) The EXST1 has 4 states
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
 """
-mutable struct EXST1 <: AVR
+mutable struct EXST1 <: ExcitationSystemDynamics
     "Voltage Measurement Time Constant in s"
     Tr::Float64
     "Voltage input limits (Vi_min, Vi_max)"
@@ -164,3 +164,38 @@ set_Tf!(value::EXST1, val) = value.Tf = val
 set_V_ref!(value::EXST1, val) = value.V_ref = val
 """Set [`EXST1`](@ref) `ext`."""
 set_ext!(value::EXST1, val) = value.ext = val
+
+
+
+function from_openapi(po::PD.EXST1, refs::OpenAPIRefs)
+    return EXST1(;
+        Tr = _wire_required(po.tr, "EXST1", "Tr"),
+        Vi_lim = _or_default(po.vi_lim, nothing),
+        Tc = _wire_required(po.tc, "EXST1", "Tc"),
+        Tb = _wire_required(po.tb, "EXST1", "Tb"),
+        Ka = _wire_required(po.ka, "EXST1", "Ka"),
+        Ta = _wire_required(po.ta, "EXST1", "Ta"),
+        Vr_lim = _or_default(po.vr_lim, nothing),
+        Kc = _wire_required(po.kc, "EXST1", "Kc"),
+        Kf = _wire_required(po.kf, "EXST1", "Kf"),
+        Tf = _wire_required(po.tf, "EXST1", "Tf"),
+        V_ref = _or_default(po.v_ref, 1.0),
+    )
+end
+
+function to_openapi(value::EXST1, refs::OpenAPIRefs)
+    return PD.EXST1(;
+        id = component_id(refs, value),
+        tr = get_Tr(value),
+        vi_lim = _minmax_po(get_Vi_lim(value)),
+        tc = get_Tc(value),
+        tb = get_Tb(value),
+        ka = get_Ka(value),
+        ta = get_Ta(value),
+        vr_lim = _minmax_po(get_Vr_lim(value)),
+        kc = get_Kc(value),
+        kf = get_Kf(value),
+        tf = get_Tf(value),
+        v_ref = get_V_ref(value),
+    )
+end

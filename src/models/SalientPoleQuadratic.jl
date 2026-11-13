@@ -1,5 +1,5 @@
 """
-    mutable struct SalientPoleQuadratic <: Machine
+    mutable struct SalientPoleQuadratic <: SynchronousMachineDynamics
         base_machine::SalientPoleMachine
         saturation_coeffs::Tuple{Float64, Float64}
 
@@ -10,7 +10,7 @@ IEEE Std 1110 §5.3.2 (Model 2.1). GENSAL in PSSE and PSLF.
 - `base_machine::SalientPoleMachine`: Salient Pole Machine model.
 - `saturation_coeffs::Tuple{Float64, Float64}``: Saturation coefficients for quadratic model.
 """
-mutable struct SalientPoleQuadratic <: Machine
+mutable struct SalientPoleQuadratic <: SynchronousMachineDynamics
     base_machine::SalientPoleMachine
     saturation_coeffs::Tuple{Float64, Float64}
 end

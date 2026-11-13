@@ -6,7 +6,7 @@
 #   TransmissionInterface        `direction_mapping::Dict{String, Int}` unclassifiable
 #   Line                         `r`/`x`/`b`/`g` need a `base_voltage` the struct does not carry
 #   TwoTerminalGenericHVDCLine   `loss` is a Union of two curve types, not `Union{Nothing, X}`
-#   TransformerCircuit           PSY field `α` vs PO field `alpha`
+#   TransformerCircuit           embedded in its owning transformer; no `id` of its own
 #   TwoWindingTransformer        `magnetizing_shunt::Complex{Float64}` unclassifiable
 #   ThreeWindingTransformer      same, plus three `TransformerCircuit` references
 #   FixedAdmittance              `Y::Complex{Float64}` unclassifiable
@@ -377,7 +377,7 @@ function from_openapi(po::PO.GenericArcImpedance, refs::OpenAPIRefs, ::NaturalUn
 end
 
 # ── SeriesCompensator ──────────────────────────────────────────────────────────
-# As `GenericArcImpedance`: `r`/`x`/`reactance_limits` pass through as system-base pu, and
+# As `GenericArcImpedance`: `r`/`x` pass through as system-base pu, and
 # only the "COMPONENT_BASE" `parameter_units` is accepted. Power fields divide by the
 # system base under `NaturalUnit`.
 
@@ -412,11 +412,7 @@ function _series_compensator_from_openapi(po, refs::OpenAPIRefs, power_base::Flo
         r = po.r,
         x = po.x,
         rating = po.rating / power_base,
-        control_mode = _or_default(po.control_mode, SeriesCompensatorControlMode.FIXED),
-        reactance_limits = _or_default(po.reactance_limits, nothing),
-        active_power_flow_setpoint = _or_default(
-            po.active_power_flow_setpoint, nothing, /, power_base,
-        ),
+        bypassed = _or_default(po.bypassed, false),
         rating_b = _or_default(po.rating_b, nothing, /, power_base),
         rating_c = _or_default(po.rating_c, nothing, /, power_base),
         base_power = _require_base_power("SeriesCompensator", po.id, po.base_power),
@@ -452,6 +448,8 @@ function from_openapi(
         r = po.r,
         x = po.x,
         rating = po.rating,
+        rating_b = _or_default(po.rating_b, nothing),
+        rating_c = _or_default(po.rating_c, nothing),
         discrete_branch_type = _or_default(
             po.discrete_branch_type,
             DiscreteControlledBranchType.OTHER,
@@ -489,6 +487,8 @@ function from_openapi(
         r = po.r,
         x = po.x,
         rating = po.rating / bp,
+        rating_b = _or_default(po.rating_b, nothing, /, bp),
+        rating_c = _or_default(po.rating_c, nothing, /, bp),
         discrete_branch_type = _or_default(
             po.discrete_branch_type,
             DiscreteControlledBranchType.OTHER,
@@ -568,14 +568,18 @@ function from_openapi(
         available = po.available,
         arc = refs[po.arc],
         tap = _or_default(po.tap, 1.0),
-        α = _or_default(po.alpha, 0.0),
+        alpha = _or_default(po.alpha, 0.0),
         r = _or_default(po.r, 0.0),
         x = _or_default(po.x, 0.0),
         control_objective = _or_default(
             po.control_objective,
             TransformerControlObjective.UNDEFINED,
         ),
-        regulated_bus_number = _or_default(po.regulated_bus_number, 0),
+        regulated_bus = resolve_ref(refs, po.regulated_bus, ACBus),
+        regulated_bus_orientation = _or_default(
+            po.regulated_bus_orientation,
+            TransformerRegulationOrientation.UNDEFINED,
+        ),
         tap_ratio_limits = _or_default(po.tap_ratio_limits, nothing),
         phase_angle_limits = _or_default(po.phase_angle_limits, nothing),
         controlled_voltage_limits = _or_default(po.controlled_voltage_limits, nothing),
@@ -608,14 +612,18 @@ function from_openapi(
         available = po.available,
         arc = refs[po.arc],
         tap = _or_default(po.tap, 1.0),
-        α = _or_default(po.alpha, 0.0),
+        alpha = _or_default(po.alpha, 0.0),
         r = _or_default(po.r, 0.0),
         x = _or_default(po.x, 0.0),
         control_objective = _or_default(
             po.control_objective,
             TransformerControlObjective.UNDEFINED,
         ),
-        regulated_bus_number = _or_default(po.regulated_bus_number, 0),
+        regulated_bus = resolve_ref(refs, po.regulated_bus, ACBus),
+        regulated_bus_orientation = _or_default(
+            po.regulated_bus_orientation,
+            TransformerRegulationOrientation.UNDEFINED,
+        ),
         tap_ratio_limits = _or_default(po.tap_ratio_limits, nothing),
         phase_angle_limits = _or_default(po.phase_angle_limits, nothing),
         controlled_voltage_limits = _or_default(po.controlled_voltage_limits, nothing),
@@ -836,7 +844,7 @@ function from_openapi(po::PO.SwitchedAdmittance, refs::OpenAPIRefs, ::ComponentB
         voltage_limits = _or_default(po.voltage_limits, nothing),
         reactive_power_range_limits = _or_default(po.reactive_power_range_limits, nothing),
         control_mode = _or_default(po.control_mode, SwitchedAdmittanceControlMode.FIXED),
-        regulated_bus_number = _or_default(po.regulated_bus_number, 0),
+        remote_regulated_bus = resolve_ref(refs, po.remote_regulated_bus, ACBus),
     )
 end
 
@@ -851,25 +859,12 @@ end
 # ── FACTSControlDevice ────────────────────────────────────────────────────────────
 # `max_shunt_current`/`max_reactive_power` (both MVA, declared `SU` on the PSY side) are
 # discriminated by `power_units` like every other power-family field: COMPONENT_BASE passes
-# through pu, NATURAL_UNITS divides by its own (required) `base_power`. `voltage_setpoint`
-# is pu on system base per PSY's own docstring; only `voltage_setpoint_units == "COMPONENT_BASE"`
-# is implemented — `NATURAL_UNITS` (kV) would need a bus base-voltage conversion no current
-# producer exercises, so it errors loudly rather than guessing. `reactive_power_required` (a
+# through pu, NATURAL_UNITS divides by its own (required) `base_power`. The regulated voltage
+# is the `voltage_setpoint` of the regulated `ACBus`. `reactive_power_required` (a
 # dimensionless 0-1 fraction per the PO schema) and `control_mode`/`shunt_control_type` (enums)
 # pass through / map without scaling.
 
-const FACTS_VOLTAGE_SETPOINT_UNITS_IMPLEMENTED = Set(["COMPONENT_BASE"])
-
-_check_facts_voltage_setpoint_units(po) = _check_unit_basis(
-    po.voltage_setpoint_units,
-    FACTS_VOLTAGE_SETPOINT_UNITS_IMPLEMENTED,
-    "FACTSControlDevice.voltage_setpoint_units",
-    " for $(po.name)",
-    "COMPONENT_BASE",
-)
-
 function from_openapi(po::PO.FACTSControlDevice, refs::OpenAPIRefs, ::ComponentBaseUnit)
-    _check_facts_voltage_setpoint_units(po)
     return FACTSControlDevice(;
         name = po.name,
         available = po.available,
@@ -879,14 +874,13 @@ function from_openapi(po::PO.FACTSControlDevice, refs::OpenAPIRefs, ::ComponentB
         else
             FACTSOperationModes.Value(po.control_mode.value)
         end,
-        voltage_setpoint = po.voltage_setpoint,
         max_shunt_current = po.max_shunt_current,
         max_reactive_power = _or_default(po.max_reactive_power, 9999.0),
         shunt_control_type = _or_default(
             po.shunt_control_type,
             FACTSShuntControlType.STATCOM,
         ),
-        regulated_bus_number = _or_default(po.regulated_bus_number, 0),
+        remote_regulated_bus = resolve_ref(refs, po.remote_regulated_bus, ACBus),
         reactive_power_required = po.reactive_power_required,
         base_power = _require_base_power("FACTSControlDevice", po.id, po.base_power),
         input_basis = u"CU",
@@ -894,7 +888,6 @@ function from_openapi(po::PO.FACTSControlDevice, refs::OpenAPIRefs, ::ComponentB
 end
 
 function from_openapi(po::PO.FACTSControlDevice, refs::OpenAPIRefs, ::NaturalUnit)
-    _check_facts_voltage_setpoint_units(po)
     bp = _require_base_power("FACTSControlDevice", po.id, po.base_power)
     return FACTSControlDevice(;
         name = po.name,
@@ -905,14 +898,13 @@ function from_openapi(po::PO.FACTSControlDevice, refs::OpenAPIRefs, ::NaturalUni
         else
             FACTSOperationModes.Value(po.control_mode.value)
         end,
-        voltage_setpoint = po.voltage_setpoint,
         max_shunt_current = po.max_shunt_current / bp,
         max_reactive_power = _or_default(po.max_reactive_power, 9999.0) / bp,
         shunt_control_type = _or_default(
             po.shunt_control_type,
             FACTSShuntControlType.STATCOM,
         ),
-        regulated_bus_number = _or_default(po.regulated_bus_number, 0),
+        remote_regulated_bus = resolve_ref(refs, po.remote_regulated_bus, ACBus),
         reactive_power_required = po.reactive_power_required,
         base_power = bp,
         input_basis = u"CU",
@@ -1032,6 +1024,7 @@ function from_openapi(
         ramp_limits = _or_default(po.ramp_limits, nothing),
         self_discharge = _or_default(po.self_discharge, 0.0),
         standing_loss = _or_default(po.standing_loss, 0.0),
+        remote_regulated_bus = resolve_ref(refs, po.remote_regulated_bus, ACBus),
         input_basis = u"CU",
     )
 end
@@ -1077,6 +1070,7 @@ function from_openapi(
         ramp_limits = _or_default(po.ramp_limits, nothing, /, dbp),
         self_discharge = _or_default(po.self_discharge, 0.0),
         standing_loss = _or_default(po.standing_loss, 0.0) / dbp,
+        remote_regulated_bus = resolve_ref(refs, po.remote_regulated_bus, ACBus),
         input_basis = u"CU",
     )
 end
@@ -1305,13 +1299,14 @@ end
 
 # ── TwoTerminalVSCLine ──────────────────────────────────────────────────────────
 # Hand-written because `converter_loss_*` is a Union of two concrete curves and the voltage
-# setpoints convert through a sibling rated voltage, which no generator rule expresses.
+# DC voltage setpoints convert through a sibling rated voltage, which no generator rule
+# expresses.
 #
 # Converted: the power-family fields and `dc_power_setpoint_*` divide by `base_power` under
-# `NaturalUnit`; `dc_voltage_setpoint_*` (kV) divide by `rated_dc_voltage` and
-# `ac_voltage_setpoint_*` (kV) by the terminal's `rated_ac_voltage_*`, because PSY stores them
-# per unit of those. A rated voltage of `0.0` is "unspecified" and errors once a setpoint is
-# present (`_vsc_optional_voltage`).
+# `NaturalUnit`; `dc_voltage_setpoint_*` (kV) divide by `rated_dc_voltage`, because PSY stores
+# them per unit of it. A rated voltage of `0.0` is "unspecified" and errors once a setpoint is
+# present (`_vsc_optional_voltage`). The regulated AC voltage is the `voltage_setpoint` of the
+# regulated `ACBus`.
 #
 # Passed through: `g` (S), `voltage_limits_*` (kV; `(0.0, 999.9)` is a no-limit sentinel),
 # `dc_voltage_droop_*` (kV/MW), the current fields (kA), the weighting fractions
@@ -1392,10 +1387,6 @@ function from_openapi(
             "dc_voltage_setpoint_from", "rated_dc_voltage",
         ),
         power_factor_setpoint_from = _or_default(po.power_factor_setpoint_from, nothing),
-        ac_voltage_setpoint_from = _vsc_optional_voltage(
-            po, po.ac_voltage_setpoint_from, rated_ac_voltage_from,
-            "ac_voltage_setpoint_from", "rated_ac_voltage_from",
-        ),
         rated_ac_voltage_from = rated_ac_voltage_from,
         converter_loss_from = _vsc_loss(po.converter_loss_from),
         max_dc_current_from = _or_default(po.max_dc_current_from, INFINITE_CURRENT),
@@ -1425,10 +1416,6 @@ function from_openapi(
             "dc_voltage_setpoint_to", "rated_dc_voltage",
         ),
         power_factor_setpoint_to = _or_default(po.power_factor_setpoint_to, nothing),
-        ac_voltage_setpoint_to = _vsc_optional_voltage(
-            po, po.ac_voltage_setpoint_to, rated_ac_voltage_to,
-            "ac_voltage_setpoint_to", "rated_ac_voltage_to",
-        ),
         rated_ac_voltage_to = rated_ac_voltage_to,
         converter_loss_to = _vsc_loss(po.converter_loss_to),
         max_dc_current_to = _or_default(po.max_dc_current_to, INFINITE_CURRENT),
@@ -1446,8 +1433,8 @@ function from_openapi(
         voltage_limits_to = _or_default(po.voltage_limits_to, (min = 0.0, max = 999.9)),
         dc_voltage_droop_to = _or_default(po.dc_voltage_droop_to, 0.0),
         rated_dc_voltage = rated_dc_voltage,
-        remote_bus_control_from = po.remote_bus_control_from,
-        remote_bus_control_to = po.remote_bus_control_to,
+        remote_regulated_bus_from = resolve_ref(refs, po.remote_regulated_bus_from, ACBus),
+        remote_regulated_bus_to = resolve_ref(refs, po.remote_regulated_bus_to, ACBus),
         base_power = base_power,
         operational_flow_limit = _or_default(
             po.operational_flow_limit,
@@ -1492,6 +1479,7 @@ function from_openapi(po::PO.Source, refs::OpenAPIRefs, ::ComponentBaseUnit)
         internal_angle = _or_default(po.internal_angle, 0.0),
         base_power = _require_base_power("Source", po.id, po.base_power),
         base_voltage = _or_default(po.base_voltage, nothing),
+        remote_regulated_bus = resolve_ref(refs, po.remote_regulated_bus, ACBus),
         operation_cost = _convert_source_operation_cost(
             po.operation_cost, get_store(refs), get_base_power(refs),
         )::OperationalCost,
@@ -1517,6 +1505,7 @@ function from_openapi(po::PO.Source, refs::OpenAPIRefs, ::NaturalUnit)
         internal_angle = _or_default(po.internal_angle, 0.0),
         base_power = dbp,
         base_voltage = _or_default(po.base_voltage, nothing),
+        remote_regulated_bus = resolve_ref(refs, po.remote_regulated_bus, ACBus),
         operation_cost = _convert_source_operation_cost(
             po.operation_cost, get_store(refs), get_base_power(refs),
         )::OperationalCost,
@@ -1556,8 +1545,8 @@ end
 # ── InterconnectingConverter ────────────────────────────────────────────────────
 # Another genuine component base: every MVA/MW-rated field divides by the converter's own
 # `base_power`. `dc_current`/`max_dc_current` (kA), the voltage fields (kV) and `dc_voltage_droop`
-# (kV/MW) are natural and pass through. `remote_bus_control` is a bus *number*, not a component
-# reference — `Union{Nothing, Int}` in PSY — so it passes through rather than resolving.
+# (kV/MW) are natural and pass through. `remote_regulated_bus` is a bus id that resolves to
+# the `ACBus`.
 # `loss_function` reuses the `TwoTerminalVSCLine` guard: the PSY field admits only the linear
 # and quadratic shapes, so a piecewise document curve is named here rather than surfacing as
 # a constructor `MethodError`.
@@ -1591,14 +1580,15 @@ function from_openapi(
         dc_power_setpoint = _or_default(po.dc_power_setpoint, nothing),
         dc_voltage_setpoint = _or_default(po.dc_voltage_setpoint, nothing),
         power_factor_setpoint = _or_default(po.power_factor_setpoint, nothing),
-        ac_voltage_setpoint = _or_default(po.ac_voltage_setpoint, nothing),
         dc_voltage_droop = _or_default(po.dc_voltage_droop, 0.0),
-        remote_bus_control = _or_default(po.remote_bus_control, nothing),
+        remote_regulated_bus = resolve_ref(refs, po.remote_regulated_bus, ACBus),
         power_factor_weighting_fraction = _or_default(
             po.power_factor_weighting_fraction,
             1.0,
         ),
         voltage_limits = _or_default(po.voltage_limits, (min = 0.0, max = 999.9)),
+        rated_ac_voltage = _or_default(po.rated_ac_voltage, 0.0),
+        rated_dc_voltage = _or_default(po.rated_dc_voltage, 0.0),
         input_basis = u"CU",
     )
 end
@@ -1629,14 +1619,15 @@ function from_openapi(po::PO.InterconnectingConverter, refs::OpenAPIRefs, ::Natu
         dc_power_setpoint = _or_default(po.dc_power_setpoint, nothing, /, dbp),
         dc_voltage_setpoint = _or_default(po.dc_voltage_setpoint, nothing),
         power_factor_setpoint = _or_default(po.power_factor_setpoint, nothing),
-        ac_voltage_setpoint = _or_default(po.ac_voltage_setpoint, nothing),
         dc_voltage_droop = _or_default(po.dc_voltage_droop, 0.0),
-        remote_bus_control = _or_default(po.remote_bus_control, nothing),
+        remote_regulated_bus = resolve_ref(refs, po.remote_regulated_bus, ACBus),
         power_factor_weighting_fraction = _or_default(
             po.power_factor_weighting_fraction,
             1.0,
         ),
         voltage_limits = _or_default(po.voltage_limits, (min = 0.0, max = 999.9)),
+        rated_ac_voltage = _or_default(po.rated_ac_voltage, 0.0),
+        rated_dc_voltage = _or_default(po.rated_dc_voltage, 0.0),
         input_basis = u"CU",
     )
 end
@@ -1692,6 +1683,7 @@ function from_openapi(po::PO.HybridSystem, refs::OpenAPIRefs, ::ComponentBaseUni
         output_active_power_limits = _or_default(po.output_active_power_limits, nothing),
         reactive_power_limits = _or_default(po.reactive_power_limits, nothing),
         interconnection_efficiency = _opt_inout(po.interconnection_efficiency),
+        remote_regulated_bus = resolve_ref(refs, po.remote_regulated_bus, ACBus),
         input_basis = u"CU",
     )
 end
@@ -1728,6 +1720,7 @@ function from_openapi(po::PO.HybridSystem, refs::OpenAPIRefs, ::NaturalUnit)
         ),
         reactive_power_limits = _or_default(po.reactive_power_limits, nothing, /, dbp),
         interconnection_efficiency = _opt_inout(po.interconnection_efficiency),
+        remote_regulated_bus = resolve_ref(refs, po.remote_regulated_bus, ACBus),
         input_basis = u"CU",
     )
 end

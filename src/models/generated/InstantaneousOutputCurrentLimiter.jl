@@ -5,7 +5,7 @@ This file is auto-generated. Do not edit.
 #! format: off
 
 """
-    mutable struct InstantaneousOutputCurrentLimiter <: OutputCurrentLimiter
+    mutable struct InstantaneousOutputCurrentLimiter <: CurrentLimitation
         Id_max::Float64
         Iq_max::Float64
         ext::Dict{String, Any}
@@ -18,7 +18,7 @@ Parameters of Instantaneous (Square) Current Controller Limiter. Regulates inver
 - `Iq_max::Float64`: Maximum limit on d-axis current controller input current in pu ([`DEVICE_BASE`](@ref per_unit)), validation range: `(0, nothing)`
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
 """
-mutable struct InstantaneousOutputCurrentLimiter <: OutputCurrentLimiter
+mutable struct InstantaneousOutputCurrentLimiter <: CurrentLimitation
     "Maximum limit on d-axis current controller input current in pu ([`DEVICE_BASE`](@ref per_unit))"
     Id_max::Float64
     "Maximum limit on d-axis current controller input current in pu ([`DEVICE_BASE`](@ref per_unit))"
@@ -54,3 +54,20 @@ set_Id_max!(value::InstantaneousOutputCurrentLimiter, val) = value.Id_max = val
 set_Iq_max!(value::InstantaneousOutputCurrentLimiter, val) = value.Iq_max = val
 """Set [`InstantaneousOutputCurrentLimiter`](@ref) `ext`."""
 set_ext!(value::InstantaneousOutputCurrentLimiter, val) = value.ext = val
+
+
+
+function from_openapi(po::PD.InstantaneousOutputCurrentLimiter, refs::OpenAPIRefs)
+    return InstantaneousOutputCurrentLimiter(;
+        Id_max = _wire_required(po.id_max, "InstantaneousOutputCurrentLimiter", "Id_max"),
+        Iq_max = _wire_required(po.iq_max, "InstantaneousOutputCurrentLimiter", "Iq_max"),
+    )
+end
+
+function to_openapi(value::InstantaneousOutputCurrentLimiter, refs::OpenAPIRefs)
+    return PD.InstantaneousOutputCurrentLimiter(;
+        id = component_id(refs, value),
+        id_max = get_Id_max(value),
+        iq_max = get_Iq_max(value),
+    )
+end

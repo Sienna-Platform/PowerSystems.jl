@@ -195,3 +195,48 @@ set_R_source!(value::RenewableEnergyConverterTypeA, val) = value.R_source = val
 set_X_source!(value::RenewableEnergyConverterTypeA, val) = value.X_source = val
 """Set [`RenewableEnergyConverterTypeA`](@ref) `ext`."""
 set_ext!(value::RenewableEnergyConverterTypeA, val) = value.ext = val
+
+
+
+function from_openapi(po::PD.RenewableEnergyConverterTypeA, refs::OpenAPIRefs)
+    return RenewableEnergyConverterTypeA(;
+        T_g = _wire_required(po.t_g, "RenewableEnergyConverterTypeA", "T_g"),
+        Rrpwr = _wire_required(po.rrpwr, "RenewableEnergyConverterTypeA", "Rrpwr"),
+        Brkpt = _wire_required(po.brkpt, "RenewableEnergyConverterTypeA", "Brkpt"),
+        Zerox = _wire_required(po.zerox, "RenewableEnergyConverterTypeA", "Zerox"),
+        Lvpl1 = _wire_required(po.lvpl1, "RenewableEnergyConverterTypeA", "Lvpl1"),
+        Vo_lim = _wire_required(po.vo_lim, "RenewableEnergyConverterTypeA", "Vo_lim"),
+        Lv_pnts = _or_default(po.lv_pnts, nothing),
+        Io_lim = _wire_required(po.io_lim, "RenewableEnergyConverterTypeA", "Io_lim"),
+        T_fltr = _wire_required(po.t_fltr, "RenewableEnergyConverterTypeA", "T_fltr"),
+        K_hv = _wire_required(po.k_hv, "RenewableEnergyConverterTypeA", "K_hv"),
+        Iqr_lims = _or_default(po.iqr_lims, nothing),
+        Accel = _wire_required(po.accel, "RenewableEnergyConverterTypeA", "Accel"),
+        Lvpl_sw = _wire_required(po.lvpl_sw, "RenewableEnergyConverterTypeA", "Lvpl_sw"),
+        Q_ref = _or_default(po.q_ref, 1.0),
+        R_source = _or_default(po.r_source, 0.0),
+        X_source = _or_default(po.x_source, 1.0e5),
+    )
+end
+
+function to_openapi(value::RenewableEnergyConverterTypeA, refs::OpenAPIRefs)
+    return PD.RenewableEnergyConverterTypeA(;
+        id = component_id(refs, value),
+        t_g = get_T_g(value),
+        rrpwr = get_Rrpwr(value),
+        brkpt = get_Brkpt(value),
+        zerox = get_Zerox(value),
+        lvpl1 = get_Lvpl1(value),
+        vo_lim = get_Vo_lim(value),
+        lv_pnts = _minmax_po(get_Lv_pnts(value)),
+        io_lim = get_Io_lim(value),
+        t_fltr = get_T_fltr(value),
+        k_hv = get_K_hv(value),
+        iqr_lims = _minmax_po(get_Iqr_lims(value)),
+        accel = get_Accel(value),
+        lvpl_sw = get_Lvpl_sw(value),
+        q_ref = get_Q_ref(value),
+        r_source = get_R_source(value),
+        x_source = get_X_source(value),
+    )
+end

@@ -5,7 +5,7 @@ This file is auto-generated. Do not edit.
 #! format: off
 
 """
-    mutable struct ESAC8B <: AVR
+    mutable struct ESAC8B <: ExcitationSystemDynamics
         Tr::Float64
         Kp::Float64
         Ki::Float64
@@ -38,12 +38,12 @@ Excitation System AC8B. Used to represent the Basler Digital Excitation Control 
 - `Ka::Float64`: Regulator output gain, validation range: `(0, 1000)`
 - `Ta::Float64`: Regulator output lag time constant in s, validation range: `(0, 10)`
 - `Vr_lim::MinMax`: Limits for exciter field voltage `(Vr_min, Vr_max)`
-- `Te::Float64`: Exciter field time constant, validation range: `(eps(), 2)`
+- `Te::Float64`: Exciter field time constant, validation range: `(0.0001, 2)`
 - `Ke::Float64`: Exciter field proportional constant, validation range: `(0, 2)`
 - `E_sat::Tuple{Float64, Float64}`: Exciter output voltage for saturation factor: (E1, E2)
 - `Se::Tuple{Float64, Float64}`: Exciter saturation factor at exciter output voltage: (Se(E1), Se(E2))
 - `V_ref::Float64`: (default: `1.0`) Reference Voltage Set-point (pu), validation range: `(0, nothing)`
-- `saturation_coeffs::Tuple{Float64, Float64}`: (default: `PowerSystems.get_avr_saturation(E_sat, Se)`) (**Do not modify.**) Coefficients (A,B) of the function: Se(V) = B(V - A)^2/V
+- `saturation_coeffs::Tuple{Float64, Float64}`: (**Do not modify.**) Coefficients (A,B) of the function: Se(V) = B(V - A)^2/V
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
 - `states::Vector{Symbol}`: (**Do not modify.**) The [states](@ref S) are:
 	Vm: Sensed terminal voltage,
@@ -55,7 +55,7 @@ Excitation System AC8B. Used to represent the Basler Digital Excitation Control 
 - `states_types::Vector{StateTypes.Value}`: (**Do not modify.**) ESAC8B has 5 states
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
 """
-mutable struct ESAC8B <: AVR
+mutable struct ESAC8B <: ExcitationSystemDynamics
     "Regulator input filter time constant in s"
     Tr::Float64
     "Regulator proportional PID gain"
@@ -101,8 +101,8 @@ mutable struct ESAC8B <: AVR
     internal::InfrastructureSystemsInternal
 end
 
-function ESAC8B(Tr, Kp, Ki, Kd, Td, Ka, Ta, Vr_lim, Te, Ke, E_sat, Se, V_ref=1.0, saturation_coeffs=PowerSystems.get_avr_saturation(E_sat, Se), ext=Dict{String, Any}(), )
-    ESAC8B(Tr, Kp, Ki, Kd, Td, Ka, Ta, Vr_lim, Te, Ke, E_sat, Se, V_ref, saturation_coeffs, ext, [:Vm, :x_i, :x_d, :Vr, :Efd], 5, [StateTypes.Hybrid, StateTypes.Differential, StateTypes.Differential, StateTypes.Hybrid, StateTypes.Differential], InfrastructureSystemsInternal(), )
+function ESAC8B(Tr, Kp, Ki, Kd, Td, Ka, Ta, Vr_lim, Te, Ke, E_sat, Se, V_ref=1.0, ext=Dict{String, Any}(), )
+    ESAC8B(Tr, Kp, Ki, Kd, Td, Ka, Ta, Vr_lim, Te, Ke, E_sat, Se, V_ref, ext, PowerSystems.get_avr_saturation(E_sat, Se), [:Vm, :x_i, :x_d, :Vr, :Efd], 5, [StateTypes.Hybrid, StateTypes.Differential, StateTypes.Differential, StateTypes.Hybrid, StateTypes.Differential], InfrastructureSystemsInternal(), )
 end
 
 function ESAC8B(; Tr, Kp, Ki, Kd, Td, Ka, Ta, Vr_lim, Te, Ke, E_sat, Se, V_ref=1.0, saturation_coeffs=PowerSystems.get_avr_saturation(E_sat, Se), ext=Dict{String, Any}(), states=[:Vm, :x_i, :x_d, :Vr, :Efd], n_states=5, states_types=[StateTypes.Hybrid, StateTypes.Differential, StateTypes.Differential, StateTypes.Hybrid, StateTypes.Differential], internal=InfrastructureSystemsInternal(), )
@@ -125,7 +125,6 @@ function ESAC8B(::Nothing)
         E_sat=(0.0, 0.0),
         Se=(0.0, 0.0),
         V_ref=0,
-        saturation_coeffs=(0.0, 0.0),
         ext=Dict{String, Any}(),
     )
 end
@@ -201,3 +200,42 @@ set_saturation_coeffs!(value::ESAC8B, val) = value.saturation_coeffs = val
 set_ext!(value::ESAC8B, val) = value.ext = val
 """Set [`ESAC8B`](@ref) `states_types`."""
 set_states_types!(value::ESAC8B, val) = value.states_types = val
+
+
+
+function from_openapi(po::PD.ESAC8B, refs::OpenAPIRefs)
+    return ESAC8B(;
+        Tr = _wire_required(po.tr, "ESAC8B", "Tr"),
+        Kp = _wire_required(po.kp, "ESAC8B", "Kp"),
+        Ki = _wire_required(po.ki, "ESAC8B", "Ki"),
+        Kd = _wire_required(po.kd, "ESAC8B", "Kd"),
+        Td = _wire_required(po.td, "ESAC8B", "Td"),
+        Ka = _wire_required(po.ka, "ESAC8B", "Ka"),
+        Ta = _wire_required(po.ta, "ESAC8B", "Ta"),
+        Vr_lim = _or_default(po.vr_lim, nothing),
+        Te = _wire_required(po.te, "ESAC8B", "Te"),
+        Ke = _wire_required(po.ke, "ESAC8B", "Ke"),
+        E_sat = _wire_to_psy(Tuple{Float64, Float64}, po.e_sat),
+        Se = _wire_to_psy(Tuple{Float64, Float64}, po.se),
+        V_ref = _or_default(po.v_ref, 1.0),
+    )
+end
+
+function to_openapi(value::ESAC8B, refs::OpenAPIRefs)
+    return PD.ESAC8B(;
+        id = component_id(refs, value),
+        tr = get_Tr(value),
+        kp = get_Kp(value),
+        ki = get_Ki(value),
+        kd = get_Kd(value),
+        td = get_Td(value),
+        ka = get_Ka(value),
+        ta = get_Ta(value),
+        vr_lim = _minmax_po(get_Vr_lim(value)),
+        te = get_Te(value),
+        ke = get_Ke(value),
+        e_sat = _psy_to_wire(get_E_sat(value)),
+        se = _psy_to_wire(get_Se(value)),
+        v_ref = get_V_ref(value),
+    )
+end

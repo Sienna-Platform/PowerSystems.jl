@@ -5,7 +5,7 @@ This file is auto-generated. Do not edit.
 #! format: off
 
 """
-    mutable struct EXPIC1 <: AVR
+    mutable struct EXPIC1 <: ExcitationSystemDynamics
         Tr::Float64
         Ka::Float64
         Ta::Float64
@@ -46,7 +46,7 @@ Generic Proportional/Integral Excitation System
 - `Ta_4::Float64`: Voltage regulator time constant in s, validation range: `(0, nothing)`
 - `Vr_lim::MinMax`: Voltage regulator limits (regulator output) (Vi_min, Vi_max)
 - `Kf::Float64`: Rate feedback gain, validation range: `(0, 0.3)`
-- `Tf_1::Float64`: Rate Feedback time constant in s, validation range: `(eps(), 15)`
+- `Tf_1::Float64`: Rate Feedback time constant in s, validation range: `(0.0001, 15)`
 - `Tf_2::Float64`: Rate Feedback time constant in s, validation range: `(0, 5)`
 - `Efd_lim::MinMax`: Field Voltage regulator limits (regulator output) (Efd_min, Efd_max)
 - `Ke::Float64`: Exciter constant, validation range: `(0, 1)`
@@ -57,7 +57,7 @@ Generic Proportional/Integral Excitation System
 - `Ki::Float64`: current source gain, validation range: `(0, 1.1)`
 - `Kc::Float64`: Exciter regulation factor, validation range: `(0, 2)`
 - `V_ref::Float64`: (default: `1.0`) Reference Voltage Set-point (pu), validation range: `(0, nothing)`
-- `saturation_coeffs::Tuple{Float64, Float64}`: (default: `PowerSystems.get_avr_saturation(E_sat, Se)`) (**Do not modify.**) Coefficients (A,B) of the function: Se(V) = B(V - A)^2/V
+- `saturation_coeffs::Tuple{Float64, Float64}`: (**Do not modify.**) Coefficients (A,B) of the function: Se(V) = B(V - A)^2/V
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
 - `states::Vector{Symbol}`: (**Do not modify.**) The [states](@ref S) are:
 	Vm: Sensed terminal voltage,
@@ -71,7 +71,7 @@ Generic Proportional/Integral Excitation System
 - `states_types::Vector{StateTypes.Value}`: (**Do not modify.**) EXPIC has 6 states
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
 """
-mutable struct EXPIC1 <: AVR
+mutable struct EXPIC1 <: ExcitationSystemDynamics
     "Regulator input filter time constant in s"
     Tr::Float64
     "Voltage regulator gain"
@@ -133,8 +133,8 @@ mutable struct EXPIC1 <: AVR
     internal::InfrastructureSystemsInternal
 end
 
-function EXPIC1(Tr, Ka, Ta, Va_lim, Ta_2, Ta_3, Ta_4, Vr_lim, Kf, Tf_1, Tf_2, Efd_lim, Ke, Te, E_sat, Se, Kp, Ki, Kc, V_ref=1.0, saturation_coeffs=PowerSystems.get_avr_saturation(E_sat, Se), ext=Dict{String, Any}(), )
-    EXPIC1(Tr, Ka, Ta, Va_lim, Ta_2, Ta_3, Ta_4, Vr_lim, Kf, Tf_1, Tf_2, Efd_lim, Ke, Te, E_sat, Se, Kp, Ki, Kc, V_ref, saturation_coeffs, ext, [:Vm, :Vr1, :Vr2, :Vf, :Vr3, :Vr4], 6, [StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Differential, StateTypes.Hybrid], InfrastructureSystemsInternal(), )
+function EXPIC1(Tr, Ka, Ta, Va_lim, Ta_2, Ta_3, Ta_4, Vr_lim, Kf, Tf_1, Tf_2, Efd_lim, Ke, Te, E_sat, Se, Kp, Ki, Kc, V_ref=1.0, ext=Dict{String, Any}(), )
+    EXPIC1(Tr, Ka, Ta, Va_lim, Ta_2, Ta_3, Ta_4, Vr_lim, Kf, Tf_1, Tf_2, Efd_lim, Ke, Te, E_sat, Se, Kp, Ki, Kc, V_ref, ext, PowerSystems.get_avr_saturation(E_sat, Se), [:Vm, :Vr1, :Vr2, :Vf, :Vr3, :Vr4], 6, [StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Differential, StateTypes.Hybrid], InfrastructureSystemsInternal(), )
 end
 
 function EXPIC1(; Tr, Ka, Ta, Va_lim, Ta_2, Ta_3, Ta_4, Vr_lim, Kf, Tf_1, Tf_2, Efd_lim, Ke, Te, E_sat, Se, Kp, Ki, Kc, V_ref=1.0, saturation_coeffs=PowerSystems.get_avr_saturation(E_sat, Se), ext=Dict{String, Any}(), states=[:Vm, :Vr1, :Vr2, :Vf, :Vr3, :Vr4], n_states=6, states_types=[StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Differential, StateTypes.Hybrid], internal=InfrastructureSystemsInternal(), )
@@ -164,7 +164,6 @@ function EXPIC1(::Nothing)
         Ki=0,
         Kc=0,
         V_ref=0,
-        saturation_coeffs=(0.0, 0.0),
         ext=Dict{String, Any}(),
     )
 end
@@ -268,3 +267,56 @@ set_saturation_coeffs!(value::EXPIC1, val) = value.saturation_coeffs = val
 set_ext!(value::EXPIC1, val) = value.ext = val
 """Set [`EXPIC1`](@ref) `states_types`."""
 set_states_types!(value::EXPIC1, val) = value.states_types = val
+
+
+
+function from_openapi(po::PD.EXPIC1, refs::OpenAPIRefs)
+    return EXPIC1(;
+        Tr = _wire_required(po.tr, "EXPIC1", "Tr"),
+        Ka = _wire_required(po.ka, "EXPIC1", "Ka"),
+        Ta = _wire_required(po.ta, "EXPIC1", "Ta"),
+        Va_lim = _or_default(po.va_lim, nothing),
+        Ta_2 = _wire_required(po.ta_2, "EXPIC1", "Ta_2"),
+        Ta_3 = _wire_required(po.ta_3, "EXPIC1", "Ta_3"),
+        Ta_4 = _wire_required(po.ta_4, "EXPIC1", "Ta_4"),
+        Vr_lim = _or_default(po.vr_lim, nothing),
+        Kf = _wire_required(po.kf, "EXPIC1", "Kf"),
+        Tf_1 = _wire_required(po.tf_1, "EXPIC1", "Tf_1"),
+        Tf_2 = _wire_required(po.tf_2, "EXPIC1", "Tf_2"),
+        Efd_lim = _or_default(po.efd_lim, nothing),
+        Ke = _wire_required(po.ke, "EXPIC1", "Ke"),
+        Te = _wire_required(po.te, "EXPIC1", "Te"),
+        E_sat = _wire_to_psy(Tuple{Float64, Float64}, po.e_sat),
+        Se = _wire_to_psy(Tuple{Float64, Float64}, po.se),
+        Kp = _wire_required(po.kp, "EXPIC1", "Kp"),
+        Ki = _wire_required(po.ki, "EXPIC1", "Ki"),
+        Kc = _wire_required(po.kc, "EXPIC1", "Kc"),
+        V_ref = _or_default(po.v_ref, 1.0),
+    )
+end
+
+function to_openapi(value::EXPIC1, refs::OpenAPIRefs)
+    return PD.EXPIC1(;
+        id = component_id(refs, value),
+        tr = get_Tr(value),
+        ka = get_Ka(value),
+        ta = get_Ta(value),
+        va_lim = _minmax_po(get_Va_lim(value)),
+        ta_2 = get_Ta_2(value),
+        ta_3 = get_Ta_3(value),
+        ta_4 = get_Ta_4(value),
+        vr_lim = _minmax_po(get_Vr_lim(value)),
+        kf = get_Kf(value),
+        tf_1 = get_Tf_1(value),
+        tf_2 = get_Tf_2(value),
+        efd_lim = _minmax_po(get_Efd_lim(value)),
+        ke = get_Ke(value),
+        te = get_Te(value),
+        e_sat = _psy_to_wire(get_E_sat(value)),
+        se = _psy_to_wire(get_Se(value)),
+        kp = get_Kp(value),
+        ki = get_Ki(value),
+        kc = get_Kc(value),
+        v_ref = get_V_ref(value),
+    )
+end

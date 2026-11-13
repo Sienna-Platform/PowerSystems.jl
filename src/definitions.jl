@@ -258,25 +258,6 @@ precise definition of each control mode.
 " SwitchedAdmittanceControlMode
 
 IS.@scoped_enum(
-    SeriesCompensatorControlMode,
-    FIXED = 0,
-    BYPASSED = 1,
-    DISPATCHABLE = 2,
-    ACTIVE_POWER_FLOW = 3,
-)
-@doc"
-    SeriesCompensatorControlMode
-
-How a [`SeriesCompensator`](@ref) sets its series reactance.
-
-# Values
-- `FIXED = 0`: holds the series impedance constant, as a series capacitor does
-- `BYPASSED = 1`: shorts the compensator into a zero-impedance tie
-- `DISPATCHABLE = 2`: the series reactance is a decision within `reactance_limits`
-- `ACTIVE_POWER_FLOW = 3`: the series reactance holds `active_power_flow_setpoint`
-" SeriesCompensatorControlMode
-
-IS.@scoped_enum(
     DiscreteControlledBranchType,
     SWITCH = 0,
     BREAKER = 1,
@@ -401,6 +382,24 @@ Negative values indicate disabled control modes, while positive values represent
 control objectives. The `FIXED` mode (0) indicates manual tap position control without
 automatic adjustment.
 " TransformerControlObjective
+
+IS.@scoped_enum(
+    TransformerRegulationOrientation,
+    UNDEFINED = 0,
+    FROM = 1,
+    TO = 2,
+)
+@doc"
+    TransformerRegulationOrientation
+
+Side of the `arc` of a [`TransformerCircuit`](@ref) on which the tap adjustment treats the
+regulated bus. It applies only when the regulated bus is not an end of the `arc`.
+
+# Values
+- `UNDEFINED = 0`: the regulated bus is an end of the `arc`, or there is no regulated bus
+- `FROM = 1`: adjust the tap as if the regulated bus is on the `from` side
+- `TO = 2`: adjust the tap as if the regulated bus is on the `to` side
+" TransformerRegulationOrientation
 
 IS.@scoped_enum(
     TwoWindingTransformerShuntLocation,

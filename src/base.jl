@@ -1820,20 +1820,27 @@ function add_supplemental_attribute!(
     outage::Outage,
 )
     if get_runchecks(sys)
-        for id in get_monitored_components(outage)
-            comp = IS.get_component(sys, id)  # throws ArgumentError on miss
-            if !(comp isa Device)
-                throw(
-                    ArgumentError(
-                        "monitored_components on $(typeof(outage)) references id " *
-                        "$(id), which resolves to $(typeof(comp)); only " *
-                        "Device subtypes are allowed",
-                    ),
-                )
-            end
-        end
+        _check_monitored_components(sys, outage)
     end
     return IS.add_supplemental_attribute!(sys.data, component, outage)
+end
+
+_check_monitored_components(::System, ::PlannedOutage) = nothing
+
+function _check_monitored_components(sys::System, outage::UnplannedOutage)
+    for id in get_monitored_components(outage)
+        comp = IS.get_component(sys, id)  # throws ArgumentError on miss
+        if !(comp isa Device)
+            throw(
+                ArgumentError(
+                    "monitored_components on $(typeof(outage)) references id " *
+                    "$(id), which resolves to $(typeof(comp)); only " *
+                    "Device subtypes are allowed",
+                ),
+            )
+        end
+    end
+    return
 end
 
 """

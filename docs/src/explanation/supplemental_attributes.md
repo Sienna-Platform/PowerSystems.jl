@@ -171,8 +171,9 @@ end
 
 #### Narrowing post-contingency monitoring
 
-Every concrete [`Outage`](@ref) carries a `monitored_components` field of type
-`Vector{Base.UUID}`. It identifies the [`Device`](@ref)s whose post-contingency
+Every concrete [`UnplannedOutage`](@ref) ([`FixedForcedOutage`](@ref) and
+[`GeometricDistributionForcedOutage`](@ref)) carries a `monitored_components` field of type
+`Vector{Base.UUID}`. A [`PlannedOutage`](@ref) is not a contingency and has no such field. It identifies the [`Device`](@ref)s whose post-contingency
 state a downstream simulation package (e.g., PowerSimulations) should model when
 this outage occurs. Limiting the list reduces the number of post-outage variables
 and constraints in security-constrained models.

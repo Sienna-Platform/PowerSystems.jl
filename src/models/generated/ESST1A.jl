@@ -5,7 +5,7 @@ This file is auto-generated. Do not edit.
 #! format: off
 
 """
-    mutable struct ESST1A <: AVR
+    mutable struct ESST1A <: ExcitationSystemDynamics
         UEL_flags::Int
         PSS_flags::Int
         Tr::Float64
@@ -49,7 +49,7 @@ Parameters of IEEE Std 421.5 Type ST1A Excitacion System. ESST1A in PSSE and PSL
 - `Vr_lim::MinMax`: Limits for exciter output `(Vr_min, Vr_max)`
 - `Kc::Float64`: Rectifier loading factor proportional to commutating reactance, validation range: `(0, 0.3)`
 - `Kf::Float64`: Rate feedback gain, validation range: `(0, 0.3)`
-- `Tf::Float64`: Rate feedback time constant in s, validation range: `(eps(), 1.5)`
+- `Tf::Float64`: Rate feedback time constant in s, validation range: `(0.0001, 1.5)`
 - `K_lr::Float64`: Exciter output current limiter gain, validation range: `(0, 5)`
 - `I_lr::Float64`: Exciter output current limit reference, validation range: `(0, 5)`
 - `V_ref::Float64`: (default: `1.0`) Reference Voltage Set-point (pu), validation range: `(0, nothing)`
@@ -64,7 +64,7 @@ Parameters of IEEE Std 421.5 Type ST1A Excitacion System. ESST1A in PSSE and PSL
 - `states_types::Vector{StateTypes.Value}`: (**Do not modify.**) ST1A has 5 states
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
 """
-mutable struct ESST1A <: AVR
+mutable struct ESST1A <: ExcitationSystemDynamics
     "Code input for Underexcitization limiter (UEL) entry. Not supported"
     UEL_flags::Int
     "Code input for Power System Stabilizer (PSS) or (VOS) entry"
@@ -238,3 +238,52 @@ set_V_ref!(value::ESST1A, val) = value.V_ref = val
 set_ext!(value::ESST1A, val) = value.ext = val
 """Set [`ESST1A`](@ref) `states_types`."""
 set_states_types!(value::ESST1A, val) = value.states_types = val
+
+
+
+function from_openapi(po::PD.ESST1A, refs::OpenAPIRefs)
+    return ESST1A(;
+        UEL_flags = _wire_required(po.uel_flags, "ESST1A", "UEL_flags"),
+        PSS_flags = _wire_required(po.pss_flags, "ESST1A", "PSS_flags"),
+        Tr = _wire_required(po.tr, "ESST1A", "Tr"),
+        Vi_lim = _wire_to_psy(Tuple{Float64, Float64}, po.vi_lim),
+        Tc = _wire_required(po.tc, "ESST1A", "Tc"),
+        Tb = _wire_required(po.tb, "ESST1A", "Tb"),
+        Tc1 = _wire_required(po.tc1, "ESST1A", "Tc1"),
+        Tb1 = _wire_required(po.tb1, "ESST1A", "Tb1"),
+        Ka = _wire_required(po.ka, "ESST1A", "Ka"),
+        Ta = _wire_required(po.ta, "ESST1A", "Ta"),
+        Va_lim = _or_default(po.va_lim, nothing),
+        Vr_lim = _or_default(po.vr_lim, nothing),
+        Kc = _wire_required(po.kc, "ESST1A", "Kc"),
+        Kf = _wire_required(po.kf, "ESST1A", "Kf"),
+        Tf = _wire_required(po.tf, "ESST1A", "Tf"),
+        K_lr = _wire_required(po.k_lr, "ESST1A", "K_lr"),
+        I_lr = _wire_required(po.i_lr, "ESST1A", "I_lr"),
+        V_ref = _or_default(po.v_ref, 1.0),
+    )
+end
+
+function to_openapi(value::ESST1A, refs::OpenAPIRefs)
+    return PD.ESST1A(;
+        id = component_id(refs, value),
+        uel_flags = get_UEL_flags(value),
+        pss_flags = get_PSS_flags(value),
+        tr = get_Tr(value),
+        vi_lim = _psy_to_wire(get_Vi_lim(value)),
+        tc = get_Tc(value),
+        tb = get_Tb(value),
+        tc1 = get_Tc1(value),
+        tb1 = get_Tb1(value),
+        ka = get_Ka(value),
+        ta = get_Ta(value),
+        va_lim = _minmax_po(get_Va_lim(value)),
+        vr_lim = _minmax_po(get_Vr_lim(value)),
+        kc = get_Kc(value),
+        kf = get_Kf(value),
+        tf = get_Tf(value),
+        k_lr = get_K_lr(value),
+        i_lr = get_I_lr(value),
+        v_ref = get_V_ref(value),
+    )
+end

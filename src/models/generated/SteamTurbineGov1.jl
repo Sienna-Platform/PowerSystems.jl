@@ -5,7 +5,7 @@ This file is auto-generated. Do not edit.
 #! format: off
 
 """
-    mutable struct SteamTurbineGov1 <: TurbineGov
+    mutable struct SteamTurbineGov1 <: TurbineGovernorDynamics
         R::Float64
         T1::Float64
         valve_position_limits::MinMax
@@ -27,10 +27,10 @@ Steam Turbine-Governor. This model considers both TGOV1 or TGOV1DU in PSS/E
 
 # Arguments
 - `R::Float64`: Droop parameter, validation range: `(0, 0.1)`
-- `T1::Float64`: Governor time constant, validation range: `(eps(), 0.5)`
+- `T1::Float64`: Governor time constant, validation range: `(0.0001, 0.5)`
 - `valve_position_limits::MinMax`: Valve position limits
 - `T2::Float64`: Lead Lag Lead Time constant , validation range: `(0, nothing)`
-- `T3::Float64`: Lead Lag Lag Time constant , validation range: `(eps(), 10)`
+- `T3::Float64`: Lead Lag Lag Time constant , validation range: `(0.0001, 10)`
 - `D_T::Float64`: Turbine Damping, validation range: `(0, 0.5)`
 - `DB_h::Float64`: Deadband for overspeed, validation range: `(0, nothing)`
 - `DB_l::Float64`: Deadband for underspeed, validation range: `(nothing, 0)`
@@ -44,7 +44,7 @@ Steam Turbine-Governor. This model considers both TGOV1 or TGOV1DU in PSS/E
 - `states_types::Vector{StateTypes.Value}`: (**Do not modify.**) TGOV1 has 2 [differential](@ref states_list) [states](@ref S)
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
 """
-mutable struct SteamTurbineGov1 <: TurbineGov
+mutable struct SteamTurbineGov1 <: TurbineGovernorDynamics
     "Droop parameter"
     R::Float64
     "Governor time constant"
@@ -159,3 +159,36 @@ set_P_ref!(value::SteamTurbineGov1, val) = value.P_ref = val
 set_ext!(value::SteamTurbineGov1, val) = value.ext = val
 """Set [`SteamTurbineGov1`](@ref) `states_types`."""
 set_states_types!(value::SteamTurbineGov1, val) = value.states_types = val
+
+
+
+function from_openapi(po::PD.SteamTurbineGov1, refs::OpenAPIRefs)
+    return SteamTurbineGov1(;
+        R = _wire_required(po.r, "SteamTurbineGov1", "R"),
+        T1 = _wire_required(po.t1, "SteamTurbineGov1", "T1"),
+        valve_position_limits = _or_default(po.valve_position_limits, nothing),
+        T2 = _wire_required(po.t2, "SteamTurbineGov1", "T2"),
+        T3 = _wire_required(po.t3, "SteamTurbineGov1", "T3"),
+        D_T = _wire_required(po.d_t, "SteamTurbineGov1", "D_T"),
+        DB_h = _wire_required(po.db_h, "SteamTurbineGov1", "DB_h"),
+        DB_l = _wire_required(po.db_l, "SteamTurbineGov1", "DB_l"),
+        T_rate = _wire_required(po.t_rate, "SteamTurbineGov1", "T_rate"),
+        P_ref = _or_default(po.p_ref, 1.0),
+    )
+end
+
+function to_openapi(value::SteamTurbineGov1, refs::OpenAPIRefs)
+    return PD.SteamTurbineGov1(;
+        id = component_id(refs, value),
+        r = get_R(value),
+        t1 = get_T1(value),
+        valve_position_limits = _minmax_po(get_valve_position_limits(value)),
+        t2 = get_T2(value),
+        t3 = get_T3(value),
+        d_t = get_D_T(value),
+        db_h = get_DB_h(value),
+        db_l = get_DB_l(value),
+        t_rate = get_T_rate(value),
+        p_ref = get_P_ref(value),
+    )
+end

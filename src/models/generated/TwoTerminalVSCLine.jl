@@ -21,7 +21,6 @@ This file is auto-generated. Do not edit.
         dc_power_setpoint_from::Union{Nothing, Float64}
         dc_voltage_setpoint_from::Union{Nothing, Float64}
         power_factor_setpoint_from::Union{Nothing, Float64}
-        ac_voltage_setpoint_from::Union{Nothing, Float64}
         rated_ac_voltage_from::Float64
         converter_loss_from::Union{AnyLossCurve{LinearCurve}, AnyLossCurve{QuadraticCurve}}
         max_dc_current_from::Float64
@@ -34,7 +33,6 @@ This file is auto-generated. Do not edit.
         dc_power_setpoint_to::Union{Nothing, Float64}
         dc_voltage_setpoint_to::Union{Nothing, Float64}
         power_factor_setpoint_to::Union{Nothing, Float64}
-        ac_voltage_setpoint_to::Union{Nothing, Float64}
         rated_ac_voltage_to::Float64
         converter_loss_to::Union{AnyLossCurve{LinearCurve}, AnyLossCurve{QuadraticCurve}}
         max_dc_current_to::Float64
@@ -44,8 +42,8 @@ This file is auto-generated. Do not edit.
         voltage_limits_to::MinMax
         dc_voltage_droop_to::Float64
         rated_dc_voltage::Float64
-        remote_bus_control_from::Union{Nothing, Int}
-        remote_bus_control_to::Union{Nothing, Int}
+        remote_regulated_bus_from::Union{Nothing, ACBus}
+        remote_regulated_bus_to::Union{Nothing, ACBus}
         services::Vector{Service}
         base_power::Float64
         operational_flow_limit::Union{Nothing, OperationalFlowLimit}
@@ -73,8 +71,7 @@ This model is appropriate for operational simulations with a linearized DC power
 - `dc_power_setpoint_from::Union{Nothing, Float64}`: (default: `nothing`) Active-power order of the `from` bus converter, used when `dc_control_from` is `DC_POWER`; `nothing` otherwise. Positive means the converter supplies power to the AC network at the `from` bus, negative means it withdraws.
 - `dc_voltage_setpoint_from::Union{Nothing, Float64}`: (default: `nothing`) DC-side voltage target of the `from` bus converter in per-unit of `rated_dc_voltage`, used when `dc_control_from` is `DC_VOLTAGE` or `DC_VOLTAGE_DROOP`; `nothing` otherwise.
 - `power_factor_setpoint_from::Union{Nothing, Float64}`: (default: `nothing`) Power-factor setpoint of the `from` bus converter, used when `ac_control_from` is `AC_REACTIVE_POWER`; `nothing` otherwise.
-- `ac_voltage_setpoint_from::Union{Nothing, Float64}`: (default: `nothing`) AC-side voltage magnitude target of the `from` bus converter in per-unit of `rated_ac_voltage_from`, used when `ac_control_from` is `AC_VOLTAGE`; `nothing` otherwise.
-- `rated_ac_voltage_from::Float64`: (default: `0.0`) Rated (base) AC voltage at the `from` converter's AC terminal in kV. Base of `ac_voltage_setpoint_from`, which is per-unit of it; `0.0` means unspecified, and a present setpoint then raises an error.
+- `rated_ac_voltage_from::Float64`: (default: `0.0`) Rated AC voltage at the AC terminal of the `from` converter, in kV. `0.0` means unspecified.
 - `converter_loss_from::Union{AnyLossCurve{LinearCurve}, AnyLossCurve{QuadraticCurve}}`: (default: `LossCurve(LinearCurve(0.0), NaturalUnit())`) Loss model coefficients in the `from` bus converter. It accepts a linear model or quadratic. Same converter data is used in both ends.
 - `max_dc_current_from::Float64`: (default: `INFINITE_CURRENT`) Maximum stable dc current limits (kA). INFINITE_CURRENT means no limit.
 - `rating_from::Float64`: (default: `1e8`) Converter rating in MVA in the `from` bus. The default is large enough that the converter imposes no limit beyond `rating`
@@ -86,8 +83,7 @@ This model is appropriate for operational simulations with a linearized DC power
 - `dc_power_setpoint_to::Union{Nothing, Float64}`: (default: `nothing`) Active-power order of the `to` bus converter, used when `dc_control_to` is `DC_POWER`; `nothing` otherwise. Positive means the converter supplies power to the AC network at the `to` bus, negative means it withdraws.
 - `dc_voltage_setpoint_to::Union{Nothing, Float64}`: (default: `nothing`) DC-side voltage target of the `to` bus converter in per-unit of `rated_dc_voltage`, used when `dc_control_to` is `DC_VOLTAGE` or `DC_VOLTAGE_DROOP`; `nothing` otherwise.
 - `power_factor_setpoint_to::Union{Nothing, Float64}`: (default: `nothing`) Power-factor setpoint of the `to` bus converter, used when `ac_control_to` is `AC_REACTIVE_POWER`; `nothing` otherwise.
-- `ac_voltage_setpoint_to::Union{Nothing, Float64}`: (default: `nothing`) AC-side voltage magnitude target of the `to` bus converter in per-unit of `rated_ac_voltage_to`, used when `ac_control_to` is `AC_VOLTAGE`; `nothing` otherwise.
-- `rated_ac_voltage_to::Float64`: (default: `0.0`) Rated (base) AC voltage at the `to` converter's AC terminal in kV. Base of `ac_voltage_setpoint_to`, which is per-unit of it; `0.0` means unspecified, and a present setpoint then raises an error.
+- `rated_ac_voltage_to::Float64`: (default: `0.0`) Rated AC voltage at the AC terminal of the `to` converter, in kV. `0.0` means unspecified.
 - `converter_loss_to::Union{AnyLossCurve{LinearCurve}, AnyLossCurve{QuadraticCurve}}`: (default: `LossCurve(LinearCurve(0.0), NaturalUnit())`) Loss model coefficients in the `to` bus converter. It accepts a linear model or quadratic. Same converter data is used in both ends.
 - `max_dc_current_to::Float64`: (default: `INFINITE_CURRENT`) Maximum stable dc current limits (kA). INFINITE_CURRENT means no limit.
 - `rating_to::Float64`: (default: `1e8`) Converter rating in MVA in the `to` bus. The default is large enough that the converter imposes no limit beyond `rating`
@@ -96,8 +92,8 @@ This model is appropriate for operational simulations with a linearized DC power
 - `voltage_limits_to::MinMax`: (default: `(min=0.0, max=999.9)`) Limits on the voltage at the DC `to` bus in kV.
 - `dc_voltage_droop_to::Float64`: (default: `0.0`) DC-voltage droop gain on the `to` converter in kV/MW, used when `dc_control_to` is `DC_VOLTAGE_DROOP`: `V_dc = dc_voltage_setpoint_to + dc_voltage_droop_to * P_c` (with `P_c` the converter's AC-side active-power injection).
 - `rated_dc_voltage::Float64`: (default: `0.0`) Rated (base) DC voltage of the link in kV. Base of the DC-voltage setpoints, which are per-unit of it; `0.0` means unspecified, and a present setpoint then raises an error.
-- `remote_bus_control_from::Union{Nothing, Int}`: (default: `nothing`) Number of the AC bus whose voltage the `from` converter regulates when `ac_control_from` is `AC_VOLTAGE`; `nothing` regulates its own terminal bus., validation range: `(1, nothing)`
-- `remote_bus_control_to::Union{Nothing, Int}`: (default: `nothing`) Number of the AC bus whose voltage the `to` converter regulates when `ac_control_to` is `AC_VOLTAGE`; `nothing` regulates its own terminal bus., validation range: `(1, nothing)`
+- `remote_regulated_bus_from::Union{Nothing, ACBus}`: (default: `nothing`) AC bus whose voltage the `from` converter regulates when `ac_control_from` is `AC_VOLTAGE`, to the `voltage_setpoint` of that bus. `nothing` regulates the `from` terminal bus. The bus must not be the `from` terminal bus.
+- `remote_regulated_bus_to::Union{Nothing, ACBus}`: (default: `nothing`) AC bus whose voltage the `to` converter regulates when `ac_control_to` is `AC_VOLTAGE`, to the `voltage_setpoint` of that bus. `nothing` regulates the `to` terminal bus. The bus must not be the `to` terminal bus.
 - `services::Vector{Service}`: (default: `Device[]`) Services that this device contributes to
 - `base_power::Float64`: (default: `100.0`) System base power for per-unitization of this component's per-unit fields, recorded per component in lieu of a system-level table (MVA), validation range: `(0.0001, nothing)`
 - `operational_flow_limit::Union{Nothing, OperationalFlowLimit}`: (default: `nothing`) Operator-set minimum and maximum flow (MW) in each direction, `from_to` and `to_from`, applied in addition to `rating`. `nothing` means no operational limit
@@ -136,9 +132,7 @@ mutable struct TwoTerminalVSCLine <: TwoTerminalHVDC
     dc_voltage_setpoint_from::Union{Nothing, Float64}
     "Power-factor setpoint of the `from` bus converter, used when `ac_control_from` is `AC_REACTIVE_POWER`; `nothing` otherwise."
     power_factor_setpoint_from::Union{Nothing, Float64}
-    "AC-side voltage magnitude target of the `from` bus converter in per-unit of `rated_ac_voltage_from`, used when `ac_control_from` is `AC_VOLTAGE`; `nothing` otherwise."
-    ac_voltage_setpoint_from::Union{Nothing, Float64}
-    "Rated (base) AC voltage at the `from` converter's AC terminal in kV. Base of `ac_voltage_setpoint_from`, which is per-unit of it; `0.0` means unspecified, and a present setpoint then raises an error."
+    "Rated AC voltage at the AC terminal of the `from` converter, in kV. `0.0` means unspecified."
     rated_ac_voltage_from::Float64
     "Loss model coefficients in the `from` bus converter. It accepts a linear model or quadratic. Same converter data is used in both ends."
     converter_loss_from::Union{AnyLossCurve{LinearCurve}, AnyLossCurve{QuadraticCurve}}
@@ -162,9 +156,7 @@ mutable struct TwoTerminalVSCLine <: TwoTerminalHVDC
     dc_voltage_setpoint_to::Union{Nothing, Float64}
     "Power-factor setpoint of the `to` bus converter, used when `ac_control_to` is `AC_REACTIVE_POWER`; `nothing` otherwise."
     power_factor_setpoint_to::Union{Nothing, Float64}
-    "AC-side voltage magnitude target of the `to` bus converter in per-unit of `rated_ac_voltage_to`, used when `ac_control_to` is `AC_VOLTAGE`; `nothing` otherwise."
-    ac_voltage_setpoint_to::Union{Nothing, Float64}
-    "Rated (base) AC voltage at the `to` converter's AC terminal in kV. Base of `ac_voltage_setpoint_to`, which is per-unit of it; `0.0` means unspecified, and a present setpoint then raises an error."
+    "Rated AC voltage at the AC terminal of the `to` converter, in kV. `0.0` means unspecified."
     rated_ac_voltage_to::Float64
     "Loss model coefficients in the `to` bus converter. It accepts a linear model or quadratic. Same converter data is used in both ends."
     converter_loss_to::Union{AnyLossCurve{LinearCurve}, AnyLossCurve{QuadraticCurve}}
@@ -182,10 +174,10 @@ mutable struct TwoTerminalVSCLine <: TwoTerminalHVDC
     dc_voltage_droop_to::Float64
     "Rated (base) DC voltage of the link in kV. Base of the DC-voltage setpoints, which are per-unit of it; `0.0` means unspecified, and a present setpoint then raises an error."
     rated_dc_voltage::Float64
-    "Number of the AC bus whose voltage the `from` converter regulates when `ac_control_from` is `AC_VOLTAGE`; `nothing` regulates its own terminal bus."
-    remote_bus_control_from::Union{Nothing, Int}
-    "Number of the AC bus whose voltage the `to` converter regulates when `ac_control_to` is `AC_VOLTAGE`; `nothing` regulates its own terminal bus."
-    remote_bus_control_to::Union{Nothing, Int}
+    "AC bus whose voltage the `from` converter regulates when `ac_control_from` is `AC_VOLTAGE`, to the `voltage_setpoint` of that bus. `nothing` regulates the `from` terminal bus. The bus must not be the `from` terminal bus."
+    remote_regulated_bus_from::Union{Nothing, ACBus}
+    "AC bus whose voltage the `to` converter regulates when `ac_control_to` is `AC_VOLTAGE`, to the `voltage_setpoint` of that bus. `nothing` regulates the `to` terminal bus. The bus must not be the `to` terminal bus."
+    remote_regulated_bus_to::Union{Nothing, ACBus}
     "Services that this device contributes to"
     services::Vector{Service}
     "System base power for per-unitization of this component's per-unit fields, recorded per component in lieu of a system-level table (MVA)"
@@ -198,12 +190,12 @@ mutable struct TwoTerminalVSCLine <: TwoTerminalHVDC
     internal::InfrastructureSystemsInternal
 end
 
-function TwoTerminalVSCLine(name, available, arc, active_power_flow, rating, dc_control_from, ac_control_from, dc_control_to, ac_control_to, g=0.0, dc_current=0.0, reactive_power_from=0.0, dc_power_setpoint_from=nothing, dc_voltage_setpoint_from=nothing, power_factor_setpoint_from=nothing, ac_voltage_setpoint_from=nothing, rated_ac_voltage_from=0.0, converter_loss_from=LossCurve(LinearCurve(0.0), NaturalUnit()), max_dc_current_from=INFINITE_CURRENT, rating_from=1e8, reactive_power_limits_from=(min=0.0, max=0.0), power_factor_weighting_fraction_from=1.0, voltage_limits_from=(min=0.0, max=999.9), dc_voltage_droop_from=0.0, reactive_power_to=0.0, dc_power_setpoint_to=nothing, dc_voltage_setpoint_to=nothing, power_factor_setpoint_to=nothing, ac_voltage_setpoint_to=nothing, rated_ac_voltage_to=0.0, converter_loss_to=LossCurve(LinearCurve(0.0), NaturalUnit()), max_dc_current_to=INFINITE_CURRENT, rating_to=1e8, reactive_power_limits_to=(min=0.0, max=0.0), power_factor_weighting_fraction_to=1.0, voltage_limits_to=(min=0.0, max=999.9), dc_voltage_droop_to=0.0, rated_dc_voltage=0.0, remote_bus_control_from=nothing, remote_bus_control_to=nothing, services=Device[], base_power=100.0, operational_flow_limit=nothing, ext=Dict{String, Any}(), )
-    TwoTerminalVSCLine(name, available, arc, active_power_flow, rating, dc_control_from, ac_control_from, dc_control_to, ac_control_to, g, dc_current, reactive_power_from, dc_power_setpoint_from, dc_voltage_setpoint_from, power_factor_setpoint_from, ac_voltage_setpoint_from, rated_ac_voltage_from, converter_loss_from, max_dc_current_from, rating_from, reactive_power_limits_from, power_factor_weighting_fraction_from, voltage_limits_from, dc_voltage_droop_from, reactive_power_to, dc_power_setpoint_to, dc_voltage_setpoint_to, power_factor_setpoint_to, ac_voltage_setpoint_to, rated_ac_voltage_to, converter_loss_to, max_dc_current_to, rating_to, reactive_power_limits_to, power_factor_weighting_fraction_to, voltage_limits_to, dc_voltage_droop_to, rated_dc_voltage, remote_bus_control_from, remote_bus_control_to, services, base_power, operational_flow_limit, ext, InfrastructureSystemsInternal(), )
+function TwoTerminalVSCLine(name, available, arc, active_power_flow, rating, dc_control_from, ac_control_from, dc_control_to, ac_control_to, g=0.0, dc_current=0.0, reactive_power_from=0.0, dc_power_setpoint_from=nothing, dc_voltage_setpoint_from=nothing, power_factor_setpoint_from=nothing, rated_ac_voltage_from=0.0, converter_loss_from=LossCurve(LinearCurve(0.0), NaturalUnit()), max_dc_current_from=INFINITE_CURRENT, rating_from=1e8, reactive_power_limits_from=(min=0.0, max=0.0), power_factor_weighting_fraction_from=1.0, voltage_limits_from=(min=0.0, max=999.9), dc_voltage_droop_from=0.0, reactive_power_to=0.0, dc_power_setpoint_to=nothing, dc_voltage_setpoint_to=nothing, power_factor_setpoint_to=nothing, rated_ac_voltage_to=0.0, converter_loss_to=LossCurve(LinearCurve(0.0), NaturalUnit()), max_dc_current_to=INFINITE_CURRENT, rating_to=1e8, reactive_power_limits_to=(min=0.0, max=0.0), power_factor_weighting_fraction_to=1.0, voltage_limits_to=(min=0.0, max=999.9), dc_voltage_droop_to=0.0, rated_dc_voltage=0.0, remote_regulated_bus_from=nothing, remote_regulated_bus_to=nothing, services=Device[], base_power=100.0, operational_flow_limit=nothing, ext=Dict{String, Any}(), )
+    TwoTerminalVSCLine(name, available, arc, active_power_flow, rating, dc_control_from, ac_control_from, dc_control_to, ac_control_to, g, dc_current, reactive_power_from, dc_power_setpoint_from, dc_voltage_setpoint_from, power_factor_setpoint_from, rated_ac_voltage_from, converter_loss_from, max_dc_current_from, rating_from, reactive_power_limits_from, power_factor_weighting_fraction_from, voltage_limits_from, dc_voltage_droop_from, reactive_power_to, dc_power_setpoint_to, dc_voltage_setpoint_to, power_factor_setpoint_to, rated_ac_voltage_to, converter_loss_to, max_dc_current_to, rating_to, reactive_power_limits_to, power_factor_weighting_fraction_to, voltage_limits_to, dc_voltage_droop_to, rated_dc_voltage, remote_regulated_bus_from, remote_regulated_bus_to, services, base_power, operational_flow_limit, ext, InfrastructureSystemsInternal(), )
 end
 
-function TwoTerminalVSCLine(; name, available, arc, active_power_flow, rating, dc_control_from, ac_control_from, dc_control_to, ac_control_to, g=0.0, dc_current=0.0, reactive_power_from=0.0, dc_power_setpoint_from=nothing, dc_voltage_setpoint_from=nothing, power_factor_setpoint_from=nothing, ac_voltage_setpoint_from=nothing, rated_ac_voltage_from=0.0, converter_loss_from=LossCurve(LinearCurve(0.0), NaturalUnit()), max_dc_current_from=INFINITE_CURRENT, rating_from=1e8, reactive_power_limits_from=(min=0.0, max=0.0), power_factor_weighting_fraction_from=1.0, voltage_limits_from=(min=0.0, max=999.9), dc_voltage_droop_from=0.0, reactive_power_to=0.0, dc_power_setpoint_to=nothing, dc_voltage_setpoint_to=nothing, power_factor_setpoint_to=nothing, ac_voltage_setpoint_to=nothing, rated_ac_voltage_to=0.0, converter_loss_to=LossCurve(LinearCurve(0.0), NaturalUnit()), max_dc_current_to=INFINITE_CURRENT, rating_to=1e8, reactive_power_limits_to=(min=0.0, max=0.0), power_factor_weighting_fraction_to=1.0, voltage_limits_to=(min=0.0, max=999.9), dc_voltage_droop_to=0.0, rated_dc_voltage=0.0, remote_bus_control_from=nothing, remote_bus_control_to=nothing, services=Device[], base_power=100.0, operational_flow_limit=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Unitful.Units, )
-    value = TwoTerminalVSCLine(name, available, arc, _placeholder(active_power_flow), _placeholder(rating), dc_control_from, ac_control_from, dc_control_to, ac_control_to, g, dc_current, _placeholder(reactive_power_from), _placeholder(dc_power_setpoint_from), dc_voltage_setpoint_from, power_factor_setpoint_from, ac_voltage_setpoint_from, rated_ac_voltage_from, converter_loss_from, max_dc_current_from, _placeholder(rating_from), _placeholder(reactive_power_limits_from), power_factor_weighting_fraction_from, voltage_limits_from, dc_voltage_droop_from, _placeholder(reactive_power_to), _placeholder(dc_power_setpoint_to), dc_voltage_setpoint_to, power_factor_setpoint_to, ac_voltage_setpoint_to, rated_ac_voltage_to, converter_loss_to, max_dc_current_to, _placeholder(rating_to), _placeholder(reactive_power_limits_to), power_factor_weighting_fraction_to, voltage_limits_to, dc_voltage_droop_to, rated_dc_voltage, remote_bus_control_from, remote_bus_control_to, services, base_power, _placeholder(operational_flow_limit), ext, internal, )
+function TwoTerminalVSCLine(; name, available, arc, active_power_flow, rating, dc_control_from, ac_control_from, dc_control_to, ac_control_to, g=0.0, dc_current=0.0, reactive_power_from=0.0, dc_power_setpoint_from=nothing, dc_voltage_setpoint_from=nothing, power_factor_setpoint_from=nothing, rated_ac_voltage_from=0.0, converter_loss_from=LossCurve(LinearCurve(0.0), NaturalUnit()), max_dc_current_from=INFINITE_CURRENT, rating_from=1e8, reactive_power_limits_from=(min=0.0, max=0.0), power_factor_weighting_fraction_from=1.0, voltage_limits_from=(min=0.0, max=999.9), dc_voltage_droop_from=0.0, reactive_power_to=0.0, dc_power_setpoint_to=nothing, dc_voltage_setpoint_to=nothing, power_factor_setpoint_to=nothing, rated_ac_voltage_to=0.0, converter_loss_to=LossCurve(LinearCurve(0.0), NaturalUnit()), max_dc_current_to=INFINITE_CURRENT, rating_to=1e8, reactive_power_limits_to=(min=0.0, max=0.0), power_factor_weighting_fraction_to=1.0, voltage_limits_to=(min=0.0, max=999.9), dc_voltage_droop_to=0.0, rated_dc_voltage=0.0, remote_regulated_bus_from=nothing, remote_regulated_bus_to=nothing, services=Device[], base_power=100.0, operational_flow_limit=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Unitful.Units, )
+    value = TwoTerminalVSCLine(name, available, arc, _placeholder(active_power_flow), _placeholder(rating), dc_control_from, ac_control_from, dc_control_to, ac_control_to, g, dc_current, _placeholder(reactive_power_from), _placeholder(dc_power_setpoint_from), dc_voltage_setpoint_from, power_factor_setpoint_from, rated_ac_voltage_from, converter_loss_from, max_dc_current_from, _placeholder(rating_from), _placeholder(reactive_power_limits_from), power_factor_weighting_fraction_from, voltage_limits_from, dc_voltage_droop_from, _placeholder(reactive_power_to), _placeholder(dc_power_setpoint_to), dc_voltage_setpoint_to, power_factor_setpoint_to, rated_ac_voltage_to, converter_loss_to, max_dc_current_to, _placeholder(rating_to), _placeholder(reactive_power_limits_to), power_factor_weighting_fraction_to, voltage_limits_to, dc_voltage_droop_to, rated_dc_voltage, remote_regulated_bus_from, remote_regulated_bus_to, services, base_power, _placeholder(operational_flow_limit), ext, internal, )
     set_active_power_flow!(value, _tag(active_power_flow, input_basis, Val(:mw)))
     set_rating!(value, _tag(rating, input_basis, Val(:mva)))
     set_reactive_power_from!(value, _tag(reactive_power_from, input_basis, Val(:mvar)))
@@ -237,7 +229,6 @@ function TwoTerminalVSCLine(::Nothing)
         dc_power_setpoint_from=nothing,
         dc_voltage_setpoint_from=nothing,
         power_factor_setpoint_from=nothing,
-        ac_voltage_setpoint_from=nothing,
         rated_ac_voltage_from=0.0,
         converter_loss_from=LossCurve(LinearCurve(0.0), NaturalUnit()),
         max_dc_current_from=0.0,
@@ -250,7 +241,6 @@ function TwoTerminalVSCLine(::Nothing)
         dc_power_setpoint_to=nothing,
         dc_voltage_setpoint_to=nothing,
         power_factor_setpoint_to=nothing,
-        ac_voltage_setpoint_to=nothing,
         rated_ac_voltage_to=0.0,
         converter_loss_to=LossCurve(LinearCurve(0.0), NaturalUnit()),
         max_dc_current_to=0.0,
@@ -260,8 +250,8 @@ function TwoTerminalVSCLine(::Nothing)
         voltage_limits_to=(min=0.0, max=0.0),
         dc_voltage_droop_to=0.0,
         rated_dc_voltage=0.0,
-        remote_bus_control_from=nothing,
-        remote_bus_control_to=nothing,
+        remote_regulated_bus_from=nothing,
+        remote_regulated_bus_to=nothing,
         services=Device[],
         base_power=100.0,
         operational_flow_limit=nothing,
@@ -324,8 +314,6 @@ InfrastructureSystems.display_units_arg(::typeof(get_dc_power_setpoint_from_unit
 get_dc_voltage_setpoint_from(value::TwoTerminalVSCLine) = value.dc_voltage_setpoint_from
 """Get [`TwoTerminalVSCLine`](@ref) `power_factor_setpoint_from`."""
 get_power_factor_setpoint_from(value::TwoTerminalVSCLine) = value.power_factor_setpoint_from
-"""Get [`TwoTerminalVSCLine`](@ref) `ac_voltage_setpoint_from`."""
-get_ac_voltage_setpoint_from(value::TwoTerminalVSCLine) = value.ac_voltage_setpoint_from
 """Get [`TwoTerminalVSCLine`](@ref) `rated_ac_voltage_from`."""
 get_rated_ac_voltage_from(value::TwoTerminalVSCLine) = value.rated_ac_voltage_from
 """Get [`TwoTerminalVSCLine`](@ref) `converter_loss_from`."""
@@ -374,8 +362,6 @@ InfrastructureSystems.display_units_arg(::typeof(get_dc_power_setpoint_to_unitfu
 get_dc_voltage_setpoint_to(value::TwoTerminalVSCLine) = value.dc_voltage_setpoint_to
 """Get [`TwoTerminalVSCLine`](@ref) `power_factor_setpoint_to`."""
 get_power_factor_setpoint_to(value::TwoTerminalVSCLine) = value.power_factor_setpoint_to
-"""Get [`TwoTerminalVSCLine`](@ref) `ac_voltage_setpoint_to`."""
-get_ac_voltage_setpoint_to(value::TwoTerminalVSCLine) = value.ac_voltage_setpoint_to
 """Get [`TwoTerminalVSCLine`](@ref) `rated_ac_voltage_to`."""
 get_rated_ac_voltage_to(value::TwoTerminalVSCLine) = value.rated_ac_voltage_to
 """Get [`TwoTerminalVSCLine`](@ref) `converter_loss_to`."""
@@ -406,10 +392,10 @@ get_voltage_limits_to(value::TwoTerminalVSCLine) = value.voltage_limits_to
 get_dc_voltage_droop_to(value::TwoTerminalVSCLine) = value.dc_voltage_droop_to
 """Get [`TwoTerminalVSCLine`](@ref) `rated_dc_voltage`."""
 get_rated_dc_voltage(value::TwoTerminalVSCLine) = value.rated_dc_voltage
-"""Get [`TwoTerminalVSCLine`](@ref) `remote_bus_control_from`."""
-get_remote_bus_control_from(value::TwoTerminalVSCLine) = value.remote_bus_control_from
-"""Get [`TwoTerminalVSCLine`](@ref) `remote_bus_control_to`."""
-get_remote_bus_control_to(value::TwoTerminalVSCLine) = value.remote_bus_control_to
+"""Get [`TwoTerminalVSCLine`](@ref) `remote_regulated_bus_from`."""
+get_remote_regulated_bus_from(value::TwoTerminalVSCLine) = value.remote_regulated_bus_from
+"""Get [`TwoTerminalVSCLine`](@ref) `remote_regulated_bus_to`."""
+get_remote_regulated_bus_to(value::TwoTerminalVSCLine) = value.remote_regulated_bus_to
 """Get [`TwoTerminalVSCLine`](@ref) `services`."""
 get_services(value::TwoTerminalVSCLine) = value.services
 
@@ -459,8 +445,6 @@ set_dc_power_setpoint_from!(value::TwoTerminalVSCLine, val::_UntaggedNumber) = _
 set_dc_voltage_setpoint_from!(value::TwoTerminalVSCLine, val) = value.dc_voltage_setpoint_from = val
 """Set [`TwoTerminalVSCLine`](@ref) `power_factor_setpoint_from`."""
 set_power_factor_setpoint_from!(value::TwoTerminalVSCLine, val) = value.power_factor_setpoint_from = val
-"""Set [`TwoTerminalVSCLine`](@ref) `ac_voltage_setpoint_from`."""
-set_ac_voltage_setpoint_from!(value::TwoTerminalVSCLine, val) = value.ac_voltage_setpoint_from = val
 """Set [`TwoTerminalVSCLine`](@ref) `rated_ac_voltage_from`."""
 set_rated_ac_voltage_from!(value::TwoTerminalVSCLine, val) = value.rated_ac_voltage_from = val
 """Set [`TwoTerminalVSCLine`](@ref) `converter_loss_from`."""
@@ -490,8 +474,6 @@ set_dc_power_setpoint_to!(value::TwoTerminalVSCLine, val::_UntaggedNumber) = _un
 set_dc_voltage_setpoint_to!(value::TwoTerminalVSCLine, val) = value.dc_voltage_setpoint_to = val
 """Set [`TwoTerminalVSCLine`](@ref) `power_factor_setpoint_to`."""
 set_power_factor_setpoint_to!(value::TwoTerminalVSCLine, val) = value.power_factor_setpoint_to = val
-"""Set [`TwoTerminalVSCLine`](@ref) `ac_voltage_setpoint_to`."""
-set_ac_voltage_setpoint_to!(value::TwoTerminalVSCLine, val) = value.ac_voltage_setpoint_to = val
 """Set [`TwoTerminalVSCLine`](@ref) `rated_ac_voltage_to`."""
 set_rated_ac_voltage_to!(value::TwoTerminalVSCLine, val) = value.rated_ac_voltage_to = val
 """Set [`TwoTerminalVSCLine`](@ref) `converter_loss_to`."""
@@ -513,10 +495,10 @@ set_voltage_limits_to!(value::TwoTerminalVSCLine, val) = value.voltage_limits_to
 set_dc_voltage_droop_to!(value::TwoTerminalVSCLine, val) = value.dc_voltage_droop_to = val
 """Set [`TwoTerminalVSCLine`](@ref) `rated_dc_voltage`."""
 set_rated_dc_voltage!(value::TwoTerminalVSCLine, val) = value.rated_dc_voltage = val
-"""Set [`TwoTerminalVSCLine`](@ref) `remote_bus_control_from`."""
-set_remote_bus_control_from!(value::TwoTerminalVSCLine, val) = value.remote_bus_control_from = val
-"""Set [`TwoTerminalVSCLine`](@ref) `remote_bus_control_to`."""
-set_remote_bus_control_to!(value::TwoTerminalVSCLine, val) = value.remote_bus_control_to = val
+"""Set [`TwoTerminalVSCLine`](@ref) `remote_regulated_bus_from`."""
+set_remote_regulated_bus_from!(value::TwoTerminalVSCLine, val) = value.remote_regulated_bus_from = val
+"""Set [`TwoTerminalVSCLine`](@ref) `remote_regulated_bus_to`."""
+set_remote_regulated_bus_to!(value::TwoTerminalVSCLine, val) = value.remote_regulated_bus_to = val
 """Set [`TwoTerminalVSCLine`](@ref) `services`."""
 set_services!(value::TwoTerminalVSCLine, val) = value.services = val
 """Set [`TwoTerminalVSCLine`](@ref) `operational_flow_limit`."""

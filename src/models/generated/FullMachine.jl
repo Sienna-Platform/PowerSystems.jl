@@ -5,7 +5,7 @@ This file is auto-generated. Do not edit.
 #! format: off
 
 """
-    mutable struct FullMachine <: Machine
+    mutable struct FullMachine <: SynchronousMachineDynamics
         R::Float64
         R_f::Float64
         R_1d::Float64
@@ -56,7 +56,7 @@ Parameter of a full order flux stator-rotor model without zero sequence flux in 
 - `n_states::Int`: (**Do not modify.**) FullMachine has 5 states
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
 """
-mutable struct FullMachine <: Machine
+mutable struct FullMachine <: SynchronousMachineDynamics
     "Resistance after EMF in machine per unit"
     R::Float64
     "Field rotor winding resistance in per unit"
@@ -194,3 +194,40 @@ set_ext!(value::FullMachine, val) = value.ext = val
 set_inv_d_fluxlink!(value::FullMachine, val) = value.inv_d_fluxlink = val
 """Set [`FullMachine`](@ref) `inv_q_fluxlink`."""
 set_inv_q_fluxlink!(value::FullMachine, val) = value.inv_q_fluxlink = val
+
+
+
+function from_openapi(po::PD.FullMachine, refs::OpenAPIRefs)
+    return FullMachine(;
+        R = _wire_required(po.r, "FullMachine", "R"),
+        R_f = _wire_required(po.r_f, "FullMachine", "R_f"),
+        R_1d = _wire_required(po.r_1d, "FullMachine", "R_1d"),
+        R_1q = _wire_required(po.r_1q, "FullMachine", "R_1q"),
+        L_d = _wire_required(po.l_d, "FullMachine", "L_d"),
+        L_q = _wire_required(po.l_q, "FullMachine", "L_q"),
+        L_ad = _wire_required(po.l_ad, "FullMachine", "L_ad"),
+        L_aq = _wire_required(po.l_aq, "FullMachine", "L_aq"),
+        L_f1d = _wire_required(po.l_f1d, "FullMachine", "L_f1d"),
+        L_ff = _wire_required(po.l_ff, "FullMachine", "L_ff"),
+        L_1d = _wire_required(po.l_1d, "FullMachine", "L_1d"),
+        L_1q = _wire_required(po.l_1q, "FullMachine", "L_1q"),
+    )
+end
+
+function to_openapi(value::FullMachine, refs::OpenAPIRefs)
+    return PD.FullMachine(;
+        id = component_id(refs, value),
+        r = get_R(value),
+        r_f = get_R_f(value),
+        r_1d = get_R_1d(value),
+        r_1q = get_R_1q(value),
+        l_d = get_L_d(value),
+        l_q = get_L_q(value),
+        l_ad = get_L_ad(value),
+        l_aq = get_L_aq(value),
+        l_f1d = get_L_f1d(value),
+        l_ff = get_L_ff(value),
+        l_1d = get_L_1d(value),
+        l_1q = get_L_1q(value),
+    )
+end
