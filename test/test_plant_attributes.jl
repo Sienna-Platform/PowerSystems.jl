@@ -31,6 +31,15 @@ const PSY = PowerSystems
         @test get_configuration(cc_block) ==
               CombinedCycleConfiguration.SingleShaftCombustionSteam
         @test get_heat_recovery_to_steam_factor(cc_block) == 0.85
+        @test get_hrsg_heat_loss(cc_block) == 0.0
+        lossy = CombinedCycleBlock(;
+            name = "CC Block 2",
+            configuration = CombinedCycleConfiguration.SingleShaftCombustionSteam,
+            heat_recovery_to_steam_factor = 0.85,
+            hrsg_heat_loss = 12.5,
+        )
+        @test get_hrsg_heat_loss(lossy) == 12.5
+        @test get_heat_recovery_to_steam_factor(lossy) == 0.85
     end
 
     @testset "Add and remove ThermalGen to/from ThermalPowerPlant" begin

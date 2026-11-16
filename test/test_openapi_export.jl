@@ -1069,11 +1069,14 @@ end
         name = "cc1",
         configuration = CombinedCycleConfiguration.SingleShaftCombustionSteam,
         heat_recovery_to_steam_factor = 0.5,
+        hrsg_heat_loss = 12.5,
     )
     refs[3] = cc_block
     cc_po = PSY.to_openapi(cc_block, refs)
     @test cc_po.configuration.value == "SingleShaftCombustionSteam"
     @test cc_po.heat_recovery_to_steam_factor == 0.5
+    @test cc_po.hrsg_heat_loss == 12.5
+    @test get_hrsg_heat_loss(PSY.from_openapi(cc_po, refs)) == 12.5
 
     plant = ThermalPowerPlant(; name = "plant1")
     refs[4] = plant

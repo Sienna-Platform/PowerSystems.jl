@@ -46,6 +46,7 @@ export get_reverse_shaft_map
 export get_components_in_shaft
 export get_configuration
 export get_heat_recovery_to_steam_factor
+export get_hrsg_heat_loss
 export get_penstock_map
 export get_reverse_penstock_map
 export get_components_in_penstock

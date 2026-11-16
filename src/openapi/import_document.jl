@@ -428,7 +428,8 @@ function from_openapi(po::PO.CombinedCycleBlock, ::OpenAPIRefs)
     return CombinedCycleBlock(;
         name = po.name,
         configuration = CombinedCycleConfiguration.Value(po.configuration.value),
-        heat_recovery_to_steam_factor = po.heat_recovery_to_steam_factor,
+        heat_recovery_to_steam_factor = _or_default(po.heat_recovery_to_steam_factor, 0.0),
+        hrsg_heat_loss = _or_default(po.hrsg_heat_loss, 0.0),
     )
 end
 

@@ -303,6 +303,27 @@ end
     @test get_configuration(cc_block) ==
           CombinedCycleConfiguration.SingleShaftCombustionSteam
     @test get_heat_recovery_to_steam_factor(cc_block) == 0.5
+    @test get_hrsg_heat_loss(cc_block) == 0.0
+
+    cc_bare_po = PSY.PO.CombinedCycleBlock(;
+        id = 99, name = "cc_bare",
+        configuration = PSY.PO.CombinedCycleConfiguration("SingleShaftCombustionSteam"),
+    )
+    cc_bare = PSY.from_openapi(cc_bare_po, refs)
+    @test get_heat_recovery_to_steam_factor(cc_bare) == 0.0
+    @test get_hrsg_heat_loss(cc_bare) == 0.0
+
+    cc_null = PSY.from_openapi(
+        PSY.PO.CombinedCycleBlock(;
+            id = 98, name = "cc_null",
+            configuration = PSY.PO.CombinedCycleConfiguration("SingleShaftCombustionSteam"),
+            heat_recovery_to_steam_factor = nothing,
+            hrsg_heat_loss = nothing,
+        ),
+        refs,
+    )
+    @test get_heat_recovery_to_steam_factor(cc_null) == 0.0
+    @test get_hrsg_heat_loss(cc_null) == 0.0
 
     cc_frac_po =
         PSY.PO.CombinedCycleFractional(;
