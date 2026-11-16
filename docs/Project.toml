@@ -31,7 +31,8 @@ InfrastructureSystems = {url = "https://github.com/Sienna-Platform/Infrastructur
 PowerFlowFileParser = {url = "https://github.com/Sienna-Platform/PowerFlowFileParser.jl.git", rev = "jd/dynamics-acceptance"}
 PowerSystemCaseBuilder = {url = "https://github.com/Sienna-Platform/PowerSystemCaseBuilder.jl.git", rev = "jd/dynamics-acceptance"}
 PowerSystems = {path = ".."}
-PowerTableDataParser = {url = "https://github.com/NLR-Sienna/PowerTableDataParser.jl.git", rev = "jd/sdk-0.5"}
+# TODO: back to NLR-Sienna rev = "psy6" once PowerTableDataParser.jl#18 merges.
+PowerTableDataParser = {url = "https://github.com/luke-kiernan/PowerTableDataParser.jl.git", rev = "lk/ts-translate-multipliers"}
 
 [compat]
 CSV = "~0.10"
