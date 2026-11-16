@@ -114,6 +114,11 @@ export InputOutputCurve, IncrementalCurve, AverageRateCurve
 export LinearCurve, QuadraticCurve
 export PiecewisePointCurve, PiecewiseIncrementalCurve, PiecewiseAverageCurve
 export ProductionVariableCostCurve, CostCurve, FuelCurve
+export DualFuelCurve
+export get_first_fuel_curve, get_second_fuel_curve
+export get_first_fuel_cost, get_first_fuel_cost_time_series, set_first_fuel_cost!
+export get_second_fuel_cost, get_second_fuel_cost_time_series, set_second_fuel_cost!
+export get_second_fuel_share, is_blended, get_stacking_threshold
 export LossCurve, AnyLossCurve, CurrentLossCurve
 export get_function_data, get_initial_input, get_input_at_zero
 export get_value_curve, get_power_units
@@ -957,6 +962,16 @@ import InfrastructureSystems:
     ProductionVariableCostCurve,
     CostCurve,
     FuelCurve,
+    DualFuelCurve,
+    get_first_fuel_curve,
+    get_second_fuel_curve,
+    get_first_fuel_cost,
+    get_first_fuel_cost_time_series,
+    get_second_fuel_cost,
+    get_second_fuel_cost_time_series,
+    get_second_fuel_share,
+    is_blended,
+    get_stacking_threshold,
     get_value_curve,
     get_vom_cost,
     get_startup_fuel_offtake,

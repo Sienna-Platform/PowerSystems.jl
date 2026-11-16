@@ -768,3 +768,197 @@ end
         ),
     ) == [offer_key, zero_key, exp_key]
 end
+
+function _dual_fuel_curves()
+    stacked = DualFuelCurve(;
+        first_fuel_curve = LinearCurve(9.89, 113.0),
+        second_fuel_curve = PiecewiseIncrementalCurve(nothing, [185.4, 304.4], [10.017]),
+        fuel_units = u"MMBtu", second_fuel_cost = 3.44)
+    blended = DualFuelCurve(;
+        first_fuel_curve = PiecewisePointCurve([
+            (100.0, 900.0),
+            (200.0, 1700.0),
+            (300.0, 2700.0),
+        ]),
+        second_fuel_curve = PiecewisePointCurve([
+            (100.0, 950.0),
+            (250.0, 2225.0),
+            (300.0, 2725.0),
+        ]),
+        fuel_units = u"MMBtu", first_fuel_cost = 3.0, second_fuel_cost = 5.0,
+        second_fuel_share = 0.3)
+    return stacked, blended
+end
+
+@testset "DualFuelCurve on a ThermalStandard" begin
+    stacked, blended = _dual_fuel_curves()
+    for curve in (stacked, blended)
+        sys = PSB.build_system(PSITestSystems, "c_sys5_uc")
+        gen = first(get_components(ThermalStandard, sys))
+        set_operation_cost!(
+            gen,
+            ThermalGenerationCost(; variable_operation_cost = curve, fixed = 0.0,
+                start_up = 0.0, shut_down = 0.0),
+        )
+        @test get_variable_operation_cost(get_operation_cost(gen)) == curve
+        rebased = convert_power_units(gen, curve, u"SU")
+        @test rebased isa DualFuelCurve
+        @test get_power_units(rebased) isa SystemBaseUnit
+        if curve === stacked
+            # NU to SU: x_SU = x_MW / S, so the slope scales by S and the threshold by 1/S.
+            S = get_base_power(sys)
+            @test S == 100.0
+            first_curve = get_first_fuel_curve(rebased)
+            @test get_proportional_term(first_curve) ≈ 9.89 * 100.0
+            @test get_constant_term(first_curve) == 113.0
+            @test get_stacking_threshold(rebased) ≈ 1.854
+        end
+    end
+    @test !is_blended(stacked)
+    @test get_stacking_threshold(stacked) == 185.4
+    @test get_first_fuel_curve(stacked) == LinearCurve(9.89, 113.0)
+    @test get_second_fuel_cost(stacked) == 3.44
+    @test is_blended(blended)
+    @test get_second_fuel_share(blended) == 0.3
+    @test get_first_fuel_cost(blended) == 3.0
+    @test get_second_fuel_curve(blended) isa PiecewisePointCurve
+    @test get_first_fuel_cost_time_series(blended) === nothing
+    @test get_second_fuel_cost_time_series(blended) === nothing
+end
+
+@testset "DualFuelCurve fuel prices" begin
+    _, blended = _dual_fuel_curves()
+    sys = PSB.build_system(PSITestSystems, "c_sys5_uc")
+    gen = first(get_components(ThermalStandard, sys))
+    set_operation_cost!(
+        gen,
+        ThermalGenerationCost(; variable_operation_cost = blended, fixed = 0.0,
+            start_up = 0.0, shut_down = 0.0),
+    )
+    curve() = get_variable_operation_cost(get_operation_cost(gen))
+    @test get_first_fuel_cost(gen) == 3.0
+    @test get_second_fuel_cost(gen) == 5.0
+    for refused in (() -> get_fuel_cost(gen), () -> set_fuel_cost!(sys, gen, 4.0))
+        err = try
+            refused()
+        catch e
+            e
+        end
+        @test err isa ArgumentError
+        for name in ("get_first_fuel_cost", "get_second_fuel_cost",
+            "set_first_fuel_cost!", "set_second_fuel_cost!")
+            @test occursin(name, err.msg)
+        end
+    end
+
+    set_second_fuel_cost!(sys, gen, 6.5)
+    @test get_second_fuel_cost(curve()) == 6.5
+    @test get_first_fuel_cost(curve()) == 3.0
+    @test get_second_fuel_share(curve()) == 0.3
+    @test get_first_fuel_curve(curve()) == get_first_fuel_curve(blended)
+
+    timestamps = range(_TS_RESOLVE_INITIAL_TIME; step = _TS_RESOLVE_RESOLUTION, length = 24)
+    series(name, prices) = IS.SingleTimeSeries(; name = name,
+        data = TimeSeries.TimeArray(collect(timestamps), prices))
+    set_first_fuel_cost!(sys, gen, series("fuel_cost", collect(1.0:24.0)))
+    set_second_fuel_cost!(sys, gen, series("second_fuel_cost", collect(101.0:124.0)))
+    @test IS.is_time_series_backed(curve())
+    @test isnothing(get_first_fuel_cost(curve()))
+    @test isnothing(get_second_fuel_cost(curve()))
+    @test has_time_series(gen, IS.SingleTimeSeries, "fuel_cost")
+    @test has_time_series(gen, IS.SingleTimeSeries, "second_fuel_cost")
+    first_prices = get_first_fuel_cost(gen; start_time = _TS_RESOLVE_INITIAL_TIME, len = 3)
+    second_prices =
+        get_second_fuel_cost(gen; start_time = _TS_RESOLVE_INITIAL_TIME, len = 3)
+    @test TimeSeries.values(first_prices) == [1.0, 2.0, 3.0]
+    @test TimeSeries.values(second_prices) == [101.0, 102.0, 103.0]
+    keys = get_time_series_keys(get_operation_cost(gen))
+    @test keys == [
+        get_first_fuel_cost_time_series(curve()),
+        get_second_fuel_cost_time_series(curve()),
+    ]
+
+    set_first_fuel_cost!(sys, gen, 2.0)
+    @test get_first_fuel_cost(curve()) == 2.0
+    @test isnothing(get_first_fuel_cost_time_series(curve()))
+end
+
+@testset "Per-fuel prices refuse a plain FuelCurve" begin
+    sys = PSB.build_system(PSITestSystems, "c_sys5_uc")
+    gen = first(get_components(ThermalStandard, sys))
+    set_operation_cost!(
+        gen,
+        ThermalGenerationCost(;
+            variable_operation_cost = FuelCurve(LinearCurve(1.0), u"MMBtu", 2.0),
+            fixed = 0.0, start_up = 0.0, shut_down = 0.0),
+    )
+    @test_throws "use DualFuelCurve instead" get_first_fuel_cost(gen)
+    @test_throws "use DualFuelCurve instead" get_second_fuel_cost(gen)
+    @test_throws "use DualFuelCurve instead" set_first_fuel_cost!(sys, gen, 1.0)
+    @test_throws "use DualFuelCurve instead" set_second_fuel_cost!(sys, gen, 1.0)
+end
+
+@testset "DualFuelCurve first price series on a stacked curve" begin
+    stacked, _ = _dual_fuel_curves()
+    sys = PSB.build_system(PSITestSystems, "c_sys5_uc")
+    gen = first(get_components(ThermalStandard, sys))
+    set_operation_cost!(
+        gen,
+        ThermalGenerationCost(; variable_operation_cost = stacked, fixed = 0.0,
+            start_up = 0.0, shut_down = 0.0),
+    )
+    timestamps = range(_TS_RESOLVE_INITIAL_TIME; step = _TS_RESOLVE_RESOLUTION, length = 24)
+    set_first_fuel_cost!(sys, gen,
+        IS.SingleTimeSeries(; name = "fuel_cost",
+            data = TimeSeries.TimeArray(collect(timestamps), collect(1.0:24.0))))
+    curve = get_variable_operation_cost(get_operation_cost(gen))
+    @test get_first_fuel_cost(curve) === nothing
+    @test get_first_fuel_cost_time_series(curve) isa IS.TimeSeriesKey
+    @test get_second_fuel_cost(curve) == 3.44
+    @test get_first_fuel_curve(curve) == get_first_fuel_curve(stacked)
+    @test get_second_fuel_curve(curve) == get_second_fuel_curve(stacked)
+    @test get_second_fuel_share(curve) === nothing
+end
+
+@testset "DualFuelCurve survives a system archive round trip" begin
+    stacked, blended = _dual_fuel_curves()
+    function with_curve(curve)
+        sys = PSB.build_system(PSITestSystems, "c_sys5_uc")
+        gen = first(get_components(ThermalStandard, sys))
+        set_operation_cost!(
+            gen,
+            ThermalGenerationCost(; variable_operation_cost = curve, fixed = 0.0,
+                start_up = 0.0, shut_down = 0.0),
+        )
+        return sys, gen
+    end
+    reloaded_curve(sys, gen) = get_variable_operation_cost(
+        get_operation_cost(get_component(ThermalStandard, sys, get_name(gen))))
+
+    for curve in (stacked, blended)
+        sys, gen = with_curve(curve)
+        sys2 = roundtrip_system(sys; form = :archive)
+        @test reloaded_curve(sys2, gen) == curve
+    end
+
+    sys, gen = with_curve(blended)
+    timestamps = range(_TS_RESOLVE_INITIAL_TIME; step = _TS_RESOLVE_RESOLUTION, length = 24)
+    series(name, prices) = IS.SingleTimeSeries(; name = name,
+        data = TimeSeries.TimeArray(collect(timestamps), prices))
+    set_first_fuel_cost!(sys, gen, series("fuel_cost", collect(1.0:24.0)))
+    set_second_fuel_cost!(sys, gen, series("second_fuel_cost", collect(101.0:124.0)))
+    sys2 = roundtrip_system(sys; form = :archive)
+    gen2 = get_component(ThermalStandard, sys2, get_name(gen))
+    curve2 = reloaded_curve(sys2, gen)
+    @test get_second_fuel_share(curve2) == 0.3
+    @test get_first_fuel_curve(curve2) == get_first_fuel_curve(blended)
+    @test get_second_fuel_curve(curve2) == get_second_fuel_curve(blended)
+    @test has_time_series(gen2, IS.SingleTimeSeries, "fuel_cost")
+    @test has_time_series(gen2, IS.SingleTimeSeries, "second_fuel_cost")
+    @test TimeSeries.values(
+        get_first_fuel_cost(gen2; start_time = _TS_RESOLVE_INITIAL_TIME, len = 3),
+    ) == [1.0, 2.0, 3.0]
+    @test TimeSeries.values(
+        get_second_fuel_cost(gen2; start_time = _TS_RESOLVE_INITIAL_TIME, len = 3),
+    ) == [101.0, 102.0, 103.0]
+end

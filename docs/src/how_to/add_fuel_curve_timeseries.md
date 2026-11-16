@@ -101,6 +101,12 @@ To add time-varying fuel costs, you need to:
   - Fuel cost units should be in \$/GJ (or \$/MBtu, etc.) and heat rate in GJ/MWh (or
     MBtu/MWh); their product gives the effective cost in \$/MWh
 
+!!! note
+
+    A [`DualFuelCurve`](@ref) has two fuel prices, so [`set_fuel_cost!`](@ref) does not apply to it.
+    Use [`set_first_fuel_cost!`](@ref) and [`set_second_fuel_cost!`](@ref) instead.
+    Operations models read the two price series by the names `"fuel_cost"` (first fuel) and `"second_fuel_cost"` (second fuel).
+
 ## Step 1: Create Time Series Fuel Cost Data
 
 Create time series data representing fuel costs that vary throughout the day. This example

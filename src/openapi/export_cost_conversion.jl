@@ -239,6 +239,35 @@ function convert_cost_to_openapi(cost::FuelCurve)
     )
 end
 
+function convert_cost_to_openapi(cost::DualFuelCurve)
+    get_fuel_units(cost) == _WIRE_FUEL_UNITS || throw(
+        ArgumentError(
+            "cannot export a DualFuelCurve in $(get_fuel_units(cost)): the document format " *
+            "records fuel in $(_WIRE_FUEL_UNITS) only",
+        ),
+    )
+    return PC.DualFuelCurve(;
+        power_units = _power_units_to_string(get_power_units(cost), cost),
+        first_fuel_curve = PC.ValueCurve(
+            convert_cost_to_openapi(get_first_fuel_curve(cost)),
+        ),
+        second_fuel_curve = PC.ValueCurve(
+            convert_cost_to_openapi(get_second_fuel_curve(cost)),
+        ),
+        first_fuel_cost = get_first_fuel_cost(cost),
+        first_fuel_cost_time_series = _fuel_cost_time_series_id(
+            get_first_fuel_cost_time_series(cost),
+        ),
+        second_fuel_cost = get_second_fuel_cost(cost),
+        second_fuel_cost_time_series = _fuel_cost_time_series_id(
+            get_second_fuel_cost_time_series(cost),
+        ),
+        second_fuel_share = get_second_fuel_share(cost),
+        fuel_units = PC.FuelUnit(WIRE_FUEL_UNITS),
+        vom_cost = convert_cost_to_openapi(get_vom_cost(cost)),
+    )
+end
+
 """`zero(CostCurve)` is the sentinel `_optional_cost_curve` maps `Absent`/`nothing` to on
 import (curtailment_cost, storage charge/discharge_variable_cost); reverse it back to
 `IC.ABSENT` rather than `nothing` — these fields are declared optional-by-omission, not
