@@ -221,17 +221,11 @@ function convert_cost_to_openapi(cost::CostCurve)
 end
 
 function convert_cost_to_openapi(cost::FuelCurve)
-    get_fuel_units(cost) == _WIRE_FUEL_UNITS || throw(
-        ArgumentError(
-            "cannot export a FuelCurve in $(get_fuel_units(cost)): the document format " *
-            "records fuel in $(_WIRE_FUEL_UNITS) only",
-        ),
-    )
     return PC.FuelCurve(;
         power_units = _power_units_to_string(get_power_units(cost), cost),
         value_curve = PC.ValueCurve(convert_cost_to_openapi(get_value_curve(cost))),
         fuel_cost = get_fuel_cost(cost),
-        fuel_units = PC.FuelUnit(WIRE_FUEL_UNITS),
+        fuel_units = PC.FuelUnit(_fuel_units_to_wire(get_fuel_units(cost))),
         fuel_cost_time_series = _fuel_cost_time_series_id(
             IS.get_fuel_cost_time_series(cost),
         ),

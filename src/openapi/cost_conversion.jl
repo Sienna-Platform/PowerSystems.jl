@@ -246,20 +246,26 @@ function convert_cost(c::PC.CostCurve, store)
     end
 end
 
-# PSY's FuelCurve records no fuel unit, so a document must state its fuel in MMBtu.
-const WIRE_FUEL_UNITS = "MMBTU"
+# SiennaSchemas' `FuelUnit` enum ⇄ Unitful. Add volume fuels here when the enum gains them.
+const _FUEL_UNITS_FROM_WIRE = Dict("MMBTU" => MMBtu, "GJ" => u"GJ")
+const _FUEL_UNITS_TO_WIRE = Dict(v => k for (k, v) in _FUEL_UNITS_FROM_WIRE)
 
-function _require_wire_fuel_units(f::PC.FuelCurve)
-    units = f.fuel_units.value
-    if units != WIRE_FUEL_UNITS
+_fuel_units_from_wire(f::PC.FuelCurve) =
+    get(_FUEL_UNITS_FROM_WIRE, f.fuel_units.value) do
+        throw(
+            ArgumentError("convert_cost: unknown FuelCurve.fuel_units $(f.fuel_units.value)"),
+        )
+    end
+
+_fuel_units_to_wire(u) =
+    get(_FUEL_UNITS_TO_WIRE, u) do
         throw(
             ArgumentError(
-                "convert_cost: FuelCurve.fuel_units is $units; only $WIRE_FUEL_UNITS is supported",
+                "cannot export a FuelCurve in $u: the schema's FuelUnit enum has only " *
+                join(sort!(collect(keys(_FUEL_UNITS_FROM_WIRE))), ", "),
             ),
         )
     end
-    return
-end
 
 """Resolve `FuelCurve`'s two mutually exclusive fields. `store` is unused on the
 scalar branch, so a plain `fuel_cost` converts with no active import at all."""
@@ -274,13 +280,7 @@ _fuel_cost_fields(::Any, ::Real, ::Integer) = error(
     "one is expected",
 )
 
-# ponytail: SiennaSchemas' `FuelCurve` has no fuel-unit field yet, so the wire is read as
-# MMBtu and export refuses any other unit rather than mislabel it. Replace with the schema
-# field once it exists.
-const _WIRE_FUEL_UNITS = MMBtu
-
 function convert_cost(f::PC.FuelCurve, store)
-    _require_wire_fuel_units(f)
     value_curve = convert_cost(_require(f.value_curve, "FuelCurve.value_curve"), store)
     vom_cost = _vom_cost(f.vom_cost)
     fuel_cost, fuel_cost_time_series = _fuel_cost_fields(
@@ -292,7 +292,7 @@ function convert_cost(f::PC.FuelCurve, store)
         FuelCurve(;
             value_curve = value_curve,
             power_units = units,
-            fuel_units = _WIRE_FUEL_UNITS,
+            fuel_units = _fuel_units_from_wire(f),
             fuel_cost = fuel_cost,
             fuel_cost_time_series = fuel_cost_time_series,
             vom_cost = vom_cost,
@@ -322,7 +322,6 @@ variant pulls the ambient store itself via its own 1-arg method, regardless of w
 only fetched when `fuel_cost_time_series` is actually present, so a scalar `fuel_cost` with a
 non-time-series value curve still converts with no active import bound at all."""
 function convert_cost(f::PC.FuelCurve)
-    _require_wire_fuel_units(f)
     value_curve = convert_cost(_require(f.value_curve, "FuelCurve.value_curve"))
     vom_cost = _vom_cost(f.vom_cost)
     fuel_cost, fuel_cost_time_series = _fuel_cost_fields_ambient(
@@ -333,7 +332,7 @@ function convert_cost(f::PC.FuelCurve)
         FuelCurve(;
             value_curve = value_curve,
             power_units = units,
-            fuel_units = _WIRE_FUEL_UNITS,
+            fuel_units = _fuel_units_from_wire(f),
             fuel_cost = fuel_cost,
             fuel_cost_time_series = fuel_cost_time_series,
             vom_cost = vom_cost,
