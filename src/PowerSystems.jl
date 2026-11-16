@@ -118,6 +118,7 @@ export DualFuelCurve
 export get_first_fuel_curve, get_second_fuel_curve
 export get_first_fuel_cost, get_first_fuel_cost_time_series, set_first_fuel_cost!
 export get_second_fuel_cost, get_second_fuel_cost_time_series, set_second_fuel_cost!
+export get_first_fuel_startup_offtake, get_second_fuel_startup_offtake
 export get_second_fuel_share, is_blended, get_stacking_threshold
 export LossCurve, AnyLossCurve, CurrentLossCurve
 export get_function_data, get_initial_input, get_input_at_zero
@@ -969,6 +970,8 @@ import InfrastructureSystems:
     get_first_fuel_cost_time_series,
     get_second_fuel_cost,
     get_second_fuel_cost_time_series,
+    get_first_fuel_startup_offtake,
+    get_second_fuel_startup_offtake,
     get_second_fuel_share,
     is_blended,
     get_stacking_threshold,

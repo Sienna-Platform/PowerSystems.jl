@@ -734,3 +734,38 @@ end
         IS.close!(store)
     end
 end
+
+@testset "convert_cost: DualFuelCurve startup offtakes" begin
+    stacked, blended, _ = _dual_fuel_conversion_curves()
+    curve = DualFuelCurve(;
+        first_fuel_curve = get_first_fuel_curve(blended),
+        second_fuel_curve = get_second_fuel_curve(blended),
+        fuel_units = u"MMBtu", first_fuel_cost = 3.0, second_fuel_cost = 5.0,
+        second_fuel_share = 0.3,
+        first_fuel_startup_offtake = LinearCurve(5.0),
+        second_fuel_startup_offtake = LinearCurve(2.0))
+    @test get_first_fuel_startup_offtake(curve) == LinearCurve(5.0)
+    po = PSY.convert_cost_to_openapi(curve)
+    @test PSY.convert_cost(po) == curve
+    @test get_second_fuel_startup_offtake(PSY.convert_cost(po)) == LinearCurve(2.0)
+    # A document without the properties, or with null, imports the default.
+    bare = _po_dual_fuel(; first_fuel_cost = 1.0, second_fuel_cost = 2.0)
+    @test bare.first_fuel_startup_offtake isa PSY.IC.Absent
+    for po_curve in (
+        PSY.PC.DualFuelCurve(;
+            first_fuel_curve = po.first_fuel_curve,
+            second_fuel_curve = po.second_fuel_curve, fuel_units = po.fuel_units,
+            power_units = po.power_units, vom_cost = po.vom_cost,
+            first_fuel_cost = 3.0, second_fuel_cost = 5.0, second_fuel_share = 0.3),
+        PSY.PC.DualFuelCurve(;
+            first_fuel_curve = po.first_fuel_curve,
+            second_fuel_curve = po.second_fuel_curve, fuel_units = po.fuel_units,
+            power_units = po.power_units, vom_cost = po.vom_cost,
+            first_fuel_cost = 3.0, second_fuel_cost = 5.0, second_fuel_share = 0.3,
+            first_fuel_startup_offtake = nothing, second_fuel_startup_offtake = nothing),
+    )
+        imported = PSY.convert_cost(po_curve)
+        @test get_first_fuel_startup_offtake(imported) == LinearCurve(0.0)
+        @test get_second_fuel_startup_offtake(imported) == LinearCurve(0.0)
+    end
+end

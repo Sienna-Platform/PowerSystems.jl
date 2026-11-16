@@ -729,6 +729,8 @@ function _rebuild_dual_fuel_curve(var_cost::IS.DualFuelCurve; changes...)
         second_fuel_cost = get_second_fuel_cost(var_cost),
         second_fuel_cost_time_series = get_second_fuel_cost_time_series(var_cost),
         second_fuel_share = get_second_fuel_share(var_cost),
+        first_fuel_startup_offtake = get_first_fuel_startup_offtake(var_cost),
+        second_fuel_startup_offtake = get_second_fuel_startup_offtake(var_cost),
         vom_cost = get_vom_cost(var_cost),
         changes...,
     )

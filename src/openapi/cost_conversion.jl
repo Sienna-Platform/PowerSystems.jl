@@ -376,6 +376,12 @@ function _convert_dual_fuel(f::PC.DualFuelCurve, convert, price)
             second_fuel_cost = second_cost,
             second_fuel_cost_time_series = second_key,
             second_fuel_share = _optional_from_wire(f.second_fuel_share),
+            first_fuel_startup_offtake = _vom_cost(
+                _optional_from_wire(f.first_fuel_startup_offtake),
+            ),
+            second_fuel_startup_offtake = _vom_cost(
+                _optional_from_wire(f.second_fuel_startup_offtake),
+            ),
             vom_cost = vom_cost,
         )
     end

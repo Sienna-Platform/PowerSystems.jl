@@ -962,3 +962,28 @@ end
         get_second_fuel_cost(gen2; start_time = _TS_RESOLVE_INITIAL_TIME, len = 3),
     ) == [101.0, 102.0, 103.0]
 end
+
+@testset "DualFuelCurve price setters keep the startup offtakes" begin
+    _, blended = _dual_fuel_curves()
+    curve = DualFuelCurve(;
+        first_fuel_curve = get_first_fuel_curve(blended),
+        second_fuel_curve = get_second_fuel_curve(blended),
+        fuel_units = u"MMBtu", first_fuel_cost = 3.0, second_fuel_cost = 5.0,
+        second_fuel_share = 0.3,
+        first_fuel_startup_offtake = LinearCurve(5.0),
+        second_fuel_startup_offtake = LinearCurve(2.0))
+    sys = PSB.build_system(PSITestSystems, "c_sys5_uc")
+    gen = first(get_components(ThermalStandard, sys))
+    set_operation_cost!(
+        gen,
+        ThermalGenerationCost(; variable_operation_cost = curve, fixed = 0.0,
+            start_up = 0.0, shut_down = 0.0),
+    )
+    set_first_fuel_cost!(sys, gen, 3.5)
+    set_second_fuel_cost!(sys, gen, 6.5)
+    rebuilt = get_variable_operation_cost(get_operation_cost(gen))
+    @test get_first_fuel_cost(rebuilt) == 3.5
+    @test get_second_fuel_cost(rebuilt) == 6.5
+    @test get_first_fuel_startup_offtake(rebuilt) == LinearCurve(5.0)
+    @test get_second_fuel_startup_offtake(rebuilt) == LinearCurve(2.0)
+end

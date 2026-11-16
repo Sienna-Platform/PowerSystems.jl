@@ -263,6 +263,12 @@ function convert_cost_to_openapi(cost::DualFuelCurve)
             get_second_fuel_cost_time_series(cost),
         ),
         second_fuel_share = get_second_fuel_share(cost),
+        first_fuel_startup_offtake = convert_cost_to_openapi(
+            get_first_fuel_startup_offtake(cost),
+        ),
+        second_fuel_startup_offtake = convert_cost_to_openapi(
+            get_second_fuel_startup_offtake(cost),
+        ),
         fuel_units = PC.FuelUnit(WIRE_FUEL_UNITS),
         vom_cost = convert_cost_to_openapi(get_vom_cost(cost)),
     )
