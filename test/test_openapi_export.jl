@@ -849,7 +849,9 @@ end
         po = PSY.to_openapi(reservoir, refs, val)
         @test po.initial_level == 500.0
         @test po.level_targets == 600.0
-        @test po.inflow == 10.0
+        # Flows: m^3/h in PSY, m^3/s in the document.
+        @test po.inflow ≈ 10.0 / 3600
+        @test po.spillage_limits.max ≈ 100.0 / 3600
         @test po.upstream_turbines == [2]
         @test po.level_data_type.value == "USABLE_VOLUME"
         @test po.operation_cost.value.level_shortage_cost == 1.0

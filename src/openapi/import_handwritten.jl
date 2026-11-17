@@ -914,7 +914,10 @@ end
 # ── HydroReservoir ──────────────────────────────────────────────────────────────
 # Volumetric/energy fields (`inflow`, `outflow`, `storage_level_limits`) have no
 # `display_units_arg`/`get_value` machinery on the PSY side and pass through in whatever
-# unit `level_data_type` declares — identical in both unit-system methods.
+# unit `level_data_type` declares — identical in both unit-system methods — except that the
+# flows (`inflow`, `outflow`, `spillage_limits`) are per second in the document and per hour
+# in PSY (m^3/h), so they convert by `_reservoir_flow_factor`. An `ENERGY` reservoir's flows
+# are MW on both sides.
 # `initial_level`/`level_targets` are the one real conversion: absolute on that same basis
 # in the document, fraction-of-`storage_level_limits.max` in PSY — semantic, not a unit
 # conversion, so also identical in both methods.
@@ -930,8 +933,20 @@ end
 # `defer_ref!` (see [`OpenAPIRefs`](@ref)), which runs once every component in the document
 # has converted and registered.
 
+"""
+Document reservoir flow (per second: m^3/s, or m/s for a head) to PSY's (per hour), by
+`level_data_type`; 1 for an `ENERGY` reservoir, whose flows are MW on both sides.
+"""
+function _reservoir_flow_factor(level_data_type::AbstractString)
+    if level_data_type == "ENERGY"
+        return 1.0
+    end
+    return 3600.0
+end
+
 function from_openapi(po::PO.HydroReservoir, refs::OpenAPIRefs, ::ComponentBaseUnit)
     max_level = po.storage_level_limits.max
+    flow = _reservoir_flow_factor(po.level_data_type.value)
     reservoir = HydroReservoir(;
         name = po.name,
         available = po.available,
@@ -942,9 +957,9 @@ function from_openapi(po::PO.HydroReservoir, refs::OpenAPIRefs, ::ComponentBaseU
             po.name,
             "initial_level",
         ),
-        spillage_limits = _or_default(po.spillage_limits, nothing),
-        inflow = po.inflow,
-        outflow = po.outflow,
+        spillage_limits = _or_default(po.spillage_limits, nothing, *, flow),
+        inflow = po.inflow * flow,
+        outflow = po.outflow * flow,
         level_targets = _level_fraction(
             po.level_targets,
             max_level,

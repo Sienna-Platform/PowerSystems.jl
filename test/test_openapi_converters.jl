@@ -852,7 +852,10 @@ end
         # Absolute -> fraction-of-max, identical in both unit systems (semantic, not unit).
         @test get_initial_level(reservoir) == 0.5
         @test get_level_targets(reservoir) == 0.6
-        @test get_inflow(reservoir) == 10.0
+        # Flows: m^3/s in the document, m^3/h in PSY.
+        @test get_inflow(reservoir) == 36000.0
+        @test get_outflow(reservoir) == 28800.0
+        @test get_spillage_limits(reservoir) == (min = 0.0, max = 360000.0)
         # `upstream_turbines` is a `defer_ref!` closure until `resolve_deferred_refs!` runs
         # (see OpenAPIRefs) — the reservoir converts before its turbines can be relied on to
         # have registered, so it must not resolve eagerly.

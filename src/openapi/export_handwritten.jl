@@ -1201,17 +1201,23 @@ function _hydro_unit_ids(refs::OpenAPIRefs, units::AbstractVector)
     return Int[component_id(refs, u) for u in units]
 end
 
+# Reservoir flows are per hour in PSY and per second in the document (the inverse of import's
+# `_reservoir_flow_factor`).
+_per_second(::Nothing, ::Real) = nothing
+_per_second(limits::NamedTuple, flow::Real) = map(x -> x / flow, limits)
+
 function to_openapi(res::HydroReservoir, refs::OpenAPIRefs, ::ComponentBaseUnit)
     limits = get_storage_level_limits(res)
+    flow = _reservoir_flow_factor(string(get_level_data_type(res)))
     return PO.HydroReservoir(;
         id = component_id(refs, res),
         name = get_name(res),
         available = get_available(res),
         storage_level_limits = _minmax_po(limits),
         initial_level = _level_absolute(get_initial_level(res), limits.max),
-        spillage_limits = _minmax_po_optional(get_spillage_limits(res)),
-        inflow = get_inflow(res),
-        outflow = get_outflow(res),
+        spillage_limits = _minmax_po_optional(_per_second(get_spillage_limits(res), flow)),
+        inflow = get_inflow(res) / flow,
+        outflow = get_outflow(res) / flow,
         level_targets = _level_absolute(get_level_targets(res), limits.max),
         intake_elevation = get_intake_elevation(res),
         head_to_volume_factor = IC.FunctionData(
