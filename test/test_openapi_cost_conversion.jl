@@ -129,8 +129,10 @@ end
     @test get_fuel_cost(fc) == 3.5
     @test get_vom_cost(fc) == LinearCurve(0.0)
 
-    # PSY records no fuel unit: a document in another unit is refused, not reinterpreted.
-    @test_throws ArgumentError PSY.convert_cost(
+    @test get_fuel_units(fc) == PSY.MMBtu
+
+    # Every FuelUnit the schema allows round-trips.
+    fc_gj = PSY.convert_cost(
         PSY.PC.FuelCurve(;
             fuel_units = PSY.PC.FuelUnit("GJ"),
             power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
@@ -138,6 +140,14 @@ end
             fuel_cost = 3.5,
             vom_cost = _po_linear_io(0.0, 0.0),
         ),
+    )
+    @test get_fuel_units(fc_gj) == u"GJ"
+    @test PSY.convert_cost_to_openapi(fc_gj).fuel_units.value == "GJ"
+    @test PSY.convert_cost_to_openapi(fc).fuel_units.value == "MMBTU"
+
+    # A unit IS accepts but the schema's enum can't express is refused on export.
+    @test_throws ArgumentError PSY.convert_cost_to_openapi(
+        FuelCurve(; value_curve = LinearCurve(1.0), fuel_units = u"L", fuel_cost = 3.5),
     )
 end
 
@@ -566,12 +576,7 @@ end
     end
 end
 
-@testset "to_openapi refuses a cost referencing a series the document omits" begin
-    # A cost may reference a series owned by a *different* component, and a component with
-    # no OpenAPI converter is omitted from the document along with its association rows.
-    # The document would then carry a bare association id with no declared identity beside
-    # it, and importing that against another sidecar binds the cost to whichever series
-    # holds that id there — silently, since the identity cross-check has nothing to match.
+@testset "to_openapi describes a cost's series owned by a dynamic injection" begin
     sys = System(100.0)
     bus = ACBus(; input_basis = u"CU",
         number = 1, name = "b", available = true, bustype = ACBusTypes.REF,
@@ -599,10 +604,10 @@ end
     )
     add_component!(sys, src)
 
-    # No dynamic type has a converter yet, so this owner cannot be described.
+    # A dynamic injection is described by the document, so the series it owns is too.
     dyn = PeriodicVariableSource(; name = "S", R_th = 0.0, X_th = 1.0)
     add_component!(sys, dyn, src)
-    @test !PowerSystems.is_document_exportable(dyn)
+    @test PowerSystems.is_document_exportable(dyn)
 
     series = SingleTimeSeries(;
         name = "fuel_price",
@@ -621,8 +626,9 @@ end
     )
 
     dir = mktempdir()
-    @test_throws IS.DataFormatError to_openapi(
-        sys; time_series_storage_path = joinpath(dir, "sidecar.h5"),
+    doc = to_openapi(sys; time_series_storage_path = joinpath(dir, "sidecar.h5"))
+    @test any(
+        row.value.owner_id == IS.get_id(dyn) for row in doc.time_series_associations
     )
 end
 
@@ -673,11 +679,26 @@ end
     @test PSY.convert_cost_to_openapi(blended).second_fuel_share == 0.3
 end
 
+@testset "convert_cost: DualFuelCurve fuel units" begin
+    _, blended, _ = _dual_fuel_conversion_curves()
+    in_gj = DualFuelCurve(;
+        first_fuel_curve = get_first_fuel_curve(blended),
+        second_fuel_curve = get_second_fuel_curve(blended),
+        fuel_units = u"GJ", first_fuel_cost = 3.0, second_fuel_cost = 5.0,
+        second_fuel_share = 0.3)
+    po = PSY.convert_cost_to_openapi(in_gj)
+    @test po.fuel_units.value == "GJ"
+    @test get_fuel_units(PSY.convert_cost(po)) == u"GJ"
+    @test PSY.convert_cost(po) == in_gj
+    in_liters = DualFuelCurve(;
+        first_fuel_curve = get_first_fuel_curve(blended),
+        second_fuel_curve = get_second_fuel_curve(blended),
+        fuel_units = u"L", first_fuel_cost = 3.0, second_fuel_cost = 5.0,
+        second_fuel_share = 0.3)
+    @test_throws ArgumentError PSY.convert_cost_to_openapi(in_liters)
+end
+
 @testset "convert_cost: DualFuelCurve refuses malformed documents" begin
-    @test_throws ArgumentError PSY.convert_cost(
-        _po_dual_fuel(; first_fuel_cost = 1.0, second_fuel_cost = 2.0,
-            fuel_units = PSY.PC.FuelUnit("GJ")),
-    )
     @test_throws ErrorException PSY.convert_cost(
         _po_dual_fuel(; first_fuel_cost = 1.0, second_fuel_cost = 2.0,
             second_fuel_cost_time_series = 7),

@@ -400,7 +400,7 @@ end
     @test occursin("p.u. on the parent device's base power", machine_out)
 
     dyn = DynamicGenerator(
-        "dyn", 1.0, BaseMachine(nothing), FiveMassShaft(nothing),
+        "dyn", 60.0, BaseMachine(nothing), FiveMassShaft(nothing),
         AVRFixed(nothing), TGFixed(nothing), PSSFixed(nothing),
     )
     dyn_out = sprint(show_component, dyn)

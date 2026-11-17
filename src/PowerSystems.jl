@@ -196,8 +196,8 @@ export SimplifiedSingleCageInductionMachine
 export ActiveConstantPowerLoad
 export DynamicExponentialLoad
 
-#AVR Exports
-export AVR
+#ExcitationSystemDynamics Exports
+export ExcitationSystemDynamics
 export AVRFixed
 export AVRSimple
 export AVRTypeI
@@ -219,8 +219,8 @@ export SCRX
 export SEXS
 export ST8C
 
-#Machine Exports
-export Machine
+#SynchronousMachineDynamics Exports
+export SynchronousMachineDynamics
 export BaseMachine
 export RoundRotorMachine
 export SalientPoleMachine
@@ -237,8 +237,8 @@ export SimpleAFMachine
 export FullMachine
 export SimpleFullMachine
 
-#PSS Exports
-export PSS
+#PowerSystemStabilizerDynamics Exports
+export PowerSystemStabilizerDynamics
 export PSSFixed
 export PSSSimple
 export IEEEST
@@ -254,7 +254,7 @@ export SingleMass
 export FiveMassShaft
 
 #TG Exports
-export TurbineGov
+export TurbineGovernorDynamics
 export TGFixed
 export TGTypeI
 export TGTypeII
@@ -286,14 +286,15 @@ export LCLFilter
 export LCFilter
 export RLFilter
 
-# FrequencyEstimator Exports
-export FrequencyEstimator
+# ReferenceFrameRotation Exports
+export ReferenceFrameRotation
 export KauraPLL
 export ReducedOrderPLL
 export FixedFrequency
 
 # Outer Control Exports
-export OuterControl
+export ActivePowerControl
+export ReactivePowerControl
 export VirtualInertia
 export ReactivePowerDroop
 export ActivePowerDroop
@@ -310,8 +311,8 @@ export VoltageModeControl
 export CurrentModeControl
 export RECurrentControlB
 
-# OutputCurrentLimiters Export
-export OutputCurrentLimiter
+# CurrentLimitation Export
+export CurrentLimitation
 export MagnitudeOutputCurrentLimiter
 export InstantaneousOutputCurrentLimiter
 export PriorityOutputCurrentLimiter
@@ -325,6 +326,7 @@ export Contingency
 
 # Outages
 export Outage
+export UnplannedOutage
 export GeometricDistributionForcedOutage
 export PlannedOutage
 export FixedForcedOutage
@@ -418,7 +420,6 @@ export VSCACControlModes
 export LCCControlMode
 export FACTSShuntControlType
 export SwitchedAdmittanceControlMode
-export SeriesCompensatorControlMode
 export DiscreteControlledBranchStatus
 export DiscreteControlledBranchType
 export PrimeMovers
@@ -426,6 +427,7 @@ export ThermalFuels
 export OperationalStates
 export CommitmentModes
 export StorageTech
+export HydroPumpTurbineStatus
 export StateTypes
 export ReservoirDataType
 export MotorLoadTechnology
@@ -633,16 +635,18 @@ export clear_ext!
 export convert_component!
 export set_area!
 export set_load_zone!
-export get_machine
+export get_synchronous_machine_dynamics
 export get_shaft
-export get_avr
-export get_prime_mover
-export get_pss
+export get_excitation_system_dynamics
+export get_turbine_governor_dynamics
+export get_power_system_stabilizer_dynamics
 export get_converter
-export get_outer_control
+export get_active_power_control
+export get_reactive_power_control
 export get_inner_control
 export get_dc_source
-export get_freq_estimator
+export get_reference_frame_rotation
+export get_current_limitation
 export get_filter
 export get_V_ref
 export get_P_ref
@@ -729,6 +733,7 @@ export get_available_groups
 export MinMax
 export GeneratorCostModels
 export TransformerControlObjective
+export TransformerRegulationOrientation
 export TwoWindingTransformerShuntLocation
 export ThreeWindingTransformerShuntLocation
 export get_limits
@@ -759,11 +764,13 @@ import Unitful
 import InfrastructureCoreOpenAPIModels
 import PowerCoreOpenAPIModels
 import PowerOperationsOpenAPIModels
+import PowerDynamicsOpenAPIModels
 import InfrastructureTimeSeriesOpenAPIModels
 import OpenAPI
 const IC = InfrastructureCoreOpenAPIModels
 const PC = PowerCoreOpenAPIModels
 const PO = PowerOperationsOpenAPIModels
+const PD = PowerDynamicsOpenAPIModels
 const PTS = InfrastructureTimeSeriesOpenAPIModels
 using Unitful: @u_str, @unit, Quantity, Units, uconvert, ustrip
 
@@ -1054,7 +1061,6 @@ include("models/storage.jl")
 include("models/loads.jl")
 include("models/dynamic_generator_components.jl")
 include("models/dynamic_inverter_components.jl")
-include("models/OuterControl.jl")
 
 # Costs
 include("models/cost_functions/operational_cost.jl")
@@ -1085,7 +1091,7 @@ include("models/generated/includes.jl")
 # references (Arc), fields with no device-level base_power (Line,
 # TwoTerminalGenericHVDCLine), unclassifiable field kinds (TwoWindingTransformer.magnetizing_shunt,
 # EnergyReservoirStorage.efficiency, HydroReservoir's Vector{HydroUnit}/Vector{Device}
-# fields), a PSY/PO field-name mismatch (TransformerCircuit.α vs po.alpha), semantic
+# fields), semantic
 # (not unit) conversions (HydroReservoir), and the parametric reserves (OnlineReserve/
 # OfflineReserve/GroupReserve). Included after generated/includes.jl so those struct
 # types exist.
@@ -1129,6 +1135,7 @@ include("emissions_data.jl")
 
 # Definitions of PowerSystem
 include("base.jl")
+include("time_series_units.jl")
 
 include("plant_attribute.jl")
 
@@ -1140,6 +1147,7 @@ include("openapi/export_cost_conversion.jl")
 include("openapi/export_generated_types.jl")
 include("openapi/export_handwritten.jl")
 include("openapi/export_document.jl")
+include("openapi/dynamics.jl")
 include("openapi/file_io.jl")
 
 include("substation.jl")

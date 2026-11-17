@@ -14,6 +14,7 @@ This file is auto-generated. Do not edit.
         reactive_power_limits::Union{Nothing, MinMax}
         base_power::Float64
         active_power_losses::Float64
+        remote_regulated_bus::Union{Nothing, ACBus}
         services::Vector{Service}
         dynamic_injector::Union{Nothing, DynamicInjection}
         ext::Dict{String, Any}
@@ -31,6 +32,7 @@ A Synchronous Machine connected to the system to provide inertia or reactive pow
 - `reactive_power_limits::Union{Nothing, MinMax}`: Minimum and maximum reactive power limits. Set to `Nothing` if not applicable
 - `base_power::Float64`: Base power of the unit (MVA) for [per unitization](@ref per_unit), validation range: `(0.0001, nothing)`
 - `active_power_losses::Float64`: (default: `0.0`) Active Power Loss incurred by having the unit online., validation range: `(0, nothing)`
+- `remote_regulated_bus::Union{Nothing, ACBus}`: (default: `nothing`) Bus whose voltage this device regulates, to the `voltage_setpoint` of that bus. `nothing` regulates the bus of this device. The bus must not be the same as `bus`.
 - `services::Vector{Service}`: (default: `Device[]`) Services that this device contributes to
 - `dynamic_injector::Union{Nothing, DynamicInjection}`: (default: `nothing`) corresponding dynamic injection device
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
@@ -54,6 +56,8 @@ mutable struct SynchronousCondenser <: StaticInjection
     base_power::Float64
     "Active Power Loss incurred by having the unit online."
     active_power_losses::Float64
+    "Bus whose voltage this device regulates, to the `voltage_setpoint` of that bus. `nothing` regulates the bus of this device. The bus must not be the same as `bus`."
+    remote_regulated_bus::Union{Nothing, ACBus}
     "Services that this device contributes to"
     services::Vector{Service}
     "corresponding dynamic injection device"
@@ -64,12 +68,12 @@ mutable struct SynchronousCondenser <: StaticInjection
     internal::InfrastructureSystemsInternal
 end
 
-function SynchronousCondenser(name, available, bus, reactive_power, rating, reactive_power_limits, base_power, active_power_losses=0.0, services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), )
-    SynchronousCondenser(name, available, bus, reactive_power, rating, reactive_power_limits, base_power, active_power_losses, services, dynamic_injector, ext, InfrastructureSystemsInternal(), )
+function SynchronousCondenser(name, available, bus, reactive_power, rating, reactive_power_limits, base_power, active_power_losses=0.0, remote_regulated_bus=nothing, services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), )
+    SynchronousCondenser(name, available, bus, reactive_power, rating, reactive_power_limits, base_power, active_power_losses, remote_regulated_bus, services, dynamic_injector, ext, InfrastructureSystemsInternal(), )
 end
 
-function SynchronousCondenser(; name, available, bus, reactive_power, rating, reactive_power_limits, base_power, active_power_losses=0.0, services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Unitful.Units, )
-    value = SynchronousCondenser(name, available, bus, _placeholder(reactive_power), _placeholder(rating), _placeholder(reactive_power_limits), base_power, _placeholder(active_power_losses), services, dynamic_injector, ext, internal, )
+function SynchronousCondenser(; name, available, bus, reactive_power, rating, reactive_power_limits, base_power, active_power_losses=0.0, remote_regulated_bus=nothing, services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Unitful.Units, )
+    value = SynchronousCondenser(name, available, bus, _placeholder(reactive_power), _placeholder(rating), _placeholder(reactive_power_limits), base_power, _placeholder(active_power_losses), remote_regulated_bus, services, dynamic_injector, ext, internal, )
     set_reactive_power!(value, _tag(reactive_power, input_basis, Val(:mvar)))
     set_rating!(value, _tag(rating, input_basis, Val(:mva)))
     set_reactive_power_limits!(value, _tag(reactive_power_limits, input_basis, Val(:mvar)))
@@ -89,6 +93,7 @@ function SynchronousCondenser(::Nothing)
         reactive_power_limits=nothing,
         base_power=100.0,
         active_power_losses=0.0,
+        remote_regulated_bus=nothing,
         services=Device[],
         dynamic_injector=nothing,
         ext=Dict{String, Any}(),
@@ -136,6 +141,8 @@ get_active_power_losses(value::SynchronousCondenser) = _units_arg_required(get_a
 get_active_power_losses_unitful(value::SynchronousCondenser) = _units_arg_required(get_active_power_losses_unitful, value, :active_power_losses, Val(:mw))
 InfrastructureSystems.display_units_arg(::typeof(get_active_power_losses), ::Type{SynchronousCondenser}) = u"SU"
 InfrastructureSystems.display_units_arg(::typeof(get_active_power_losses_unitful), ::Type{SynchronousCondenser}) = u"SU"
+"""Get [`SynchronousCondenser`](@ref) `remote_regulated_bus`."""
+get_remote_regulated_bus(value::SynchronousCondenser) = value.remote_regulated_bus
 """Get [`SynchronousCondenser`](@ref) `services`."""
 get_services(value::SynchronousCondenser) = value.services
 """Get [`SynchronousCondenser`](@ref) `dynamic_injector`."""
@@ -162,6 +169,8 @@ set_reactive_power_limits!(value::SynchronousCondenser, val::NamedTuple{(:min, :
 """Set [`SynchronousCondenser`](@ref) `active_power_losses`."""
 set_active_power_losses!(value::SynchronousCondenser, val) = value.active_power_losses = set_value(value, Val(:active_power_losses), val, Val(:mw))
 set_active_power_losses!(value::SynchronousCondenser, val::_UntaggedNumber) = _units_tag_required(set_active_power_losses!, value, :active_power_losses, Val(:mw), val)
+"""Set [`SynchronousCondenser`](@ref) `remote_regulated_bus`."""
+set_remote_regulated_bus!(value::SynchronousCondenser, val) = value.remote_regulated_bus = val
 """Set [`SynchronousCondenser`](@ref) `services`."""
 set_services!(value::SynchronousCondenser, val) = value.services = val
 """Set [`SynchronousCondenser`](@ref) `ext`."""
@@ -178,6 +187,7 @@ function from_openapi(po::PO.SynchronousCondenser, refs::OpenAPIRefs, ::Componen
         reactive_power_limits = _or_default(po.reactive_power_limits, nothing),
         base_power = po.base_power,
         active_power_losses = _or_default(po.active_power_losses, 0.0),
+        remote_regulated_bus = resolve_ref(refs, po.remote_regulated_bus, ACBus),
         input_basis = u"CU",
     )
 end
@@ -192,6 +202,7 @@ function from_openapi(po::PO.SynchronousCondenser, refs::OpenAPIRefs, ::NaturalU
         reactive_power_limits = _or_default(po.reactive_power_limits, nothing, (/), po.base_power),
         base_power = po.base_power,
         active_power_losses = _or_default(po.active_power_losses, 0.0, (/), po.base_power),
+        remote_regulated_bus = resolve_ref(refs, po.remote_regulated_bus, ACBus),
         input_basis = u"CU",
     )
 end
@@ -211,6 +222,7 @@ function to_openapi(value::SynchronousCondenser, refs::OpenAPIRefs, ::ComponentB
         reactive_power_limits = _minmax_po_optional(get_reactive_power_limits(value, u"CU")),
         base_power = _get_base_power(value),
         active_power_losses = get_active_power_losses(value, u"CU"),
+        remote_regulated_bus = _component_id_optional(refs, get_remote_regulated_bus(value)),
         power_units = _power_units_string(CU),
     )
 end
@@ -226,6 +238,7 @@ function to_openapi(value::SynchronousCondenser, refs::OpenAPIRefs, ::NaturalUni
         reactive_power_limits = _minmax_po_scaled_optional(get_reactive_power_limits(value, u"CU"), _get_base_power(value)),
         base_power = _get_base_power(value),
         active_power_losses = get_active_power_losses(value, u"CU") * _get_base_power(value),
+        remote_regulated_bus = _component_id_optional(refs, get_remote_regulated_bus(value)),
         power_units = _power_units_string(NU),
     )
 end

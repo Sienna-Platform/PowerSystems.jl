@@ -5,7 +5,7 @@ This file is auto-generated. Do not edit.
 #! format: off
 
 """
-    mutable struct IEEEST <: PSS
+    mutable struct IEEEST <: PowerSystemStabilizerDynamics
         input_code::Int
         remote_bus_control::Int
         A1::Float64
@@ -47,7 +47,7 @@ IEEE Stabilizing Model PSS.
 - `T3::Float64`: Time constant, validation range: `(0, 10)`
 - `T4::Float64`: Time constant, validation range: `(0, 10)`
 - `T5::Float64`: Time constant, validation range: `(0, 10)`
-- `T6::Float64`: Time constant, validation range: `(eps(), 2.0)`
+- `T6::Float64`: Time constant, validation range: `(0.0001, 2.0)`
 - `Ks::Float64`: Proportional gain, validation range: `(0, nothing)`
 - `Ls_lim::Tuple{Float64, Float64}`: PSS output limits for regulator output `(Ls_min, Ls_max)`
 - `Vcu::Float64`: Cutoff limiter upper bound, validation range: `(0, 1.25)`
@@ -65,7 +65,7 @@ IEEE Stabilizing Model PSS.
 - `states_types::Vector{StateTypes.Value}`: (**Do not modify.**) IEEEST has 7 [differential](@ref states_list) [states](@ref S)
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
 """
-mutable struct IEEEST <: PSS
+mutable struct IEEEST <: PowerSystemStabilizerDynamics
     "Code input for stabilizer"
     input_code::Int
     "ACBus identification [`number`](@ref ACBus) for control. `0` identifies the bus connected to this component"
@@ -241,3 +241,52 @@ set_Vcl!(value::IEEEST, val) = value.Vcl = val
 set_ext!(value::IEEEST, val) = value.ext = val
 """Set [`IEEEST`](@ref) `states_types`."""
 set_states_types!(value::IEEEST, val) = value.states_types = val
+
+
+
+function from_openapi(po::PD.IEEEST, refs::OpenAPIRefs)
+    return IEEEST(;
+        input_code = _wire_required(po.input_code, "IEEEST", "input_code"),
+        remote_bus_control = _wire_required(po.remote_bus_control, "IEEEST", "remote_bus_control"),
+        A1 = _wire_required(po.a1, "IEEEST", "A1"),
+        A2 = _wire_required(po.a2, "IEEEST", "A2"),
+        A3 = _wire_required(po.a3, "IEEEST", "A3"),
+        A4 = _wire_required(po.a4, "IEEEST", "A4"),
+        A5 = _wire_required(po.a5, "IEEEST", "A5"),
+        A6 = _wire_required(po.a6, "IEEEST", "A6"),
+        T1 = _wire_required(po.t1, "IEEEST", "T1"),
+        T2 = _wire_required(po.t2, "IEEEST", "T2"),
+        T3 = _wire_required(po.t3, "IEEEST", "T3"),
+        T4 = _wire_required(po.t4, "IEEEST", "T4"),
+        T5 = _wire_required(po.t5, "IEEEST", "T5"),
+        T6 = _wire_required(po.t6, "IEEEST", "T6"),
+        Ks = _wire_required(po.ks, "IEEEST", "Ks"),
+        Ls_lim = _wire_to_psy(Tuple{Float64, Float64}, po.ls_lim),
+        Vcu = _wire_required(po.vcu, "IEEEST", "Vcu"),
+        Vcl = _wire_required(po.vcl, "IEEEST", "Vcl"),
+    )
+end
+
+function to_openapi(value::IEEEST, refs::OpenAPIRefs)
+    return PD.IEEEST(;
+        id = component_id(refs, value),
+        input_code = get_input_code(value),
+        remote_bus_control = get_remote_bus_control(value),
+        a1 = get_A1(value),
+        a2 = get_A2(value),
+        a3 = get_A3(value),
+        a4 = get_A4(value),
+        a5 = get_A5(value),
+        a6 = get_A6(value),
+        t1 = get_T1(value),
+        t2 = get_T2(value),
+        t3 = get_T3(value),
+        t4 = get_T4(value),
+        t5 = get_T5(value),
+        t6 = get_T6(value),
+        ks = get_Ks(value),
+        ls_lim = _psy_to_wire(get_Ls_lim(value)),
+        vcu = get_Vcu(value),
+        vcl = get_Vcl(value),
+    )
+end

@@ -22,6 +22,7 @@ This file is auto-generated. Do not edit.
         commitment_mode::CommitmentModes.Value
         prime_mover_type::PrimeMovers.Value
         fuel::ThermalFuels.Value
+        remote_regulated_bus::Union{Nothing, ACBus}
         services::Vector{Service}
         time_at_status::Float64
         dynamic_injector::Union{Nothing, DynamicInjection}
@@ -51,6 +52,7 @@ This is a standard representation with options to include a minimum up time, min
 - `commitment_mode::CommitmentModes.Value`: (default: `CommitmentModes.COMMITTED`) Commitment mode of the unit. Options are listed [here](@ref commit_list)
 - `prime_mover_type::PrimeMovers.Value`: (default: `PrimeMovers.OT`) Prime mover technology according to EIA 923. Options are listed [here](@ref pm_list)
 - `fuel::ThermalFuels.Value`: (default: `ThermalFuels.OTHER`) Prime mover fuel according to EIA 923. Options are listed [here](@ref tf_list)
+- `remote_regulated_bus::Union{Nothing, ACBus}`: (default: `nothing`) Bus whose voltage this device regulates, to the `voltage_setpoint` of that bus. `nothing` regulates the bus of this device. The bus must not be the same as `bus`.
 - `services::Vector{Service}`: (default: `Device[]`) Services that this device contributes to
 - `time_at_status::Float64`: (default: `INFINITE_TIME`) Time (e.g., `Minutes(360)`) the generator has been in its current `status`
 - `dynamic_injector::Union{Nothing, DynamicInjection}`: (default: `nothing`) corresponding dynamic injection device
@@ -92,6 +94,8 @@ mutable struct ThermalStandard <: ThermalGen
     prime_mover_type::PrimeMovers.Value
     "Prime mover fuel according to EIA 923. Options are listed [here](@ref tf_list)"
     fuel::ThermalFuels.Value
+    "Bus whose voltage this device regulates, to the `voltage_setpoint` of that bus. `nothing` regulates the bus of this device. The bus must not be the same as `bus`."
+    remote_regulated_bus::Union{Nothing, ACBus}
     "Services that this device contributes to"
     services::Vector{Service}
     "Time (e.g., `Minutes(360)`) the generator has been in its current `status`"
@@ -106,12 +110,12 @@ mutable struct ThermalStandard <: ThermalGen
     internal::InfrastructureSystemsInternal
 end
 
-function ThermalStandard(name, available, status, bus, active_power, reactive_power, rating, active_power_limits, reactive_power_limits, ramp_limits, operation_cost, base_power, time_limits=nothing, commitment_mode=CommitmentModes.COMMITTED, prime_mover_type=PrimeMovers.OT, fuel=ThermalFuels.OTHER, services=Device[], time_at_status=INFINITE_TIME, dynamic_injector=nothing, switching_times=nothing, ext=Dict{String, Any}(), )
-    ThermalStandard(name, available, status, bus, active_power, reactive_power, rating, active_power_limits, reactive_power_limits, ramp_limits, operation_cost, base_power, time_limits, commitment_mode, prime_mover_type, fuel, services, time_at_status, dynamic_injector, switching_times, ext, InfrastructureSystemsInternal(), )
+function ThermalStandard(name, available, status, bus, active_power, reactive_power, rating, active_power_limits, reactive_power_limits, ramp_limits, operation_cost, base_power, time_limits=nothing, commitment_mode=CommitmentModes.COMMITTED, prime_mover_type=PrimeMovers.OT, fuel=ThermalFuels.OTHER, remote_regulated_bus=nothing, services=Device[], time_at_status=INFINITE_TIME, dynamic_injector=nothing, switching_times=nothing, ext=Dict{String, Any}(), )
+    ThermalStandard(name, available, status, bus, active_power, reactive_power, rating, active_power_limits, reactive_power_limits, ramp_limits, operation_cost, base_power, time_limits, commitment_mode, prime_mover_type, fuel, remote_regulated_bus, services, time_at_status, dynamic_injector, switching_times, ext, InfrastructureSystemsInternal(), )
 end
 
-function ThermalStandard(; name, available, status, bus, active_power, reactive_power, rating, active_power_limits, reactive_power_limits, ramp_limits, operation_cost, base_power, time_limits=nothing, commitment_mode=CommitmentModes.COMMITTED, prime_mover_type=PrimeMovers.OT, fuel=ThermalFuels.OTHER, services=Device[], time_at_status=INFINITE_TIME, dynamic_injector=nothing, switching_times=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Unitful.Units, )
-    value = ThermalStandard(name, available, status, bus, _placeholder(active_power), _placeholder(reactive_power), _placeholder(rating), _placeholder(active_power_limits), _placeholder(reactive_power_limits), _placeholder(ramp_limits), operation_cost, base_power, time_limits, commitment_mode, prime_mover_type, fuel, services, time_at_status, dynamic_injector, switching_times, ext, internal, )
+function ThermalStandard(; name, available, status, bus, active_power, reactive_power, rating, active_power_limits, reactive_power_limits, ramp_limits, operation_cost, base_power, time_limits=nothing, commitment_mode=CommitmentModes.COMMITTED, prime_mover_type=PrimeMovers.OT, fuel=ThermalFuels.OTHER, remote_regulated_bus=nothing, services=Device[], time_at_status=INFINITE_TIME, dynamic_injector=nothing, switching_times=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Unitful.Units, )
+    value = ThermalStandard(name, available, status, bus, _placeholder(active_power), _placeholder(reactive_power), _placeholder(rating), _placeholder(active_power_limits), _placeholder(reactive_power_limits), _placeholder(ramp_limits), operation_cost, base_power, time_limits, commitment_mode, prime_mover_type, fuel, remote_regulated_bus, services, time_at_status, dynamic_injector, switching_times, ext, internal, )
     set_active_power!(value, _tag(active_power, input_basis, Val(:mw)))
     set_reactive_power!(value, _tag(reactive_power, input_basis, Val(:mvar)))
     set_rating!(value, _tag(rating, input_basis, Val(:mva)))
@@ -141,6 +145,7 @@ function ThermalStandard(::Nothing)
         commitment_mode=CommitmentModes.UNCOMMITTED,
         prime_mover_type=PrimeMovers.OT,
         fuel=ThermalFuels.OTHER,
+        remote_regulated_bus=nothing,
         services=Device[],
         time_at_status=INFINITE_TIME,
         dynamic_injector=nothing,
@@ -218,6 +223,8 @@ get_commitment_mode(value::ThermalStandard) = value.commitment_mode
 get_prime_mover_type(value::ThermalStandard) = value.prime_mover_type
 """Get [`ThermalStandard`](@ref) `fuel`."""
 get_fuel(value::ThermalStandard) = value.fuel
+"""Get [`ThermalStandard`](@ref) `remote_regulated_bus`."""
+get_remote_regulated_bus(value::ThermalStandard) = value.remote_regulated_bus
 """Get [`ThermalStandard`](@ref) `services`."""
 get_services(value::ThermalStandard) = value.services
 """Get [`ThermalStandard`](@ref) `time_at_status`."""
@@ -268,6 +275,8 @@ set_commitment_mode!(value::ThermalStandard, val) = value.commitment_mode = val
 set_prime_mover_type!(value::ThermalStandard, val) = value.prime_mover_type = val
 """Set [`ThermalStandard`](@ref) `fuel`."""
 set_fuel!(value::ThermalStandard, val) = value.fuel = val
+"""Set [`ThermalStandard`](@ref) `remote_regulated_bus`."""
+set_remote_regulated_bus!(value::ThermalStandard, val) = value.remote_regulated_bus = val
 """Set [`ThermalStandard`](@ref) `services`."""
 set_services!(value::ThermalStandard, val) = value.services = val
 """Set [`ThermalStandard`](@ref) `time_at_status`."""
@@ -296,6 +305,7 @@ function from_openapi(po::PO.ThermalStandard, refs::OpenAPIRefs, ::ComponentBase
         commitment_mode = _or_default(po.commitment_mode, CommitmentModes.COMMITTED),
         prime_mover_type = _or_default(po.prime_mover_type, PrimeMovers.OT),
         fuel = _or_default(po.fuel, ThermalFuels.OTHER),
+        remote_regulated_bus = resolve_ref(refs, po.remote_regulated_bus, ACBus),
         time_at_status = _or_default(po.time_at_status, INFINITE_TIME),
         switching_times = _or_default(po.switching_times, nothing),
         input_basis = u"CU",
@@ -320,6 +330,7 @@ function from_openapi(po::PO.ThermalStandard, refs::OpenAPIRefs, ::NaturalUnit)
         commitment_mode = _or_default(po.commitment_mode, CommitmentModes.COMMITTED),
         prime_mover_type = _or_default(po.prime_mover_type, PrimeMovers.OT),
         fuel = _or_default(po.fuel, ThermalFuels.OTHER),
+        remote_regulated_bus = resolve_ref(refs, po.remote_regulated_bus, ACBus),
         time_at_status = _or_default(po.time_at_status, INFINITE_TIME),
         switching_times = _or_default(po.switching_times, nothing),
         input_basis = u"CU",
@@ -349,6 +360,7 @@ function to_openapi(value::ThermalStandard, refs::OpenAPIRefs, ::ComponentBaseUn
         commitment_mode = PO.CommitmentModes(string(get_commitment_mode(value))),
         prime_mover_type = PO.PrimeMovers(string(get_prime_mover_type(value))),
         fuel = PO.ThermalFuels(string(get_fuel(value))),
+        remote_regulated_bus = _component_id_optional(refs, get_remote_regulated_bus(value)),
         time_at_status = get_time_at_status(value),
         switching_times = _updown_po_optional(get_switching_times(value)),
         power_units = _power_units_string(CU),
@@ -374,6 +386,7 @@ function to_openapi(value::ThermalStandard, refs::OpenAPIRefs, ::NaturalUnit)
         commitment_mode = PO.CommitmentModes(string(get_commitment_mode(value))),
         prime_mover_type = PO.PrimeMovers(string(get_prime_mover_type(value))),
         fuel = PO.ThermalFuels(string(get_fuel(value))),
+        remote_regulated_bus = _component_id_optional(refs, get_remote_regulated_bus(value)),
         time_at_status = get_time_at_status(value),
         switching_times = _updown_po_optional(get_switching_times(value)),
         power_units = _power_units_string(NU),

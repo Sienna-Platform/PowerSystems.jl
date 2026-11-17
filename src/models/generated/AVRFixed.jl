@@ -5,7 +5,7 @@ This file is auto-generated. Do not edit.
 #! format: off
 
 """
-    mutable struct AVRFixed <: AVR
+    mutable struct AVRFixed <: ExcitationSystemDynamics
         Vf::Float64
         V_ref::Float64
         ext::Dict{String, Any}
@@ -26,7 +26,7 @@ Parameters of a AVR that returns a fixed voltage to the rotor winding
 - `states_types::Vector{StateTypes.Value}`: (**Do not modify.**) Fixed AVR has no [states](@ref S)
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
 """
-mutable struct AVRFixed <: AVR
+mutable struct AVRFixed <: ExcitationSystemDynamics
     "Fixed voltage field applied to the rotor winding in pu ([`DEVICE_BASE`](@ref per_unit))"
     Vf::Float64
     "Reference Voltage Set-point (pu)"
@@ -83,3 +83,20 @@ set_V_ref!(value::AVRFixed, val) = value.V_ref = val
 set_ext!(value::AVRFixed, val) = value.ext = val
 """Set [`AVRFixed`](@ref) `states_types`."""
 set_states_types!(value::AVRFixed, val) = value.states_types = val
+
+
+
+function from_openapi(po::PD.AVRFixed, refs::OpenAPIRefs)
+    return AVRFixed(;
+        Vf = _wire_required(po.vf, "AVRFixed", "Vf"),
+        V_ref = _or_default(po.v_ref, 1.0),
+    )
+end
+
+function to_openapi(value::AVRFixed, refs::OpenAPIRefs)
+    return PD.AVRFixed(;
+        id = component_id(refs, value),
+        vf = get_Vf(value),
+        v_ref = get_V_ref(value),
+    )
+end

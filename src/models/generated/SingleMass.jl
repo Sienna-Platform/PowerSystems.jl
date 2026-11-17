@@ -79,3 +79,20 @@ set_H!(value::SingleMass, val) = value.H = val
 set_D!(value::SingleMass, val) = value.D = val
 """Set [`SingleMass`](@ref) `ext`."""
 set_ext!(value::SingleMass, val) = value.ext = val
+
+
+
+function from_openapi(po::PD.SingleMass, refs::OpenAPIRefs)
+    return SingleMass(;
+        H = _wire_required(po.h, "SingleMass", "H"),
+        D = _wire_required(po.d, "SingleMass", "D"),
+    )
+end
+
+function to_openapi(value::SingleMass, refs::OpenAPIRefs)
+    return PD.SingleMass(;
+        id = component_id(refs, value),
+        h = get_H(value),
+        d = get_D(value),
+    )
+end

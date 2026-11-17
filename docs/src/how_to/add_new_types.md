@@ -128,8 +128,8 @@ but the struct is parameterized on the actual concrete type.
 *Solution*: Use the fact that the concrete type is encoded into the serialized
 type of the struct and extract it in a customized `deserialze` method.
 
-*Example*: `deserialize` method for `OuterControl` in
-`src/models/OuterControl.jl`.
+*Example*: `IS.deserialize_struct` method for `RoundRotorQuadratic` in
+`src/models/RoundRotorQuadratic.jl`.
 
 ### Adding `PowerSystems.jl` as a dependency in a modeling package
 

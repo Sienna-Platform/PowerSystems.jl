@@ -5,7 +5,7 @@ This file is auto-generated. Do not edit.
 #! format: off
 
 """
-    mutable struct ESAC6A <: AVR
+    mutable struct ESAC6A <: ExcitationSystemDynamics
         Tr::Float64
         Ka::Float64
         Ta::Float64
@@ -46,7 +46,7 @@ Parameters of IEEE Std 421.5 Type AC6A Excitacion System. ESAC6A in PSSE and PSL
 - `Tc::Float64`: Regulator numerator (lead) time constant in s, validation range: `(0, 20)`
 - `Va_lim::MinMax`: Limits for regulator output `(Va_min, Va_max)`
 - `Vr_lim::MinMax`: Limits for exciter field voltage `(Vr_min, Vr_max)`
-- `Te::Float64`: Exciter field time constant, validation range: `(eps(), 2)`
+- `Te::Float64`: Exciter field time constant, validation range: `(0.0001, 2)`
 - `VFE_lim::Float64`: Exciter field current limiter reference, validation range: `(-5, 20)`
 - `Kh::Float64`: Exciter field current regulator feedback gain, validation range: `(0, 100)`
 - `VH_max::Float64`: Exciter field current limiter maximum output, validation range: `(0, 100)`
@@ -58,7 +58,7 @@ Parameters of IEEE Std 421.5 Type AC6A Excitacion System. ESAC6A in PSSE and PSL
 - `E_sat::Tuple{Float64, Float64}`: Exciter output voltage for saturation factor: (E1, E2)
 - `Se::Tuple{Float64, Float64}`: Exciter saturation factor at exciter output voltage: (Se(E1), Se(E2))
 - `V_ref::Float64`: (default: `1.0`) Reference Voltage Set-point (pu), validation range: `(0, nothing)`
-- `saturation_coeffs::Tuple{Float64, Float64}`: (default: `PowerSystems.get_avr_saturation(E_sat, Se)`) (**Do not modify.**) Coefficients (A,B) of the function: Se(V) = B(V - A)^2/V
+- `saturation_coeffs::Tuple{Float64, Float64}`: (**Do not modify.**) Coefficients (A,B) of the function: Se(V) = B(V - A)^2/V
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
 - `states::Vector{Symbol}`: (**Do not modify.**) The [states](@ref S) are:
 	Vm: Sensed terminal voltage,
@@ -70,7 +70,7 @@ Parameters of IEEE Std 421.5 Type AC6A Excitacion System. ESAC6A in PSSE and PSL
 - `states_types::Vector{StateTypes.Value}`: (**Do not modify.**) ESAC6A has 5 states
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
 """
-mutable struct ESAC6A <: AVR
+mutable struct ESAC6A <: ExcitationSystemDynamics
     "Regulator input filter time constant in s"
     Tr::Float64
     "Regulator output gain"
@@ -130,8 +130,8 @@ mutable struct ESAC6A <: AVR
     internal::InfrastructureSystemsInternal
 end
 
-function ESAC6A(Tr, Ka, Ta, Tk, Tb, Tc, Va_lim, Vr_lim, Te, VFE_lim, Kh, VH_max, Th, Tj, Kc, Kd, Ke, E_sat, Se, V_ref=1.0, saturation_coeffs=PowerSystems.get_avr_saturation(E_sat, Se), ext=Dict{String, Any}(), )
-    ESAC6A(Tr, Ka, Ta, Tk, Tb, Tc, Va_lim, Vr_lim, Te, VFE_lim, Kh, VH_max, Th, Tj, Kc, Kd, Ke, E_sat, Se, V_ref, saturation_coeffs, ext, [:Vm, :Vr1, :Vr2, :Ve, :Vr3], 5, [StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Differential, StateTypes.Hybrid], InfrastructureSystemsInternal(), )
+function ESAC6A(Tr, Ka, Ta, Tk, Tb, Tc, Va_lim, Vr_lim, Te, VFE_lim, Kh, VH_max, Th, Tj, Kc, Kd, Ke, E_sat, Se, V_ref=1.0, ext=Dict{String, Any}(), )
+    ESAC6A(Tr, Ka, Ta, Tk, Tb, Tc, Va_lim, Vr_lim, Te, VFE_lim, Kh, VH_max, Th, Tj, Kc, Kd, Ke, E_sat, Se, V_ref, ext, PowerSystems.get_avr_saturation(E_sat, Se), [:Vm, :Vr1, :Vr2, :Ve, :Vr3], 5, [StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Differential, StateTypes.Hybrid], InfrastructureSystemsInternal(), )
 end
 
 function ESAC6A(; Tr, Ka, Ta, Tk, Tb, Tc, Va_lim, Vr_lim, Te, VFE_lim, Kh, VH_max, Th, Tj, Kc, Kd, Ke, E_sat, Se, V_ref=1.0, saturation_coeffs=PowerSystems.get_avr_saturation(E_sat, Se), ext=Dict{String, Any}(), states=[:Vm, :Vr1, :Vr2, :Ve, :Vr3], n_states=5, states_types=[StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Differential, StateTypes.Hybrid], internal=InfrastructureSystemsInternal(), )
@@ -161,7 +161,6 @@ function ESAC6A(::Nothing)
         E_sat=(0.0, 0.0),
         Se=(0.0, 0.0),
         V_ref=0,
-        saturation_coeffs=(0.0, 0.0),
         ext=Dict{String, Any}(),
     )
 end
@@ -265,3 +264,56 @@ set_saturation_coeffs!(value::ESAC6A, val) = value.saturation_coeffs = val
 set_ext!(value::ESAC6A, val) = value.ext = val
 """Set [`ESAC6A`](@ref) `states_types`."""
 set_states_types!(value::ESAC6A, val) = value.states_types = val
+
+
+
+function from_openapi(po::PD.ESAC6A, refs::OpenAPIRefs)
+    return ESAC6A(;
+        Tr = _wire_required(po.tr, "ESAC6A", "Tr"),
+        Ka = _wire_required(po.ka, "ESAC6A", "Ka"),
+        Ta = _wire_required(po.ta, "ESAC6A", "Ta"),
+        Tk = _wire_required(po.tk, "ESAC6A", "Tk"),
+        Tb = _wire_required(po.tb, "ESAC6A", "Tb"),
+        Tc = _wire_required(po.tc, "ESAC6A", "Tc"),
+        Va_lim = _or_default(po.va_lim, nothing),
+        Vr_lim = _or_default(po.vr_lim, nothing),
+        Te = _wire_required(po.te, "ESAC6A", "Te"),
+        VFE_lim = _wire_required(po.vfe_lim, "ESAC6A", "VFE_lim"),
+        Kh = _wire_required(po.kh, "ESAC6A", "Kh"),
+        VH_max = _wire_required(po.vh_max, "ESAC6A", "VH_max"),
+        Th = _wire_required(po.th, "ESAC6A", "Th"),
+        Tj = _wire_required(po.tj, "ESAC6A", "Tj"),
+        Kc = _wire_required(po.kc, "ESAC6A", "Kc"),
+        Kd = _wire_required(po.kd, "ESAC6A", "Kd"),
+        Ke = _wire_required(po.ke, "ESAC6A", "Ke"),
+        E_sat = _wire_to_psy(Tuple{Float64, Float64}, po.e_sat),
+        Se = _wire_to_psy(Tuple{Float64, Float64}, po.se),
+        V_ref = _or_default(po.v_ref, 1.0),
+    )
+end
+
+function to_openapi(value::ESAC6A, refs::OpenAPIRefs)
+    return PD.ESAC6A(;
+        id = component_id(refs, value),
+        tr = get_Tr(value),
+        ka = get_Ka(value),
+        ta = get_Ta(value),
+        tk = get_Tk(value),
+        tb = get_Tb(value),
+        tc = get_Tc(value),
+        va_lim = _minmax_po(get_Va_lim(value)),
+        vr_lim = _minmax_po(get_Vr_lim(value)),
+        te = get_Te(value),
+        vfe_lim = get_VFE_lim(value),
+        kh = get_Kh(value),
+        vh_max = get_VH_max(value),
+        th = get_Th(value),
+        tj = get_Tj(value),
+        kc = get_Kc(value),
+        kd = get_Kd(value),
+        ke = get_Ke(value),
+        e_sat = _psy_to_wire(get_E_sat(value)),
+        se = _psy_to_wire(get_Se(value)),
+        v_ref = get_V_ref(value),
+    )
+end

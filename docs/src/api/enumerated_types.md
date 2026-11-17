@@ -119,8 +119,20 @@ Availability is not one of these values: a unit on outage is `available = false`
 `OFFLINE` unit that is `available = true` is in service and eligible for re-commitment.
 
 [`HydroPumpTurbine`](@ref) keeps its pumping/generating mode in a separate
-`operating_mode::HydroPumpTurbineStatus` field; `status` there is the same lifecycle as
-everywhere else.
+`operating_mode::HydroPumpTurbineStatus` field, listed [here](@ref pumpturbine_list); `status`
+there is the same lifecycle as everywhere else.
+
+## [Pumped-Storage Operating Modes](@id pumpturbine_list)
+
+Each [`HydroPumpTurbine`](@ref) has a field for `operating_mode::HydroPumpTurbineStatus`, the
+mode the unit runs in. The sign of the value is the direction of net active power.
+`HydroPumpTurbineStatus` has the options:
+
+| Name   | Value | Description                                     |
+|:------ |:----- |:----------------------------------------------- |
+| `OFF`  | 0     | Idle, neither generating nor pumping            |
+| `GEN`  | 1     | Generating (turbine operation)                  |
+| `PUMP` | -1    | Pumping, consuming active power to store energy |
 
 ## [Commitment Modes](@id commit_list)
 
@@ -214,6 +226,18 @@ tap changer, which can be used to determine the tap position during power flow c
 | `ACTIVE_POWER_FLOW`                     | Active power flow control                                                 |
 | `CONTROL_OF_DC_LINE`                    | Control of a DC line quantity                                             |
 | `ASYMMETRIC_ACTIVE_POWER_FLOW`          | Asymmetric active power flow control                                      |
+
+## [Transformer Regulation Orientations](@id xtf_regulation_orientation)
+
+`TransformerRegulationOrientation` states on which side of the `arc` of a
+[`TransformerCircuit`](@ref) the tap adjustment treats the regulated bus. It applies only
+when `regulated_bus` is not an end of the `arc`.
+
+| Name        | Description                                                            |
+|:----------- |:---------------------------------------------------------------------- |
+| `UNDEFINED` | The regulated bus is an end of the `arc`, or there is no regulated bus |
+| `FROM`      | Adjust the tap as if the regulated bus is on the `from` side           |
+| `TO`        | Adjust the tap as if the regulated bus is on the `to` side             |
 
 ## [LCC Control Modes](@id lcc_control_mode)
 

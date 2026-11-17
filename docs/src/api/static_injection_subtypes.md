@@ -69,14 +69,14 @@ Here, "`MinMax` (optional)" means `Union{MinMax, Nothing}`, with `nothing` repes
 
 ## Load-Specific Fields
 
-| Field                   | [`PowerLoad`](@ref) | [`StandardLoad`](@ref) | [`ExponentialLoad`](@ref) | [`MotorLoad`](@ref) | Interruptible* | Shiftable |
-|:----------------------- |:------------------- |:---------------------- |:------------------------- |:------------------- |:-------------- |:--------- |
-| `active_power`          | ✅                   | ⊕                      | ✅                         | ✅                   | ✅              | ✅         |
-| `reactive_power`        | ✅                   | ⊕                      | ✅                         | ✅                   | ✅              | ✅         |
-| `conformity`            | ✅                   | ✅                      | ✅                         | ❌                   | ✅              | ❌         |
-| `operation_cost`        | ❌                   | ❌                      | ❌                         | ❌                   | ✅              | ✅         |
-| `rating`                | ❌                   | ❌                      | ❌                         | ✅                   | ❌              | ❌         |
-| `α`, `β` (voltage exp.) | ❌                   | ❌                      | ✅                         | ❌                   | ❌              | ❌         |
+| Field                          | [`PowerLoad`](@ref) | [`StandardLoad`](@ref) | [`ExponentialLoad`](@ref) | [`MotorLoad`](@ref) | Interruptible* | Shiftable |
+|:------------------------------ |:------------------- |:---------------------- |:------------------------- |:------------------- |:-------------- |:--------- |
+| `active_power`                 | ✅                   | ⊕                      | ✅                         | ✅                   | ✅              | ✅         |
+| `reactive_power`               | ✅                   | ⊕                      | ✅                         | ✅                   | ✅              | ✅         |
+| `conformity`                   | ✅                   | ✅                      | ✅                         | ❌                   | ✅              | ❌         |
+| `operation_cost`               | ❌                   | ❌                      | ❌                         | ❌                   | ✅              | ✅         |
+| `rating`                       | ❌                   | ❌                      | ❌                         | ✅                   | ❌              | ❌         |
+| `alpha`, `beta` (voltage exp.) | ❌                   | ❌                      | ✅                         | ❌                   | ❌              | ❌         |
 
 \* Interruptible = [`InterruptiblePowerLoad`](@ref), [`InterruptibleStandardLoad`](@ref); Shiftable = [`ShiftablePowerLoad`](@ref)
 

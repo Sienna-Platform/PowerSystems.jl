@@ -1427,7 +1427,12 @@ of the same type with the same name but with different data.
 
 Returns a key that can later be used to retrieve the time series data.
 
-Throws ArgumentError if the component is not stored in the system.
+Throws ArgumentError if the component is not stored in the system, or if the series' units
+labels do not fit the component. Only a device's power and a battery's stored energy may be
+stored in CU; such a series must declare `per_unit_of`, the component field its values are a
+fraction of (`"base_power"` for power, `"storage_capacity"` for a battery's energy), when it
+is constructed. Every other series, a reservoir's, a service's or a topology's, is natural
+units only.
 
 # Examples
 ```julia
@@ -1820,20 +1825,27 @@ function add_supplemental_attribute!(
     outage::Outage,
 )
     if get_runchecks(sys)
-        for id in get_monitored_components(outage)
-            comp = IS.get_component(sys, id)  # throws ArgumentError on miss
-            if !(comp isa Device)
-                throw(
-                    ArgumentError(
-                        "monitored_components on $(typeof(outage)) references id " *
-                        "$(id), which resolves to $(typeof(comp)); only " *
-                        "Device subtypes are allowed",
-                    ),
-                )
-            end
-        end
+        _check_monitored_components(sys, outage)
     end
     return IS.add_supplemental_attribute!(sys.data, component, outage)
+end
+
+_check_monitored_components(::System, ::PlannedOutage) = nothing
+
+function _check_monitored_components(sys::System, outage::UnplannedOutage)
+    for id in get_monitored_components(outage)
+        comp = IS.get_component(sys, id)  # throws ArgumentError on miss
+        if !(comp isa Device)
+            throw(
+                ArgumentError(
+                    "monitored_components on $(typeof(outage)) references id " *
+                    "$(id), which resolves to $(typeof(comp)); only " *
+                    "Device subtypes are allowed",
+                ),
+            )
+        end
+    end
+    return
 end
 
 """

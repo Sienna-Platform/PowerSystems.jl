@@ -5,7 +5,7 @@ This file is auto-generated. Do not edit.
 #! format: off
 
 """
-    mutable struct ESAC1A <: AVR
+    mutable struct ESAC1A <: ExcitationSystemDynamics
         Tr::Float64
         Tb::Float64
         Tc::Float64
@@ -41,9 +41,9 @@ Parameters of IEEE Std 421.5 Type AC1A Excitacion System. This model corresponds
 - `Ka::Float64`: Regulator output gain, validation range: `(0, 1000)`
 - `Ta::Float64`: Regulator output time constant in s, validation range: `(0, 10)`
 - `Va_lim::MinMax`: Limits for regulator output `(Va_min, Va_max)`
-- `Te::Float64`: Exciter field time constant in s, validation range: `(eps(), 2)`
+- `Te::Float64`: Exciter field time constant in s, validation range: `(0.0001, 2)`
 - `Kf::Float64`: Rate feedback excitation system stabilizer gain, validation range: `(0, 0.3)`
-- `Tf::Float64`: Rate feedback time constant, validation range: `(eps(), 1.5)`
+- `Tf::Float64`: Rate feedback time constant, validation range: `(0.0001, 1.5)`
 - `Kc::Float64`: Rectifier loading factor proportional to commutating reactance, validation range: `(0, 1)`
 - `Kd::Float64`: Demagnetizing factor, function of exciter alternator reactances, validation range: `(0, 1)`
 - `Ke::Float64`: Exciter field proportional constant, validation range: `(0, 1)`
@@ -51,7 +51,7 @@ Parameters of IEEE Std 421.5 Type AC1A Excitacion System. This model corresponds
 - `Se::Tuple{Float64, Float64}`: Exciter saturation factor at exciter output voltage: (Se(E1), Se(E2))
 - `Vr_lim::MinMax`: Limits for exciter field voltage: `(Vr_min, Vr_max)`
 - `V_ref::Float64`: (default: `1.0`) Reference Voltage Set-point (pu), validation range: `(0, nothing)`
-- `saturation_coeffs::Tuple{Float64, Float64}`: (default: `PowerSystems.get_avr_saturation(E_sat, Se)`) (**Do not modify.**) Coefficients (A,B) of the function: Se(x) = B(x - A)^2/x
+- `saturation_coeffs::Tuple{Float64, Float64}`: (**Do not modify.**) Coefficients (A,B) of the function: Se(x) = B(x - A)^2/x
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
 - `states::Vector{Symbol}`: (**Do not modify.**) The [states](@ref S) are:
 	Vm: Sensed terminal voltage,
@@ -63,7 +63,7 @@ Parameters of IEEE Std 421.5 Type AC1A Excitacion System. This model corresponds
 - `states_types::Vector{StateTypes.Value}`: (**Do not modify.**) ESAC1A has 5 states
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
 """
-mutable struct ESAC1A <: AVR
+mutable struct ESAC1A <: ExcitationSystemDynamics
     "Regulator input filter time constant in s"
     Tr::Float64
     "Regulator denominator (lag) time constant in s"
@@ -115,8 +115,8 @@ mutable struct ESAC1A <: AVR
     internal::InfrastructureSystemsInternal
 end
 
-function ESAC1A(Tr, Tb, Tc, Ka, Ta, Va_lim, Te, Kf, Tf, Kc, Kd, Ke, E_sat, Se, Vr_lim, V_ref=1.0, saturation_coeffs=PowerSystems.get_avr_saturation(E_sat, Se), ext=Dict{String, Any}(), )
-    ESAC1A(Tr, Tb, Tc, Ka, Ta, Va_lim, Te, Kf, Tf, Kc, Kd, Ke, E_sat, Se, Vr_lim, V_ref, saturation_coeffs, ext, [:Vm, :Vr1, :Vr2, :Ve, :Vr3], 5, [StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Differential, StateTypes.Differential], InfrastructureSystemsInternal(), )
+function ESAC1A(Tr, Tb, Tc, Ka, Ta, Va_lim, Te, Kf, Tf, Kc, Kd, Ke, E_sat, Se, Vr_lim, V_ref=1.0, ext=Dict{String, Any}(), )
+    ESAC1A(Tr, Tb, Tc, Ka, Ta, Va_lim, Te, Kf, Tf, Kc, Kd, Ke, E_sat, Se, Vr_lim, V_ref, ext, PowerSystems.get_avr_saturation(E_sat, Se), [:Vm, :Vr1, :Vr2, :Ve, :Vr3], 5, [StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Differential, StateTypes.Differential], InfrastructureSystemsInternal(), )
 end
 
 function ESAC1A(; Tr, Tb, Tc, Ka, Ta, Va_lim, Te, Kf, Tf, Kc, Kd, Ke, E_sat, Se, Vr_lim, V_ref=1.0, saturation_coeffs=PowerSystems.get_avr_saturation(E_sat, Se), ext=Dict{String, Any}(), states=[:Vm, :Vr1, :Vr2, :Ve, :Vr3], n_states=5, states_types=[StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Differential, StateTypes.Differential], internal=InfrastructureSystemsInternal(), )
@@ -142,7 +142,6 @@ function ESAC1A(::Nothing)
         Se=(0.0, 0.0),
         Vr_lim=(min=0.0, max=0.0),
         V_ref=0,
-        saturation_coeffs=(0.0, 0.0),
         ext=Dict{String, Any}(),
     )
 end
@@ -230,3 +229,48 @@ set_saturation_coeffs!(value::ESAC1A, val) = value.saturation_coeffs = val
 set_ext!(value::ESAC1A, val) = value.ext = val
 """Set [`ESAC1A`](@ref) `states_types`."""
 set_states_types!(value::ESAC1A, val) = value.states_types = val
+
+
+
+function from_openapi(po::PD.ESAC1A, refs::OpenAPIRefs)
+    return ESAC1A(;
+        Tr = _wire_required(po.tr, "ESAC1A", "Tr"),
+        Tb = _wire_required(po.tb, "ESAC1A", "Tb"),
+        Tc = _wire_required(po.tc, "ESAC1A", "Tc"),
+        Ka = _wire_required(po.ka, "ESAC1A", "Ka"),
+        Ta = _wire_required(po.ta, "ESAC1A", "Ta"),
+        Va_lim = _or_default(po.va_lim, nothing),
+        Te = _wire_required(po.te, "ESAC1A", "Te"),
+        Kf = _wire_required(po.kf, "ESAC1A", "Kf"),
+        Tf = _wire_required(po.tf, "ESAC1A", "Tf"),
+        Kc = _wire_required(po.kc, "ESAC1A", "Kc"),
+        Kd = _wire_required(po.kd, "ESAC1A", "Kd"),
+        Ke = _wire_required(po.ke, "ESAC1A", "Ke"),
+        E_sat = _wire_to_psy(Tuple{Float64, Float64}, po.e_sat),
+        Se = _wire_to_psy(Tuple{Float64, Float64}, po.se),
+        Vr_lim = _or_default(po.vr_lim, nothing),
+        V_ref = _or_default(po.v_ref, 1.0),
+    )
+end
+
+function to_openapi(value::ESAC1A, refs::OpenAPIRefs)
+    return PD.ESAC1A(;
+        id = component_id(refs, value),
+        tr = get_Tr(value),
+        tb = get_Tb(value),
+        tc = get_Tc(value),
+        ka = get_Ka(value),
+        ta = get_Ta(value),
+        va_lim = _minmax_po(get_Va_lim(value)),
+        te = get_Te(value),
+        kf = get_Kf(value),
+        tf = get_Tf(value),
+        kc = get_Kc(value),
+        kd = get_Kd(value),
+        ke = get_Ke(value),
+        e_sat = _psy_to_wire(get_E_sat(value)),
+        se = _psy_to_wire(get_Se(value)),
+        vr_lim = _minmax_po(get_Vr_lim(value)),
+        v_ref = get_V_ref(value),
+    )
+end

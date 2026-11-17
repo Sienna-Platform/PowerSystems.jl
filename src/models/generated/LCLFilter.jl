@@ -108,3 +108,26 @@ set_lg!(value::LCLFilter, val) = value.lg = val
 set_rg!(value::LCLFilter, val) = value.rg = val
 """Set [`LCLFilter`](@ref) `ext`."""
 set_ext!(value::LCLFilter, val) = value.ext = val
+
+
+
+function from_openapi(po::PD.LCLFilter, refs::OpenAPIRefs)
+    return LCLFilter(;
+        lf = _wire_required(po.lf, "LCLFilter", "lf"),
+        rf = _wire_required(po.rf, "LCLFilter", "rf"),
+        cf = _wire_required(po.cf, "LCLFilter", "cf"),
+        lg = _wire_required(po.lg, "LCLFilter", "lg"),
+        rg = _wire_required(po.rg, "LCLFilter", "rg"),
+    )
+end
+
+function to_openapi(value::LCLFilter, refs::OpenAPIRefs)
+    return PD.LCLFilter(;
+        id = component_id(refs, value),
+        lf = get_lf(value),
+        rf = get_rf(value),
+        cf = get_cf(value),
+        lg = get_lg(value),
+        rg = get_rg(value),
+    )
+end

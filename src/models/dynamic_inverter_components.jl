@@ -25,13 +25,13 @@ Concrete subtypes include [`LCLFilter`](@ref), [`LCFilter`](@ref), and [`RLFilte
 abstract type Filter <: DynamicInverterComponent end
 
 """
-Supertype for all frequency estimator models for
+Supertype for all reference frame rotation (frequency estimator) models for
 [`DynamicInverter`](@ref) components.
 
 Concrete subtypes include [`KauraPLL`](@ref), [`ReducedOrderPLL`](@ref), and
 [`FixedFrequency`](@ref).
 """
-abstract type FrequencyEstimator <: DynamicInverterComponent end
+abstract type ReferenceFrameRotation <: DynamicInverterComponent end
 
 """
 Supertype for all inner control loop models for
@@ -43,14 +43,30 @@ and [`RECurrentControlB`](@ref).
 abstract type InnerControl <: DynamicInverterComponent end
 
 """
-Supertype for all output current limiter models for
+Supertype for all current limitation models for
 [`DynamicInverter`](@ref) components.
 
 Concrete subtypes include [`MagnitudeOutputCurrentLimiter`](@ref),
 [`InstantaneousOutputCurrentLimiter`](@ref), [`PriorityOutputCurrentLimiter`](@ref),
 [`SaturationOutputCurrentLimiter`](@ref), and [`HybridOutputCurrentLimiter`](@ref).
 """
-abstract type OutputCurrentLimiter <: DynamicInverterComponent end
+abstract type CurrentLimitation <: DynamicInverterComponent end
 
-abstract type ActivePowerControl <: DeviceParameter end
-abstract type ReactivePowerControl <: DeviceParameter end
+"""
+Supertype for all outer-loop active power control models for
+[`DynamicInverter`](@ref) components.
+
+Concrete subtypes include [`ActivePowerDroop`](@ref), [`ActivePowerPI`](@ref),
+[`ActiveRenewableControllerAB`](@ref), [`ActiveVirtualOscillator`](@ref), and
+[`VirtualInertia`](@ref).
+"""
+abstract type ActivePowerControl <: DynamicInverterComponent end
+
+"""
+Supertype for all outer-loop reactive power control models for
+[`DynamicInverter`](@ref) components.
+
+Concrete subtypes include [`ReactivePowerDroop`](@ref), [`ReactivePowerPI`](@ref),
+[`ReactiveRenewableControllerAB`](@ref), and [`ReactiveVirtualOscillator`](@ref).
+"""
+abstract type ReactivePowerControl <: DynamicInverterComponent end

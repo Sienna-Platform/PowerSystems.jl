@@ -5,7 +5,7 @@ This file is auto-generated. Do not edit.
 #! format: off
 
 """
-    mutable struct GasTG <: TurbineGov
+    mutable struct GasTG <: TurbineGovernorDynamics
         R::Float64
         T1::Float64
         T2::Float64
@@ -25,10 +25,10 @@ This file is auto-generated. Do not edit.
 Parameters of Gas Turbine-Governor. GAST in PSSE and GAST_PTI in PowerWorld
 
 # Arguments
-- `R::Float64`: Speed droop parameter, validation range: `(eps(), 0.1)`
-- `T1::Float64`: Governor time constant in s, validation range: `(eps(), 0.5)`
-- `T2::Float64`: Combustion chamber time constant, validation range: `(eps(), 0.5)`
-- `T3::Float64`: Load limit time constant (exhaust gas measurement time), validation range: `(eps(), 5)`
+- `R::Float64`: Speed droop parameter, validation range: `(0.0001, 0.1)`
+- `T1::Float64`: Governor time constant in s, validation range: `(0.0001, 0.5)`
+- `T2::Float64`: Combustion chamber time constant, validation range: `(0.0001, 0.5)`
+- `T3::Float64`: Load limit time constant (exhaust gas measurement time), validation range: `(0.0001, 5)`
 - `AT::Float64`: Ambient temperature load limit, validation range: `(0, 1)`
 - `Kt::Float64`: Load limit feedback gain, validation range: `(0, 5)`
 - `V_lim::Tuple{Float64, Float64}`: Operational control limits on fuel valve opening (V_min, V_max)
@@ -43,7 +43,7 @@ Parameters of Gas Turbine-Governor. GAST in PSSE and GAST_PTI in PowerWorld
 - `states_types::Vector{StateTypes.Value}`: (**Do not modify.**) GAST has 3 [differential](@ref states_list) [states](@ref S)
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
 """
-mutable struct GasTG <: TurbineGov
+mutable struct GasTG <: TurbineGovernorDynamics
     "Speed droop parameter"
     R::Float64
     "Governor time constant in s"
@@ -152,3 +152,34 @@ set_P_ref!(value::GasTG, val) = value.P_ref = val
 set_ext!(value::GasTG, val) = value.ext = val
 """Set [`GasTG`](@ref) `states_types`."""
 set_states_types!(value::GasTG, val) = value.states_types = val
+
+
+
+function from_openapi(po::PD.GasTG, refs::OpenAPIRefs)
+    return GasTG(;
+        R = _wire_required(po.r, "GasTG", "R"),
+        T1 = _wire_required(po.t1, "GasTG", "T1"),
+        T2 = _wire_required(po.t2, "GasTG", "T2"),
+        T3 = _wire_required(po.t3, "GasTG", "T3"),
+        AT = _wire_required(po.at, "GasTG", "AT"),
+        Kt = _wire_required(po.kt, "GasTG", "Kt"),
+        V_lim = _wire_to_psy(Tuple{Float64, Float64}, po.v_lim),
+        D_turb = _wire_required(po.d_turb, "GasTG", "D_turb"),
+        P_ref = _or_default(po.p_ref, 1.0),
+    )
+end
+
+function to_openapi(value::GasTG, refs::OpenAPIRefs)
+    return PD.GasTG(;
+        id = component_id(refs, value),
+        r = get_R(value),
+        t1 = get_T1(value),
+        t2 = get_T2(value),
+        t3 = get_T3(value),
+        at = get_AT(value),
+        kt = get_Kt(value),
+        v_lim = _psy_to_wire(get_V_lim(value)),
+        d_turb = get_D_turb(value),
+        p_ref = get_P_ref(value),
+    )
+end

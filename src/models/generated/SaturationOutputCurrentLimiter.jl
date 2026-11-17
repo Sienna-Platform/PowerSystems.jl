@@ -5,7 +5,7 @@ This file is auto-generated. Do not edit.
 #! format: off
 
 """
-    mutable struct SaturationOutputCurrentLimiter <: OutputCurrentLimiter
+    mutable struct SaturationOutputCurrentLimiter <: CurrentLimitation
         I_max::Float64
         kw::Float64
         ext::Dict{String, Any}
@@ -18,7 +18,7 @@ Parameters of Saturation Current Controller Limiter. Regulates the magnitude of 
 - `kw::Float64`: Defined feedback gain, validation range: `(0, nothing)`
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`)
 """
-mutable struct SaturationOutputCurrentLimiter <: OutputCurrentLimiter
+mutable struct SaturationOutputCurrentLimiter <: CurrentLimitation
     "Maximum limit on current controller input current (component base)"
     I_max::Float64
     "Defined feedback gain"
@@ -53,3 +53,20 @@ set_I_max!(value::SaturationOutputCurrentLimiter, val) = value.I_max = val
 set_kw!(value::SaturationOutputCurrentLimiter, val) = value.kw = val
 """Set [`SaturationOutputCurrentLimiter`](@ref) `ext`."""
 set_ext!(value::SaturationOutputCurrentLimiter, val) = value.ext = val
+
+
+
+function from_openapi(po::PD.SaturationOutputCurrentLimiter, refs::OpenAPIRefs)
+    return SaturationOutputCurrentLimiter(;
+        I_max = _wire_required(po.i_max, "SaturationOutputCurrentLimiter", "I_max"),
+        kw = _wire_required(po.kw, "SaturationOutputCurrentLimiter", "kw"),
+    )
+end
+
+function to_openapi(value::SaturationOutputCurrentLimiter, refs::OpenAPIRefs)
+    return PD.SaturationOutputCurrentLimiter(;
+        id = component_id(refs, value),
+        i_max = get_I_max(value),
+        kw = get_kw(value),
+    )
+end

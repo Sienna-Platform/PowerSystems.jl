@@ -11,8 +11,8 @@ This file is auto-generated. Do not edit.
         bus::ACBus
         active_power::Float64
         reactive_power::Float64
-        α::Float64
-        β::Float64
+        alpha::Float64
+        beta::Float64
         base_power::Float64
         max_active_power::Float64
         max_reactive_power::Float64
@@ -33,8 +33,8 @@ An `ExponentialLoad` models active power as P = P0 * V^α and reactive power as 
 - `bus::ACBus`: Bus that this component is connected to
 - `active_power::Float64`: Active power coefficient, P0 (MW)
 - `reactive_power::Float64`: Reactive power coefficient, Q0 (MVAR)
-- `α::Float64`: Exponent relating voltage dependency for active power. 0 = constant power only, 1 = constant current only, and 2 = constant impedance only, validation range: `(0, nothing)`
-- `β::Float64`: Exponent relating voltage dependency for reactive power. 0 = constant power only, 1 = constant current only, and 2 = constant impedance only, validation range: `(0, nothing)`
+- `alpha::Float64`: Exponent relating voltage dependency for active power. 0 = constant power only, 1 = constant current only, and 2 = constant impedance only, validation range: `(0, nothing)`
+- `beta::Float64`: Exponent relating voltage dependency for reactive power. 0 = constant power only, 1 = constant current only, and 2 = constant impedance only, validation range: `(0, nothing)`
 - `base_power::Float64`: Base power (MVA) for [per unitization](@ref per_unit), validation range: `(0.0001, nothing)`
 - `max_active_power::Float64`: Maximum active power (MW) that this load can demand
 - `max_reactive_power::Float64`: Maximum reactive power (MVAR) that this load can demand
@@ -57,9 +57,9 @@ mutable struct ExponentialLoad <: StaticLoad
     "Reactive power coefficient, Q0 (MVAR)"
     reactive_power::Float64
     "Exponent relating voltage dependency for active power. 0 = constant power only, 1 = constant current only, and 2 = constant impedance only"
-    α::Float64
+    alpha::Float64
     "Exponent relating voltage dependency for reactive power. 0 = constant power only, 1 = constant current only, and 2 = constant impedance only"
-    β::Float64
+    beta::Float64
     "Base power (MVA) for [per unitization](@ref per_unit)"
     base_power::Float64
     "Maximum active power (MW) that this load can demand"
@@ -78,12 +78,12 @@ mutable struct ExponentialLoad <: StaticLoad
     internal::InfrastructureSystemsInternal
 end
 
-function ExponentialLoad(name, available, bus, active_power, reactive_power, α, β, base_power, max_active_power, max_reactive_power, conformity=LoadConformity.UNDEFINED, services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), )
-    ExponentialLoad(name, available, bus, active_power, reactive_power, α, β, base_power, max_active_power, max_reactive_power, conformity, services, dynamic_injector, ext, InfrastructureSystemsInternal(), )
+function ExponentialLoad(name, available, bus, active_power, reactive_power, alpha, beta, base_power, max_active_power, max_reactive_power, conformity=LoadConformity.UNDEFINED, services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), )
+    ExponentialLoad(name, available, bus, active_power, reactive_power, alpha, beta, base_power, max_active_power, max_reactive_power, conformity, services, dynamic_injector, ext, InfrastructureSystemsInternal(), )
 end
 
-function ExponentialLoad(; name, available, bus, active_power, reactive_power, α, β, base_power, max_active_power, max_reactive_power, conformity=LoadConformity.UNDEFINED, services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Unitful.Units, )
-    value = ExponentialLoad(name, available, bus, _placeholder(active_power), _placeholder(reactive_power), α, β, base_power, _placeholder(max_active_power), _placeholder(max_reactive_power), conformity, services, dynamic_injector, ext, internal, )
+function ExponentialLoad(; name, available, bus, active_power, reactive_power, alpha, beta, base_power, max_active_power, max_reactive_power, conformity=LoadConformity.UNDEFINED, services=Device[], dynamic_injector=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Unitful.Units, )
+    value = ExponentialLoad(name, available, bus, _placeholder(active_power), _placeholder(reactive_power), alpha, beta, base_power, _placeholder(max_active_power), _placeholder(max_reactive_power), conformity, services, dynamic_injector, ext, internal, )
     set_active_power!(value, _tag(active_power, input_basis, Val(:mw)))
     set_reactive_power!(value, _tag(reactive_power, input_basis, Val(:mvar)))
     set_max_active_power!(value, _tag(max_active_power, input_basis, Val(:mw)))
@@ -100,8 +100,8 @@ function ExponentialLoad(::Nothing)
         bus=ACBus(nothing),
         active_power=0.0,
         reactive_power=0.0,
-        α=0.0,
-        β=0.0,
+        alpha=0.0,
+        beta=0.0,
         base_power=100.0,
         max_active_power=0.0,
         max_reactive_power=0.0,
@@ -135,10 +135,10 @@ get_reactive_power(value::ExponentialLoad) = _units_arg_required(get_reactive_po
 get_reactive_power_unitful(value::ExponentialLoad) = _units_arg_required(get_reactive_power_unitful, value, :reactive_power, Val(:mvar))
 InfrastructureSystems.display_units_arg(::typeof(get_reactive_power), ::Type{ExponentialLoad}) = u"SU"
 InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_unitful), ::Type{ExponentialLoad}) = u"SU"
-"""Get [`ExponentialLoad`](@ref) `α`."""
-get_α(value::ExponentialLoad) = value.α
-"""Get [`ExponentialLoad`](@ref) `β`."""
-get_β(value::ExponentialLoad) = value.β
+"""Get [`ExponentialLoad`](@ref) `alpha`."""
+get_alpha(value::ExponentialLoad) = value.alpha
+"""Get [`ExponentialLoad`](@ref) `beta`."""
+get_beta(value::ExponentialLoad) = value.beta
 
 _get_base_power(value::ExponentialLoad) = value.base_power
 """Get [`ExponentialLoad`](@ref) `max_active_power` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`, `u"NU"`, `u"MW"`). For the unit-bearing value see [`get_max_active_power_unitful`](@ref)."""
@@ -178,10 +178,10 @@ set_active_power!(value::ExponentialLoad, val::_UntaggedNumber) = _units_tag_req
 """Set [`ExponentialLoad`](@ref) `reactive_power`."""
 set_reactive_power!(value::ExponentialLoad, val) = value.reactive_power = set_value(value, Val(:reactive_power), val, Val(:mvar))
 set_reactive_power!(value::ExponentialLoad, val::_UntaggedNumber) = _units_tag_required(set_reactive_power!, value, :reactive_power, Val(:mvar), val)
-"""Set [`ExponentialLoad`](@ref) `α`."""
-set_α!(value::ExponentialLoad, val) = value.α = val
-"""Set [`ExponentialLoad`](@ref) `β`."""
-set_β!(value::ExponentialLoad, val) = value.β = val
+"""Set [`ExponentialLoad`](@ref) `alpha`."""
+set_alpha!(value::ExponentialLoad, val) = value.alpha = val
+"""Set [`ExponentialLoad`](@ref) `beta`."""
+set_beta!(value::ExponentialLoad, val) = value.beta = val
 """Set [`ExponentialLoad`](@ref) `max_active_power`."""
 set_max_active_power!(value::ExponentialLoad, val) = value.max_active_power = set_value(value, Val(:max_active_power), val, Val(:mw))
 set_max_active_power!(value::ExponentialLoad, val::_UntaggedNumber) = _units_tag_required(set_max_active_power!, value, :max_active_power, Val(:mw), val)
@@ -203,8 +203,8 @@ function from_openapi(po::PO.ExponentialLoad, refs::OpenAPIRefs, ::ComponentBase
         bus = resolve_ref(refs, po.bus, ACBus),
         active_power = po.active_power,
         reactive_power = po.reactive_power,
-        α = po.alpha,
-        β = po.beta,
+        alpha = po.alpha,
+        beta = po.beta,
         base_power = po.base_power,
         max_active_power = po.max_active_power,
         max_reactive_power = po.max_reactive_power,
@@ -220,8 +220,8 @@ function from_openapi(po::PO.ExponentialLoad, refs::OpenAPIRefs, ::NaturalUnit)
         bus = resolve_ref(refs, po.bus, ACBus),
         active_power = po.active_power / po.base_power,
         reactive_power = po.reactive_power / po.base_power,
-        α = po.alpha,
-        β = po.beta,
+        alpha = po.alpha,
+        beta = po.beta,
         base_power = po.base_power,
         max_active_power = po.max_active_power / po.base_power,
         max_reactive_power = po.max_reactive_power / po.base_power,
@@ -242,8 +242,8 @@ function to_openapi(value::ExponentialLoad, refs::OpenAPIRefs, ::ComponentBaseUn
         bus = component_id(refs, get_bus(value)),
         active_power = get_active_power(value, u"CU"),
         reactive_power = get_reactive_power(value, u"CU"),
-        alpha = get_α(value),
-        beta = get_β(value),
+        alpha = get_alpha(value),
+        beta = get_beta(value),
         base_power = _get_base_power(value),
         max_active_power = get_max_active_power(value, u"CU"),
         max_reactive_power = get_max_reactive_power(value, u"CU"),
@@ -260,8 +260,8 @@ function to_openapi(value::ExponentialLoad, refs::OpenAPIRefs, ::NaturalUnit)
         bus = component_id(refs, get_bus(value)),
         active_power = get_active_power(value, u"CU") * _get_base_power(value),
         reactive_power = get_reactive_power(value, u"CU") * _get_base_power(value),
-        alpha = get_α(value),
-        beta = get_β(value),
+        alpha = get_alpha(value),
+        beta = get_beta(value),
         base_power = _get_base_power(value),
         max_active_power = get_max_active_power(value, u"CU") * _get_base_power(value),
         max_reactive_power = get_max_reactive_power(value, u"CU") * _get_base_power(value),

@@ -5,7 +5,7 @@ This file is auto-generated. Do not edit.
 #! format: off
 
 """
-    mutable struct MarconatoMachine <: Machine
+    mutable struct MarconatoMachine <: SynchronousMachineDynamics
         R::Float64
         Xd::Float64
         Xq::Float64
@@ -54,7 +54,7 @@ Parameters of 6-[states](@ref S) synchronous machine: Marconato model
 - `n_states::Int`: (**Do not modify.**) MarconatoMachine has 6 states
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
 """
-mutable struct MarconatoMachine <: Machine
+mutable struct MarconatoMachine <: SynchronousMachineDynamics
     "Resistance after EMF in machine per unit"
     R::Float64
     "Reactance after EMF in d-axis per unit"
@@ -193,3 +193,40 @@ set_ext!(value::MarconatoMachine, val) = value.ext = val
 set_γd!(value::MarconatoMachine, val) = value.γd = val
 """Set [`MarconatoMachine`](@ref) `γq`."""
 set_γq!(value::MarconatoMachine, val) = value.γq = val
+
+
+
+function from_openapi(po::PD.MarconatoMachine, refs::OpenAPIRefs)
+    return MarconatoMachine(;
+        R = _wire_required(po.r, "MarconatoMachine", "R"),
+        Xd = _wire_required(po.xd, "MarconatoMachine", "Xd"),
+        Xq = _wire_required(po.xq, "MarconatoMachine", "Xq"),
+        Xd_p = _wire_required(po.xd_p, "MarconatoMachine", "Xd_p"),
+        Xq_p = _wire_required(po.xq_p, "MarconatoMachine", "Xq_p"),
+        Xd_pp = _wire_required(po.xd_pp, "MarconatoMachine", "Xd_pp"),
+        Xq_pp = _wire_required(po.xq_pp, "MarconatoMachine", "Xq_pp"),
+        Td0_p = _wire_required(po.td0_p, "MarconatoMachine", "Td0_p"),
+        Tq0_p = _wire_required(po.tq0_p, "MarconatoMachine", "Tq0_p"),
+        Td0_pp = _wire_required(po.td0_pp, "MarconatoMachine", "Td0_pp"),
+        Tq0_pp = _wire_required(po.tq0_pp, "MarconatoMachine", "Tq0_pp"),
+        T_AA = _wire_required(po.t_aa, "MarconatoMachine", "T_AA"),
+    )
+end
+
+function to_openapi(value::MarconatoMachine, refs::OpenAPIRefs)
+    return PD.MarconatoMachine(;
+        id = component_id(refs, value),
+        r = get_R(value),
+        xd = get_Xd(value),
+        xq = get_Xq(value),
+        xd_p = get_Xd_p(value),
+        xq_p = get_Xq_p(value),
+        xd_pp = get_Xd_pp(value),
+        xq_pp = get_Xq_pp(value),
+        td0_p = get_Td0_p(value),
+        tq0_p = get_Tq0_p(value),
+        td0_pp = get_Td0_pp(value),
+        tq0_pp = get_Tq0_pp(value),
+        t_aa = get_T_AA(value),
+    )
+end

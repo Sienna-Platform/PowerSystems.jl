@@ -5,7 +5,7 @@ This file is auto-generated. Do not edit.
 #! format: off
 
 """
-    mutable struct PIDGOV <: TurbineGov
+    mutable struct PIDGOV <: TurbineGovernorDynamics
         feedback_flag::Int
         Rperm::Float64
         T_reg::Float64
@@ -44,8 +44,8 @@ Hydro Turbine-Governor with PID controller.
 - `gate_openings::Tuple{Float64, Float64, Float64}`: Gate-opening speed at different loads
 - `power_gate_openings::Tuple{Float64, Float64, Float64}`: Power at gate_openings
 - `G_lim::MinMax`: Minimum/Maximum Gate openings `(G_min, G_max)`.
-- `A_tw::Float64`: Factor multiplying Tw, validation range: `(eps(), nothing)`
-- `Tw::Float64`: Water inertia time constant, sec, validation range: `(eps(), nothing)`
+- `A_tw::Float64`: Factor multiplying Tw, validation range: `(0.0001, nothing)`
+- `Tw::Float64`: Water inertia time constant, sec, validation range: `(0.0001, nothing)`
 - `V_lim::MinMax`: Gate opening velocity limits `(G_min, G_max)`.
 - `P_ref::Float64`: (default: `1.0`) Reference Power Set-point (pu), validation range: `(0, nothing)`
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
@@ -61,7 +61,7 @@ Hydro Turbine-Governor with PID controller.
 - `states_types::Vector{StateTypes.Value}`: (**Do not modify.**) PIDGOV has 7 [differential](@ref states_list) [states](@ref S)
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
 """
-mutable struct PIDGOV <: TurbineGov
+mutable struct PIDGOV <: TurbineGovernorDynamics
     "Feedback signal for governor droop: 0 for electrical power, and 1 for gate position."
     feedback_flag::Int
     "Speed permanent droop parameter"
@@ -223,3 +223,48 @@ set_P_ref!(value::PIDGOV, val) = value.P_ref = val
 set_ext!(value::PIDGOV, val) = value.ext = val
 """Set [`PIDGOV`](@ref) `states_types`."""
 set_states_types!(value::PIDGOV, val) = value.states_types = val
+
+
+
+function from_openapi(po::PD.PIDGOV, refs::OpenAPIRefs)
+    return PIDGOV(;
+        feedback_flag = _wire_required(po.feedback_flag, "PIDGOV", "feedback_flag"),
+        Rperm = _wire_required(po.rperm, "PIDGOV", "Rperm"),
+        T_reg = _wire_required(po.t_reg, "PIDGOV", "T_reg"),
+        Kp = _wire_required(po.kp, "PIDGOV", "Kp"),
+        Ki = _wire_required(po.ki, "PIDGOV", "Ki"),
+        Kd = _wire_required(po.kd, "PIDGOV", "Kd"),
+        Ta = _wire_required(po.ta, "PIDGOV", "Ta"),
+        Tb = _wire_required(po.tb, "PIDGOV", "Tb"),
+        D_turb = _wire_required(po.d_turb, "PIDGOV", "D_turb"),
+        gate_openings = _wire_to_psy(Tuple{Float64, Float64, Float64}, po.gate_openings),
+        power_gate_openings = _wire_to_psy(Tuple{Float64, Float64, Float64}, po.power_gate_openings),
+        G_lim = _or_default(po.g_lim, nothing),
+        A_tw = _wire_required(po.a_tw, "PIDGOV", "A_tw"),
+        Tw = _wire_required(po.tw, "PIDGOV", "Tw"),
+        V_lim = _or_default(po.v_lim, nothing),
+        P_ref = _or_default(po.p_ref, 1.0),
+    )
+end
+
+function to_openapi(value::PIDGOV, refs::OpenAPIRefs)
+    return PD.PIDGOV(;
+        id = component_id(refs, value),
+        feedback_flag = get_feedback_flag(value),
+        rperm = get_Rperm(value),
+        t_reg = get_T_reg(value),
+        kp = get_Kp(value),
+        ki = get_Ki(value),
+        kd = get_Kd(value),
+        ta = get_Ta(value),
+        tb = get_Tb(value),
+        d_turb = get_D_turb(value),
+        gate_openings = _psy_to_wire(get_gate_openings(value)),
+        power_gate_openings = _psy_to_wire(get_power_gate_openings(value)),
+        g_lim = _minmax_po(get_G_lim(value)),
+        a_tw = get_A_tw(value),
+        tw = get_Tw(value),
+        v_lim = _minmax_po(get_V_lim(value)),
+        p_ref = get_P_ref(value),
+    )
+end

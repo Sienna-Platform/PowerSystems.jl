@@ -5,7 +5,7 @@ This file is auto-generated. Do not edit.
 #! format: off
 
 """
-    mutable struct ST6B <: AVR
+    mutable struct ST6B <: ExcitationSystemDynamics
         OEL_Flag::Int
         Tr::Float64
         K_pa::Float64
@@ -59,7 +59,7 @@ Parameters of IEEE Std 421.5 Type ST6B Excitacion System. ST6B in PSSE and PSLF
 - `states_types::Vector{StateTypes.Value}`: (**Do not modify.**) ST6B has 4 states
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
 """
-mutable struct ST6B <: AVR
+mutable struct ST6B <: ExcitationSystemDynamics
     "OEL Flag for ST6B: 1: before HV gate, 2: after HV gate"
     OEL_Flag::Int
     "Regulator input filter time constant in s"
@@ -218,3 +218,48 @@ set_V_ref!(value::ST6B, val) = value.V_ref = val
 set_ext!(value::ST6B, val) = value.ext = val
 """Set [`ST6B`](@ref) `states_types`."""
 set_states_types!(value::ST6B, val) = value.states_types = val
+
+
+
+function from_openapi(po::PD.ST6B, refs::OpenAPIRefs)
+    return ST6B(;
+        OEL_Flag = _wire_required(po.oel_flag, "ST6B", "OEL_Flag"),
+        Tr = _wire_required(po.tr, "ST6B", "Tr"),
+        K_pa = _wire_required(po.k_pa, "ST6B", "K_pa"),
+        K_ia = _wire_required(po.k_ia, "ST6B", "K_ia"),
+        K_da = _wire_required(po.k_da, "ST6B", "K_da"),
+        T_da = _wire_required(po.t_da, "ST6B", "T_da"),
+        Va_lim = _or_default(po.va_lim, nothing),
+        K_ff = _wire_required(po.k_ff, "ST6B", "K_ff"),
+        K_m = _wire_required(po.k_m, "ST6B", "K_m"),
+        K_ci = _wire_required(po.k_ci, "ST6B", "K_ci"),
+        K_lr = _wire_required(po.k_lr, "ST6B", "K_lr"),
+        I_lr = _wire_required(po.i_lr, "ST6B", "I_lr"),
+        Vr_lim = _or_default(po.vr_lim, nothing),
+        Kg = _wire_required(po.kg, "ST6B", "Kg"),
+        Tg = _wire_required(po.tg, "ST6B", "Tg"),
+        V_ref = _or_default(po.v_ref, 1.0),
+    )
+end
+
+function to_openapi(value::ST6B, refs::OpenAPIRefs)
+    return PD.ST6B(;
+        id = component_id(refs, value),
+        oel_flag = get_OEL_Flag(value),
+        tr = get_Tr(value),
+        k_pa = get_K_pa(value),
+        k_ia = get_K_ia(value),
+        k_da = get_K_da(value),
+        t_da = get_T_da(value),
+        va_lim = _minmax_po(get_Va_lim(value)),
+        k_ff = get_K_ff(value),
+        k_m = get_K_m(value),
+        k_ci = get_K_ci(value),
+        k_lr = get_K_lr(value),
+        i_lr = get_I_lr(value),
+        vr_lim = _minmax_po(get_Vr_lim(value)),
+        kg = get_Kg(value),
+        tg = get_Tg(value),
+        v_ref = get_V_ref(value),
+    )
+end

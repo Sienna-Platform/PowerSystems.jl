@@ -3,21 +3,24 @@ abstract type InverterComponent <: DynamicComponent end
 """
     mutable struct DynamicInverter{
         C <: Converter,
-        O <: OuterControl,
+        AP <: ActivePowerControl,
+        RP <: ReactivePowerControl,
         IC <: InnerControl,
         DC <: DCSource,
-        P <: FrequencyEstimator,
+        RF <: ReferenceFrameRotation,
         F <: Filter,
+        CL <: Union{Nothing, CurrentLimitation},
     } <: DynamicInjection
         name::String
-        ω_ref::Float64
+        frequency_ref::Float64
         converter::C
-        outer_control::O
+        active_power_control::AP
+        reactive_power_control::RP
         inner_control::IC
         dc_source::DC
-        freq_estimator::P
+        reference_frame_rotation::RF
         filter::F
-        limiter::Union{nothing, OutputCurrentLimiter}
+        current_limitation::CL
         base_power::Float64
         n_states::Int
         states::Vector{Symbol}
@@ -28,10 +31,10 @@ abstract type InverterComponent <: DynamicComponent end
 A dynamic inverter with the necessary data for modeling the dynamic response of an inverter
 in a phasor or electromagnetic transient simulation.
 
-A dynamic inverter is composed by 6 components, namely a [Converter](@ref),
-[Outer Loop Control](@ref OuterControl), [Inner Loop Control](@ref InnerControl),
-a [DC Source](@ref DCSource), a [Frequency Estimator](@ref FrequencyEstimator) and a
-[Filter](@ref).
+A dynamic inverter has 7 components: a [`Converter`](@ref), an [`ActivePowerControl`](@ref),
+a [`ReactivePowerControl`](@ref), an [`InnerControl`](@ref), a [`DCSource`](@ref),
+a [`ReferenceFrameRotation`](@ref) and a [`Filter`](@ref). A
+[`CurrentLimitation`](@ref) is optional.
 
 It must be attached to a
 [`StaticInjection`](@ref) device using [`add_component!`](@ref add_component!(
@@ -44,14 +47,15 @@ response.
 
 # Arguments
 - `name::String`: Name of inverter.
-- `ω_ref::Float64`: Frequency reference set-point in pu.
+- `frequency_ref::Float64`: Frequency reference set-point in Hz. Usually equal to the system frequency.
 - `converter <: Converter`: Converter model for the PWM transformation.
-- `outer_control <: OuterControl`: An [OuterControl](@ref) controller model.
+- `active_power_control <: ActivePowerControl`: Outer-loop active power control model.
+- `reactive_power_control <: ReactivePowerControl`: Outer-loop reactive power control model.
 - `inner_control <: InnerControl`: An [InnerControl](@ref) controller model.
 - `dc_source <: DCSource`: [DCSource](@ref) model.
-- `freq_estimator <: FrequencyEstimator`: a [FrequencyEstimator](@ref) (typically a [PLL](@ref P)) model.
+- `reference_frame_rotation <: ReferenceFrameRotation`: a [`ReferenceFrameRotation`](@ref) (typically a PLL) model.
 - `filter <: Filter`: [Filter](@ref) model.
-- `limiter <: Union{nothing, OutputCurrentLimiter}`: (default: nothing) Inner Control [Current Limiter](@ref OutputCurrentLimiter) model
+- `current_limitation <: Union{nothing, CurrentLimitation}`: (default: nothing) Inner control [`CurrentLimitation`](@ref) model.
 - `base_power::Float64`: (default: `100.0`) Base power of the unit (MVA) for [per unitization](@ref per_unit). Although this has a default, in almost all cases `base_power` should be updated to equal the `base_power` field of the [`StaticInjection`](@ref) device that this dynamic generator will be attached to.
 - `n_states::Int`: (**Do not modify.**)  Number of states (will depend on the inputs above).
 - `states::Vector{Symbol}`: (**Do not modify.**) Vector of states (will depend on the inputs above).
@@ -60,22 +64,24 @@ response.
 """
 mutable struct DynamicInverter{
     C <: Converter,
-    O <: OuterControl,
+    AP <: ActivePowerControl,
+    RP <: ReactivePowerControl,
     IC <: InnerControl,
     DC <: DCSource,
-    P <: FrequencyEstimator,
+    RF <: ReferenceFrameRotation,
     F <: Filter,
-    L <: Union{Nothing, OutputCurrentLimiter},
+    CL <: Union{Nothing, CurrentLimitation},
 } <: DynamicInjection
     name::String
-    ω_ref::Float64
+    frequency_ref::Float64
     converter::C
-    outer_control::O
+    active_power_control::AP
+    reactive_power_control::RP
     inner_control::IC
     dc_source::DC
-    freq_estimator::P
+    reference_frame_rotation::RF
     filter::F
-    limiter::L
+    current_limitation::CL
     base_power::Float64
     n_states::Int
     states::Vector{Symbol}
@@ -85,52 +91,57 @@ end
 
 function DynamicInverter(
     name::String,
-    ω_ref::Float64,
+    frequency_ref::Float64,
     converter::C,
-    outer_control::O,
+    active_power_control::AP,
+    reactive_power_control::RP,
     inner_control::IC,
     dc_source::DC,
-    freq_estimator::P,
+    reference_frame_rotation::RF,
     filter::F,
-    limiter::L = nothing,
+    current_limitation::CL = nothing,
     base_power::Float64 = 100.0,
     ext::Dict{String, Any} = Dict{String, Any}(),
 ) where {
     C <: Converter,
-    O <: OuterControl,
+    AP <: ActivePowerControl,
+    RP <: ReactivePowerControl,
     IC <: InnerControl,
     DC <: DCSource,
-    P <: FrequencyEstimator,
+    RF <: ReferenceFrameRotation,
     F <: Filter,
-    L <: Union{Nothing, OutputCurrentLimiter},
+    CL <: Union{Nothing, CurrentLimitation},
 }
     n_states = _calc_n_states(
         converter,
-        outer_control,
+        active_power_control,
+        reactive_power_control,
         inner_control,
         dc_source,
-        freq_estimator,
+        reference_frame_rotation,
         filter,
     )
     states = _calc_states(
         converter,
-        outer_control,
+        active_power_control,
+        reactive_power_control,
         inner_control,
         dc_source,
-        freq_estimator,
+        reference_frame_rotation,
         filter,
     )
 
-    return DynamicInverter{C, O, IC, DC, P, F, L}(
+    return DynamicInverter{C, AP, RP, IC, DC, RF, F, CL}(
         name,
-        ω_ref,
+        frequency_ref,
         converter,
-        outer_control,
+        active_power_control,
+        reactive_power_control,
         inner_control,
         dc_source,
-        freq_estimator,
+        reference_frame_rotation,
         filter,
-        limiter,
+        current_limitation,
         base_power,
         n_states,
         states,
@@ -141,52 +152,57 @@ end
 
 function DynamicInverter(;
     name::String,
-    ω_ref::Float64,
+    frequency_ref::Float64,
     converter::C,
-    outer_control::O,
+    active_power_control::AP,
+    reactive_power_control::RP,
     inner_control::IC,
     dc_source::DC,
-    freq_estimator::P,
+    reference_frame_rotation::RF,
     filter::F,
-    limiter::L = nothing,
+    current_limitation::CL = nothing,
     base_power::Float64 = 100.0,
     n_states = _calc_n_states(
         converter,
-        outer_control,
+        active_power_control,
+        reactive_power_control,
         inner_control,
         dc_source,
-        freq_estimator,
+        reference_frame_rotation,
         filter,
     ),
     states = _calc_states(
         converter,
-        outer_control,
+        active_power_control,
+        reactive_power_control,
         inner_control,
         dc_source,
-        freq_estimator,
+        reference_frame_rotation,
         filter,
     ),
     ext::Dict{String, Any} = Dict{String, Any}(),
     internal = IS.InfrastructureSystemsInternal(),
 ) where {
     C <: Converter,
-    O <: OuterControl,
+    AP <: ActivePowerControl,
+    RP <: ReactivePowerControl,
     IC <: InnerControl,
     DC <: DCSource,
-    P <: FrequencyEstimator,
+    RF <: ReferenceFrameRotation,
     F <: Filter,
-    L <: Union{Nothing, OutputCurrentLimiter},
+    CL <: Union{Nothing, CurrentLimitation},
 }
     return DynamicInverter(
         name,
-        ω_ref,
+        frequency_ref,
         converter,
-        outer_control,
+        active_power_control,
+        reactive_power_control,
         inner_control,
         dc_source,
-        freq_estimator,
+        reference_frame_rotation,
         filter,
-        limiter,
+        current_limitation,
         base_power,
         n_states,
         states,
@@ -195,135 +211,115 @@ function DynamicInverter(;
     )
 end
 
-function DynamicInverter(
-    name::String,
-    ω_ref::Float64,
-    converter::C,
-    active_power_control::AC,
-    reactive_power_control::RC,
-    inner_control::IC,
-    dc_source::DC,
-    freq_estimator::P,
-    ac_filter::F,
-) where {
-    C <: Converter,
-    AC <: ActivePowerControl,
-    RC <: ReactivePowerControl,
-    IC <: InnerControl,
-    DC <: DCSource,
-    P <: FrequencyEstimator,
-    F <: Filter,
-}
-    outer_control = OuterControl(active_power_control, reactive_power_control)
-    return DynamicInverter(
-        name,
-        ω_ref,
-        converter,
-        outer_control,
-        inner_control,
-        dc_source,
-        freq_estimator,
-        ac_filter,
-    )
-end
-
 get_name(device::DynamicInverter) = device.name
-get_ω_ref(device::DynamicInverter) = device.ω_ref
+"""Get the frequency reference of a [`DynamicInverter`](@ref) in Hz."""
+get_frequency_ref(device::DynamicInverter) = device.frequency_ref
 get_ext(device::DynamicInverter) = device.ext
 get_states(device::DynamicInverter) = device.states
 get_n_states(device::DynamicInverter) = device.n_states
 """Get the [`Converter`](@ref) component of a [`DynamicInverter`](@ref)."""
 get_converter(device::DynamicInverter) = device.converter
-"""Get the [`OuterControl`](@ref) component of a [`DynamicInverter`](@ref)."""
-get_outer_control(device::DynamicInverter) = device.outer_control
+"""Get the [`ActivePowerControl`](@ref) component of a [`DynamicInverter`](@ref)."""
+get_active_power_control(device::DynamicInverter) = device.active_power_control
+"""Get the [`ReactivePowerControl`](@ref) component of a [`DynamicInverter`](@ref)."""
+get_reactive_power_control(device::DynamicInverter) = device.reactive_power_control
 """Get the [`InnerControl`](@ref) component of a [`DynamicInverter`](@ref)."""
 get_inner_control(device::DynamicInverter) = device.inner_control
 """Get the [`DCSource`](@ref) component of a [`DynamicInverter`](@ref)."""
 get_dc_source(device::DynamicInverter) = device.dc_source
-"""Get the [`FrequencyEstimator`](@ref) component of a [`DynamicInverter`](@ref)."""
-get_freq_estimator(device::DynamicInverter) = device.freq_estimator
+"""Get the [`ReferenceFrameRotation`](@ref) component of a [`DynamicInverter`](@ref)."""
+get_reference_frame_rotation(device::DynamicInverter) = device.reference_frame_rotation
 """Get the [`Filter`](@ref) component of a [`DynamicInverter`](@ref)."""
 get_filter(device::DynamicInverter) = device.filter
-get_limiter(device::DynamicInverter) = device.limiter
+"""Get the [`CurrentLimitation`](@ref) component of a [`DynamicInverter`](@ref)."""
+get_current_limitation(device::DynamicInverter) = device.current_limitation
 _get_base_power(device::DynamicInverter) = device.base_power
 get_internal(device::DynamicInverter) = device.internal
-get_P_ref(value::DynamicInverter) =
-    get_P_ref(get_active_power_control(get_outer_control(value)))
-get_V_ref(value::DynamicInverter) =
-    get_V_ref(get_reactive_power_control(get_outer_control(value)))
+get_P_ref(value::DynamicInverter) = get_P_ref(get_active_power_control(value))
+get_V_ref(value::DynamicInverter) = get_V_ref(get_reactive_power_control(value))
 
 function _calc_n_states(
     converter,
-    outer_control,
+    active_power_control,
+    reactive_power_control,
     inner_control,
     dc_source,
-    freq_estimator,
+    reference_frame_rotation,
     filter,
 )
     return converter.n_states +
-           outer_control.n_states +
+           active_power_control.n_states +
+           reactive_power_control.n_states +
            inner_control.n_states +
            dc_source.n_states +
-           freq_estimator.n_states +
+           reference_frame_rotation.n_states +
            filter.n_states
 end
 
 function _calc_states(
     converter,
-    outer_control,
+    active_power_control,
+    reactive_power_control,
     inner_control,
     dc_source,
-    freq_estimator,
+    reference_frame_rotation,
     filter,
 )
     return vcat(
         converter.states,
-        outer_control.states,
+        active_power_control.states,
+        reactive_power_control.states,
         inner_control.states,
         dc_source.states,
-        freq_estimator.states,
+        reference_frame_rotation.states,
         filter.states,
     )
 end
 
-function get_REControlB_states(Q_Flag::Int)
-    if Q_Flag == 0
-        return [:Vt_filt, :I_icv]
-    elseif Q_Flag == 1
+function get_REControlB_states(Q_Flag::Bool)
+    if Q_Flag
         return [:Vt_filt, :ξ_icv]
     else
-        error("Unsupported value of Q_Flag")
+        return [:Vt_filt, :I_icv]
     end
 end
 
-function get_activeRETypeAB_states(Freq_Flag::Int)
-    if Freq_Flag == 1
+function get_activeRETypeAB_states(Freq_Flag::Bool)
+    if Freq_Flag
         return [:p_flt, :ξ_P, :p_ext, :p_ord], 4
-    elseif Freq_Flag == 0
-        return [:p_ord], 1
     else
-        error("Unsupported value of Freq_Flag")
+        return [:p_ord], 1
     end
 end
 
-function get_reactiveRETypeAB_states(Ref_Flag::Int, PF_Flag::Int, V_Flag::Int)
-    if (Ref_Flag == 0) && ((PF_Flag == 1) && (V_Flag == 1))
-        return [:pr_flt, :ξ_Q], 2
-    elseif (Ref_Flag == 0) && ((PF_Flag == 1) && (V_Flag == 0))
-        return [:pr_flt], 1
-    elseif (Ref_Flag == 0) && ((PF_Flag == 0) && (V_Flag == 1))
-        return [:q_flt, :ξq_oc, :q_LL, :ξ_Q], 4
-    elseif (Ref_Flag == 0) && ((PF_Flag == 0) && (V_Flag == 0))
-        return [:q_flt, :ξq_oc, :q_LL], 3
-    elseif (Ref_Flag == 1) && ((PF_Flag == 1) && (V_Flag == 1))
-        return [:pr_flt, :ξ_Q], 2
-    elseif (Ref_Flag == 1) && ((PF_Flag == 1) && (V_Flag == 0))
-        return [:pr_flt], 1
-    elseif (Ref_Flag == 1) && ((PF_Flag == 0) && (V_Flag == 1))
-        return [:V_cflt, :ξq_oc, :q_LL, :ξ_Q], 4
-    elseif (Ref_Flag == 1) && ((PF_Flag == 0) && (V_Flag == 0))
-        return [:V_cflt, :ξq_oc, :q_LL], 3
+function get_reactiveRETypeAB_states(Ref_Flag::Bool, PF_Flag::Bool, V_Flag::Bool)
+    if !Ref_Flag
+        if PF_Flag
+            if V_Flag
+                return [:pr_flt, :ξ_Q], 2
+            else
+                return [:pr_flt], 1
+            end
+        else
+            if V_Flag
+                return [:q_flt, :ξq_oc, :q_LL, :ξ_Q], 4
+            else
+                return [:q_flt, :ξq_oc, :q_LL], 3
+            end
+        end
     else
-        error("Unsupported value of Ref_Flag, PF_Flag or V_Flag")
+        if PF_Flag
+            if V_Flag
+                return [:pr_flt, :ξ_Q], 2
+            else
+                return [:pr_flt], 1
+            end
+        else
+            if V_Flag
+                return [:V_cflt, :ξq_oc, :q_LL, :ξ_Q], 4
+            else
+                return [:V_cflt, :ξq_oc, :q_LL], 3
+            end
+        end
     end
 end
