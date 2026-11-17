@@ -22,6 +22,11 @@ To begin, the user must make 2 or 3 decisions before defining the operating cost
           * If you have data in units of currency, such as \$/MWh, use [`CostCurve`](@ref).
             If you selected another `OperationalCost` type, the variable cost is represented
             as a `CostCurve`.
+          * If the unit burns two fuels, use [`DualFuelCurve`](@ref).
+            Each fuel has its own heat rate curve and its own price.
+            In a stacked curve, the second fuel covers the output above a threshold, as in duct firing.
+            The second curve is a [`PiecewiseIncrementalCurve`](@ref) with no `initial_input` that starts where the first curve ends, and `second_fuel_share` is not set.
+            In a blended curve, both curves cover the full output and `second_fuel_share` is the fixed share of the second fuel.
 
  2. Select a [`ValueCurve`](@ref) to represent the variable cost data by comparing the format
     of your variable cost data to the [Variable Cost Representations table](@ref curve_table)

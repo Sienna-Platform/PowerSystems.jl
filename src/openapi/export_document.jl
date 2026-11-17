@@ -90,6 +90,7 @@ function to_openapi(block::CombinedCycleBlock, refs::OpenAPIRefs)
         name = get_name(block),
         configuration = PO.CombinedCycleConfiguration(string(get_configuration(block))),
         heat_recovery_to_steam_factor = get_heat_recovery_to_steam_factor(block),
+        hrsg_heat_loss = get_hrsg_heat_loss(block),
     )
 end
 

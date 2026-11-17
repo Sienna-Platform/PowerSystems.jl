@@ -588,6 +588,8 @@ _unit_category(::Val{:mw_per_minute}) = ACTIVE_POWER_CHANGE_RATE
 _axis_categories(::IS.CostCurve) = (ACTIVE_POWER, nothing)
 _axis_categories(curve::IS.FuelCurve) =
     (ACTIVE_POWER, _fuel_category(get_fuel_units(curve)))
+_axis_categories(curve::IS.DualFuelCurve) =
+    (ACTIVE_POWER, _fuel_category(get_fuel_units(curve)))
 _axis_categories(curve::IS.LossCurve) = (_loss_x_category(get_x_units(curve)), ACTIVE_POWER)
 
 _loss_x_category(::typeof(u"MW")) = ACTIVE_POWER
@@ -600,7 +602,7 @@ _loss_x_category(units) = throw(
 _fuel_category(::Union{typeof(MMBtu), typeof(u"GJ")}) = nothing
 _fuel_category(units) = throw(
     ArgumentError(
-        "a FuelCurve's fuel_units must be u\"MMBtu\" or u\"GJ\" to rebase; got $units",
+        "a fuel curve's fuel_units must be u\"MMBtu\" or u\"GJ\" to rebase; got $units",
     ),
 )
 

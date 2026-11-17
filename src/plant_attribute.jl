@@ -128,6 +128,7 @@ For aggregate representations consider using [`CombinedCycleFractional`](@ref).
 - `name::String`: Name of the combined cycle block
 - `configuration::CombinedCycleConfiguration.Value`: Configuration type of the combined cycle
 - `heat_recovery_to_steam_factor::Float64`: Factor for heat recovery to steam conversion
+- `hrsg_heat_loss::Float64`: Heat each HRSG of the block loses per hour for each committed CT that feeds it, taken from the recovered heat, not negative. In the fuel units of the block's member units' fuel curves, per hour.
 - `hrsg_ct_map::Dict{Int, Vector{Int}}`: Mapping of HRSG numbers to CT unit ids (CTs as HRSG inputs)
 - `hrsg_ca_map::Dict{Int, Vector{Int}}`: Mapping of HRSG numbers to CA unit ids (CAs as HRSG outputs)
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems internal reference
@@ -136,9 +137,31 @@ struct CombinedCycleBlock <: PowerPlant
     name::String
     configuration::CombinedCycleConfiguration.Value
     heat_recovery_to_steam_factor::Float64
+    hrsg_heat_loss::Float64
     hrsg_ct_map::Dict{Int, Vector{Int}}
     hrsg_ca_map::Dict{Int, Vector{Int}}
     internal::InfrastructureSystemsInternal
+
+    # Every constructor ends here.
+    function CombinedCycleBlock(
+        name,
+        configuration,
+        heat_recovery_to_steam_factor,
+        hrsg_heat_loss,
+        hrsg_ct_map,
+        hrsg_ca_map,
+        internal,
+    )
+        if !(hrsg_heat_loss >= 0.0)
+            throw(
+                ArgumentError(
+                    "CombinedCycleBlock $name: hrsg_heat_loss must not be negative; got $hrsg_heat_loss",
+                ),
+            )
+        end
+        return new(name, configuration, heat_recovery_to_steam_factor, hrsg_heat_loss,
+            hrsg_ct_map, hrsg_ca_map, internal)
+    end
 end
 
 # Deserialization variant: converts string-keyed dicts from JSON
@@ -146,6 +169,7 @@ function CombinedCycleBlock(
     name::String,
     configuration::CombinedCycleConfiguration.Value,
     heat_recovery_to_steam_factor::Float64,
+    hrsg_heat_loss::Float64,
     hrsg_ct_map::Dict{String, <:Any},
     hrsg_ca_map::Dict{String, <:Any},
     internal::InfrastructureSystemsInternal,
@@ -154,6 +178,7 @@ function CombinedCycleBlock(
         name,
         configuration,
         heat_recovery_to_steam_factor,
+        hrsg_heat_loss,
         Dict{Int, Vector{Int}}(
             parse(Int, k) => Int.(v) for (k, v) in hrsg_ct_map
         ),
@@ -169,14 +194,16 @@ function CombinedCycleBlock(
     name::String,
     configuration::String,
     heat_recovery_to_steam_factor::Float64,
+    hrsg_heat_loss::Float64,
     hrsg_ct_map::Dict{String, <:Any},
     hrsg_ca_map::Dict{String, <:Any},
     internal::InfrastructureSystemsInternal,
 )
     return CombinedCycleBlock(
         name,
-        IS.deserialize(CombinedCycleConfiguration, configuration),
+        IS.deserialize(CombinedCycleConfiguration.Value, configuration),
         heat_recovery_to_steam_factor,
+        hrsg_heat_loss,
         hrsg_ct_map,
         hrsg_ca_map,
         internal,
@@ -184,7 +211,7 @@ function CombinedCycleBlock(
 end
 
 """
-    CombinedCycleBlock(; name, configuration, heat_recovery_to_steam_factor, hrsg_ct_map, hrsg_ca_map, internal)
+    CombinedCycleBlock(; name, configuration, heat_recovery_to_steam_factor, hrsg_heat_loss, hrsg_ct_map, hrsg_ca_map, internal)
 
 Construct a [`CombinedCycleBlock`](@ref).
 
@@ -192,6 +219,7 @@ Construct a [`CombinedCycleBlock`](@ref).
 - `name::String`: Name of the combined cycle block
 - `configuration::CombinedCycleConfiguration.Value`: Configuration type of the combined cycle
 - `heat_recovery_to_steam_factor::Float64`: (default: `0.0`) Factor for heat recovery to steam conversion
+- `hrsg_heat_loss::Float64`: (default: `0.0`) Heat each HRSG of the block loses per hour for each committed CT that feeds it, taken from the recovered heat, not negative. In the fuel units of the block's member units' fuel curves, per hour.
 - `hrsg_ct_map::AbstractDict`: (default: empty dict) Mapping of HRSG numbers to CT unit ids (CTs as HRSG inputs)
 - `hrsg_ca_map::AbstractDict`: (default: empty dict) Mapping of HRSG numbers to CA unit ids (CAs as HRSG outputs)
 - `internal::InfrastructureSystemsInternal`: (default: `InfrastructureSystemsInternal()`) (**Do not modify.**) PowerSystems internal reference
@@ -200,6 +228,7 @@ function CombinedCycleBlock(;
     name,
     configuration,
     heat_recovery_to_steam_factor = 0.0,
+    hrsg_heat_loss = 0.0,
     hrsg_ct_map::AbstractDict = Dict{Int, Vector{Int}}(),
     hrsg_ca_map::AbstractDict = Dict{Int, Vector{Int}}(),
     internal = InfrastructureSystemsInternal(),
@@ -208,6 +237,7 @@ function CombinedCycleBlock(;
         name,
         configuration,
         heat_recovery_to_steam_factor,
+        hrsg_heat_loss,
         hrsg_ct_map,
         hrsg_ca_map,
         internal,
@@ -221,6 +251,8 @@ get_configuration(value::CombinedCycleBlock) = value.configuration
 """Get [`CombinedCycleBlock`](@ref) `heat_recovery_to_steam_factor`."""
 get_heat_recovery_to_steam_factor(value::CombinedCycleBlock) =
     value.heat_recovery_to_steam_factor
+"""Get [`CombinedCycleBlock`](@ref) `hrsg_heat_loss`."""
+get_hrsg_heat_loss(value::CombinedCycleBlock) = value.hrsg_heat_loss
 """Get [`CombinedCycleBlock`](@ref) `hrsg_ct_map`."""
 get_hrsg_ct_map(value::CombinedCycleBlock) = value.hrsg_ct_map
 """Get [`CombinedCycleBlock`](@ref) `hrsg_ca_map`."""
@@ -274,7 +306,7 @@ function CombinedCycleFractional(
 )
     return CombinedCycleFractional(
         name,
-        IS.deserialize(CombinedCycleConfiguration, configuration),
+        IS.deserialize(CombinedCycleConfiguration.Value, configuration),
         operation_exclusion_map,
         internal,
     )

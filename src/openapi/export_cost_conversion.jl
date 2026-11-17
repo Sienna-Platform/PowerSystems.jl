@@ -229,6 +229,36 @@ function convert_cost_to_openapi(cost::FuelCurve)
         fuel_cost_time_series = _fuel_cost_time_series_id(
             IS.get_fuel_cost_time_series(cost),
         ),
+        startup_fuel_offtake = convert_cost_to_openapi(get_startup_fuel_offtake(cost)),
+        vom_cost = convert_cost_to_openapi(get_vom_cost(cost)),
+    )
+end
+
+function convert_cost_to_openapi(cost::DualFuelCurve)
+    return PC.DualFuelCurve(;
+        power_units = _power_units_to_string(get_power_units(cost), cost),
+        first_fuel_curve = PC.ValueCurve(
+            convert_cost_to_openapi(get_first_fuel_curve(cost)),
+        ),
+        second_fuel_curve = PC.ValueCurve(
+            convert_cost_to_openapi(get_second_fuel_curve(cost)),
+        ),
+        first_fuel_cost = get_first_fuel_cost(cost),
+        first_fuel_cost_time_series = _fuel_cost_time_series_id(
+            get_first_fuel_cost_time_series(cost),
+        ),
+        second_fuel_cost = get_second_fuel_cost(cost),
+        second_fuel_cost_time_series = _fuel_cost_time_series_id(
+            get_second_fuel_cost_time_series(cost),
+        ),
+        second_fuel_share = get_second_fuel_share(cost),
+        first_fuel_startup_offtake = convert_cost_to_openapi(
+            get_first_fuel_startup_offtake(cost),
+        ),
+        second_fuel_startup_offtake = convert_cost_to_openapi(
+            get_second_fuel_startup_offtake(cost),
+        ),
+        fuel_units = PC.FuelUnit(_fuel_units_to_wire(get_fuel_units(cost))),
         vom_cost = convert_cost_to_openapi(get_vom_cost(cost)),
     )
 end
