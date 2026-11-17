@@ -5,7 +5,7 @@ This file is auto-generated. Do not edit.
 #! format: off
 
 """
-    mutable struct HybridOutputCurrentLimiter <: OutputCurrentLimiter
+    mutable struct HybridOutputCurrentLimiter <: CurrentLimitation
         I_max::Float64
         rv::Float64
         lv::Float64
@@ -20,7 +20,7 @@ Parameters of Hybrid Current Controller Limiter. Regulates the magnitude of the 
 - `lv::Float64`: Imaginary part of the virtual impedance, validation range: `(0, nothing)`
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`)
 """
-mutable struct HybridOutputCurrentLimiter <: OutputCurrentLimiter
+mutable struct HybridOutputCurrentLimiter <: CurrentLimitation
     "Maximum limit on current controller input current (component base)"
     I_max::Float64
     "Real part of the virtual impedance"
@@ -62,3 +62,22 @@ set_rv!(value::HybridOutputCurrentLimiter, val) = value.rv = val
 set_lv!(value::HybridOutputCurrentLimiter, val) = value.lv = val
 """Set [`HybridOutputCurrentLimiter`](@ref) `ext`."""
 set_ext!(value::HybridOutputCurrentLimiter, val) = value.ext = val
+
+
+
+function from_openapi(po::PD.HybridOutputCurrentLimiter, refs::OpenAPIRefs)
+    return HybridOutputCurrentLimiter(;
+        I_max = _wire_required(po.i_max, "HybridOutputCurrentLimiter", "I_max"),
+        rv = _wire_required(po.rv, "HybridOutputCurrentLimiter", "rv"),
+        lv = _wire_required(po.lv, "HybridOutputCurrentLimiter", "lv"),
+    )
+end
+
+function to_openapi(value::HybridOutputCurrentLimiter, refs::OpenAPIRefs)
+    return PD.HybridOutputCurrentLimiter(;
+        id = component_id(refs, value),
+        i_max = get_I_max(value),
+        rv = get_rv(value),
+        lv = get_lv(value),
+    )
+end

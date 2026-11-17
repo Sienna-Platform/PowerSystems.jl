@@ -138,6 +138,26 @@ InfrastructureSystems.display_units_arg(::typeof({{accessor}}_unitful), ::{{unit
 {{/custom_code}}
 
 {{#openapi_type}}
+{{#openapi_dynamic}}
+{{! A dynamics type carries no unit-bearing field and no `power_units`, so one method per
+    direction serves both unit systems. }}
+function from_openapi(po::{{{openapi_po_type}}}, refs::OpenAPIRefs)
+    return {{struct_name}}(;
+        {{#openapi_kwargs_device}}
+        {{name}} = {{{expr}}},
+        {{/openapi_kwargs_device}}
+    )
+end
+
+function to_openapi(value::{{struct_name}}, refs::OpenAPIRefs)
+    return {{{openapi_po_type}}}(;
+        {{#openapi_export_kwargs_device}}
+        {{name}} = {{{expr}}},
+        {{/openapi_export_kwargs_device}}
+    )
+end
+{{/openapi_dynamic}}
+{{^openapi_dynamic}}
 function from_openapi(po::{{{openapi_po_type}}}, refs::OpenAPIRefs, ::ComponentBaseUnit)
     return {{struct_name}}(;
         {{#openapi_kwargs_device}}
@@ -194,6 +214,7 @@ function to_openapi(value::{{struct_name}}, refs::OpenAPIRefs, ::NaturalUnit)
         {{/openapi_export_kwargs_natural}}
     )
 end
+{{/openapi_dynamic}}
 {{/openapi_type}}
 """
 
@@ -291,7 +312,7 @@ const OPENAPI_EXPORT_COMPOUND_CTORS = Dict(
         optional_scaled = "_minmax_po_scaled_optional",
     ),
     "UpDown" => (
-        required = nothing, optional = "_updown_po_optional",
+        required = "_updown_po", optional = "_updown_po_optional",
         required_scaled = nothing, optional_scaled = "_updown_po_scaled_optional",
     ),
     "FromTo_ToFrom" => (
@@ -332,7 +353,7 @@ end
 
 """
 Classify one field's role in an OpenAPI converter. Returns `(kind, bare, nullable)` with
-`kind` one of `:skip`, `:cost`, `:scalar`, `:compound`, `:reference`, `:enum`.
+`kind` one of `:skip`, `:cost`, `:scalar`, `:compound`, `:wire`, `:reference`, `:enum`.
 
 Raises `DataFormatError` — never returns a partial/guessed classification — when `bare`
 is neither a scalar, a known compound alias, a component struct defined in this same
@@ -341,7 +362,8 @@ descriptor, nor a plausible bare enum type identifier (e.g. `Complex{Float64}`,
 """
 function openapi_classify_field(struct_name, field, struct_names)
     name = field["name"]
-    if name in OPENAPI_SKIP_FIELDS
+    # A field computed by the constructor (`internal_default`) is derived, never on the wire.
+    if name in OPENAPI_SKIP_FIELDS || haskey(field, "internal_default")
         return (:skip, field["data_type"], false)
     end
     if name in ("operation_cost", "spread_bid")
@@ -353,6 +375,10 @@ function openapi_classify_field(struct_name, field, struct_names)
     end
     if haskey(OPENAPI_COMPOUND_MEMBERS, bare)
         return (:compound, bare, nullable)
+    end
+    # Tuples, `NamedTuple`s and vectors: the wire spells them as arrays or point structs.
+    if occursin(r"^(Tuple|NamedTuple|Vector)\{", bare)
+        return (:wire, bare, nullable)
     end
     if bare in struct_names || bare in OPENAPI_REFERENCE_TYPES
         return (:reference, bare, nullable)
@@ -557,12 +583,25 @@ end
 The name this field carries on the PO side, which is its PSY name unless the descriptor
 states otherwise with `openapi_name`.
 
-The two diverge when PSY uses an identifier the schema cannot: `ExponentialLoad`'s `α`/`β`
-are `alpha`/`beta` in the JSON. The override lives on the field rather than being inferred
-(e.g. by transliterating Greek) so the mapping is stated once, in the descriptor, and any
-future divergence is declared rather than guessed.
+The two diverge when PSY names a field differently from the schema. The override lives on
+the field rather than being inferred, so the mapping is stated once, in the descriptor, and
+any divergence is declared rather than guessed.
 """
 openapi_po_field_name(field) = get(field, "openapi_name", field["name"])
+
+"""
+Give every field of an `openapi_dynamic` struct its lower-cased name as `openapi_name`, unless
+the descriptor already states one. The dynamics SDK spells each property in lower case.
+"""
+function openapi_default_dynamic_names!(item)
+    if !get(item, "openapi_dynamic", false)
+        return nothing
+    end
+    for field in item["fields"]
+        get!(field, "openapi_name", lowercase(field["name"]))
+    end
+    return nothing
+end
 
 """Emit the `_or_default` call that falls back to `default_expr` when the wire value is
 absent. The guard is dispatch on `Union{Nothing, IC.Absent}` inside the helper, not a type
@@ -697,6 +736,18 @@ function compute_openapi_converter!(item, struct_names)
             push!(kwargs_natural, Dict("name" => name, "expr" => expr))
             continue
         end
+        if kind == :wire
+            # The target type is the descriptor's own, so `_wire_to_psy` dispatches on it and
+            # on the wire value; a default covers a schema-optional field.
+            args = "$bare, po.$po_name"
+            if haskey(field, "default")
+                args *= ", $(field["default"])"
+            end
+            expr = "_wire_to_psy($args)"
+            push!(kwargs_device, Dict("name" => name, "expr" => expr))
+            push!(kwargs_natural, Dict("name" => name, "expr" => expr))
+            continue
+        end
         conversion = if pu_override
             :none
         else
@@ -707,6 +758,13 @@ function compute_openapi_converter!(item, struct_names)
             device, natural = openapi_scalar_exprs(
                 po_name, conversion, nullable, bases, get(field, "default", nothing),
             )
+            if get(item, "openapi_dynamic", false) && !haskey(field, "default") &&
+               !nullable
+                # A schema-optional property the struct requires has no value to fall back
+                # to: absent is an error naming the field.
+                device = "_wire_required(po.$po_name, \"$struct_name\", \"$name\")"
+                natural = device
+            end
         else
             members = OPENAPI_COMPOUND_MEMBERS[bare]
             device, natural =
@@ -716,7 +774,11 @@ function compute_openapi_converter!(item, struct_names)
         push!(kwargs_natural, Dict("name" => name, "expr" => natural))
     end
 
-    item["openapi_po_type"] = "PO." * item["openapi_type"]
+    po_module = "PO"
+    if get(item, "openapi_dynamic", false)
+        po_module = "PD"
+    end
+    item["openapi_po_type"] = po_module * "." * item["openapi_type"]
     item["openapi_kwargs_device"] = kwargs_device
     item["openapi_kwargs_natural"] = kwargs_natural
     return nothing
@@ -1043,7 +1105,17 @@ function compute_openapi_export_converter!(item, struct_names)
             push!(kwargs_natural, Dict("name" => name, "expr" => expr))
             continue
         end
-        if name == "base_power"
+        if kind == :wire
+            getter = "$(openapi_export_getter_name(field))(value)"
+            expr = "_psy_to_wire($getter)"
+            if haskey(field, "openapi_wire")
+                expr = "_psy_to_wire($(field["openapi_wire"]), $getter)"
+            end
+            push!(kwargs_device, Dict("name" => name, "expr" => expr))
+            push!(kwargs_natural, Dict("name" => name, "expr" => expr))
+            continue
+        end
+        if name == "base_power" && !get(item, "openapi_dynamic", false)
             if isnothing(base_source)
                 base_source = openapi_export_base_source(item)
             end
@@ -1314,6 +1386,7 @@ function generate_structs(directory, data::Vector; print_results = true)
         item["needs_positional_constructor"] = has_internal && has_non_default_values
 
         if haskey(item, "openapi_type")
+            openapi_default_dynamic_names!(item)
             item["has_power_units"] = openapi_has_power_units(item)
             compute_openapi_converter!(item, openapi_struct_names)
             compute_openapi_export_converter!(item, openapi_struct_names)

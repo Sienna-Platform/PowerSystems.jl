@@ -331,13 +331,13 @@ end
     @test get_component(TwoWindingTransformer, sys, "badtap") === nothing
 end
 
-@testset "Circuit α outside typical range warns but adds" begin
+@testset "Circuit alpha outside typical range warns but adds" begin
     sys = System(100.0)
     bus_from, bus_to = _circuit_check_buses()
     add_component!(sys, bus_from)
     add_component!(sys, bus_to)
     xfrm = _circuit_check_xfrm("badalpha", bus_from, bus_to)
-    set_α!(get_circuit(xfrm), 2.0)   # outside [-1.571, 1.571]
+    set_alpha!(get_circuit(xfrm), 2.0)   # outside [-1.571, 1.571]
 
     @test_logs (:warn, r"phase shift") match_mode = :any add_component!(sys, xfrm)
     @test get_component(TwoWindingTransformer, sys, "badalpha") !== nothing

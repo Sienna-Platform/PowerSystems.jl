@@ -5,7 +5,7 @@ This file is auto-generated. Do not edit.
 #! format: off
 
 """
-    mutable struct SimpleMarconatoMachine <: Machine
+    mutable struct SimpleMarconatoMachine <: SynchronousMachineDynamics
         R::Float64
         Xd::Float64
         Xq::Float64
@@ -55,7 +55,7 @@ Parameters of 4-[states](@ref S) synchronous machine: Simplified Marconato model
 - `n_states::Int`: (**Do not modify.**) SimpleMarconatoMachine has 4 states
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
 """
-mutable struct SimpleMarconatoMachine <: Machine
+mutable struct SimpleMarconatoMachine <: SynchronousMachineDynamics
     "Resistance after EMF in machine per unit"
     R::Float64
     "Reactance after EMF in d-axis per unit"
@@ -192,3 +192,40 @@ set_ext!(value::SimpleMarconatoMachine, val) = value.ext = val
 set_γd!(value::SimpleMarconatoMachine, val) = value.γd = val
 """Set [`SimpleMarconatoMachine`](@ref) `γq`."""
 set_γq!(value::SimpleMarconatoMachine, val) = value.γq = val
+
+
+
+function from_openapi(po::PD.SimpleMarconatoMachine, refs::OpenAPIRefs)
+    return SimpleMarconatoMachine(;
+        R = _wire_required(po.r, "SimpleMarconatoMachine", "R"),
+        Xd = _wire_required(po.xd, "SimpleMarconatoMachine", "Xd"),
+        Xq = _wire_required(po.xq, "SimpleMarconatoMachine", "Xq"),
+        Xd_p = _wire_required(po.xd_p, "SimpleMarconatoMachine", "Xd_p"),
+        Xq_p = _wire_required(po.xq_p, "SimpleMarconatoMachine", "Xq_p"),
+        Xd_pp = _wire_required(po.xd_pp, "SimpleMarconatoMachine", "Xd_pp"),
+        Xq_pp = _wire_required(po.xq_pp, "SimpleMarconatoMachine", "Xq_pp"),
+        Td0_p = _wire_required(po.td0_p, "SimpleMarconatoMachine", "Td0_p"),
+        Tq0_p = _wire_required(po.tq0_p, "SimpleMarconatoMachine", "Tq0_p"),
+        Td0_pp = _wire_required(po.td0_pp, "SimpleMarconatoMachine", "Td0_pp"),
+        Tq0_pp = _wire_required(po.tq0_pp, "SimpleMarconatoMachine", "Tq0_pp"),
+        T_AA = _wire_required(po.t_aa, "SimpleMarconatoMachine", "T_AA"),
+    )
+end
+
+function to_openapi(value::SimpleMarconatoMachine, refs::OpenAPIRefs)
+    return PD.SimpleMarconatoMachine(;
+        id = component_id(refs, value),
+        r = get_R(value),
+        xd = get_Xd(value),
+        xq = get_Xq(value),
+        xd_p = get_Xd_p(value),
+        xq_p = get_Xq_p(value),
+        xd_pp = get_Xd_pp(value),
+        xq_pp = get_Xq_pp(value),
+        td0_p = get_Td0_p(value),
+        tq0_p = get_Tq0_p(value),
+        td0_pp = get_Td0_pp(value),
+        tq0_pp = get_Tq0_pp(value),
+        t_aa = get_T_AA(value),
+    )
+end

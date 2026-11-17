@@ -42,6 +42,7 @@ function check_bus_params(
     base_voltage,
     area,
     load_zone,
+    voltage_setpoint,
     ext,
     internal,
 )
@@ -55,6 +56,7 @@ function check_bus_params(
     base_voltage,
     area,
     load_zone,
+    voltage_setpoint,
     ext,
     internal
 end

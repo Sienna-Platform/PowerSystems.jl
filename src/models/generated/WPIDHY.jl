@@ -5,7 +5,7 @@ This file is auto-generated. Do not edit.
 #! format: off
 
 """
-    mutable struct WPIDHY <: TurbineGov
+    mutable struct WPIDHY <: TurbineGovernorDynamics
         T_reg::Float64
         reg::Float64
         Kp::Float64
@@ -40,7 +40,7 @@ Woodward PID Hydro Governor
 - `Tb::Float64`: Gate-servo time constant, validation range: `(0, nothing)`
 - `V_lim::MinMax`: Gate opening velocity limits `(G_min, G_max)`.
 - `G_lim::MinMax`: Minimum/Maximum Gate velocity `(G_min, G_max)`.
-- `Tw::Float64`: Water inertia time constant, sec, validation range: `(eps(), nothing)`
+- `Tw::Float64`: Water inertia time constant, sec, validation range: `(0.0001, nothing)`
 - `P_lim::MinMax`: Minimum/Maximum Gate openings `(P_min, P_max)`.
 - `D::Float64`: Turbine damping coefficient, validation range: `(0, nothing)`
 - `gate_openings::Tuple{Float64, Float64, Float64}`: Gate-opening speed at different loads
@@ -59,7 +59,7 @@ Woodward PID Hydro Governor
 - `states_types::Vector{StateTypes.Value}`: (**Do not modify.**) PIDGOV has 7 [differential](@ref states_list) [states](@ref S)
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
 """
-mutable struct WPIDHY <: TurbineGov
+mutable struct WPIDHY <: TurbineGovernorDynamics
     "Input time constant of the governor in s"
     T_reg::Float64
     "Input governor gain"
@@ -214,3 +214,46 @@ set_P_ref!(value::WPIDHY, val) = value.P_ref = val
 set_ext!(value::WPIDHY, val) = value.ext = val
 """Set [`WPIDHY`](@ref) `states_types`."""
 set_states_types!(value::WPIDHY, val) = value.states_types = val
+
+
+
+function from_openapi(po::PD.WPIDHY, refs::OpenAPIRefs)
+    return WPIDHY(;
+        T_reg = _wire_required(po.t_reg, "WPIDHY", "T_reg"),
+        reg = _wire_required(po.reg, "WPIDHY", "reg"),
+        Kp = _wire_required(po.kp, "WPIDHY", "Kp"),
+        Ki = _wire_required(po.ki, "WPIDHY", "Ki"),
+        Kd = _wire_required(po.kd, "WPIDHY", "Kd"),
+        Ta = _wire_required(po.ta, "WPIDHY", "Ta"),
+        Tb = _wire_required(po.tb, "WPIDHY", "Tb"),
+        V_lim = _or_default(po.v_lim, nothing),
+        G_lim = _or_default(po.g_lim, nothing),
+        Tw = _wire_required(po.tw, "WPIDHY", "Tw"),
+        P_lim = _or_default(po.p_lim, nothing),
+        D = _wire_required(po.d, "WPIDHY", "D"),
+        gate_openings = _wire_to_psy(Tuple{Float64, Float64, Float64}, po.gate_openings),
+        power_gate_openings = _wire_to_psy(Tuple{Float64, Float64, Float64}, po.power_gate_openings),
+        P_ref = _or_default(po.p_ref, 1.0),
+    )
+end
+
+function to_openapi(value::WPIDHY, refs::OpenAPIRefs)
+    return PD.WPIDHY(;
+        id = component_id(refs, value),
+        t_reg = get_T_reg(value),
+        reg = get_reg(value),
+        kp = get_Kp(value),
+        ki = get_Ki(value),
+        kd = get_Kd(value),
+        ta = get_Ta(value),
+        tb = get_Tb(value),
+        v_lim = _minmax_po(get_V_lim(value)),
+        g_lim = _minmax_po(get_G_lim(value)),
+        tw = get_Tw(value),
+        p_lim = _minmax_po(get_P_lim(value)),
+        d = get_D(value),
+        gate_openings = _psy_to_wire(get_gate_openings(value)),
+        power_gate_openings = _psy_to_wire(get_power_gate_openings(value)),
+        p_ref = get_P_ref(value),
+    )
+end

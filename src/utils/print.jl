@@ -214,15 +214,12 @@ function _component_base_note(d::DynamicInjection)
     return "parameters of the dynamic components above are in p.u. on the component base$base"
 end
 
-# The dynamic-model parameter blocks: machines, shafts, AVRs, turbine governors, PSSs,
-# and the inverter-side converters, filters, and controls. `ActivePowerControl` and
-# `ReactivePowerControl` sit directly under `DeviceParameter` rather than under
-# `DynamicComponent`, so they are named separately.
-const DynamicParameterBlock =
-    Union{DynamicComponent, ActivePowerControl, ReactivePowerControl}
+# The dynamic-model parameter blocks: machines, shafts, excitation systems, turbine
+# governors, stabilizers, and the inverter-side converters, filters, and controls.
+const DynamicParameterBlock = DynamicComponent
 
 """
-Print a dynamic-model parameter block (a machine, shaft, AVR, turbine governor, PSS,
+Print a dynamic-model parameter block (a machine, shaft, excitation system, turbine governor, stabilizer,
 converter, filter, control, ...) to `io` field by field, in the same shape as
 [`show_component`](@ref). These blocks are [`DeviceParameter`](@ref)s rather than
 [`Component`](@ref)s, so without this they fall back to Julia's single-line struct dump.
@@ -233,7 +230,7 @@ to print.
 
 # Examples
 ```julia
-show_device_parameter(get_machine(dyn_gen))
+show_device_parameter(get_synchronous_machine_dynamics(dyn_gen))
 ```
 """
 function show_device_parameter(io::IO, tech::DynamicParameterBlock)

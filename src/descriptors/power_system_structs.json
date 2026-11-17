@@ -373,6 +373,13 @@
                     "default": "nothing"
                 },
                 {
+                    "name": "voltage_setpoint",
+                    "comment": "Scheduled voltage magnitude of the bus, in per unit of `base_voltage`. The devices that regulate this bus hold this value, unless a droop or a reactive power limit prevents it. `nothing` when no device regulates the bus. `magnitude` is the solved value.",
+                    "null_value": "nothing",
+                    "default": "nothing",
+                    "data_type": "Union{Nothing, Float64}"
+                },
+                {
                     "name": "ext",
                     "comment": "An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.",
                     "data_type": "Dict{String, Any}",
@@ -534,7 +541,7 @@
                     "default": "1.0"
                 },
                 {
-                    "name": "α",
+                    "name": "alpha",
                     "comment": "Initial condition of phase shift (radians) across this circuit",
                     "null_value": "0.0",
                     "data_type": "Float64",
@@ -576,11 +583,18 @@
                     "default": "TransformerControlObjective.UNDEFINED"
                 },
                 {
-                    "name": "regulated_bus_number",
-                    "comment": "Controlled bus number; the sign indicates the regulation side",
-                    "null_value": "0",
-                    "data_type": "Int",
-                    "default": "0"
+                    "name": "regulated_bus",
+                    "comment": "Bus whose voltage the tap changer of this circuit regulates, within `controlled_voltage_limits`. The bus can be an end of `arc` or a remote bus. Used only when `control_objective` is `VOLTAGE` or `VOLTAGE_DISABLED`.",
+                    "null_value": "nothing",
+                    "default": "nothing",
+                    "data_type": "Union{Nothing, ACBus}"
+                },
+                {
+                    "name": "regulated_bus_orientation",
+                    "comment": "Direction that the tap adjustment assumes for `regulated_bus`. Set it only when `regulated_bus` is not an end of `arc`. Otherwise it is `UNDEFINED`, because the connections give the direction.",
+                    "null_value": "TransformerRegulationOrientation.UNDEFINED",
+                    "default": "TransformerRegulationOrientation.UNDEFINED",
+                    "data_type": "TransformerRegulationOrientation.Value"
                 },
                 {
                     "name": "tap_ratio_limits",
@@ -1057,6 +1071,26 @@
                     "display_units": "CU"
                 },
                 {
+                    "name": "rating_b",
+                    "comment": "Second current rating; entered in MVA.",
+                    "null_value": "nothing",
+                    "data_type": "Union{Nothing, Float64}",
+                    "default": "nothing",
+                    "needs_conversion": true,
+                    "conversion_unit": ":mva",
+                    "display_units": "CU"
+                },
+                {
+                    "name": "rating_c",
+                    "comment": "Third current rating; entered in MVA.",
+                    "null_value": "nothing",
+                    "data_type": "Union{Nothing, Float64}",
+                    "default": "nothing",
+                    "needs_conversion": true,
+                    "conversion_unit": ":mva",
+                    "display_units": "CU"
+                },
+                {
                     "name": "discrete_branch_type",
                     "comment": "Type of discrete control",
                     "null_value": "DiscreteControlledBranchType.BREAKER",
@@ -1195,29 +1229,11 @@
                     "display_units": "CU"
                 },
                 {
-                    "name": "control_mode",
-                    "comment": "How the series reactance is set; see [`SeriesCompensatorControlMode`](@ref). `DISPATCHABLE` and `ACTIVE_POWER_FLOW` use `reactance_limits`; `ACTIVE_POWER_FLOW` also uses `active_power_flow_setpoint`",
-                    "data_type": "SeriesCompensatorControlMode.Value",
-                    "null_value": "SeriesCompensatorControlMode.FIXED",
-                    "default": "SeriesCompensatorControlMode.FIXED"
-                },
-                {
-                    "name": "reactance_limits",
-                    "comment": "Minimum and maximum series reactance in pu ([`SYSTEM_BASE`](@ref per_unit)), for `DISPATCHABLE` and `ACTIVE_POWER_FLOW`. `nothing` if not applicable",
-                    "null_value": "nothing",
-                    "data_type": "Union{Nothing, MinMax}",
-                    "default": "nothing",
-                    "needs_conversion": true,
-                    "conversion_unit": ":ohm"
-                },
-                {
-                    "name": "active_power_flow_setpoint",
-                    "comment": "Active power flow (MW), from the `from` bus to the `to` bus, held under `ACTIVE_POWER_FLOW`. `nothing` if not applicable",
-                    "null_value": "nothing",
-                    "data_type": "Union{Nothing, Float64}",
-                    "default": "nothing",
-                    "needs_conversion": true,
-                    "conversion_unit": ":mw"
+                    "name": "bypassed",
+                    "comment": "`true` when the device is bypassed: it is shorted into a zero-impedance tie between the `from` and `to` buses. `r` and `x` keep the values of the device in service.",
+                    "null_value": "false",
+                    "default": "false",
+                    "data_type": "Bool"
                 },
                 {
                     "null_value": "0.0",
@@ -1797,15 +1813,8 @@
                     "default": "nothing"
                 },
                 {
-                    "name": "ac_voltage_setpoint_from",
-                    "comment": "AC-side voltage magnitude target of the `from` bus converter in per-unit of `rated_ac_voltage_from`, used when `ac_control_from` is `AC_VOLTAGE`; `nothing` otherwise.",
-                    "null_value": "nothing",
-                    "data_type": "Union{Nothing, Float64}",
-                    "default": "nothing"
-                },
-                {
                     "name": "rated_ac_voltage_from",
-                    "comment": "Rated (base) AC voltage at the `from` converter's AC terminal in kV. Base of `ac_voltage_setpoint_from`, which is per-unit of it; `0.0` means unspecified, and a present setpoint then raises an error.",
+                    "comment": "Rated AC voltage at the AC terminal of the `from` converter, in kV. `0.0` means unspecified.",
                     "null_value": "0.0",
                     "data_type": "Float64",
                     "default": "0.0"
@@ -1901,15 +1910,8 @@
                     "default": "nothing"
                 },
                 {
-                    "name": "ac_voltage_setpoint_to",
-                    "comment": "AC-side voltage magnitude target of the `to` bus converter in per-unit of `rated_ac_voltage_to`, used when `ac_control_to` is `AC_VOLTAGE`; `nothing` otherwise.",
-                    "null_value": "nothing",
-                    "data_type": "Union{Nothing, Float64}",
-                    "default": "nothing"
-                },
-                {
                     "name": "rated_ac_voltage_to",
-                    "comment": "Rated (base) AC voltage at the `to` converter's AC terminal in kV. Base of `ac_voltage_setpoint_to`, which is per-unit of it; `0.0` means unspecified, and a present setpoint then raises an error.",
+                    "comment": "Rated AC voltage at the AC terminal of the `to` converter, in kV. `0.0` means unspecified.",
                     "null_value": "0.0",
                     "data_type": "Float64",
                     "default": "0.0"
@@ -1980,28 +1982,18 @@
                     "default": "0.0"
                 },
                 {
-                    "name": "remote_bus_control_from",
-                    "comment": "Number of the AC bus whose voltage the `from` converter regulates when `ac_control_from` is `AC_VOLTAGE`; `nothing` regulates its own terminal bus.",
+                    "name": "remote_regulated_bus_from",
+                    "comment": "AC bus whose voltage the `from` converter regulates when `ac_control_from` is `AC_VOLTAGE`, to the `voltage_setpoint` of that bus. `nothing` regulates the `from` terminal bus. The bus must not be the `from` terminal bus.",
                     "null_value": "nothing",
-                    "data_type": "Union{Nothing, Int}",
                     "default": "nothing",
-                    "valid_range": {
-                        "min": 1,
-                        "max": null
-                    },
-                    "validation_action": "error"
+                    "data_type": "Union{Nothing, ACBus}"
                 },
                 {
-                    "name": "remote_bus_control_to",
-                    "comment": "Number of the AC bus whose voltage the `to` converter regulates when `ac_control_to` is `AC_VOLTAGE`; `nothing` regulates its own terminal bus.",
+                    "name": "remote_regulated_bus_to",
+                    "comment": "AC bus whose voltage the `to` converter regulates when `ac_control_to` is `AC_VOLTAGE`, to the `voltage_setpoint` of that bus. `nothing` regulates the `to` terminal bus. The bus must not be the `to` terminal bus.",
                     "null_value": "nothing",
-                    "data_type": "Union{Nothing, Int}",
                     "default": "nothing",
-                    "valid_range": {
-                        "min": 1,
-                        "max": null
-                    },
-                    "validation_action": "error"
+                    "data_type": "Union{Nothing, ACBus}"
                 },
                 {
                     "name": "services",
@@ -2936,13 +2928,6 @@
                     "data_type": "Union{Nothing, FACTSOperationModes.Value}"
                 },
                 {
-                    "name": "voltage_setpoint",
-                    "comment": "Voltage setpoint at the sending end bus, it has to be a [`PV`](@ref ACBusTypes) bus, in p.u. ([`SYSTEM_BASE`](@ref per_unit)).",
-                    "null_value": "1.0",
-                    "default": "1.0",
-                    "data_type": "Float64"
-                },
-                {
                     "name": "max_shunt_current",
                     "comment": "Maximum shunt current at unity voltage, MVA; the STATCOM current limit and SVC susceptance base.",
                     "default": "9999.0",
@@ -2966,11 +2951,11 @@
                     "data_type": "FACTSShuntControlType.Value"
                 },
                 {
-                    "name": "regulated_bus_number",
-                    "comment": "Bus whose voltage this device regulates; 0 ⇒ local (sending) bus",
-                    "null_value": "0",
-                    "default": "0",
-                    "data_type": "Int"
+                    "name": "remote_regulated_bus",
+                    "comment": "Bus whose voltage this device regulates, to the `voltage_setpoint` of that bus. `nothing` regulates the sending end bus. The bus must not be the same as `bus`.",
+                    "null_value": "nothing",
+                    "default": "nothing",
+                    "data_type": "Union{Nothing, ACBus}"
                 },
                 {
                     "name": "reactive_power_required",
@@ -3172,11 +3157,11 @@
                     "default": "SwitchedAdmittanceControlMode.FIXED"
                 },
                 {
-                    "name": "regulated_bus_number",
-                    "comment": "Bus number whose voltage/quantity this shunt regulates; 0 ⇒ local bus.",
-                    "data_type": "Int",
-                    "null_value": "0",
-                    "default": "0"
+                    "name": "remote_regulated_bus",
+                    "comment": "Bus that this shunt regulates. For the voltage modes, the bus whose voltage the shunt holds within `voltage_limits`. For the reactive modes, the bus of the device whose reactive quantity the shunt regulates. `nothing` means the bus of this shunt. The bus must not be the same as `bus`.",
+                    "null_value": "nothing",
+                    "default": "nothing",
+                    "data_type": "Union{Nothing, ACBus}"
                 },
                 {
                     "name": "dynamic_injector",
@@ -3665,8 +3650,7 @@
                     "conversion_unit": ":mvar"
                 },
                 {
-                    "name": "α",
-                    "openapi_name": "alpha",
+                    "name": "alpha",
                     "comment": "Exponent relating voltage dependency for active power. 0 = constant power only, 1 = constant current only, and 2 = constant impedance only",
                     "null_value": "0.0",
                     "data_type": "Float64",
@@ -3677,8 +3661,7 @@
                     "validation_action": "warn"
                 },
                 {
-                    "name": "β",
-                    "openapi_name": "beta",
+                    "name": "beta",
                     "comment": "Exponent relating voltage dependency for reactive power. 0 = constant power only, 1 = constant current only, and 2 = constant impedance only",
                     "null_value": "0.0",
                     "data_type": "Float64",
@@ -3757,6 +3740,8 @@
         },
         {
             "struct_name": "SingleCageInductionMachine",
+            "openapi_type": "SingleCageInductionMachine",
+            "openapi_dynamic": true,
             "docstring": "Parameters of 5-states three-phase single cage induction machine with quadratic torque-speed relationship",
             "fields": [
                 {
@@ -3847,6 +3832,18 @@
                     }
                 },
                 {
+                    "name": "torque_ref",
+                    "comment": "Reference torque parameter",
+                    "data_type": "Float64",
+                    "null_value": 0
+                },
+                {
+                    "name": "B_shunt",
+                    "comment": "Susceptance Initialization Corrector Term",
+                    "data_type": "Float64",
+                    "null_value": 0
+                },
+                {
                     "name": "base_power",
                     "exclude_getter": true,
                     "exclude_setter": true,
@@ -3869,18 +3866,6 @@
                     "name": "C",
                     "comment": "(**Do not modify.**) Torque-Speed Constant Term",
                     "internal_default": "PowerSystems.calculate_IM_torque_params(A, B)",
-                    "data_type": "Float64"
-                },
-                {
-                    "name": "τ_ref",
-                    "comment": "Reference torque parameter",
-                    "internal_default": "1.0",
-                    "data_type": "Float64"
-                },
-                {
-                    "name": "B_shunt",
-                    "comment": "Susceptance Initialization Corrector Term",
-                    "internal_default": "0.0",
                     "data_type": "Float64"
                 },
                 {
@@ -3921,6 +3906,8 @@
         },
         {
             "struct_name": "SimplifiedSingleCageInductionMachine",
+            "openapi_type": "SimplifiedSingleCageInductionMachine",
+            "openapi_dynamic": true,
             "docstring": "Parameters of 3-states three-phase single cage induction machine with quadratic torque-speed relationship",
             "fields": [
                 {
@@ -4011,6 +3998,18 @@
                     }
                 },
                 {
+                    "name": "torque_ref",
+                    "comment": "Reference torque parameter",
+                    "data_type": "Float64",
+                    "null_value": 0
+                },
+                {
+                    "name": "B_shunt",
+                    "comment": "Susceptance Initialization Corrector Term",
+                    "data_type": "Float64",
+                    "null_value": 0
+                },
+                {
                     "name": "base_power",
                     "exclude_getter": true,
                     "exclude_setter": true,
@@ -4033,18 +4032,6 @@
                     "name": "C",
                     "comment": "(**Do not modify.**) Torque-Speed Constant Term",
                     "internal_default": "PowerSystems.calculate_IM_torque_params(A, B)",
-                    "data_type": "Float64"
-                },
-                {
-                    "name": "τ_ref",
-                    "comment": "Reference torque parameter",
-                    "internal_default": "1.0",
-                    "data_type": "Float64"
-                },
-                {
-                    "name": "B_shunt",
-                    "comment": "Susceptance Initialization Corrector Term",
-                    "internal_default": "0.0",
                     "data_type": "Float64"
                 },
                 {
@@ -4091,6 +4078,8 @@
         },
         {
             "struct_name": "DynamicExponentialLoad",
+            "openapi_type": "DynamicExponentialLoad",
+            "openapi_dynamic": true,
             "docstring": "Parameters of 2-states of a generic dynamic load model based on [\"Voltage stability analysis using generic dynamic load models.\"](https://doi.org/10.1109/59.317575)",
             "fields": [
                 {
@@ -4121,7 +4110,7 @@
                     }
                 },
                 {
-                    "name": "α",
+                    "name": "alpha",
                     "comment": "Active power transient exponential coefficient",
                     "null_value": 0,
                     "data_type": "Float64",
@@ -4131,7 +4120,7 @@
                     }
                 },
                 {
-                    "name": "β",
+                    "name": "beta",
                     "comment": "Reactive power transient exponential coefficient",
                     "null_value": 0,
                     "data_type": "Float64",
@@ -4161,19 +4150,19 @@
                     }
                 },
                 {
+                    "name": "base_power",
+                    "exclude_getter": true,
+                    "exclude_setter": true,
+                    "comment": "Base power of the load (MVA) for [per unitization](@ref per_unit)",
+                    "data_type": "Float64",
+                    "null_value": 100.0
+                },
+                {
                     "name": "ext",
                     "comment": "An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.",
                     "data_type": "Dict{String, Any}",
                     "null_value": "Dict{String, Any}()",
                     "default": "Dict{String, Any}()"
-                },
-                {
-                    "name": "base_power",
-                    "exclude_getter": true,
-                    "exclude_setter": true,
-                    "comment": "Base power of the load (MVA) for [per unitization](@ref per_unit)",
-                    "internal_default": "100.0",
-                    "data_type": "Float64"
                 },
                 {
                     "name": "states",
@@ -4201,6 +4190,8 @@
         },
         {
             "struct_name": "ActiveConstantPowerLoad",
+            "openapi_type": "ActiveConstantPowerLoad",
+            "openapi_dynamic": true,
             "docstring": "Parameters of 12-[states](@ref S) active power load based on the paper, [\"Dynamic Stability of a Microgrid With an Active Load.\"](https://doi.org/10.1109/TPEL.2013.2241455)",
             "fields": [
                 {
@@ -4341,6 +4332,36 @@
                     }
                 },
                 {
+                    "name": "P_ref",
+                    "comment": "Reference active power (pu)",
+                    "data_type": "Float64",
+                    "null_value": 0
+                },
+                {
+                    "name": "Q_ref",
+                    "comment": "Reference reactive power (pu)",
+                    "data_type": "Float64",
+                    "null_value": 0
+                },
+                {
+                    "name": "V_ref",
+                    "comment": "Reference voltage (pu)",
+                    "data_type": "Float64",
+                    "null_value": 0
+                },
+                {
+                    "name": "frequency_ref",
+                    "comment": "Reference frequency in Hz",
+                    "data_type": "Float64",
+                    "null_value": 0
+                },
+                {
+                    "name": "is_filter_differential",
+                    "comment": "Boolean to decide if filter [states](@ref S) are differential or algebraic",
+                    "data_type": "Bool",
+                    "null_value": "false"
+                },
+                {
                     "name": "base_power",
                     "exclude_getter": true,
                     "exclude_setter": true,
@@ -4358,36 +4379,6 @@
                     "data_type": "Dict{String, Any}",
                     "null_value": "Dict{String, Any}()",
                     "default": "Dict{String, Any}()"
-                },
-                {
-                    "name": "P_ref",
-                    "comment": "Reference active power (pu)",
-                    "internal_default": "1.0",
-                    "data_type": "Float64"
-                },
-                {
-                    "name": "Q_ref",
-                    "comment": "Reference reactive power (pu)",
-                    "internal_default": "1.0",
-                    "data_type": "Float64"
-                },
-                {
-                    "name": "V_ref",
-                    "comment": "Reference voltage (pu)",
-                    "internal_default": "1.0",
-                    "data_type": "Float64"
-                },
-                {
-                    "name": "ω_ref",
-                    "comment": "Reference frequency (pu)",
-                    "internal_default": "1.0",
-                    "data_type": "Float64"
-                },
-                {
-                    "name": "is_filter_differential",
-                    "comment": "Boolean to decide if filter [states](@ref S) are differential or algebraic",
-                    "internal_default": "1",
-                    "data_type": "Int"
                 },
                 {
                     "name": "states",
@@ -4553,13 +4544,6 @@
                     "default": "nothing"
                 },
                 {
-                    "name": "ac_voltage_setpoint",
-                    "comment": "AC-side voltage magnitude target of the converter in kV, used when `ac_control` is `AC_VOLTAGE`; `nothing` otherwise.",
-                    "null_value": "nothing",
-                    "data_type": "Union{Nothing, Float64}",
-                    "default": "nothing"
-                },
-                {
                     "name": "dc_voltage_droop",
                     "comment": "DC-voltage droop gain in kV/MW relating DC voltage to converter active power as V_dc = dc_voltage_setpoint - dc_voltage_droop * P_c. A value of 0.0 disables droop.",
                     "null_value": "0.0",
@@ -4567,16 +4551,11 @@
                     "default": "0.0"
                 },
                 {
-                    "name": "remote_bus_control",
-                    "comment": "Number of the AC bus whose voltage the converter regulates when `ac_control` is `AC_VOLTAGE`; `nothing` regulates its own terminal bus.",
+                    "name": "remote_regulated_bus",
+                    "comment": "AC bus whose voltage the converter regulates when `ac_control` is `AC_VOLTAGE`, to the `voltage_setpoint` of that bus. `nothing` regulates the AC bus of the converter. The bus must not be the same as `bus`.",
                     "null_value": "nothing",
-                    "data_type": "Union{Nothing, Int}",
                     "default": "nothing",
-                    "valid_range": {
-                        "min": 1,
-                        "max": null
-                    },
-                    "validation_action": "error"
+                    "data_type": "Union{Nothing, ACBus}"
                 },
                 {
                     "name": "power_factor_weighting_fraction",
@@ -4596,6 +4575,20 @@
                     "null_value": "(min=0.0, max=0.0)",
                     "data_type": "MinMax",
                     "default": "(min=0.0, max=999.9)"
+                },
+                {
+                    "name": "rated_ac_voltage",
+                    "comment": "Rated AC voltage at the AC terminal of the converter, in kV. `0.0` means unspecified.",
+                    "null_value": "0.0",
+                    "default": "0.0",
+                    "data_type": "Float64"
+                },
+                {
+                    "name": "rated_dc_voltage",
+                    "comment": "Rated DC voltage of the converter, in kV. It is the base for `dc_voltage_setpoint` and `voltage_limits`. `0.0` means unspecified.",
+                    "null_value": "0.0",
+                    "default": "0.0",
+                    "data_type": "Float64"
                 },
                 {
                     "name": "services",
@@ -4631,6 +4624,8 @@
         },
         {
             "struct_name": "CSVGN1",
+            "openapi_type": "CSVGN1",
+            "openapi_dynamic": true,
             "docstring": "Parameters of static shunt compensator: CSVGN1 in PSSE",
             "fields": [
                 {
@@ -4676,7 +4671,7 @@
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": "eps()",
+                        "min": 0.0001,
                         "max": null
                     }
                 },
@@ -4741,6 +4736,18 @@
                     }
                 },
                 {
+                    "name": "R_th",
+                    "comment": "Source Thevenin resistance",
+                    "data_type": "Float64",
+                    "null_value": 0
+                },
+                {
+                    "name": "X_th",
+                    "comment": "Source Thevenin reactance",
+                    "data_type": "Float64",
+                    "null_value": 0
+                },
+                {
                     "name": "base_power",
                     "exclude_getter": true,
                     "exclude_setter": true,
@@ -4758,18 +4765,6 @@
                     "data_type": "Dict{String, Any}",
                     "null_value": "Dict{String, Any}()",
                     "default": "Dict{String, Any}()"
-                },
-                {
-                    "name": "R_th",
-                    "comment": "Source Thevenin resistance",
-                    "internal_default": "0.0",
-                    "data_type": "Float64"
-                },
-                {
-                    "name": "X_th",
-                    "comment": "Source Thevenin reactance",
-                    "internal_default": "0.0",
-                    "data_type": "Float64"
                 },
                 {
                     "name": "states",
@@ -4937,6 +4932,13 @@
                     "data_type": "OperationalCost",
                     "default": "HydroGenerationCost(nothing)",
                     "comment": "[`OperationalCost`](@ref) of generation"
+                },
+                {
+                    "name": "remote_regulated_bus",
+                    "comment": "Bus whose voltage this device regulates, to the `voltage_setpoint` of that bus. `nothing` regulates the bus of this device. The bus must not be the same as `bus`.",
+                    "null_value": "nothing",
+                    "default": "nothing",
+                    "data_type": "Union{Nothing, ACBus}"
                 },
                 {
                     "name": "services",
@@ -5176,6 +5178,13 @@
                     "null_value": "nothing",
                     "data_type": "Union{Nothing, Float64}",
                     "default": "nothing"
+                },
+                {
+                    "name": "remote_regulated_bus",
+                    "comment": "Bus whose voltage this device regulates, to the `voltage_setpoint` of that bus. `nothing` regulates the bus of this device. The bus must not be the same as `bus`.",
+                    "null_value": "nothing",
+                    "default": "nothing",
+                    "data_type": "Union{Nothing, ACBus}"
                 },
                 {
                     "name": "services",
@@ -5444,6 +5453,13 @@
                     "default": "PrimeMovers.PS"
                 },
                 {
+                    "name": "remote_regulated_bus",
+                    "comment": "Bus whose voltage this device regulates, to the `voltage_setpoint` of that bus. `nothing` regulates the bus of this device. The bus must not be the same as `bus`.",
+                    "null_value": "nothing",
+                    "default": "nothing",
+                    "data_type": "Union{Nothing, ACBus}"
+                },
+                {
                     "name": "services",
                     "data_type": "Vector{Service}",
                     "comment": "Services that this device contributes to",
@@ -5701,6 +5717,13 @@
                         "max": null
                     },
                     "validation_action": "warn"
+                },
+                {
+                    "name": "remote_regulated_bus",
+                    "comment": "Bus whose voltage this device regulates, to the `voltage_setpoint` of that bus. `nothing` regulates the bus of this device. The bus must not be the same as `bus`.",
+                    "null_value": "nothing",
+                    "default": "nothing",
+                    "data_type": "Union{Nothing, ACBus}"
                 },
                 {
                     "name": "services",
@@ -6002,6 +6025,13 @@
                     "default": "ThermalFuels.OTHER"
                 },
                 {
+                    "name": "remote_regulated_bus",
+                    "comment": "Bus whose voltage this device regulates, to the `voltage_setpoint` of that bus. `nothing` regulates the bus of this device. The bus must not be the same as `bus`.",
+                    "null_value": "nothing",
+                    "default": "nothing",
+                    "data_type": "Union{Nothing, ACBus}"
+                },
+                {
                     "name": "services",
                     "data_type": "Vector{Service}",
                     "comment": "Services that this device contributes to",
@@ -6134,6 +6164,13 @@
                     "validation_action": "warn",
                     "needs_conversion": true,
                     "conversion_unit": ":mw"
+                },
+                {
+                    "name": "remote_regulated_bus",
+                    "comment": "Bus whose voltage this device regulates, to the `voltage_setpoint` of that bus. `nothing` regulates the bus of this device. The bus must not be the same as `bus`.",
+                    "null_value": "nothing",
+                    "default": "nothing",
+                    "data_type": "Union{Nothing, ACBus}"
                 },
                 {
                     "name": "services",
@@ -6332,6 +6369,13 @@
                         "max": null
                     },
                     "validation_action": "warn"
+                },
+                {
+                    "name": "remote_regulated_bus",
+                    "comment": "Bus whose voltage this device regulates, to the `voltage_setpoint` of that bus. `nothing` regulates the bus of this device. The bus must not be the same as `bus`.",
+                    "null_value": "nothing",
+                    "default": "nothing",
+                    "data_type": "Union{Nothing, ACBus}"
                 },
                 {
                     "name": "services",
@@ -6616,6 +6660,13 @@
                     "default": "0.0"
                 },
                 {
+                    "name": "remote_regulated_bus",
+                    "comment": "Bus whose voltage this device regulates, to the `voltage_setpoint` of that bus. `nothing` regulates the bus of this device. The bus must not be the same as `bus`.",
+                    "null_value": "nothing",
+                    "default": "nothing",
+                    "data_type": "Union{Nothing, ACBus}"
+                },
+                {
                     "name": "services",
                     "data_type": "Vector{Service}",
                     "comment": "Services that this device contributes to",
@@ -6798,6 +6849,13 @@
                     "default": "nothing"
                 },
                 {
+                    "name": "remote_regulated_bus",
+                    "comment": "Bus whose voltage this device regulates, to the `voltage_setpoint` of that bus. `nothing` regulates the bus of this device. The bus must not be the same as `bus`.",
+                    "null_value": "nothing",
+                    "default": "nothing",
+                    "data_type": "Union{Nothing, ACBus}"
+                },
+                {
                     "name": "services",
                     "data_type": "Vector{Service}",
                     "comment": "Services that this device contributes to",
@@ -6917,6 +6975,8 @@
         },
         {
             "struct_name": "AVRFixed",
+            "openapi_type": "AVRFixed",
+            "openapi_dynamic": true,
             "docstring": "Parameters of a AVR that returns a fixed voltage to the rotor winding",
             "fields": [
                 {
@@ -6976,10 +7036,12 @@
                     "exclude_setter": true
                 }
             ],
-            "supertype": "AVR"
+            "supertype": "ExcitationSystemDynamics"
         },
         {
             "struct_name": "AVRSimple",
+            "openapi_type": "AVRSimple",
+            "openapi_dynamic": true,
             "docstring": "Parameters of a simple proportional AVR in the derivative of EMF\ni.e. an integrator controller on EMF",
             "fields": [
                 {
@@ -7038,10 +7100,12 @@
                     "exclude_setter": true
                 }
             ],
-            "supertype": "AVR"
+            "supertype": "ExcitationSystemDynamics"
         },
         {
             "struct_name": "SEXS",
+            "openapi_type": "SEXS",
+            "openapi_dynamic": true,
             "docstring": "Parameters of Simplified Excitation System Model - SEXS in PSSE",
             "fields": [
                 {
@@ -7060,7 +7124,7 @@
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": "eps()",
+                        "min": 0.0001,
                         "max": null
                     }
                 },
@@ -7136,10 +7200,12 @@
                     "exclude_setter": true
                 }
             ],
-            "supertype": "AVR"
+            "supertype": "ExcitationSystemDynamics"
         },
         {
             "struct_name": "ESDC1A",
+            "openapi_type": "ESDC1A",
+            "openapi_dynamic": true,
             "docstring": "Self-excited shunt fields with the voltage regulator operating in a mode commonly termed buck-boost. \nParameters of IEEE Std 421.5 Type DC1A Excitacion System. This model corresponds to ESDC1A in PSSE and PSLF",
             "fields": [
                 {
@@ -7219,7 +7285,7 @@
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": "eps()",
+                        "min": 0.0001,
                         "max": 1
                     },
                     "validation_action": "error"
@@ -7230,7 +7296,7 @@
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": "eps()",
+                        "min": 0.0001,
                         "max": 0.3
                     },
                     "validation_action": "error"
@@ -7241,7 +7307,7 @@
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": "eps()",
+                        "min": 0.0001,
                         "max": null
                     },
                     "validation_action": "error"
@@ -7284,8 +7350,7 @@
                     "name": "saturation_coeffs",
                     "comment": "(**Do not modify.**) Coefficients (A,B) of the function: Se(V) = B(V - A)^2/V",
                     "data_type": "Tuple{Float64, Float64}",
-                    "null_value": "(0.0, 0.0)",
-                    "default": "PowerSystems.get_avr_saturation(E_sat, Se)"
+                    "internal_default": "PowerSystems.get_avr_saturation(E_sat, Se)"
                 },
                 {
                     "name": "ext",
@@ -7322,10 +7387,12 @@
                     "exclude_setter": true
                 }
             ],
-            "supertype": "AVR"
+            "supertype": "ExcitationSystemDynamics"
         },
         {
             "struct_name": "ESDC2A",
+            "openapi_type": "ESDC2A",
+            "openapi_dynamic": true,
             "docstring": "Is used to represent field-controlled dc commutator exciters with continuously acting voltage regulators having power supplies derived from the generator or auxiliaries bus.\nParameters of IEEE Std 421.5 Type DC2A Excitacion System. This model corresponds to ESDC2A in PSSE and PSLF",
             "fields": [
                 {
@@ -7406,7 +7473,7 @@
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": "eps()",
+                        "min": 0.0001,
                         "max": 2
                     },
                     "validation_action": "error"
@@ -7428,7 +7495,7 @@
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": "eps()",
+                        "min": 0.0001,
                         "max": 1.5
                     },
                     "validation_action": "error"
@@ -7471,8 +7538,7 @@
                     "name": "saturation_coeffs",
                     "comment": "(**Do not modify.**) Coefficients (A,B) of the function: Se(V) = B(V - A)^2/V",
                     "data_type": "Tuple{Float64, Float64}",
-                    "null_value": "(0.0, 0.0)",
-                    "default": "PowerSystems.get_avr_saturation(E_sat, Se)"
+                    "internal_default": "PowerSystems.get_avr_saturation(E_sat, Se)"
                 },
                 {
                     "name": "ext",
@@ -7509,10 +7575,12 @@
                     "exclude_setter": true
                 }
             ],
-            "supertype": "AVR"
+            "supertype": "ExcitationSystemDynamics"
         },
         {
             "struct_name": "IEEET1",
+            "openapi_type": "IEEET1",
+            "openapi_dynamic": true,
             "docstring": "1968 IEEE type 1 excitation system model",
             "fields": [
                 {
@@ -7570,7 +7638,7 @@
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": "eps()",
+                        "min": 0.0001,
                         "max": 1
                     },
                     "validation_action": "error"
@@ -7581,7 +7649,7 @@
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": "eps()",
+                        "min": 0.0001,
                         "max": 0.3
                     },
                     "validation_action": "warn"
@@ -7592,7 +7660,7 @@
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": "eps()",
+                        "min": 0.0001,
                         "max": null
                     },
                     "validation_action": "error"
@@ -7635,8 +7703,7 @@
                     "name": "saturation_coeffs",
                     "comment": "(**Do not modify.**) Coefficients (A,B) of the function: Se(V) = B(V - A)^2/V",
                     "data_type": "Tuple{Float64, Float64}",
-                    "null_value": "(0.0, 0.0)",
-                    "default": "PowerSystems.get_avr_saturation(E_sat, Se)"
+                    "internal_default": "PowerSystems.get_avr_saturation(E_sat, Se)"
                 },
                 {
                     "name": "ext",
@@ -7673,10 +7740,12 @@
                     "exclude_setter": true
                 }
             ],
-            "supertype": "AVR"
+            "supertype": "ExcitationSystemDynamics"
         },
         {
             "struct_name": "AVRTypeI",
+            "openapi_type": "AVRTypeI",
+            "openapi_dynamic": true,
             "docstring": "Parameters of an Automatic Voltage Regulator Type I - Resembles IEEE Type DC1",
             "fields": [
                 {
@@ -7821,10 +7890,12 @@
                     "exclude_setter": true
                 }
             ],
-            "supertype": "AVR"
+            "supertype": "ExcitationSystemDynamics"
         },
         {
             "struct_name": "AVRTypeII",
+            "openapi_type": "AVRTypeII",
+            "openapi_dynamic": true,
             "docstring": "Parameters of an Automatic Voltage Regulator Type II -  Typical static exciter model",
             "fields": [
                 {
@@ -7969,10 +8040,12 @@
                     "exclude_setter": true
                 }
             ],
-            "supertype": "AVR"
+            "supertype": "ExcitationSystemDynamics"
         },
         {
             "struct_name": "SCRX",
+            "openapi_type": "SCRX",
+            "openapi_dynamic": true,
             "docstring": "This exciter is based on an IEEE type SCRX solid state exciter.  The output field voltage is varied by a control system to maintain the system voltage at Vref.  Please note that this exciter model has no initialization capabilities - this means that it will respond to whatever inputs it receives regardless of the state of the machine model",
             "fields": [
                 {
@@ -8093,10 +8166,12 @@
                     "exclude_setter": true
                 }
             ],
-            "supertype": "AVR"
+            "supertype": "ExcitationSystemDynamics"
         },
         {
             "struct_name": "ESAC1A",
+            "openapi_type": "ESAC1A",
+            "openapi_dynamic": true,
             "docstring": "This excitation systems consists of an alternator main exciter feeding its output via non-controlled rectifiers.\nThe exciter does not employ self-excitation, and the voltage regulator power is taken from a source that is not affected by external transients.\nParameters of IEEE Std 421.5 Type AC1A Excitacion System. This model corresponds to ESAC1A in PSSE and PSLF",
             "fields": [
                 {
@@ -8165,7 +8240,7 @@
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": "eps()",
+                        "min": 0.0001,
                         "max": 2
                     },
                     "validation_action": "error"
@@ -8187,7 +8262,7 @@
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": "eps()",
+                        "min": 0.0001,
                         "max": 1.5
                     },
                     "validation_action": "error"
@@ -8258,8 +8333,7 @@
                     "name": "saturation_coeffs",
                     "comment": "(**Do not modify.**) Coefficients (A,B) of the function: Se(x) = B(x - A)^2/x",
                     "data_type": "Tuple{Float64, Float64}",
-                    "null_value": "(0.0, 0.0)",
-                    "default": "PowerSystems.get_avr_saturation(E_sat, Se)"
+                    "internal_default": "PowerSystems.get_avr_saturation(E_sat, Se)"
                 },
                 {
                     "name": "ext",
@@ -8296,10 +8370,12 @@
                     "exclude_setter": true
                 }
             ],
-            "supertype": "AVR"
+            "supertype": "ExcitationSystemDynamics"
         },
         {
             "struct_name": "EXAC1A",
+            "openapi_type": "EXAC1A",
+            "openapi_dynamic": true,
             "docstring": "Modified ESAC1A. This excitation systems consists of an alternator main exciter feeding its output via non-controlled rectifiers.\nThe exciter does not employ self-excitation, and the voltage regulator power is taken from a source that is not affected by external transients.\nParameters of IEEE Std 421.5 Type AC1A Excitacion System. EXAC1A in PSSE and PSLF",
             "fields": [
                 {
@@ -8368,7 +8444,7 @@
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": "eps()",
+                        "min": 0.0001,
                         "max": 2
                     },
                     "validation_action": "error"
@@ -8390,7 +8466,7 @@
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": "eps()",
+                        "min": 0.0001,
                         "max": 1.5
                     },
                     "validation_action": "error"
@@ -8460,8 +8536,7 @@
                     "name": "saturation_coeffs",
                     "comment": "(**Do not modify.**) Coefficients (A,B) of the function: Se(x) = B(x - A)^2/x",
                     "data_type": "Tuple{Float64, Float64}",
-                    "null_value": "(0.0, 0.0)",
-                    "default": "PowerSystems.get_avr_saturation(E_sat, Se)"
+                    "internal_default": "PowerSystems.get_avr_saturation(E_sat, Se)"
                 },
                 {
                     "name": "ext",
@@ -8498,10 +8573,12 @@
                     "exclude_setter": true
                 }
             ],
-            "supertype": "AVR"
+            "supertype": "ExcitationSystemDynamics"
         },
         {
             "struct_name": "EXAC1",
+            "openapi_type": "EXAC1",
+            "openapi_dynamic": true,
             "docstring": "Modified ESAC1A. This excitation systems consists of an alternator main exciter feeding its output via non-controlled rectifiers.\nThe exciter does not employ self-excitation, and the voltage regulator power is taken from a source that is not affected by external transients.\nParameters of IEEE Std 421.5 Type AC1A.  EXAC1 in PSSE and PSLF",
             "fields": [
                 {
@@ -8570,7 +8647,7 @@
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": "eps()",
+                        "min": 0.0001,
                         "max": 2
                     },
                     "validation_action": "error"
@@ -8592,7 +8669,7 @@
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": "eps()",
+                        "min": 0.0001,
                         "max": 1.5
                     },
                     "validation_action": "error"
@@ -8656,8 +8733,7 @@
                     "name": "saturation_coeffs",
                     "comment": "(**Do not modify.**) Coefficients (A,B) of the function: Se(V) = B(V - A)^2/V",
                     "data_type": "Tuple{Float64, Float64}",
-                    "null_value": "(0.0, 0.0)",
-                    "default": "PowerSystems.get_avr_saturation(E_sat, Se)"
+                    "internal_default": "PowerSystems.get_avr_saturation(E_sat, Se)"
                 },
                 {
                     "name": "ext",
@@ -8694,10 +8770,12 @@
                     "exclude_setter": true
                 }
             ],
-            "supertype": "AVR"
+            "supertype": "ExcitationSystemDynamics"
         },
         {
             "struct_name": "EXAC2",
+            "openapi_type": "EXAC2",
+            "openapi_dynamic": true,
             "docstring": "Modified AC2. This excitation systems consists of an alternator main exciter feeding its output via non-controlled rectifiers.\nThe exciter does not employ self-excitation, and the voltage regulator power is taken from a source that is not affected by external transients.\nParameters of IEEE Std 421.5 Type AC2A Excitacion System. The alternator main exciter is used, feeding its output via non-controlled rectifiers. The Type AC2C model is similar to that of Type AC1C except for the inclusion of exciter time constant compensation and exciter field current limiting elements. EXAC2 in PSSE and PSLF",
             "fields": [
                 {
@@ -8766,7 +8844,7 @@
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": "eps()",
+                        "min": 0.0001,
                         "max": 500
                     },
                     "validation_action": "error"
@@ -8783,7 +8861,7 @@
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": "eps()",
+                        "min": 0.0001,
                         "max": 2
                     },
                     "validation_action": "error"
@@ -8827,7 +8905,7 @@
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": "eps()",
+                        "min": 0.0001,
                         "max": null
                     },
                     "validation_action": "error"
@@ -8903,8 +8981,7 @@
                     "name": "saturation_coeffs",
                     "comment": "(**Do not modify.**) Coefficients (A,B) of the function: Se(V) = B(V - A)^2/V",
                     "data_type": "Tuple{Float64, Float64}",
-                    "null_value": "(0.0, 0.0)",
-                    "default": "PowerSystems.get_avr_saturation(E_sat, Se)"
+                    "internal_default": "PowerSystems.get_avr_saturation(E_sat, Se)"
                 },
                 {
                     "name": "ext",
@@ -8941,10 +9018,12 @@
                     "exclude_setter": true
                 }
             ],
-            "supertype": "AVR"
+            "supertype": "ExcitationSystemDynamics"
         },
         {
             "struct_name": "ESAC6A",
+            "openapi_type": "ESAC6A",
+            "openapi_dynamic": true,
             "docstring": "Modified AC6A. Used to represent field-controlled alternator-rectifier excitation systems with system-supplied electronic voltage regulators. \nParameters of IEEE Std 421.5 Type AC6A Excitacion System. ESAC6A in PSSE and PSLF",
             "fields": [
                 {
@@ -9031,7 +9110,7 @@
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": "eps()",
+                        "min": 0.0001,
                         "max": 2
                     },
                     "validation_action": "error"
@@ -9149,8 +9228,7 @@
                     "name": "saturation_coeffs",
                     "comment": "(**Do not modify.**) Coefficients (A,B) of the function: Se(V) = B(V - A)^2/V",
                     "data_type": "Tuple{Float64, Float64}",
-                    "null_value": "(0.0, 0.0)",
-                    "default": "PowerSystems.get_avr_saturation(E_sat, Se)"
+                    "internal_default": "PowerSystems.get_avr_saturation(E_sat, Se)"
                 },
                 {
                     "name": "ext",
@@ -9187,10 +9265,12 @@
                     "exclude_setter": true
                 }
             ],
-            "supertype": "AVR"
+            "supertype": "ExcitationSystemDynamics"
         },
         {
             "struct_name": "ESAC8B",
+            "openapi_type": "ESAC8B",
+            "openapi_dynamic": true,
             "docstring": "Excitation System AC8B. Used to represent the Basler Digital Excitation Control System (DECS) with PID controller in PSSE.",
             "fields": [
                 {
@@ -9282,7 +9362,7 @@
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": "eps()",
+                        "min": 0.0001,
                         "max": 2
                     },
                     "validation_action": "error"
@@ -9325,8 +9405,7 @@
                     "name": "saturation_coeffs",
                     "comment": "(**Do not modify.**) Coefficients (A,B) of the function: Se(V) = B(V - A)^2/V",
                     "data_type": "Tuple{Float64, Float64}",
-                    "null_value": "(0.0, 0.0)",
-                    "default": "PowerSystems.get_avr_saturation(E_sat, Se)"
+                    "internal_default": "PowerSystems.get_avr_saturation(E_sat, Se)"
                 },
                 {
                     "name": "ext",
@@ -9363,10 +9442,12 @@
                     "exclude_setter": true
                 }
             ],
-            "supertype": "AVR"
+            "supertype": "ExcitationSystemDynamics"
         },
         {
             "struct_name": "ESST1A",
+            "openapi_type": "ESST1A",
+            "openapi_dynamic": true,
             "docstring": "This excitation system supplies power through a transformer from the generator terminals and its regulated by a controlled rectifier (via thyristors).\nParameters of IEEE Std 421.5 Type ST1A Excitacion System. ESST1A in PSSE and PSLF",
             "fields": [
                 {
@@ -9512,7 +9593,7 @@
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": "eps()",
+                        "min": 0.0001,
                         "max": 1.5
                     },
                     "validation_action": "error"
@@ -9585,10 +9666,12 @@
                     "exclude_setter": true
                 }
             ],
-            "supertype": "AVR"
+            "supertype": "ExcitationSystemDynamics"
         },
         {
             "struct_name": "EXPIC1",
+            "openapi_type": "EXPIC1",
+            "openapi_dynamic": true,
             "docstring": "Generic Proportional/Integral Excitation System",
             "fields": [
                 {
@@ -9685,7 +9768,7 @@
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": "eps()",
+                        "min": 0.0001,
                         "max": 15
                     },
                     "validation_actions": "error"
@@ -9788,8 +9871,7 @@
                     "name": "saturation_coeffs",
                     "comment": "(**Do not modify.**) Coefficients (A,B) of the function: Se(V) = B(V - A)^2/V",
                     "data_type": "Tuple{Float64, Float64}",
-                    "null_value": "(0.0, 0.0)",
-                    "default": "PowerSystems.get_avr_saturation(E_sat, Se)"
+                    "internal_default": "PowerSystems.get_avr_saturation(E_sat, Se)"
                 },
                 {
                     "name": "ext",
@@ -9826,10 +9908,12 @@
                     "exclude_setter": true
                 }
             ],
-            "supertype": "AVR"
+            "supertype": "ExcitationSystemDynamics"
         },
         {
             "struct_name": "ESST4B",
+            "openapi_type": "ESST4B",
+            "openapi_dynamic": true,
             "docstring": "In these excitation systems, voltage (and also current in compounded systems) is transformed to an appropriate level. Rectifiers, either controlled or non-controlled, provide the necessary direct current for the generator field.\nParameters of IEEE Std 421.5 Type ST4B Excitacion System. ESST4B in PSSE and PSLF",
             "fields": [
                 {
@@ -9977,7 +10061,7 @@
                     "validation_action": "warn"
                 },
                 {
-                    "name": "θp",
+                    "name": "thetap",
                     "comment": "Potential circuit phase angle (degrees)",
                     "null_value": 0,
                     "data_type": "Float64",
@@ -9999,11 +10083,10 @@
                     }
                 },
                 {
-                    "name": "θp_rad",
+                    "name": "thetap_rad",
                     "comment": "(**Do not modify.**) Potential circuit phase angle (radians)",
-                    "null_value": 0,
-                    "default": "θp*π*inv(180)",
-                    "data_type": "Float64"
+                    "data_type": "Float64",
+                    "internal_default": "thetap*π*inv(180)"
                 },
                 {
                     "name": "ext",
@@ -10040,10 +10123,12 @@
                     "exclude_setter": true
                 }
             ],
-            "supertype": "AVR"
+            "supertype": "ExcitationSystemDynamics"
         },
         {
             "struct_name": "ST6B",
+            "openapi_type": "ST6B",
+            "openapi_dynamic": true,
             "docstring": "In these excitation systems, voltage (and also current in compounded systems) is transformed to an appropriate level. Rectifiers, either controlled or non-controlled, provide the necessary direct current for the generator field.\nParameters of IEEE Std 421.5 Type ST6B Excitacion System. ST6B in PSSE and PSLF",
             "fields": [
                 {
@@ -10246,10 +10331,12 @@
                     "exclude_setter": true
                 }
             ],
-            "supertype": "AVR"
+            "supertype": "ExcitationSystemDynamics"
         },
         {
             "struct_name": "ST8C",
+            "openapi_type": "ST8C",
+            "openapi_dynamic": true,
             "docstring": "In these excitation systems, voltage (and also current in compounded systems) is transformed to an appropriate level. Rectifiers, either controlled or non-controlled, provide the necessary direct current for the generator field.\nParameters of IEEE Std 421.5 Type ST8C Excitacion System. ST8C in PSSE and PSLF",
             "fields": [
                 {
@@ -10454,7 +10541,7 @@
                     "validation_action": "warn"
                 },
                 {
-                    "name": "θ_p",
+                    "name": "theta_p",
                     "comment": "Potential circuit phase angle (degrees)",
                     "null_value": 0,
                     "data_type": "Float64",
@@ -10565,10 +10652,12 @@
                     "exclude_setter": true
                 }
             ],
-            "supertype": "AVR"
+            "supertype": "ExcitationSystemDynamics"
         },
         {
             "struct_name": "EXST1",
+            "openapi_type": "EXST1",
+            "openapi_dynamic": true,
             "docstring": "IEEE Type ST1 Excitation System (PTI version)",
             "fields": [
                 {
@@ -10654,7 +10743,7 @@
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": "eps()",
+                        "min": 0.0001,
                         "max": 0.3
                     },
                     "validation_action": "warn"
@@ -10665,7 +10754,7 @@
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": "eps()",
+                        "min": 0.0001,
                         "max": null
                     },
                     "validation_action": "error"
@@ -10710,10 +10799,12 @@
                     "exclude_setter": true
                 }
             ],
-            "supertype": "AVR"
+            "supertype": "ExcitationSystemDynamics"
         },
         {
             "struct_name": "EX4VSA",
+            "openapi_type": "EX4VSA",
+            "openapi_dynamic": true,
             "docstring": "IEEE Excitation System for Voltage Security Assesment",
             "fields": [
                 {
@@ -10878,10 +10969,12 @@
                     "exclude_setter": true
                 }
             ],
-            "supertype": "AVR"
+            "supertype": "ExcitationSystemDynamics"
         },
         {
             "struct_name": "BaseMachine",
+            "openapi_type": "BaseMachine",
+            "openapi_dynamic": true,
             "docstring": "Parameters of a Classic Machine: GENCLS in PSSE and PSLF",
             "fields": [
                 {
@@ -10943,10 +11036,12 @@
                     "exclude_setter": true
                 }
             ],
-            "supertype": "Machine"
+            "supertype": "SynchronousMachineDynamics"
         },
         {
             "struct_name": "RoundRotorMachine",
+            "openapi_type": "RoundRotorMachine",
+            "openapi_dynamic": true,
             "docstring": "Parameters of 4-[states](@ref S) round-rotor synchronous machine with quadratic/exponential saturation:\nIEEE Std 1110 §5.3.2 (Model 2.2). GENROU or GENROE model in PSSE and PSLF",
             "fields": [
                 {
@@ -11124,10 +11219,12 @@
                     "exclude_setter": true
                 }
             ],
-            "supertype": "Machine"
+            "supertype": "SynchronousMachineDynamics"
         },
         {
             "struct_name": "SalientPoleMachine",
+            "openapi_type": "SalientPoleMachine",
+            "openapi_dynamic": true,
             "docstring": "Parameters of 3-[states](@ref S) salient-pole synchronous machine with quadratic/exponential saturation:\nIEEE Std 1110 §5.3.1 (Model 2.1). GENSAL or GENSAE model in PSSE and PSLF",
             "fields": [
                 {
@@ -11273,10 +11370,12 @@
                     "exclude_setter": true
                 }
             ],
-            "supertype": "Machine"
+            "supertype": "SynchronousMachineDynamics"
         },
         {
             "struct_name": "AndersonFouadMachine",
+            "openapi_type": "AndersonFouadMachine",
+            "openapi_dynamic": true,
             "docstring": "Parameters of 6-[states](@ref S) synchronous machine: Anderson-Fouad model",
             "fields": [
                 {
@@ -11418,10 +11517,12 @@
                     "exclude_setter": true
                 }
             ],
-            "supertype": "Machine"
+            "supertype": "SynchronousMachineDynamics"
         },
         {
             "struct_name": "FullMachine",
+            "openapi_type": "FullMachine",
+            "openapi_dynamic": true,
             "docstring": "Parameter of a full order flux stator-rotor model without zero sequence flux in the stator.\n The derivative of stator fluxes (ψd and ψq) is NOT neglected. Only one q-axis damping circuit is considered. All parameters are in machine per unit.\n Refer to Chapter 3 of [Power System Stability and Control by P. Kundur](https://www.accessengineeringlibrary.com/content/book/9781260473544) or Chapter 11 of [Power System Dynamics: Stability and Control, by J. Machowski, J. Bialek and J. Bumby](https://www.wiley.com/en-us/Power+System+Dynamics%3A+Stability+and+Control%2C+3rd+Edition-p-9781119526360), for more details.\n Note that the models are somewhat different (but equivalent) due to the different Park Transformation used in both books",
             "fields": [
                 {
@@ -11585,10 +11686,12 @@
                     "exclude_setter": true
                 }
             ],
-            "supertype": "Machine"
+            "supertype": "SynchronousMachineDynamics"
         },
         {
             "struct_name": "SauerPaiMachine",
+            "openapi_type": "SauerPaiMachine",
+            "openapi_dynamic": true,
             "docstring": "Parameters of synchronous machine: Sauer Pai model",
             "fields": [
                 {
@@ -11764,10 +11867,12 @@
                     "exclude_setter": true
                 }
             ],
-            "supertype": "Machine"
+            "supertype": "SynchronousMachineDynamics"
         },
         {
             "struct_name": "MarconatoMachine",
+            "openapi_type": "MarconatoMachine",
+            "openapi_dynamic": true,
             "docstring": "Parameters of 6-[states](@ref S) synchronous machine: Marconato model",
             "fields": [
                 {
@@ -11931,10 +12036,12 @@
                     "exclude_setter": true
                 }
             ],
-            "supertype": "Machine"
+            "supertype": "SynchronousMachineDynamics"
         },
         {
             "struct_name": "OneDOneQMachine",
+            "openapi_type": "OneDOneQMachine",
+            "openapi_dynamic": true,
             "docstring": "Parameters of 4-[states](@ref S) synchronous machine: Simplified Marconato model\n The derivative of stator fluxes (ψd and ψq) is neglected and ωψd = ψd and\n ωψq = ψq is assumed (i.e. ω=1.0). This is standard when\n transmission network dynamics is neglected",
             "fields": [
                 {
@@ -12036,10 +12143,12 @@
                     "exclude_setter": true
                 }
             ],
-            "supertype": "Machine"
+            "supertype": "SynchronousMachineDynamics"
         },
         {
             "struct_name": "SimpleAFMachine",
+            "openapi_type": "SimpleAFMachine",
+            "openapi_dynamic": true,
             "docstring": "Parameters of 4-[states](@ref S) simplified Anderson-Fouad (SimpleAFMachine) model.\n The derivative of stator fluxes (ψd and ψq) is neglected and ωψd = ψd and\n ωψq = ψq is assumed (i.e. ω=1.0). This is standard when transmission network\n dynamics is neglected.\n If transmission dynamics is considered use the full order Anderson Fouad model",
             "fields": [
                 {
@@ -12181,10 +12290,12 @@
                     "exclude_setter": true
                 }
             ],
-            "supertype": "Machine"
+            "supertype": "SynchronousMachineDynamics"
         },
         {
             "struct_name": "SimpleFullMachine",
+            "openapi_type": "SimpleFullMachine",
+            "openapi_dynamic": true,
             "docstring": "Parameter of a full order flux stator-rotor model without zero sequence flux in the stator.\n The derivative of stator fluxes (ψd and ψq) is neglected. This is standard when\n transmission network dynamics is neglected. Only one q-axis damping circuit\n is considered. All per unit are in machine per unit.\n Refer to Chapter 3 of Power System Stability and Control by P. Kundur or Chapter 11 of Power System Dynamics: Stability and Control, by J. Machowski, J. Bialek and J. Bumby, for more details.\n Note that the models are somewhat different (but equivalent) due to the different Park Transformation used in both books",
             "fields": [
                 {
@@ -12348,10 +12459,12 @@
                     "exclude_setter": true
                 }
             ],
-            "supertype": "Machine"
+            "supertype": "SynchronousMachineDynamics"
         },
         {
             "struct_name": "SimpleMarconatoMachine",
+            "openapi_type": "SimpleMarconatoMachine",
+            "openapi_dynamic": true,
             "docstring": "Parameters of 4-[states](@ref S) synchronous machine: Simplified Marconato model\n The derivative of stator fluxes (ψd and ψq) is neglected and ωψd = ψd and\n ωψq = ψq is assumed (i.e. ω=1.0). This is standard when transmission network\n dynamics is neglected",
             "fields": [
                 {
@@ -12515,10 +12628,12 @@
                     "exclude_setter": true
                 }
             ],
-            "supertype": "Machine"
+            "supertype": "SynchronousMachineDynamics"
         },
         {
             "struct_name": "PSSFixed",
+            "openapi_type": "PSSFixed",
+            "openapi_dynamic": true,
             "docstring": "Parameters of a PSS that returns a fixed voltage to add to the reference for the AVR",
             "fields": [
                 {
@@ -12560,14 +12675,16 @@
                     "exclude_setter": true
                 }
             ],
-            "supertype": "PSS"
+            "supertype": "PowerSystemStabilizerDynamics"
         },
         {
             "struct_name": "PSSSimple",
+            "openapi_type": "PSSSimple",
+            "openapi_dynamic": true,
             "docstring": "Parameters of a PSS that returns a proportional droop voltage to add to the reference for the AVR",
             "fields": [
                 {
-                    "name": "K_ω",
+                    "name": "K_frequency",
                     "comment": "Proportional gain for frequency",
                     "null_value": 0,
                     "data_type": "Float64",
@@ -12615,10 +12732,12 @@
                     "exclude_setter": true
                 }
             ],
-            "supertype": "PSS"
+            "supertype": "PowerSystemStabilizerDynamics"
         },
         {
             "struct_name": "IEEEST",
+            "openapi_type": "IEEEST",
+            "openapi_dynamic": true,
             "docstring": "IEEE Stabilizing Model PSS. ",
             "fields": [
                 {
@@ -12764,7 +12883,7 @@
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": "eps()",
+                        "min": 0.0001,
                         "max": "2.0"
                     },
                     "validation_action": "error"
@@ -12843,10 +12962,12 @@
                     "exclude_setter": true
                 }
             ],
-            "supertype": "PSS"
+            "supertype": "PowerSystemStabilizerDynamics"
         },
         {
             "struct_name": "STAB1",
+            "openapi_type": "STAB1",
+            "openapi_dynamic": true,
             "docstring": "Speed-Sensitive Stabilizing Model",
             "fields": [
                 {
@@ -12960,10 +13081,12 @@
                     "exclude_setter": true
                 }
             ],
-            "supertype": "PSS"
+            "supertype": "PowerSystemStabilizerDynamics"
         },
         {
             "struct_name": "PSS2A",
+            "openapi_type": "PSS2A",
+            "openapi_dynamic": true,
             "docstring": "IEEE Dual-Input Stabilizer Model",
             "fields": [
                 {
@@ -13028,7 +13151,7 @@
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": "eps()",
+                        "min": 0.0001,
                         "max": null
                     },
                     "validation_action": "warn"
@@ -13061,7 +13184,7 @@
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": "eps()",
+                        "min": 0.0001,
                         "max": null
                     },
                     "validation_action": "warn"
@@ -13127,7 +13250,7 @@
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": "eps()",
+                        "min": 0.0001,
                         "max": null
                     },
                     "validation_action": "warn"
@@ -13228,10 +13351,12 @@
                     "exclude_setter": true
                 }
             ],
-            "supertype": "PSS"
+            "supertype": "PowerSystemStabilizerDynamics"
         },
         {
             "struct_name": "PSS2B",
+            "openapi_type": "PSS2B",
+            "openapi_dynamic": true,
             "docstring": "IEEE 421.5 2005 PSS2B IEEE Dual-Input Stabilizer Model",
             "fields": [
                 {
@@ -13296,7 +13421,7 @@
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": "eps()",
+                        "min": 0.0001,
                         "max": null
                     },
                     "validation_action": "warn"
@@ -13329,7 +13454,7 @@
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": "eps()",
+                        "min": 0.0001,
                         "max": null
                     },
                     "validation_action": "warn"
@@ -13395,7 +13520,7 @@
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": "eps()",
+                        "min": 0.0001,
                         "max": null
                     },
                     "validation_action": "warn"
@@ -13530,10 +13655,12 @@
                     "exclude_setter": true
                 }
             ],
-            "supertype": "PSS"
+            "supertype": "PowerSystemStabilizerDynamics"
         },
         {
             "struct_name": "PSS2C",
+            "openapi_type": "PSS2C",
+            "openapi_dynamic": true,
             "docstring": "IEEE 421.5 2016 PSS2C IEEE Dual-Input Stabilizer Model",
             "fields": [
                 {
@@ -13598,7 +13725,7 @@
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": "eps()",
+                        "min": 0.0001,
                         "max": null
                     },
                     "validation_action": "warn"
@@ -13631,7 +13758,7 @@
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": "eps()",
+                        "min": 0.0001,
                         "max": null
                     },
                     "validation_action": "warn"
@@ -13697,7 +13824,7 @@
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": "eps()",
+                        "min": 0.0001,
                         "max": null
                     },
                     "validation_action": "warn"
@@ -13841,7 +13968,7 @@
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": "eps()",
+                        "min": 0.0001,
                         "max": null
                     },
                     "validation_action": "error"
@@ -13888,10 +14015,12 @@
                     "exclude_setter": true
                 }
             ],
-            "supertype": "PSS"
+            "supertype": "PowerSystemStabilizerDynamics"
         },
         {
             "struct_name": "SingleMass",
+            "openapi_type": "SingleMass",
+            "openapi_dynamic": true,
             "docstring": "Parameters of single mass shaft model. Typically represents the rotor mass",
             "fields": [
                 {
@@ -13947,6 +14076,8 @@
         },
         {
             "struct_name": "FiveMassShaft",
+            "openapi_type": "FiveMassShaft",
+            "openapi_dynamic": true,
             "docstring": "Parameters of 5 mass-spring shaft model.\n It contains a High-Pressure (HP) steam turbine, Intermediate-Pressure (IP)\n steam turbine, Low-Pressure (LP) steam turbine, the Rotor and an Exciter (EX) mover",
             "fields": [
                 {
@@ -14162,6 +14293,8 @@
         },
         {
             "struct_name": "TGFixed",
+            "openapi_type": "TGFixed",
+            "openapi_dynamic": true,
             "docstring": "Parameters of a fixed Turbine Governor that returns a fixed mechanical torque\n given by the product of P_ref*efficiency",
             "fields": [
                 {
@@ -14214,10 +14347,12 @@
                     "exclude_setter": true
                 }
             ],
-            "supertype": "TurbineGov"
+            "supertype": "TurbineGovernorDynamics"
         },
         {
             "struct_name": "GasTG",
+            "openapi_type": "GasTG",
+            "openapi_dynamic": true,
             "docstring": "Parameters of Gas Turbine-Governor. GAST in PSSE and GAST_PTI in PowerWorld",
             "fields": [
                 {
@@ -14226,7 +14361,7 @@
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": "eps()",
+                        "min": 0.0001,
                         "max": 0.1
                     }
                 },
@@ -14236,7 +14371,7 @@
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": "eps()",
+                        "min": 0.0001,
                         "max": 0.5
                     }
                 },
@@ -14246,7 +14381,7 @@
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": "eps()",
+                        "min": 0.0001,
                         "max": 0.5
                     }
                 },
@@ -14256,7 +14391,7 @@
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": "eps()",
+                        "min": 0.0001,
                         "max": 5
                     }
                 },
@@ -14342,10 +14477,12 @@
                     "exclude_setter": true
                 }
             ],
-            "supertype": "TurbineGov"
+            "supertype": "TurbineGovernorDynamics"
         },
         {
             "struct_name": "DEGOV",
+            "openapi_type": "DEGOV",
+            "openapi_dynamic": true,
             "docstring": "Parameters Woodward Diesel Governor Model. DEGOV in PowerWorld",
             "fields": [
                 {
@@ -14354,7 +14491,7 @@
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": "eps()",
+                        "min": 0.0001,
                         "max": 100.0
                     }
                 },
@@ -14364,7 +14501,7 @@
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": "eps()",
+                        "min": 0.0001,
                         "max": 100.0
                     }
                 },
@@ -14374,7 +14511,7 @@
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": "eps()",
+                        "min": 0.0001,
                         "max": 100.0
                     }
                 },
@@ -14384,7 +14521,7 @@
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": "eps()",
+                        "min": 0.0001,
                         "max": 100.0
                     }
                 },
@@ -14394,7 +14531,7 @@
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": "eps()",
+                        "min": 0.0001,
                         "max": 100.0
                     }
                 },
@@ -14404,7 +14541,7 @@
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": "eps()",
+                        "min": 0.0001,
                         "max": 100.0
                     }
                 },
@@ -14414,7 +14551,7 @@
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": "eps()",
+                        "min": 0.0001,
                         "max": 100.0
                     }
                 },
@@ -14424,7 +14561,7 @@
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": "eps()",
+                        "min": 0.0001,
                         "max": 100.0
                     }
                 },
@@ -14474,10 +14611,12 @@
                     "exclude_setter": true
                 }
             ],
-            "supertype": "TurbineGov"
+            "supertype": "TurbineGovernorDynamics"
         },
         {
             "struct_name": "DEGOV1",
+            "openapi_type": "DEGOV1",
+            "openapi_dynamic": true,
             "docstring": "Parameters Woodward Diesel Governor Model. DEGOV1 in PSSE",
             "fields": [
                 {
@@ -14637,10 +14776,12 @@
                     "exclude_setter": true
                 }
             ],
-            "supertype": "TurbineGov"
+            "supertype": "TurbineGovernorDynamics"
         },
         {
             "struct_name": "GeneralGovModel",
+            "openapi_type": "GeneralGovModel",
+            "openapi_dynamic": true,
             "docstring": "GE General Governor/Turbine Model. The GeneralGovModel (GGOV1) model is a general purpose governor model used for a variety of prime movers controlled by proportional-integral-derivative (PID) governors including gas turbines",
             "fields": [
                 {
@@ -14671,7 +14812,7 @@
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": "eps()",
+                        "min": 0.0001,
                         "max": null
                     },
                     "validation_action": "warn"
@@ -14682,7 +14823,7 @@
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": "eps()",
+                        "min": 0.0001,
                         "max": null
                     },
                     "validation_action": "warn"
@@ -14925,7 +15066,7 @@
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": "eps()",
+                        "min": 0.0001,
                         "max": null
                     },
                     "validation_action": "error"
@@ -15026,10 +15167,12 @@
                     "exclude_setter": true
                 }
             ],
-            "supertype": "TurbineGov"
+            "supertype": "TurbineGovernorDynamics"
         },
         {
             "struct_name": "PIDGOV",
+            "openapi_type": "PIDGOV",
+            "openapi_dynamic": true,
             "docstring": "Hydro Turbine-Governor with PID controller.",
             "fields": [
                 {
@@ -15155,7 +15298,7 @@
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": "eps()",
+                        "min": 0.0001,
                         "max": null
                     },
                     "validation_action": "warn"
@@ -15166,7 +15309,7 @@
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": "eps()",
+                        "min": 0.0001,
                         "max": null
                     },
                     "validation_action": "warn"
@@ -15223,10 +15366,12 @@
                     "exclude_setter": true
                 }
             ],
-            "supertype": "TurbineGov"
+            "supertype": "TurbineGovernorDynamics"
         },
         {
             "struct_name": "WPIDHY",
+            "openapi_type": "WPIDHY",
+            "openapi_dynamic": true,
             "docstring": "Woodward PID Hydro Governor",
             "fields": [
                 {
@@ -15324,7 +15469,7 @@
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": "eps()",
+                        "min": 0.0001,
                         "max": null
                     },
                     "validation_action": "warn"
@@ -15404,10 +15549,12 @@
                     "exclude_setter": true
                 }
             ],
-            "supertype": "TurbineGov"
+            "supertype": "TurbineGovernorDynamics"
         },
         {
             "struct_name": "SteamTurbineGov1",
+            "openapi_type": "SteamTurbineGov1",
+            "openapi_dynamic": true,
             "docstring": "Steam Turbine-Governor. This model considers both TGOV1 or TGOV1DU in PSS/E",
             "fields": [
                 {
@@ -15427,7 +15574,7 @@
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": "eps()",
+                        "min": 0.0001,
                         "max": 0.5
                     },
                     "validation_action": "error"
@@ -15455,7 +15602,7 @@
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": "eps()",
+                        "min": 0.0001,
                         "max": 10
                     },
                     "validation_action": "error"
@@ -15550,15 +15697,17 @@
                     "exclude_setter": true
                 }
             ],
-            "supertype": "TurbineGov"
+            "supertype": "TurbineGovernorDynamics"
         },
         {
             "struct_name": "HydroTurbineGov",
+            "openapi_type": "HydroTurbineGov",
+            "openapi_dynamic": true,
             "docstring": "Hydro Turbine-Governor",
             "fields": [
                 {
-                    "name": "R",
-                    "comment": "Permanent droop parameter",
+                    "name": "R_BIG",
+                    "comment": "Permanent droop, in pu.",
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
@@ -15568,8 +15717,8 @@
                     "validation_action": "warn"
                 },
                 {
-                    "name": "r",
-                    "comment": "Temporary Droop",
+                    "name": "R_SMALL",
+                    "comment": "Temporary droop, in pu.",
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
@@ -15584,7 +15733,7 @@
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": "eps()",
+                        "min": 0.0001,
                         "max": 30
                     },
                     "validation_action": "error"
@@ -15595,7 +15744,7 @@
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": "eps()",
+                        "min": 0.0001,
                         "max": 0.1
                     },
                     "valiation_action": "error"
@@ -15606,7 +15755,7 @@
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": "eps()",
+                        "min": 0.0001,
                         "max": 1
                     },
                     "validation_action": "error"
@@ -15617,7 +15766,7 @@
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": "eps()",
+                        "min": 0.0001,
                         "max": 0.3
                     },
                     "validation_action": "error"
@@ -15634,7 +15783,7 @@
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": "eps()",
+                        "min": 0.0001,
                         "max": 3
                     },
                     "validation_action": "error"
@@ -15718,10 +15867,12 @@
                     "exclude_setter": true
                 }
             ],
-            "supertype": "TurbineGov"
+            "supertype": "TurbineGovernorDynamics"
         },
         {
             "struct_name": "IEEETurbineGov1",
+            "openapi_type": "IEEETurbineGov1",
+            "openapi_dynamic": true,
             "docstring": "IEEE Type 1 Speed-Governing Model",
             "fields": [
                 {
@@ -15763,7 +15914,7 @@
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
-                        "min": "eps()",
+                        "min": 0.0001,
                         "max": 1
                     },
                     "validation_action": "error"
@@ -15974,10 +16125,12 @@
                     "exclude_setter": true
                 }
             ],
-            "supertype": "TurbineGov"
+            "supertype": "TurbineGovernorDynamics"
         },
         {
             "struct_name": "TGTypeI",
+            "openapi_type": "TGTypeI",
+            "openapi_dynamic": true,
             "docstring": "Parameters of a Turbine Governor Type I",
             "fields": [
                 {
@@ -16086,10 +16239,12 @@
                     "exclude_setter": true
                 }
             ],
-            "supertype": "TurbineGov"
+            "supertype": "TurbineGovernorDynamics"
         },
         {
             "struct_name": "TGTypeII",
+            "openapi_type": "TGTypeII",
+            "openapi_dynamic": true,
             "docstring": "Parameters of a Turbine Governor Type II",
             "fields": [
                 {
@@ -16123,7 +16278,7 @@
                     }
                 },
                 {
-                    "name": "τ_limits",
+                    "name": "tau_limits",
                     "comment": "Power into the governor limits",
                     "null_value": "(min=0.0, max=0.0)",
                     "data_type": "MinMax"
@@ -16168,10 +16323,12 @@
                     "exclude_setter": true
                 }
             ],
-            "supertype": "TurbineGov"
+            "supertype": "TurbineGovernorDynamics"
         },
         {
             "struct_name": "TGSimple",
+            "openapi_type": "TGSimple",
+            "openapi_dynamic": true,
             "docstring": "Parameters of a Simple one-state Turbine Governor",
             "fields": [
                 {
@@ -16234,10 +16391,12 @@
                     "exclude_setter": true
                 }
             ],
-            "supertype": "TurbineGov"
+            "supertype": "TurbineGovernorDynamics"
         },
         {
             "struct_name": "AverageConverter",
+            "openapi_type": "AverageConverter",
+            "openapi_dynamic": true,
             "docstring": "Parameters of an average converter model",
             "fields": [
                 {
@@ -16286,6 +16445,8 @@
         },
         {
             "struct_name": "RenewableEnergyConverterTypeA",
+            "openapi_type": "RenewableEnergyConverterTypeA",
+            "openapi_dynamic": true,
             "docstring": "Parameters of a renewable energy generator/converter model, this model corresponds to REGCA1 in PSSE",
             "fields": [
                 {
@@ -16469,6 +16630,8 @@
         },
         {
             "struct_name": "RenewableEnergyVoltageConverterTypeA",
+            "openapi_type": "RenewableEnergyVoltageConverterTypeA",
+            "openapi_dynamic": true,
             "docstring": "Parameters of a renewable energy generator/converter model, this model corresponds to REGCA1 in PSSE, but to be interfaced using a Voltage Source instead of a Current Source",
             "fields": [
                 {
@@ -16630,6 +16793,8 @@
         },
         {
             "struct_name": "FixedDCSource",
+            "openapi_type": "FixedDCSource",
+            "openapi_dynamic": true,
             "docstring": "Parameters of a Fixed DC Source that returns a fixed DC voltage",
             "fields": [
                 {
@@ -16675,6 +16840,8 @@
         },
         {
             "struct_name": "ZeroOrderBESS",
+            "openapi_type": "ZeroOrderBESS",
+            "openapi_dynamic": true,
             "docstring": "Parameters for the DC-side with a Battery Energy Storage System from [\"Grid-Coupled Dynamic Response of Battery-Driven Voltage Source Converters.\"](https://arxiv.org/abs/2007.11776)",
             "fields": [
                 {
@@ -16824,6 +16991,8 @@
         },
         {
             "struct_name": "LCLFilter",
+            "openapi_type": "LCLFilter",
+            "openapi_dynamic": true,
             "docstring": "Parameters of a LCL filter outside the converter, the [states](@ref S) are in the grid's reference frame",
             "fields": [
                 {
@@ -16902,6 +17071,8 @@
         },
         {
             "struct_name": "LCFilter",
+            "openapi_type": "LCFilter",
+            "openapi_dynamic": true,
             "docstring": "Parameters of a LCL filter outside the converter",
             "fields": [
                 {
@@ -16960,6 +17131,8 @@
         },
         {
             "struct_name": "RLFilter",
+            "openapi_type": "RLFilter",
+            "openapi_dynamic": true,
             "docstring": "Parameters of RL series filter in algebraic representation",
             "fields": [
                 {
@@ -17008,11 +17181,13 @@
         },
         {
             "struct_name": "KauraPLL",
+            "openapi_type": "KauraPLL",
+            "openapi_dynamic": true,
             "docstring": "Parameters of a Phase-Locked Loop (PLL) based on [\"Operation of a phase locked loop system under distorted utility conditions\"](https://doi.org/10.1109/28.567077) by Vikram Kaura, and Vladimir Blasko",
             "fields": [
                 {
-                    "name": "ω_lp",
-                    "comment": "PLL low-pass filter frequency (rad/sec)",
+                    "name": "frequency_lp",
+                    "comment": "PLL low-pass filter cutoff frequency, in natural units in Hz",
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
@@ -17062,15 +17237,17 @@
                     "data_type": "Int"
                 }
             ],
-            "supertype": "FrequencyEstimator"
+            "supertype": "ReferenceFrameRotation"
         },
         {
             "struct_name": "ReducedOrderPLL",
+            "openapi_type": "ReducedOrderPLL",
+            "openapi_dynamic": true,
             "docstring": "Parameters of a Phase-Locked Loop (PLL) based on [\"Reduced-order Structure-preserving Model for Parallel-connected Three-phase Grid-tied Inverters.\"](https://doi.org/10.1109/COMPEL.2017.8013389)",
             "fields": [
                 {
-                    "name": "ω_lp",
-                    "comment": "PLL low-pass filter frequency (rad/sec)",
+                    "name": "frequency_lp",
+                    "comment": "PLL low-pass filter cutoff frequency, in natural units in Hz",
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
@@ -17120,10 +17297,12 @@
                     "data_type": "Int"
                 }
             ],
-            "supertype": "FrequencyEstimator"
+            "supertype": "ReferenceFrameRotation"
         },
         {
             "struct_name": "FixedFrequency",
+            "openapi_type": "FixedFrequency",
+            "openapi_dynamic": true,
             "docstring": "Parameters of a Fixed Frequency Estimator (i.e. no PLL)",
             "fields": [
                 {
@@ -17155,10 +17334,12 @@
                     "data_type": "Int"
                 }
             ],
-            "supertype": "FrequencyEstimator"
+            "supertype": "ReferenceFrameRotation"
         },
         {
             "struct_name": "VirtualInertia",
+            "openapi_type": "VirtualInertia",
+            "openapi_dynamic": true,
             "docstring": "Parameters of a Virtual Inertia with SRF using VSM for active power controller",
             "fields": [
                 {
@@ -17182,7 +17363,7 @@
                     }
                 },
                 {
-                    "name": "kω",
+                    "name": "k_frequency",
                     "comment": "frequency droop gain",
                     "null_value": 0,
                     "data_type": "Float64",
@@ -17228,6 +17409,8 @@
         },
         {
             "struct_name": "ActivePowerDroop",
+            "openapi_type": "ActivePowerDroop",
+            "openapi_dynamic": true,
             "docstring": "Parameters of an Active Power droop controller",
             "fields": [
                 {
@@ -17241,8 +17424,8 @@
                     }
                 },
                 {
-                    "name": "ωz",
-                    "comment": "filter frequency cutoff",
+                    "name": "active_power_filter_frequency",
+                    "comment": "Filter cutoff frequency, in natural units in Hz",
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
@@ -17287,6 +17470,8 @@
         },
         {
             "struct_name": "ActivePowerPI",
+            "openapi_type": "ActivePowerPI",
+            "openapi_dynamic": true,
             "docstring": "Parameters of a Proportional-Integral Active Power controller for a specified power reference",
             "fields": [
                 {
@@ -17310,8 +17495,8 @@
                     }
                 },
                 {
-                    "name": "ωz",
-                    "comment": "filter frequency cutoff",
+                    "name": "active_power_filter_frequency",
+                    "comment": "Filter cutoff frequency, in natural units in Hz",
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
@@ -17356,6 +17541,8 @@
         },
         {
             "struct_name": "ActiveVirtualOscillator",
+            "openapi_type": "ActiveVirtualOscillator",
+            "openapi_dynamic": true,
             "docstring": "Parameters of an Active Virtual Oscillator controller. Model is based on [\"Model Reduction for Inverters with Current Limiting and Dispatchable Virtual Oscillator Control.\"](https://doi.org/10.1109/TEC.2021.3083488)",
             "fields": [
                 {
@@ -17369,7 +17556,7 @@
                     }
                 },
                 {
-                    "name": "ψ",
+                    "name": "psi",
                     "comment": "Rotation angle of the controller",
                     "null_value": 0,
                     "data_type": "Float64",
@@ -17415,6 +17602,8 @@
         },
         {
             "struct_name": "ActiveRenewableControllerAB",
+            "openapi_type": "ActiveRenewableControllerAB",
+            "openapi_dynamic": true,
             "docstring": "Parameters of Active Power Controller including REPCA1 and REECB1",
             "fields": [
                 {
@@ -17449,19 +17638,15 @@
                 },
                 {
                     "name": "branch_id_control",
-                    "comment": "Branch circuit id for line drop compensation (as a string). If 0 generator power will be used",
+                    "comment": "Branch circuit id for line drop compensation. If 0, the generator power is used.",
                     "null_value": 0,
-                    "data_type": "String"
+                    "data_type": "Int"
                 },
                 {
                     "name": "Freq_Flag",
-                    "comment": "Frequency Flag for REPCA1: 0: disable, 1:enable",
-                    "null_value": 0,
-                    "data_type": "Int",
-                    "valid_range": {
-                        "min": 0,
-                        "max": 1
-                    }
+                    "comment": "Frequency Flag for REPCA1: `false`: disable, `true`: enable",
+                    "null_value": "false",
+                    "data_type": "Bool"
                 },
                 {
                     "name": "K_pg",
@@ -17497,7 +17682,8 @@
                     "name": "fdbd_pnts",
                     "comment": "Frequency error dead band thresholds `(fdbd1, fdbd2)`",
                     "null_value": "(0.0, 0.0)",
-                    "data_type": "Tuple{Float64, Float64}"
+                    "data_type": "Tuple{Float64, Float64}",
+                    "openapi_wire": "PC.FdbdPnts"
                 },
                 {
                     "name": "fe_lim",
@@ -17600,6 +17786,8 @@
         },
         {
             "struct_name": "ReactiveRenewableControllerAB",
+            "openapi_type": "ReactiveRenewableControllerAB",
+            "openapi_dynamic": true,
             "docstring": "Parameters of Reactive Power Controller including REPCA1 and REECB1",
             "fields": [
                 {
@@ -17641,42 +17829,26 @@
                 {
                     "name": "VC_Flag",
                     "comment": "Voltage Compensator Flag for REPCA1",
-                    "null_value": 0,
-                    "data_type": "Int",
-                    "valid_range": {
-                        "min": 0,
-                        "max": 1
-                    }
+                    "null_value": "false",
+                    "data_type": "Bool"
                 },
                 {
                     "name": "Ref_Flag",
-                    "comment": "Flag for Reactive Power Control for REPCA1. 0: Q-control, 1: V-control",
-                    "null_value": 0,
-                    "data_type": "Int",
-                    "valid_range": {
-                        "min": 0,
-                        "max": 1
-                    }
+                    "comment": "Flag for Reactive Power Control for REPCA1. `false`: Q-control, `true`: V-control",
+                    "null_value": "false",
+                    "data_type": "Bool"
                 },
                 {
                     "name": "PF_Flag",
-                    "comment": "Flag for Power Factor Control for Outer Control of REECB1. 0: Q-control, 1: Power Factor Control",
-                    "null_value": 0,
-                    "data_type": "Int",
-                    "valid_range": {
-                        "min": 0,
-                        "max": 1
-                    }
+                    "comment": "Flag for Power Factor Control for Outer Control of REECB1. `false`: Q-control, `true`: Power Factor Control",
+                    "null_value": "false",
+                    "data_type": "Bool"
                 },
                 {
                     "name": "V_Flag",
-                    "comment": "Flag for Voltage Control for Outer Control of REECB1. 0: Voltage Control, 1: Q-Control",
-                    "null_value": 0,
-                    "data_type": "Int",
-                    "valid_range": {
-                        "min": 0,
-                        "max": 1
-                    }
+                    "comment": "Flag for Voltage Control for Outer Control of REECB1. `false`: Voltage Control, `true`: Q-Control",
+                    "null_value": "false",
+                    "data_type": "Bool"
                 },
                 {
                     "name": "T_fltr",
@@ -17778,7 +17950,8 @@
                     "name": "dbd_pnts",
                     "comment": "Voltage or Q-power error dead band thresholds `(dbd1, dbd2)`",
                     "null_value": "(0.0, 0.0)",
-                    "data_type": "Tuple{Float64, Float64}"
+                    "data_type": "Tuple{Float64, Float64}",
+                    "openapi_wire": "PC.DbdPnts"
                 },
                 {
                     "name": "Q_lim",
@@ -17876,6 +18049,8 @@
         },
         {
             "struct_name": "ReactivePowerDroop",
+            "openapi_type": "ReactivePowerDroop",
+            "openapi_dynamic": true,
             "docstring": "Parameters of a Reactive Power droop controller",
             "fields": [
                 {
@@ -17889,8 +18064,8 @@
                     }
                 },
                 {
-                    "name": "ωf",
-                    "comment": "filter frequency cutoff",
+                    "name": "reactive_power_filter_frequency",
+                    "comment": "Filter cutoff frequency, in natural units in Hz",
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
@@ -17935,6 +18110,8 @@
         },
         {
             "struct_name": "ReactivePowerPI",
+            "openapi_type": "ReactivePowerPI",
+            "openapi_dynamic": true,
             "docstring": "Parameters of a Proportional-Integral Reactive Power controller for a specified power reference",
             "fields": [
                 {
@@ -17958,8 +18135,8 @@
                     }
                 },
                 {
-                    "name": "ωf",
-                    "comment": "filter frequency cutoff",
+                    "name": "reactive_power_filter_frequency",
+                    "comment": "Filter cutoff frequency, in natural units in Hz",
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
@@ -18015,6 +18192,8 @@
         },
         {
             "struct_name": "ReactiveVirtualOscillator",
+            "openapi_type": "ReactiveVirtualOscillator",
+            "openapi_dynamic": true,
             "docstring": "Parameters of a Reactive Virtual Oscillator controller. Model is based on [\"Model Reduction for Inverters with Current Limiting and Dispatchable Virtual Oscillator Control.\"](https://doi.org/10.1109/TEC.2021.3083488)",
             "fields": [
                 {
@@ -18075,6 +18254,8 @@
         },
         {
             "struct_name": "VoltageModeControl",
+            "openapi_type": "VoltageModeControl",
+            "openapi_dynamic": true,
             "docstring": "Parameters of an inner loop current control PID using virtual impedance based on [\"A Virtual Synchronous Machine implementation for distributed control of power converters in SmartGrids.\"](https://doi.org/10.1016/j.epsr.2015.01.001)",
             "fields": [
                 {
@@ -18158,8 +18339,8 @@
                     }
                 },
                 {
-                    "name": "ωad",
-                    "comment": "active damping filter cutoff frequency (rad/sec)",
+                    "name": "active_damping_filter_frequency",
+                    "comment": "Active damping filter cutoff frequency, in natural units in Hz",
                     "null_value": 0,
                     "data_type": "Float64",
                     "valid_range": {
@@ -18203,6 +18384,8 @@
         },
         {
             "struct_name": "CurrentModeControl",
+            "openapi_type": "CurrentModeControl",
+            "openapi_dynamic": true,
             "docstring": "Parameters of an inner loop proportional integral (PI) current control based on [\"Reduced-order Structure-preserving Model for Parallel-connected Three-phase Grid-tied Inverters.\"](https://doi.org/10.1109/COMPEL.2017.8013389)",
             "fields": [
                 {
@@ -18261,27 +18444,21 @@
         },
         {
             "struct_name": "RECurrentControlB",
+            "openapi_type": "RECurrentControlB",
+            "openapi_dynamic": true,
             "docstring": "Parameters of the Inner Control part of the REECB model in PSS/E",
             "fields": [
                 {
                     "name": "Q_Flag",
                     "comment": "Q Flag used for I_qinj",
-                    "null_value": 0,
-                    "data_type": "Int",
-                    "valid_range": {
-                        "min": 0,
-                        "max": 1
-                    }
+                    "null_value": "false",
+                    "data_type": "Bool"
                 },
                 {
                     "name": "PQ_Flag",
                     "comment": "PQ Flag used for the Current Limit Logic",
-                    "null_value": 0,
-                    "data_type": "Int",
-                    "valid_range": {
-                        "min": 0,
-                        "max": 1
-                    }
+                    "null_value": "false",
+                    "data_type": "Bool"
                 },
                 {
                     "name": "Vdip_lim",
@@ -18303,7 +18480,8 @@
                     "name": "dbd_pnts",
                     "comment": "Voltage error deadband thresholds `(dbd1, dbd2)`",
                     "null_value": "(0.0, 0.0)",
-                    "data_type": "Tuple{Float64, Float64}"
+                    "data_type": "Tuple{Float64, Float64}",
+                    "openapi_wire": "PC.DbdPnts"
                 },
                 {
                     "name": "K_qv",
@@ -18397,6 +18575,8 @@
         },
         {
             "struct_name": "MagnitudeOutputCurrentLimiter",
+            "openapi_type": "MagnitudeOutputCurrentLimiter",
+            "openapi_dynamic": true,
             "docstring": "Parameters of Magnitude (Circular) Current Controller Limiter. Regulates only the magnitude of the inverter output current",
             "fields": [
                 {
@@ -18417,10 +18597,12 @@
                     "default": "Dict{String, Any}()"
                 }
             ],
-            "supertype": "OutputCurrentLimiter"
+            "supertype": "CurrentLimitation"
         },
         {
             "struct_name": "InstantaneousOutputCurrentLimiter",
+            "openapi_type": "InstantaneousOutputCurrentLimiter",
+            "openapi_dynamic": true,
             "docstring": "Parameters of Instantaneous (Square) Current Controller Limiter. Regulates inverter output current on the d and q axis separately",
             "fields": [
                 {
@@ -18451,10 +18633,12 @@
                     "default": "Dict{String, Any}()"
                 }
             ],
-            "supertype": "OutputCurrentLimiter"
+            "supertype": "CurrentLimitation"
         },
         {
             "struct_name": "PriorityOutputCurrentLimiter",
+            "openapi_type": "PriorityOutputCurrentLimiter",
+            "openapi_dynamic": true,
             "docstring": "Parameters of Priority-Based Current Controller Limiter. Regulates the magnitude of the inverter output current and prioritizes a specific angle for the resultant current signal",
             "fields": [
                 {
@@ -18468,7 +18652,7 @@
                     }
                 },
                 {
-                    "name": "ϕ_I",
+                    "name": "phi_I",
                     "comment": "Pre-defined angle (measured against the d-axis) for I_ref once limit I_max is hit",
                     "null_value": 0,
                     "data_type": "Float64",
@@ -18485,10 +18669,12 @@
                     "default": "Dict{String, Any}()"
                 }
             ],
-            "supertype": "OutputCurrentLimiter"
+            "supertype": "CurrentLimitation"
         },
         {
             "struct_name": "SaturationOutputCurrentLimiter",
+            "openapi_type": "SaturationOutputCurrentLimiter",
+            "openapi_dynamic": true,
             "docstring": "Parameters of Saturation Current Controller Limiter. Regulates the magnitude of the inverter output current, and applies a closed loop feedback regulated by a static gain which provides ant-windup",
             "fields": [
                 {
@@ -18518,10 +18704,12 @@
                     "default": "Dict{String, Any}()"
                 }
             ],
-            "supertype": "OutputCurrentLimiter"
+            "supertype": "CurrentLimitation"
         },
         {
             "struct_name": "HybridOutputCurrentLimiter",
+            "openapi_type": "HybridOutputCurrentLimiter",
+            "openapi_dynamic": true,
             "docstring": "Parameters of Hybrid Current Controller Limiter. Regulates the magnitude of the inverter output current, but with a closed loop feedback regulated by a virtual impedance which provides ant-windup. Described in: Novel Hybrid Current Limiter for Grid-Forming Inverter Control During Unbalanced Faults by Baeckland and Seo, 2023 ",
             "fields": [
                 {
@@ -18561,10 +18749,12 @@
                     "default": "Dict{String, Any}()"
                 }
             ],
-            "supertype": "OutputCurrentLimiter"
+            "supertype": "CurrentLimitation"
         },
         {
             "struct_name": "AggregateDistributedGenerationA",
+            "openapi_type": "AggregateDistributedGenerationA",
+            "openapi_dynamic": true,
             "docstring": "Parameters of the DERA1 model in PSS/E",
             "fields": [
                 {
@@ -18577,62 +18767,38 @@
                 {
                     "name": "Pf_Flag",
                     "comment": "Flag for Power Factor Control",
-                    "null_value": 0,
-                    "data_type": "Int",
-                    "valid_range": {
-                        "min": 0,
-                        "max": 1
-                    }
+                    "null_value": "false",
+                    "data_type": "Bool"
                 },
                 {
                     "name": "Freq_Flag",
                     "comment": "Flag to enable/disable frequency control",
-                    "null_value": 0,
-                    "data_type": "Int",
-                    "valid_range": {
-                        "min": 0,
-                        "max": 1
-                    }
+                    "null_value": "false",
+                    "data_type": "Bool"
                 },
                 {
                     "name": "PQ_Flag",
                     "comment": "Flag used to enforce maximum current",
-                    "null_value": 0,
-                    "data_type": "Int",
-                    "valid_range": {
-                        "min": 0,
-                        "max": 1
-                    }
+                    "null_value": "false",
+                    "data_type": "Bool"
                 },
                 {
                     "name": "Gen_Flag",
                     "comment": "Flag to specify generator or storage",
-                    "null_value": 0,
-                    "data_type": "Int",
-                    "valid_range": {
-                        "min": 0,
-                        "max": 1
-                    }
+                    "null_value": "false",
+                    "data_type": "Bool"
                 },
                 {
                     "name": "Vtrip_Flag",
                     "comment": "Flag to enable/disable voltage trip logic",
-                    "null_value": 0,
-                    "data_type": "Int",
-                    "valid_range": {
-                        "min": 0,
-                        "max": 1
-                    }
+                    "null_value": "false",
+                    "data_type": "Bool"
                 },
                 {
                     "name": "Ftrip_Flag",
                     "comment": "Flag to enable/disable frequency trip logic",
-                    "null_value": 0,
-                    "data_type": "Int",
-                    "valid_range": {
-                        "min": 0,
-                        "max": 1
-                    }
+                    "null_value": "false",
+                    "data_type": "Bool"
                 },
                 {
                     "name": "T_rv",
@@ -18658,7 +18824,8 @@
                     "name": "dbd_pnts",
                     "comment": "Voltage deadband thresholds `(dbd1, dbd2)`",
                     "null_value": "(0.0, 0.0)",
-                    "data_type": "Tuple{Float64, Float64}"
+                    "data_type": "Tuple{Float64, Float64}",
+                    "openapi_wire": "PC.DbdPnts"
                 },
                 {
                     "name": "K_qv",
@@ -18714,7 +18881,8 @@
                     "name": "fdbd_pnts",
                     "comment": "Frequency control deadband thresholds `(fdbd1, fdbd2)`",
                     "null_value": "(0.0, 0.0)",
-                    "data_type": "Tuple{Float64, Float64}"
+                    "data_type": "Tuple{Float64, Float64}",
+                    "openapi_wire": "PC.FdbdPnts"
                 },
                 {
                     "name": "fe_lim",
@@ -18905,10 +19073,10 @@
                     }
                 },
                 {
-                    "name": "ω_ref",
-                    "comment": "Reference Frequency (pu)",
+                    "name": "frequency_ref",
+                    "comment": "Reference frequency, in natural units. Usually equal to the system frequency in Hz",
                     "null_value": 0,
-                    "default": "1.0",
+                    "default": "DEFAULT_SYSTEM_FREQUENCY",
                     "data_type": "Float64",
                     "valid_range": {
                         "min": 0,
@@ -19109,6 +19277,13 @@
                     "comment": "[`ImportExportCost`](@ref) of the source."
                 },
                 {
+                    "name": "remote_regulated_bus",
+                    "comment": "Bus whose voltage this device regulates, to the `voltage_setpoint` of that bus. `nothing` regulates the bus of this device. The bus must not be the same as `bus`.",
+                    "null_value": "nothing",
+                    "default": "nothing",
+                    "data_type": "Union{Nothing, ACBus}"
+                },
+                {
                     "name": "dynamic_injector",
                     "data_type": "Union{Nothing, DynamicInjection}",
                     "comment": "corresponding dynamic injection device",
@@ -19142,6 +19317,8 @@
         },
         {
             "struct_name": "PeriodicVariableSource",
+            "openapi_type": "PeriodicVariableSource",
+            "openapi_dynamic": true,
             "docstring": "This struct acts as an infinity bus with time varying phasor values magnitude and angle V(t) \theta(t). Time varying functions are represented using fourier series",
             "fields": [
                 {
@@ -19260,6 +19437,8 @@
         },
         {
             "struct_name": "GenericDER",
+            "openapi_type": "GenericDER",
+            "openapi_dynamic": true,
             "docstring": "Parameters of a Generic Distributed Energy Resource Model. Based on [\"Modeling Framework and Coordination of DER and Flexible Loads for Ancillary Service Provision.\"](http://hdl.handle.net/10125/70994)",
             "fields": [
                 {
@@ -19281,43 +19460,27 @@
                 },
                 {
                     "name": "PQ_Flag",
-                    "comment": "Active and reactive power priority mode. 0 for Q priority, 1 for P priority",
-                    "null_value": 0,
-                    "data_type": "Int",
-                    "valid_range": {
-                        "min": 0,
-                        "max": 1
-                    }
+                    "comment": "Active and reactive power priority mode. `false` for Q priority, `true` for P priority",
+                    "null_value": "false",
+                    "data_type": "Bool"
                 },
                 {
                     "name": "Gen_Flag",
-                    "comment": "Define generator or storage system. 0 unit is a storage device, 1 unit is a generator",
-                    "null_value": 0,
-                    "data_type": "Int",
-                    "valid_range": {
-                        "min": 0,
-                        "max": 1
-                    }
+                    "comment": "Define generator or storage system. `false` for a storage device, `true` for a generator",
+                    "null_value": "false",
+                    "data_type": "Bool"
                 },
                 {
                     "name": "PerOp_Flag",
-                    "comment": "Defines operation of permisible region in VRT characteristic. 0 for cease, 1 for continuous operation",
-                    "null_value": 0,
-                    "data_type": "Int",
-                    "valid_range": {
-                        "min": 0,
-                        "max": 1
-                    }
+                    "comment": "Defines operation of permisible region in VRT characteristic. `false` for cease, `true` for continuous operation",
+                    "null_value": "false",
+                    "data_type": "Bool"
                 },
                 {
                     "name": "Recon_Flag",
                     "comment": "Defines if DER can reconnect after voltage ride-through disconnection",
-                    "null_value": 0,
-                    "data_type": "Int",
-                    "valid_range": {
-                        "min": 0,
-                        "max": 1
-                    }
+                    "null_value": "false",
+                    "data_type": "Bool"
                 },
                 {
                     "name": "Trv",

@@ -14,7 +14,7 @@ This file is auto-generated. Do not edit.
         kpc::Float64
         kic::Float64
         kffi::Float64
-        ωad::Float64
+        active_damping_filter_frequency::Float64
         kad::Float64
         ext::Dict{String, Any}
         states::Vector{Symbol}
@@ -32,7 +32,7 @@ Parameters of an inner loop current control PID using virtual impedance based on
 - `kpc::Float64`: current controller proportional gain, validation range: `(0, nothing)`
 - `kic::Float64`: current controller integral gain, validation range: `(0, nothing)`
 - `kffi::Float64`: Binary variable to enable feed-forward gain of current, validation range: `(0, nothing)`
-- `ωad::Float64`: active damping filter cutoff frequency (rad/sec), validation range: `(0, nothing)`
+- `active_damping_filter_frequency::Float64`: Active damping filter cutoff frequency, in natural units in Hz, validation range: `(0, nothing)`
 - `kad::Float64`: active damping gain, validation range: `(0, nothing)`
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
 - `states::Vector{Symbol}`: (**Do not modify.**) The [states](@ref S) of the VoltageModeControl model are:
@@ -61,8 +61,8 @@ mutable struct VoltageModeControl <: InnerControl
     kic::Float64
     "Binary variable to enable feed-forward gain of current"
     kffi::Float64
-    "active damping filter cutoff frequency (rad/sec)"
-    ωad::Float64
+    "Active damping filter cutoff frequency, in natural units in Hz"
+    active_damping_filter_frequency::Float64
     "active damping gain"
     kad::Float64
     "An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation."
@@ -79,12 +79,12 @@ mutable struct VoltageModeControl <: InnerControl
     n_states::Int
 end
 
-function VoltageModeControl(kpv, kiv, kffv, rv, lv, kpc, kic, kffi, ωad, kad, ext=Dict{String, Any}(), )
-    VoltageModeControl(kpv, kiv, kffv, rv, lv, kpc, kic, kffi, ωad, kad, ext, [:ξd_ic, :ξq_ic, :γd_ic, :γq_ic, :ϕd_ic, :ϕq_ic], 6, )
+function VoltageModeControl(kpv, kiv, kffv, rv, lv, kpc, kic, kffi, active_damping_filter_frequency, kad, ext=Dict{String, Any}(), )
+    VoltageModeControl(kpv, kiv, kffv, rv, lv, kpc, kic, kffi, active_damping_filter_frequency, kad, ext, [:ξd_ic, :ξq_ic, :γd_ic, :γq_ic, :ϕd_ic, :ϕq_ic], 6, )
 end
 
-function VoltageModeControl(; kpv, kiv, kffv, rv, lv, kpc, kic, kffi, ωad, kad, ext=Dict{String, Any}(), states=[:ξd_ic, :ξq_ic, :γd_ic, :γq_ic, :ϕd_ic, :ϕq_ic], n_states=6, )
-    VoltageModeControl(kpv, kiv, kffv, rv, lv, kpc, kic, kffi, ωad, kad, ext, states, n_states, )
+function VoltageModeControl(; kpv, kiv, kffv, rv, lv, kpc, kic, kffi, active_damping_filter_frequency, kad, ext=Dict{String, Any}(), states=[:ξd_ic, :ξq_ic, :γd_ic, :γq_ic, :ϕd_ic, :ϕq_ic], n_states=6, )
+    VoltageModeControl(kpv, kiv, kffv, rv, lv, kpc, kic, kffi, active_damping_filter_frequency, kad, ext, states, n_states, )
 end
 
 # Constructor for demo purposes; non-functional.
@@ -98,7 +98,7 @@ function VoltageModeControl(::Nothing)
         kpc=0,
         kic=0,
         kffi=0,
-        ωad=0,
+        active_damping_filter_frequency=0,
         kad=0,
         ext=Dict{String, Any}(),
     )
@@ -120,8 +120,8 @@ get_kpc(value::VoltageModeControl) = value.kpc
 get_kic(value::VoltageModeControl) = value.kic
 """Get [`VoltageModeControl`](@ref) `kffi`."""
 get_kffi(value::VoltageModeControl) = value.kffi
-"""Get [`VoltageModeControl`](@ref) `ωad`."""
-get_ωad(value::VoltageModeControl) = value.ωad
+"""Get [`VoltageModeControl`](@ref) `active_damping_filter_frequency`."""
+get_active_damping_filter_frequency(value::VoltageModeControl) = value.active_damping_filter_frequency
 """Get [`VoltageModeControl`](@ref) `kad`."""
 get_kad(value::VoltageModeControl) = value.kad
 """Get [`VoltageModeControl`](@ref) `ext`."""
@@ -147,9 +147,42 @@ set_kpc!(value::VoltageModeControl, val) = value.kpc = val
 set_kic!(value::VoltageModeControl, val) = value.kic = val
 """Set [`VoltageModeControl`](@ref) `kffi`."""
 set_kffi!(value::VoltageModeControl, val) = value.kffi = val
-"""Set [`VoltageModeControl`](@ref) `ωad`."""
-set_ωad!(value::VoltageModeControl, val) = value.ωad = val
+"""Set [`VoltageModeControl`](@ref) `active_damping_filter_frequency`."""
+set_active_damping_filter_frequency!(value::VoltageModeControl, val) = value.active_damping_filter_frequency = val
 """Set [`VoltageModeControl`](@ref) `kad`."""
 set_kad!(value::VoltageModeControl, val) = value.kad = val
 """Set [`VoltageModeControl`](@ref) `ext`."""
 set_ext!(value::VoltageModeControl, val) = value.ext = val
+
+
+
+function from_openapi(po::PD.VoltageModeControl, refs::OpenAPIRefs)
+    return VoltageModeControl(;
+        kpv = _wire_required(po.kpv, "VoltageModeControl", "kpv"),
+        kiv = _wire_required(po.kiv, "VoltageModeControl", "kiv"),
+        kffv = _wire_required(po.kffv, "VoltageModeControl", "kffv"),
+        rv = _wire_required(po.rv, "VoltageModeControl", "rv"),
+        lv = _wire_required(po.lv, "VoltageModeControl", "lv"),
+        kpc = _wire_required(po.kpc, "VoltageModeControl", "kpc"),
+        kic = _wire_required(po.kic, "VoltageModeControl", "kic"),
+        kffi = _wire_required(po.kffi, "VoltageModeControl", "kffi"),
+        active_damping_filter_frequency = _wire_required(po.active_damping_filter_frequency, "VoltageModeControl", "active_damping_filter_frequency"),
+        kad = _wire_required(po.kad, "VoltageModeControl", "kad"),
+    )
+end
+
+function to_openapi(value::VoltageModeControl, refs::OpenAPIRefs)
+    return PD.VoltageModeControl(;
+        id = component_id(refs, value),
+        kpv = get_kpv(value),
+        kiv = get_kiv(value),
+        kffv = get_kffv(value),
+        rv = get_rv(value),
+        lv = get_lv(value),
+        kpc = get_kpc(value),
+        kic = get_kic(value),
+        kffi = get_kffi(value),
+        active_damping_filter_frequency = get_active_damping_filter_frequency(value),
+        kad = get_kad(value),
+    )
+end

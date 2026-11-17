@@ -15,11 +15,11 @@ This file is auto-generated. Do not edit.
         H::Float64
         A::Float64
         B::Float64
+        torque_ref::Float64
+        B_shunt::Float64
         base_power::Float64
         ext::Dict{String, Any}
         C::Float64
-        τ_ref::Float64
-        B_shunt::Float64
         X_ss::Float64
         X_rr::Float64
         X_p::Float64
@@ -40,11 +40,11 @@ Parameters of 3-states three-phase single cage induction machine with quadratic 
 - `H::Float64`: Motor Inertia Constant [s], validation range: `(0, nothing)`
 - `A::Float64`: Torque-Speed Quadratic Term, validation range: `(0, 1)`
 - `B::Float64`: Torque-Speed Linear Term, validation range: `(0, 1)`
+- `torque_ref::Float64`: Reference torque parameter
+- `B_shunt::Float64`: Susceptance Initialization Corrector Term
 - `base_power::Float64`: Base power of the unit (MVA) for [per unitization](@ref per_unit), validation range: `(0.0001, nothing)`
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
 - `C::Float64`: (**Do not modify.**) Torque-Speed Constant Term
-- `τ_ref::Float64`: Reference torque parameter
-- `B_shunt::Float64`: Susceptance Initialization Corrector Term
 - `X_ss::Float64`: (**Do not modify.**) Stator self reactance
 - `X_rr::Float64`: (**Do not modify.**) Rotor self reactance
 - `X_p::Float64`: (**Do not modify.**) Transient reactance
@@ -74,16 +74,16 @@ mutable struct SimplifiedSingleCageInductionMachine <: DynamicInjection
     A::Float64
     "Torque-Speed Linear Term"
     B::Float64
+    "Reference torque parameter"
+    torque_ref::Float64
+    "Susceptance Initialization Corrector Term"
+    B_shunt::Float64
     "Base power of the unit (MVA) for [per unitization](@ref per_unit)"
     base_power::Float64
     "An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation."
     ext::Dict{String, Any}
     "(**Do not modify.**) Torque-Speed Constant Term"
     C::Float64
-    "Reference torque parameter"
-    τ_ref::Float64
-    "Susceptance Initialization Corrector Term"
-    B_shunt::Float64
     "(**Do not modify.**) Stator self reactance"
     X_ss::Float64
     "(**Do not modify.**) Rotor self reactance"
@@ -101,12 +101,12 @@ mutable struct SimplifiedSingleCageInductionMachine <: DynamicInjection
     internal::InfrastructureSystemsInternal
 end
 
-function SimplifiedSingleCageInductionMachine(name, R_s, R_r, X_ls, X_lr, X_m, H, A, B, base_power, ext=Dict{String, Any}(), )
-    SimplifiedSingleCageInductionMachine(name, R_s, R_r, X_ls, X_lr, X_m, H, A, B, base_power, ext, PowerSystems.calculate_IM_torque_params(A, B), 1.0, 0.0, X_ls + X_m, X_lr + X_m, X_ss - X_m^2 / X_rr, [:ψ_qr, :ψ_dr, :ωr], 3, InfrastructureSystemsInternal(), )
+function SimplifiedSingleCageInductionMachine(name, R_s, R_r, X_ls, X_lr, X_m, H, A, B, torque_ref, B_shunt, base_power, ext=Dict{String, Any}(), )
+    SimplifiedSingleCageInductionMachine(name, R_s, R_r, X_ls, X_lr, X_m, H, A, B, torque_ref, B_shunt, base_power, ext, PowerSystems.calculate_IM_torque_params(A, B), X_ls + X_m, X_lr + X_m, X_ss - X_m^2 / X_rr, [:ψ_qr, :ψ_dr, :ωr], 3, InfrastructureSystemsInternal(), )
 end
 
-function SimplifiedSingleCageInductionMachine(; name, R_s, R_r, X_ls, X_lr, X_m, H, A, B, base_power, ext=Dict{String, Any}(), C=PowerSystems.calculate_IM_torque_params(A, B), τ_ref=1.0, B_shunt=0.0, X_ss=X_ls + X_m, X_rr=X_lr + X_m, X_p=X_ss - X_m^2 / X_rr, states=[:ψ_qr, :ψ_dr, :ωr], n_states=3, internal=InfrastructureSystemsInternal(), )
-    SimplifiedSingleCageInductionMachine(name, R_s, R_r, X_ls, X_lr, X_m, H, A, B, base_power, ext, C, τ_ref, B_shunt, X_ss, X_rr, X_p, states, n_states, internal, )
+function SimplifiedSingleCageInductionMachine(; name, R_s, R_r, X_ls, X_lr, X_m, H, A, B, torque_ref, B_shunt, base_power, ext=Dict{String, Any}(), C=PowerSystems.calculate_IM_torque_params(A, B), X_ss=X_ls + X_m, X_rr=X_lr + X_m, X_p=X_ss - X_m^2 / X_rr, states=[:ψ_qr, :ψ_dr, :ωr], n_states=3, internal=InfrastructureSystemsInternal(), )
+    SimplifiedSingleCageInductionMachine(name, R_s, R_r, X_ls, X_lr, X_m, H, A, B, torque_ref, B_shunt, base_power, ext, C, X_ss, X_rr, X_p, states, n_states, internal, )
 end
 
 # Constructor for demo purposes; non-functional.
@@ -121,6 +121,8 @@ function SimplifiedSingleCageInductionMachine(::Nothing)
         H=0,
         A=0.0,
         B=0.0,
+        torque_ref=0,
+        B_shunt=0,
         base_power=100.0,
         ext=Dict{String, Any}(),
     )
@@ -144,16 +146,16 @@ get_H(value::SimplifiedSingleCageInductionMachine) = value.H
 get_A(value::SimplifiedSingleCageInductionMachine) = value.A
 """Get [`SimplifiedSingleCageInductionMachine`](@ref) `B`."""
 get_B(value::SimplifiedSingleCageInductionMachine) = value.B
+"""Get [`SimplifiedSingleCageInductionMachine`](@ref) `torque_ref`."""
+get_torque_ref(value::SimplifiedSingleCageInductionMachine) = value.torque_ref
+"""Get [`SimplifiedSingleCageInductionMachine`](@ref) `B_shunt`."""
+get_B_shunt(value::SimplifiedSingleCageInductionMachine) = value.B_shunt
 
 _get_base_power(value::SimplifiedSingleCageInductionMachine) = value.base_power
 """Get [`SimplifiedSingleCageInductionMachine`](@ref) `ext`."""
 get_ext(value::SimplifiedSingleCageInductionMachine) = value.ext
 """Get [`SimplifiedSingleCageInductionMachine`](@ref) `C`."""
 get_C(value::SimplifiedSingleCageInductionMachine) = value.C
-"""Get [`SimplifiedSingleCageInductionMachine`](@ref) `τ_ref`."""
-get_τ_ref(value::SimplifiedSingleCageInductionMachine) = value.τ_ref
-"""Get [`SimplifiedSingleCageInductionMachine`](@ref) `B_shunt`."""
-get_B_shunt(value::SimplifiedSingleCageInductionMachine) = value.B_shunt
 """Get [`SimplifiedSingleCageInductionMachine`](@ref) `X_ss`."""
 get_X_ss(value::SimplifiedSingleCageInductionMachine) = value.X_ss
 """Get [`SimplifiedSingleCageInductionMachine`](@ref) `X_rr`."""
@@ -183,17 +185,54 @@ set_H!(value::SimplifiedSingleCageInductionMachine, val) = value.H = val
 set_A!(value::SimplifiedSingleCageInductionMachine, val) = value.A = val
 """Set [`SimplifiedSingleCageInductionMachine`](@ref) `B`."""
 set_B!(value::SimplifiedSingleCageInductionMachine, val) = value.B = val
+"""Set [`SimplifiedSingleCageInductionMachine`](@ref) `torque_ref`."""
+set_torque_ref!(value::SimplifiedSingleCageInductionMachine, val) = value.torque_ref = val
+"""Set [`SimplifiedSingleCageInductionMachine`](@ref) `B_shunt`."""
+set_B_shunt!(value::SimplifiedSingleCageInductionMachine, val) = value.B_shunt = val
 """Set [`SimplifiedSingleCageInductionMachine`](@ref) `ext`."""
 set_ext!(value::SimplifiedSingleCageInductionMachine, val) = value.ext = val
 """Set [`SimplifiedSingleCageInductionMachine`](@ref) `C`."""
 set_C!(value::SimplifiedSingleCageInductionMachine, val) = value.C = val
-"""Set [`SimplifiedSingleCageInductionMachine`](@ref) `τ_ref`."""
-set_τ_ref!(value::SimplifiedSingleCageInductionMachine, val) = value.τ_ref = val
-"""Set [`SimplifiedSingleCageInductionMachine`](@ref) `B_shunt`."""
-set_B_shunt!(value::SimplifiedSingleCageInductionMachine, val) = value.B_shunt = val
 """Set [`SimplifiedSingleCageInductionMachine`](@ref) `X_ss`."""
 set_X_ss!(value::SimplifiedSingleCageInductionMachine, val) = value.X_ss = val
 """Set [`SimplifiedSingleCageInductionMachine`](@ref) `X_rr`."""
 set_X_rr!(value::SimplifiedSingleCageInductionMachine, val) = value.X_rr = val
 """Set [`SimplifiedSingleCageInductionMachine`](@ref) `X_p`."""
 set_X_p!(value::SimplifiedSingleCageInductionMachine, val) = value.X_p = val
+
+
+
+function from_openapi(po::PD.SimplifiedSingleCageInductionMachine, refs::OpenAPIRefs)
+    return SimplifiedSingleCageInductionMachine(;
+        name = _wire_required(po.name, "SimplifiedSingleCageInductionMachine", "name"),
+        R_s = _wire_required(po.r_s, "SimplifiedSingleCageInductionMachine", "R_s"),
+        R_r = _wire_required(po.r_r, "SimplifiedSingleCageInductionMachine", "R_r"),
+        X_ls = _wire_required(po.x_ls, "SimplifiedSingleCageInductionMachine", "X_ls"),
+        X_lr = _wire_required(po.x_lr, "SimplifiedSingleCageInductionMachine", "X_lr"),
+        X_m = _wire_required(po.x_m, "SimplifiedSingleCageInductionMachine", "X_m"),
+        H = _wire_required(po.h, "SimplifiedSingleCageInductionMachine", "H"),
+        A = _wire_required(po.a, "SimplifiedSingleCageInductionMachine", "A"),
+        B = _wire_required(po.b, "SimplifiedSingleCageInductionMachine", "B"),
+        torque_ref = _wire_required(po.torque_ref, "SimplifiedSingleCageInductionMachine", "torque_ref"),
+        B_shunt = _wire_required(po.b_shunt, "SimplifiedSingleCageInductionMachine", "B_shunt"),
+        base_power = _wire_required(po.base_power, "SimplifiedSingleCageInductionMachine", "base_power"),
+    )
+end
+
+function to_openapi(value::SimplifiedSingleCageInductionMachine, refs::OpenAPIRefs)
+    return PD.SimplifiedSingleCageInductionMachine(;
+        id = component_id(refs, value),
+        name = get_name(value),
+        r_s = get_R_s(value),
+        r_r = get_R_r(value),
+        x_ls = get_X_ls(value),
+        x_lr = get_X_lr(value),
+        x_m = get_X_m(value),
+        h = get_H(value),
+        a = get_A(value),
+        b = get_B(value),
+        torque_ref = get_torque_ref(value),
+        b_shunt = get_B_shunt(value),
+        base_power = _get_base_power(value),
+    )
+end

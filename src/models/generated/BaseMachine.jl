@@ -5,7 +5,7 @@ This file is auto-generated. Do not edit.
 #! format: off
 
 """
-    mutable struct BaseMachine <: Machine
+    mutable struct BaseMachine <: SynchronousMachineDynamics
         R::Float64
         Xd_p::Float64
         eq_p::Float64
@@ -26,7 +26,7 @@ Parameters of a Classic Machine: GENCLS in PSSE and PSLF
 - `n_states::Int`: (**Do not modify.**) BaseMachine has no states
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
 """
-mutable struct BaseMachine <: Machine
+mutable struct BaseMachine <: SynchronousMachineDynamics
     "Resistance after EMF in machine per unit"
     R::Float64
     "Reactance after EMF in machine per unit"
@@ -84,3 +84,22 @@ set_Xd_p!(value::BaseMachine, val) = value.Xd_p = val
 set_eq_p!(value::BaseMachine, val) = value.eq_p = val
 """Set [`BaseMachine`](@ref) `ext`."""
 set_ext!(value::BaseMachine, val) = value.ext = val
+
+
+
+function from_openapi(po::PD.BaseMachine, refs::OpenAPIRefs)
+    return BaseMachine(;
+        R = _wire_required(po.r, "BaseMachine", "R"),
+        Xd_p = _wire_required(po.xd_p, "BaseMachine", "Xd_p"),
+        eq_p = _wire_required(po.eq_p, "BaseMachine", "eq_p"),
+    )
+end
+
+function to_openapi(value::BaseMachine, refs::OpenAPIRefs)
+    return PD.BaseMachine(;
+        id = component_id(refs, value),
+        r = get_R(value),
+        xd_p = get_Xd_p(value),
+        eq_p = get_eq_p(value),
+    )
+end

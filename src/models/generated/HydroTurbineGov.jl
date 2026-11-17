@@ -5,9 +5,9 @@ This file is auto-generated. Do not edit.
 #! format: off
 
 """
-    mutable struct HydroTurbineGov <: TurbineGov
-        R::Float64
-        r::Float64
+    mutable struct HydroTurbineGov <: TurbineGovernorDynamics
+        R_BIG::Float64
+        R_SMALL::Float64
         Tr::Float64
         Tf::Float64
         Tg::Float64
@@ -28,14 +28,14 @@ This file is auto-generated. Do not edit.
 Hydro Turbine-Governor
 
 # Arguments
-- `R::Float64`: Permanent droop parameter, validation range: `(0, 0.1)`
-- `r::Float64`: Temporary Droop, validation range: `(0, 2)`
-- `Tr::Float64`: Governor time constant, validation range: `(eps(), 30)`
-- `Tf::Float64`: Filter Time constant, validation range: `(eps(), 0.1)`
-- `Tg::Float64`: Servo time constant, validation range: `(eps(), 1)`
-- `VELM::Float64`: gate velocity limit, validation range: `(eps(), 0.3)`
+- `R_BIG::Float64`: Permanent droop, in pu., validation range: `(0, 0.1)`
+- `R_SMALL::Float64`: Temporary droop, in pu., validation range: `(0, 2)`
+- `Tr::Float64`: Governor time constant, validation range: `(0.0001, 30)`
+- `Tf::Float64`: Filter Time constant, validation range: `(0.0001, 0.1)`
+- `Tg::Float64`: Servo time constant, validation range: `(0.0001, 1)`
+- `VELM::Float64`: gate velocity limit, validation range: `(0.0001, 0.3)`
 - `gate_position_limits::MinMax`: Gate position limits
-- `Tw::Float64`: water time constant, validation range: `(eps(), 3)`
+- `Tw::Float64`: water time constant, validation range: `(0.0001, 3)`
 - `At::Float64`: Turbine gain, validation range: `(0.8, 1.5)`
 - `D_T::Float64`: Turbine Damping, validation range: `(0, 0.5)`
 - `q_nl::Float64`: No-power flow, validation range: `(0, nothing)`
@@ -50,11 +50,11 @@ Hydro Turbine-Governor
 - `states_types::Vector{StateTypes.Value}`: (**Do not modify.**) HYGOV has 4 [differential](@ref states_list) [states](@ref S)
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
 """
-mutable struct HydroTurbineGov <: TurbineGov
-    "Permanent droop parameter"
-    R::Float64
-    "Temporary Droop"
-    r::Float64
+mutable struct HydroTurbineGov <: TurbineGovernorDynamics
+    "Permanent droop, in pu."
+    R_BIG::Float64
+    "Temporary droop, in pu."
+    R_SMALL::Float64
     "Governor time constant"
     Tr::Float64
     "Filter Time constant"
@@ -91,19 +91,19 @@ mutable struct HydroTurbineGov <: TurbineGov
     internal::InfrastructureSystemsInternal
 end
 
-function HydroTurbineGov(R, r, Tr, Tf, Tg, VELM, gate_position_limits, Tw, At, D_T, q_nl, P_ref=1.0, ext=Dict{String, Any}(), )
-    HydroTurbineGov(R, r, Tr, Tf, Tg, VELM, gate_position_limits, Tw, At, D_T, q_nl, P_ref, ext, [:x_g1, :x_g2, :x_g3, :x_g4], 4, [StateTypes.Differential, StateTypes.Differential, StateTypes.Differential, StateTypes.Differential], InfrastructureSystemsInternal(), )
+function HydroTurbineGov(R_BIG, R_SMALL, Tr, Tf, Tg, VELM, gate_position_limits, Tw, At, D_T, q_nl, P_ref=1.0, ext=Dict{String, Any}(), )
+    HydroTurbineGov(R_BIG, R_SMALL, Tr, Tf, Tg, VELM, gate_position_limits, Tw, At, D_T, q_nl, P_ref, ext, [:x_g1, :x_g2, :x_g3, :x_g4], 4, [StateTypes.Differential, StateTypes.Differential, StateTypes.Differential, StateTypes.Differential], InfrastructureSystemsInternal(), )
 end
 
-function HydroTurbineGov(; R, r, Tr, Tf, Tg, VELM, gate_position_limits, Tw, At, D_T, q_nl, P_ref=1.0, ext=Dict{String, Any}(), states=[:x_g1, :x_g2, :x_g3, :x_g4], n_states=4, states_types=[StateTypes.Differential, StateTypes.Differential, StateTypes.Differential, StateTypes.Differential], internal=InfrastructureSystemsInternal(), )
-    HydroTurbineGov(R, r, Tr, Tf, Tg, VELM, gate_position_limits, Tw, At, D_T, q_nl, P_ref, ext, states, n_states, states_types, internal, )
+function HydroTurbineGov(; R_BIG, R_SMALL, Tr, Tf, Tg, VELM, gate_position_limits, Tw, At, D_T, q_nl, P_ref=1.0, ext=Dict{String, Any}(), states=[:x_g1, :x_g2, :x_g3, :x_g4], n_states=4, states_types=[StateTypes.Differential, StateTypes.Differential, StateTypes.Differential, StateTypes.Differential], internal=InfrastructureSystemsInternal(), )
+    HydroTurbineGov(R_BIG, R_SMALL, Tr, Tf, Tg, VELM, gate_position_limits, Tw, At, D_T, q_nl, P_ref, ext, states, n_states, states_types, internal, )
 end
 
 # Constructor for demo purposes; non-functional.
 function HydroTurbineGov(::Nothing)
     HydroTurbineGov(;
-        R=0,
-        r=0,
+        R_BIG=0,
+        R_SMALL=0,
         Tr=0,
         Tf=0,
         Tg=0,
@@ -118,10 +118,10 @@ function HydroTurbineGov(::Nothing)
     )
 end
 
-"""Get [`HydroTurbineGov`](@ref) `R`."""
-get_R(value::HydroTurbineGov) = value.R
-"""Get [`HydroTurbineGov`](@ref) `r`."""
-get_r(value::HydroTurbineGov) = value.r
+"""Get [`HydroTurbineGov`](@ref) `R_BIG`."""
+get_R_BIG(value::HydroTurbineGov) = value.R_BIG
+"""Get [`HydroTurbineGov`](@ref) `R_SMALL`."""
+get_R_SMALL(value::HydroTurbineGov) = value.R_SMALL
 """Get [`HydroTurbineGov`](@ref) `Tr`."""
 get_Tr(value::HydroTurbineGov) = value.Tr
 """Get [`HydroTurbineGov`](@ref) `Tf`."""
@@ -153,10 +153,10 @@ get_states_types(value::HydroTurbineGov) = value.states_types
 """Get [`HydroTurbineGov`](@ref) `internal`."""
 get_internal(value::HydroTurbineGov) = value.internal
 
-"""Set [`HydroTurbineGov`](@ref) `R`."""
-set_R!(value::HydroTurbineGov, val) = value.R = val
-"""Set [`HydroTurbineGov`](@ref) `r`."""
-set_r!(value::HydroTurbineGov, val) = value.r = val
+"""Set [`HydroTurbineGov`](@ref) `R_BIG`."""
+set_R_BIG!(value::HydroTurbineGov, val) = value.R_BIG = val
+"""Set [`HydroTurbineGov`](@ref) `R_SMALL`."""
+set_R_SMALL!(value::HydroTurbineGov, val) = value.R_SMALL = val
 """Set [`HydroTurbineGov`](@ref) `Tr`."""
 set_Tr!(value::HydroTurbineGov, val) = value.Tr = val
 """Set [`HydroTurbineGov`](@ref) `Tf`."""
@@ -181,3 +181,40 @@ set_P_ref!(value::HydroTurbineGov, val) = value.P_ref = val
 set_ext!(value::HydroTurbineGov, val) = value.ext = val
 """Set [`HydroTurbineGov`](@ref) `states_types`."""
 set_states_types!(value::HydroTurbineGov, val) = value.states_types = val
+
+
+
+function from_openapi(po::PD.HydroTurbineGov, refs::OpenAPIRefs)
+    return HydroTurbineGov(;
+        R_BIG = _wire_required(po.r_big, "HydroTurbineGov", "R_BIG"),
+        R_SMALL = _wire_required(po.r_small, "HydroTurbineGov", "R_SMALL"),
+        Tr = _wire_required(po.tr, "HydroTurbineGov", "Tr"),
+        Tf = _wire_required(po.tf, "HydroTurbineGov", "Tf"),
+        Tg = _wire_required(po.tg, "HydroTurbineGov", "Tg"),
+        VELM = _wire_required(po.velm, "HydroTurbineGov", "VELM"),
+        gate_position_limits = _or_default(po.gate_position_limits, nothing),
+        Tw = _wire_required(po.tw, "HydroTurbineGov", "Tw"),
+        At = _wire_required(po.at, "HydroTurbineGov", "At"),
+        D_T = _wire_required(po.d_t, "HydroTurbineGov", "D_T"),
+        q_nl = _wire_required(po.q_nl, "HydroTurbineGov", "q_nl"),
+        P_ref = _or_default(po.p_ref, 1.0),
+    )
+end
+
+function to_openapi(value::HydroTurbineGov, refs::OpenAPIRefs)
+    return PD.HydroTurbineGov(;
+        id = component_id(refs, value),
+        r_big = get_R_BIG(value),
+        r_small = get_R_SMALL(value),
+        tr = get_Tr(value),
+        tf = get_Tf(value),
+        tg = get_Tg(value),
+        velm = get_VELM(value),
+        gate_position_limits = _minmax_po(get_gate_position_limits(value)),
+        tw = get_Tw(value),
+        at = get_At(value),
+        d_t = get_D_T(value),
+        q_nl = get_q_nl(value),
+        p_ref = get_P_ref(value),
+    )
+end
