@@ -108,6 +108,10 @@ Order = [:type, :function]
 Filter = t -> (t isa DataType || t isa UnionAll || t isa Function) && nameof(t) in names(PowerSystems)
 ```
 
+```@docs
+get_time_series_conversion_factor
+```
+
 ## System
 
 ```@autodocs

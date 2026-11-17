@@ -314,6 +314,46 @@ end
     @test_throws ArgumentError read_ts(u"CU")
 end
 
+@testset "Time series units labels: conversion factor from the metadata" begin
+    sys = System(100.0)
+    bus = ACBus(nothing)
+    add_component!(sys, bus)
+    gen = ThermalStandard(nothing)
+    set_bus!(gen, bus)
+    rebase_component!(gen, 50.0u"MW")
+    add_component!(sys, gen)
+    reserve = OnlineReserve{ReserveUp}(nothing)
+    add_service!(sys, reserve, Device[])
+    stamps = range(DateTime("2020-01-01"); step = Hour(1), length = 3)
+    ta = TimeSeries.TimeArray(stamps, [0.2, 0.4, 0.8])
+    add_time_series!(sys, gen,
+        SingleTimeSeries("cu", ta; quantity_kind = "active_power",
+            per_unit_of = "base_power"))
+    add_time_series!(sys, reserve,
+        SingleTimeSeries("requirement", ta .* 100.0; units = "MW",
+            quantity_kind = "active_power"))
+    add_time_series!(sys, gen, SingleTimeSeries("unlabeled", ta))
+
+    gen_md = get_time_series_metadata(SingleTimeSeries, gen, "cu")
+    reserve_md = get_time_series_metadata(SingleTimeSeries, reserve, "requirement")
+    @test get_time_series_conversion_factor(gen, gen_md, u"SU") ≈ 0.5
+    @test get_time_series_conversion_factor(gen, gen_md, u"MW") ≈ 50.0
+    @test get_time_series_conversion_factor(reserve, reserve_md, u"SU") ≈ 0.01
+    @test get_time_series_conversion_factor(reserve, reserve_md, u"SU";
+        quantity = :ActivePower) ≈ 0.01
+    # The factor from the metadata is the one the unit-taking reads apply.
+    @test get_time_series_values(SingleTimeSeries, gen, "cu", u"SU") ≈
+          values(ta) .* get_time_series_conversion_factor(gen, gen_md, u"SU")
+    @test get_time_series_conversion_factor(
+        gen, get_time_series(SingleTimeSeries, gen, "cu"), u"SU") ≈ 0.5
+    @test_throws ArgumentError get_time_series_conversion_factor(
+        reserve, reserve_md, u"SU"; quantity = :ReactivePower)
+    @test_throws ArgumentError get_time_series_conversion_factor(
+        reserve, reserve_md, u"CU")
+    @test_throws ArgumentError get_time_series_conversion_factor(
+        gen, get_time_series_metadata(SingleTimeSeries, gen, "unlabeled"), u"SU")
+end
+
 @testset "Time series units labels: per_unit_of survives every file form" begin
     sys, gen = _sys_with_thermal(; system_base = 100.0, component_base = 250.0)
     stamps = range(DateTime("2020-01-01"); step = Hour(1), length = 3)
