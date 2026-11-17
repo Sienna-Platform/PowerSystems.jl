@@ -24,18 +24,18 @@ This file is auto-generated. Do not edit.
         internal::InfrastructureSystemsInternal
     end
 
-A series compensator: a series capacitor or reactor, or a thyristor-controlled or static synchronous series compensator, with one series reactance on an [`Arc`](@ref). Out of service is `available = false`; a bypassed compensator is `control_mode = BYPASSED`
+A fixed series compensator on an [`Arc`](@ref) (the CIM `SeriesCompensator`): a series capacitor or reactor, or an AC line without charging susceptance, with constant `r` and `x`. Out of service is `available = false`; a bypassed device (`bypassed = true`) is shorted into a zero-impedance tie
 
 # Arguments
 - `name::String`: Name of the component. Components of the same type (e.g., `PowerLoad`) must have unique names, but components of different types (e.g., `PowerLoad` and `ACBus`) can have the same name
 - `available::Bool`: Indicator of whether the component is connected and online (`true`) or disconnected, offline, or down (`false`). Unavailable components are excluded during simulations
-- `active_power_flow::Float64`: Initial condition of active power flow through the compensator (MW)
-- `reactive_power_flow::Float64`: Initial condition of reactive power flow through the compensator (MVAR)
-- `arc::Arc`: An [`Arc`](@ref) defining this compensator `from` a bus `to` another bus
+- `active_power_flow::Float64`: Initial condition of active power flow through the device (MW)
+- `reactive_power_flow::Float64`: Initial condition of reactive power flow through the device (MVAR)
+- `arc::Arc`: An [`Arc`](@ref) defining this device `from` a bus `to` another bus
 - `r::Float64`: Resistance in pu ([`SYSTEM_BASE`](@ref per_unit)), validation range: `(0, 4)`
-- `x::Float64`: Series reactance in pu ([`SYSTEM_BASE`](@ref per_unit)); negative for a capacitor. Under `DISPATCHABLE` and `ACTIVE_POWER_FLOW`, the present value, validation range: `(-4, 4)`
-- `rating::Float64`: Thermal rating (MVA). Flow through the compensator must be between -`rating` and `rating`. When defining a compensator before it is attached to a `System`, `rating` must be in pu ([`SYSTEM_BASE`](@ref per_unit)) using the base power of the `System` it will be attached to. Displays in component base ([`DEVICE_BASE`](@ref per_unit)) by default, unlike most converted fields which default to system base
-- `bypassed::Bool`: (default: `false`) `true` when the device is bypassed: it is shorted into a zero-impedance tie between the `from` and `to` buses. `r` and `x` keep the values of the device in service.
+- `x::Float64`: Series reactance in pu ([`SYSTEM_BASE`](@ref per_unit)); negative for a capacitor, validation range: `(-4, 4)`
+- `rating::Float64`: Thermal rating (MVA). Flow through the device must be between -`rating` and `rating`. When defining a device before it is attached to a `System`, `rating` must be in pu ([`SYSTEM_BASE`](@ref per_unit)) using the base power of the `System` it will be attached to. Displays in component base ([`DEVICE_BASE`](@ref per_unit)) by default, unlike most converted fields which default to system base
+- `bypassed::Bool`: (default: `false`) Whether the device is bypassed: shorted into a zero-impedance tie between the `from` and `to` buses. `r` and `x` keep the impedance it has when in service
 - `rating_b::Union{Nothing, Float64}`: (default: `nothing`) Second current rating; entered in MVA.
 - `rating_c::Union{Nothing, Float64}`: (default: `nothing`) Third current rating; entered in MVA.
 - `services::Vector{Service}`: (default: `Device[]`) Services that this device contributes to
@@ -50,19 +50,19 @@ mutable struct SeriesCompensator <: ACTransmission
     name::String
     "Indicator of whether the component is connected and online (`true`) or disconnected, offline, or down (`false`). Unavailable components are excluded during simulations"
     available::Bool
-    "Initial condition of active power flow through the compensator (MW)"
+    "Initial condition of active power flow through the device (MW)"
     active_power_flow::Float64
-    "Initial condition of reactive power flow through the compensator (MVAR)"
+    "Initial condition of reactive power flow through the device (MVAR)"
     reactive_power_flow::Float64
-    "An [`Arc`](@ref) defining this compensator `from` a bus `to` another bus"
+    "An [`Arc`](@ref) defining this device `from` a bus `to` another bus"
     arc::Arc
     "Resistance in pu ([`SYSTEM_BASE`](@ref per_unit))"
     r::Float64
-    "Series reactance in pu ([`SYSTEM_BASE`](@ref per_unit)); negative for a capacitor. Under `DISPATCHABLE` and `ACTIVE_POWER_FLOW`, the present value"
+    "Series reactance in pu ([`SYSTEM_BASE`](@ref per_unit)); negative for a capacitor"
     x::Float64
-    "Thermal rating (MVA). Flow through the compensator must be between -`rating` and `rating`. When defining a compensator before it is attached to a `System`, `rating` must be in pu ([`SYSTEM_BASE`](@ref per_unit)) using the base power of the `System` it will be attached to. Displays in component base ([`DEVICE_BASE`](@ref per_unit)) by default, unlike most converted fields which default to system base"
+    "Thermal rating (MVA). Flow through the device must be between -`rating` and `rating`. When defining a device before it is attached to a `System`, `rating` must be in pu ([`SYSTEM_BASE`](@ref per_unit)) using the base power of the `System` it will be attached to. Displays in component base ([`DEVICE_BASE`](@ref per_unit)) by default, unlike most converted fields which default to system base"
     rating::Float64
-    "`true` when the device is bypassed: it is shorted into a zero-impedance tie between the `from` and `to` buses. `r` and `x` keep the values of the device in service."
+    "Whether the device is bypassed: shorted into a zero-impedance tie between the `from` and `to` buses. `r` and `x` keep the impedance it has when in service"
     bypassed::Bool
     "Second current rating; entered in MVA."
     rating_b::Union{Nothing, Float64}
