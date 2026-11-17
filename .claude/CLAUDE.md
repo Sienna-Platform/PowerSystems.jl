@@ -1,6 +1,6 @@
 # PowerSystems.jl (PSY) — psy6 branch
 
-The Sienna power-system **data model**: the `System` container plus ~210 component types (buses, branches, generators, storage, loads, services, dynamic models), operational cost structures, time series, and the **explicit-units engine**. Layer 1 of the psy6 stack, built on InfrastructureSystems (IS4 branch). Platform-wide conventions: the `sienna-psy6` skill. Workspace architecture: the psy6 workspace root `CLAUDE.md`.
+The Sienna power-system **data model**: the `System` container plus the generated component types (buses, branches, generators, storage, loads, services, dynamic models), operational cost structures, time series, and the **explicit-units engine**. Layer 1 of the psy6 stack, built on InfrastructureSystems (IS4 branch). Platform-wide conventions: the `sienna-psy6` skill. Workspace architecture: the psy6 workspace root `CLAUDE.md`.
 
 **This branch has NO parsers.** `src/parsers/` was removed in the psy6 line; all Matpower/PSSE/table parsing lives in PowerFlowFileParser.jl (and PSB's parser wrappers). Do not re-add parsing here.
 
@@ -65,7 +65,7 @@ also rewrite `Project.toml`, stripping comments and sometimes `[sources]` itself
 
 PNM, PF, POM, and PSB all consume PSY; SiennaSchemas mirrors PSY component fields (JSON schemas), so field renames/retypes create schema drift the sync tooling must catch. After a PSY change:
 
-1. compile-smoke the stack: `julia --project=<psy6-workspace-root> -e 'using PowerNetworkMatrices, PowerFlows, PowerOperationsModels, PowerSystemCaseBuilder'`
+1. run the downstream gate in the workspace root `CLAUDE.md` ("Blast radius and the test gate"). No workspace env exists; a downstream env uses this checkout only when its `[sources]` pin points here.
 2. **clear PSB's `data/serialized_system/` cache** — it has no version-aware invalidation, and stale cached systems produce confusing deserialization failures downstream.
 3. if the change touched a component field also present in SiennaSchemas, flag the schema counterpart (example of real drift: `head_to_volume_factor` moved to `FunctionData` in PSY commit `ed30a682` while `SiennaSchemas/Operations/StaticInjection/HydroReservoir.json` still `$ref`s `ValueCurve`).
 
@@ -77,8 +77,6 @@ PNM, PF, POM, and PSB all consume PSY; SiennaSchemas mirrors PSY component field
   never edit**.
 - `src/descriptors/power_system_structs.json` — source of truth for generated structs (top-level
   key `auto_generated_structs`).
-- `src/deprecated.jl` — legacy 4.0.0-era constructor deprecations that predate the no-shims policy.
-  Do not add to it; psy6 breaking changes get no shims.
 
 ## Generated code workflow
 
@@ -111,7 +109,7 @@ The canonical example of psy6 cross-repo propagation — a PSY field change touc
 4. **PSB**: clear `data/serialized_system/` (cached fixtures embed the old shape); check whether any builder in `src/library/` sets the field.
 5. **SiennaSchemas**: mirror the field in the matching `Operations/...json` with an `x-unit` annotation; run `validate_units.py`. Skipping this creates the drift the sync check exists to catch.
 6. **GridDB**: if the field maps to a DB column, update `column_conventions.json` and regenerate the sealed registry.
-7. **Downstream smoke**: `julia --project=<psy6-workspace-root> -e 'using PowerNetworkMatrices, PowerFlows, PowerOperationsModels, PowerSystemCaseBuilder'`; consumers reading the field must pass an explicit unit system.
+7. **Downstream**: run the downstream gate in the workspace root `CLAUDE.md`; consumers reading the field must pass an explicit unit.
 
 ## Transformer architecture (PR #1714, `d19f3244f`)
 
@@ -124,7 +122,7 @@ Five concrete transformer types became two, and series data moved onto a nested 
 - `is_phase_shifting` is the **canonical** predicate — true when `α ≠ 0` or the control objective is one of four active-power objectives. Downstream must not re-derive it from raw fields. `has_control(w)` is `control_objective != UNDEFINED`.
 - 3W pairwise impedance fields are `Union{Nothing,Float64}`, validated **all-or-none** by `check_pairwise_impedance_block`; a partial block is always a data error (impedances without their base have no defined conversion). `base_power_13` → `base_power_31`.
 - **Deleted, now owned by PowerNetworkMatrices**: `get_series_susceptance(s)`, `get_series_admittance(s)`, and the winding-group `get_α`/`get_α_primary`/`_secondary`/`_tertiary` derivations. Do not re-add them here — `get_α` is a plain circuit field now.
-- `get_arc` is defined for `TwoWindingTransformer` only (`components.jl:45`, delegating to the circuit); 3W has three arcs and no single-arc accessor.
+- `get_arc` is defined for `TwoWindingTransformer` only (`src/models/components.jl`, delegating to the circuit); 3W has three arcs and no single-arc accessor.
 
 ## The explicit-units engine (the defining psy6 feature)
 
@@ -139,24 +137,19 @@ Five concrete transformer types became two, and series data moved onto a nested 
 
 ### Known audit items (do not silently "fix"; coordinate)
 
-- **Resolved**: `check_rating_values(::Union{Line,MonitoredLine}, ::Float64)` at `src/utils/IO/branchdata_checks.jl` now mirrors its transformer sibling — it reads `component_base_power = _get_base_power(line)` and scales the raw CU rating fields through that, ignoring the passed `basemva`, instead of dividing the MW thresholds by a caller-supplied base. This closed the latent trap the previous note warned about: `base_power` was added to `Line`/`MonitoredLine` (and 10 other types whose base *is* the system base — see `base_power_kind`/`BasePowerKind` trait in `src/models/components.jl`), and `add_component!` now keeps that field synced to the system's base power on attachment.
-- `_set_units_base!` at `src/base.jl:574` — `IS.get_units_info` is nothing-unguarded for detached components on the display path; wants the `isnothing(...) && error(...)` guard matching `_get_system_base_power` (`src/models/components.jl`).
-- `src/base.jl:~3290` — copy-paste bug: `old_load.max_active_power` copied into `max_constant_reactive_power`. Known, pending a separate fix.
 - Setters bypass validation and `set_bus!` does not maintain `sys.bus_numbers` — mutation after `add_component!` is convention-trusted.
-- Sweep artifacts live in `.claude/`: `convertible_fields.txt` (72 convertible field names), `units_sweep_hits.txt`, `units_sweep_report.md`.
 
 ## Commands
 
 ```sh
-julia --project=test -e 'using Pkg; Pkg.instantiate()'            # first time
-julia --project=test -e 'using Pkg; Pkg.develop(path = ".")'      # once per clone: test env must dev the working tree
+julia --project=test -e 'using Pkg; Pkg.instantiate()'            # whole setup; test/Project.toml path-pins this checkout
 julia --project=test test/runtests.jl                             # full suite
 julia --project=test test/runtests.jl test_plant_attributes       # single file (stem, no .jl)
 julia --project=docs docs/make.jl                                 # docs must build cleanly
 julia --project=scripts/formatter -e 'include("scripts/formatter/formatter_code.jl")'   # always before done
 ```
 
-Compile-check after each edit: `julia --project=<psy6-workspace-root> -e 'using PowerSystems'`.
+Compile-check after each edit: `julia --project -e 'using PowerSystems'`.
 
 ## Working with the data model
 
