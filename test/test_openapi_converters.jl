@@ -1868,13 +1868,13 @@ end
     vsc_po_no_remote = _po_with(
         vsc_po;
         id = 23, name = "vsc4",
-        remote_bus_control_from = PSY.IC.ABSENT,
-        remote_bus_control_to = PSY.IC.ABSENT,
+        remote_regulated_bus_from = PSY.IC.ABSENT,
+        remote_regulated_bus_to = PSY.IC.ABSENT,
     )
     for val in (CU, NU)
         vsc_no_remote = PSY.from_openapi(vsc_po_no_remote, refs, val)
-        @test isnothing(get_remote_bus_control_from(vsc_no_remote))
-        @test isnothing(get_remote_bus_control_to(vsc_no_remote))
+        @test isnothing(get_remote_regulated_bus_from(vsc_no_remote))
+        @test isnothing(get_remote_regulated_bus_to(vsc_no_remote))
     end
 end
 
