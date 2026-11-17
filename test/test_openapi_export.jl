@@ -468,7 +468,7 @@ end
 @testset "OpenAPI export converters: TModelHVDCLine" begin
     # Exception among the branches: `active_power_flow`/`operational_flow_limit`
     # declare x-unit "MW" outright, fixed natural units with no `power_units` discriminator
-    # and no `base_power` field — same posture as reserves' `requirement`. Both export
+    # and no `base_power` field. Both export
     # methods multiply by `get_base_power(refs)` and are identical; `base_current` (not a
     # power base) is `r`/`l`/`c`'s own anchor and rides through untouched.
     dcbus1 = DCBus(; input_basis = u"CU",
@@ -863,28 +863,28 @@ end
 
 @testset "OpenAPI export converters: reserves" begin
     up_reserve = OnlineReserve{ReserveUp}(;
-        name = "spin_up", available = true, time_frame = 10.0, requirement = 1.0,
+        name = "spin_up", available = true, time_frame = 10.0, requirement = 100.0,
         variable = PSY.ZERO_OFFER_CURVE, sustained_time = 60.0,
         max_output_fraction = 1.0,
         max_participation_factor = 1.0, deployed_fraction = 1.0,
     )
     down_reserve = OnlineReserve{ReserveDown}(;
-        name = "spin_down", available = true, time_frame = 10.0, requirement = 0.5,
+        name = "spin_down", available = true, time_frame = 10.0, requirement = 50.0,
         sustained_time = 60.0, max_output_fraction = 1.0,
         max_participation_factor = 1.0,
         deployed_fraction = 1.0,
     )
     offline_reserve = OfflineReserve(;
-        name = "nonspin", available = true, time_frame = 10.0, requirement = 0.5,
+        name = "nonspin", available = true, time_frame = 10.0, requirement = 50.0,
         sustained_time = 60.0, max_output_fraction = 1.0,
         max_participation_factor = 1.0,
         deployed_fraction = 1.0,
     )
     group =
-        GroupReserve{ReserveUp}(; name = "group_up", available = true, requirement = 1.5)
+        GroupReserve{ReserveUp}(; name = "group_up", available = true, requirement = 150.0)
 
     ordc_reserve = OnlineReserve{ReserveUp}(;
-        name = "spin_ordc", available = true, time_frame = 10.0, requirement = 1.0,
+        name = "spin_ordc", available = true, time_frame = 10.0, requirement = 100.0,
         variable = CostCurve(;
             value_curve = IncrementalCurve(;
                 function_data = PiecewiseStepData([0.0, 100.0], [10.0]),

@@ -214,9 +214,9 @@ end
 end
 
 @testset "display_units_arg resolves for parametric struct types" begin
-    @test IS.display_units_arg(get_requirement, OnlineReserve{ReserveUp}) == u"SU"
+    @test IS.display_units_arg(get_requirement, OnlineReserve{ReserveUp}) == u"MW"
     @test IS.display_units_arg(get_requirement_unitful, OnlineReserve{ReserveUp}) ==
-          u"SU"
+          u"MW"
 end
 
 @testset "rating fields default to component-base display, unlike other converted fields" begin

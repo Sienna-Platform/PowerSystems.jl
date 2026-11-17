@@ -21,7 +21,7 @@ struct OpenAPIRefs
     "The System's computational base power (MVA): the caller-supplied anchor for import
     (`from_openapi(::Type{System}, doc; base_power)`) or `get_base_power(sys)` on export, used
     by the handful of converters for types carrying no device-level per-unit basis of their
-    own (e.g. a reserve's `requirement`). Every power-bearing component is otherwise
+    own (e.g. a `TModelHVDCLine`'s MW fields). Every power-bearing component is otherwise
     self-interpretable via its own `base_power`/`power_units`."
     base_power::Float64
     "Component→component reference resolutions queued by [`defer_ref!`](@ref) because the

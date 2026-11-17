@@ -20133,9 +20133,7 @@
                         "min": 0,
                         "max": null
                     },
-                    "validation_action": "error",
-                    "needs_conversion": true,
-                    "conversion_unit": ":mw"
+                    "validation_action": "error"
                 },
                 {
                     "name": "variable"
@@ -20216,9 +20214,7 @@
                         "min": 0,
                         "max": null
                     },
-                    "validation_action": "error",
-                    "needs_conversion": true,
-                    "conversion_unit": ":mw"
+                    "validation_action": "error"
                 },
                 {
                     "name": "variable"
@@ -20289,9 +20285,7 @@
                         "min": 0,
                         "max": null
                     },
-                    "validation_action": "error",
-                    "needs_conversion": true,
-                    "conversion_unit": ":mw"
+                    "validation_action": "error"
                 },
                 {
                     "name": "ext"

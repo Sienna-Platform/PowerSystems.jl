@@ -73,7 +73,7 @@ mutable struct OnlineReserve{T <: ReserveDirection, U <: IS.AbstractUnitSystem} 
     available::Bool
     "The saturation time frame in minutes to provide reserve contribution"
     time_frame::Float64
-    "The required quantity of the product in p.u. ([`SYSTEM_BASE`](@ref per_unit)), scaled by a `\"requirement\"` time series when one is attached"
+    "The required quantity of the product in MW, scaled by a `\"requirement\"` time series when one is attached"
     requirement::Float64
     # TODO DISCUSS: the ORDC `variable` is a Union of a static and a time-series-backed CostCurve
     # (absorbing the retired ReserveDemandCurve / ReserveDemandTimeSeriesCurve). Revisit later.
@@ -187,7 +187,7 @@ mutable struct OfflineReserve{U <: IS.AbstractUnitSystem} <: AbstractReserve
     available::Bool
     "The saturation time frame in minutes to provide reserve contribution"
     time_frame::Float64
-    "The required quantity of the product in p.u. ([`SYSTEM_BASE`](@ref per_unit)), scaled by a `\"requirement\"` time series when one is attached"
+    "The required quantity of the product in MW, scaled by a `\"requirement\"` time series when one is attached"
     requirement::Float64
     # TODO DISCUSS: see OnlineReserve.variable - the ORDC is a Union of a static and a
     # time-series-backed CostCurve. Revisit later.
@@ -306,7 +306,7 @@ mutable struct GroupReserve{T <: ReserveDirection, U <: IS.AbstractUnitSystem} <
     name::String
     "Indicator of whether the component is connected and online"
     available::Bool
-    "The value of required reserves in p.u. ([`SYSTEM_BASE`](@ref per_unit))"
+    "The value of required reserves in MW"
     requirement::Float64
     # TODO DISCUSS: see OnlineReserve.variable - the ORDC is a Union of a static and a
     # time-series-backed CostCurve. Revisit later.
@@ -389,23 +389,23 @@ get_name(value::Union{OnlineReserve, OfflineReserve}) = value.name
 get_available(value::Union{OnlineReserve, OfflineReserve}) = value.available
 """Get [`OnlineReserve`](@ref)/[`OfflineReserve`](@ref) `time_frame`."""
 get_time_frame(value::Union{OnlineReserve, OfflineReserve}) = value.time_frame
-"""Get [`OnlineReserve`](@ref)/[`OfflineReserve`](@ref) `requirement` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`). For the unit-bearing value see [`get_requirement_unitful`](@ref)."""
+"""Get [`OnlineReserve`](@ref)/[`OfflineReserve`](@ref) `requirement` as a bare number in the requested `units` (e.g. `u"MW"`, `u"SU"`). It is stored in MW; a per-unit read needs the reserve attached to a system. For the unit-bearing value see [`get_requirement_unitful`](@ref)."""
 get_requirement(value::Union{OnlineReserve, OfflineReserve}, units) =
-    IS._strip_units(get_value(value, Val(:requirement), Val(:mw), units))
+    IS._strip_units(get_requirement_unitful(value, units))
 """Get [`OnlineReserve`](@ref)/[`OfflineReserve`](@ref) `requirement` as a unit-bearing quantity in the requested `units`. For a bare number see [`get_requirement`](@ref)."""
 get_requirement_unitful(value::Union{OnlineReserve, OfflineReserve}, units) =
-    get_value(value, Val(:requirement), Val(:mw), units)
+    _convert_requirement(value, value.requirement * u"MW", units)
 # Must be `::Type{<:...}`: the fully-parameterized spelling would not match the partially
 # applied `OnlineReserve{ReserveUp}` UnionAll that callers actually write.
 IS.display_units_arg(
     ::typeof(get_requirement),
     ::Type{<:Union{OnlineReserve, OfflineReserve}},
 ) =
-    u"SU"
+    u"MW"
 IS.display_units_arg(
     ::typeof(get_requirement_unitful),
     ::Type{<:Union{OnlineReserve, OfflineReserve}},
-) = u"SU"
+) = u"MW"
 """Get [`OnlineReserve`](@ref)/[`OfflineReserve`](@ref) `variable`."""
 get_variable(value::Union{OnlineReserve, OfflineReserve}) = value.variable
 """Get [`OnlineReserve`](@ref)/[`OfflineReserve`](@ref) `sustained_time`."""
@@ -427,9 +427,11 @@ get_internal(value::Union{OnlineReserve, OfflineReserve}) = value.internal
 set_available!(value::Union{OnlineReserve, OfflineReserve}, val) = value.available = val
 """Set [`OnlineReserve`](@ref)/[`OfflineReserve`](@ref) `time_frame`."""
 set_time_frame!(value::Union{OnlineReserve, OfflineReserve}, val) = value.time_frame = val
-"""Set [`OnlineReserve`](@ref)/[`OfflineReserve`](@ref) `requirement`."""
+"""Set [`OnlineReserve`](@ref)/[`OfflineReserve`](@ref) `requirement` from a units-tagged value, e.g. `100.0u"MW"`."""
+set_requirement!(value::Union{OnlineReserve, OfflineReserve}, val::Quantity) =
+    value.requirement = Unitful.ustrip(_convert_requirement(value, val, u"MW"))
 set_requirement!(value::Union{OnlineReserve, OfflineReserve}, val) =
-    value.requirement = set_value(value, Val(:requirement), val, Val(:mw))
+    set_value(value, Val(:requirement), val, Val(:mw))
 """Set [`OnlineReserve`](@ref)/[`OfflineReserve`](@ref) `variable`."""
 set_variable!(value::Union{OnlineReserve, OfflineReserve}, val) = value.variable = val
 """Set [`OnlineReserve`](@ref)/[`OfflineReserve`](@ref) `sustained_time`."""
@@ -451,14 +453,14 @@ set_ext!(value::Union{OnlineReserve, OfflineReserve}, val) = value.ext = val
 get_name(value::GroupReserve) = value.name
 """Get [`GroupReserve`](@ref) `available`."""
 get_available(value::GroupReserve) = value.available
-"""Get [`GroupReserve`](@ref) `requirement` as a bare number in the requested `units` (e.g. `u"SU"`, `u"CU"`). For the unit-bearing value see [`get_requirement_unitful`](@ref)."""
+"""Get [`GroupReserve`](@ref) `requirement` as a bare number in the requested `units` (e.g. `u"MW"`, `u"SU"`). It is stored in MW; a per-unit read needs the reserve attached to a system. For the unit-bearing value see [`get_requirement_unitful`](@ref)."""
 get_requirement(value::GroupReserve, units) =
-    IS._strip_units(get_value(value, Val(:requirement), Val(:mw), units))
+    IS._strip_units(get_requirement_unitful(value, units))
 """Get [`GroupReserve`](@ref) `requirement` as a unit-bearing quantity in the requested `units`. For a bare number see [`get_requirement`](@ref)."""
 get_requirement_unitful(value::GroupReserve, units) =
-    get_value(value, Val(:requirement), Val(:mw), units)
-IS.display_units_arg(::typeof(get_requirement), ::Type{<:GroupReserve}) = u"SU"
-IS.display_units_arg(::typeof(get_requirement_unitful), ::Type{<:GroupReserve}) = u"SU"
+    _convert_requirement(value, value.requirement * u"MW", units)
+IS.display_units_arg(::typeof(get_requirement), ::Type{<:GroupReserve}) = u"MW"
+IS.display_units_arg(::typeof(get_requirement_unitful), ::Type{<:GroupReserve}) = u"MW"
 """Get [`GroupReserve`](@ref) `variable` (its operating reserve demand curve)."""
 get_variable(value::GroupReserve) = value.variable
 """Get [`GroupReserve`](@ref) `ext`."""
@@ -470,15 +472,29 @@ get_internal(value::GroupReserve) = value.internal
 
 """Set [`GroupReserve`](@ref) `available`."""
 set_available!(value::GroupReserve, val) = value.available = val
-"""Set [`GroupReserve`](@ref) `requirement`."""
+"""Set [`GroupReserve`](@ref) `requirement` from a units-tagged value, e.g. `100.0u"MW"`."""
+set_requirement!(value::GroupReserve, val::Quantity) =
+    value.requirement = Unitful.ustrip(_convert_requirement(value, val, u"MW"))
 set_requirement!(value::GroupReserve, val) =
-    value.requirement = set_value(value, Val(:requirement), val, Val(:mw))
+    set_value(value, Val(:requirement), val, Val(:mw))
 """Set [`GroupReserve`](@ref) `variable` (its operating reserve demand curve)."""
 set_variable!(value::GroupReserve, val) = value.variable = val
 """Set [`GroupReserve`](@ref) `ext`."""
 set_ext!(value::GroupReserve, val) = value.ext = val
 """Set [`GroupReserve`](@ref) `contributing_services`."""
 set_contributing_services!(value::GroupReserve, val) = value.contributing_services = val
+
+# `requirement` is stored in MW. A natural-units value converts directly; a per-unit value
+# needs the system base, so only an attached reserve reads or takes one.
+function _convert_requirement(reserve::AbstractReserve, q::Quantity, units::Unitful.Units)
+    from, from_units = _conversion_plan(ACTIVE_POWER, Unitful.unit(q))
+    to, to_units = _conversion_plan(ACTIVE_POWER, units)
+    return _convert_requirement(from, to, reserve, Unitful.ustrip(q) * from_units, to_units)
+end
+_convert_requirement(::Val{:natural}, ::Val{:natural}, _, q, units) =
+    Unitful.uconvert(units, q)
+_convert_requirement(::Val, ::Val, reserve, q, units) =
+    convert_units(reserve, q, ACTIVE_POWER, units)
 
 """
 Return whether an Operating Reserve Demand Curve is defined on `reserve`.
