@@ -1156,7 +1156,7 @@
         },
         {
             "struct_name": "SeriesCompensator",
-            "docstring": "A series compensator: a series capacitor or reactor, or a thyristor-controlled or static synchronous series compensator, with one series reactance on an [`Arc`](@ref). Out of service is `available = false`; a bypassed compensator is `control_mode = BYPASSED`",
+            "docstring": "A fixed series compensator on an [`Arc`](@ref) (the CIM `SeriesCompensator`): a series capacitor or reactor, or an AC line without charging susceptance, with constant `r` and `x`. Out of service is `available = false`; a bypassed device (`bypassed = true`) is shorted into a zero-impedance tie",
             "fields": [
                 {
                     "null_value": "init",
@@ -1173,7 +1173,7 @@
                 },
                 {
                     "name": "active_power_flow",
-                    "comment": "Initial condition of active power flow through the compensator (MW)",
+                    "comment": "Initial condition of active power flow through the device (MW)",
                     "null_value": "0.0",
                     "data_type": "Float64",
                     "needs_conversion": true,
@@ -1181,7 +1181,7 @@
                 },
                 {
                     "name": "reactive_power_flow",
-                    "comment": "Initial condition of reactive power flow through the compensator (MVAR)",
+                    "comment": "Initial condition of reactive power flow through the device (MVAR)",
                     "null_value": "0.0",
                     "data_type": "Float64",
                     "needs_conversion": true,
@@ -1190,7 +1190,7 @@
                 {
                     "null_value": "Arc(ACBus(nothing), ACBus(nothing))",
                     "name": "arc",
-                    "comment": "An [`Arc`](@ref) defining this compensator `from` a bus `to` another bus",
+                    "comment": "An [`Arc`](@ref) defining this device `from` a bus `to` another bus",
                     "data_type": "Arc"
                 },
                 {
@@ -1210,7 +1210,7 @@
                     "null_value": "0.0",
                     "name": "x",
                     "data_type": "Float64",
-                    "comment": "Series reactance in pu ([`SYSTEM_BASE`](@ref per_unit)); negative for a capacitor. Under `DISPATCHABLE` and `ACTIVE_POWER_FLOW`, the present value",
+                    "comment": "Series reactance in pu ([`SYSTEM_BASE`](@ref per_unit)); negative for a capacitor",
                     "valid_range": {
                         "min": -4,
                         "max": 4
@@ -1222,7 +1222,7 @@
                 {
                     "null_value": "0.0",
                     "name": "rating",
-                    "comment": "Thermal rating (MVA). Flow through the compensator must be between -`rating` and `rating`. When defining a compensator before it is attached to a `System`, `rating` must be in pu ([`SYSTEM_BASE`](@ref per_unit)) using the base power of the `System` it will be attached to. Displays in component base ([`DEVICE_BASE`](@ref per_unit)) by default, unlike most converted fields which default to system base",
+                    "comment": "Thermal rating (MVA). Flow through the device must be between -`rating` and `rating`. When defining a device before it is attached to a `System`, `rating` must be in pu ([`SYSTEM_BASE`](@ref per_unit)) using the base power of the `System` it will be attached to. Displays in component base ([`DEVICE_BASE`](@ref per_unit)) by default, unlike most converted fields which default to system base",
                     "data_type": "Float64",
                     "needs_conversion": true,
                     "conversion_unit": ":mva",
@@ -1230,7 +1230,7 @@
                 },
                 {
                     "name": "bypassed",
-                    "comment": "`true` when the device is bypassed: it is shorted into a zero-impedance tie between the `from` and `to` buses. `r` and `x` keep the values of the device in service.",
+                    "comment": "Whether the device is bypassed: shorted into a zero-impedance tie between the `from` and `to` buses. `r` and `x` keep the impedance it has when in service",
                     "null_value": "false",
                     "default": "false",
                     "data_type": "Bool"

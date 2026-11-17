@@ -741,7 +741,7 @@ end
     end
 end
 
-@testset "SeriesCompensator round trip: bypassed flag and optional fields" begin
+@testset "SeriesCompensator round trip: bypassed and optional fields" begin
     sys = System(100.0)
     buses = map(1:2) do n
         bus = ACBus(nothing)
@@ -781,8 +781,11 @@ end
         @test get_operational_flow_limit(fixed, u"SU") ==
               (from_to = (min = 0.0, max = 15.0), to_from = (min = 0.0, max = 12.0))
         @test !get_bypassed(fixed)
-        @test get_bypassed(unit("bypassed"))
-        @test get_name(get_from(get_arc(fixed))) == "bus1"
+        bypassed = unit("bypassed")
+        @test get_bypassed(bypassed)
+        # Bypassing keeps the in-service impedance.
+        @test get_x(bypassed, u"SU") == -0.0125
+        @test get_name(get_from(get_arc(bypassed))) == "bus1"
     end
 
     for units in (CU, NU)
