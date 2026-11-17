@@ -172,6 +172,7 @@ end
     @test_throws ArgumentError add_time_series!(sys, battery, energy("base_power"))
     add_time_series!(sys, battery, energy("storage_capacity"))
     @test read_ts("energy", u"MW*hr") ≈ [80.0, 160.0, 320.0]
+    @test read_ts("energy", u"NU") ≈ [80.0, 160.0, 320.0]
     @test read_ts("energy", u"CU") ≈ [0.2, 0.4, 0.8]
     # Energy reads in SU*hr, on the 100 MVA system base; plain SU is a power.
     @test read_ts("energy", u"SU*hr") ≈ [0.8, 1.6, 3.2]
@@ -251,6 +252,8 @@ end
         series("inflow"; units = "MW", quantity_kind = "ActivePower"))
     @test read_ts(energy_reservoir, "level", u"MW*hr") ≈ [0.2, 0.4, 0.8]
     @test read_ts(energy_reservoir, "inflow", u"kW") ≈ [200.0, 400.0, 800.0]
+    @test read_ts(energy_reservoir, "level", u"NU") ≈ [0.2, 0.4, 0.8]
+    @test read_ts(energy_reservoir, "inflow", u"NU") ≈ [0.2, 0.4, 0.8]
     # On the 100 MVA system base: SU*hr for the level, SU for the flow.
     @test read_ts(energy_reservoir, "level", u"SU*hr") ≈ [0.2, 0.4, 0.8] ./ 100
     @test read_ts(energy_reservoir, "inflow", u"SU") ≈ [0.2, 0.4, 0.8] ./ 100
@@ -271,6 +274,8 @@ end
     )
     add_time_series!(sys, head_reservoir, inflow)
     @test read_ts(head_reservoir, "inflow", u"m^3/hr") ≈ [0.2, 0.4, 0.8] .* 3600
+    @test read_ts(head_reservoir, "inflow", u"NU") ≈ [0.2, 0.4, 0.8]
+    @test read_ts(head_reservoir, "target", u"NU") ≈ [0.2, 0.4, 0.8]
     @test_throws ArgumentError read_ts(head_reservoir, "target", u"CU")
     # Water has no system base.
     @test_throws Unitful.DimensionError read_ts(head_reservoir, "inflow", u"SU")
