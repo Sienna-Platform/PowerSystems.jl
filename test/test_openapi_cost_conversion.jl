@@ -151,6 +151,18 @@ end
     )
 end
 
+@testset "convert_cost: FuelCurve startup_fuel_offtake round trips" begin
+    fc = FuelCurve(; value_curve = LinearCurve(9.0, 100.0), fuel_units = u"MMBtu",
+        fuel_cost = 3.5, startup_fuel_offtake = LinearCurve(25.0))
+    po = PSY.convert_cost_to_openapi(fc)
+    @test PSY.convert_cost(po) == fc
+    @test PSY.convert_cost(po, nothing) == fc
+    # A document without the property imports the default.
+    bare = PSY.PC.FuelCurve(; fuel_units = po.fuel_units, power_units = po.power_units,
+        value_curve = po.value_curve, fuel_cost = 3.5, vom_cost = po.vom_cost)
+    @test IS.get_startup_fuel_offtake(PSY.convert_cost(bare)) == LinearCurve(0.0)
+end
+
 @testset "convert_cost: vom_cost must be LINEAR" begin
     bad = _po_cost_curve(;
         vom_cost = PSY.PC.InputOutputCurve(;

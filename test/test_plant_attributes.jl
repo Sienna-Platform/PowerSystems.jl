@@ -40,6 +40,24 @@ const PSY = PowerSystems
         )
         @test get_hrsg_heat_loss(lossy) == 12.5
         @test get_heat_recovery_to_steam_factor(lossy) == 0.85
+        config = CombinedCycleConfiguration.SingleShaftCombustionSteam
+        for loss in (-1.0, NaN)
+            @test_throws ArgumentError CombinedCycleBlock(;
+                name = "CC Block 3", configuration = config, hrsg_heat_loss = loss)
+            # the deserialization variant, with string-keyed maps
+            @test_throws ArgumentError CombinedCycleBlock("CC Block 3", string(config),
+                0.0, loss, Dict{String, Any}(), Dict{String, Any}(),
+                IS.InfrastructureSystemsInternal())
+        end
+        # the string-configuration variants read the enum from its name
+        from_strings = CombinedCycleBlock("CC Block 4", string(config), 0.85, 2.0,
+            Dict{String, Any}("1" => [7]), Dict{String, Any}(),
+            IS.InfrastructureSystemsInternal())
+        @test get_configuration(from_strings) == config
+        @test get_hrsg_ct_map(from_strings) == Dict(1 => [7])
+        frac = CombinedCycleFractional("CC Frac", string(config), Dict{String, Any}(),
+            IS.InfrastructureSystemsInternal())
+        @test get_configuration(frac) == config
     end
 
     @testset "Add and remove ThermalGen to/from ThermalPowerPlant" begin

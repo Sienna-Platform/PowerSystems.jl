@@ -738,7 +738,6 @@ end
 
 """
 Set the first fuel price of the component's variable cost, which must be a `DualFuelCurve`.
-A time series must be named `"fuel_cost"`: operations models find the series by that name.
 """
 function set_first_fuel_cost!(
     sys::System,
@@ -756,7 +755,6 @@ end
 
 """
 Set the second fuel price of the component's variable cost, which must be a `DualFuelCurve`.
-A time series must be named `"second_fuel_cost"`: operations models find the series by that name.
 """
 function set_second_fuel_cost!(
     sys::System,

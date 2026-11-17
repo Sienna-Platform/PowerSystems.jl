@@ -229,6 +229,7 @@ function convert_cost_to_openapi(cost::FuelCurve)
         fuel_cost_time_series = _fuel_cost_time_series_id(
             IS.get_fuel_cost_time_series(cost),
         ),
+        startup_fuel_offtake = convert_cost_to_openapi(get_startup_fuel_offtake(cost)),
         vom_cost = convert_cost_to_openapi(get_vom_cost(cost)),
     )
 end

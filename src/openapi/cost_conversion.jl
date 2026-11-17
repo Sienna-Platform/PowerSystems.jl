@@ -120,14 +120,15 @@ convert_cost(vc::PC.AverageRateCurve) =
 
 # ── vom_cost / startup_fuel_offtake: always a LINEAR InputOutputCurve ──────────
 
-_as_linear_curve(curve::InputOutputCurve{LinearFunctionData}) = curve
-_as_linear_curve(curve) = error(
-    "convert_cost: vom_cost must be a LINEAR InputOutputCurve, got " *
+_as_linear_curve(curve::InputOutputCurve{LinearFunctionData}, ::String) = curve
+_as_linear_curve(curve, field::String) = error(
+    "convert_cost: $field must be a LINEAR InputOutputCurve, got " *
     "InputOutputCurve{$(typeof(get_function_data(curve)))}",
 )
 
-_vom_cost(::Nothing) = LinearCurve(0.0)
-_vom_cost(io::PC.InputOutputCurve) = _as_linear_curve(convert_cost(io))
+_optional_linear_curve(::Union{Nothing, IC.Absent}, ::String) = LinearCurve(0.0)
+_optional_linear_curve(io::PC.InputOutputCurve, field::String) =
+    _as_linear_curve(convert_cost(io), field)
 
 # ── fuel_cost: a bare number ───────────────────────────────────────────────────
 
@@ -229,7 +230,7 @@ convert_cost(vc::PC.TimeSeriesAverageRateCurve) = convert_cost(vc, _current_impo
 
 function convert_cost(c::PC.CostCurve)
     value_curve = convert_cost(_require(c.value_curve, "CostCurve.value_curve"))
-    vom_cost = _vom_cost(c.vom_cost)
+    vom_cost = _optional_linear_curve(c.vom_cost, "vom_cost")
     return _with_power_units(c.power_units) do units
         CostCurve(; value_curve = value_curve, power_units = units, vom_cost = vom_cost)
     end
@@ -240,7 +241,7 @@ end
 `import_offer_curves`/`export_offer_curves`)."""
 function convert_cost(c::PC.CostCurve, store)
     value_curve = convert_cost(_require(c.value_curve, "CostCurve.value_curve"), store)
-    vom_cost = _vom_cost(c.vom_cost)
+    vom_cost = _optional_linear_curve(c.vom_cost, "vom_cost")
     return _with_power_units(c.power_units) do units
         CostCurve(; value_curve = value_curve, power_units = units, vom_cost = vom_cost)
     end
@@ -294,7 +295,9 @@ _fuel_cost_fields(::Any, ::Real, ::Integer, owner = "FuelCurve", field = "fuel_c
 
 function convert_cost(f::PC.FuelCurve, store)
     value_curve = convert_cost(_require(f.value_curve, "FuelCurve.value_curve"), store)
-    vom_cost = _vom_cost(f.vom_cost)
+    vom_cost = _optional_linear_curve(f.vom_cost, "vom_cost")
+    startup_fuel_offtake =
+        _optional_linear_curve(f.startup_fuel_offtake, "startup_fuel_offtake")
     fuel_cost, fuel_cost_time_series = _fuel_cost_fields(
         store,
         _optional_from_wire(f.fuel_cost),
@@ -307,6 +310,7 @@ function convert_cost(f::PC.FuelCurve, store)
             fuel_units = _fuel_units_from_wire(f),
             fuel_cost = fuel_cost,
             fuel_cost_time_series = fuel_cost_time_series,
+            startup_fuel_offtake = startup_fuel_offtake,
             vom_cost = vom_cost,
         )
     end
@@ -335,7 +339,9 @@ only fetched when `fuel_cost_time_series` is actually present, so a scalar `fuel
 non-time-series value curve still converts with no active import bound at all."""
 function convert_cost(f::PC.FuelCurve)
     value_curve = convert_cost(_require(f.value_curve, "FuelCurve.value_curve"))
-    vom_cost = _vom_cost(f.vom_cost)
+    vom_cost = _optional_linear_curve(f.vom_cost, "vom_cost")
+    startup_fuel_offtake =
+        _optional_linear_curve(f.startup_fuel_offtake, "startup_fuel_offtake")
     fuel_cost, fuel_cost_time_series = _fuel_cost_fields_ambient(
         _optional_from_wire(f.fuel_cost),
         _optional_from_wire(f.fuel_cost_time_series),
@@ -347,6 +353,7 @@ function convert_cost(f::PC.FuelCurve)
             fuel_units = _fuel_units_from_wire(f),
             fuel_cost = fuel_cost,
             fuel_cost_time_series = fuel_cost_time_series,
+            startup_fuel_offtake = startup_fuel_offtake,
             vom_cost = vom_cost,
         )
     end
@@ -364,7 +371,7 @@ function _convert_dual_fuel(f::PC.DualFuelCurve, convert, price)
     )
     first_curve = convert(_require(f.first_fuel_curve, "DualFuelCurve.first_fuel_curve"))
     second_curve = convert(_require(f.second_fuel_curve, "DualFuelCurve.second_fuel_curve"))
-    vom_cost = _vom_cost(f.vom_cost)
+    vom_cost = _optional_linear_curve(f.vom_cost, "vom_cost")
     return _with_power_units(f.power_units) do units
         DualFuelCurve(;
             first_fuel_curve = first_curve,
@@ -376,11 +383,11 @@ function _convert_dual_fuel(f::PC.DualFuelCurve, convert, price)
             second_fuel_cost = second_cost,
             second_fuel_cost_time_series = second_key,
             second_fuel_share = _optional_from_wire(f.second_fuel_share),
-            first_fuel_startup_offtake = _vom_cost(
-                _optional_from_wire(f.first_fuel_startup_offtake),
+            first_fuel_startup_offtake = _optional_linear_curve(
+                f.first_fuel_startup_offtake, "first_fuel_startup_offtake",
             ),
-            second_fuel_startup_offtake = _vom_cost(
-                _optional_from_wire(f.second_fuel_startup_offtake),
+            second_fuel_startup_offtake = _optional_linear_curve(
+                f.second_fuel_startup_offtake, "second_fuel_startup_offtake",
             ),
             vom_cost = vom_cost,
         )
