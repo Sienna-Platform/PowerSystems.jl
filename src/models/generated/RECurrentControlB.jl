@@ -6,8 +6,8 @@ This file is auto-generated. Do not edit.
 
 """
     mutable struct RECurrentControlB <: InnerControl
-        Q_Flag::Int
-        PQ_Flag::Int
+        Q_Flag::Bool
+        PQ_Flag::Bool
         Vdip_lim::MinMax
         T_rv::Float64
         dbd_pnts::Tuple{Float64, Float64}
@@ -26,8 +26,8 @@ This file is auto-generated. Do not edit.
 Parameters of the Inner Control part of the REECB model in PSS/E
 
 # Arguments
-- `Q_Flag::Int`: Q Flag used for I_qinj, validation range: `(0, 1)`
-- `PQ_Flag::Int`: PQ Flag used for the Current Limit Logic, validation range: `(0, 1)`
+- `Q_Flag::Bool`: Q Flag used for I_qinj
+- `PQ_Flag::Bool`: PQ Flag used for the Current Limit Logic
 - `Vdip_lim::MinMax`: Limits for Voltage Dip Logic `(Vdip, Vup)`
 - `T_rv::Float64`: Voltage Filter Time Constant, validation range: `(0, nothing)`
 - `dbd_pnts::Tuple{Float64, Float64}`: Voltage error deadband thresholds `(dbd1, dbd2)`
@@ -44,9 +44,9 @@ Parameters of the Inner Control part of the REECB model in PSS/E
 """
 mutable struct RECurrentControlB <: InnerControl
     "Q Flag used for I_qinj"
-    Q_Flag::Int
+    Q_Flag::Bool
     "PQ Flag used for the Current Limit Logic"
-    PQ_Flag::Int
+    PQ_Flag::Bool
     "Limits for Voltage Dip Logic `(Vdip, Vup)`"
     Vdip_lim::MinMax
     "Voltage Filter Time Constant"
@@ -86,8 +86,8 @@ end
 # Constructor for demo purposes; non-functional.
 function RECurrentControlB(::Nothing)
     RECurrentControlB(;
-        Q_Flag=0,
-        PQ_Flag=0,
+        Q_Flag=false,
+        PQ_Flag=false,
         Vdip_lim=(min=0.0, max=0.0),
         T_rv=0,
         dbd_pnts=(0.0, 0.0),
@@ -159,3 +159,40 @@ set_T_iq!(value::RECurrentControlB, val) = value.T_iq = val
 set_I_max!(value::RECurrentControlB, val) = value.I_max = val
 """Set [`RECurrentControlB`](@ref) `ext`."""
 set_ext!(value::RECurrentControlB, val) = value.ext = val
+
+
+
+function from_openapi(po::PD.RECurrentControlB, refs::OpenAPIRefs)
+    return RECurrentControlB(;
+        Q_Flag = _wire_required(po.q_flag, "RECurrentControlB", "Q_Flag"),
+        PQ_Flag = _wire_required(po.pq_flag, "RECurrentControlB", "PQ_Flag"),
+        Vdip_lim = _or_default(po.vdip_lim, nothing),
+        T_rv = _wire_required(po.t_rv, "RECurrentControlB", "T_rv"),
+        dbd_pnts = _wire_to_psy(Tuple{Float64, Float64}, po.dbd_pnts),
+        K_qv = _wire_required(po.k_qv, "RECurrentControlB", "K_qv"),
+        Iqinj_lim = _or_default(po.iqinj_lim, nothing),
+        V_ref0 = _wire_required(po.v_ref0, "RECurrentControlB", "V_ref0"),
+        K_vp = _wire_required(po.k_vp, "RECurrentControlB", "K_vp"),
+        K_vi = _wire_required(po.k_vi, "RECurrentControlB", "K_vi"),
+        T_iq = _wire_required(po.t_iq, "RECurrentControlB", "T_iq"),
+        I_max = _wire_required(po.i_max, "RECurrentControlB", "I_max"),
+    )
+end
+
+function to_openapi(value::RECurrentControlB, refs::OpenAPIRefs)
+    return PD.RECurrentControlB(;
+        id = component_id(refs, value),
+        q_flag = get_Q_Flag(value),
+        pq_flag = get_PQ_Flag(value),
+        vdip_lim = _minmax_po(get_Vdip_lim(value)),
+        t_rv = get_T_rv(value),
+        dbd_pnts = _psy_to_wire(PC.DbdPnts, get_dbd_pnts(value)),
+        k_qv = get_K_qv(value),
+        iqinj_lim = _minmax_po(get_Iqinj_lim(value)),
+        v_ref0 = get_V_ref0(value),
+        k_vp = get_K_vp(value),
+        k_vi = get_K_vi(value),
+        t_iq = get_T_iq(value),
+        i_max = get_I_max(value),
+    )
+end

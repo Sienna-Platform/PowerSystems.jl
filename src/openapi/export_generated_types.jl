@@ -70,3 +70,29 @@ _component_id_optional(refs::OpenAPIRefs, component) = component_id(refs, compon
 # whose reverse direction is derived from the forward table rather than hand-written again,
 # so the two cannot drift.
 _invert(d) = Dict(v => k for (k, v) in d)
+
+# ── dynamics wire shapes (inverse of `_wire_to_psy` in import_generated_types.jl) ──
+_updown_po(nt) = IC.UpDown(; up = nt.up, down = nt.down)
+
+_psy_to_wire(x::NTuple{N, Float64}) where {N} = Float64[x...]
+_psy_to_wire(x::Vector{Float64}) = copy(x)
+_psy_to_wire(x::Vector{Tuple{Float64, Float64}}) = [Float64[p...] for p in x]
+_psy_to_wire(::Type{PC.DbdPnts}, x::Tuple{Float64, Float64}) =
+    PC.DbdPnts(; dbd1 = x[1], dbd2 = x[2])
+_psy_to_wire(::Type{PC.FdbdPnts}, x::Tuple{Float64, Float64}) =
+    PC.FdbdPnts(; fdbd1 = x[1], fdbd2 = x[2])
+_psy_to_wire(x::NamedTuple{(:fdbd1, :fdbd2)}) =
+    PC.FdbdPnts(; fdbd1 = x.fdbd1, fdbd2 = x.fdbd2)
+_psy_to_wire(x::NamedTuple{(:V1, :V2, :V3, :V4)}) =
+    PD.VoltVarPnts(; v1 = x.V1, v2 = x.V2, v3 = x.V3, v4 = x.V4)
+_psy_to_wire(x::NamedTuple{(:vrt1, :vrt2, :vrt3, :vrt4, :vrt5)}) =
+    PD.VoltageRideThroughPnts(;
+        vrt1 = x.vrt1, vrt2 = x.vrt2, vrt3 = x.vrt3, vrt4 = x.vrt4, vrt5 = x.vrt5,
+    )
+_psy_to_wire(x::NamedTuple{(:tvrt1, :tvrt2, :tvrt3)}) =
+    PD.VoltageRideThroughTimePnts(; tvrt1 = x.tvrt1, tvrt2 = x.tvrt2, tvrt3 = x.tvrt3)
+_psy_to_wire(x::NamedTuple{(:frt1, :frt2, :frt3, :frt4)}) = PD.FrequencyRideThroughPnts(;
+    frt1 = x.frt1, frt2 = x.frt2, frt3 = x.frt3, frt4 = x.frt4,
+)
+_psy_to_wire(x::NamedTuple{(:tfrt1, :tfrt2)}) =
+    PD.FrequencyRideThroughTimePnts(; tfrt1 = x.tfrt1, tfrt2 = x.tfrt2)

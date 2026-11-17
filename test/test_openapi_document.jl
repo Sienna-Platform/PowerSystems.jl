@@ -275,7 +275,7 @@ end
     @test isnothing(get_identifier(fixed))
 
     planned_po = PSY.PO.PlannedOutage(;
-        id = 5, outage_schedule = "maintenance_2024", monitored_components = [1],
+        id = 5, outage_schedule = "maintenance_2024",
         identifier = "block_12",
     )
     planned = PSY.from_openapi(planned_po, refs)
@@ -741,6 +741,63 @@ end
     end
 end
 
+@testset "SeriesCompensator round trip: bypassed and optional fields" begin
+    sys = System(100.0)
+    buses = map(1:2) do n
+        bus = ACBus(nothing)
+        bus.name = "bus$n"
+        bus.number = n
+        bus.bustype = n == 1 ? ACBusTypes.REF : ACBusTypes.PQ
+        bus.base_voltage = 500.0
+        add_component!(sys, bus)
+        bus
+    end
+    arc = Arc(; from = buses[1], to = buses[2])
+    add_component!(sys, arc)
+    compensator(name; kwargs...) = SeriesCompensator(;
+        name = name, available = true, active_power_flow = 0.0,
+        reactive_power_flow = 0.0,
+        arc = arc, r = 0.0, x = -0.0125, rating = 17.0,
+        input_basis = u"CU", kwargs...,
+    )
+    add_component!(
+        sys,
+        compensator("fixed";
+            rating_b = 20.0,
+            operational_flow_limit = (
+                from_to = (min = 0.0, max = 15.0), to_from = (min = 0.0, max = 12.0)),
+        ),
+    )
+    add_component!(sys, compensator("bypassed"; bypassed = true))
+
+    function check(sys2)
+        unit(name) = get_component(SeriesCompensator, sys2, name)
+        fixed = unit("fixed")
+        @test get_x(fixed, u"SU") == -0.0125
+        @test get_r(fixed, u"SU") == 0.0
+        @test get_rating(fixed, u"SU") == 17.0
+        @test get_rating_b(fixed, u"SU") == 20.0
+        @test isnothing(get_rating_c(fixed, u"SU"))
+        @test get_operational_flow_limit(fixed, u"SU") ==
+              (from_to = (min = 0.0, max = 15.0), to_from = (min = 0.0, max = 12.0))
+        @test !get_bypassed(fixed)
+        bypassed = unit("bypassed")
+        @test get_bypassed(bypassed)
+        # Bypassing keeps the in-service impedance.
+        @test get_x(bypassed, u"SU") == -0.0125
+        @test get_name(get_from(get_arc(bypassed))) == "bus1"
+    end
+
+    for units in (CU, NU)
+        check(from_openapi(System, to_openapi(sys; units = units)))
+    end
+    mktempdir() do dir
+        document = joinpath(dir, "case.json")
+        to_file(sys, document)
+        check(from_file(document))
+    end
+end
+
 @testset "HydroReservoir round trip: forward turbine and cascading reservoir references" begin
     sys = System(100.0)
     bus = ACBus(nothing)
@@ -880,4 +937,39 @@ end
     )
     @test get_phase_angle_correction_curve(angle) == curve
     @test isnothing(get_tap_ratio_correction_curve(angle))
+end
+
+"""`make_openapi_test_doc` with `bus2` moved to a second area, so `load1` (at `bus2`) is an
+off-area load of `area1`."""
+function _off_area_load_doc(out_of_area_load_ids)
+    doc = make_openapi_test_doc()
+    area1 = only(doc["components"]["Area"])
+    area1["scheduled_net_interchange"] = nothing
+    area1["out_of_area_load_ids"] = out_of_area_load_ids
+    area2 = openapi_raw(
+        PSY.PO.Area(;
+            id = 10, name = "area2", base_power = 100.0,
+            power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
+            scheduled_net_interchange = -25.0,
+        ),
+    )
+    push!(doc["components"]["Area"], area2)
+    doc["components"]["ACBus"][2]["area"] = 10
+    return doc
+end
+
+@testset "from_openapi(System, doc): Area net interchange and off-area loads" begin
+    sys = PSY.from_openapi(System, to_test_document(_off_area_load_doc([7])))
+    area1 = get_component(Area, sys, "area1")
+    area2 = get_component(Area, sys, "area2")
+    @test get_scheduled_net_interchange(area1, u"MW") === nothing
+    @test get_out_of_area_loads(area1) == [get_component(PowerLoad, sys, "load1")]
+    @test get_scheduled_net_interchange(area2, u"MW") ≈ -25.0
+    @test isempty(get_out_of_area_loads(area2))
+
+    unknown = to_test_document(_off_area_load_doc([999]))
+    @test_throws r"area1.*999" PSY.from_openapi(System, unknown)
+
+    not_a_load = to_test_document(_off_area_load_doc([3]))
+    @test_throws r"area1.*3.*ElectricLoad" PSY.from_openapi(System, not_a_load)
 end

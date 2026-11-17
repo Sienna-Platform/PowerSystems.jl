@@ -5,7 +5,7 @@ This file is auto-generated. Do not edit.
 #! format: off
 
 """
-    mutable struct SimpleAFMachine <: Machine
+    mutable struct SimpleAFMachine <: SynchronousMachineDynamics
         R::Float64
         Xd::Float64
         Xq::Float64
@@ -50,7 +50,7 @@ Parameters of 4-[states](@ref S) simplified Anderson-Fouad (SimpleAFMachine) mod
 - `n_states::Int`: (**Do not modify.**) SimpleAFMachine has 4 states
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
 """
-mutable struct SimpleAFMachine <: Machine
+mutable struct SimpleAFMachine <: SynchronousMachineDynamics
     "Resistance after EMF in machine per unit"
     R::Float64
     "Reactance after EMF in d-axis per unit"
@@ -168,3 +168,38 @@ set_Td0_pp!(value::SimpleAFMachine, val) = value.Td0_pp = val
 set_Tq0_pp!(value::SimpleAFMachine, val) = value.Tq0_pp = val
 """Set [`SimpleAFMachine`](@ref) `ext`."""
 set_ext!(value::SimpleAFMachine, val) = value.ext = val
+
+
+
+function from_openapi(po::PD.SimpleAFMachine, refs::OpenAPIRefs)
+    return SimpleAFMachine(;
+        R = _wire_required(po.r, "SimpleAFMachine", "R"),
+        Xd = _wire_required(po.xd, "SimpleAFMachine", "Xd"),
+        Xq = _wire_required(po.xq, "SimpleAFMachine", "Xq"),
+        Xd_p = _wire_required(po.xd_p, "SimpleAFMachine", "Xd_p"),
+        Xq_p = _wire_required(po.xq_p, "SimpleAFMachine", "Xq_p"),
+        Xd_pp = _wire_required(po.xd_pp, "SimpleAFMachine", "Xd_pp"),
+        Xq_pp = _wire_required(po.xq_pp, "SimpleAFMachine", "Xq_pp"),
+        Td0_p = _wire_required(po.td0_p, "SimpleAFMachine", "Td0_p"),
+        Tq0_p = _wire_required(po.tq0_p, "SimpleAFMachine", "Tq0_p"),
+        Td0_pp = _wire_required(po.td0_pp, "SimpleAFMachine", "Td0_pp"),
+        Tq0_pp = _wire_required(po.tq0_pp, "SimpleAFMachine", "Tq0_pp"),
+    )
+end
+
+function to_openapi(value::SimpleAFMachine, refs::OpenAPIRefs)
+    return PD.SimpleAFMachine(;
+        id = component_id(refs, value),
+        r = get_R(value),
+        xd = get_Xd(value),
+        xq = get_Xq(value),
+        xd_p = get_Xd_p(value),
+        xq_p = get_Xq_p(value),
+        xd_pp = get_Xd_pp(value),
+        xq_pp = get_Xq_pp(value),
+        td0_p = get_Td0_p(value),
+        tq0_p = get_Tq0_p(value),
+        td0_pp = get_Td0_pp(value),
+        tq0_pp = get_Tq0_pp(value),
+    )
+end

@@ -4,12 +4,12 @@
           "QuadraticCurve (alias for InputOutputCurve{QuadraticFunctionData})"
 
     # Make sure there are no IS-related prefixes in the printouts
-    fc = FuelCurve(InputOutputCurve(IS.QuadraticFunctionData(1, 2, 3)), 4.0)
+    fc = FuelCurve(InputOutputCurve(IS.QuadraticFunctionData(1, 2, 3)), u"MMBtu", 4.0)
     @test sprint(show, "text/plain", fc) ==
           sprint(show, "text/plain", fc; context = :compact => false) ==
-          "FuelCurve:\n  value_curve: QuadraticCurve (a type of InputOutputCurve) where function is: f(x) = 1.0 x^2 + 2.0 x + 3.0\n  fuel_cost: 4.0\n  fuel_cost_time_series: nothing\n  startup_fuel_offtake: LinearCurve (a type of InputOutputCurve) where function is: f(x) = 0.0 x + 0.0\n  vom_cost: LinearCurve (a type of InputOutputCurve) where function is: f(x) = 0.0 x + 0.0\n  power_units: NU"
+          "FuelCurve:\n  value_curve: QuadraticCurve (a type of InputOutputCurve) where function is: f(x) = 1.0 x^2 + 2.0 x + 3.0\n  fuel_cost: 4.0\n  fuel_cost_time_series: nothing\n  startup_fuel_offtake: LinearCurve (a type of InputOutputCurve) where function is: f(x) = 0.0 x + 0.0\n  vom_cost: LinearCurve (a type of InputOutputCurve) where function is: f(x) = 0.0 x + 0.0\n  power_units: NU\n  fuel_units: MMBtu"
     @test sprint(show, "text/plain", fc; context = :compact => true) ==
-          "FuelCurve with power_units NU, fuel_cost 4.0, fuel_cost_time_series nothing, startup_fuel_offtake LinearCurve(0.0, 0.0), vom_cost LinearCurve(0.0, 0.0), and value_curve:\n  QuadraticCurve (a type of InputOutputCurve) where function is: f(x) = 1.0 x^2 + 2.0 x + 3.0"
+          "FuelCurve with power_units NU, fuel_units MMBtu, fuel_cost 4.0, fuel_cost_time_series nothing, startup_fuel_offtake LinearCurve(0.0, 0.0), vom_cost LinearCurve(0.0, 0.0), and value_curve:\n  QuadraticCurve (a type of InputOutputCurve) where function is: f(x) = 1.0 x^2 + 2.0 x + 3.0"
 end
 
 @testset "Test MarketBidCost direct struct creation and some scalar cost_function_timeseries interface" begin
@@ -469,7 +469,7 @@ end
             fixed = get_fixed(old_cost),
             shut_down = get_shut_down(old_cost),
             start_up = get_start_up(old_cost),
-            variable_operation_cost = FuelCurve(;
+            variable_operation_cost = FuelCurve(; fuel_units = u"MMBtu",
                 value_curve = get_value_curve(old_variable),
                 power_units = get_power_units(old_variable),
                 fuel_cost_time_series = fuel_key,
@@ -494,7 +494,7 @@ end
             fixed = get_fixed(old_cost),
             shut_down = get_shut_down(old_cost),
             start_up = get_start_up(old_cost),
-            variable_operation_cost = FuelCurve(;
+            variable_operation_cost = FuelCurve(; fuel_units = u"MMBtu",
                 value_curve = get_value_curve(old_variable),
                 power_units = get_power_units(old_variable),
                 fuel_cost = 2.0,
@@ -665,7 +665,12 @@ end
             gen,
             IS.SingleTimeSeries(; name = "fuel_cost", data = fuel_ta),
         )
-    fuel = ThermalGenerationCost(FuelCurve(LinearCurve(1.0), fuel_key), 0.0, 0.0, 0.0)
+    fuel = ThermalGenerationCost(
+        FuelCurve(LinearCurve(1.0), u"MMBtu", fuel_key),
+        0.0,
+        0.0,
+        0.0,
+    )
     @test get_time_series_keys(fuel) == [fuel_key]
 
     inc_key = _attach_pwl_forecast(sys, gen, "inc_offer_keys")

@@ -226,7 +226,7 @@ holds; the other setpoint is `nothing`.
 |:--------- |:---------------------------------------------------------------------- |
 | `BLOCKED` | The line is blocked and holds no schedule                              |
 | `POWER`   | The line holds a power schedule in `power_transfer_setpoint` (MW)      |
-| `CURRENT` | The line holds a current schedule in `current_transfer_setpoint` (A)   |
+| `CURRENT` | The line holds a current schedule in `current_transfer_setpoint` (kA)  |
 " LCCControlMode
 
 IS.@scoped_enum(
@@ -382,6 +382,24 @@ Negative values indicate disabled control modes, while positive values represent
 control objectives. The `FIXED` mode (0) indicates manual tap position control without
 automatic adjustment.
 " TransformerControlObjective
+
+IS.@scoped_enum(
+    TransformerRegulationOrientation,
+    UNDEFINED = 0,
+    FROM = 1,
+    TO = 2,
+)
+@doc"
+    TransformerRegulationOrientation
+
+Side of the `arc` of a [`TransformerCircuit`](@ref) on which the tap adjustment treats the
+regulated bus. It applies only when the regulated bus is not an end of the `arc`.
+
+# Values
+- `UNDEFINED = 0`: the regulated bus is an end of the `arc`, or there is no regulated bus
+- `FROM = 1`: adjust the tap as if the regulated bus is on the `from` side
+- `TO = 2`: adjust the tap as if the regulated bus is on the `to` side
+" TransformerRegulationOrientation
 
 IS.@scoped_enum(
     TwoWindingTransformerShuntLocation,
@@ -713,6 +731,9 @@ const MW_ACCUMULATOR_TYPE = Float64
 # Sentinel for `time_at_status`: "has been in this state indefinitely". Carried
 # in minutes, matching the operational-duration convention.
 const INFINITE_TIME = 6e5
+# Sentinel for the DC current limits: "no limit". Carried in kA; never binds at
+# realistic voltages, and matches the PSS/E "no limit" constant used when parsing.
+const INFINITE_CURRENT = 9999.0
 const START_COST = 1e8
 const INFINITE_COST = 1e8
 const INFINITE_BOUND = 1e6

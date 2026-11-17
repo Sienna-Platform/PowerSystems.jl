@@ -88,7 +88,7 @@ convert_cost(fd::IC.QuadraticFunctionData) =
     QuadraticFunctionData(fd.quadratic_term, fd.proportional_term, fd.constant_term)
 # `points` is generated as a bare `Vector`, so converting once restores inference for the loop.
 function convert_cost(fd::IC.PiecewiseLinearData)
-    points = convert(Vector{IC.XYCoords}, fd.points)
+    points = convert(Vector{IC.TwoDimensionalFunctionPoint}, fd.points)
     return PiecewiseLinearData([(x = p.x, y = p.y) for p in points])
 end
 convert_cost(fd::IC.PiecewiseStepData) = PiecewiseStepData(fd.x_coords, fd.y_coords)
@@ -246,6 +246,27 @@ function convert_cost(c::PC.CostCurve, store)
     end
 end
 
+# SiennaSchemas' `FuelUnit` enum ⇄ Unitful. Add volume fuels here when the enum gains them.
+const _FUEL_UNITS_FROM_WIRE = Dict("MMBTU" => MMBtu, "GJ" => u"GJ")
+const _FUEL_UNITS_TO_WIRE = Dict(v => k for (k, v) in _FUEL_UNITS_FROM_WIRE)
+
+_fuel_units_from_wire(f::PC.FuelCurve) =
+    get(_FUEL_UNITS_FROM_WIRE, f.fuel_units.value) do
+        throw(
+            ArgumentError("convert_cost: unknown FuelCurve.fuel_units $(f.fuel_units.value)"),
+        )
+    end
+
+_fuel_units_to_wire(u) =
+    get(_FUEL_UNITS_TO_WIRE, u) do
+        throw(
+            ArgumentError(
+                "cannot export a FuelCurve in $u: the schema's FuelUnit enum has only " *
+                join(sort!(collect(keys(_FUEL_UNITS_FROM_WIRE))), ", "),
+            ),
+        )
+    end
+
 """Resolve `FuelCurve`'s two mutually exclusive fields. `store` is unused on the
 scalar branch, so a plain `fuel_cost` converts with no active import at all."""
 _fuel_cost_fields(::Any, fuel_cost::Real, ::Nothing) = (Float64(fuel_cost), nothing)
@@ -271,6 +292,7 @@ function convert_cost(f::PC.FuelCurve, store)
         FuelCurve(;
             value_curve = value_curve,
             power_units = units,
+            fuel_units = _fuel_units_from_wire(f),
             fuel_cost = fuel_cost,
             fuel_cost_time_series = fuel_cost_time_series,
             vom_cost = vom_cost,
@@ -310,6 +332,7 @@ function convert_cost(f::PC.FuelCurve)
         FuelCurve(;
             value_curve = value_curve,
             power_units = units,
+            fuel_units = _fuel_units_from_wire(f),
             fuel_cost = fuel_cost,
             fuel_cost_time_series = fuel_cost_time_series,
             vom_cost = vom_cost,
@@ -605,11 +628,16 @@ convert_reserve_variable(po::Union{Nothing, IC.Absent, PC.CostCurve}) =
 # ── LossCurve ⇄ OpenAPI ────────────────────────────────────────────────────────
 # The schemas' `LossCurve` records the basis its curve is expressed in (`power_units`,
 # governing both axes), the same enum every power-bearing component records. Import keeps that
-# basis and export writes PSY's `get_power_units`; neither side assumes natural units.
+# basis and export writes PSY's `get_power_units`; neither side assumes natural units. What
+# the x-axis *is* (power flow, or converter current) is not on the wire: the field decides it.
 
-"""Wrap a document's loss curve as a `LossCurve` on the unit system it states."""
-loss_curve_from_openapi(curve::ValueCurve, units::IS.AbstractUnitSystem) =
-    LossCurve(curve, units)
+"""Wrap a document's loss curve as a `LossCurve` on the unit system it states, with the
+x-axis the receiving field takes."""
+loss_curve_from_openapi(
+    curve::ValueCurve,
+    units::IS.AbstractUnitSystem,
+    x_units::Unitful.Units = u"MW",
+) = LossCurve(curve, units, x_units)
 
 """
 Unwrap a `LossCurve` to the bare curve the document's `value_curve` holds. The caller

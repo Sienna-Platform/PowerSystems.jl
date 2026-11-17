@@ -33,6 +33,7 @@ heat_rate_curve = PiecewisePointCurve([
 # Create a FuelCurve with an initial scalar fuel cost
 fuel_curve = FuelCurve(;
     value_curve = heat_rate_curve,
+    fuel_units = u"GJ",
     fuel_cost = 5.0,  # Initial fuel cost: $5.0/GJ
 )
 

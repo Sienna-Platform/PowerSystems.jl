@@ -74,7 +74,8 @@ heat_rate_curve = PiecewisePointCurve([(100.0, 1400.0), (200.0, 2200.0)])
 Use the heat rate to define the fuel curve, including the cost of fuel:
 
 ```@repl costcurve
-fuel_curve = FuelCurve(; value_curve = heat_rate_curve, fuel_cost = 20.0)
+fuel_curve =
+    FuelCurve(; value_curve = heat_rate_curve, fuel_units = u"GJ", fuel_cost = 20.0)
 ```
 
 Finally, define the full operating cost:
@@ -109,7 +110,8 @@ The [`FuelCurve`](@ref) and [`ThermalGenerationCost`](@ref) are specified in the
 differing representation of the value curve:
 
 ```@repl costcurve
-fuel_curve = FuelCurve(; value_curve = heat_rate_curve, fuel_cost = 20.0)
+fuel_curve =
+    FuelCurve(; value_curve = heat_rate_curve, fuel_units = u"GJ", fuel_cost = 20.0)
 cost = ThermalGenerationCost(;
     variable = fuel_curve,
     fixed = 6.0,

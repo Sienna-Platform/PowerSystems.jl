@@ -5,7 +5,7 @@ This file is auto-generated. Do not edit.
 #! format: off
 
 """
-    mutable struct PSS2A <: PSS
+    mutable struct PSS2A <: PowerSystemStabilizerDynamics
         input_code_1::Int
         remote_bus_control_1::Int
         input_code_2::Int
@@ -44,16 +44,16 @@ IEEE Dual-Input Stabilizer Model
 - `remote_bus_control_2::Int`: Second Input remote bus identification [`number`](@ref ACBus) for control. `0` identifies the local bus connected to this component
 - `M_rtf::Int`: M parameter for ramp tracking filter, validation range: `(0, 8)`
 - `N_rtf::Int`: N parameter for ramp tracking filter, validation range: `(0, 8)`
-- `Tw1::Float64`: Time constant for first washout filter for first input, validation range: `(eps(), nothing)`
+- `Tw1::Float64`: Time constant for first washout filter for first input, validation range: `(0.0001, nothing)`
 - `Tw2::Float64`: Time constant for second washout filter for first input, validation range: `(0, nothing)`
 - `T6::Float64`: Time constant for low-pass filter for first input, validation range: `(0, nothing)`
-- `Tw3::Float64`: Time constant for first washout filter for second input, validation range: `(eps(), nothing)`
+- `Tw3::Float64`: Time constant for first washout filter for second input, validation range: `(0.0001, nothing)`
 - `Tw4::Float64`: Time constant for second washout filter for second input, validation range: `(0, nothing)`
 - `T7::Float64`: Time constant for low-pass filter for second input, validation range: `(0, nothing)`
 - `Ks2::Float64`: Gain for low-pass filter for second input, validation range: `(0, nothing)`
 - `Ks3::Float64`: Gain for second input, validation range: `(0, nothing)`
 - `T8::Float64`: Time constant for ramp tracking filter, validation range: `(0, nothing)`
-- `T9::Float64`: Time constant for ramp tracking filter, validation range: `(eps(), nothing)`
+- `T9::Float64`: Time constant for ramp tracking filter, validation range: `(0.0001, nothing)`
 - `Ks1::Float64`: Gain before lead-lag blocks, validation range: `(0, nothing)`
 - `T1::Float64`: Time constant for first lead-lag block, validation range: `(0, nothing)`
 - `T2::Float64`: Time constant for first lead-lag block, validation range: `(0, nothing)`
@@ -82,7 +82,7 @@ IEEE Dual-Input Stabilizer Model
 - `states_types::Vector{StateTypes.Value}`: (**Do not modify.**) IEEEST has 16 [differential](@ref states_list) [states](@ref S)
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
 """
-mutable struct PSS2A <: PSS
+mutable struct PSS2A <: PowerSystemStabilizerDynamics
     "First Input Code for stabilizer"
     input_code_1::Int
     "First Input remote bus identification [`number`](@ref ACBus) for control. `0` identifies the local bus connected to this component"
@@ -295,3 +295,60 @@ set_Vst_lim!(value::PSS2A, val) = value.Vst_lim = val
 set_ext!(value::PSS2A, val) = value.ext = val
 """Set [`PSS2A`](@ref) `states_types`."""
 set_states_types!(value::PSS2A, val) = value.states_types = val
+
+
+
+function from_openapi(po::PD.PSS2A, refs::OpenAPIRefs)
+    return PSS2A(;
+        input_code_1 = _wire_required(po.input_code_1, "PSS2A", "input_code_1"),
+        remote_bus_control_1 = _wire_required(po.remote_bus_control_1, "PSS2A", "remote_bus_control_1"),
+        input_code_2 = _wire_required(po.input_code_2, "PSS2A", "input_code_2"),
+        remote_bus_control_2 = _wire_required(po.remote_bus_control_2, "PSS2A", "remote_bus_control_2"),
+        M_rtf = _wire_required(po.m_rtf, "PSS2A", "M_rtf"),
+        N_rtf = _wire_required(po.n_rtf, "PSS2A", "N_rtf"),
+        Tw1 = _wire_required(po.tw1, "PSS2A", "Tw1"),
+        Tw2 = _wire_required(po.tw2, "PSS2A", "Tw2"),
+        T6 = _wire_required(po.t6, "PSS2A", "T6"),
+        Tw3 = _wire_required(po.tw3, "PSS2A", "Tw3"),
+        Tw4 = _wire_required(po.tw4, "PSS2A", "Tw4"),
+        T7 = _wire_required(po.t7, "PSS2A", "T7"),
+        Ks2 = _wire_required(po.ks2, "PSS2A", "Ks2"),
+        Ks3 = _wire_required(po.ks3, "PSS2A", "Ks3"),
+        T8 = _wire_required(po.t8, "PSS2A", "T8"),
+        T9 = _wire_required(po.t9, "PSS2A", "T9"),
+        Ks1 = _wire_required(po.ks1, "PSS2A", "Ks1"),
+        T1 = _wire_required(po.t1, "PSS2A", "T1"),
+        T2 = _wire_required(po.t2, "PSS2A", "T2"),
+        T3 = _wire_required(po.t3, "PSS2A", "T3"),
+        T4 = _wire_required(po.t4, "PSS2A", "T4"),
+        Vst_lim = _wire_to_psy(Tuple{Float64, Float64}, po.vst_lim),
+    )
+end
+
+function to_openapi(value::PSS2A, refs::OpenAPIRefs)
+    return PD.PSS2A(;
+        id = component_id(refs, value),
+        input_code_1 = get_input_code_1(value),
+        remote_bus_control_1 = get_remote_bus_control_1(value),
+        input_code_2 = get_input_code_2(value),
+        remote_bus_control_2 = get_remote_bus_control_2(value),
+        m_rtf = get_M_rtf(value),
+        n_rtf = get_N_rtf(value),
+        tw1 = get_Tw1(value),
+        tw2 = get_Tw2(value),
+        t6 = get_T6(value),
+        tw3 = get_Tw3(value),
+        tw4 = get_Tw4(value),
+        t7 = get_T7(value),
+        ks2 = get_Ks2(value),
+        ks3 = get_Ks3(value),
+        t8 = get_T8(value),
+        t9 = get_T9(value),
+        ks1 = get_Ks1(value),
+        t1 = get_T1(value),
+        t2 = get_T2(value),
+        t3 = get_T3(value),
+        t4 = get_T4(value),
+        vst_lim = _psy_to_wire(get_Vst_lim(value)),
+    )
+end

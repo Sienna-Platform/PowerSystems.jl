@@ -1427,7 +1427,12 @@ of the same type with the same name but with different data.
 
 Returns a key that can later be used to retrieve the time series data.
 
-Throws ArgumentError if the component is not stored in the system.
+Throws ArgumentError if the component is not stored in the system, or if the series' units
+labels do not fit the component. Only a device's power and a battery's stored energy may be
+stored in CU; such a series must declare `per_unit_of`, the component field its values are a
+fraction of (`"base_power"` for power, `"storage_capacity"` for a battery's energy), when it
+is constructed. Every other series, a reservoir's, a service's or a topology's, is natural
+units only.
 
 # Examples
 ```julia
@@ -1580,7 +1585,10 @@ get_forecast_interval(sys::System; kwargs...) =
 """
 Build a `ForecastReader` over every forecast in the system of `time_series_type`.
 `resolution` is required and pins the reader to one forecast resolution; `name` and
-`features` further narrow the match.
+`features` further narrow the match. `lazy = true` hands back multi-dimensional windows
+that need no element decoding as `PermutedDimsArray`s over the stored values rather than
+reordered copies; a window whose element type is decoded is built fresh either way. See
+`InfrastructureSystems.build_forecast_reader`.
 
 Drive the reader with `read_forecast_window!` and read each entry with
 `get_forecast_window`. Forecasts that share an underlying array are read from storage
@@ -1593,6 +1601,7 @@ build_forecast_reader(
     resolution::Dates.Period,
     name::Union{Nothing, AbstractString} = nothing,
     features::Union{Nothing, Dict} = nothing,
+    lazy::Bool = false,
 ) where {T <: Forecast} =
     IS.build_forecast_reader(
         sys.data,
@@ -1600,12 +1609,13 @@ build_forecast_reader(
         resolution = resolution,
         name = name,
         features = features,
+        lazy = lazy,
     )
 
 """
 Build a `StaticTimeSeriesReader` over every `SingleTimeSeries` in the system.
 `resolution` is required and pins the reader to one resolution; `name` and
-`features` further narrow the match.
+`features` further narrow the match. `lazy` is as for [`build_forecast_reader`](@ref).
 
 Drive the reader with `read_static_time_series_values!` and read each entry with
 `get_static_time_series_value`. Series with the same element type are packed into one
@@ -1616,12 +1626,14 @@ build_static_time_series_reader(
     resolution::Dates.Period,
     name::Union{Nothing, AbstractString} = nothing,
     features::Union{Nothing, Dict} = nothing,
+    lazy::Bool = false,
 ) =
     IS.build_static_time_series_reader(
         sys.data;
         resolution = resolution,
         name = name,
         features = features,
+        lazy = lazy,
     )
 
 """
@@ -1813,20 +1825,27 @@ function add_supplemental_attribute!(
     outage::Outage,
 )
     if get_runchecks(sys)
-        for id in get_monitored_components(outage)
-            comp = IS.get_component(sys, id)  # throws ArgumentError on miss
-            if !(comp isa Device)
-                throw(
-                    ArgumentError(
-                        "monitored_components on $(typeof(outage)) references id " *
-                        "$(id), which resolves to $(typeof(comp)); only " *
-                        "Device subtypes are allowed",
-                    ),
-                )
-            end
-        end
+        _check_monitored_components(sys, outage)
     end
     return IS.add_supplemental_attribute!(sys.data, component, outage)
+end
+
+_check_monitored_components(::System, ::PlannedOutage) = nothing
+
+function _check_monitored_components(sys::System, outage::UnplannedOutage)
+    for id in get_monitored_components(outage)
+        comp = IS.get_component(sys, id)  # throws ArgumentError on miss
+        if !(comp isa Device)
+            throw(
+                ArgumentError(
+                    "monitored_components on $(typeof(outage)) references id " *
+                    "$(id), which resolves to $(typeof(comp)); only " *
+                    "Device subtypes are allowed",
+                ),
+            )
+        end
+    end
+    return
 end
 
 """

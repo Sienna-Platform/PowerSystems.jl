@@ -163,7 +163,7 @@ end
     sys = PSB.build_system(PSB.PSITestSystems, "c_sys5_uc"; add_forecasts = false)
     thermal = first(get_components(ThermalStandard, sys))
     # Ensure thermal has ThermalGenerationCost with FuelCurve
-    fc = FuelCurve(InputOutputCurve(IS.QuadraticFunctionData(1, 2, 3)), 2.5)
+    fc = FuelCurve(InputOutputCurve(IS.QuadraticFunctionData(1, 2, 3)), u"MMBtu", 2.5)
     set_operation_cost!(thermal, ThermalGenerationCost(fc, 0.0, 0.0, 0.0))
     expected_fuel_cost = get_fuel_cost(thermal)
 

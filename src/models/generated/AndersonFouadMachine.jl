@@ -5,7 +5,7 @@ This file is auto-generated. Do not edit.
 #! format: off
 
 """
-    mutable struct AndersonFouadMachine <: Machine
+    mutable struct AndersonFouadMachine <: SynchronousMachineDynamics
         R::Float64
         Xd::Float64
         Xq::Float64
@@ -48,7 +48,7 @@ Parameters of 6-[states](@ref S) synchronous machine: Anderson-Fouad model
 - `n_states::Int`: (**Do not modify.**) The states AndersonFouadMachine has 6 states
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
 """
-mutable struct AndersonFouadMachine <: Machine
+mutable struct AndersonFouadMachine <: SynchronousMachineDynamics
     "Resistance after EMF in machine per unit"
     R::Float64
     "Reactance after EMF in d-axis per unit"
@@ -168,3 +168,38 @@ set_Td0_pp!(value::AndersonFouadMachine, val) = value.Td0_pp = val
 set_Tq0_pp!(value::AndersonFouadMachine, val) = value.Tq0_pp = val
 """Set [`AndersonFouadMachine`](@ref) `ext`."""
 set_ext!(value::AndersonFouadMachine, val) = value.ext = val
+
+
+
+function from_openapi(po::PD.AndersonFouadMachine, refs::OpenAPIRefs)
+    return AndersonFouadMachine(;
+        R = _wire_required(po.r, "AndersonFouadMachine", "R"),
+        Xd = _wire_required(po.xd, "AndersonFouadMachine", "Xd"),
+        Xq = _wire_required(po.xq, "AndersonFouadMachine", "Xq"),
+        Xd_p = _wire_required(po.xd_p, "AndersonFouadMachine", "Xd_p"),
+        Xq_p = _wire_required(po.xq_p, "AndersonFouadMachine", "Xq_p"),
+        Xd_pp = _wire_required(po.xd_pp, "AndersonFouadMachine", "Xd_pp"),
+        Xq_pp = _wire_required(po.xq_pp, "AndersonFouadMachine", "Xq_pp"),
+        Td0_p = _wire_required(po.td0_p, "AndersonFouadMachine", "Td0_p"),
+        Tq0_p = _wire_required(po.tq0_p, "AndersonFouadMachine", "Tq0_p"),
+        Td0_pp = _wire_required(po.td0_pp, "AndersonFouadMachine", "Td0_pp"),
+        Tq0_pp = _wire_required(po.tq0_pp, "AndersonFouadMachine", "Tq0_pp"),
+    )
+end
+
+function to_openapi(value::AndersonFouadMachine, refs::OpenAPIRefs)
+    return PD.AndersonFouadMachine(;
+        id = component_id(refs, value),
+        r = get_R(value),
+        xd = get_Xd(value),
+        xq = get_Xq(value),
+        xd_p = get_Xd_p(value),
+        xq_p = get_Xq_p(value),
+        xd_pp = get_Xd_pp(value),
+        xq_pp = get_Xq_pp(value),
+        td0_p = get_Td0_p(value),
+        tq0_p = get_Tq0_p(value),
+        td0_pp = get_Td0_pp(value),
+        tq0_pp = get_Tq0_pp(value),
+    )
+end

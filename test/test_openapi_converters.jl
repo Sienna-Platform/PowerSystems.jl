@@ -47,12 +47,12 @@ function _vsc_po_minimal(; overrides...)
         id = 20, name = "vsc1", available = true, arc = 10,
         active_power_flow = 50.0, rating = 200.0,
         g = 0.5,
-        dc_current = 300.0, reactive_power_from = 10.0,
+        dc_current = 0.3, reactive_power_from = 10.0,
         dc_control_from = PSY.PO.VSCDCControlModes("DC_POWER"),
         ac_control_from = PSY.PO.VSCACControlModes("AC_REACTIVE_POWER"),
         dc_power_setpoint_from = 40.0, power_factor_setpoint_from = 0.95,
         converter_loss_from = _loss_curve_po(1.2, 0.5),
-        max_dc_current_from = 1000.0, rating_from = 200.0,
+        max_dc_current_from = 1.0, rating_from = 200.0,
         reactive_power_limits_from = PSY.IC.MinMax(; min = -100.0, max = 100.0),
         power_factor_weighting_fraction_from = 0.5,
         voltage_limits_from = PSY.IC.MinMax(; min = 0.9, max = 1.1),
@@ -61,12 +61,12 @@ function _vsc_po_minimal(; overrides...)
         ac_control_to = PSY.PO.VSCACControlModes("AC_REACTIVE_POWER"),
         dc_power_setpoint_to = 40.0, power_factor_setpoint_to = 0.98,
         converter_loss_to = _loss_curve_po(1.1, 0.4),
-        max_dc_current_to = 1000.0, rating_to = 200.0,
+        max_dc_current_to = 1.0, rating_to = 200.0,
         reactive_power_limits_to = PSY.IC.MinMax(; min = -100.0, max = 100.0),
         power_factor_weighting_fraction_to = 0.5,
         voltage_limits_to = PSY.IC.MinMax(; min = 0.9, max = 1.1),
         dc_voltage_droop_to = 0.0, rated_dc_voltage = 200.0,
-        remote_bus_control_from = nothing, remote_bus_control_to = 4,
+        remote_regulated_bus_from = nothing, remote_regulated_bus_to = 3,
         base_power = 100.0,
         power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
     )
@@ -359,7 +359,6 @@ end
         parameter_units = PSY.PO.ImpedanceUnitBasis("COMPONENT_BASE"), r = 0.01,
         x = 0.1,
         control_objective = PSY.PO.TransformerControlObjective("UNDEFINED"),
-        regulated_bus_number = 0,
         number_of_tap_positions = 33,
         rating = 100.0, rating_b = nothing, rating_c = nothing,
         active_power_flow = 5.0, reactive_power_flow = 1.0,
@@ -368,7 +367,7 @@ end
     )
     circuit_natural =
         PSY.from_openapi(circuit_po, refs, NU)
-    @test get_α(circuit_natural) == 0.05
+    @test get_alpha(circuit_natural) == 0.05
     @test get_r(circuit_natural, u"CU") == 0.01
     @test get_x(circuit_natural, u"CU") == 0.1
     @test get_rating(circuit_natural, u"CU") == 2.0
@@ -387,7 +386,6 @@ end
         id = 21, available = true, arc = 10, tap = 1.0, alpha = 0.0,
         parameter_units = PSY.PO.ImpedanceUnitBasis("NATURAL_UNITS"), r = 0.01, x = 0.1,
         control_objective = PSY.PO.TransformerControlObjective("UNDEFINED"),
-        regulated_bus_number = 0,
         number_of_tap_positions = 33,
         rating = 100.0, rating_b = nothing, rating_c = nothing,
         active_power_flow = 0.0, reactive_power_flow = 0.0,
@@ -429,7 +427,6 @@ end
         parameter_units = PSY.PO.ImpedanceUnitBasis("COMPONENT_BASE"), r = 0.01,
         x = 0.1,
         control_objective = PSY.PO.TransformerControlObjective("UNDEFINED"),
-        regulated_bus_number = 0,
         number_of_tap_positions = 33,
         rating = 100.0, rating_b = nothing, rating_c = nothing,
         active_power_flow = 5.0, reactive_power_flow = 1.0,
@@ -451,7 +448,8 @@ end
         circuit_po_no_limits;
         id = 25,
         control_objective = PSY.PO.TransformerControlObjective("REACTIVE_POWER_FLOW"),
-        regulated_bus_number = 4,
+        regulated_bus = 4,
+        regulated_bus_orientation = PSY.PO.TransformerRegulationOrientation("TO"),
         tap_ratio_limits = PSY.IC.MinMax(; min = 0.9, max = 1.1),
         controlled_reactive_power_flow_limits = PSY.IC.MinMax(; min = -10.0, max = 10.0),
     )
@@ -461,6 +459,9 @@ end
           (min = -0.2, max = 0.2)
     @test isnothing(get_controlled_voltage_limits(circuit_q_natural))
     @test isnothing(get_phase_angle_limits(circuit_q_natural))
+    @test get_regulated_bus(circuit_q_natural) === refs[4]
+    @test get_regulated_bus_orientation(circuit_q_natural) ==
+          TransformerRegulationOrientation.TO
     circuit_q_device = PSY.from_openapi(circuit_po_q, refs, CU)
     @test get_controlled_reactive_power_flow_limits(circuit_q_device, u"CU") ==
           (min = -10.0, max = 10.0)
@@ -493,7 +494,6 @@ end
         parameter_units = PSY.PO.ImpedanceUnitBasis("COMPONENT_BASE"), r = 0.001,
         x = 0.01,
         control_objective = PSY.PO.TransformerControlObjective("UNDEFINED"),
-        regulated_bus_number = 0,
         number_of_tap_positions = 33,
         rating = 100.0, rating_b = nothing, rating_c = nothing,
         active_power_flow = 0.0, reactive_power_flow = 0.0,
@@ -1253,7 +1253,7 @@ end
     tmodel_po = PSY.PO.TModelHVDCLine(;
         id = 33, name = "tmodel1", available = true, active_power_flow = 125.0,
         arc = 32,
-        base_current = 200.0,
+        base_current = 0.2,
         r = 0.01, l = 0.02, c = 0.03,
         operational_flow_limit = PSY.PC.OperationalFlowLimit(;
             from_to_min = 0.0, from_to_max = 250.0, to_from_min = 0.0,
@@ -1272,7 +1272,7 @@ end
     @test get_active_power_flow(tmodel_100, u"MW") == 125.0
     @test get_operational_flow_limit(tmodel_100, u"MW") ==
           (from_to = (min = 0.0, max = 250.0), to_from = (min = 0.0, max = 250.0))
-    @test get_base_current(tmodel_100) == 200.0
+    @test get_base_current(tmodel_100) == 0.2
     @test (get_r(tmodel_100), get_l(tmodel_100), get_c(tmodel_100)) == (0.01, 0.02, 0.03)
 
     # Default import kwarg is 100.0 (see `from_openapi(::Type{System}, doc)`); a mismatched
@@ -1433,13 +1433,13 @@ end
             lcc_po_no_optional;
             id = 23, name = "lcc_current",
             control_mode = PSY.PO.LCCControlMode("CURRENT"),
-            current_transfer_setpoint = 1200.0,
+            current_transfer_setpoint = 1.2,
         ),
         refs,
         NU,
     )
     @test get_control_mode(lcc_current) == LCCControlMode.CURRENT
-    @test get_current_transfer_setpoint(lcc_current) == 1200.0
+    @test get_current_transfer_setpoint(lcc_current) == 1.2
     @test isnothing(get_power_transfer_setpoint(lcc_current, u"CU"))
 
     # Impedances (ohm) pass through unchanged in both unit systems.
@@ -1503,7 +1503,7 @@ end
     # instead of `_vsc_loss` (which unwraps `.value_curve` and checks `power_units` first, the
     # way `TwoTerminalVSCLine.converter_loss_from/to` already do), so every
     # `InterconnectingConverter` import threw `convert_cost: unmapped variant LossCurve`
-    # regardless of whether `loss_function` was omitted. `remote_bus_control` is the same "raw
+    # regardless of whether `loss_function` was omitted. `remote_regulated_bus` is the same "raw
     # `Absent` passthrough" bug as `Source.base_voltage`, a few fields below `loss_function`.
     ic_po = PSY.PO.InterconnectingConverter(;
         id = 20, name = "ic1", available = true, bus = 4, dc_bus = 30,
@@ -1517,13 +1517,14 @@ end
     )
     for val in (CU, NU)
         ic = PSY.from_openapi(ic_po, refs, val)
-        @test get_loss_function(ic) == LossCurve(LinearCurve(0.0), NaturalUnit())
-        @test isnothing(get_remote_bus_control(ic))
+        @test get_loss_function(ic) == LossCurve(LinearCurve(0.0), NaturalUnit(), u"kA")
+        @test isnothing(get_remote_regulated_bus(ic))
+        @test get_rated_ac_voltage(ic) == 0.0
+        @test get_rated_dc_voltage(ic) == 0.0
         @test get_voltage_limits(ic) == (min = 0.0, max = 999.9)
         @test get_dc_voltage_setpoint(ic) == 1.0
         @test isnothing(get_dc_power_setpoint(ic, u"CU"))
         @test get_power_factor_setpoint(ic) == 1.0
-        @test isnothing(get_ac_voltage_setpoint(ic))
     end
 
     # DC_POWER selects `dc_power_setpoint`, a power field dividing by the converter base under
@@ -1550,7 +1551,7 @@ end
         ac_control = PSY.PO.VSCACControlModes("AC_REACTIVE_POWER"),
         power_factor_setpoint = 1.0,
         power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
-        loss_function = PSY.PC.LossCurve(;
+        loss_function = PSY.PC.CurrentLossCurve(;
             power_units = PSY.IC.UnitSystem("COMPONENT_BASE"),
             value_curve = PSY.PC.LossValueCurve(
                 PSY.PC.InputOutputCurve(;
@@ -1567,17 +1568,17 @@ end
         ),
     )
     @test get_loss_function(PSY.from_openapi(ic_po_cu_loss, refs, NU)) ==
-          LossCurve(QuadraticCurve(0.01, 0.01, 0.0), ComponentBaseUnit())
+          LossCurve(QuadraticCurve(0.01, 0.01, 0.0), ComponentBaseUnit(), u"kA")
 
-    # Currents (A) and `dc_voltage_droop` (kV/MW) pass through in both unit systems.
+    # Currents (kA) and `dc_voltage_droop` (kV/MW) pass through in both unit systems.
     ic_po_current = _po_with(
-        ic_po; id = 25, name = "ic_current", dc_current = 300.0, max_dc_current = 900.0,
+        ic_po; id = 25, name = "ic_current", dc_current = 0.3, max_dc_current = 0.9,
         dc_voltage_droop = 0.5,
     )
     for val in (CU, NU)
         ic_current = PSY.from_openapi(ic_po_current, refs, val)
-        @test get_dc_current(ic_current) == 300.0
-        @test get_max_dc_current(ic_current) == 900.0
+        @test get_dc_current(ic_current) == 0.3
+        @test get_max_dc_current(ic_current) == 0.9
         @test get_dc_voltage_droop(ic_current) == 0.5
     end
 end
@@ -1780,12 +1781,12 @@ end
         id = 20, name = "vsc1", available = true, arc = 10,
         active_power_flow = 50.0, rating = 200.0,
         g = 0.5,
-        dc_current = 300.0, reactive_power_from = 10.0,
+        dc_current = 0.3, reactive_power_from = 10.0,
         dc_control_from = PSY.PO.VSCDCControlModes("DC_POWER"),
         ac_control_from = PSY.PO.VSCACControlModes("AC_REACTIVE_POWER"),
         dc_power_setpoint_from = 40.0, power_factor_setpoint_from = 0.95,
         converter_loss_from = _loss_curve_po(1.2, 0.5),
-        max_dc_current_from = 1000.0, rating_from = 200.0,
+        max_dc_current_from = 1.0, rating_from = 200.0,
         reactive_power_limits_from = PSY.IC.MinMax(; min = -100.0, max = 100.0),
         power_factor_weighting_fraction_from = 0.5,
         # `dc_voltage_setpoint_to` below is kV, divided by `rated_dc_voltage`.
@@ -1795,12 +1796,12 @@ end
         ac_control_to = PSY.PO.VSCACControlModes("AC_REACTIVE_POWER"),
         dc_voltage_setpoint_to = 204.0, power_factor_setpoint_to = 0.98,
         converter_loss_to = _loss_curve_po(1.1, 0.4),
-        max_dc_current_to = 1000.0, rating_to = 200.0,
+        max_dc_current_to = 1.0, rating_to = 200.0,
         reactive_power_limits_to = PSY.IC.MinMax(; min = -100.0, max = 100.0),
         power_factor_weighting_fraction_to = 0.5,
         voltage_limits_to = PSY.IC.MinMax(; min = 0.9, max = 1.1),
         dc_voltage_droop_to = 0.0, rated_dc_voltage = 200.0,
-        remote_bus_control_from = nothing, remote_bus_control_to = 4,
+        remote_regulated_bus_from = nothing, remote_regulated_bus_to = 3,
         base_power = 100.0,
         power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
     )
@@ -1825,13 +1826,12 @@ end
     @test isnothing(get_dc_power_setpoint_to(natural, u"SU"))
     @test get_g(natural) == 0.5
     # Amperes, dimensionless, and kV fields have no base to convert against.
-    @test get_dc_current(natural) == 300.0
+    @test get_dc_current(natural) == 0.3
     @test get_power_factor_setpoint_from(natural) == 0.95
-    @test isnothing(get_ac_voltage_setpoint_from(natural))
     @test get_voltage_limits_from(natural) == (min = 0.9, max = 1.1)
     @test get_rated_dc_voltage(natural) == 200.0
-    @test isnothing(get_remote_bus_control_from(natural))
-    @test get_remote_bus_control_to(natural) == 4
+    @test isnothing(get_remote_regulated_bus_from(natural))
+    @test get_remote_regulated_bus_to(natural) === refs[3]
     @test get_converter_loss_from(natural) ==
           LossCurve(LinearCurve(1.2, 0.5), NaturalUnit())
 
@@ -1878,23 +1878,24 @@ end
     end
 end
 
-@testset "OpenAPI converters: TwoTerminalVSCLine AC_VOLTAGE setpoint in kV" begin
+@testset "OpenAPI converters: TwoTerminalVSCLine AC_VOLTAGE regulates a bus" begin
     refs = _refs_with_area_bus(; base_power = 100.0)
     refs[10] =
         PSY.from_openapi(PSY.PO.Arc(; id = 10, from_id = 3, to_id = 4), refs, NU)
 
-    # `ac_voltage_setpoint_from` is kV, converted through `rated_ac_voltage_from` — the AC-side
-    # counterpart of `rated_dc_voltage` — exactly like `dc_voltage_setpoint_*`.
+    # The regulated voltage is the `voltage_setpoint` of the regulated bus, so the converter
+    # holds no setpoint of its own; the rated AC voltage still passes through in kV.
     vsc_po = _vsc_po_minimal(;
         ac_control_from = PSY.PO.VSCACControlModes("AC_VOLTAGE"),
-        ac_voltage_setpoint_from = 234.6, power_factor_setpoint_from = PSY.IC.ABSENT,
+        power_factor_setpoint_from = PSY.IC.ABSENT,
         rated_ac_voltage_from = 230.0,
+        remote_regulated_bus_from = 4,
     )
 
     for val in (NU, CU)
         vsc = PSY.from_openapi(vsc_po, refs, val)
         @test get_rated_ac_voltage_from(vsc) == 230.0
-        @test get_ac_voltage_setpoint_from(vsc) == 234.6 / 230.0
+        @test get_remote_regulated_bus_from(vsc) === refs[4]
     end
 end
 
@@ -1927,33 +1928,19 @@ end
     refs[10] =
         PSY.from_openapi(PSY.PO.Arc(; id = 10, from_id = 3, to_id = 4), refs, NU)
 
-    # kV in the document, divided by the base each side is expressed against —
-    # `rated_dc_voltage` (200.0) on the DC side, `rated_ac_voltage_from` (138.0) on the AC side.
+    # kV in the document, divided by the base it is expressed against: `rated_dc_voltage` (200.0).
     natural = _vsc_po_minimal(;
         dc_control_to = PSY.PO.VSCDCControlModes("DC_VOLTAGE"),
         dc_voltage_setpoint_to = 204.0, dc_power_setpoint_to = PSY.IC.ABSENT,
-        ac_control_from = PSY.PO.VSCACControlModes("AC_VOLTAGE"),
-        ac_voltage_setpoint_from = 141.45, power_factor_setpoint_from = PSY.IC.ABSENT,
-        rated_ac_voltage_from = 138.0,
     )
     vsc_natural = PSY.from_openapi(natural, refs, NU)
     @test get_dc_voltage_setpoint_to(vsc_natural) == 204.0 / 200.0
-    @test get_ac_voltage_setpoint_from(vsc_natural) == 141.45 / 138.0
 end
 
 @testset "OpenAPI converters: TwoTerminalVSCLine unconvertible inputs error" begin
     refs = _refs_with_area_bus(; base_power = 100.0)
     refs[10] =
         PSY.from_openapi(PSY.PO.Arc(; id = 10, from_id = 3, to_id = 4), refs, NU)
-
-    # An AC_VOLTAGE setpoint is kV, converted through `rated_ac_voltage_from` — but
-    # `_vsc_po_minimal` leaves it at `0.0` (unspecified), so there is no base to convert it
-    # against. The "divide by the rated voltage" testset above gives a base.
-    ac_voltage = _vsc_po_minimal(;
-        ac_control_from = PSY.PO.VSCACControlModes("AC_VOLTAGE"),
-        ac_voltage_setpoint_from = 1.03, power_factor_setpoint_from = PSY.IC.ABSENT,
-    )
-    @test_throws ErrorException PSY.from_openapi(ac_voltage, refs, NU)
 
     # The control modes have no default: a document omitting one is rejected, not guessed.
     no_mode = _vsc_po_minimal(; dc_control_from = PSY.IC.ABSENT)

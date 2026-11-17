@@ -5,7 +5,7 @@ This file is auto-generated. Do not edit.
 #! format: off
 
 """
-    mutable struct IEEETurbineGov1 <: TurbineGov
+    mutable struct IEEETurbineGov1 <: TurbineGovernorDynamics
         K::Float64
         T1::Float64
         T2::Float64
@@ -39,7 +39,7 @@ IEEE Type 1 Speed-Governing Model
 - `K::Float64`: Governor Gain, validation range: `(5, 30)`
 - `T1::Float64`: Input Filter Lag, validation range: `(0, 5)`
 - `T2::Float64`: Input Filter Lead, validation range: `(0, 10)`
-- `T3::Float64`: Valve position Time Constant, validation range: `(eps(), 1)`
+- `T3::Float64`: Valve position Time Constant, validation range: `(0.0001, 1)`
 - `U0::Float64`: Maximum Valve Opening Rate, validation range: `(0.01, 0.03)`
 - `U_c::Float64`: Maximum Valve closing rate, validation range: `(-0.3, 0)`
 - `valve_position_limits::MinMax`: Valve position limits in MW
@@ -68,7 +68,7 @@ IEEE Type 1 Speed-Governing Model
 - `states_types::Vector{StateTypes.Value}`: (**Do not modify.**) IEEEG1 has 6 [differential](@ref states_list) [states](@ref S)
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
 """
-mutable struct IEEETurbineGov1 <: TurbineGov
+mutable struct IEEETurbineGov1 <: TurbineGovernorDynamics
     "Governor Gain"
     K::Float64
     "Input Filter Lag"
@@ -257,3 +257,56 @@ set_P_ref!(value::IEEETurbineGov1, val) = value.P_ref = val
 set_ext!(value::IEEETurbineGov1, val) = value.ext = val
 """Set [`IEEETurbineGov1`](@ref) `states_types`."""
 set_states_types!(value::IEEETurbineGov1, val) = value.states_types = val
+
+
+
+function from_openapi(po::PD.IEEETurbineGov1, refs::OpenAPIRefs)
+    return IEEETurbineGov1(;
+        K = _wire_required(po.k, "IEEETurbineGov1", "K"),
+        T1 = _wire_required(po.t1, "IEEETurbineGov1", "T1"),
+        T2 = _wire_required(po.t2, "IEEETurbineGov1", "T2"),
+        T3 = _wire_required(po.t3, "IEEETurbineGov1", "T3"),
+        U0 = _wire_required(po.u0, "IEEETurbineGov1", "U0"),
+        U_c = _wire_required(po.u_c, "IEEETurbineGov1", "U_c"),
+        valve_position_limits = _or_default(po.valve_position_limits, nothing),
+        T4 = _wire_required(po.t4, "IEEETurbineGov1", "T4"),
+        K1 = _wire_required(po.k1, "IEEETurbineGov1", "K1"),
+        K2 = _wire_required(po.k2, "IEEETurbineGov1", "K2"),
+        T5 = _wire_required(po.t5, "IEEETurbineGov1", "T5"),
+        K3 = _wire_required(po.k3, "IEEETurbineGov1", "K3"),
+        K4 = _wire_required(po.k4, "IEEETurbineGov1", "K4"),
+        T6 = _wire_required(po.t6, "IEEETurbineGov1", "T6"),
+        K5 = _wire_required(po.k5, "IEEETurbineGov1", "K5"),
+        K6 = _wire_required(po.k6, "IEEETurbineGov1", "K6"),
+        T7 = _wire_required(po.t7, "IEEETurbineGov1", "T7"),
+        K7 = _wire_required(po.k7, "IEEETurbineGov1", "K7"),
+        K8 = _wire_required(po.k8, "IEEETurbineGov1", "K8"),
+        P_ref = _or_default(po.p_ref, 1.0),
+    )
+end
+
+function to_openapi(value::IEEETurbineGov1, refs::OpenAPIRefs)
+    return PD.IEEETurbineGov1(;
+        id = component_id(refs, value),
+        k = get_K(value),
+        t1 = get_T1(value),
+        t2 = get_T2(value),
+        t3 = get_T3(value),
+        u0 = get_U0(value),
+        u_c = get_U_c(value),
+        valve_position_limits = _minmax_po(get_valve_position_limits(value)),
+        t4 = get_T4(value),
+        k1 = get_K1(value),
+        k2 = get_K2(value),
+        t5 = get_T5(value),
+        k3 = get_K3(value),
+        k4 = get_K4(value),
+        t6 = get_T6(value),
+        k5 = get_K5(value),
+        k6 = get_K6(value),
+        t7 = get_T7(value),
+        k7 = get_K7(value),
+        k8 = get_K8(value),
+        p_ref = get_P_ref(value),
+    )
+end

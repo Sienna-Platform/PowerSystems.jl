@@ -18,7 +18,7 @@ import JSON
 
 # All known unit strings → Unitful units.
 # Canonical names come from unit_to_string; aliases provide lenient parsing.
-const STRING_TO_UNIT = Dict{String, Any}(
+const STRING_TO_UNIT = Dict{String, Unitful.Units}(
     # Per-unit units.
     "CU" => u"CU",
     "SU" => u"SU",
@@ -36,6 +36,10 @@ const STRING_TO_UNIT = Dict{String, Any}(
     "Ω" => u"Ω",
     "S" => u"S",
     "kA" => u"kA",
+    "USD" => USD,
+    "USD hr^-1" => USD / u"hr",
+    "USD/hr" => USD / u"hr",
+    "USD/h" => USD / u"hr",
     # Compound (rate) units. The canonical spelling is the ASCII exponent form emitted
     # by `unit_to_string`; the Unicode and slashed forms are lenient aliases. The
     # Unicode one is not hypothetical: it is what Unitful prints by default on macOS.
@@ -48,16 +52,16 @@ const STRING_TO_UNIT = Dict{String, Any}(
     "siemens" => u"S",
 )
 
-"""
-    unit_to_string(unit) → String
-
-Convert a unit type to its string representation for serialization.
-"""
 # `string(u)` is *not* stable across platforms: Unitful renders exponents with Unicode
 # superscripts or ASCII carets depending on `ENV["UNITFUL_FANCY_EXPONENTS"]`, which
 # defaults to true on macOS and false everywhere else. A serialized system has to read
 # back on the machine that did not write it, so pin the spelling instead of inheriting
 # the platform's. Units without an exponent are unaffected either way.
+"""
+    unit_to_string(unit) → String
+
+Convert a unit type to its string representation for serialization.
+"""
 unit_to_string(u::Unitful.Units) =
     sprint(show, u; context = :fancy_exponent => false)
 

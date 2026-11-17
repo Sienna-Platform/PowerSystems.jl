@@ -3,7 +3,7 @@ function _test_circuit(; base_power = 20.0, system_base = 100.0)
     c = TransformerCircuit(;
         arc = arc,
         tap = 1.05,
-        α = 0.0,
+        alpha = 0.0,
         available = true,
         r = 0.02,               # CU on the 20 MVA / 138 kV circuit base
         x = 0.1,
@@ -23,7 +23,7 @@ end
 @testset "TransformerCircuit plain accessors" begin
     c = _test_circuit()
     @test get_tap(c) == 1.05
-    @test get_α(c) == 0.0
+    @test get_alpha(c) == 0.0
     @test get_available(c)
     @test get_control_objective(c) == TransformerControlObjective.UNDEFINED
     @test !has_control(c)
@@ -74,9 +74,9 @@ end
 @testset "predicates" begin
     c = _test_circuit()
     @test !is_phase_shifting(c)
-    set_α!(c, 0.3)
+    set_alpha!(c, 0.3)
     @test is_phase_shifting(c)
-    set_α!(c, 0.0)
+    set_alpha!(c, 0.0)
     set_control_objective!(c, TransformerControlObjective.ACTIVE_POWER_FLOW)
     @test is_phase_shifting(c)
     @test has_control(c)
@@ -310,7 +310,8 @@ end
     set_arc!(c, arc12)
     set_tap!(c, 1.05)
     set_control_objective!(c, TransformerControlObjective.VOLTAGE)
-    set_regulated_bus_number!(c, 2)
+    set_regulated_bus!(c, b3)
+    set_regulated_bus_orientation!(c, TransformerRegulationOrientation.TO)
     set_tap_ratio_limits!(c, (min = 0.9, max = 1.1))
     set_controlled_voltage_limits!(c, (min = 0.95, max = 1.05))
     set_number_of_tap_positions!(c, 33)
@@ -362,7 +363,8 @@ end
     @test isnothing(get_phase_angle_limits(c2))
     @test isnothing(get_controlled_reactive_power_flow_limits(c2, u"CU"))
     @test isnothing(get_controlled_active_power_flow_limits(c2, u"CU"))
-    @test get_regulated_bus_number(c2) == 2
+    @test get_regulated_bus(c2) === get_component(ACBus, sys2, "b3")
+    @test get_regulated_bus_orientation(c2) == TransformerRegulationOrientation.TO
     @test get_number_of_tap_positions(c2) == 33
     # parent-level shunt fields round-trip
     @test get_shunt_location(t2w2) == TwoWindingTransformerShuntLocation.SPLIT

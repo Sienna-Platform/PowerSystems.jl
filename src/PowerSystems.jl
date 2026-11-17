@@ -73,6 +73,7 @@ export Branch
 export StaticInjection
 export StaticInjectionSubsystem
 export DiscreteControlledACBranch
+export SeriesCompensator
 export ACBranch
 export ACTransmission
 export TwoWindingTransformer
@@ -112,7 +113,7 @@ export InputOutputCurve, IncrementalCurve, AverageRateCurve
 export LinearCurve, QuadraticCurve
 export PiecewisePointCurve, PiecewiseIncrementalCurve, PiecewiseAverageCurve
 export ProductionVariableCostCurve, CostCurve, FuelCurve
-export LossCurve, AnyLossCurve
+export LossCurve, AnyLossCurve, CurrentLossCurve
 export get_function_data, get_initial_input, get_input_at_zero
 export get_value_curve, get_power_units
 
@@ -122,6 +123,7 @@ export OperationalCost,
 export HydroGenerationCost, RenewableGenerationCost, ThermalGenerationCost
 export HydroReservoirCost
 export get_fuel_cost, get_fuel_cost_time_series, set_fuel_cost!, get_vom_cost
+export get_fuel_units, get_x_units, get_y_units
 export is_market_bid_curve, make_market_bid_curve, make_market_bid_ts_curve
 export make_import_curve, make_export_curve, make_import_export_ts_curve
 export TimeSeriesLinearCurve, TimeSeriesQuadraticCurve, TimeSeriesPiecewisePointCurve
@@ -187,8 +189,8 @@ export SimplifiedSingleCageInductionMachine
 export ActiveConstantPowerLoad
 export DynamicExponentialLoad
 
-#AVR Exports
-export AVR
+#ExcitationSystemDynamics Exports
+export ExcitationSystemDynamics
 export AVRFixed
 export AVRSimple
 export AVRTypeI
@@ -210,8 +212,8 @@ export SCRX
 export SEXS
 export ST8C
 
-#Machine Exports
-export Machine
+#SynchronousMachineDynamics Exports
+export SynchronousMachineDynamics
 export BaseMachine
 export RoundRotorMachine
 export SalientPoleMachine
@@ -228,8 +230,8 @@ export SimpleAFMachine
 export FullMachine
 export SimpleFullMachine
 
-#PSS Exports
-export PSS
+#PowerSystemStabilizerDynamics Exports
+export PowerSystemStabilizerDynamics
 export PSSFixed
 export PSSSimple
 export IEEEST
@@ -245,7 +247,7 @@ export SingleMass
 export FiveMassShaft
 
 #TG Exports
-export TurbineGov
+export TurbineGovernorDynamics
 export TGFixed
 export TGTypeI
 export TGTypeII
@@ -277,14 +279,15 @@ export LCLFilter
 export LCFilter
 export RLFilter
 
-# FrequencyEstimator Exports
-export FrequencyEstimator
+# ReferenceFrameRotation Exports
+export ReferenceFrameRotation
 export KauraPLL
 export ReducedOrderPLL
 export FixedFrequency
 
 # Outer Control Exports
-export OuterControl
+export ActivePowerControl
+export ReactivePowerControl
 export VirtualInertia
 export ReactivePowerDroop
 export ActivePowerDroop
@@ -301,8 +304,8 @@ export VoltageModeControl
 export CurrentModeControl
 export RECurrentControlB
 
-# OutputCurrentLimiters Export
-export OutputCurrentLimiter
+# CurrentLimitation Export
+export CurrentLimitation
 export MagnitudeOutputCurrentLimiter
 export InstantaneousOutputCurrentLimiter
 export PriorityOutputCurrentLimiter
@@ -316,6 +319,7 @@ export Contingency
 
 # Outages
 export Outage
+export UnplannedOutage
 export GeometricDistributionForcedOutage
 export PlannedOutage
 export FixedForcedOutage
@@ -416,6 +420,7 @@ export ThermalFuels
 export OperationalStates
 export CommitmentModes
 export StorageTech
+export HydroPumpTurbineStatus
 export StateTypes
 export ReservoirDataType
 export MotorLoadTechnology
@@ -623,16 +628,18 @@ export clear_ext!
 export convert_component!
 export set_area!
 export set_load_zone!
-export get_machine
+export get_synchronous_machine_dynamics
 export get_shaft
-export get_avr
-export get_prime_mover
-export get_pss
+export get_excitation_system_dynamics
+export get_turbine_governor_dynamics
+export get_power_system_stabilizer_dynamics
 export get_converter
-export get_outer_control
+export get_active_power_control
+export get_reactive_power_control
 export get_inner_control
 export get_dc_source
-export get_freq_estimator
+export get_reference_frame_rotation
+export get_current_limitation
 export get_filter
 export get_V_ref
 export get_P_ref
@@ -681,8 +688,8 @@ export UnitSystem # internal.jl
 # PowerSystems` is enough to write them without also importing Unitful.
 # `PerUnit` carries the generic `u"CU"`/`u"SU"`/`u"NU"`: Unitful's `u"..."` only finds
 # unit modules bound by name in the caller, so re-exporting it is what makes them work
-# after `using PowerSystems`.
-export @u_str, PerUnit
+# after `using PowerSystems`. `CommodityUnits` does the same for `u"USD"`/`u"MMBtu"`.
+export @u_str, PerUnit, CommodityUnits
 # Unit-system markers: cost curves' `U` parameter and the OpenAPI export mode.
 export CU, SU, NU, ComponentBaseUnit, SystemBaseUnit, NaturalUnit
 export AbstractRelativeUnit
@@ -693,6 +700,7 @@ export UnitCategory, AbstractPowerCategory,
 export ACTIVE_POWER, REACTIVE_POWER, APPARENT_POWER
 export IMPEDANCE, ADMITTANCE, VOLTAGE, CURRENT
 export natural_unit, base_value, system_base_value, convert_units
+export convert_power_units
 # Hand-written unit-bearing companion for the `exclude_getter` `base_power`
 # descriptor entry (its bare-number counterpart gets exported via
 # generated/includes.jl). `base_power_12`/`_23`/`_31` on `ThreeWindingTransformer`
@@ -718,6 +726,7 @@ export get_available_groups
 export MinMax
 export GeneratorCostModels
 export TransformerControlObjective
+export TransformerRegulationOrientation
 export TwoWindingTransformerShuntLocation
 export ThreeWindingTransformerShuntLocation
 export get_limits
@@ -748,11 +757,13 @@ import Unitful
 import InfrastructureCoreOpenAPIModels
 import PowerCoreOpenAPIModels
 import PowerOperationsOpenAPIModels
+import PowerDynamicsOpenAPIModels
 import InfrastructureTimeSeriesOpenAPIModels
 import OpenAPI
 const IC = InfrastructureCoreOpenAPIModels
 const PC = PowerCoreOpenAPIModels
 const PO = PowerOperationsOpenAPIModels
+const PD = PowerDynamicsOpenAPIModels
 const PTS = InfrastructureTimeSeriesOpenAPIModels
 using Unitful: @u_str, @unit, Quantity, Units, uconvert, ustrip
 
@@ -765,11 +776,13 @@ import InfrastructureSystems:
     SystemBaseUnit,
     NaturalUnit,
     PerUnit,
+    CommodityUnits,
     CU,
     SU,
     NU,
     get_value,
     set_value
+using InfrastructureSystems.CommodityUnits: USD, MMBtu
 
 # Import InfrastructureSystems both as full module name (needed for internal macros like @forward)
 # and with alias for convenient usage throughout the codebase
@@ -929,6 +942,7 @@ import InfrastructureSystems:
     QuadraticCurve,
     LossCurve,
     AnyLossCurve,
+    CurrentLossCurve,
     PiecewisePointCurve,
     PiecewiseIncrementalCurve,
     PiecewiseAverageCurve,
@@ -954,7 +968,11 @@ import InfrastructureSystems:
     get_startup_fuel_offtake,
     get_power_units,
     get_fuel_cost,
-    get_fuel_cost_time_series
+    get_fuel_units,
+    get_x_units,
+    get_y_units,
+    get_fuel_cost_time_series,
+    convert_power_units
 
 #################################################################################
 
@@ -1024,7 +1042,6 @@ include("models/storage.jl")
 include("models/loads.jl")
 include("models/dynamic_generator_components.jl")
 include("models/dynamic_inverter_components.jl")
-include("models/OuterControl.jl")
 
 # Costs
 include("models/cost_functions/operational_cost.jl")
@@ -1055,7 +1072,7 @@ include("models/generated/includes.jl")
 # references (Arc), fields with no device-level base_power (Line,
 # TwoTerminalGenericHVDCLine), unclassifiable field kinds (TwoWindingTransformer.magnetizing_shunt,
 # EnergyReservoirStorage.efficiency, HydroReservoir's Vector{HydroUnit}/Vector{Device}
-# fields), a PSY/PO field-name mismatch (TransformerCircuit.α vs po.alpha), semantic
+# fields), semantic
 # (not unit) conversions (HydroReservoir), and the parametric reserves (OnlineReserve/
 # OfflineReserve/GroupReserve). Included after generated/includes.jl so those struct
 # types exist.
@@ -1099,6 +1116,7 @@ include("emissions_data.jl")
 
 # Definitions of PowerSystem
 include("base.jl")
+include("time_series_units.jl")
 
 include("plant_attribute.jl")
 
@@ -1110,6 +1128,7 @@ include("openapi/export_cost_conversion.jl")
 include("openapi/export_generated_types.jl")
 include("openapi/export_handwritten.jl")
 include("openapi/export_document.jl")
+include("openapi/dynamics.jl")
 include("openapi/file_io.jl")
 
 include("substation.jl")

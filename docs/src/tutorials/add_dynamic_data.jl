@@ -71,10 +71,10 @@ add_component!(threebus_sys, inf_source)
 # ## Adding a Dynamic Generator
 # Now, we will connect a classic machine model to the generator at bus 102.
 # Dynamic generator devices
-# are composed by 5 components: a [Machine](@ref Machine),
-# [Shaft](@ref Shaft), [Automatic Voltage Regulator](@ref AVR) (AVR),
-# [Power System Stabilizer](@ref PSS) (PSS), and
-# [Prime Mover and Turbine Governor](@ref TurbineGov).
+# are composed by 5 components: a [SynchronousMachineDynamics](@ref SynchronousMachineDynamics),
+# [Shaft](@ref Shaft), [ExcitationSystemDynamics](@ref ExcitationSystemDynamics),
+# [PowerSystemStabilizerDynamics](@ref PowerSystemStabilizerDynamics), and
+# [TurbineGovernorDynamics](@ref TurbineGovernorDynamics).
 # For each of those 5 components, we will select a specific model that defines the data and
 # differential equations for that component,
 # and then use those 5 components to define the complete dynamic generator.
@@ -84,7 +84,7 @@ add_component!(threebus_sys, inf_source)
 # !!! note
 #     When defining dynamic data, by convention `PowerSystems.jl` assumes that all data is
 #     in [`DEVICE_BASE`](@ref per_unit).
-# First, define a [Machine](@ref Machine) that describes the stator electro-magnetic dynamics:
+# First, define a [SynchronousMachineDynamics](@ref SynchronousMachineDynamics) model that describes the stator electro-magnetic dynamics:
 
 machine_oneDoneQ = OneDOneQMachine(;
     R = 0.0,
@@ -107,7 +107,7 @@ shaft_no_damping = SingleMass(;
 )
 
 # Represent the electromotive dynamics of the AVR controller using a specific
-# [Automatic Voltage Regulator](@ref AVR) model, [`AVRTypeI`](@ref):
+# [ExcitationSystemDynamics](@ref ExcitationSystemDynamics) model, [`AVRTypeI`](@ref):
 
 avr_type1 = AVRTypeI(; # Type I: Resembles a DC1 AVR
     Ka = 20.0,
@@ -122,7 +122,7 @@ avr_type1 = AVRTypeI(; # Type I: Resembles a DC1 AVR
     Be = 1.555, #2nd ceiling coefficient
 )
 
-# Define a fixed efficiency [Prime Mover and Turbine Governor](@ref TurbineGov) with
+# Define a fixed efficiency [TurbineGovernorDynamics](@ref TurbineGovernorDynamics) with
 # [`TGFixed`](@ref):
 
 tg_none = TGFixed(; efficiency = 1.0) # No Turbine Governor
@@ -145,12 +145,12 @@ static_gen = get_component(Generator, threebus_sys, "generator-102-1")
 
 dynamic_gen = DynamicGenerator(;
     name = get_name(static_gen),
-    ω_ref = 1.0, # frequency reference set-point
-    machine = machine_oneDoneQ,
+    frequency_ref = 60.0, # frequency reference set-point in Hz
+    synchronous_machine_dynamics = machine_oneDoneQ,
     shaft = shaft_no_damping,
-    avr = avr_type1,
-    prime_mover = tg_none,
-    pss = pss_none,
+    excitation_system_dynamics = avr_type1,
+    turbine_governor_dynamics = tg_none,
+    power_system_stabilizer_dynamics = pss_none,
 )
 
 # See that the specific component models that we selected and defined above were used to
@@ -191,8 +191,8 @@ static_gen
 
 # ## Adding a Dynamic Inverter
 # Next we will connect a Virtual Synchronous Generator Inverter at bus 103.
-# An inverter is composed of [Converter](@ref), [OuterControl](@ref), [InnerControl](@ref),
-# [DCSource](@ref), [FrequencyEstimator](@ref), and [Filter](@ref) components:
+# An inverter is composed of [Converter](@ref), [ActivePowerControl](@ref), [ReactivePowerControl](@ref),
+# [InnerControl](@ref), [DCSource](@ref), [ReferenceFrameRotation](@ref), and [Filter](@ref) components:
 # ```@raw html
 # <img src="../../assets/inv_metamodel.png" width="75%"/>
 # ```
@@ -209,13 +209,12 @@ converter_high_power() = AverageConverter(;
 # Recall from the tip above that we can define these components as *functions* instead of
 # objects for reusability across multiple generators, and notice that that is what we have
 # done here.
-# Define [OuterControl](@ref) using [Virtual Inertia](@ref) for the active power control and
-# [ReactivePowerDroop](@ref) for the reactive power control:
+# Define an [ActivePowerControl](@ref) using [`VirtualInertia`](@ref) and a
+# [ReactivePowerControl](@ref) using [`ReactivePowerDroop`](@ref):
 
-outer_control() = OuterControl(
-    VirtualInertia(; Ta = 2.0, kd = 400.0, kω = 20.0),
-    ReactivePowerDroop(; kq = 0.2, ωf = 1000.0),
-)
+active_power_control() = VirtualInertia(; Ta = 2.0, kd = 400.0, k_frequency = 20.0)
+reactive_power_control() =
+    ReactivePowerDroop(; kq = 0.2, reactive_power_filter_frequency = 1000.0)
 
 # Define an [InnerControl](@ref) as a Voltage+Current Controller with Virtual Impedance,
 # using [`VoltageModeControl`](@ref):
@@ -229,7 +228,7 @@ inner_control() = VoltageModeControl(;
     kpc = 1.27,     #Current controller proportional gain
     kic = 14.3,     #Current controller integral gain
     kffi = 0.0,     #Binary variable enabling the current feed-forward in output of current controllers
-    ωad = 50.0,     #Active damping low pass filter cut-off frequency
+    active_damping_filter_frequency = 50.0,     #Active damping low pass filter cut-off frequency in Hz
     kad = 0.2,      #Active damping gain
 )
 
@@ -237,10 +236,10 @@ inner_control() = VoltageModeControl(;
 
 dc_source_lv() = FixedDCSource(; voltage = 600.0)
 
-# Define a [FrequencyEstimator](@ref) as a phase-locked loop (PLL) using [`KauraPLL`](@ref):
+# Define a [ReferenceFrameRotation](@ref) as a phase-locked loop (PLL) using [`KauraPLL`](@ref):
 
 pll() = KauraPLL(;
-    ω_lp = 500.0, #Cut-off frequency for LowPass filter of PLL filter.
+    frequency_lp = 500.0, #Cut-off frequency in Hz for LowPass filter of PLL filter.
     kp_pll = 0.084,  #PLL proportional gain
     ki_pll = 4.69,   #PLL integral gain
 )
@@ -264,12 +263,13 @@ gen_103 = get_component(Generator, threebus_sys, "generator-103-1");
 
 dynamic_inv = DynamicInverter(;
     name = get_name(gen_103),
-    ω_ref = 1.0, # frequency reference set-point
+    frequency_ref = 60.0, # frequency reference set-point in Hz
     converter = converter_high_power(),
-    outer_control = outer_control(),
+    active_power_control = active_power_control(),
+    reactive_power_control = reactive_power_control(),
     inner_control = inner_control(),
     dc_source = dc_source_lv(),
-    freq_estimator = pll(),
+    reference_frame_rotation = pll(),
     filter = filt(),
 )
 
@@ -293,10 +293,10 @@ threebus_sys
 # Next, you might like to:
 #   - Read more about the static and dynamic data layers and the dynamic data format in
 #     [Dynamic Devices](@ref).
-#   - Review the specific subsystem models available in `PowerSystems.jl` for [Machine](@ref),
-#     [Shaft](@ref), [AVR](@ref), [PSS](@ref),
-#     [Prime Mover and Turbine Governor](@ref TurbineGov), [Converter](@ref),
-#     [OuterControl](@ref), [InnerControl](@ref), [DCSource](@ref),
-#     [FrequencyEstimator](@ref), and [Filter](@ref) components
+#   - Review the specific subsystem models available in `PowerSystems.jl` for [SynchronousMachineDynamics](@ref),
+#     [Shaft](@ref), [ExcitationSystemDynamics](@ref), [PowerSystemStabilizerDynamics](@ref),
+#     [TurbineGovernorDynamics](@ref), [Converter](@ref),
+#     [ActivePowerControl](@ref), [ReactivePowerControl](@ref), [InnerControl](@ref), [DCSource](@ref),
+#     [ReferenceFrameRotation](@ref), and [Filter](@ref) components
 #   - Explore [`PowerSimulationsDynamics.jl`](https://sienna-platform.github.io/PowerSimulationsDynamics.jl/stable/)
 #     for dynamics modeling in Sienna\Dyn

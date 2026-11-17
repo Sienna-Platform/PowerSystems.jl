@@ -223,7 +223,7 @@ function _ptdp_e2e_attach_ts_costs!(sys::System)
     set_operation_cost!(market_bid_gen, market_bid_cost)
 
     old_variable = get_variable_operation_cost(get_operation_cost(fuel_gen))
-    new_variable = FuelCurve(;
+    new_variable = FuelCurve(; fuel_units = u"MMBtu",
         value_curve = get_value_curve(old_variable),
         power_units = get_power_units(old_variable),
         fuel_cost_time_series = fuel_key,
@@ -337,7 +337,7 @@ function _ptdp_e2e_verify_time_series(doc, sys::System, staged, label::AbstractS
         # (b) the row's own columns describe what came back.
         @test length(loaded) == row.length
         @test Dates.Millisecond(IS.get_resolution(loaded)) == resolution
-        @test IS.get_initial_timestamp(loaded) == Dates.DateTime(row.initial_timestamp)
+        @test IS.get_initial_timestamp(loaded) == row.initial_timestamp.value
 
         # (c) values and timestamps, exactly, against the series PTDP staged.
         expected_values = IS.get_array(series)
@@ -391,7 +391,11 @@ end
     @test isfile(descriptors)
 
     # (1) BUILD, entirely inside PowerTableDataParser.
-    table_data = PDP.PowerSystemTableData(rts_dir, 100.0, descriptors)
+    # PSB's filter drops the test system data's known-bad rows (reservoir series on a
+    # reservoir-less unit), which the parser rejects.
+    table_data = PSB.fix_known_stale_time_series_data(
+        PDP.PowerSystemTableData(rts_dir, 100.0, descriptors),
+    )
     sys_ptdp = PDP.build_openapi_system(table_data)
     staged = _ptdp_e2e_staged_index(sys_ptdp.time_series)
     @test length(staged) == length(sys_ptdp.time_series)

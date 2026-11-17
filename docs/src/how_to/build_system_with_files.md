@@ -337,6 +337,7 @@ for row in eachrow(thermal_gens)
     fuel_curve =
         FuelCurve(;
             value_curve = heat_rate_curve,
+            fuel_units = u"MMBtu",
             fuel_cost = fuel_cost_dict[row[fuel]],
         )
     cost_thermal = ThermalGenerationCost(;

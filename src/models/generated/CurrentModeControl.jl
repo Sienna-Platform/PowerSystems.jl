@@ -82,3 +82,22 @@ set_kic!(value::CurrentModeControl, val) = value.kic = val
 set_kffv!(value::CurrentModeControl, val) = value.kffv = val
 """Set [`CurrentModeControl`](@ref) `ext`."""
 set_ext!(value::CurrentModeControl, val) = value.ext = val
+
+
+
+function from_openapi(po::PD.CurrentModeControl, refs::OpenAPIRefs)
+    return CurrentModeControl(;
+        kpc = _wire_required(po.kpc, "CurrentModeControl", "kpc"),
+        kic = _wire_required(po.kic, "CurrentModeControl", "kic"),
+        kffv = _wire_required(po.kffv, "CurrentModeControl", "kffv"),
+    )
+end
+
+function to_openapi(value::CurrentModeControl, refs::OpenAPIRefs)
+    return PD.CurrentModeControl(;
+        id = component_id(refs, value),
+        kpc = get_kpc(value),
+        kic = get_kic(value),
+        kffv = get_kffv(value),
+    )
+end

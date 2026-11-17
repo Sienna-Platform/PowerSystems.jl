@@ -24,6 +24,7 @@ This file is auto-generated. Do not edit.
         output_active_power_limits::Union{Nothing, MinMax}
         reactive_power_limits::Union{Nothing, MinMax}
         interconnection_efficiency::Union{Nothing, NamedTuple{(:in, :out), Tuple{Float64, Float64}}}
+        remote_regulated_bus::Union{Nothing, ACBus}
         services::Vector{Service}
         dynamic_injector::Union{Nothing, DynamicInjection}
         ext::Dict{String, Any}
@@ -53,6 +54,7 @@ The subcomponents (`thermal_unit`, `electric_load`, `storage`, `renewable_unit`)
 - `output_active_power_limits::Union{Nothing, MinMax}`: (default: `nothing`) Minimum and maximum stable output active power levels (MW). Set to `nothing` if not applicable
 - `reactive_power_limits::Union{Nothing, MinMax}`: (default: `nothing`) Minimum and maximum reactive power limits (MVAR). Set to `nothing` if not applicable
 - `interconnection_efficiency::Union{Nothing, NamedTuple{(:in, :out), Tuple{Float64, Float64}}}`: (default: `nothing`) Efficiency [0, 1.0] at the grid interconnection to model losses `in` and `out` of the common DC-side conversion. Set to `nothing` if not applicable
+- `remote_regulated_bus::Union{Nothing, ACBus}`: (default: `nothing`) Bus whose voltage this device regulates, to the `voltage_setpoint` of that bus. `nothing` regulates the bus of this device. The bus must not be the same as `bus`.
 - `services::Vector{Service}`: (default: `Service[]`) Services that this device contributes to
 - `dynamic_injector::Union{Nothing, DynamicInjection}`: (default: `nothing`) corresponding dynamic injection device
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
@@ -96,6 +98,8 @@ mutable struct HybridSystem <: StaticInjectionSubsystem
     reactive_power_limits::Union{Nothing, MinMax}
     "Efficiency [0, 1.0] at the grid interconnection to model losses `in` and `out` of the common DC-side conversion. Set to `nothing` if not applicable"
     interconnection_efficiency::Union{Nothing, NamedTuple{(:in, :out), Tuple{Float64, Float64}}}
+    "Bus whose voltage this device regulates, to the `voltage_setpoint` of that bus. `nothing` regulates the bus of this device. The bus must not be the same as `bus`."
+    remote_regulated_bus::Union{Nothing, ACBus}
     "Services that this device contributes to"
     services::Vector{Service}
     "corresponding dynamic injection device"
@@ -106,12 +110,12 @@ mutable struct HybridSystem <: StaticInjectionSubsystem
     internal::InfrastructureSystemsInternal
 end
 
-function HybridSystem(name, available, status, bus, active_power=0.0, reactive_power=0.0, base_power=100.0, operation_cost=MarketBidCost(nothing), thermal_unit=nothing, electric_load=nothing, storage=nothing, renewable_unit=nothing, interconnection_impedance=0.0, interconnection_rating=nothing, input_active_power_limits=nothing, output_active_power_limits=nothing, reactive_power_limits=nothing, interconnection_efficiency=nothing, services=Service[], dynamic_injector=nothing, ext=Dict{String, Any}(), )
-    HybridSystem(name, available, status, bus, active_power, reactive_power, base_power, operation_cost, thermal_unit, electric_load, storage, renewable_unit, interconnection_impedance, interconnection_rating, input_active_power_limits, output_active_power_limits, reactive_power_limits, interconnection_efficiency, services, dynamic_injector, ext, InfrastructureSystemsInternal(), )
+function HybridSystem(name, available, status, bus, active_power=0.0, reactive_power=0.0, base_power=100.0, operation_cost=MarketBidCost(nothing), thermal_unit=nothing, electric_load=nothing, storage=nothing, renewable_unit=nothing, interconnection_impedance=0.0, interconnection_rating=nothing, input_active_power_limits=nothing, output_active_power_limits=nothing, reactive_power_limits=nothing, interconnection_efficiency=nothing, remote_regulated_bus=nothing, services=Service[], dynamic_injector=nothing, ext=Dict{String, Any}(), )
+    HybridSystem(name, available, status, bus, active_power, reactive_power, base_power, operation_cost, thermal_unit, electric_load, storage, renewable_unit, interconnection_impedance, interconnection_rating, input_active_power_limits, output_active_power_limits, reactive_power_limits, interconnection_efficiency, remote_regulated_bus, services, dynamic_injector, ext, InfrastructureSystemsInternal(), )
 end
 
-function HybridSystem(; name, available, status, bus, active_power=0.0, reactive_power=0.0, base_power=100.0, operation_cost=MarketBidCost(nothing), thermal_unit=nothing, electric_load=nothing, storage=nothing, renewable_unit=nothing, interconnection_impedance=0.0, interconnection_rating=nothing, input_active_power_limits=nothing, output_active_power_limits=nothing, reactive_power_limits=nothing, interconnection_efficiency=nothing, services=Service[], dynamic_injector=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Unitful.Units, )
-    value = HybridSystem(name, available, status, bus, _placeholder(active_power), _placeholder(reactive_power), base_power, operation_cost, thermal_unit, electric_load, storage, renewable_unit, interconnection_impedance, _placeholder(interconnection_rating), _placeholder(input_active_power_limits), _placeholder(output_active_power_limits), _placeholder(reactive_power_limits), interconnection_efficiency, services, dynamic_injector, ext, internal, )
+function HybridSystem(; name, available, status, bus, active_power=0.0, reactive_power=0.0, base_power=100.0, operation_cost=MarketBidCost(nothing), thermal_unit=nothing, electric_load=nothing, storage=nothing, renewable_unit=nothing, interconnection_impedance=0.0, interconnection_rating=nothing, input_active_power_limits=nothing, output_active_power_limits=nothing, reactive_power_limits=nothing, interconnection_efficiency=nothing, remote_regulated_bus=nothing, services=Service[], dynamic_injector=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Unitful.Units, )
+    value = HybridSystem(name, available, status, bus, _placeholder(active_power), _placeholder(reactive_power), base_power, operation_cost, thermal_unit, electric_load, storage, renewable_unit, interconnection_impedance, _placeholder(interconnection_rating), _placeholder(input_active_power_limits), _placeholder(output_active_power_limits), _placeholder(reactive_power_limits), interconnection_efficiency, remote_regulated_bus, services, dynamic_injector, ext, internal, )
     set_active_power!(value, _tag(active_power, input_basis, Val(:mw)))
     set_reactive_power!(value, _tag(reactive_power, input_basis, Val(:mvar)))
     set_interconnection_rating!(value, _tag(interconnection_rating, input_basis, Val(:mva)))
@@ -143,6 +147,7 @@ function HybridSystem(::Nothing)
         output_active_power_limits=nothing,
         reactive_power_limits=nothing,
         interconnection_efficiency=nothing,
+        remote_regulated_bus=nothing,
         services=Service[],
         dynamic_injector=nothing,
         ext=Dict{String, Any}(),
@@ -222,6 +227,8 @@ InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_limits), ::T
 InfrastructureSystems.display_units_arg(::typeof(get_reactive_power_limits_unitful), ::Type{HybridSystem}) = u"SU"
 """Get [`HybridSystem`](@ref) `interconnection_efficiency`."""
 get_interconnection_efficiency(value::HybridSystem) = value.interconnection_efficiency
+"""Get [`HybridSystem`](@ref) `remote_regulated_bus`."""
+get_remote_regulated_bus(value::HybridSystem) = value.remote_regulated_bus
 """Get [`HybridSystem`](@ref) `services`."""
 get_services(value::HybridSystem) = value.services
 """Get [`HybridSystem`](@ref) `dynamic_injector`."""
@@ -264,6 +271,8 @@ set_reactive_power_limits!(value::HybridSystem, val::_UntaggedNumber) = _units_t
 set_reactive_power_limits!(value::HybridSystem, val::NamedTuple{(:min, :max), <:Tuple{Vararg{_UntaggedNumber}}}) = _units_tag_required(set_reactive_power_limits!, value, :reactive_power_limits, Val(:mvar), val)
 """Set [`HybridSystem`](@ref) `interconnection_efficiency`."""
 set_interconnection_efficiency!(value::HybridSystem, val) = value.interconnection_efficiency = val
+"""Set [`HybridSystem`](@ref) `remote_regulated_bus`."""
+set_remote_regulated_bus!(value::HybridSystem, val) = value.remote_regulated_bus = val
 """Set [`HybridSystem`](@ref) `services`."""
 set_services!(value::HybridSystem, val) = value.services = val
 """Set [`HybridSystem`](@ref) `ext`."""

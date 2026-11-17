@@ -66,3 +66,18 @@ get_internal(value::FixedDCSource) = value.internal
 set_voltage!(value::FixedDCSource, val) = value.voltage = val
 """Set [`FixedDCSource`](@ref) `ext`."""
 set_ext!(value::FixedDCSource, val) = value.ext = val
+
+
+
+function from_openapi(po::PD.FixedDCSource, refs::OpenAPIRefs)
+    return FixedDCSource(;
+        voltage = _wire_required(po.voltage, "FixedDCSource", "voltage"),
+    )
+end
+
+function to_openapi(value::FixedDCSource, refs::OpenAPIRefs)
+    return PD.FixedDCSource(;
+        id = component_id(refs, value),
+        voltage = get_voltage(value),
+    )
+end

@@ -78,11 +78,8 @@ dyn_categories =[
     PSY.DynamicGeneratorComponent,
     PSY.DynamicInverterComponent,
 ],
-exceptions = [PSY.OuterControl,
-              PSY.ActivePowerControl,
-              PSY.ReactivePowerControl,],
-
-manual_additions = Dict{String, Any}("DynamicInverterComponent" => Any["OuterControl" => "model_library/outer_control.md"])
+exceptions = [],
+manual_additions = Dict{String, Any}()
 )
     for abstract_type in dyn_categories
         @info "Making entries for subtypes of $abstract_type"

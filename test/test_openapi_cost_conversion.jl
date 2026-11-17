@@ -29,8 +29,8 @@ _po_cost_curve(; power_units = "NATURAL_UNITS", vom_cost = _po_linear_io(0.0, 0.
     @test PSY.convert_cost(
         PSY.IC.PiecewiseLinearData(;
             points = [
-                PSY.IC.XYCoords(; x = 0.0, y = 0.0),
-                PSY.IC.XYCoords(; x = 10.0, y = 100.0),
+                PSY.IC.TwoDimensionalFunctionPoint(; x = 0.0, y = 0.0),
+                PSY.IC.TwoDimensionalFunctionPoint(; x = 10.0, y = 100.0),
             ],
         ),
     ) == PiecewiseLinearData([(x = 0.0, y = 0.0), (x = 10.0, y = 100.0)])
@@ -108,6 +108,7 @@ end
 
     fc = PSY.convert_cost(
         PSY.PC.FuelCurve(;
+            fuel_units = PSY.PC.FuelUnit("MMBTU"),
             power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
             value_curve = PSY.PC.ValueCurve(
                 PSY.PC.IncrementalCurve(;
@@ -127,6 +128,27 @@ end
     @test fc isa FuelCurve
     @test get_fuel_cost(fc) == 3.5
     @test get_vom_cost(fc) == LinearCurve(0.0)
+
+    @test get_fuel_units(fc) == PSY.MMBtu
+
+    # Every FuelUnit the schema allows round-trips.
+    fc_gj = PSY.convert_cost(
+        PSY.PC.FuelCurve(;
+            fuel_units = PSY.PC.FuelUnit("GJ"),
+            power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
+            value_curve = PSY.PC.ValueCurve(_po_linear_io(1.0, 0.0)),
+            fuel_cost = 3.5,
+            vom_cost = _po_linear_io(0.0, 0.0),
+        ),
+    )
+    @test get_fuel_units(fc_gj) == u"GJ"
+    @test PSY.convert_cost_to_openapi(fc_gj).fuel_units.value == "GJ"
+    @test PSY.convert_cost_to_openapi(fc).fuel_units.value == "MMBTU"
+
+    # A unit IS accepts but the schema's enum can't express is refused on export.
+    @test_throws ArgumentError PSY.convert_cost_to_openapi(
+        FuelCurve(; value_curve = LinearCurve(1.0), fuel_units = u"L", fuel_cost = 3.5),
+    )
 end
 
 @testset "convert_cost: vom_cost must be LINEAR" begin
@@ -351,6 +373,7 @@ end
     # Neither set.
     @test_throws ErrorException PSY.convert_cost(
         PSY.PC.FuelCurve(;
+            fuel_units = PSY.PC.FuelUnit("MMBTU"),
             power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
             value_curve = PSY.PC.ValueCurve(_po_linear_io(1.0, 0.0)),
             vom_cost = _po_linear_io(0.0, 0.0),
@@ -360,6 +383,7 @@ end
     # resolves, so this errors before ever touching a store.
     @test_throws ErrorException PSY.convert_cost(
         PSY.PC.FuelCurve(;
+            fuel_units = PSY.PC.FuelUnit("MMBTU"),
             power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
             value_curve = PSY.PC.ValueCurve(_po_linear_io(1.0, 0.0)),
             fuel_cost = 3.5,
@@ -406,6 +430,7 @@ end
         fc = PSY._with_import_store(store) do
             PSY.convert_cost(
                 PSY.PC.FuelCurve(;
+                    fuel_units = PSY.PC.FuelUnit("MMBTU"),
                     power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
                     value_curve = PSY.PC.ValueCurve(
                         PSY.PC.TimeSeriesIncrementalCurve(;
@@ -436,6 +461,7 @@ end
     # the 1-arg ambient form errors rather than silently treating it as absent.
     @test_throws ErrorException PSY.convert_cost(
         PSY.PC.FuelCurve(;
+            fuel_units = PSY.PC.FuelUnit("MMBTU"),
             power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
             value_curve = PSY.PC.ValueCurve(_po_linear_io(1.0, 0.0)),
             fuel_cost_time_series = 7,
@@ -567,12 +593,7 @@ end
     end
 end
 
-@testset "to_openapi refuses a cost referencing a series the document omits" begin
-    # A cost may reference a series owned by a *different* component, and a component with
-    # no OpenAPI converter is omitted from the document along with its association rows.
-    # The document would then carry a bare association id with no declared identity beside
-    # it, and importing that against another sidecar binds the cost to whichever series
-    # holds that id there — silently, since the identity cross-check has nothing to match.
+@testset "to_openapi describes a cost's series owned by a dynamic injection" begin
     sys = System(100.0)
     bus = ACBus(; input_basis = u"CU",
         number = 1, name = "b", available = true, bustype = ACBusTypes.REF,
@@ -600,10 +621,10 @@ end
     )
     add_component!(sys, src)
 
-    # No dynamic type has a converter yet, so this owner cannot be described.
+    # A dynamic injection is described by the document, so the series it owns is too.
     dyn = PeriodicVariableSource(; name = "S", R_th = 0.0, X_th = 1.0)
     add_component!(sys, dyn, src)
-    @test !PowerSystems.is_document_exportable(dyn)
+    @test PowerSystems.is_document_exportable(dyn)
 
     series = SingleTimeSeries(;
         name = "fuel_price",
@@ -616,13 +637,14 @@ end
     set_operation_cost!(
         gen,
         ThermalGenerationCost(;
-            variable_operation_cost = FuelCurve(LinearCurve(1.0), key),
+            variable_operation_cost = FuelCurve(LinearCurve(1.0), u"MMBtu", key),
             fixed = 0.0, start_up = 0.0, shut_down = 0.0,
         ),
     )
 
     dir = mktempdir()
-    @test_throws IS.DataFormatError to_openapi(
-        sys; time_series_storage_path = joinpath(dir, "sidecar.h5"),
+    doc = to_openapi(sys; time_series_storage_path = joinpath(dir, "sidecar.h5"))
+    @test any(
+        row.value.owner_id == IS.get_id(dyn) for row in doc.time_series_associations
     )
 end

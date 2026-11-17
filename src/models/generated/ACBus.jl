@@ -16,6 +16,7 @@ This file is auto-generated. Do not edit.
         base_voltage::Union{Nothing, Float64}
         area::Union{Nothing, Area}
         load_zone::Union{Nothing, LoadZone}
+        voltage_setpoint::Union{Nothing, Float64}
         ext::Dict{String, Any}
         internal::InfrastructureSystemsInternal
     end
@@ -33,6 +34,7 @@ An AC bus
 - `base_voltage::Union{Nothing, Float64}`: the base voltage in kV, validation range: `(0, nothing)`
 - `area::Union{Nothing, Area}`: (default: `nothing`) the area containing the bus
 - `load_zone::Union{Nothing, LoadZone}`: (default: `nothing`) the load zone containing the bus
+- `voltage_setpoint::Union{Nothing, Float64}`: (default: `nothing`) Scheduled voltage magnitude of the bus, in per unit of `base_voltage`. The devices that regulate this bus hold this value, unless a droop or a reactive power limit prevents it. `nothing` when no device regulates the bus. `magnitude` is the solved value.
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
 - `input_basis`: (keyword constructor only, required) `u"CU"` or `u"NU"`, the units of bare numbers on unit-bearing fields. Tagged values (`50.0u"MW"`) keep their own units
@@ -58,13 +60,15 @@ mutable struct ACBus <: Bus
     area::Union{Nothing, Area}
     "the load zone containing the bus"
     load_zone::Union{Nothing, LoadZone}
+    "Scheduled voltage magnitude of the bus, in per unit of `base_voltage`. The devices that regulate this bus hold this value, unless a droop or a reactive power limit prevents it. `nothing` when no device regulates the bus. `magnitude` is the solved value."
+    voltage_setpoint::Union{Nothing, Float64}
     "An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation."
     ext::Dict{String, Any}
     "(**Do not modify.**) PowerSystems.jl internal reference"
     internal::InfrastructureSystemsInternal
 
-    function ACBus(number, name, available, bustype, angle, magnitude, voltage_limits, base_voltage, area, load_zone, ext, internal, )
-        (number, name, available, bustype, angle, magnitude, voltage_limits, base_voltage, area, load_zone, ext, internal, ) = check_bus_params(
+    function ACBus(number, name, available, bustype, angle, magnitude, voltage_limits, base_voltage, area, load_zone, voltage_setpoint, ext, internal, )
+        (number, name, available, bustype, angle, magnitude, voltage_limits, base_voltage, area, load_zone, voltage_setpoint, ext, internal, ) = check_bus_params(
             number,
             name,
             available,
@@ -75,19 +79,20 @@ mutable struct ACBus <: Bus
             base_voltage,
             area,
             load_zone,
+            voltage_setpoint,
             ext,
             internal,
         )
-        new(number, name, available, bustype, angle, magnitude, voltage_limits, base_voltage, area, load_zone, ext, internal, )
+        new(number, name, available, bustype, angle, magnitude, voltage_limits, base_voltage, area, load_zone, voltage_setpoint, ext, internal, )
     end
 end
 
-function ACBus(number, name, available, bustype, angle, magnitude, voltage_limits, base_voltage, area=nothing, load_zone=nothing, ext=Dict{String, Any}(), )
-    ACBus(number, name, available, bustype, angle, magnitude, voltage_limits, base_voltage, area, load_zone, ext, InfrastructureSystemsInternal(), )
+function ACBus(number, name, available, bustype, angle, magnitude, voltage_limits, base_voltage, area=nothing, load_zone=nothing, voltage_setpoint=nothing, ext=Dict{String, Any}(), )
+    ACBus(number, name, available, bustype, angle, magnitude, voltage_limits, base_voltage, area, load_zone, voltage_setpoint, ext, InfrastructureSystemsInternal(), )
 end
 
-function ACBus(; number, name, available, bustype, angle, magnitude, voltage_limits, base_voltage, area=nothing, load_zone=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Unitful.Units, )
-    value = ACBus(number, name, available, bustype, angle, _placeholder(magnitude), _placeholder(voltage_limits), base_voltage, area, load_zone, ext, internal, )
+function ACBus(; number, name, available, bustype, angle, magnitude, voltage_limits, base_voltage, area=nothing, load_zone=nothing, voltage_setpoint=nothing, ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Unitful.Units, )
+    value = ACBus(number, name, available, bustype, angle, _placeholder(magnitude), _placeholder(voltage_limits), base_voltage, area, load_zone, voltage_setpoint, ext, internal, )
     set_magnitude!(value, _tag(magnitude, input_basis, Val(:kv)))
     set_voltage_limits!(value, _tag(voltage_limits, input_basis, Val(:kv)))
     return value
@@ -107,6 +112,7 @@ function ACBus(::Nothing)
         base_voltage=nothing,
         area=nothing,
         load_zone=nothing,
+        voltage_setpoint=nothing,
         ext=Dict{String, Any}(),
         input_basis=u"CU",
     )
@@ -144,6 +150,8 @@ get_base_voltage(value::ACBus) = value.base_voltage
 get_area(value::ACBus) = value.area
 """Get [`ACBus`](@ref) `load_zone`."""
 get_load_zone(value::ACBus) = value.load_zone
+"""Get [`ACBus`](@ref) `voltage_setpoint`."""
+get_voltage_setpoint(value::ACBus) = value.voltage_setpoint
 """Get [`ACBus`](@ref) `ext`."""
 get_ext(value::ACBus) = value.ext
 """Get [`ACBus`](@ref) `internal`."""
@@ -166,6 +174,8 @@ set_voltage_limits!(value::ACBus, val::NamedTuple{(:min, :max), <:Tuple{Vararg{_
 set_area!(value::ACBus, val) = value.area = val
 """Set [`ACBus`](@ref) `load_zone`."""
 set_load_zone!(value::ACBus, val) = value.load_zone = val
+"""Set [`ACBus`](@ref) `voltage_setpoint`."""
+set_voltage_setpoint!(value::ACBus, val) = value.voltage_setpoint = val
 """Set [`ACBus`](@ref) `ext`."""
 set_ext!(value::ACBus, val) = value.ext = val
 
@@ -182,6 +192,7 @@ function from_openapi(po::PO.ACBus, refs::OpenAPIRefs, ::ComponentBaseUnit)
         base_voltage = _or_default(po.base_voltage, nothing),
         area = resolve_ref(refs, po.area, Area),
         load_zone = resolve_ref(refs, po.load_zone, LoadZone),
+        voltage_setpoint = _or_default(po.voltage_setpoint, nothing),
         input_basis = u"CU",
     )
 end
@@ -198,6 +209,7 @@ function from_openapi(po::PO.ACBus, refs::OpenAPIRefs, ::NaturalUnit)
         base_voltage = _or_default(po.base_voltage, nothing),
         area = resolve_ref(refs, po.area, Area),
         load_zone = resolve_ref(refs, po.load_zone, LoadZone),
+        voltage_setpoint = _or_default(po.voltage_setpoint, nothing),
         input_basis = u"CU",
     )
 end
@@ -219,6 +231,7 @@ function to_openapi(value::ACBus, refs::OpenAPIRefs, ::ComponentBaseUnit)
         base_voltage = _optional_to_wire(get_base_voltage(value)),
         area = _component_id_optional(refs, get_area(value)),
         load_zone = _component_id_optional(refs, get_load_zone(value)),
+        voltage_setpoint = _optional_to_wire(get_voltage_setpoint(value)),
     )
 end
 
@@ -235,5 +248,6 @@ function to_openapi(value::ACBus, refs::OpenAPIRefs, ::NaturalUnit)
         base_voltage = _optional_to_wire(get_base_voltage(value)),
         area = _component_id_optional(refs, get_area(value)),
         load_zone = _component_id_optional(refs, get_load_zone(value)),
+        voltage_setpoint = _optional_to_wire(get_voltage_setpoint(value)),
     )
 end

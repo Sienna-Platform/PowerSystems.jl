@@ -940,3 +940,45 @@ end
         end
     end
 end
+
+@testset "roundtrip: Area net interchange schedule and off-area loads ($form)" for form in
+                                                                                   (
+    "case.json",
+    "case.sns",
+)
+    sys = _file_io_fixture(; with_time_series = false)
+    a1 = get_component(Area, sys, "a1")
+    a2 = Area(; name = "a2", input_basis = u"CU")
+    add_component!(sys, a2)
+    b2 = ACBus(nothing)
+    b2.name = "b2"
+    b2.number = 2
+    b2.bustype = ACBusTypes.PQ
+    b2.base_voltage = 230.0
+    b2.area = a2
+    b2.load_zone = get_component(LoadZone, sys, "z1")
+    add_component!(sys, b2)
+    load = PowerLoad(nothing)
+    load.name = "off_area_load"
+    set_bus!(load, b2)
+    add_component!(sys, load)
+    set_scheduled_net_interchange!(a1, 50.0u"MW")
+    set_out_of_area_loads!(a1, [load])
+
+    @test get_scheduled_net_interchange(a2, u"MW") === nothing
+    @test isempty(get_out_of_area_loads(a2))
+
+    mktempdir() do dir
+        path = joinpath(dir, form)
+        to_file(sys, path)
+        sys2 = from_file(path)
+        a1_2 = get_component(Area, sys2, "a1")
+        a2_2 = get_component(Area, sys2, "a2")
+        @test get_scheduled_net_interchange(a1_2, u"MW") ≈ 50.0
+        @test get_scheduled_net_interchange(a1_2, u"SU") ≈ 0.5
+        @test get_out_of_area_loads(a1_2) ==
+              [get_component(PowerLoad, sys2, "off_area_load")]
+        @test get_scheduled_net_interchange(a2_2, u"MW") === nothing
+        @test isempty(get_out_of_area_loads(a2_2))
+    end
+end

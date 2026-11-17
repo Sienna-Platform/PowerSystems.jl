@@ -5,7 +5,7 @@ This file is auto-generated. Do not edit.
 #! format: off
 
 """
-    mutable struct SCRX <: AVR
+    mutable struct SCRX <: ExcitationSystemDynamics
         Ta_Tb::Float64
         Tb::Float64
         K::Float64
@@ -40,7 +40,7 @@ This exciter is based on an IEEE type SCRX solid state exciter.  The output fiel
 - `states_types::Vector{StateTypes.Value}`: (**Do not modify.**) SCRX has 2 [differential](@ref states_list) [states](@ref S)
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
 """
-mutable struct SCRX <: AVR
+mutable struct SCRX <: ExcitationSystemDynamics
     "Lead input constant ratio"
     Ta_Tb::Float64
     "Lag input constant in s"
@@ -141,3 +141,32 @@ set_V_ref!(value::SCRX, val) = value.V_ref = val
 set_ext!(value::SCRX, val) = value.ext = val
 """Set [`SCRX`](@ref) `states_types`."""
 set_states_types!(value::SCRX, val) = value.states_types = val
+
+
+
+function from_openapi(po::PD.SCRX, refs::OpenAPIRefs)
+    return SCRX(;
+        Ta_Tb = _wire_required(po.ta_tb, "SCRX", "Ta_Tb"),
+        Tb = _wire_required(po.tb, "SCRX", "Tb"),
+        K = _wire_required(po.k, "SCRX", "K"),
+        Te = _wire_required(po.te, "SCRX", "Te"),
+        Efd_lim = _or_default(po.efd_lim, nothing),
+        switch = _wire_required(po.switch, "SCRX", "switch"),
+        rc_rfd = _wire_required(po.rc_rfd, "SCRX", "rc_rfd"),
+        V_ref = _or_default(po.v_ref, 1.0),
+    )
+end
+
+function to_openapi(value::SCRX, refs::OpenAPIRefs)
+    return PD.SCRX(;
+        id = component_id(refs, value),
+        ta_tb = get_Ta_Tb(value),
+        tb = get_Tb(value),
+        k = get_K(value),
+        te = get_Te(value),
+        efd_lim = _minmax_po(get_Efd_lim(value)),
+        switch = get_switch(value),
+        rc_rfd = get_rc_rfd(value),
+        v_ref = get_V_ref(value),
+    )
+end

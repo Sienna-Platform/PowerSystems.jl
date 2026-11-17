@@ -69,3 +69,20 @@ set_rf!(value::RLFilter, val) = value.rf = val
 set_lf!(value::RLFilter, val) = value.lf = val
 """Set [`RLFilter`](@ref) `ext`."""
 set_ext!(value::RLFilter, val) = value.ext = val
+
+
+
+function from_openapi(po::PD.RLFilter, refs::OpenAPIRefs)
+    return RLFilter(;
+        rf = _wire_required(po.rf, "RLFilter", "rf"),
+        lf = _wire_required(po.lf, "RLFilter", "lf"),
+    )
+end
+
+function to_openapi(value::RLFilter, refs::OpenAPIRefs)
+    return PD.RLFilter(;
+        id = component_id(refs, value),
+        rf = get_rf(value),
+        lf = get_lf(value),
+    )
+end

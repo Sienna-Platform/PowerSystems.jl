@@ -11,14 +11,17 @@
     Q_control = ReactivePowerDroop(0.2, 1000.0)
     Q_control_PI = ReactivePowerPI(2.0, 20.0, 50.0)
     Q_VOC = ReactiveVirtualOscillator(0.0796)
-    outer_control = OuterControl(virtual_H, Q_control)
-    test_accessors(outer_control)
-    outer_control_droop = OuterControl(P_control, Q_control)
-    test_accessors(outer_control_droop)
-    outer_control_PI = OuterControl(P_control_PI, Q_control_PI)
-    test_accessors(outer_control_PI)
-    outer_control_VOC = OuterControl(P_VOC, Q_VOC)
-    test_accessors(outer_control_VOC)
+    for block in (
+        virtual_H,
+        P_control,
+        P_control_PI,
+        P_VOC,
+        Q_control,
+        Q_control_PI,
+        Q_VOC,
+    )
+        test_accessors(block)
+    end
     vsc = VoltageModeControl(0.59, 736.0, 0.0, 0.0, 0.2, 1.27, 14.3, 0.0, 50.0, 0.2)
     vsc3 = CurrentModeControl(1.27, 14.3, 0.0)
     BESS_source = ZeroOrderBESS(
@@ -51,13 +54,13 @@ end
     pll = KauraPLL(500.0, 0.084, 4.69)
     virtual_H = VirtualInertia(2.0, 400.0, 20.0, 2 * pi * 50.0)
     Q_control = ReactivePowerDroop(0.2, 1000.0)
-    outer_control = OuterControl(virtual_H, Q_control)
     vsc = VoltageModeControl(0.59, 736.0, 0.0, 0.0, 0.2, 1.27, 14.3, 0.0, 50.0, 0.2)
     inverter = DynamicInverter(
         "TestInverter",
-        1.0,
+        60.0,
         converter,
-        outer_control,
+        virtual_H,
+        Q_control,
         vsc,
         dc_source,
         pll,
@@ -66,26 +69,28 @@ end
     test_accessors(inverter)
     inv_magnitude = DynamicInverter(;
         name = "TestInverter",
-        ω_ref = 1.0,
+        frequency_ref = 60.0,
         converter = converter,
-        outer_control = outer_control,
+        active_power_control = virtual_H,
+        reactive_power_control = Q_control,
         inner_control = vsc,
         dc_source = dc_source,
-        freq_estimator = pll,
+        reference_frame_rotation = pll,
         filter = filt,
-        limiter = MagnitudeOutputCurrentLimiter(; I_max = 1.0),
+        current_limitation = MagnitudeOutputCurrentLimiter(; I_max = 1.0),
     )
     test_accessors(inv_magnitude)
     inv_inst = DynamicInverter(;
         name = "TestInverter",
-        ω_ref = 1.0,
+        frequency_ref = 60.0,
         converter = converter,
-        outer_control = outer_control,
+        active_power_control = virtual_H,
+        reactive_power_control = Q_control,
         inner_control = vsc,
         dc_source = dc_source,
-        freq_estimator = pll,
+        reference_frame_rotation = pll,
         filter = filt,
-        limiter = InstantaneousOutputCurrentLimiter(;
+        current_limitation = InstantaneousOutputCurrentLimiter(;
             Id_max = 1.0 / sqrt(2),
             Iq_max = 1.0 / sqrt(2),
         ),
@@ -93,14 +98,15 @@ end
     test_accessors(inv_inst)
     inv_priority = DynamicInverter(;
         name = "TestInverter",
-        ω_ref = 1.0,
+        frequency_ref = 60.0,
         converter = converter,
-        outer_control = outer_control,
+        active_power_control = virtual_H,
+        reactive_power_control = Q_control,
         inner_control = vsc,
         dc_source = dc_source,
-        freq_estimator = pll,
+        reference_frame_rotation = pll,
         filter = filt,
-        limiter = PriorityOutputCurrentLimiter(; I_max = 1.0, ϕ_I = 0.1),
+        current_limitation = PriorityOutputCurrentLimiter(; I_max = 1.0, phi_I = 0.1),
     )
     test_accessors(inv_priority)
 end
@@ -123,8 +129,8 @@ end
     )
     filt_current = RLFilter(; rf = 0.0, lf = 0.1)
     inner_ctrl_typeB = RECurrentControlB(;
-        Q_Flag = 0,
-        PQ_Flag = 0,
+        Q_Flag = false,
+        PQ_Flag = false,
         Vdip_lim = (-99.0, 99.0),
         T_rv = 0.02,
         dbd_pnts = (-1.0, 1.0),
@@ -138,12 +144,12 @@ end
     )
     # Creates 2^5 = 32 combinations of flags for an outer control
     for (F_flag, VC_flag, R_flag, PF_flag, V_flag) in
-        reverse.(Iterators.product(fill(0:1, 5)...))[:]
+        reverse.(Iterators.product(fill((false, true), 5)...))[:]
         P_control_typeAB = ActiveRenewableControllerAB(;
             bus_control = 0,
             from_branch_control = 0,
             to_branch_control = 0,
-            branch_id_control = "0",
+            branch_id_control = 0,
             Freq_Flag = F_flag,
             K_pg = 1.0,
             K_ig = 0.05,
@@ -185,7 +191,7 @@ end
             K_qp = 0.0,
             K_qi = 0.01,
         )
-        outer_control_typeAB = OuterControl(P_control_typeAB, Q_control_typeAB)
-        test_accessors(outer_control_typeAB)
+        test_accessors(P_control_typeAB)
+        test_accessors(Q_control_typeAB)
     end
 end

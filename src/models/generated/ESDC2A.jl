@@ -5,7 +5,7 @@ This file is auto-generated. Do not edit.
 #! format: off
 
 """
-    mutable struct ESDC2A <: AVR
+    mutable struct ESDC2A <: ExcitationSystemDynamics
         Tr::Float64
         Ka::Float64
         Ta::Float64
@@ -39,14 +39,14 @@ Parameters of IEEE Std 421.5 Type DC2A Excitacion System. This model corresponds
 - `Tc::Float64`: Regulator input Time Constant in s, validation range: `(0, nothing)`
 - `Vr_lim::MinMax`: Voltage regulator limits (regulator output) (Vi_min, Vi_max)
 - `Ke::Float64`: Exciter constant related to self-excited field, validation range: `(-1, 1)`
-- `Te::Float64`: Exciter time constant, integration rate associated with exciter control, validation range: `(eps(), 2)`
+- `Te::Float64`: Exciter time constant, integration rate associated with exciter control, validation range: `(0.0001, 2)`
 - `Kf::Float64`: Excitation control system stabilizer gain, validation range: `(0, 0.3)`
-- `Tf::Float64`: Excitation control system stabilizer time constant. Appropiate Data: 5.0 <= Tf/Kf <= 15.0, validation range: `(eps(), 1.5)`
+- `Tf::Float64`: Excitation control system stabilizer time constant. Appropiate Data: 5.0 <= Tf/Kf <= 15.0, validation range: `(0.0001, 1.5)`
 - `switch::Int`: Switch, validation range: `(0, 1)`
 - `E_sat::Tuple{Float64, Float64}`: Exciter output voltage for saturation factor: (E1, E2)
 - `Se::Tuple{Float64, Float64}`: Exciter saturation factor at exciter output voltage: (Se(E1), Se(E2))
 - `V_ref::Float64`: (default: `1.0`) Reference Voltage Set-point (pu), validation range: `(0, nothing)`
-- `saturation_coeffs::Tuple{Float64, Float64}`: (default: `PowerSystems.get_avr_saturation(E_sat, Se)`) (**Do not modify.**) Coefficients (A,B) of the function: Se(V) = B(V - A)^2/V
+- `saturation_coeffs::Tuple{Float64, Float64}`: (**Do not modify.**) Coefficients (A,B) of the function: Se(V) = B(V - A)^2/V
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
 - `states::Vector{Symbol}`: (**Do not modify.**) The [states](@ref S) are:
 	Vt: Terminal Voltage,
@@ -58,7 +58,7 @@ Parameters of IEEE Std 421.5 Type DC2A Excitacion System. This model corresponds
 - `states_types::Vector{StateTypes.Value}`: (**Do not modify.**) ESDC2A has 5 [differential](@ref states_list) [states](@ref S)
 - `internal::InfrastructureSystemsInternal`: (**Do not modify.**) PowerSystems.jl internal reference
 """
-mutable struct ESDC2A <: AVR
+mutable struct ESDC2A <: ExcitationSystemDynamics
     "Voltage Measurement Time Constant in s"
     Tr::Float64
     "Amplifier Gain"
@@ -106,8 +106,8 @@ mutable struct ESDC2A <: AVR
     internal::InfrastructureSystemsInternal
 end
 
-function ESDC2A(Tr, Ka, Ta, Tb, Tc, Vr_lim, Ke, Te, Kf, Tf, switch, E_sat, Se, V_ref=1.0, saturation_coeffs=PowerSystems.get_avr_saturation(E_sat, Se), ext=Dict{String, Any}(), )
-    ESDC2A(Tr, Ka, Ta, Tb, Tc, Vr_lim, Ke, Te, Kf, Tf, switch, E_sat, Se, V_ref, saturation_coeffs, ext, [:Vt, :Vr1, :Vr2, :Vf, :Vr3], 5, [StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Differential, StateTypes.Differential], InfrastructureSystemsInternal(), )
+function ESDC2A(Tr, Ka, Ta, Tb, Tc, Vr_lim, Ke, Te, Kf, Tf, switch, E_sat, Se, V_ref=1.0, ext=Dict{String, Any}(), )
+    ESDC2A(Tr, Ka, Ta, Tb, Tc, Vr_lim, Ke, Te, Kf, Tf, switch, E_sat, Se, V_ref, ext, PowerSystems.get_avr_saturation(E_sat, Se), [:Vt, :Vr1, :Vr2, :Vf, :Vr3], 5, [StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Differential, StateTypes.Differential], InfrastructureSystemsInternal(), )
 end
 
 function ESDC2A(; Tr, Ka, Ta, Tb, Tc, Vr_lim, Ke, Te, Kf, Tf, switch, E_sat, Se, V_ref=1.0, saturation_coeffs=PowerSystems.get_avr_saturation(E_sat, Se), ext=Dict{String, Any}(), states=[:Vt, :Vr1, :Vr2, :Vf, :Vr3], n_states=5, states_types=[StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Hybrid, StateTypes.Differential, StateTypes.Differential], internal=InfrastructureSystemsInternal(), )
@@ -131,7 +131,6 @@ function ESDC2A(::Nothing)
         E_sat=(0.0, 0.0),
         Se=(0.0, 0.0),
         V_ref=0,
-        saturation_coeffs=(0.0, 0.0),
         ext=Dict{String, Any}(),
     )
 end
@@ -211,3 +210,44 @@ set_saturation_coeffs!(value::ESDC2A, val) = value.saturation_coeffs = val
 set_ext!(value::ESDC2A, val) = value.ext = val
 """Set [`ESDC2A`](@ref) `states_types`."""
 set_states_types!(value::ESDC2A, val) = value.states_types = val
+
+
+
+function from_openapi(po::PD.ESDC2A, refs::OpenAPIRefs)
+    return ESDC2A(;
+        Tr = _wire_required(po.tr, "ESDC2A", "Tr"),
+        Ka = _wire_required(po.ka, "ESDC2A", "Ka"),
+        Ta = _wire_required(po.ta, "ESDC2A", "Ta"),
+        Tb = _wire_required(po.tb, "ESDC2A", "Tb"),
+        Tc = _wire_required(po.tc, "ESDC2A", "Tc"),
+        Vr_lim = _or_default(po.vr_lim, nothing),
+        Ke = _wire_required(po.ke, "ESDC2A", "Ke"),
+        Te = _wire_required(po.te, "ESDC2A", "Te"),
+        Kf = _wire_required(po.kf, "ESDC2A", "Kf"),
+        Tf = _wire_required(po.tf, "ESDC2A", "Tf"),
+        switch = _wire_required(po.switch, "ESDC2A", "switch"),
+        E_sat = _wire_to_psy(Tuple{Float64, Float64}, po.e_sat),
+        Se = _wire_to_psy(Tuple{Float64, Float64}, po.se),
+        V_ref = _or_default(po.v_ref, 1.0),
+    )
+end
+
+function to_openapi(value::ESDC2A, refs::OpenAPIRefs)
+    return PD.ESDC2A(;
+        id = component_id(refs, value),
+        tr = get_Tr(value),
+        ka = get_Ka(value),
+        ta = get_Ta(value),
+        tb = get_Tb(value),
+        tc = get_Tc(value),
+        vr_lim = _minmax_po(get_Vr_lim(value)),
+        ke = get_Ke(value),
+        te = get_Te(value),
+        kf = get_Kf(value),
+        tf = get_Tf(value),
+        switch = get_switch(value),
+        e_sat = _psy_to_wire(get_E_sat(value)),
+        se = _psy_to_wire(get_Se(value)),
+        v_ref = get_V_ref(value),
+    )
+end

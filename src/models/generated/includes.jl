@@ -9,6 +9,7 @@ include("TransformerCircuit.jl")
 include("Line.jl")
 include("GenericArcImpedance.jl")
 include("DiscreteControlledACBranch.jl")
+include("SeriesCompensator.jl")
 include("TwoWindingTransformer.jl")
 include("ThreeWindingTransformer.jl")
 include("TwoTerminalGenericHVDCLine.jl")
@@ -217,6 +218,7 @@ export get_K_da
 export get_K_ex
 export get_K_f
 export get_K_ff
+export get_K_frequency
 export get_K_hp
 export get_K_hv
 export get_K_i
@@ -241,7 +243,6 @@ export get_K_qv
 export get_K_turb
 export get_K_vi
 export get_K_vp
-export get_K_ω
 export get_Ka
 export get_Kb
 export get_Kc
@@ -310,6 +311,8 @@ export get_Qref_Flag
 export get_R
 export get_R_1d
 export get_R_1q
+export get_R_BIG
+export get_R_SMALL
 export get_R_c
 export get_R_close
 export get_R_f
@@ -477,10 +480,9 @@ export get_a
 export get_ac_control
 export get_ac_control_from
 export get_ac_control_to
-export get_ac_voltage_setpoint
-export get_ac_voltage_setpoint_from
-export get_ac_voltage_setpoint_to
+export get_active_damping_filter_frequency
 export get_active_power
+export get_active_power_filter_frequency
 export get_active_power_flow
 export get_active_power_flow_limits
 export get_active_power_flow_limits_unitful
@@ -494,6 +496,7 @@ export get_active_power_losses_unitful
 export get_active_power_pump
 export get_active_power_pump_unitful
 export get_active_power_unitful
+export get_alpha
 export get_angle
 export get_angle_limits
 export get_arc
@@ -512,6 +515,7 @@ export get_base_voltage_primary
 export get_base_voltage_secondary
 export get_battery_resistance
 export get_battery_voltage
+export get_beta
 export get_bias
 export get_branch_id_control
 export get_branch_status
@@ -519,6 +523,7 @@ export get_bus
 export get_bus_control
 export get_buses
 export get_bustype
+export get_bypassed
 export get_c
 export get_c_dc
 export get_cf
@@ -591,6 +596,8 @@ export get_fl
 export get_flow_limits
 export get_flow_limits_unitful
 export get_frequency
+export get_frequency_lp
+export get_frequency_ref
 export get_from
 export get_from_area
 export get_from_branch_control
@@ -647,6 +654,7 @@ export get_is_filter_differential
 export get_k1
 export get_k2
 export get_kWh_Cap
+export get_k_frequency
 export get_kad
 export get_kd
 export get_kffi
@@ -661,7 +669,6 @@ export get_kpi
 export get_kpv
 export get_kq
 export get_kw
-export get_kω
 export get_l
 export get_level_data_type
 export get_level_targets
@@ -715,6 +722,7 @@ export get_operating_mode
 export get_operation_cost
 export get_operational_flow_limit
 export get_operational_flow_limit_unitful
+export get_out_of_area_loads
 export get_outflow
 export get_outflow_limits
 export get_output_active_power_limits
@@ -724,6 +732,7 @@ export get_peak_active_power_unitful
 export get_peak_reactive_power
 export get_peak_reactive_power_unitful
 export get_phase_angle_limits
+export get_phi_I
 export get_power_factor
 export get_power_factor_setpoint
 export get_power_factor_setpoint_from
@@ -740,6 +749,7 @@ export get_powerhouse_elevation
 export get_price_limits
 export get_primary_circuit
 export get_prime_mover_type
+export get_psi
 export get_q_nl
 export get_r
 export get_r_12
@@ -752,6 +762,7 @@ export get_r_load
 export get_r_unitful
 export get_ramp_limits
 export get_ramp_limits_unitful
+export get_rated_ac_voltage
 export get_rated_ac_voltage_from
 export get_rated_ac_voltage_to
 export get_rated_current
@@ -769,6 +780,7 @@ export get_rating_to_unitful
 export get_rating_unitful
 export get_rc_rfd
 export get_reactive_power
+export get_reactive_power_filter_frequency
 export get_reactive_power_flow
 export get_reactive_power_flow_unitful
 export get_reactive_power_from
@@ -796,12 +808,14 @@ export get_rectifier_tap_step
 export get_rectifier_transformer_ratio
 export get_rectifier_xc
 export get_reg
-export get_regulated_bus_number
+export get_regulated_bus
+export get_regulated_bus_orientation
 export get_remote_bus_control
 export get_remote_bus_control_1
 export get_remote_bus_control_2
-export get_remote_bus_control_from
-export get_remote_bus_control_to
+export get_remote_regulated_bus
+export get_remote_regulated_bus_from
+export get_remote_regulated_bus_to
 export get_renewable_unit
 export get_reserves
 export get_rf
@@ -810,6 +824,8 @@ export get_rrpwr
 export get_rv
 export get_saturation_coeffs
 export get_scheduled_dc_voltage
+export get_scheduled_net_interchange
+export get_scheduled_net_interchange_unitful
 export get_secondary_circuit
 export get_self_discharge
 export get_services
@@ -841,15 +857,20 @@ export get_tF_delay
 export get_tV_delay
 export get_tap
 export get_tap_ratio_limits
+export get_tau_limits
 export get_tertiary_circuit
 export get_tfh
 export get_tfl
 export get_thermal_unit
+export get_theta_p
+export get_thetap
+export get_thetap_rad
 export get_time_at_status
 export get_time_limits
 export get_to
 export get_to_area
 export get_to_branch_control
+export get_torque_ref
 export get_trading_hubs
 export get_transition_time
 export get_travel_time
@@ -874,8 +895,6 @@ export get_x_23_unitful
 export get_x_31
 export get_x_31_unitful
 export get_x_unitful
-export get_α
-export get_β
 export get_γ_d1
 export get_γ_d2
 export get_γ_q1
@@ -883,18 +902,6 @@ export get_γ_q2
 export get_γ_qd
 export get_γd
 export get_γq
-export get_θ_p
-export get_θp
-export get_θp_rad
-export get_τ_limits
-export get_τ_ref
-export get_ψ
-export get_ω_lp
-export get_ω_ref
-export get_ωad
-export get_ωf
-export get_ωz
-export get_ϕ_I
 export set_A!
 export set_A1!
 export set_A2!
@@ -978,6 +985,7 @@ export set_K_da!
 export set_K_ex!
 export set_K_f!
 export set_K_ff!
+export set_K_frequency!
 export set_K_hp!
 export set_K_hv!
 export set_K_i!
@@ -1002,7 +1010,6 @@ export set_K_qv!
 export set_K_turb!
 export set_K_vi!
 export set_K_vp!
-export set_K_ω!
 export set_Ka!
 export set_Kb!
 export set_Kc!
@@ -1071,6 +1078,8 @@ export set_Qref_Flag!
 export set_R!
 export set_R_1d!
 export set_R_1q!
+export set_R_BIG!
+export set_R_SMALL!
 export set_R_c!
 export set_R_close!
 export set_R_f!
@@ -1238,16 +1247,16 @@ export set_a!
 export set_ac_control!
 export set_ac_control_from!
 export set_ac_control_to!
-export set_ac_voltage_setpoint!
-export set_ac_voltage_setpoint_from!
-export set_ac_voltage_setpoint_to!
+export set_active_damping_filter_frequency!
 export set_active_power!
+export set_active_power_filter_frequency!
 export set_active_power_flow!
 export set_active_power_flow_limits!
 export set_active_power_limits!
 export set_active_power_limits_pump!
 export set_active_power_losses!
 export set_active_power_pump!
+export set_alpha!
 export set_angle!
 export set_angle_limits!
 export set_arc!
@@ -1265,6 +1274,7 @@ export set_base_voltage_primary!
 export set_base_voltage_secondary!
 export set_battery_resistance!
 export set_battery_voltage!
+export set_beta!
 export set_bias!
 export set_branch_id_control!
 export set_branch_status!
@@ -1272,6 +1282,7 @@ export set_bus!
 export set_bus_control!
 export set_buses!
 export set_bustype!
+export set_bypassed!
 export set_c!
 export set_c_dc!
 export set_cf!
@@ -1334,6 +1345,8 @@ export set_fh!
 export set_fl!
 export set_flow_limits!
 export set_frequency!
+export set_frequency_lp!
+export set_frequency_ref!
 export set_from!
 export set_from_area!
 export set_from_branch_control!
@@ -1384,6 +1397,7 @@ export set_is_filter_differential!
 export set_k1!
 export set_k2!
 export set_kWh_Cap!
+export set_k_frequency!
 export set_kad!
 export set_kd!
 export set_kffi!
@@ -1398,7 +1412,6 @@ export set_kpi!
 export set_kpv!
 export set_kq!
 export set_kw!
-export set_kω!
 export set_l!
 export set_level_data_type!
 export set_level_targets!
@@ -1440,12 +1453,14 @@ export set_number_of_tap_positions!
 export set_operating_mode!
 export set_operation_cost!
 export set_operational_flow_limit!
+export set_out_of_area_loads!
 export set_outflow!
 export set_outflow_limits!
 export set_output_active_power_limits!
 export set_peak_active_power!
 export set_peak_reactive_power!
 export set_phase_angle_limits!
+export set_phi_I!
 export set_power_factor!
 export set_power_factor_setpoint!
 export set_power_factor_setpoint_from!
@@ -1460,6 +1475,7 @@ export set_powerhouse_elevation!
 export set_price_limits!
 export set_primary_circuit!
 export set_prime_mover_type!
+export set_psi!
 export set_q_nl!
 export set_r!
 export set_r_12!
@@ -1467,6 +1483,7 @@ export set_r_23!
 export set_r_31!
 export set_r_load!
 export set_ramp_limits!
+export set_rated_ac_voltage!
 export set_rated_ac_voltage_from!
 export set_rated_ac_voltage_to!
 export set_rated_current!
@@ -1479,6 +1496,7 @@ export set_rating_from!
 export set_rating_to!
 export set_rc_rfd!
 export set_reactive_power!
+export set_reactive_power_filter_frequency!
 export set_reactive_power_flow!
 export set_reactive_power_from!
 export set_reactive_power_limits!
@@ -1499,12 +1517,14 @@ export set_rectifier_tap_step!
 export set_rectifier_transformer_ratio!
 export set_rectifier_xc!
 export set_reg!
-export set_regulated_bus_number!
+export set_regulated_bus!
+export set_regulated_bus_orientation!
 export set_remote_bus_control!
 export set_remote_bus_control_1!
 export set_remote_bus_control_2!
-export set_remote_bus_control_from!
-export set_remote_bus_control_to!
+export set_remote_regulated_bus!
+export set_remote_regulated_bus_from!
+export set_remote_regulated_bus_to!
 export set_renewable_unit!
 export set_reserves!
 export set_rf!
@@ -1513,6 +1533,7 @@ export set_rrpwr!
 export set_rv!
 export set_saturation_coeffs!
 export set_scheduled_dc_voltage!
+export set_scheduled_net_interchange!
 export set_secondary_circuit!
 export set_self_discharge!
 export set_services!
@@ -1542,15 +1563,20 @@ export set_tF_delay!
 export set_tV_delay!
 export set_tap!
 export set_tap_ratio_limits!
+export set_tau_limits!
 export set_tertiary_circuit!
 export set_tfh!
 export set_tfl!
 export set_thermal_unit!
+export set_theta_p!
+export set_thetap!
+export set_thetap_rad!
 export set_time_at_status!
 export set_time_limits!
 export set_to!
 export set_to_area!
 export set_to_branch_control!
+export set_torque_ref!
 export set_trading_hubs!
 export set_transition_time!
 export set_travel_time!
@@ -1570,8 +1596,6 @@ export set_x!
 export set_x_12!
 export set_x_23!
 export set_x_31!
-export set_α!
-export set_β!
 export set_γ_d1!
 export set_γ_d2!
 export set_γ_q1!
@@ -1579,15 +1603,3 @@ export set_γ_q2!
 export set_γ_qd!
 export set_γd!
 export set_γq!
-export set_θ_p!
-export set_θp!
-export set_θp_rad!
-export set_τ_limits!
-export set_τ_ref!
-export set_ψ!
-export set_ω_lp!
-export set_ω_ref!
-export set_ωad!
-export set_ωf!
-export set_ωz!
-export set_ϕ_I!

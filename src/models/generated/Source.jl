@@ -20,6 +20,7 @@ This file is auto-generated. Do not edit.
         base_power::Float64
         base_voltage::Union{Nothing, Float64}
         operation_cost::OperationalCost
+        remote_regulated_bus::Union{Nothing, ACBus}
         dynamic_injector::Union{Nothing, DynamicInjection}
         services::Vector{Service}
         ext::Dict{String, Any}
@@ -45,6 +46,7 @@ Commonly used in dynamics simulations to represent a very large machine on a sin
 - `base_power::Float64`: (default: `100.0`) Base Power in MVA
 - `base_voltage::Union{Nothing, Float64}`: (default: `nothing`) the base voltage in kV, validation range: `(0, nothing)`
 - `operation_cost::OperationalCost`: (default: `ImportExportCost(nothing)`) [`ImportExportCost`](@ref) of the source.
+- `remote_regulated_bus::Union{Nothing, ACBus}`: (default: `nothing`) Bus whose voltage this device regulates, to the `voltage_setpoint` of that bus. `nothing` regulates the bus of this device. The bus must not be the same as `bus`.
 - `dynamic_injector::Union{Nothing, DynamicInjection}`: (default: `nothing`) corresponding dynamic injection device
 - `services::Vector{Service}`: (default: `Device[]`) Services that this device contributes to
 - `ext::Dict{String, Any}`: (default: `Dict{String, Any}()`) An [*ext*ra dictionary](@ref additional_fields) for users to add metadata that are not used in simulation.
@@ -80,6 +82,8 @@ mutable struct Source <: StaticInjection
     base_voltage::Union{Nothing, Float64}
     "[`ImportExportCost`](@ref) of the source."
     operation_cost::OperationalCost
+    "Bus whose voltage this device regulates, to the `voltage_setpoint` of that bus. `nothing` regulates the bus of this device. The bus must not be the same as `bus`."
+    remote_regulated_bus::Union{Nothing, ACBus}
     "corresponding dynamic injection device"
     dynamic_injector::Union{Nothing, DynamicInjection}
     "Services that this device contributes to"
@@ -90,12 +94,12 @@ mutable struct Source <: StaticInjection
     internal::InfrastructureSystemsInternal
 end
 
-function Source(name, available, bus, active_power=0.0, reactive_power=0.0, active_power_limits=(min=0.0, max=0.0), reactive_power_limits=(min=0.0, max=0.0), R_th=0.0, X_th=0.0, internal_voltage=1.0, internal_angle=0.0, base_power=100.0, base_voltage=nothing, operation_cost=ImportExportCost(nothing), dynamic_injector=nothing, services=Device[], ext=Dict{String, Any}(), )
-    Source(name, available, bus, active_power, reactive_power, active_power_limits, reactive_power_limits, R_th, X_th, internal_voltage, internal_angle, base_power, base_voltage, operation_cost, dynamic_injector, services, ext, InfrastructureSystemsInternal(), )
+function Source(name, available, bus, active_power=0.0, reactive_power=0.0, active_power_limits=(min=0.0, max=0.0), reactive_power_limits=(min=0.0, max=0.0), R_th=0.0, X_th=0.0, internal_voltage=1.0, internal_angle=0.0, base_power=100.0, base_voltage=nothing, operation_cost=ImportExportCost(nothing), remote_regulated_bus=nothing, dynamic_injector=nothing, services=Device[], ext=Dict{String, Any}(), )
+    Source(name, available, bus, active_power, reactive_power, active_power_limits, reactive_power_limits, R_th, X_th, internal_voltage, internal_angle, base_power, base_voltage, operation_cost, remote_regulated_bus, dynamic_injector, services, ext, InfrastructureSystemsInternal(), )
 end
 
-function Source(; name, available, bus, active_power=0.0, reactive_power=0.0, active_power_limits=(min=0.0, max=0.0), reactive_power_limits=(min=0.0, max=0.0), R_th=0.0, X_th=0.0, internal_voltage=1.0, internal_angle=0.0, base_power=100.0, base_voltage=nothing, operation_cost=ImportExportCost(nothing), dynamic_injector=nothing, services=Device[], ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Unitful.Units, )
-    value = Source(name, available, bus, _placeholder(active_power), _placeholder(reactive_power), _placeholder(active_power_limits), _placeholder(reactive_power_limits), R_th, X_th, _placeholder(internal_voltage), internal_angle, base_power, base_voltage, operation_cost, dynamic_injector, services, ext, internal, )
+function Source(; name, available, bus, active_power=0.0, reactive_power=0.0, active_power_limits=(min=0.0, max=0.0), reactive_power_limits=(min=0.0, max=0.0), R_th=0.0, X_th=0.0, internal_voltage=1.0, internal_angle=0.0, base_power=100.0, base_voltage=nothing, operation_cost=ImportExportCost(nothing), remote_regulated_bus=nothing, dynamic_injector=nothing, services=Device[], ext=Dict{String, Any}(), internal=InfrastructureSystemsInternal(), input_basis::Unitful.Units, )
+    value = Source(name, available, bus, _placeholder(active_power), _placeholder(reactive_power), _placeholder(active_power_limits), _placeholder(reactive_power_limits), R_th, X_th, _placeholder(internal_voltage), internal_angle, base_power, base_voltage, operation_cost, remote_regulated_bus, dynamic_injector, services, ext, internal, )
     set_active_power!(value, _tag(active_power, input_basis, Val(:mw)))
     set_reactive_power!(value, _tag(reactive_power, input_basis, Val(:mvar)))
     set_active_power_limits!(value, _tag(active_power_limits, input_basis, Val(:mw)))
@@ -122,6 +126,7 @@ function Source(::Nothing)
         base_power=0,
         base_voltage=nothing,
         operation_cost=ImportExportCost(nothing),
+        remote_regulated_bus=nothing,
         dynamic_injector=nothing,
         services=Device[],
         ext=Dict{String, Any}(),
@@ -187,6 +192,8 @@ _get_base_power(value::Source) = value.base_power
 get_base_voltage(value::Source) = value.base_voltage
 """Get [`Source`](@ref) `operation_cost`."""
 get_operation_cost(value::Source) = value.operation_cost
+"""Get [`Source`](@ref) `remote_regulated_bus`."""
+get_remote_regulated_bus(value::Source) = value.remote_regulated_bus
 """Get [`Source`](@ref) `dynamic_injector`."""
 get_dynamic_injector(value::Source) = value.dynamic_injector
 """Get [`Source`](@ref) `services`."""
@@ -225,6 +232,8 @@ set_internal_voltage!(value::Source, val::_UntaggedNumber) = _units_tag_required
 set_internal_angle!(value::Source, val) = value.internal_angle = val
 """Set [`Source`](@ref) `operation_cost`."""
 set_operation_cost!(value::Source, val) = value.operation_cost = val
+"""Set [`Source`](@ref) `remote_regulated_bus`."""
+set_remote_regulated_bus!(value::Source, val) = value.remote_regulated_bus = val
 """Set [`Source`](@ref) `services`."""
 set_services!(value::Source, val) = value.services = val
 """Set [`Source`](@ref) `ext`."""

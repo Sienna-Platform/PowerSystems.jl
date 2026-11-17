@@ -706,7 +706,8 @@ end
         "max_active_power",
         TimeArray(collect(DateTime("2024-01-01"):Hour(1):DateTime("2024-01-01T02:00")),
             [0.5, 0.6, 0.7]);
-        unit_system = CU,
+        quantity_kind = "active_power",
+        per_unit_of = "base_power",
     )
     add_time_series!(sys, gen, ts)
     @test_throws ArgumentError rebase_component!(gen, 500.0)
@@ -721,7 +722,7 @@ end
 
     # So can a converter whose loss curve is stated in component base.
     ic = InterconnectingConverter(nothing)
-    set_loss_function!(ic, LossCurve(LinearCurve(0.01), CU))
+    set_loss_function!(ic, LossCurve(LinearCurve(0.01), CU, u"kA"))
     @test_throws ArgumentError rebase_component!(ic, 50.0)
 
     # A base shared with the system can't be moved at all.

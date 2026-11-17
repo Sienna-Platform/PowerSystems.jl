@@ -14,6 +14,7 @@ const _ENCODE_AS_ID = (
     Vector{Device},
     Vector{ACBus},
     Vector{TradingHub},
+    Vector{ElectricLoad},
 )
 
 should_encode_as_id(val) = any(x -> val isa x, _ENCODE_AS_ID)

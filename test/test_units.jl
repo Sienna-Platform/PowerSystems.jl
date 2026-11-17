@@ -749,3 +749,174 @@ end
     @test get_magnitude(bus, u"CU") ≈ 0.5  # relative reads never need the base
     @test_throws ErrorException get_magnitude(bus, u"NU")
 end
+
+@testset "cost categories: currency and derived curve coefficients" begin
+    # USD is its own base dimension, so it is dimensionally incomparable to power.
+    @test Unitful.dimension(u"USD") != Unitful.dimension(u"MW")
+    @test PSY.natural_unit(PSY.COST_PER_TIME) == u"USD" / u"hr"
+
+    _, gen = _sys_with_thermal(; component_base = 50.0)
+
+    # A cost rate per-unitizes nothing, so its base is 1.0 whatever the component is.
+    @test PSY.base_value(gen, PSY.COST_PER_TIME) == 1.0
+
+    # For `y = sum a_n x^n` the coefficient category is `Y / X^n`: derived by composition,
+    # never declared. Bases are 1, 1/S, 1/S^2 against the component base of 50 MVA.
+    for (n, unit, base) in (
+        (0, u"USD" / u"hr", 1.0),
+        (1, u"USD" / u"hr" / u"MW", 1 / 50.0),
+        (2, u"USD" / u"hr" / u"MW"^2, 1 / 50.0^2),
+    )
+        coeff = PSY.COST_PER_TIME / PSY.ACTIVE_POWER^Val(n)
+        @test PSY.natural_unit(coeff) == unit
+        @test PSY.base_value(gen, coeff) ≈ base
+    end
+
+    # A loss curve's y-axis is power, so its slope is dimensionless and base-invariant.
+    @test PSY.base_value(gen, PSY.ACTIVE_POWER / PSY.ACTIVE_POWER^Val(1)) == 1.0
+
+    @test PSY.string_to_unit(PSY.unit_to_string(u"USD" / u"hr")) == u"USD" / u"hr"
+end
+
+@testset "component-aware curve rebasing" begin
+    sys, gen = _sys_with_thermal(; system_base = 100.0, component_base = 50.0)
+
+    # y = 10x + 100, x in MW: 100 USD/h at zero output, 10 USD/MWh marginal.
+    curve = CostCurve(LinearCurve(10.0, 100.0), NU)
+    set_variable_operation_cost!(get_operation_cost(gen), curve)
+
+    # NU -> CU: x_cu = x_mw / 50, so the slope picks up the base and the intercept
+    # does not (an absolute USD/h quantity is untouched by a change of power base).
+    cu = get_variable_operation_cost(gen, u"CU")
+    @test get_power_units(cu) == CU
+    fd = get_function_data(get_value_curve(cu))
+    @test get_proportional_term(fd) ≈ 10.0 * 50.0
+    @test get_constant_term(fd) ≈ 100.0
+
+    # The same cost at the same physical output, whichever basis it is read in.
+    nu_fd = get_function_data(get_value_curve(get_variable_operation_cost(gen, u"NU")))
+    @test get_proportional_term(nu_fd) ≈ 10.0
+
+    # CU -> SU rides the base-power ratio only.
+    su = get_variable_operation_cost(gen, u"SU")
+    su_fd = get_function_data(get_value_curve(su))
+    @test get_power_units(su) == SU
+    @test get_proportional_term(su_fd) ≈ 10.0 * 100.0
+
+    # Reading does not mutate the stored curve.
+    @test get_power_units(get_variable_operation_cost(get_operation_cost(gen))) == NU
+
+    # A LossCurve's y-axis is power, so it picks up the y-scaling too: a dimensionless
+    # slope is base-invariant while the absolute intercept rebases.
+    loss = LossCurve(LinearCurve(0.05, 2.0), NU)
+    loss_fd = get_function_data(
+        get_value_curve(convert_power_units(gen, loss, u"CU")),
+    )
+    @test get_proportional_term(loss_fd) ≈ 0.05
+    @test get_constant_term(loss_fd) ≈ 2.0 / 50.0
+end
+
+@testset "curve rebasing reaches every curve-bearing field" begin
+    # Storage: two curves on one operation_cost, reached through the component.
+    store = EnergyReservoirStorage(nothing)
+    rebase_component!(store, 50.0)
+    cost = get_operation_cost(store)
+    set_charge_variable_cost!(cost, CostCurve(LinearCurve(4.0, 40.0), NU))
+    set_discharge_variable_cost!(cost, CostCurve(LinearCurve(6.0, 60.0), NU))
+
+    charge = get_function_data(get_value_curve(get_charge_variable_cost(store, u"CU")))
+    @test get_proportional_term(charge) ≈ 4.0 * 50.0
+    @test get_constant_term(charge) ≈ 40.0
+    discharge =
+        get_function_data(get_value_curve(get_discharge_variable_cost(store, u"CU")))
+    @test get_proportional_term(discharge) ≈ 6.0 * 50.0
+
+    # Loss curve on the component itself, not under an operation_cost. Its y-axis is
+    # power, so the slope is base-invariant and the intercept rebases.
+    line = TwoTerminalGenericHVDCLine(nothing)
+    set_loss!(line, LossCurve(LinearCurve(0.02, 3.0), NU))
+    loss = get_function_data(get_value_curve(get_loss(line, u"CU")))
+    @test get_proportional_term(loss) ≈ 0.02
+    @test get_constant_term(loss) ≈ 3.0 / get_base_power(line, u"NU")
+
+    # A converter's loss is a function of DC current, whose base is the converter's base
+    # power over its DC bus's base voltage: 200 MVA / 10 kV = 20 kA.
+    conv = InterconnectingConverter(nothing)
+    rebase_component!(conv, 200.0)
+    dc_bus = DCBus(nothing)
+    set_base_voltage!(dc_bus, 10.0)
+    set_dc_bus!(conv, dc_bus)
+    set_loss_function!(conv, LossCurve(LinearCurve(0.02, 3.0), NU, u"kA"))
+    loss = get_function_data(get_value_curve(get_loss_function(conv, u"CU")))
+    @test get_proportional_term(loss) ≈ 0.02 * 20.0 / 200.0
+    @test get_constant_term(loss) ≈ 3.0 / 200.0
+    # CU <-> SU needs no base voltage, since it cancels, so an unset one is fine there.
+    sys, gen = _sys_with_thermal(; system_base = 100.0, component_base = 50.0)
+    bare_dc_bus = DCBus(nothing)
+    set_number!(bare_dc_bus, 2)
+    set_name!(bare_dc_bus, "dc")
+    add_component!(sys, bare_dc_bus)
+    attached = InterconnectingConverter(nothing)
+    set_name!(attached, "ic")
+    set_bus!(attached, get_bus(gen))
+    set_dc_bus!(attached, bare_dc_bus)
+    set_dc_voltage_setpoint!(attached, 1.0)
+    set_power_factor_setpoint!(attached, 1.0)
+    rebase_component!(attached, 200.0)
+    add_component!(sys, attached)
+    @test isnothing(get_base_voltage(bare_dc_bus))
+    set_loss_function!(attached, LossCurve(LinearCurve(0.02, 3.0), CU, u"kA"))
+    su = get_function_data(get_value_curve(get_loss_function(attached, u"SU")))
+    # x_cu = 2 x_su on both axes (200 MVA over 100 MVA): slope unchanged, intercept doubled
+    @test get_proportional_term(su) ≈ 0.02
+    @test get_constant_term(su) ≈ 6.0
+    su_curve = convert_power_units(attached, get_loss_function(attached), u"SU")
+    back =
+        get_function_data(get_value_curve(convert_power_units(attached, su_curve, u"CU")))
+    @test get_proportional_term(back) ≈ 0.02
+    @test get_constant_term(back) ≈ 3.0
+    # ...but NU needs it
+    @test_throws ErrorException get_loss_function(attached, u"NU")
+
+    # Units the data format doesn't carry are refused rather than read as base-free,
+    # even when no conversion would be needed.
+    set_loss!(line, LossCurve(LinearCurve(0.02, 3.0), NU, u"A"))
+    @test_throws ArgumentError get_loss(line, u"CU")
+    @test_throws ArgumentError get_loss(line, u"NU")
+    # Fuel in `u"MW*hr"` simplifies to MW per hour; it must not be rebased as power.
+    op = get_operation_cost(gen)
+    set_variable_operation_cost!(op, FuelCurve(LinearCurve(7.0), NU, u"MW*hr", 2.0))
+    @test_throws ArgumentError get_variable_operation_cost(gen, u"CU")
+    for fuel in (u"MMBtu", u"GJ")
+        set_variable_operation_cost!(op, FuelCurve(LinearCurve(7.0, 1.0), NU, fuel, 2.0))
+        fd = get_function_data(get_value_curve(get_variable_operation_cost(gen, u"CU")))
+        @test get_proportional_term(fd) ≈ 7.0 * 50.0
+        @test get_constant_term(fd) ≈ 1.0
+    end
+
+    # A power-axis curve can't be stored there
+    @test_throws MethodError set_loss_function!(conv, LossCurve(LinearCurve(0.02), NU))
+    # VSC losses are current-driven too, but the line has no DC base voltage yet
+    @test !hasmethod(get_converter_loss_from, Tuple{TwoTerminalVSCLine, Unitful.Units})
+
+    # Renewable curtailment_cost, the second curve on its cost struct.
+    ren = RenewableDispatch(nothing)
+    rebase_component!(ren, 25.0)
+    set_curtailment_cost!(get_operation_cost(ren), CostCurve(LinearCurve(8.0, 0.0), NU))
+    curt = get_function_data(get_value_curve(get_curtailment_cost(ren, u"CU")))
+    @test get_proportional_term(curt) ≈ 8.0 * 25.0
+end
+
+@testset "curve rebasing to its own basis is the identity" begin
+    gen = RenewableDispatch(nothing)
+    rebase_component!(gen, 25.0)
+    curve = CostCurve(LinearCurve(8.0, 1.0), NU)
+    set_variable_operation_cost!(get_operation_cost(gen), curve)
+    # Returned as-is, not reconstructed: a time-series-backed curve cannot be scaled at
+    # all, so the identity case must not reach `scale_x`.
+    @test get_variable_operation_cost(gen, u"NU") === curve
+    # `u"MW"` is what `u"NU"` resolves to; anything else is not a basis a curve carries.
+    @test get_variable_operation_cost(gen, u"MW") === curve
+    @test_throws ArgumentError get_variable_operation_cost(gen, u"kW")
+    @test_throws ArgumentError get_variable_operation_cost(gen, u"CU/hr")
+end

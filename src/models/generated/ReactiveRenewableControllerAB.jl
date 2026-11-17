@@ -10,10 +10,10 @@ This file is auto-generated. Do not edit.
         from_branch_control::Int
         to_branch_control::Int
         branch_id_control::String
-        VC_Flag::Int
-        Ref_Flag::Int
-        PF_Flag::Int
-        V_Flag::Int
+        VC_Flag::Bool
+        Ref_Flag::Bool
+        PF_Flag::Bool
+        V_Flag::Bool
         T_fltr::Float64
         K_p::Float64
         K_i::Float64
@@ -45,10 +45,10 @@ Parameters of Reactive Power Controller including REPCA1 and REECB1
 - `from_branch_control::Int`: Monitored branch FROM bus identification number for line drop compensation (if 0 generator power will be used), validation range: `(0, nothing)`
 - `to_branch_control::Int`: Monitored branch TO bus identification number for line drop compensation (if 0 generator power will be used), validation range: `(0, nothing)`
 - `branch_id_control::String`: Branch circuit id for line drop compensation (as a string). If 0 generator power will be used
-- `VC_Flag::Int`: Voltage Compensator Flag for REPCA1, validation range: `(0, 1)`
-- `Ref_Flag::Int`: Flag for Reactive Power Control for REPCA1. 0: Q-control, 1: V-control, validation range: `(0, 1)`
-- `PF_Flag::Int`: Flag for Power Factor Control for Outer Control of REECB1. 0: Q-control, 1: Power Factor Control, validation range: `(0, 1)`
-- `V_Flag::Int`: Flag for Voltage Control for Outer Control of REECB1. 0: Voltage Control, 1: Q-Control, validation range: `(0, 1)`
+- `VC_Flag::Bool`: Voltage Compensator Flag for REPCA1
+- `Ref_Flag::Bool`: Flag for Reactive Power Control for REPCA1. `false`: Q-control, `true`: V-control
+- `PF_Flag::Bool`: Flag for Power Factor Control for Outer Control of REECB1. `false`: Q-control, `true`: Power Factor Control
+- `V_Flag::Bool`: Flag for Voltage Control for Outer Control of REECB1. `false`: Voltage Control, `true`: Q-Control
 - `T_fltr::Float64`: Voltage or Q-power of REPCA Filter Time Constant, validation range: `(0, nothing)`
 - `K_p::Float64`: Reactive power PI control proportional gain, validation range: `(0, nothing)`
 - `K_i::Float64`: Reactive power PI control integral gain, validation range: `(0, nothing)`
@@ -82,13 +82,13 @@ mutable struct ReactiveRenewableControllerAB <: ReactivePowerControl
     "Branch circuit id for line drop compensation (as a string). If 0 generator power will be used"
     branch_id_control::String
     "Voltage Compensator Flag for REPCA1"
-    VC_Flag::Int
-    "Flag for Reactive Power Control for REPCA1. 0: Q-control, 1: V-control"
-    Ref_Flag::Int
-    "Flag for Power Factor Control for Outer Control of REECB1. 0: Q-control, 1: Power Factor Control"
-    PF_Flag::Int
-    "Flag for Voltage Control for Outer Control of REECB1. 0: Voltage Control, 1: Q-Control"
-    V_Flag::Int
+    VC_Flag::Bool
+    "Flag for Reactive Power Control for REPCA1. `false`: Q-control, `true`: V-control"
+    Ref_Flag::Bool
+    "Flag for Power Factor Control for Outer Control of REECB1. `false`: Q-control, `true`: Power Factor Control"
+    PF_Flag::Bool
+    "Flag for Voltage Control for Outer Control of REECB1. `false`: Voltage Control, `true`: Q-Control"
+    V_Flag::Bool
     "Voltage or Q-power of REPCA Filter Time Constant"
     T_fltr::Float64
     "Reactive power PI control proportional gain"
@@ -150,10 +150,10 @@ function ReactiveRenewableControllerAB(::Nothing)
         from_branch_control=0,
         to_branch_control=0,
         branch_id_control="0",
-        VC_Flag=0,
-        Ref_Flag=0,
-        PF_Flag=0,
-        V_Flag=0,
+        VC_Flag=false,
+        Ref_Flag=false,
+        PF_Flag=false,
+        V_Flag=false,
         T_fltr=0,
         K_p=0,
         K_i=0,
@@ -294,3 +294,70 @@ set_Q_ref!(value::ReactiveRenewableControllerAB, val) = value.Q_ref = val
 set_V_ref!(value::ReactiveRenewableControllerAB, val) = value.V_ref = val
 """Set [`ReactiveRenewableControllerAB`](@ref) `ext`."""
 set_ext!(value::ReactiveRenewableControllerAB, val) = value.ext = val
+
+
+
+function from_openapi(po::PD.ReactiveRenewableControllerAB, refs::OpenAPIRefs)
+    return ReactiveRenewableControllerAB(;
+        bus_control = _wire_required(po.bus_control, "ReactiveRenewableControllerAB", "bus_control"),
+        from_branch_control = _wire_required(po.from_branch_control, "ReactiveRenewableControllerAB", "from_branch_control"),
+        to_branch_control = _wire_required(po.to_branch_control, "ReactiveRenewableControllerAB", "to_branch_control"),
+        branch_id_control = _wire_required(po.branch_id_control, "ReactiveRenewableControllerAB", "branch_id_control"),
+        VC_Flag = _wire_required(po.vc_flag, "ReactiveRenewableControllerAB", "VC_Flag"),
+        Ref_Flag = _wire_required(po.ref_flag, "ReactiveRenewableControllerAB", "Ref_Flag"),
+        PF_Flag = _wire_required(po.pf_flag, "ReactiveRenewableControllerAB", "PF_Flag"),
+        V_Flag = _wire_required(po.v_flag, "ReactiveRenewableControllerAB", "V_Flag"),
+        T_fltr = _wire_required(po.t_fltr, "ReactiveRenewableControllerAB", "T_fltr"),
+        K_p = _wire_required(po.k_p, "ReactiveRenewableControllerAB", "K_p"),
+        K_i = _wire_required(po.k_i, "ReactiveRenewableControllerAB", "K_i"),
+        T_ft = _wire_required(po.t_ft, "ReactiveRenewableControllerAB", "T_ft"),
+        T_fv = _wire_required(po.t_fv, "ReactiveRenewableControllerAB", "T_fv"),
+        V_frz = _wire_required(po.v_frz, "ReactiveRenewableControllerAB", "V_frz"),
+        R_c = _wire_required(po.r_c, "ReactiveRenewableControllerAB", "R_c"),
+        X_c = _wire_required(po.x_c, "ReactiveRenewableControllerAB", "X_c"),
+        K_c = _wire_required(po.k_c, "ReactiveRenewableControllerAB", "K_c"),
+        e_lim = _or_default(po.e_lim, nothing),
+        dbd_pnts = _wire_to_psy(Tuple{Float64, Float64}, po.dbd_pnts),
+        Q_lim = _or_default(po.q_lim, nothing),
+        T_p = _wire_required(po.t_p, "ReactiveRenewableControllerAB", "T_p"),
+        Q_lim_inner = _or_default(po.q_lim_inner, nothing),
+        V_lim = _or_default(po.v_lim, nothing),
+        K_qp = _wire_required(po.k_qp, "ReactiveRenewableControllerAB", "K_qp"),
+        K_qi = _wire_required(po.k_qi, "ReactiveRenewableControllerAB", "K_qi"),
+        Q_ref = _or_default(po.q_ref, 1.0),
+        V_ref = _or_default(po.v_ref, 1.0),
+    )
+end
+
+function to_openapi(value::ReactiveRenewableControllerAB, refs::OpenAPIRefs)
+    return PD.ReactiveRenewableControllerAB(;
+        id = component_id(refs, value),
+        bus_control = get_bus_control(value),
+        from_branch_control = get_from_branch_control(value),
+        to_branch_control = get_to_branch_control(value),
+        branch_id_control = get_branch_id_control(value),
+        vc_flag = get_VC_Flag(value),
+        ref_flag = get_Ref_Flag(value),
+        pf_flag = get_PF_Flag(value),
+        v_flag = get_V_Flag(value),
+        t_fltr = get_T_fltr(value),
+        k_p = get_K_p(value),
+        k_i = get_K_i(value),
+        t_ft = get_T_ft(value),
+        t_fv = get_T_fv(value),
+        v_frz = get_V_frz(value),
+        r_c = get_R_c(value),
+        x_c = get_X_c(value),
+        k_c = get_K_c(value),
+        e_lim = _minmax_po(get_e_lim(value)),
+        dbd_pnts = _psy_to_wire(PC.DbdPnts, get_dbd_pnts(value)),
+        q_lim = _minmax_po(get_Q_lim(value)),
+        t_p = get_T_p(value),
+        q_lim_inner = _minmax_po(get_Q_lim_inner(value)),
+        v_lim = _minmax_po(get_V_lim(value)),
+        k_qp = get_K_qp(value),
+        k_qi = get_K_qi(value),
+        q_ref = get_Q_ref(value),
+        v_ref = get_V_ref(value),
+    )
+end
