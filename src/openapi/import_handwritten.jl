@@ -1680,7 +1680,7 @@ function from_openapi(po::PO.HybridSystem, refs::OpenAPIRefs, ::ComponentBaseUni
         renewable_unit = resolve_ref(refs, po.renewable_unit, RenewableGen),
         interconnection_impedance =
         _or_default(po.interconnection_impedance, Complex(0.0, 0.0)),
-        interconnection_rating = po.interconnection_rating,
+        interconnection_rating = _or_default(po.interconnection_rating, nothing),
         input_active_power_limits = _or_default(po.input_active_power_limits, nothing),
         output_active_power_limits = _or_default(po.output_active_power_limits, nothing),
         reactive_power_limits = _or_default(po.reactive_power_limits, nothing),

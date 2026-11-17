@@ -1997,3 +1997,30 @@ end
     @test get_constant_active_power(device, u"CU") == 50.0
     @test get_max_current_active_power(device, u"CU") == 35.0
 end
+
+@testset "OpenAPI converters: HybridSystem with an omitted interconnection_rating" begin
+    # The schema allows null ("Set to `null` if not applicable"), and a document that omits
+    # the field decodes it as `Absent`: both must read back as `nothing`.
+    bus = ACBus(nothing)
+    thermal = ThermalStandard(nothing)
+    load = PowerLoad(nothing)
+    storage = EnergyReservoirStorage(nothing)
+    renewable = RenewableDispatch(nothing)
+    hybrid = HybridSystem(;
+        name = "h1", available = true, status = OperationalStates.ONLINE, bus = bus,
+        active_power = 1.0, reactive_power = 1.0, thermal_unit = thermal,
+        electric_load = load, storage = storage, renewable_unit = renewable,
+        base_power = 100.0, operation_cost = MarketBidCost(nothing), input_basis = u"CU",
+    )
+    refs = PSY.OpenAPIRefs(100.0)
+    for (id, component) in enumerate((bus, thermal, load, storage, renewable, hybrid))
+        refs[id] = component
+    end
+    hybrid_po = PSY.to_openapi(hybrid, refs, CU)
+    omitted = _po_with(hybrid_po; interconnection_rating = PSY.IC.ABSENT)
+    for val in (CU, NU)
+        @test isnothing(
+            get_interconnection_rating(PSY.from_openapi(omitted, refs, val), u"CU"),
+        )
+    end
+end
