@@ -212,16 +212,22 @@ _ts_conversion_factor(c, cat::UnitCategory, from, to) =
     ustrip(convert_units(c, 1.0 * from, cat, to))
 # A battery's energy is per unit of its capacity instead. A reservoir has no `base_power`, so
 # its power flows (an energy reservoir's) also go through natural units.
-_ts_conversion_factor(c, ::Unitful.Units, from, to) =
-    _capacity_conversion_factor(c, from, to)
-_ts_conversion_factor(c::HydroReservoir, ::UnitCategory, from, to) =
-    _capacity_conversion_factor(c, from, to)
+_ts_conversion_factor(c, kind::Unitful.Units, from, to) =
+    _capacity_conversion_factor(c, kind, from, to)
+_ts_conversion_factor(c::HydroReservoir, kind::UnitCategory, from, to) =
+    _capacity_conversion_factor(c, kind, from, to)
 
 # Both sides go through natural units: CU is that much of the capacity, and SU
 # (SU*hr for energy) that much of the system base in MW. Water quantities have no SU, so
-# reading one in SU fails on its dimension.
-_capacity_conversion_factor(c, from, to) =
-    Unitful.uconvert(Unitful.NoUnits, _in_natural_units(c, from) / _in_natural_units(c, to))
+# reading one in SU fails on its dimension. A generic `u"NU"` target is resolved to the
+# quantity's natural unit first, as `convert_units` does on the other path.
+function _capacity_conversion_factor(c, kind, from, to)
+    to = IS.resolve_per_unit(to, u"CU", u"SU", _ts_natural_unit(kind))
+    return Unitful.uconvert(
+        Unitful.NoUnits,
+        _in_natural_units(c, from) / _in_natural_units(c, to),
+    )
+end
 
 function _in_natural_units(c, u)
     _is_per_unit(u) && return _cu_capacity(c) * (1.0 * u / u"CU")
