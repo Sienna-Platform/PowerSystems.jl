@@ -129,8 +129,10 @@ end
     @test get_fuel_cost(fc) == 3.5
     @test get_vom_cost(fc) == LinearCurve(0.0)
 
-    # PSY records no fuel unit: a document in another unit is refused, not reinterpreted.
-    @test_throws ArgumentError PSY.convert_cost(
+    @test get_fuel_units(fc) == PSY.MMBtu
+
+    # Every FuelUnit the schema allows round-trips.
+    fc_gj = PSY.convert_cost(
         PSY.PC.FuelCurve(;
             fuel_units = PSY.PC.FuelUnit("GJ"),
             power_units = PSY.IC.UnitSystem("NATURAL_UNITS"),
@@ -138,6 +140,14 @@ end
             fuel_cost = 3.5,
             vom_cost = _po_linear_io(0.0, 0.0),
         ),
+    )
+    @test get_fuel_units(fc_gj) == u"GJ"
+    @test PSY.convert_cost_to_openapi(fc_gj).fuel_units.value == "GJ"
+    @test PSY.convert_cost_to_openapi(fc).fuel_units.value == "MMBTU"
+
+    # A unit IS accepts but the schema's enum can't express is refused on export.
+    @test_throws ArgumentError PSY.convert_cost_to_openapi(
+        FuelCurve(; value_curve = LinearCurve(1.0), fuel_units = u"L", fuel_cost = 3.5),
     )
 end
 
