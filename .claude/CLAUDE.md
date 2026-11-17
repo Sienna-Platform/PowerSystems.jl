@@ -1,10 +1,15 @@
 # PowerSystems.jl (PSY) — psy6 branch
 
-The Sienna power-system **data model**: the `System` container plus the generated component types (buses, branches, generators, storage, loads, services, dynamic models), operational cost structures, time series, and the **explicit-units engine**. Layer 1 of the psy6 stack, built on InfrastructureSystems (IS4 branch). Platform-wide conventions: the `sienna-psy6` skill. Workspace architecture: the psy6 workspace root `CLAUDE.md`.
+The Sienna power-system **data model**: the `System` container plus the generated component types (buses, branches, generators, storage, loads, services, dynamic models), operational cost structures, time series, and the **explicit-units engine**. Layer 1 of the psy6 stack, built on InfrastructureSystems (IS4 branch).
 
-**This branch has NO parsers.** `src/parsers/` was removed in the psy6 line; all Matpower/PSSE/table parsing lives in PowerFlowFileParser.jl (and PSB's parser wrappers). Do not re-add parsing here.
+The shared Sienna rules load from the import below; the `sienna-dev` skill holds the cross-package
+context; the `sienna-dev` and `sienna-reviewer` subagents implement and review.
 
-**There is also NO native JSON serializer.** `to_file`/`from_file` are the only way a `System` reaches or leaves disk — see "System file I/O" below before touching anything serialization-shaped.
+@Sienna.md
+
+**This branch has no parsers.** `src/parsers/` was removed in the psy6 line; all Matpower/PSSE/table parsing lives in PowerFlowFileParser.jl (and PSB's parser wrappers). Do not re-add parsing here.
+
+**There is also no native JSON serializer.** `to_file`/`from_file` are the only way a `System` reaches or leaves disk — see "System file I/O" below before touching anything serialization-shaped.
 
 ## System file I/O — `to_file` / `from_file` only
 
@@ -39,8 +44,8 @@ power-bearing blobs — that is per-value wire data, spelled `"COMPONENT_BASE"`/
 
 **The archive container is IS's, the extension is PSY's** — `IS.create_sienna_archive` /
 `extract_sienna_archive` own the zip; PSY only supplies the extension
-(`SYSTEM_ARCHIVE_EXTENSION = ".sns"`, so PowerSystemsInvestmentsPortfolios can reuse the same
-container under `.snp`). Do not add zip or archive dependencies here.
+(`SYSTEM_ARCHIVE_EXTENSION = ".sns"`). Other packages pass their own extension to the same IS
+container. Do not add zip or archive dependencies here.
 
 **What the document forms lose:** subsystem membership, which only `sienna_extras.json` carries —
 `_warn_on_document_data_loss` warns (never errors) from the document forms only. Frequency
@@ -51,8 +56,8 @@ list for them — that would give one truth two writers.
 **Deleted, stays deleted:** `src/data_format_conversions.jl`, `DATA_FORMAT_VERSION`,
 `_post_deserialize_handling`, `from_dict(::Type{System}, …)`, `deserialize_components!`,
 `test/test_serialization.jl`, the `format` keyword, and `_resolve_export_power_units`.
-`System(::AbstractString)` throws and names its replacement; `to_json`/`from_json` are no longer
-exported for `System` at all. Do not restore any of them, and do not add a shim.
+`System(::AbstractString)` throws and names its replacement; `to_json`/`from_json` are not
+exported for `System`. Do not restore any of them, and do not add a shim.
 
 Migration between lines belongs to **PowerSystemsUpdater.jl**, not here. There is no migration
 path from pre-cutover files — regenerate them.
@@ -65,9 +70,9 @@ also rewrite `Project.toml`, stripping comments and sometimes `[sources]` itself
 
 PNM, PF, POM, and PSB all consume PSY; SiennaSchemas mirrors PSY component fields (JSON schemas), so field renames/retypes create schema drift the sync tooling must catch. After a PSY change:
 
-1. run the downstream gate in the workspace root `CLAUDE.md` ("Blast radius and the test gate"). No workspace env exists; a downstream env uses this checkout only when its `[sources]` pin points here.
+1. run the downstream suites in the blast-radius order of `.claude/Sienna.md`. No workspace env exists; a downstream env uses this checkout only when its `[sources]` pin points here.
 2. **clear PSB's `data/serialized_system/` cache** — it has no version-aware invalidation, and stale cached systems produce confusing deserialization failures downstream.
-3. if the change touched a component field also present in SiennaSchemas, flag the schema counterpart (example of real drift: `head_to_volume_factor` moved to `FunctionData` in PSY commit `ed30a682` while `SiennaSchemas/Operations/StaticInjection/HydroReservoir.json` still `$ref`s `ValueCurve`).
+3. if the change touched a component field also present in SiennaSchemas, flag the schema counterpart. Run `validate_units.py` in SiennaSchemas to detect drift.
 
 ## Source layout — the non-obvious parts
 
@@ -109,9 +114,9 @@ The canonical example of psy6 cross-repo propagation — a PSY field change touc
 4. **PSB**: clear `data/serialized_system/` (cached fixtures embed the old shape); check whether any builder in `src/library/` sets the field.
 5. **SiennaSchemas**: mirror the field in the matching `Operations/...json` with an `x-unit` annotation; run `validate_units.py`. Skipping this creates the drift the sync check exists to catch.
 6. **GridDB**: if the field maps to a DB column, update `column_conventions.json` and regenerate the sealed registry.
-7. **Downstream**: run the downstream gate in the workspace root `CLAUDE.md`; consumers reading the field must pass an explicit unit.
+7. **Downstream**: run the downstream suites in the blast-radius order of `.claude/Sienna.md`; consumers reading the field must pass an explicit unit.
 
-## Transformer architecture (PR #1714, `d19f3244f`)
+## Transformer architecture
 
 Five concrete transformer types became two, and series data moved onto a nested struct. `Transformer2W`, `TapTransformer`, `PhaseShiftingTransformer` → **`TwoWindingTransformer`**; `Transformer3W`, `PhaseShiftingTransformer3W` → **`ThreeWindingTransformer`**. Both names were previously *abstract supertypes* in `src/models/branches.jl` and are now concrete generated structs — code written against the old hierarchy changes meaning instead of failing.
 
@@ -126,14 +131,14 @@ Five concrete transformer types became two, and series data moved onto a nested 
 
 ## The explicit-units engine (the defining psy6 feature)
 
-- Descriptor fields carry `needs_conversion: true` + `conversion_unit` (`:mva` / `:ohm` / `:siemens`) — **247 fields** across the descriptor. Codegen (IS-side) emits `get_X(comp, units)`, `get_X_unitful(comp, units)`, and `set_X!(comp, tagged_value)`.
+- Descriptor fields carry `needs_conversion: true` + `conversion_unit` (`:mva` / `:ohm` / `:siemens`). Codegen (IS-side) emits `get_X(comp, units)`, `get_X_unitful(comp, units)`, and `set_X!(comp, tagged_value)`.
 - Units are Unitful: `get_rating(br, u"SU")`, `set_rating_b!(line, 0.9u"SU")`, rates `u"SU/minute"`, `input_basis = u"CU"`/`u"NU"`. Bare floats are rejected.
-- Per-unit values carry IS's generic `u"CU"`/`u"SU"` for every category (this branch; the per-base alternative is PR #1817). Kinds on one base add; bases don't mix.
+- Per-unit values carry IS's generic `u"CU"`/`u"SU"` for every category. Kinds on one base add; bases don't mix.
 - `SU`/`CU`/`NU` markers remain only for cost curves' `U` and the `to_file`/OpenAPI `units` mode.
-- **`with_units_base` / `set_units_base_system!` / `get_units_base` are GONE** (verified against `origin/psy6`: all three `isdefined(PowerSystems, …) == false`). The stateful units system was fully removed in the psy6 line — see `7ffbbdf8d` "remove last pieces of stateful units system". Every value is read with an explicit unit argument instead. The `UnitSystem` enum still exists as display metadata, but there is no setter. Downstream code calling any of the three must migrate to explicit unit args, not look for a replacement setter.
+- **`with_units_base`, `set_units_base_system!`, and `get_units_base` do not exist.** The stateful units system is removed. Every value is read with an explicit unit argument. The `UnitSystem` enum still exists as display metadata, but there is no setter. Downstream code calling any of the three must migrate to explicit unit args, not look for a replacement setter.
 - Serialization writes on whichever basis `to_file`'s `units` keyword names (`CU`/`NU`) — see "System file I/O" above for the write/read asymmetry and the `.sns` `CU`-only rule.
 - Cost curves default to `power_units = IS.NaturalUnit()`; `CostCurve{T,U}`/`FuelCurve{T,U}` carry the unit as a type parameter (IS4).
-- Units test filter: `julia --project=test test/runtests.jl test_units` (fast, ~22 s).
+- Units test filter: `julia --project=test test/runtests.jl test_units`.
 
 ### Known audit items (do not silently "fix"; coordinate)
 

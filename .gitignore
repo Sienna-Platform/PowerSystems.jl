@@ -137,3 +137,8 @@ settings.json
 .claude/convertible_fields.txt
 .claude/units_sweep_hits.txt
 .claude/units_sweep_report.md
+
+# Local agent files (never committed)
+.claude/drafts/
+.claude/worktrees/
+.claude/settings.local.json
