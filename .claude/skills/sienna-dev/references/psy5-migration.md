@@ -17,7 +17,7 @@ solver design, PSB cache semantics) — that transfers. The *API and package* fa
 | PSY native JSON serialization | removed; `to_file`/`from_file` write and read the OpenAPI document (directory, `.json`, `.sns`). The OpenAPI ⇄ GridDB bridge is not built |
 | `Transformer2W` / `TapTransformer` / `PhaseShiftingTransformer` | `TwoWindingTransformer` — the name was an abstract supertype in psy5 and is a concrete struct in psy6, so old code changes meaning instead of failing |
 | `Transformer3W` / `PhaseShiftingTransformer3W` | `ThreeWindingTransformer` — same abstract→concrete hazard |
-| "PSI PR #NNNN added X" | check POM `.claude/pom_port_plan.md` before assuming X exists in POM |
+| "PSI PR #NNNN added X" | check POM `.claude/plans/pom_port_plan.md` (local) before assuming X exists in POM |
 
 ## Porting rules
 
