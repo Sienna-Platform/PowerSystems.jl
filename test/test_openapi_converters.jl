@@ -1224,7 +1224,7 @@ end
 @testset "OpenAPI converters: TModelHVDCLine" begin
     # Exception among the branches: no `power_units` discriminator and no `base_power` at
     # all — `active_power_flow`/`operational_flow_limit` are fixed natural units (MW),
-    # same posture as reserves' `requirement`, so import always divides by
+    # so import always divides by
     # `get_base_power(refs)`; `base_current`, not a power base, is `r`/`l`/`c`'s own anchor.
     # Self-interpretability: the physical MW value must survive regardless of which system
     # base the blob is imported into (100.0 here, 250.0 below) — there is no recorded base

@@ -761,8 +761,8 @@ end
 # `Y`'s basis is the per-field `admittance_units` discriminator — same pattern as
 # TwoWindingTransformer.magnetizing_shunt above. A shunt has no device MVA rating of its own,
 # so `ShuntAdmittanceUnitBasis` is `NATURAL_UNITS`/`COMPONENT_MVAR` only. `COMPONENT_MVAR` is
-# MVAr at unity voltage and divides by `refs.base_power` (the System's own computational base),
-# the same anchor reserve requirements use, to land on PSY's system-base pu storage.
+# MVAr at unity voltage and divides by `refs.base_power` (the System's own computational base)
+# to land on PSY's system-base pu storage.
 # `NATURAL_UNITS` (physical siemens, needing the bus's own `Z_base`) is not implemented, same
 # posture as
 # `SHUNT_ADMITTANCE_UNITS_IMPLEMENTED` above.
@@ -1517,8 +1517,7 @@ end
 # The cable exception. This type carries no `base_power` at all — its anchor is
 # `base_current` (kA), recorded as source data only: `r`/`l`/`c` (ohm/H/F) are natural. The MW
 # fields have no `power_units` discriminator either (see the schema): they declare x-unit
-# "MW" outright, fixed natural units, same posture as reserves' `requirement` field (see
-# that header). So they always divide by `get_base_power(refs)` (the System's own
+# "MW" outright, fixed natural units. So they always divide by `get_base_power(refs)` (the System's own
 # computational base — this type has no base of its own for power fields) in both marker
 # methods; both are therefore identical, hence the trivial `CU` delegate below.
 
@@ -1730,8 +1729,8 @@ end
 # as a type parameter, resolved through a literal table (direction is not a codegen case).
 # `requirement`'s schema (`Operations/Service/{OnlineReserve,OfflineReserve,GroupReserve}.json`)
 # declares x-unit "MW" outright — fixed natural units, with no `power_units` discriminator field
-# on these PO structs — so it divides by `get_base_power(refs)` (the System's own computational
-# base; a reserve has no base of its own) in BOTH marker methods. Both methods are therefore
+# on these PO structs — and PSY stores it in MW too, so it passes through in BOTH marker
+# methods. Both methods are therefore
 # identical, so the 2-arg selector below is the trivial `CU` delegate like every other
 # non-power-family type. `variable` (the Operating Reserve Demand Curve) goes through
 # `convert_reserve_variable` (already handles the `nothing` → `ZERO_OFFER_CURVE` default).
@@ -1742,7 +1741,7 @@ function from_openapi(po::PO.OnlineReserve, refs::OpenAPIRefs, ::ComponentBaseUn
         name = po.name,
         available = po.available,
         time_frame = po.time_frame,
-        requirement = po.requirement / get_base_power(refs),
+        requirement = po.requirement,
         variable = convert_reserve_variable(po.variable),
         sustained_time = _or_default(po.sustained_time, 60.0),
         max_output_fraction = _or_default(po.max_output_fraction, 1.0),
@@ -1760,7 +1759,7 @@ function from_openapi(po::PO.OfflineReserve, refs::OpenAPIRefs, ::ComponentBaseU
         name = po.name,
         available = po.available,
         time_frame = po.time_frame,
-        requirement = po.requirement / get_base_power(refs),
+        requirement = po.requirement,
         variable = convert_reserve_variable(po.variable),
         sustained_time = _or_default(po.sustained_time, 60.0),
         max_output_fraction = _or_default(po.max_output_fraction, 1.0),
@@ -1778,7 +1777,7 @@ function from_openapi(po::PO.GroupReserve, refs::OpenAPIRefs, ::ComponentBaseUni
     return GroupReserve{direction}(;
         name = po.name,
         available = po.available,
-        requirement = po.requirement / get_base_power(refs),
+        requirement = po.requirement,
         variable = convert_reserve_variable(po.variable),
     )
 end

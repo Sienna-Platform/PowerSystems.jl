@@ -322,7 +322,7 @@ end
 # `active_power_flow`/`operational_flow_limit` declare x-unit "MW"
 # outright — fixed natural units, no `power_units` discriminator on this PO struct (see the
 # schema and import_handwritten.jl's header on this exact point) — so they multiply by
-# `get_base_power(refs)` in both methods, same posture as reserves' `requirement`. Both
+# `get_base_power(refs)` in both methods. Both
 # methods are therefore identical, hence the trivial `CU` delegate below. `r`/`l`/`c` are
 # stored in ohm/H/F and `base_current` in kA, so all pass through.
 
@@ -1340,8 +1340,8 @@ end
 # ── Reserves: OnlineReserve, OfflineReserve, GroupReserve ───────────────────────
 # `reserve_direction` resolves from the `T` type parameter through a literal table (the
 # reverse of `RESERVE_DIRECTION`; direction is not a codegen case). `requirement`'s schema
-# declares x-unit "MW" outright (see import_handwritten.jl's header on this exact point), so it
-# multiplies by `get_base_power(refs)` in both methods — a reserve has no base of its own.
+# declares x-unit "MW" outright (see import_handwritten.jl's header on this exact point), and
+# PSY stores it in MW, so it passes through in both methods.
 # `variable` (the Operating Reserve Demand Curve) goes through
 # `convert_reserve_variable_to_openapi` (already handles the `ZERO_OFFER_CURVE` → `nothing`
 # default).
@@ -1358,7 +1358,7 @@ function to_openapi(
         name = get_name(reserve),
         available = get_available(reserve),
         time_frame = get_time_frame(reserve),
-        requirement = get_requirement(reserve, u"SU") * get_base_power(refs),
+        requirement = get_requirement(reserve, u"MW"),
         variable = convert_reserve_variable_to_openapi(reserve),
         sustained_time = get_sustained_time(reserve),
         max_output_fraction = get_max_output_fraction(reserve),
@@ -1386,7 +1386,7 @@ function to_openapi(
         name = get_name(reserve),
         available = get_available(reserve),
         time_frame = get_time_frame(reserve),
-        requirement = get_requirement(reserve, u"SU") * get_base_power(refs),
+        requirement = get_requirement(reserve, u"MW"),
         variable = convert_reserve_variable_to_openapi(reserve),
         sustained_time = get_sustained_time(reserve),
         max_output_fraction = get_max_output_fraction(reserve),
@@ -1412,7 +1412,7 @@ function to_openapi(
         id = component_id(refs, reserve),
         name = get_name(reserve),
         available = get_available(reserve),
-        requirement = get_requirement(reserve, u"SU") * get_base_power(refs),
+        requirement = get_requirement(reserve, u"MW"),
         variable = convert_reserve_variable_to_openapi(reserve),
         reserve_direction = PO.ReserveDirection(RESERVE_DIRECTION_TO_STRING[T]),
     )

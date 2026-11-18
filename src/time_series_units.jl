@@ -28,7 +28,16 @@ const TIME_SERIES_QUANTITIES = Dict{Symbol, Any}(
 _quantity_symbol(s::AbstractString) = Symbol(join(uppercasefirst.(split(s, '_'))))
 _quantity_symbol(s::Symbol) = _quantity_symbol(string(s))
 
-function _ts_quantity(labels)
+"""
+    get_time_series_quantity(labels) -> Union{Nothing, Symbol}
+
+Return the quantity a time series' `quantity_kind` label names, as a key of the time series
+quantity vocabulary (e.g. `:ActivePower`, `:ReactivePower`, `:Energy`). `labels` is the
+series or its metadata. Snake case (`"reactive_power"`) and camel case (`"ReactivePower"`)
+labels give the same quantity. Returns `nothing` for a series without a `quantity_kind`
+label, and throws an `ArgumentError` for a label outside the vocabulary.
+"""
+function get_time_series_quantity(labels::Union{TimeSeriesData, IS.TimeSeriesMetadata})
     s = IS.get_quantity_kind(labels)
     isnothing(s) && return nothing
     q = _quantity_symbol(s)
@@ -139,7 +148,7 @@ function _check_time_series_labels(
     name = IS.get_name(labels)
     per_unit_of = IS.get_per_unit_of(labels)
     units = _ts_source_units(labels)
-    q = _ts_quantity(labels)
+    q = get_time_series_quantity(labels)
     # ponytail: unlabeled series pass unchecked so PSB keeps building; require labels once
     # PSB and PTDP write them everywhere.
     isnothing(units) && isnothing(q) && return
@@ -240,17 +249,17 @@ _is_system_base(u::Unitful.Units) = any(
     typeof(Unitful.dimension(u)).parameters[1],
 )
 
-# Check that `ts` can be read in `units`, and return the factor that converts its stored
-# values there.
+# Check that a series (its data or its metadata) can be read in `units`, and return the
+# factor that converts its stored values there.
 function _ts_read_factor(
     component::Component,
-    ts::TimeSeriesData,
+    labels::Union{TimeSeriesData, IS.TimeSeriesMetadata},
     units::Unitful.Units,
     quantity,
 )
-    name = IS.get_name(ts)
-    q = _ts_quantity(ts)
-    source = _ts_source_units(ts)
+    name = IS.get_name(labels)
+    q = get_time_series_quantity(labels)
+    source = _ts_source_units(labels)
     (isnothing(q) || isnothing(source)) && throw(
         ArgumentError(
             "time series \"$name\" on $(summary(component)) has no units labels, so it " *
@@ -310,6 +319,22 @@ function _ts_read_converted(
     )
     return ta, factor
 end
+
+"""
+    get_time_series_conversion_factor(component, labels, units; quantity = nothing)
+
+Return the factor that converts the stored values of a time series on `component` to
+`units`: `u"CU"`, `u"SU"`, `u"SU*hr"`, or a natural unit such as `u"MW"`. `labels` is the
+series or its metadata, so a caller can scale a series without reading its data. The
+series must carry units labels. `quantity` (e.g. `:ActivePower`), when given, must match
+the series' own quantity.
+"""
+get_time_series_conversion_factor(
+    component::Component,
+    labels::Union{TimeSeriesData, IS.TimeSeriesMetadata},
+    units::Unitful.Units;
+    quantity::Union{Nothing, Symbol, AbstractString} = nothing,
+) = _ts_read_factor(component, labels, units, quantity)
 
 """
     get_time_series_values(T, component, name, units; quantity = nothing, kwargs...)
