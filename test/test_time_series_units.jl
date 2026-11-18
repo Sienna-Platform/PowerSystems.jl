@@ -354,6 +354,31 @@ end
         gen, get_time_series_metadata(SingleTimeSeries, gen, "unlabeled"), u"SU")
 end
 
+@testset "Time series units labels: quantity from the labels" begin
+    sys = System(100.0)
+    bus = ACBus(nothing)
+    add_component!(sys, bus)
+    gen = ThermalStandard(nothing)
+    set_bus!(gen, bus)
+    add_component!(sys, gen)
+    stamps = range(DateTime("2020-01-01"); step = Hour(1), length = 3)
+    ta = TimeSeries.TimeArray(stamps, [0.2, 0.4, 0.8])
+    for (name, kind) in (("p", "active_power"), ("q_snake", "reactive_power"),
+        ("q_camel", "ReactivePower"))
+        add_time_series!(sys, gen,
+            SingleTimeSeries(name, ta; quantity_kind = kind, per_unit_of = "base_power"))
+    end
+    add_time_series!(sys, gen, SingleTimeSeries("unlabeled", ta))
+
+    md(name) = get_time_series_metadata(SingleTimeSeries, gen, name)
+    @test get_time_series_quantity(md("p")) == :ActivePower
+    @test get_time_series_quantity(md("q_snake")) == :ReactivePower
+    @test get_time_series_quantity(md("q_camel")) == :ReactivePower
+    @test get_time_series_quantity(get_time_series(SingleTimeSeries, gen, "p")) ==
+          :ActivePower
+    @test isnothing(get_time_series_quantity(md("unlabeled")))
+end
+
 @testset "Time series units labels: per_unit_of survives every file form" begin
     sys, gen = _sys_with_thermal(; system_base = 100.0, component_base = 250.0)
     stamps = range(DateTime("2020-01-01"); step = Hour(1), length = 3)

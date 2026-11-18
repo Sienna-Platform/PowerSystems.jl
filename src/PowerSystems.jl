@@ -547,6 +547,7 @@ export supports_voltage_control
 export get_time_series_timestamps
 export get_time_series_values
 export get_time_series_conversion_factor
+export get_time_series_quantity
 export get_time_series_counts
 export get_time_series_hash
 export get_time_series_array_groups

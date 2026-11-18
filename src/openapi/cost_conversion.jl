@@ -253,7 +253,9 @@ const _FUEL_UNITS_TO_WIRE = Dict(v => k for (k, v) in _FUEL_UNITS_FROM_WIRE)
 _fuel_units_from_wire(f::PC.FuelCurve) =
     get(_FUEL_UNITS_FROM_WIRE, f.fuel_units.value) do
         throw(
-            ArgumentError("convert_cost: unknown FuelCurve.fuel_units $(f.fuel_units.value)"),
+            ArgumentError(
+                "convert_cost: unknown FuelCurve.fuel_units $(f.fuel_units.value)",
+            ),
         )
     end
 

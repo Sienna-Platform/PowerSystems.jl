@@ -110,6 +110,7 @@ Filter = t -> (t isa DataType || t isa UnionAll || t isa Function) && nameof(t) 
 
 ```@docs
 get_time_series_conversion_factor
+get_time_series_quantity
 ```
 
 ## System

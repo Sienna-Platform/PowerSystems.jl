@@ -28,7 +28,16 @@ const TIME_SERIES_QUANTITIES = Dict{Symbol, Any}(
 _quantity_symbol(s::AbstractString) = Symbol(join(uppercasefirst.(split(s, '_'))))
 _quantity_symbol(s::Symbol) = _quantity_symbol(string(s))
 
-function _ts_quantity(labels)
+"""
+    get_time_series_quantity(labels) -> Union{Nothing, Symbol}
+
+Return the quantity a time series' `quantity_kind` label names, as a key of the time series
+quantity vocabulary (e.g. `:ActivePower`, `:ReactivePower`, `:Energy`). `labels` is the
+series or its metadata. Snake case (`"reactive_power"`) and camel case (`"ReactivePower"`)
+labels give the same quantity. Returns `nothing` for a series without a `quantity_kind`
+label, and throws an `ArgumentError` for a label outside the vocabulary.
+"""
+function get_time_series_quantity(labels::Union{TimeSeriesData, IS.TimeSeriesMetadata})
     s = IS.get_quantity_kind(labels)
     isnothing(s) && return nothing
     q = _quantity_symbol(s)
@@ -139,7 +148,7 @@ function _check_time_series_labels(
     name = IS.get_name(labels)
     per_unit_of = IS.get_per_unit_of(labels)
     units = _ts_source_units(labels)
-    q = _ts_quantity(labels)
+    q = get_time_series_quantity(labels)
     # ponytail: unlabeled series pass unchecked so PSB keeps building; require labels once
     # PSB and PTDP write them everywhere.
     isnothing(units) && isnothing(q) && return
@@ -243,7 +252,7 @@ function _ts_read_factor(
     quantity,
 )
     name = IS.get_name(labels)
-    q = _ts_quantity(labels)
+    q = get_time_series_quantity(labels)
     source = _ts_source_units(labels)
     (isnothing(q) || isnothing(source)) && throw(
         ArgumentError(
