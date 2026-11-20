@@ -41,7 +41,7 @@ const PSY = PowerSystems
         @test get_hrsg_heat_loss(lossy) == 12.5
         @test get_heat_recovery_to_steam_factor(lossy) == 0.85
         config = CombinedCycleConfiguration.SingleShaftCombustionSteam
-        for loss in (-1.0, NaN)
+        for loss in (-1.0, NaN, Inf)
             @test_throws ArgumentError CombinedCycleBlock(;
                 name = "CC Block 3", configuration = config, hrsg_heat_loss = loss)
             # the deserialization variant, with string-keyed maps

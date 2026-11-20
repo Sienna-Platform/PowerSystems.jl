@@ -270,24 +270,18 @@ _fuel_units_to_wire(u) =
         )
     end
 
-"""Resolve a price's two mutually exclusive fields. `store` is unused on the
-scalar branch, so a plain `fuel_cost` converts with no active import at all. `owner` and
-`field` only name the price in errors."""
-_fuel_cost_fields(::Any, cost::Real, ::Nothing, owner = "FuelCurve", field = "fuel_cost") =
+"""Resolve a price's two mutually exclusive fields. `get_store` is called only for a
+series id, so a fixed price converts with no active import. `owner` and `field` name the
+price in errors."""
+_fuel_cost_fields(::Function, cost::Real, ::Nothing, ::String, ::String) =
     (Float64(cost), nothing)
-_fuel_cost_fields(
-    store,
-    ::Nothing,
-    series::Integer,
-    owner = "FuelCurve",
-    field = "fuel_cost",
-) =
-    (nothing, IS.get_time_series_key(store, series))
-_fuel_cost_fields(::Any, ::Nothing, ::Nothing, owner = "FuelCurve", field = "fuel_cost") =
+_fuel_cost_fields(get_store::Function, ::Nothing, series::Integer, ::String, ::String) =
+    (nothing, IS.get_time_series_key(get_store(), series))
+_fuel_cost_fields(::Function, ::Nothing, ::Nothing, owner::String, field::String) =
     error(
         "convert_cost: $owner requires exactly one of $field or $(field)_time_series",
     )
-_fuel_cost_fields(::Any, ::Real, ::Integer, owner = "FuelCurve", field = "fuel_cost") =
+_fuel_cost_fields(::Function, ::Real, ::Integer, owner::String, field::String) =
     error(
         "convert_cost: $owner carries both $field and $(field)_time_series - exactly " *
         "one is expected",
@@ -299,9 +293,11 @@ function convert_cost(f::PC.FuelCurve, store)
     startup_fuel_offtake =
         _optional_linear_curve(f.startup_fuel_offtake, "startup_fuel_offtake")
     fuel_cost, fuel_cost_time_series = _fuel_cost_fields(
-        store,
+        () -> store,
         _optional_from_wire(f.fuel_cost),
         _optional_from_wire(f.fuel_cost_time_series),
+        "FuelCurve",
+        "fuel_cost",
     )
     return _with_power_units(f.power_units) do units
         FuelCurve(;
@@ -316,20 +312,6 @@ function convert_cost(f::PC.FuelCurve, store)
     end
 end
 
-"""[`_fuel_cost_fields`](@ref) for the ambient 1-arg form: the store is pulled lazily,
-only inside the time series branch, so a scalar price needs no active import bound at all."""
-_fuel_cost_fields_ambient(cost::Real, ::Nothing, owner = "FuelCurve", field = "fuel_cost") =
-    _fuel_cost_fields(nothing, cost, nothing, owner, field)
-_fuel_cost_fields_ambient(
-    ::Nothing, series::Integer, owner = "FuelCurve", field = "fuel_cost",
-) = _fuel_cost_fields(_current_import_store(), nothing, series, owner, field)
-_fuel_cost_fields_ambient(
-    ::Nothing, ::Nothing, owner = "FuelCurve", field = "fuel_cost",
-) = _fuel_cost_fields(nothing, nothing, nothing, owner, field)
-_fuel_cost_fields_ambient(
-    ::Real, ::Integer, owner = "FuelCurve", field = "fuel_cost",
-) = _fuel_cost_fields(nothing, 0.0, 0, owner, field)
-
 """1-arg ambient form for callers with no `store` in hand (the generated per-device
 `from_openapi` methods — see `_current_import_store`). `value_curve` converts through the
 plain 1-arg `convert_cost` chain, exactly like `CostCurve`'s 1-arg form — a time-series-backed
@@ -342,9 +324,12 @@ function convert_cost(f::PC.FuelCurve)
     vom_cost = _optional_linear_curve(f.vom_cost, "vom_cost")
     startup_fuel_offtake =
         _optional_linear_curve(f.startup_fuel_offtake, "startup_fuel_offtake")
-    fuel_cost, fuel_cost_time_series = _fuel_cost_fields_ambient(
+    fuel_cost, fuel_cost_time_series = _fuel_cost_fields(
+        _current_import_store,
         _optional_from_wire(f.fuel_cost),
         _optional_from_wire(f.fuel_cost_time_series),
+        "FuelCurve",
+        "fuel_cost",
     )
     return _with_power_units(f.power_units) do units
         FuelCurve(;
@@ -408,12 +393,12 @@ end
 convert_cost(f::PC.TwoFuelCurve, store) = _convert_two_fuel(
     f, vc -> convert_cost(vc, store),
     (cost, series, field) ->
-        _fuel_cost_fields(store, cost, series, "TwoFuelCurve", field),
+        _fuel_cost_fields(() -> store, cost, series, "TwoFuelCurve", field),
 )
 convert_cost(f::PC.TwoFuelCurve) = _convert_two_fuel(
     f, convert_cost,
     (cost, series, field) ->
-        _fuel_cost_fields_ambient(cost, series, "TwoFuelCurve", field),
+        _fuel_cost_fields(_current_import_store, cost, series, "TwoFuelCurve", field),
 )
 
 _optional_cost_curve(::Nothing) = zero(CostCurve)

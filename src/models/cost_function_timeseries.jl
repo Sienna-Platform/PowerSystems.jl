@@ -691,7 +691,11 @@ end
 
 # ── FuelCurve Setter (unchanged) ───────────────────────────────────────────
 
-"Set the fuel cost of the component's variable cost, which must be a `FuelCurve`."
+"""
+Set the fuel cost of the component's variable cost, which must be a `FuelCurve`.
+A time series is attached as a new series, and a series the curve pointed to stays attached:
+remove it with [`remove_time_series!`](@ref) first.
+"""
 function set_fuel_cost!(
     sys::System,
     component::StaticInjection,
@@ -713,10 +717,10 @@ function set_fuel_cost!(
 end
 
 # Splits a fixed price or a stored series key into the (price, key) pair of the curve.
-function _fuel_price_fields(sys::System, component::StaticInjection, data)
-    to_set = _process_set_cost(Float64, Float64, sys, component, data)
-    return to_set isa Float64 ? (to_set, nothing) : (nothing, to_set)
-end
+_fuel_price_fields(sys::System, component::StaticInjection, data) =
+    _price_pair(_process_set_cost(Float64, Float64, sys, component, data))
+_price_pair(price::Float64) = (price, nothing)
+_price_pair(key::IS.TimeSeriesKey) = (nothing, key)
 
 function _rebuild_two_fuel_curve(var_cost::IS.TwoFuelCurve; changes...)
     return TwoFuelCurve(;
@@ -739,6 +743,8 @@ end
 
 """
 Set the first fuel price of the component's variable cost, which must be a `TwoFuelCurve`.
+A time series is attached as a new series, and a series the curve pointed to stays attached:
+remove it with [`remove_time_series!`](@ref) first.
 """
 function set_first_fuel_cost!(
     sys::System,
@@ -756,6 +762,8 @@ end
 
 """
 Set the second fuel price of the component's variable cost, which must be a `TwoFuelCurve`.
+A time series is attached as a new series, and a series the curve pointed to stays attached:
+remove it with [`remove_time_series!`](@ref) first.
 """
 function set_second_fuel_cost!(
     sys::System,
