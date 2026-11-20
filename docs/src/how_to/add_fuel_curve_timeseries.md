@@ -103,7 +103,7 @@ To add time-varying fuel costs, you need to:
 
 !!! note
 
-    A [`DualFuelCurve`](@ref) has two fuel prices, so [`set_fuel_cost!`](@ref) does not apply to it.
+    A [`TwoFuelCurve`](@ref) has two fuel prices, so [`set_fuel_cost!`](@ref) does not apply to it.
     Use [`set_first_fuel_cost!`](@ref) and [`set_second_fuel_cost!`](@ref) instead.
     Operations models read the two price series by the names `"fuel_cost"` (first fuel) and `"second_fuel_cost"` (second fuel).
 

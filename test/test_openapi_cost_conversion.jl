@@ -644,26 +644,29 @@ end
     )
 end
 
-function _dual_fuel_conversion_curves()
-    stacked = DualFuelCurve(;
+function _two_fuel_conversion_curves()
+    stacked = TwoFuelCurve(;
         first_fuel_curve = LinearCurve(9.89, 113.0),
         second_fuel_curve = PiecewiseIncrementalCurve(nothing, [185.4, 304.4], [10.017]),
-        fuel_units = u"MMBtu", second_fuel_cost = 3.44)
-    blended = DualFuelCurve(;
+        fuel_units = u"MMBtu", second_fuel_cost = 3.44,
+        fuel_curve_type = TwoFuelCurveType.STACKED)
+    blended = TwoFuelCurve(;
         first_fuel_curve = PiecewisePointCurve([(100.0, 900.0), (300.0, 2700.0)]),
         second_fuel_curve = PiecewisePointCurve([(100.0, 950.0), (300.0, 2725.0)]),
         fuel_units = u"MMBtu", first_fuel_cost = 3.0, second_fuel_cost = 5.0,
-        second_fuel_share = 0.3, vom_cost = LinearCurve(2.0, 0.0))
-    linear = DualFuelCurve(;
+        fuel_curve_type = TwoFuelCurveType.BLENDED, second_fuel_output_share = 0.3,
+        vom_cost = LinearCurve(2.0, 0.0))
+    linear = TwoFuelCurve(;
         first_fuel_curve = LinearCurve(9.0, 100.0),
         second_fuel_curve = LinearCurve(10.0, 90.0),
         fuel_units = u"MMBtu", first_fuel_cost = 3.0, second_fuel_cost = 5.0,
-        second_fuel_share = 0.5, power_units = ComponentBaseUnit())
+        fuel_curve_type = TwoFuelCurveType.BLENDED, second_fuel_output_share = 0.5,
+        power_units = ComponentBaseUnit())
     return stacked, blended, linear
 end
 
-function _po_dual_fuel(; kwargs...)
-    return PSY.PC.DualFuelCurve(;
+function _po_two_fuel(; kwargs...)
+    return PSY.PC.TwoFuelCurve(;
         first_fuel_curve = PSY.PC.ValueCurve(_po_linear_io(1.0, 0.0)),
         second_fuel_curve = PSY.PC.ValueCurve(_po_linear_io(2.0, 0.0)),
         fuel_units = PSY.PC.FuelUnit("MMBTU"),
@@ -673,12 +676,13 @@ function _po_dual_fuel(; kwargs...)
     )
 end
 
-@testset "convert_cost: DualFuelCurve static round trip" begin
-    stacked, blended, linear = _dual_fuel_conversion_curves()
+@testset "convert_cost: TwoFuelCurve static round trip" begin
+    stacked, blended, linear = _two_fuel_conversion_curves()
     for curve in (stacked, blended, linear)
         po = PSY.convert_cost_to_openapi(curve)
-        @test po isa PSY.PC.DualFuelCurve
-        @test po.variable_cost_type == "DUAL_FUEL"
+        @test po isa PSY.PC.TwoFuelCurve
+        @test po.variable_cost_type == "TWO_FUEL"
+        @test po.fuel_curve_type.value == string(get_fuel_curve_type(curve))
         @test PSY.convert_cost(po) == curve
         @test PSY.convert_cost(po, nothing) == curve
         wrapped = PSY.PC.ProductionVariableCostCurve(po)
@@ -686,58 +690,73 @@ end
     end
     po = PSY.convert_cost_to_openapi(stacked)
     @test isnothing(PSY._optional_from_wire(po.second_fuel_curve.value.initial_input))
-    @test isnothing(po.second_fuel_share)
+    @test po.second_fuel_output_share == 0.0
+    @test po.fuel_curve_type.value == "STACKED"
     @test isnothing(PSY.convert_cost_to_openapi(blended).second_fuel_cost_time_series)
-    @test PSY.convert_cost_to_openapi(blended).second_fuel_share == 0.3
+    @test PSY.convert_cost_to_openapi(blended).second_fuel_output_share == 0.3
 end
 
-@testset "convert_cost: DualFuelCurve fuel units" begin
-    _, blended, _ = _dual_fuel_conversion_curves()
-    in_gj = DualFuelCurve(;
+@testset "convert_cost: TwoFuelCurve fuel units" begin
+    _, blended, _ = _two_fuel_conversion_curves()
+    in_gj = TwoFuelCurve(;
         first_fuel_curve = get_first_fuel_curve(blended),
         second_fuel_curve = get_second_fuel_curve(blended),
         fuel_units = u"GJ", first_fuel_cost = 3.0, second_fuel_cost = 5.0,
-        second_fuel_share = 0.3)
+        fuel_curve_type = TwoFuelCurveType.BLENDED, second_fuel_output_share = 0.3)
     po = PSY.convert_cost_to_openapi(in_gj)
     @test po.fuel_units.value == "GJ"
     @test get_fuel_units(PSY.convert_cost(po)) == u"GJ"
     @test PSY.convert_cost(po) == in_gj
-    in_liters = DualFuelCurve(;
+    in_liters = TwoFuelCurve(;
         first_fuel_curve = get_first_fuel_curve(blended),
         second_fuel_curve = get_second_fuel_curve(blended),
         fuel_units = u"L", first_fuel_cost = 3.0, second_fuel_cost = 5.0,
-        second_fuel_share = 0.3)
+        fuel_curve_type = TwoFuelCurveType.BLENDED, second_fuel_output_share = 0.3)
     @test_throws ArgumentError PSY.convert_cost_to_openapi(in_liters)
 end
 
-@testset "convert_cost: DualFuelCurve refuses malformed documents" begin
+@testset "convert_cost: TwoFuelCurve refuses malformed documents" begin
     @test_throws ErrorException PSY.convert_cost(
-        _po_dual_fuel(; first_fuel_cost = 1.0, second_fuel_cost = 2.0,
+        _po_two_fuel(; first_fuel_cost = 1.0, second_fuel_cost = 2.0,
             second_fuel_cost_time_series = 7),
     )
-    @test_throws ErrorException PSY.convert_cost(_po_dual_fuel(; second_fuel_cost = 2.0))
+    @test_throws ErrorException PSY.convert_cost(_po_two_fuel(; second_fuel_cost = 2.0))
     @test_throws ErrorException PSY.convert_cost(
-        _po_dual_fuel(; first_fuel_cost = 1.0, second_fuel_cost = 2.0,
+        _po_two_fuel(; first_fuel_cost = 1.0, second_fuel_cost = 2.0,
             first_fuel_cost_time_series = 7),
     )
-    # No share and linear curves: not a stacked layout.
+    # Linear curves are not a stacked layout.
     @test_throws ArgumentError PSY.convert_cost(
-        _po_dual_fuel(; first_fuel_cost = 1.0, second_fuel_cost = 2.0),
+        _po_two_fuel(; first_fuel_cost = 1.0, second_fuel_cost = 2.0,
+            fuel_curve_type = PSY.PC.TwoFuelCurveType("STACKED")),
     )
-    # A share with a stacked second curve is not a blended layout.
-    stacked, _, _ = _dual_fuel_conversion_curves()
+    # A stacked second curve is not a blended layout.
+    stacked, _, _ = _two_fuel_conversion_curves()
     po = PSY.convert_cost_to_openapi(stacked)
     first = PSY.convert_cost_to_openapi(PiecewisePointCurve([(0.0, 0.0), (185.4, 1800.0)]))
-    shared = PSY.PC.DualFuelCurve(;
+    shared = PSY.PC.TwoFuelCurve(;
         first_fuel_curve = PSY.PC.ValueCurve(first),
         second_fuel_curve = po.second_fuel_curve,
         fuel_units = po.fuel_units, power_units = po.power_units,
         vom_cost = po.vom_cost,
-        first_fuel_cost = 1.0, second_fuel_cost = 3.44, second_fuel_share = 0.3)
+        first_fuel_cost = 1.0, second_fuel_cost = 3.44,
+        fuel_curve_type = PSY.PC.TwoFuelCurveType("BLENDED"),
+        second_fuel_output_share = 0.3)
     @test_throws ArgumentError PSY.convert_cost(shared)
 end
 
-@testset "convert_cost: DualFuelCurve prices as time series" begin
+@testset "convert_cost: TwoFuelCurve without a curve type" begin
+    # A document without fuel_curve_type or the share imports the defaults.
+    imported =
+        PSY.convert_cost(_po_two_fuel(; first_fuel_cost = 1.0, second_fuel_cost = 2.0))
+    @test get_fuel_curve_type(imported) == TwoFuelCurveType.UNDEFINED
+    @test get_second_fuel_output_share(imported) == 0.0
+    po = PSY.convert_cost_to_openapi(imported)
+    @test po.fuel_curve_type.value == "UNDEFINED"
+    @test PSY.convert_cost(po) == imported
+end
+
+@testset "convert_cost: TwoFuelCurve prices as time series" begin
     store = IS.Store(; in_memory = true)
     try
         stamps = [Dates.DateTime(2024, 1, 1, h) for h in 0:2]
@@ -749,14 +768,14 @@ end
                     data = TimeSeries.TimeArray(stamps, [1.0, 2.0, 3.0])),
             )
         end
-        _, blended, _ = _dual_fuel_conversion_curves()
-        curve = DualFuelCurve(;
+        _, blended, _ = _two_fuel_conversion_curves()
+        curve = TwoFuelCurve(;
             first_fuel_curve = get_first_fuel_curve(blended),
             second_fuel_curve = get_second_fuel_curve(blended),
             fuel_units = u"MMBtu",
             first_fuel_cost_time_series = ids[1],
             second_fuel_cost_time_series = ids[2],
-            second_fuel_share = 0.3)
+            fuel_curve_type = TwoFuelCurveType.BLENDED, second_fuel_output_share = 0.3)
         po = PSY.convert_cost_to_openapi(curve)
         @test po.first_fuel_cost_time_series == IS.get_association_id(ids[1])
         @test isnothing(po.first_fuel_cost)
@@ -768,13 +787,13 @@ end
     end
 end
 
-@testset "convert_cost: DualFuelCurve startup offtakes" begin
-    stacked, blended, _ = _dual_fuel_conversion_curves()
-    curve = DualFuelCurve(;
+@testset "convert_cost: TwoFuelCurve startup offtakes" begin
+    stacked, blended, _ = _two_fuel_conversion_curves()
+    curve = TwoFuelCurve(;
         first_fuel_curve = get_first_fuel_curve(blended),
         second_fuel_curve = get_second_fuel_curve(blended),
         fuel_units = u"MMBtu", first_fuel_cost = 3.0, second_fuel_cost = 5.0,
-        second_fuel_share = 0.3,
+        fuel_curve_type = TwoFuelCurveType.BLENDED, second_fuel_output_share = 0.3,
         first_fuel_startup_offtake = LinearCurve(5.0),
         second_fuel_startup_offtake = LinearCurve(2.0))
     @test get_first_fuel_startup_offtake(curve) == LinearCurve(5.0)
@@ -782,19 +801,24 @@ end
     @test PSY.convert_cost(po) == curve
     @test get_second_fuel_startup_offtake(PSY.convert_cost(po)) == LinearCurve(2.0)
     # A document without the properties, or with null, imports the default.
-    bare = _po_dual_fuel(; first_fuel_cost = 1.0, second_fuel_cost = 2.0)
+    bare = _po_two_fuel(; first_fuel_cost = 1.0, second_fuel_cost = 2.0)
     @test bare.first_fuel_startup_offtake isa PSY.IC.Absent
     for po_curve in (
-        PSY.PC.DualFuelCurve(;
+        PSY.PC.TwoFuelCurve(;
             first_fuel_curve = po.first_fuel_curve,
             second_fuel_curve = po.second_fuel_curve, fuel_units = po.fuel_units,
             power_units = po.power_units, vom_cost = po.vom_cost,
-            first_fuel_cost = 3.0, second_fuel_cost = 5.0, second_fuel_share = 0.3),
-        PSY.PC.DualFuelCurve(;
+            first_fuel_cost = 3.0, second_fuel_cost = 5.0,
+            fuel_curve_type = PSY.PC.TwoFuelCurveType("BLENDED"),
+            second_fuel_output_share = 0.3,
+        ),
+        PSY.PC.TwoFuelCurve(;
             first_fuel_curve = po.first_fuel_curve,
             second_fuel_curve = po.second_fuel_curve, fuel_units = po.fuel_units,
             power_units = po.power_units, vom_cost = po.vom_cost,
-            first_fuel_cost = 3.0, second_fuel_cost = 5.0, second_fuel_share = 0.3,
+            first_fuel_cost = 3.0, second_fuel_cost = 5.0,
+            fuel_curve_type = PSY.PC.TwoFuelCurveType("BLENDED"),
+            second_fuel_output_share = 0.3,
             first_fuel_startup_offtake = nothing, second_fuel_startup_offtake = nothing),
     )
         imported = PSY.convert_cost(po_curve)

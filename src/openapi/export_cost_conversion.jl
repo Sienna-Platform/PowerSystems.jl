@@ -234,9 +234,10 @@ function convert_cost_to_openapi(cost::FuelCurve)
     )
 end
 
-function convert_cost_to_openapi(cost::DualFuelCurve)
-    return PC.DualFuelCurve(;
+function convert_cost_to_openapi(cost::TwoFuelCurve)
+    return PC.TwoFuelCurve(;
         power_units = _power_units_to_string(get_power_units(cost), cost),
+        fuel_curve_type = PC.TwoFuelCurveType(string(get_fuel_curve_type(cost))),
         first_fuel_curve = PC.ValueCurve(
             convert_cost_to_openapi(get_first_fuel_curve(cost)),
         ),
@@ -251,7 +252,7 @@ function convert_cost_to_openapi(cost::DualFuelCurve)
         second_fuel_cost_time_series = _fuel_cost_time_series_id(
             get_second_fuel_cost_time_series(cost),
         ),
-        second_fuel_share = get_second_fuel_share(cost),
+        second_fuel_output_share = get_second_fuel_output_share(cost),
         first_fuel_startup_offtake = convert_cost_to_openapi(
             get_first_fuel_startup_offtake(cost),
         ),

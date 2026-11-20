@@ -251,7 +251,7 @@ end
 const _FUEL_UNITS_FROM_WIRE = Dict("MMBTU" => MMBtu, "GJ" => u"GJ")
 const _FUEL_UNITS_TO_WIRE = Dict(v => k for (k, v) in _FUEL_UNITS_FROM_WIRE)
 
-_fuel_units_from_wire(f::Union{PC.FuelCurve, PC.DualFuelCurve}) =
+_fuel_units_from_wire(f::Union{PC.FuelCurve, PC.TwoFuelCurve}) =
     get(_FUEL_UNITS_FROM_WIRE, f.fuel_units.value) do
         throw(
             ArgumentError(
@@ -359,8 +359,14 @@ function convert_cost(f::PC.FuelCurve)
     end
 end
 
+# An absent curve type or share takes the data model's default.
+_two_fuel_curve_type_from_wire(::Nothing) = TwoFuelCurveType.UNDEFINED
+_two_fuel_curve_type_from_wire(t::PC.TwoFuelCurveType) = TwoFuelCurveType.Value(t.value)
+_output_share_from_wire(::Nothing) = 0.0
+_output_share_from_wire(share::Real) = Float64(share)
+
 # `convert` converts a value curve; `price` resolves one fuel's (fixed, key) pair.
-function _convert_dual_fuel(f::PC.DualFuelCurve, convert, price)
+function _convert_two_fuel(f::PC.TwoFuelCurve, convert, price)
     first_cost, first_key = price(
         _optional_from_wire(f.first_fuel_cost),
         _optional_from_wire(f.first_fuel_cost_time_series), "first_fuel_cost",
@@ -369,20 +375,25 @@ function _convert_dual_fuel(f::PC.DualFuelCurve, convert, price)
         _optional_from_wire(f.second_fuel_cost),
         _optional_from_wire(f.second_fuel_cost_time_series), "second_fuel_cost",
     )
-    first_curve = convert(_require(f.first_fuel_curve, "DualFuelCurve.first_fuel_curve"))
-    second_curve = convert(_require(f.second_fuel_curve, "DualFuelCurve.second_fuel_curve"))
+    first_curve = convert(_require(f.first_fuel_curve, "TwoFuelCurve.first_fuel_curve"))
+    second_curve = convert(_require(f.second_fuel_curve, "TwoFuelCurve.second_fuel_curve"))
     vom_cost = _optional_linear_curve(f.vom_cost, "vom_cost")
     return _with_power_units(f.power_units) do units
-        DualFuelCurve(;
+        TwoFuelCurve(;
             first_fuel_curve = first_curve,
             second_fuel_curve = second_curve,
             power_units = units,
             fuel_units = _fuel_units_from_wire(f),
+            fuel_curve_type = _two_fuel_curve_type_from_wire(
+                _optional_from_wire(f.fuel_curve_type),
+            ),
             first_fuel_cost = first_cost,
             first_fuel_cost_time_series = first_key,
             second_fuel_cost = second_cost,
             second_fuel_cost_time_series = second_key,
-            second_fuel_share = _optional_from_wire(f.second_fuel_share),
+            second_fuel_output_share = _output_share_from_wire(
+                _optional_from_wire(f.second_fuel_output_share),
+            ),
             first_fuel_startup_offtake = _optional_linear_curve(
                 f.first_fuel_startup_offtake, "first_fuel_startup_offtake",
             ),
@@ -394,15 +405,15 @@ function _convert_dual_fuel(f::PC.DualFuelCurve, convert, price)
     end
 end
 
-convert_cost(f::PC.DualFuelCurve, store) = _convert_dual_fuel(
+convert_cost(f::PC.TwoFuelCurve, store) = _convert_two_fuel(
     f, vc -> convert_cost(vc, store),
     (cost, series, field) ->
-        _fuel_cost_fields(store, cost, series, "DualFuelCurve", field),
+        _fuel_cost_fields(store, cost, series, "TwoFuelCurve", field),
 )
-convert_cost(f::PC.DualFuelCurve) = _convert_dual_fuel(
+convert_cost(f::PC.TwoFuelCurve) = _convert_two_fuel(
     f, convert_cost,
     (cost, series, field) ->
-        _fuel_cost_fields_ambient(cost, series, "DualFuelCurve", field),
+        _fuel_cost_fields_ambient(cost, series, "TwoFuelCurve", field),
 )
 
 _optional_cost_curve(::Nothing) = zero(CostCurve)

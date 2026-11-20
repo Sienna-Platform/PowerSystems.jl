@@ -1,5 +1,5 @@
 """
-Every `TimeSeriesKey` this cost holds: a `FuelCurve`'s fuel cost, a `DualFuelCurve`'s two
+Every `TimeSeriesKey` this cost holds: a `FuelCurve`'s fuel cost, a `TwoFuelCurve`'s two
 curves and two prices, a time-series value curve's inputs, and a `MarketBidTimeSeriesCost`'s offer, start-up and shut-down series. This is the
 set of series a copy of the cost's owner needs to carry for the cost to resolve.
 """
@@ -26,7 +26,7 @@ function _collect_time_series_keys!(keys::Vector{IS.TimeSeriesKey}, curve::IS.Fu
     return nothing
 end
 
-function _collect_time_series_keys!(keys::Vector{IS.TimeSeriesKey}, curve::IS.DualFuelCurve)
+function _collect_time_series_keys!(keys::Vector{IS.TimeSeriesKey}, curve::IS.TwoFuelCurve)
     _collect_time_series_keys!(keys, IS.get_first_fuel_curve(curve))
     _collect_time_series_keys!(keys, IS.get_second_fuel_curve(curve))
     _collect_time_series_keys!(keys, IS.get_first_fuel_cost_time_series(curve))

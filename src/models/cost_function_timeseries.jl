@@ -29,11 +29,11 @@ function _validate_reserve_demand_curve(cost::T, name::String) where {T <: CostC
     )
 end
 
-function _validate_dual_fuel_curve(component::Component)
+function _validate_two_fuel_curve(component::Component)
     var_cost = get_variable_operation_cost(get_operation_cost(component))
-    !(var_cost isa IS.DualFuelCurve) && throw(
+    !(var_cost isa IS.TwoFuelCurve) && throw(
         ArgumentError(
-            "Variable cost of type $(typeof(var_cost)) has no first and second fuel, use DualFuelCurve instead",
+            "Variable cost of type $(typeof(var_cost)) has no first and second fuel, use TwoFuelCurve instead",
         ),
     )
     return var_cost
@@ -43,7 +43,7 @@ _validate_fuel_curve(component::Component) =
     _check_fuel_curve(get_variable_operation_cost(get_operation_cost(component)))
 
 _check_fuel_curve(curve::FuelCurve) = curve
-_check_fuel_curve(curve::IS.DualFuelCurve) = throw(
+_check_fuel_curve(curve::IS.TwoFuelCurve) = throw(
     ArgumentError(
         "Variable cost of type $(typeof(curve)) has two fuels, use get_first_fuel_cost, " *
         "get_second_fuel_cost, set_first_fuel_cost! and set_second_fuel_cost! instead",
@@ -395,22 +395,22 @@ function get_fuel_cost(component::StaticInjection;
     )
 end
 
-"Get the first fuel price of the component's variable cost, which must be a `DualFuelCurve`."
+"Get the first fuel price of the component's variable cost, which must be a `TwoFuelCurve`."
 function get_first_fuel_cost(component::StaticInjection;
     start_time::Union{Nothing, Dates.DateTime} = nothing,
     len::Union{Nothing, Int} = nothing,
 )
-    var_cost = _validate_dual_fuel_curve(component)
+    var_cost = _validate_two_fuel_curve(component)
     return _get_fuel_price(component, get_first_fuel_cost(var_cost),
         get_first_fuel_cost_time_series(var_cost), start_time, len)
 end
 
-"Get the second fuel price of the component's variable cost, which must be a `DualFuelCurve`."
+"Get the second fuel price of the component's variable cost, which must be a `TwoFuelCurve`."
 function get_second_fuel_cost(component::StaticInjection;
     start_time::Union{Nothing, Dates.DateTime} = nothing,
     len::Union{Nothing, Int} = nothing,
 )
-    var_cost = _validate_dual_fuel_curve(component)
+    var_cost = _validate_two_fuel_curve(component)
     return _get_fuel_price(component, get_second_fuel_cost(var_cost),
         get_second_fuel_cost_time_series(var_cost), start_time, len)
 end
@@ -718,17 +718,18 @@ function _fuel_price_fields(sys::System, component::StaticInjection, data)
     return to_set isa Float64 ? (to_set, nothing) : (nothing, to_set)
 end
 
-function _rebuild_dual_fuel_curve(var_cost::IS.DualFuelCurve; changes...)
-    return DualFuelCurve(;
+function _rebuild_two_fuel_curve(var_cost::IS.TwoFuelCurve; changes...)
+    return TwoFuelCurve(;
         first_fuel_curve = get_first_fuel_curve(var_cost),
         second_fuel_curve = get_second_fuel_curve(var_cost),
         fuel_units = get_fuel_units(var_cost),
         power_units = get_power_units(var_cost),
+        fuel_curve_type = get_fuel_curve_type(var_cost),
         first_fuel_cost = get_first_fuel_cost(var_cost),
         first_fuel_cost_time_series = get_first_fuel_cost_time_series(var_cost),
         second_fuel_cost = get_second_fuel_cost(var_cost),
         second_fuel_cost_time_series = get_second_fuel_cost_time_series(var_cost),
-        second_fuel_share = get_second_fuel_share(var_cost),
+        second_fuel_output_share = get_second_fuel_output_share(var_cost),
         first_fuel_startup_offtake = get_first_fuel_startup_offtake(var_cost),
         second_fuel_startup_offtake = get_second_fuel_startup_offtake(var_cost),
         vom_cost = get_vom_cost(var_cost),
@@ -737,35 +738,35 @@ function _rebuild_dual_fuel_curve(var_cost::IS.DualFuelCurve; changes...)
 end
 
 """
-Set the first fuel price of the component's variable cost, which must be a `DualFuelCurve`.
+Set the first fuel price of the component's variable cost, which must be a `TwoFuelCurve`.
 """
 function set_first_fuel_cost!(
     sys::System,
     component::StaticInjection,
     data::Union{Float64, IS.TimeSeriesData},
 )
-    var_cost = _validate_dual_fuel_curve(component)
+    var_cost = _validate_two_fuel_curve(component)
     price, key = _fuel_price_fields(sys, component, data)
     set_variable_operation_cost!(
         get_operation_cost(component),
-        _rebuild_dual_fuel_curve(var_cost; first_fuel_cost = price,
+        _rebuild_two_fuel_curve(var_cost; first_fuel_cost = price,
             first_fuel_cost_time_series = key),
     )
 end
 
 """
-Set the second fuel price of the component's variable cost, which must be a `DualFuelCurve`.
+Set the second fuel price of the component's variable cost, which must be a `TwoFuelCurve`.
 """
 function set_second_fuel_cost!(
     sys::System,
     component::StaticInjection,
     data::Union{Float64, IS.TimeSeriesData},
 )
-    var_cost = _validate_dual_fuel_curve(component)
+    var_cost = _validate_two_fuel_curve(component)
     price, key = _fuel_price_fields(sys, component, data)
     set_variable_operation_cost!(
         get_operation_cost(component),
-        _rebuild_dual_fuel_curve(var_cost; second_fuel_cost = price,
+        _rebuild_two_fuel_curve(var_cost; second_fuel_cost = price,
             second_fuel_cost_time_series = key),
     )
 end
